@@ -1,0 +1,54 @@
+<project name="Scala Refactoring" default="build">
+
+	<property name="sources.dir" value="src" />
+	<property name="test.dir" value="test" />
+	<property name="build.dir" value="build" />
+	<property name="lib.dir" value="../scala/lib" />
+
+	<target name="init">
+		<property name="scala-library.jar" value="${lib.dir}/scala-library.jar" />
+		<path id="build.classpath">
+			<pathelement location="${scala-library.jar}" />
+			<pathelement location="${build.dir}" />
+			<pathelement location="/usr/share/junit-4/lib/junit.jar" />
+			<pathelement location="/usr/share/hamcrest-core/lib/hamcrest-core.jar" />
+
+		</path>
+		<taskdef resource="scala/tools/ant/antlib.xml">
+			<classpath>
+				<pathelement location="${lib.dir}/scala-compiler.jar" />
+				<pathelement location="${scala-library.jar}" />
+			</classpath>
+		</taskdef>
+	</target>
+
+	<target name="build" depends="init">
+		<mkdir dir="${build.dir}" />
+		<scalac srcdir="${sources.dir}" destdir="${build.dir}" classpathref="build.classpath">
+			<include name="**/*.scala" />
+		</scalac>
+	</target>
+
+	<target name="build-tests" depends="build">
+		<mkdir dir="${build.dir}" />
+		<scalac srcdir="${test.dir}" destdir="${build.dir}" classpathref="build.classpath">
+			<include name="**/*.scala" />
+		</scalac>
+	</target>
+
+	<target name="test" depends="build-tests">
+		<junit printsummary="yes" haltonfailure="yes">
+			<formatter type="xml" />
+			<classpath refid="build.classpath" />
+			<batchtest fork="yes" todir="${build.dir}">
+				<fileset dir="${build.dir}">
+					<include name="**/tests/**/*" />
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<target name="clean">
+		<delete dir="${build.dir}"/>
+	</target>
+</project>
