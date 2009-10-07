@@ -7,8 +7,10 @@
 
 	<target name="init">
 		<property name="scala-library.jar" value="${lib.dir}/scala-library.jar" />
+		<property name="scala-compiler.jar" value="${lib.dir}/scala-compiler.jar" />
 		<path id="build.classpath">
 			<pathelement location="${scala-library.jar}" />
+			<pathelement location="${scala-compiler.jar}" />
 			<pathelement location="${build.dir}" />
 			<pathelement location="/usr/share/junit-4/lib/junit.jar" />
 			<pathelement location="/usr/share/hamcrest-core/lib/hamcrest-core.jar" />
@@ -42,13 +44,13 @@
 			<classpath refid="build.classpath" />
 			<batchtest fork="yes" todir="${build.dir}">
 				<fileset dir="${build.dir}">
-					<include name="**/tests/**/*" />
+					<include name="**/tests/*" />
 				</fileset>
 			</batchtest>
 		</junit>
 	</target>
 
 	<target name="clean">
-		<delete dir="${build.dir}"/>
+		<delete dir="${build.dir}" />
 	</target>
 </project>

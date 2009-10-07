@@ -1,11 +1,16 @@
 package scala.tools.refactor.tests
 
+import utils._
+
+import scala.tools.refactor.printer._
+
 import junit.framework._
-import org.junit.Assert._
 
-class First extends TestCase {
-
-  def testOne() = {
-    assertEquals(1, 1)
-  }
+class First extends TestCase with PrinterTest {
+  
+  def testOne() = assert print
+    """
+    		object A
+    """
+  
 }
