@@ -3,7 +3,7 @@
 	<property name="sources.dir" value="src" />
 	<property name="test.dir" value="test" />
 	<property name="build.dir" value="build" />
-	<property name="lib.dir" value="../scala/lib" />
+	<property name="lib.dir" value="../scala/dists/latest/lib" />
 
 	<target name="init">
 		<property name="scala-library.jar" value="${lib.dir}/scala-library.jar" />

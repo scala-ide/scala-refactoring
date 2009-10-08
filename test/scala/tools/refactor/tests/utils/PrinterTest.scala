@@ -10,7 +10,8 @@ trait PrinterTest extends Compiler {
   
   def print(src: String) = {
     val buffer = new SB
-    Printer(buffer, compiler,  treeFrom(src))
+    val tree = treeFrom(src)
+    Printer(buffer, compiler, tree)
     assertEquals(src, buffer.toString)
   }
 }
