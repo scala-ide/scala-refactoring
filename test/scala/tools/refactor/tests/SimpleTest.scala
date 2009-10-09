@@ -43,7 +43,14 @@ class SimpleTest extends TestCase with PrinterTest {
   
   def testClassExtendsWithTrait = assert print 
   """
-    trait A
-    class X extends AnyRef with A
+    trait A; trait B
+    class X extends AnyRef with A with B
+  """  
+
+  def testClassWithBody = assert print 
+  """
+    class X extends AnyRef {
+      
+    }
   """
 }
