@@ -10,16 +10,24 @@ object Printer {
   
   trait SourceElement {
     def print(out: Appendable)
+    override def toString = {
+      val sb = new java.lang.StringBuilder
+      print(sb)
+      sb.toString
+    }
   }
   
-  object nullSourceElement extends SourceElement {
-    def print(out: Appendable) = ()
+  object nullSourceElement extends FromFileSourceElement(0, 0, null) {
+    override def print(out: Appendable) = ()
   }
   
   class FromFileSourceElement(start: Int, end: Int, file: SourceFile) extends SourceElement {
     def print(out: Appendable) {
       file.content.slice(start, end).foreach(out append _)
     }
+    
+    def offset(o: Int) = new FromFileSourceElement(start + o, end, file)
+    def offset(s: String) = new FromFileSourceElement(start + s.length, end, file)
   }
   
   class StringSourceElement(text: String) extends SourceElement {
@@ -48,7 +56,9 @@ object Printer {
     case _ if p2 precedes p1 => nullSourceElement
     case (pos, _) if p1 == p2 => between(pos.start, pos.point, pos.source)
     case (p1, p2) if (p2 includes p1) &&  (p2.start < p1.start) => new FromFileSourceElement(p1.end, p2.end, p1.source)
-    case (p1, p2) => new FromFileSourceElement(p1.end, p2.start, p1.source)
+    case (p1, p2) if p1.end == p2.end => new FromFileSourceElement(p1.start, p2.start, p1.source)
+    case (p1, p2) if p1.start == p2.start => new FromFileSourceElement(p1.end, p2.point, p1.source)
+    case (p1, p2) => new FromFileSourceElement(p1.start, p2.start, p1.source)
   }
   def space(t: Trees#Tree) = between(t.pos.start, t.pos.point, t.pos.source)
   def space(t1: Trees#Tree, t2: Trees#Tree) = (t1.pos, t2.pos) match {
@@ -57,8 +67,10 @@ object Printer {
     case (p1, p2: RangePosition) => between(p1.end, p2.point, p1.source)
     case _ => nullSourceElement
   }
-  def space(t: Trees#Tree, l: List[Trees#Tree]): SourceElement = if (l.isEmpty) nullSourceElement else space(t, l.head)
-  def space(l1: List[Trees#Tree], l2: List[Trees#Tree]): SourceElement = if (l2.isEmpty) nullSourceElement else space(l1.last, l2.head)
+  def space(t: Trees#Tree, l: List[Trees#Tree]): FromFileSourceElement = if (l.isEmpty) nullSourceElement else space(t, l.head)
+  def space(l1: List[Trees#Tree], l2: List[Trees#Tree]): FromFileSourceElement = if (l2.isEmpty || l1.filter(_.pos.isInstanceOf[RangePosition]).isEmpty) nullSourceElement else space(l1.last, l2.head)
+  def space(p: Position, t: Trees#Tree): FromFileSourceElement = space(p, t.pos)
+  def space(t: Trees#Tree, p: Position): FromFileSourceElement = space(t.pos, p)
   
   def iterateInPairs[T](l: Iterable[T])(f: T => Unit)(between: (T, T) => Unit): Unit = l match {
     case Nil => ()
@@ -82,14 +94,14 @@ object Printer {
       
       object visitors {
         
-        def visitAll(trees: List[Tree]): Unit = iterateInPairs(trees.toList)(visit(_))(s += space(_, _))
+        def visitAll(trees: List[Tree]): Unit = iterateInPairs(trees.filter(_.pos.isInstanceOf[RangePosition]).toList)(visit(_))(s += space(_, _))
         
         def visit(tree: Tree): Unit = {
           
           def modifiers(mods: Modifiers) = iterateInPairs(mods.positions) {
-            (x: Tuple2[Long, Position]) => s += new FlagSourceElement(x._1)
+            (x: Tuple2[Long, Position]) => s += new FlagSourceElement(x._1); println(s.last)
           }{
-            (x: Tuple2[Long, Position], y: Tuple2[Long, Position]) => s += space(x._2, y._2)
+            (x: Tuple2[Long, Position], y: Tuple2[Long, Position]) => s += space(x._2, y._2); println(s.last)
           }
           
           def classOrObject(pos: Position, mods: Modifiers, name: String) {
@@ -122,21 +134,58 @@ object Printer {
             classOrObject(m.pos, mods, name.toString)
             
           case t @ Template(parents, _, body) =>
-            s += space(t, parents)
+            
+            val (classParams, restBody) = body.partition {
+              case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
+              case _ => false
+            }
+            
+            val(trueBody, earlyBody) = restBody.partition( (t: Tree) => parents.forall(_.pos precedes t.pos))
+            
+            s += space(t, classParams); println(s.last)
+            visitAll(classParams)
+            
+            if(classParams.isEmpty) {
+              s += space(t, parents.filter(_.pos.isInstanceOf[RangePosition])); println(s.last)
+            } else {
+              s += space(classParams, parents); println(s.last)
+            }
+            
+            def empty(ts: List[Tree]) = !ts.exists(_.pos.isInstanceOf[RangePosition])
+            
+            if(empty(parents) && empty(trueBody) && !empty(classParams)) {
+              s += space(classParams.last, t.pos); println(s.last)
+            }
+            
             visitAll(parents)
-            s += space(parents, body)
-            visitAll(body)
+            s += space(parents.filter(_.pos.isInstanceOf[RangePosition]), trueBody.filter(_.pos.isInstanceOf[RangePosition])); println(s.last)
+            visitAll(trueBody)
             
             // {} with an empty body
-            if(!body.exists(_.pos.isInstanceOf[RangePosition]) && parents.exists(_.pos.isInstanceOf[RangePosition])) {
+            if(!trueBody.exists(_.pos.isInstanceOf[RangePosition]) && parents.exists(_.pos.isInstanceOf[RangePosition])) {
               val maxPos = parents.filter(_.pos.isInstanceOf[RangePosition]).map(_.pos).reduceLeft((p1: Position, p2: Position) => if(p1.end > p2.end) p1 else p2)
               s += space(maxPos, t.pos)
+            } else {
+              val ts = trueBody.filter(_.pos.isInstanceOf[RangePosition])
+              if(!ts.isEmpty)
+                s += between(ts.last.pos.end, t.pos.end, t.pos.source)
             }
+            
+          case v @ ValDef(mods, name, typ, rhs) => 
+            modifiers(mods)
+            if(mods.positions.isEmpty) {
+              s += space(v, v.symbol.pos); println(s.last)
+            } else {
+              s += space(mods.positions.last._2, v.symbol.pos) offset 1; println(s.last)
+            }
+            s += new StringSourceElement(name.toString.trim); println(s.last)
+            s += space(v.symbol.pos, typ) offset (name.length - 1 + v.symbol.pos.point - v.symbol.pos.start); println(s.last) // FIXME name is too long
+            visit(typ)
             
           case t: TypeTree => visit(t.original)
             
           case i @ Ident(sym) if i.symbol.pos != NoPosition => 
-            s += new StringSourceElement(sym.toString)
+            s += new StringSourceElement(sym.toString); println(s.last)
                       
           case select @ Select(qualifier, name) if qualifier.symbol.pos == NoPosition =>
             if(select.pos.isInstanceOf[RangePosition])

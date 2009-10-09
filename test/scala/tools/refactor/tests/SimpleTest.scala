@@ -53,4 +53,18 @@ class SimpleTest extends TestCase with PrinterTest {
       
     }
   """
+
+  def testCaseClass = assert print "case class X(i: Int, s: String) extends AnyRef" 
+  
+  def testClassParams = assert print "class Xyz(private val abc: String, var int: Int/**/)/*done!*/"
+  
+  def testClassParamsWithBody = assert print
+  """
+    class Xyz(private val abc: String, var int: Int) {
+    }
+  """
+
+  def testTraitBody = assert print "trait A; class Xyz extends A { object C }/*done*/"
+  
+  def testEarlyDef = assert print "trait A; class Xyz extends { type T } with A {  }/*done*/"
 }
