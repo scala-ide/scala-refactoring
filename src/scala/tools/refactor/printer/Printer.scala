@@ -2,6 +2,7 @@ package scala.tools.refactor.printer
 
 import scala.tools.nsc.util._
 import scala.tools.nsc.ast._
+import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
 
@@ -46,6 +47,7 @@ object Printer {
       case OVERRIDE     => "override"
       case CASE         => "case"
       case ABSTRACT     => "abstract"
+      case Tokens.VAL   => "val"
       case _            => "<unknown>: " + flagsToString(flag)
     })
   }
@@ -145,27 +147,29 @@ object Printer {
             val(trueBody, earlyBody) = restBody.filter(withRange).partition( (t: Tree) => parents.forall(_.pos precedes t.pos))
             
             val trueParents = parents filter withRange
-            
+
             s += space(t, classParams); println(s.last)
+            
+            visitAll(classParams)
             
             if(classParams.isEmpty) {
               s += space(t, trueParents); println(s.last)
             } else {
-	            visitAll(classParams)
               s += space(classParams, trueParents); println(s.last)
             }
             
-            if(empty(trueParents) && empty(trueBody) && !empty(classParams)) {
+            if(trueParents.isEmpty && trueBody.isEmpty && !empty(classParams)) {
               s += space(classParams.last, t.pos); println(s.last)
             }
             
             visitAll(trueParents)
-            s += space(trueParents, trueBody); println(s.last)
+            
+            s += space(if(!trueParents.isEmpty) trueParents.last else t, trueBody); println(s.last)
+            
             visitAll(trueBody)
             
             // {} with an empty body
             if(trueBody.isEmpty && !trueParents.isEmpty) {
-              val maxPos = trueParents.map(_.pos).reduceLeft((p1: Position, p2: Position) => if(p1.end > p2.end) p1 else p2)
               s += space(trueParents.last, t.pos)
             } else {
               if(!trueBody.isEmpty)
@@ -182,6 +186,8 @@ object Printer {
             s += new StringSourceElement(name.toString.trim); println(s.last)
             s += space(v.symbol.pos, if(withRange(typ)) typ else rhs) offset (name.length - 1 + v.symbol.pos.point - v.symbol.pos.start); println(s.last) // FIXME name is too long
             visit(typ)
+            //s += space(typ, rhs)
+            visit(rhs)
             
           case t: TypeTree => if(t.original != null) visit(t.original)
             
@@ -213,7 +219,7 @@ object Printer {
             visit(rhs)
             
   
-          case x => println(x)
+          case x => println("Unknown Tree: "+ x)
           
           }
         }
