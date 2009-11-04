@@ -188,8 +188,7 @@ object Partitioner {
       
       add(new WhiteSpacePart(0, root.pos.start, root.pos.source))
       visitors.visit(root)
-      if(root.pos.end != root.pos.source.length - 1)
-        add(new WhiteSpacePart(root.pos.end, root.pos.source.length, root.pos.source))
+      add(new WhiteSpacePart(s.last.end, root.pos.source.length, root.pos.source))
       
       s.toList
   }

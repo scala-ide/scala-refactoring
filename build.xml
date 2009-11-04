@@ -18,7 +18,7 @@
 		</path>
 		<taskdef resource="scala/tools/ant/antlib.xml">
 			<classpath>
-				<pathelement location="${lib.dir}/scala-compiler.jar" />
+				<pathelement location="${scala-compiler.jar}" />
 				<pathelement location="${scala-library.jar}" />
 			</classpath>
 		</taskdef>
@@ -43,9 +43,7 @@
 			<formatter type="xml" />
 			<classpath refid="build.classpath" />
 			<batchtest fork="yes" todir="${build.dir}">
-				<fileset dir="${build.dir}">
-					<include name="**/tests/*" />
-				</fileset>
+				<fileset dir="${build.dir}" includes="**/tests/W*" excludes="**/*$*.class" />
 			</batchtest>
 		</junit>
 	</target>

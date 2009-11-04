@@ -1,11 +1,10 @@
 package scala.tools.refactor.tests
 
-import utils._
+import utils.TestHelper
+import junit.framework.TestCase
+import org.junit.Test
 
-import scala.tools.refactor.printer._
-
-import junit.framework._
-
+@Test
 class PartitionerTest extends TestCase with TestHelper {
     
   def testSingleObject = "object A" partitionsInto "object |A"
@@ -30,7 +29,6 @@ class PartitionerTest extends TestCase with TestHelper {
         |private| object |A|
     """
 
-  def testPackage = "package x\n\n\n" partitionsInto "package |x|\n\n\n"
 
   def testPrettyPackages = "/**/ package /**/ x/**/./**/y/**/./**/z/**/" partitionsInto "/**/ |package /**/ |x|/**/./**/|y|/**/./**/|z|/**/"
   
@@ -84,10 +82,11 @@ class PartitionerTest extends TestCase with TestHelper {
 
   def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; |class |Xyz| |extends |A| { |object |C| }|/*done*/" 
     
-  def testClassParams = "class Xyz(private val abc: String, var int: Int/**/)/*done!*/" partitionsInto "class |Xyz|(|private| val |abc|: |String|, |var |int|: |Int|/**/)|/*done!*/"
-  
   def testNestedPackages = "package x.y.z" partitionsInto "package |x|.|y|.|z"
 
+  def testPackage = "class Abc //done" partitionsInto "class |Abc| //done"
+  
+  def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "class |Xyz|(|i|: |Int|/**/)|/**/"
   // not yet: def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "trait| |A|; |class |Xyz| |extends { |type |T| } with |A| {  }|/*done*/"
 
   //  
