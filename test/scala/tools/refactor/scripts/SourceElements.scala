@@ -7,7 +7,8 @@ object SourceElements extends Compiler {
   
   def main(args : Array[String]) : Unit = {
       
-    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
+//    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
+    val tree = treeFrom("class A(i: Int, s: String) extends AnyRef")
     
     import compiler._
     
@@ -20,18 +21,12 @@ object SourceElements extends Compiler {
     
     val newTree = transformer.transform(tree)
     
-    println(Printer(compiler, tree) map {
+    println(Partitioner(compiler, tree) map {
       case se: WhiteSpacePart => "["+se+"]"
-      case se: SymbolPart       => "{"+se+"}"
+      case se: SymbolPart     => "{"+se+"}"
       case se: FlagPart       => "{"+se+"}"
     } mkString " -> ")    
     
-    println(Printer(compiler, newTree) map {
-      case se: WhiteSpacePart => ;
-      case se: SymbolPart       => "{"+se+"}"
-      case se: FlagPart       => "{"+se+"}"
-    } mkString " -> ")
-    
-    //println(Printer(compiler, tree) mkString "")
+    println(Partitioner(compiler, newTree) filter (!_.isWhiteSpace) mkString " -> ")
   }
 }

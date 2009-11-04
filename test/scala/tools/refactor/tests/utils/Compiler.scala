@@ -4,6 +4,7 @@ import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global 
 import scala.tools.nsc.reporters.ConsoleReporter 
 import scala.tools.nsc.util.BatchSourceFile
+import scala.tools.refactor.printer._
 
 trait Compiler {
   
@@ -14,4 +15,6 @@ trait Compiler {
   val compiler = new Global(settings, new ConsoleReporter(settings))
   
   def treeFrom(source: String) = compiler.typedTree(new BatchSourceFile("test", source), false)
+  
+  def sourceParts(source: String) = Partitioner(compiler, treeFrom(source))
 }
