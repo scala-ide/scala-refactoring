@@ -27,9 +27,7 @@ class WhiteSpaceSourceElement(start: Int, end: Int, file: SourceFile) extends So
   def offset(o: Int) = new WhiteSpaceSourceElement(start + o, end, file)
 }
 
-trait TreeElement
-
-class SymbolTreeElement(tree: Trees#SymTree) extends SourceElement with TreeElement {
+class SymbolTreeElement(tree: Trees#SymTree) extends SourceElement {
   def print(out: Appendable) {
     val sym = tree.symbol
     val src = tree.pos.source.asInstanceOf[BatchSourceFile]
@@ -37,7 +35,7 @@ class SymbolTreeElement(tree: Trees#SymTree) extends SourceElement with TreeElem
   }
 }
 
-class FlagSourceElement(flag: Long) extends SourceElement with TreeElement {
+class FlagSourceElement(flag: Long, pos: Position) extends SourceElement {
   import Flags._
   def print(out: Appendable) = out append(flag match {
     case TRAIT        => "trait"
@@ -102,9 +100,9 @@ object Printer {
         if(s != nullSourceElement && se.toString != "") {
           s += se
           se match {
-            case se: WhiteSpaceSourceElement => println("WSpace ["+se+"]")
-            case se: SymbolTreeElement => println("Symbol ["+se+"]")
-            case se: TreeElement => println("TreeEl ["+se+"]")
+            case se: WhiteSpaceSourceElement => println("Space  ["+se+"]")
+            case se: SymbolTreeElement =>       println("Symbol ["+se+"]")
+            case se: FlagSourceElement =>       println("Flag   ["+se+"]")
           }
         }
       }
@@ -122,7 +120,7 @@ object Printer {
         def visit(tree: Tree): Unit = {
            
           def modifiers(mods: Modifiers) = iterateInPairs(mods.positions) {
-            (x: Pair[Long, Position]) => add(new FlagSourceElement(x._1))
+            (x: Pair[Long, Position]) => add(new FlagSourceElement(x._1, x._2))
           }{
             (x: Pair[Long, Position], y: Pair[Long, Position]) => add(space(x._2, y._2))
           }
@@ -233,7 +231,7 @@ object Printer {
             visit(tpt)
             visit(rhs)
 
-          case x => println("Unknown Tree: "+ x)
+          case x => ;//println("Unknown Tree: "+ x)
           
           }
         }
