@@ -6,7 +6,7 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
 
-trait SourceElement {
+trait Part {
   def print(out: Appendable)
   override def toString = {
     val sb = new java.lang.StringBuilder
@@ -15,19 +15,19 @@ trait SourceElement {
   }
 }
 
-object nullSourceElement extends WhiteSpaceSourceElement(0, 0, null) {
+object nullPart extends WhiteSpacePart(0, 0, null) {
   override def print(out: Appendable) = ()
 }
 
-class WhiteSpaceSourceElement(start: Int, end: Int, file: SourceFile) extends SourceElement {
+class WhiteSpacePart(start: Int, end: Int, file: SourceFile) extends Part {
   def print(out: Appendable) {
     file.content.slice(start, end).foreach(out append _)
   }
   
-  def offset(o: Int) = new WhiteSpaceSourceElement(start + o, end, file)
+  def offset(o: Int) = new WhiteSpacePart(start + o, end, file)
 }
 
-class SymbolTreeElement(tree: Trees#SymTree) extends SourceElement {
+class SymbolPart(tree: Trees#SymTree) extends Part {
   def print(out: Appendable) {
     val sym = tree.symbol
     val src = tree.pos.source.asInstanceOf[BatchSourceFile]
@@ -35,7 +35,7 @@ class SymbolTreeElement(tree: Trees#SymTree) extends SourceElement {
   }
 }
 
-class FlagSourceElement(flag: Long, pos: Position) extends SourceElement {
+class FlagPart(flag: Long, pos: Position) extends Part {
   import Flags._
   def print(out: Appendable) = out append(flag match {
     case TRAIT        => "trait"
@@ -55,22 +55,22 @@ class FlagSourceElement(flag: Long, pos: Position) extends SourceElement {
 object Space {
   
   def space(p1: Position, p2: Position) = (p1, p2) match {
-    case _ if p2 precedes p1 => nullSourceElement
-    case _ if p1.end < p2.start => new WhiteSpaceSourceElement(p1.end, p2.start, p1.source)
-    case _ if p1.start < p2.start => new WhiteSpaceSourceElement(p1.start, p2.start, p1.source)
-    case _ if p1 == p2 => new WhiteSpaceSourceElement(p1.start, p1.point, p1.source)
-    case _ if (p2 includes p1) &&  (p2.start < p1.start) => new WhiteSpaceSourceElement(p1.end, p2.end, p1.source)
-    case _ if p1.end == p2.end => new WhiteSpaceSourceElement(p1.start, p2.start, p1.source)
-    case _ if p1.start == p2.start => new WhiteSpaceSourceElement(p1.end, p2.point, p1.source)
-    case _ => new WhiteSpaceSourceElement(p1.start, p2.start, p1.source)
+    case _ if p2 precedes p1 => nullPart
+    case _ if p1.end < p2.start => new WhiteSpacePart(p1.end, p2.start, p1.source)
+    case _ if p1.start < p2.start => new WhiteSpacePart(p1.start, p2.start, p1.source)
+    case _ if p1 == p2 => new WhiteSpacePart(p1.start, p1.point, p1.source)
+    case _ if (p2 includes p1) &&  (p2.start < p1.start) => new WhiteSpacePart(p1.end, p2.end, p1.source)
+    case _ if p1.end == p2.end => new WhiteSpacePart(p1.start, p2.start, p1.source)
+    case _ if p1.start == p2.start => new WhiteSpacePart(p1.end, p2.point, p1.source)
+    case _ => new WhiteSpacePart(p1.start, p2.start, p1.source)
   }
 
-  def space(t: Trees#Tree) = new WhiteSpaceSourceElement(t.pos.start, t.pos.point, t.pos.source)
-  def space(t: Trees#Tree, l: List[Trees#Tree]): WhiteSpaceSourceElement = if (l.isEmpty) nullSourceElement else space(t, l.head)
-  def space(l1: List[Trees#Tree], l2: List[Trees#Tree]): WhiteSpaceSourceElement = if (l2.isEmpty || l1.isEmpty) nullSourceElement else space(l1.last, l2.head)
-  def space(t1: Trees#Tree, t2: Trees#Tree): WhiteSpaceSourceElement = space(t1.pos, t2.pos)
-  def space(p: Position, t: Trees#Tree): WhiteSpaceSourceElement = space(p, t.pos)
-  def space(t: Trees#Tree, p: Position): WhiteSpaceSourceElement = space(t.pos, p)
+  def space(t: Trees#Tree) = new WhiteSpacePart(t.pos.start, t.pos.point, t.pos.source)
+  def space(t: Trees#Tree, l: List[Trees#Tree]): WhiteSpacePart = if (l.isEmpty) nullPart else space(t, l.head)
+  def space(l1: List[Trees#Tree], l2: List[Trees#Tree]): WhiteSpacePart = if (l2.isEmpty || l1.isEmpty) nullPart else space(l1.last, l2.head)
+  def space(t1: Trees#Tree, t2: Trees#Tree): WhiteSpacePart = space(t1.pos, t2.pos)
+  def space(p: Position, t: Trees#Tree): WhiteSpacePart = space(p, t.pos)
+  def space(t: Trees#Tree, p: Position): WhiteSpacePart = space(t.pos, p)
 }
 
 object Printer {
@@ -89,15 +89,15 @@ object Printer {
       f(last)
   }
 
-  def apply(trees: Trees, root: Trees#Tree) : List[SourceElement] = {
+  def apply(trees: Trees, root: Trees#Tree) : List[Part] = {
     
       import trees._
       type Tree = Trees#Tree
       
-      val s = new ListBuffer[SourceElement]
+      val s = new ListBuffer[Part]
                              
-      def add(se: SourceElement) { 
-        if(s != nullSourceElement && se.toString != "") {
+      def add(se: Part) { 
+        if(s != nullPart && se.toString != "") {
           s += se
         }
       }
@@ -115,7 +115,7 @@ object Printer {
         def visit(tree: Tree): Unit = {
            
           def modifiers(mods: Modifiers) = iterateInPairs(mods.positions) {
-            (x: Pair[Long, Position]) => add(new FlagSourceElement(x._1, x._2))
+            (x: Pair[Long, Position]) => add(new FlagPart(x._1, x._2))
           }{
             (x: Pair[Long, Position], y: Pair[Long, Position]) => add(space(x._2, y._2))
           }
@@ -125,7 +125,7 @@ object Printer {
            if (mods.positions.isEmpty)
               add(space(pos, pos))
             else
-              add(new WhiteSpaceSourceElement(mods.positions.last._2.end + 1, pos.point, pos.source))
+              add(new WhiteSpacePart(mods.positions.last._2.end + 1, pos.point, pos.source))
           }
           
           tree match {
@@ -142,14 +142,14 @@ object Printer {
             
           case c @ ClassDef(mods, name, tparams, impl) =>
             classOrObject(c.pos, mods)
-            add(new SymbolTreeElement(c))
+            add(new SymbolPart(c))
             //s += space(afterName(c), impl)
-            add(new WhiteSpaceSourceElement(c.pos.point + name.length, impl.pos.start, c.pos.source))
+            add(new WhiteSpacePart(c.pos.point + name.length, impl.pos.start, c.pos.source))
             visit(impl)
             
           case m @ ModuleDef(mods, name, impl) => 
             classOrObject(m.pos, mods)
-            add(new SymbolTreeElement(m))
+            add(new SymbolPart(m))
             
           case t @ Template(parents, _, body) =>          
             
@@ -187,7 +187,7 @@ object Printer {
               add(space(trueParents.last, t.pos))
             } else {
               if(!trueBody.isEmpty)
-                add(new WhiteSpaceSourceElement(trueBody.last.pos.end, t.pos.end, t.pos.source))
+                add(new WhiteSpacePart(trueBody.last.pos.end, t.pos.end, t.pos.source))
             }
             
           case v @ ValDef(mods, name, typ, rhs) => 
@@ -197,7 +197,7 @@ object Printer {
             } else {
               add(space(mods.positions.last._2, v.symbol.pos) offset 1)
             }
-            add(new SymbolTreeElement(v))
+            add(new SymbolPart(v))
             add(space(v.symbol.pos, if(withRange(typ)) typ else rhs) offset (v.symbol.nameString.length + v.symbol.pos.point - v.symbol.pos.start)) // FIXME name is too long
             visit(typ)
             //s += space(typ, rhs)
@@ -206,21 +206,21 @@ object Printer {
           case t: TypeTree => if(t.original != null) visit(t.original)
 
           case i: Ident =>
-            add(new SymbolTreeElement(i))
+            add(new SymbolPart(i))
                       
           case select @ Select(qualifier, name) if qualifier.symbol.pos == NoPosition =>
             if(withRange(select))
-              add(new SymbolTreeElement(select))
+              add(new SymbolPart(select))
             
           case select @ Select(qualifier, name)  =>
             visit(qualifier)
             add(space(qualifier, select))
-            add(new SymbolTreeElement(select))
+            add(new SymbolPart(select))
             
           case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
             modifiers(mods)
             add(space(defdef))
-            add(new SymbolTreeElement(defdef))
+            add(new SymbolPart(defdef))
 
             add(space(afterName(defdef), tpt))
             visit(tpt)
@@ -232,10 +232,10 @@ object Printer {
         }
       }
       
-      add(new WhiteSpaceSourceElement(0, root.pos.start, root.pos.source))
+      add(new WhiteSpacePart(0, root.pos.start, root.pos.source))
       visitors.visit(root)
       if(root.pos.end != root.pos.source.length - 1)
-        add(new WhiteSpaceSourceElement(root.pos.end, root.pos.source.length, root.pos.source))
+        add(new WhiteSpacePart(root.pos.end, root.pos.source.length, root.pos.source))
       
       s.toList
   }

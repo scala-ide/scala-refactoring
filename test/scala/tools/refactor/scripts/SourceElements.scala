@@ -21,15 +21,15 @@ object SourceElements extends Compiler {
     val newTree = transformer.transform(tree)
     
     println(Printer(compiler, tree) map {
-      case se: WhiteSpaceSourceElement => "["+se+"]"
-      case se: SymbolTreeElement       => "{"+se+"}"
-      case se: FlagSourceElement       => "{"+se+"}"
+      case se: WhiteSpacePart => "["+se+"]"
+      case se: SymbolPart       => "{"+se+"}"
+      case se: FlagPart       => "{"+se+"}"
     } mkString " -> ")    
     
     println(Printer(compiler, newTree) map {
-      case se: WhiteSpaceSourceElement => ;
-      case se: SymbolTreeElement       => "{"+se+"}"
-      case se: FlagSourceElement       => "{"+se+"}"
+      case se: WhiteSpacePart => ;
+      case se: SymbolPart       => "{"+se+"}"
+      case se: FlagPart       => "{"+se+"}"
     } mkString " -> ")
     
     //println(Printer(compiler, tree) mkString "")
