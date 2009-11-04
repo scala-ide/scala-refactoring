@@ -9,9 +9,10 @@ trait PrinterTest extends Compiler {
   def assert : this.type = this 
   
   def print(src: String) = {
-    val buffer = new SB
     val tree = treeFrom(src)
-    Printer(buffer, compiler, tree)
+    val sourceElements = Printer(compiler, tree)
+    val buffer = new SB
+    sourceElements foreach (_.print(buffer))
     assertEquals(src, buffer.toString)
   }
 }

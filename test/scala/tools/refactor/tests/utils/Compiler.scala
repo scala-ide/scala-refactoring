@@ -9,7 +9,7 @@ trait Compiler {
   
   def error(message: String) = { }
   
-  private val settings = new Settings(error) 
+  private val settings = new Settings(error)
     
   val compiler = new Global(settings, new ConsoleReporter(settings))
   

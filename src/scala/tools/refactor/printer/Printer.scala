@@ -89,7 +89,7 @@ object Printer {
       f(last)
   }
 
-  def apply(out: Appendable, trees: Trees, root: Trees#Tree) : Unit = {
+  def apply(trees: Trees, root: Trees#Tree) : List[SourceElement] = {
     
       import trees._
       type Tree = Trees#Tree
@@ -99,11 +99,6 @@ object Printer {
       def add(se: SourceElement) { 
         if(s != nullSourceElement && se.toString != "") {
           s += se
-          se match {
-            case se: WhiteSpaceSourceElement => println("Space  ["+se+"]")
-            case se: SymbolTreeElement =>       println("Symbol ["+se+"]")
-            case se: FlagSourceElement =>       println("Flag   ["+se+"]")
-          }
         }
       }
 
@@ -241,9 +236,7 @@ object Printer {
       visitors.visit(root)
       if(root.pos.end != root.pos.source.length - 1)
         add(new WhiteSpaceSourceElement(root.pos.end, root.pos.source.length, root.pos.source))
-        
-      println("==============")
       
-      s foreach (_.print(out))
+      s.toList
   }
 }
