@@ -8,6 +8,8 @@ import junit.framework._
 
 class SimpleTest extends TestCase with PrinterTest {
   
+  def testSimpleClass = assert print "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef"
+  
   def testSingleObject = assert print "object A"
   
   def testSingleClass = assert print "class B"
@@ -28,8 +30,6 @@ class SimpleTest extends TestCase with PrinterTest {
 
   def testPackage = assert print "package x\n\n\n"
 
-  def testNestedPackages = assert print "package x.y.z"
-  
   def testPrettyPackages = assert print "/**/ package /**/ x/**/./**/y/**/./**/z/**/"
   
   def testPackageAndClass = assert print 
@@ -56,7 +56,6 @@ class SimpleTest extends TestCase with PrinterTest {
 
   def testCaseClass = assert print "case class X(i: Int, s: String) extends AnyRef" 
   
-  def testClassParams = assert print "class Xyz(private val abc: String, var int: Int/**/)/*done!*/"
   
   def testClassParamsWithBody = assert print
   """
@@ -68,16 +67,20 @@ class SimpleTest extends TestCase with PrinterTest {
   
   def testEarlyDef = assert print "trait A; class Xyz extends { type T } with A {  }/*done*/"
   
-  def testEarlyDefFromSpec5_1_8 = assert print
-  """
-    trait Greeting {
-      val name: String
-      val msg = "How are you, " +name
-    }
-    class C extends {
-      val name = "Bob"
-    } with Greeting {
-      println(msg)
-    }
-  """
+  def testClassParams = assert print "class Xyz(private val abc: String, var int: Int/**/)/*done!*/"
+  
+  def testNestedPackages = assert print "package x.y.z"
+//  
+//  def testEarlyDefFromSpec5_1_8 = assert print
+//  """
+//    trait Greeting {
+//      val name: String
+//      val msg = "How are you, " +name
+//    }
+//    class C extends {
+//      val name = "Bob"
+//    } with Greeting {
+//      println(msg)
+//    }
+//  """
 }
