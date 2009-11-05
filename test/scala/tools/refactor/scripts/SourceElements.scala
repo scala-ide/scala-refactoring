@@ -30,5 +30,8 @@ object SourceElements {
     } mkString " -> ")    
     
     println(Partitioner(compiler, newTree) filter (!_.isWhiteSpace) mkString " -> ")
+    
+    // why?
+    exit(0)
   }
 }
