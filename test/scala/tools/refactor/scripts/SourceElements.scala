@@ -1,16 +1,18 @@
 package scala.tools.refactor.scripts
 
-import scala.tools.refactor.tests.utils.Compiler
+import scala.tools.refactor.tests.utils._
 import scala.tools.refactor.printer._
 
-object SourceElements extends Compiler {
+object SourceElements {
   
   def main(args : Array[String]) : Unit = {
+    
+    import Compiler._
+    import compiler._
       
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
     val tree = treeFrom("class A(i: Int, s: String) extends AnyRef")
     
-    import compiler._
     
     val transformer = new Transformer {
       override def transform(tree: Tree): Tree = super.transform(tree) match {

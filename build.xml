@@ -43,7 +43,7 @@
 			<formatter type="xml" />
 			<classpath refid="build.classpath" />
 			<batchtest fork="yes" todir="${build.dir}">
-				<fileset dir="${build.dir}" includes="**/tests/W*" excludes="**/*$*.class" />
+				<fileset dir="${build.dir}" includes="**/tests/*" excludes="**/*$*.class" />
 			</batchtest>
 		</junit>
 	</target>
