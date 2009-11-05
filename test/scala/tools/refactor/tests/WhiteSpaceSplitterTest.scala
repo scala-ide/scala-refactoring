@@ -9,7 +9,7 @@ import utils.Compiler
 @Test
 class WhiteSpaceSplitterTest extends TestCase with TestHelper {
 
-  def testAbc: Unit = {
+  def testAbc() = {
     assertEquals(true, true)
   }
 }
