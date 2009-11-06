@@ -15,9 +15,9 @@ object Partitioner {
     case x if x.isEmpty => ()
     case x => val last = x reduceLeft {
         (t1: T, t2: T) => 
-        f(t1)
-        between(t1, t2)
-        t2
+          f(t1)
+          between(t1, t2)
+          t2
       }
       f(last)
   }
@@ -43,7 +43,7 @@ object Partitioner {
     
     def afterName(t: DefTree) = new RangePosition(t.pos.source, t.pos.point + t.name.toString.length, t.pos.point + t.name.toString.length, t.pos.end)
     
-    def visitAll(trees: List[Tree]): Unit = iterateInPairs(trees filter withRange)(visit(_))((t1: Tree, t2: Tree) => add(space(t1,t2)))
+    def visitAll(trees: List[Tree]): Unit = iterateInPairs(trees filter withRange)(visit(_))((t1, t2) => add(space(t1,t2)))
     
     def visit(tree: Tree): Unit = {
        

@@ -33,7 +33,7 @@ trait MergeParts {
           
     val OpeningBrace = """(.*?\()(.*)""".r
     val ClosingBrace = """(.*?)(\).*)""".r
-    val Comma = """(.*?),(.*)""".r
+    val Comma = """(.*?),\s*(.*)""".r
     // strip comments!
     
     explain("Splitting whitespace between "+ parts._1 +" and "+ parts._3)

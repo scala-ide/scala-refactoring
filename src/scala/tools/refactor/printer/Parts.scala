@@ -6,6 +6,10 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 
+trait Requirement {
+  
+}
+
 trait Part {
   val isWhiteSpace = false
   val start: Int
