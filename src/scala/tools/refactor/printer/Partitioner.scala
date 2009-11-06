@@ -43,7 +43,7 @@ object Partitioner {
     
     def afterName(t: DefTree) = new RangePosition(t.pos.source, t.pos.point + t.name.toString.length, t.pos.point + t.name.toString.length, t.pos.end)
     
-    def visitAll(trees: List[Tree]): Unit = iterateInPairs(trees filter withRange)(visit(_))((t1, t2) => add(space(t1,t2)))
+    def visitAll(trees: List[Tree]): Unit = iterateInPairs(trees filter withRange){visit(_)}((t1, t2) => add(space(t1,t2)))
     
     def visit(tree: Tree): Unit = {
        
@@ -55,7 +55,7 @@ object Partitioner {
       
       def classOrObject(pos: Position, mods: Modifiers) {
         modifiers(mods)
-       if (mods.positions.isEmpty)
+        if (mods.positions.isEmpty)
           add(space(pos, pos))
         else
           add(new WhiteSpacePart(mods.positions.last._2.end + 1, pos.point, pos.source))
@@ -84,7 +84,7 @@ object Partitioner {
         classOrObject(m.pos, mods)
         add(new SymbolPart(m))
         
-      case t @ Template(parents, _, body) =>          
+      case t @ Template(parents, _, body) =>
         
         val (classParams, restBody) = body.partition {
           case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
@@ -96,8 +96,8 @@ object Partitioner {
         val trueParents = parents filter withRange
 
         add(space(t, classParams))
-        
-        visitAll(classParams)
+                
+        iterateInPairs(classParams){visit(_)}((t1, t2) => add(space(t1,t2)))
         
         if(classParams.isEmpty) {
           add(space(t, trueParents))

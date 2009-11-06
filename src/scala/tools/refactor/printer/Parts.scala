@@ -25,13 +25,15 @@ trait Part {
 case object BeginOfFile extends Part {
   val start = 0
   val end = 0
-  def print(out: Appendable) = out append "❰"
+  override def toString = "❰"
+  def print(out: Appendable) = ()
 }
 
 case class EndOfFile(file: SourceFile) extends Part {
   val start = file.length
   val end = file.length
-  def print(out: Appendable) = out append "❱"
+  override def toString = "❱"
+  def print(out: Appendable) = ()
 }
 
 case object nullPart extends WhiteSpacePart(0, 0, null) {
