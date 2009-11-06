@@ -18,11 +18,23 @@ trait Part {
   }
 }
 
-object nullPart extends WhiteSpacePart(0, 0, null) {
+case object BeginOfFile extends Part {
+  val start = 0
+  val end = 0
+  def print(out: Appendable) = out append "❰"
+}
+
+case class EndOfFile(file: SourceFile) extends Part {
+  val start = file.length
+  val end = file.length
+  def print(out: Appendable) = out append "❱"
+}
+
+case object nullPart extends WhiteSpacePart(0, 0, null) {
   override def print(out: Appendable) = ()
 }
 
-class WhiteSpacePart(val start: Int, val end: Int, file: SourceFile) extends Part {
+case class WhiteSpacePart(val start: Int, val end: Int, file: SourceFile) extends Part {
   override val isWhiteSpace = true
   def print(out: Appendable) {
     file.content.slice(start, end).foreach(out append _)
@@ -31,16 +43,27 @@ class WhiteSpacePart(val start: Int, val end: Int, file: SourceFile) extends Par
   def offset(o: Int) = new WhiteSpacePart(start + o, end, file)
 }
 
-class SymbolPart(tree: Trees#SymTree) extends Part {
+case class StringPart(string: String) extends Part {
+  val start = -1
+  val end = -1
+  def print(out: Appendable) = string foreach(out append)
+}
+
+case class SymbolPart(tree: Trees#SymTree) extends Part {
+  override def hashCode = toString.hashCode + start * 31 * (end + 17)
+  override def equals(that: Any) = that match {
+    case that: SymbolPart => that.start == this.start && that.end == this.end && that.src == this.src
+    case _ => false
+  }
   val end = tree.pos.point +  tree.symbol.nameString.length
   val start = tree.pos.point
+  val src = tree.pos.source.asInstanceOf[BatchSourceFile]
   def print(out: Appendable) {
-    val src = tree.pos.source.asInstanceOf[BatchSourceFile]
     src.content.slice(start, end).foreach(out append _)
   }
 }
 
-class FlagPart(flag: Long, pos: Position) extends Part {
+case class FlagPart(flag: Long, pos: Position) extends Part {
   val start = pos.start
   val end = pos.end
   import Flags._

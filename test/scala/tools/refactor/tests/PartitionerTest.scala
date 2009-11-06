@@ -68,7 +68,7 @@ class PartitionerTest extends TestCase with TestHelper {
     }|
   """
 
-  def testCaseClass = "case class X(i: Int, s: String) extends AnyRef" partitionsInto "case| class |X|(|i|: |Int|, |s|: |String|) extends |AnyRef" 
+  def testCaseClass = "case class X(i: Int, s: String)" partitionsInto "case| class |X|(|i|: |Int|, |s|: |String|)" 
   
   def testClassParamsWithBody =
   """
