@@ -6,7 +6,7 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
 
-object Partitioner {
+trait Partitioner {
 
   import WhiteSpaceBetweenTrees._
 
@@ -22,7 +22,7 @@ object Partitioner {
       f(last)
   }
 
-  def apply(trees: Trees, root: Trees#Tree) : List[Part] = {
+  def splitIntoParts(trees: Trees, root: Trees#Tree) : List[Part] = {
   
     import trees._
     type Tree = Trees#Tree
