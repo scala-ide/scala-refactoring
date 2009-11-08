@@ -3,16 +3,16 @@ package scala.tools.refactor.tests.utils
 import org.junit.Assert._
 
 import scala.tools.refactor.printer._
+import scala.tools.refactor.transform._
 
-trait TestHelper extends Partitioner with Merger {
-
-  import Compiler._
+trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform {
   
-  def parts(src: String) = splitIntoParts(compiler, treeFrom(src))
+  def parts(src: String) = splitIntoParts(treeFrom(src))
   
-  class TestString(src: String) extends Partitioner {
+  class TestString(src: String) {
+    
     def partitionsInto(expected: String) = {
-      val generatedCode = splitIntoParts(compiler, treeFrom(src)) map (_.print) mkString "|"
+      val generatedCode = splitIntoParts(treeFrom(src)) map (_.print) mkString "|"
       assertEquals("|"+ expected+ "|", generatedCode)
     }
     
@@ -27,6 +27,19 @@ trait TestHelper extends Partitioner with Merger {
       }
       
       assertEquals(expected, splitAllWhitespaces(parts(src)))
+    }
+    
+    def transformsTo(expected: String, transform: compiler.Tree => compiler.Tree) {
+      
+      val tree = treeFrom(src)
+      
+      val newTree = transform(tree)
+      
+      val partitionedModified = splitIntoParts(newTree)
+      
+      val satisfied = satisfyRequirements(merge(splitIntoParts(tree), partitionedModified filter (!_.isWhitespace)))
+      
+      assertEquals(expected, satisfied mkString)
     }
   }
   

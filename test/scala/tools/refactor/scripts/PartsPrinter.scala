@@ -2,27 +2,18 @@ package scala.tools.refactor.scripts
 
 import scala.tools.refactor.tests.utils._
 import scala.tools.refactor.printer._
+import scala.tools.refactor.transform._
 
-object PartsPrinter extends Partitioner {
+object PartsPrinter extends Partitioner with CompilerProvider with Transform {
   
   def main(args : Array[String]) : Unit = {
-    
-    import Compiler._
-    import compiler._
-      
+
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
     val tree = treeFrom("class A(i: Int, s: String)")
     
-    val transformer = new Transformer {
-      override def transform(tree: Tree): Tree = super.transform(tree) match {
-        case Template(parents, self, body) => new Template(parents, self, body.reverse).copyAttrs(tree)
-        case x => x
-      }
-    }
-    
     val newTree = transformer.transform(tree)
     
-    val partitionedOriginal = splitIntoParts(compiler, tree)
+    val partitionedOriginal = splitIntoParts(tree)
     
     println(""" 
 digraph structs {
@@ -44,7 +35,7 @@ digraph structs {
     
     println((partitionedOriginal map (_.hashCode) mkString " -> ") + ";")
     
-    println((splitIntoParts(compiler, newTree) filter (!_.isWhitespace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
+    println((splitIntoParts(newTree) filter (!_.isWhitespace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
     
     println("\n}")
     

@@ -7,6 +7,8 @@ import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
 
 trait Partitioner {
+  self: scala.tools.refactor.Compiler =>
+  import compiler._
 
   import WhiteSpaceBetweenTrees._
 
@@ -22,10 +24,7 @@ trait Partitioner {
       f(last)
   }
 
-  def splitIntoParts(trees: Trees, root: Trees#Tree) : List[Part] = {
-  
-    import trees._
-    type Tree = Trees#Tree
+  def splitIntoParts(root: Tree) : List[Part] = {
     
     val s = new ListBuffer[OriginalSourcePart]
     

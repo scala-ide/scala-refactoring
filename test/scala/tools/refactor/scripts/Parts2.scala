@@ -2,31 +2,22 @@ package scala.tools.refactor.scripts
 
 import scala.tools.refactor.tests.utils._
 import scala.tools.refactor.printer._
+import scala.tools.refactor.transform._
 
-object Parts2 extends Merger with Partitioner {
-  
+object Parts2 extends Merger with Partitioner with Transform with CompilerProvider {
+
   def main(args : Array[String]) : Unit = {
 
-    import Compiler._
-    import compiler._
-      
-    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
-//    val tree = treeFrom("class A/*aa*/(private val i: Int, s: String, a: Any /*a comment for the Any parameter*/)")
+//    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
+    val tree = treeFrom("class A(i: Int, s: String)")
     
-    val transformer = new Transformer {
-      override def transform(tree: Tree): Tree = super.transform(tree) match {
-        case Template(parents, self, body) => new Template(parents, self, body.reverse).copyAttrs(tree)
-        case x => x
-      }
-    }
+    val newTree = reverseClassParameters.transform(tree)
     
-    val newTree = transformer.transform(tree)
-    
-    val partitionedOriginal = splitIntoParts(compiler, tree)
+    val partitionedOriginal = splitIntoParts(tree)
     
     println(partitionedOriginal mkString "▒▒")
     
-    val partitionedModified = splitIntoParts(compiler, newTree)
+    val partitionedModified = splitIntoParts(newTree)
     
     println(partitionedModified filter (!_.isWhitespace) mkString " → ")
     
