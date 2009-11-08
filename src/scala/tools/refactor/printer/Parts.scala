@@ -5,75 +5,82 @@ import scala.tools.nsc.util.Position
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
+import scala.collection.mutable.ListBuffer
 
-trait Requirement {
-  
-}
-
-trait Part {
-  val isWhiteSpace = false
-  val start: Int
-  val end: Int
-  def print(out: Appendable)
-  override def toString = {
-    val sb = new java.lang.StringBuilder
-    print(sb)
-    sb.toString
+trait WithRequirement {
+  val postRequirements = new ListBuffer[String]
+  def requirePost(text: String) {
+    postRequirements += text
   }
+  def hasRequirements = postRequirements.size > 0
 }
 
-case object BeginOfFile extends Part {
+abstract sealed class Part {
+  val isWhitespace = false
+  def print: String
+  override def toString = print
+}
+
+trait OriginalSourcePart extends Part {
+  def start: Int
+  def end: Int
+  def file: SourceFile
+}
+
+case class BeginOfFile(file: SourceFile) extends Part with OriginalSourcePart {
   val start = 0
   val end = 0
+  val print = ""
   override def toString = "❰"
-  def print(out: Appendable) = ()
 }
 
-case class EndOfFile(file: SourceFile) extends Part {
+case class EndOfFile(file: SourceFile) extends Part with OriginalSourcePart {
   val start = file.length
   val end = file.length
+  val print = ""
   override def toString = "❱"
-  def print(out: Appendable) = ()
 }
 
-case object nullPart extends WhiteSpacePart(0, 0, null) {
-  override def print(out: Appendable) = ()
+trait OffsetablePart extends OriginalSourcePart {
+  def offset(off: Int): OffsetablePart
 }
 
-case class WhiteSpacePart(val start: Int, val end: Int, file: SourceFile) extends Part {
-  override val isWhiteSpace = true
-  def print(out: Appendable) {
-    file.content.slice(start, end).foreach(out append _)
-  }
-  
-  def offset(o: Int) = new WhiteSpacePart(start + o, end, file)
+case object NullPart extends Part with OffsetablePart {
+  def file = throw new Exception("No File in NullPart")
+  def end = throw new Exception("No End in NullPart")
+  def start = throw new Exception("No Start in NullPart")
+  def print = throw new Exception("Can't print NullPart")
+  def offset(off: Int) = NullPart
+}
+
+case class WhitespacePart(val start: Int, val end: Int, file: SourceFile) extends Part with OriginalSourcePart with OffsetablePart {
+  override val isWhitespace = true
+  def print = new String(file.content.slice(start, end))  
+  def offset(off: Int) = new WhitespacePart(start + off, end, file)
 }
 
 case class StringPart(string: String) extends Part {
-  val start = -1
-  val end = -1
-  def print(out: Appendable) = string foreach(out append)
+  val print = string
 }
 
-case class SymbolPart(tree: Trees#SymTree) extends Part {
+case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart with WithRequirement {
   override def hashCode = toString.hashCode + start * 31 * (end + 17)
   override def equals(that: Any) = that match {
-    case that: SymbolPart => that.start == this.start && that.end == this.end && that.src == this.src
+    case that: SymTreePart => that.start == this.start && that.end == this.end && that.file == this.file
     case _ => false
   }
   val end = tree.pos.point +  tree.symbol.nameString.length
   val start = tree.pos.point
-  val src = tree.pos.source.asInstanceOf[BatchSourceFile]
-  def print(out: Appendable) {
-    src.content.slice(start, end).foreach(out append _)
-  }
+  val file = tree.pos.source.asInstanceOf[BatchSourceFile]
+  def print = new String(file.content.slice(start, end))
 }
 
-case class FlagPart(flag: Long, pos: Position) extends Part {
+case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourcePart {
   val start = pos.start
-  val end = pos.end
+  val end = pos.end + print.length
+  val file = pos.source
   import Flags._
-  def print(out: Appendable) = out append(flag match {
+  def print = flag match {
     case TRAIT        => "trait"
     case FINAL        => "final"
     case IMPLICIT     => "implicit"
@@ -85,5 +92,5 @@ case class FlagPart(flag: Long, pos: Position) extends Part {
     case ABSTRACT     => "abstract"
     case Tokens.VAL   => "val"
     case _            => "<unknown>: " + flagsToString(flag)
-  })
+  }
 }

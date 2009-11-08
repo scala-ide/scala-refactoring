@@ -27,14 +27,14 @@ object Partitioner {
     import trees._
     type Tree = Trees#Tree
     
-    val s = new ListBuffer[Part]
+    val s = new ListBuffer[OriginalSourcePart]
     
-    s += BeginOfFile
+    s += BeginOfFile(root.pos.source)
                            
-    def add(se: Part) { 
-      if(s != nullPart && se.toString != "") {
-        s += se
-      }
+    def add(se: OriginalSourcePart) = se match {
+      case NullPart => ()
+      case se if se.print == "" => ()
+      case _ => s += se
     }
 
     def withRange(t: Tree) = t.pos.isRange
@@ -43,7 +43,13 @@ object Partitioner {
     
     def afterName(t: DefTree) = new RangePosition(t.pos.source, t.pos.point + t.name.toString.length, t.pos.point + t.name.toString.length, t.pos.end)
     
-    def visitAll(trees: List[Tree]): Unit = iterateInPairs(trees filter withRange){visit(_)}((t1, t2) => add(space(t1,t2)))
+    def visitAll(trees: List[Tree])(after: (Part) => Unit ): Unit = iterateInPairs(trees filter withRange) {
+        (tree) => visit(tree)
+      }{
+        (t1, t2) => 
+        after(s.last)
+        add(space(t1,t2))
+      }
     
     def visit(tree: Tree): Unit = {
        
@@ -58,31 +64,31 @@ object Partitioner {
         if (mods.positions.isEmpty)
           add(space(pos, pos))
         else
-          add(new WhiteSpacePart(mods.positions.last._2.end + 1, pos.point, pos.source))
+          add(new WhitespacePart(mods.positions.last._2.end + 1, pos.point, pos.source))
       }
       
       tree match {
       
       case p @ PackageDef(pid, stats) if pid.symbol.pos == NoPosition =>
         add(space(p))
-        visitAll(stats)
+        visitAll(stats)(part => ())
 
       case p @ PackageDef(pid, stats) =>  
         add(space(p, pid))
         visit(pid)
         add(space(pid, stats))
-        visitAll(stats)
+        visitAll(stats)(part => ())
         
       case c @ ClassDef(mods, name, tparams, impl) =>
         classOrObject(c.pos, mods)
-        add(new SymbolPart(c))
+        add(new SymTreePart(c))
         //s += space(afterName(c), impl)
-        add(new WhiteSpacePart(c.pos.point + name.length, impl.pos.start, c.pos.source))
+        add(new WhitespacePart(c.pos.point + name.length, impl.pos.start, c.pos.source))
         visit(impl)
         
       case m @ ModuleDef(mods, name, impl) => 
         classOrObject(m.pos, mods)
-        add(new SymbolPart(m))
+        add(new SymTreePart(m))
         
       case t @ Template(parents, _, body) =>
         
@@ -97,7 +103,10 @@ object Partitioner {
 
         add(space(t, classParams))
                 
-        iterateInPairs(classParams){visit(_)}((t1, t2) => add(space(t1,t2)))
+        visitAll(classParams) {
+          case part: WithRequirement => part.requirePost(", ")
+          case _ => ()
+        }
         
         if(classParams.isEmpty) {
           add(space(t, trueParents))
@@ -109,18 +118,18 @@ object Partitioner {
           add(space(classParams.last, t.pos))
         }
         
-        visitAll(trueParents)
+        visitAll(trueParents)(part => ())
         
         add(space(if(!trueParents.isEmpty) trueParents.last else t, trueBody))
         
-        visitAll(trueBody)
+        visitAll(trueBody)(part => ())
         
         // {} with an empty body
         if(trueBody.isEmpty && !trueParents.isEmpty) {
           add(space(trueParents.last, t.pos))
         } else {
           if(!trueBody.isEmpty)
-            add(new WhiteSpacePart(trueBody.last.pos.end, t.pos.end, t.pos.source))
+            add(new WhitespacePart(trueBody.last.pos.end, t.pos.end, t.pos.source))
         }
         
       case v @ ValDef(mods, name, typ, rhs) => 
@@ -128,9 +137,10 @@ object Partitioner {
         if(mods.positions.isEmpty) {
           add(space(v, v.symbol.pos))
         } else {
+          
           add(space(mods.positions.last._2, v.symbol.pos) offset 1)
         }
-        add(new SymbolPart(v))
+        add(new SymTreePart(v))
         add(space(v.symbol.pos, if(withRange(typ)) typ else rhs) offset (v.symbol.nameString.length + v.symbol.pos.point - v.symbol.pos.start)) // FIXME name is too long
         visit(typ)
         //s += space(typ, rhs)
@@ -139,21 +149,21 @@ object Partitioner {
       case t: TypeTree => if(t.original != null) visit(t.original)
 
       case i: Ident =>
-        add(new SymbolPart(i))
+        add(new SymTreePart(i))
                   
       case select @ Select(qualifier, name) if qualifier.symbol.pos == NoPosition =>
         if(withRange(select))
-          add(new SymbolPart(select))
+          add(new SymTreePart(select))
         
       case select @ Select(qualifier, name)  =>
         visit(qualifier)
         add(space(qualifier, select))
-        add(new SymbolPart(select))
+        add(new SymTreePart(select))
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         modifiers(mods)
         add(space(defdef))
-        add(new SymbolPart(defdef))
+        add(new SymTreePart(defdef))
 
         add(space(afterName(defdef), tpt))
         visit(tpt)
@@ -164,9 +174,9 @@ object Partitioner {
       }
     }
     
-    add(new WhiteSpacePart(0, root.pos.start, root.pos.source))
+    add(new WhitespacePart(0, root.pos.start, root.pos.source))
     visit(root)
-    add(new WhiteSpacePart(s.last.end, root.pos.source.length, root.pos.source))
+    add(new WhitespacePart(s.last.end, root.pos.source.length, root.pos.source))
     
     s += EndOfFile(root.pos.source)
     

@@ -32,14 +32,14 @@ digraph structs {
     """)
     
     println(partitionedOriginal map {
-      case se: WhiteSpacePart => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0];"
-      case se: SymbolPart     => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0, style=filled, fillcolor=lightgrey];"
+      case se: WhitespacePart => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0];"
+      case se: SymTreePart     => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0, style=filled, fillcolor=lightgrey];"
       case se: FlagPart       => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0, style=filled, fillcolor=lightgrey];"
     } mkString "\n")
     
     println((partitionedOriginal map (_.hashCode) mkString " -> ") + ";")
     
-    println((Partitioner(compiler, newTree) filter (!_.isWhiteSpace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
+    println((Partitioner(compiler, newTree) filter (!_.isWhitespace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
     
     println("\n}")
     

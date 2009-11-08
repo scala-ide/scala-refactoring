@@ -10,8 +10,8 @@ class PartsHolder(parts: List[Part]) {
     val partInOriginal = parts.dropWhile(_ != part)
     
     val wsAfterPart = partInOriginal.tail
-    val nextPart = wsAfterPart.dropWhile(_.isWhiteSpace).head
-    val whitespaceBetween = wsAfterPart.takeWhile(_.isWhiteSpace)
+    val nextPart = wsAfterPart.dropWhile(_.isWhitespace).head
+    val whitespaceBetween = wsAfterPart.takeWhile(_.isWhitespace)
     
     (partInOriginal.head, whitespaceBetween, nextPart)
   }
@@ -20,8 +20,8 @@ class PartsHolder(parts: List[Part]) {
     val partInOriginal = parts.reverse.dropWhile(_ != part)
     
     val wsAfterPart = partInOriginal.tail
-    val nextPart = wsAfterPart.dropWhile(_.isWhiteSpace).head
-    val whitespaceBetween = wsAfterPart.takeWhile(_.isWhiteSpace)
+    val nextPart = wsAfterPart.dropWhile(_.isWhitespace).head
+    val whitespaceBetween = wsAfterPart.takeWhile(_.isWhitespace)
     
     (nextPart, whitespaceBetween.reverse, partInOriginal.head)
   }
@@ -47,7 +47,7 @@ trait MergeParts {
     }) match {
       case(l, r) => 
         explain("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒.")
-        (StringPart(l), StringPart(r))
+        (l, r)
     }
   }
   
@@ -68,14 +68,30 @@ trait MergeParts {
         explain("Whitespace ▒▒"+ (ws mkString "") +"▒▒ is between ▒▒"+ left +"▒▒ and ▒▒"+ right +"▒▒.")
         ws
       } else {
-        whitespaceRightOf(parts._1) :: whitespaceLeftOf(parts._2) :: Nil
+        StringPart(whitespaceRightOf(parts._1) + whitespaceLeftOf(parts._2)) :: Nil
       }
     }
     
     (modified zip modified.tail) flatMap {
-      case p @ (BeginOfFile, right) => withWhitespace(p)
+      case p @ (BeginOfFile(_), right) => withWhitespace(p)
       case p @ (left, right) => left :: withWhitespace(p)
     }
+  }
+  
+  def satisfyRequirements(parts: List[Part]): List[Part] = parts match {
+    case Nil => Nil
+    case (first: WithRequirement) :: second :: rest if first.hasRequirements => 
+      val whitespace = second.print
+      
+      first :: second :: (first.postRequirements.foldRight(List[Part]()) {
+        (required: String, ps: List[Part])  =>
+          if(whitespace contains required) {
+            ps
+          } else {
+            StringPart(required) :: ps
+          }
+      }) ::: satisfyRequirements(rest)
+    case x :: xs => x :: satisfyRequirements(xs)
   }
 }
 
@@ -86,8 +102,8 @@ object Parts2 extends MergeParts {
     import Compiler._
     import compiler._
       
-//    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
-    val tree = treeFrom("class A/*aa*/(private val i: Int, s: String)")
+    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
+    //val tree = treeFrom("class A/*aa*/(private val i: Int, s: String, a: Any /*a comment for the Any parameter*/)")
     
     val transformer = new Transformer {
       override def transform(tree: Tree): Tree = super.transform(tree) match {
@@ -104,11 +120,15 @@ object Parts2 extends MergeParts {
     
     val partitionedModified = Partitioner(compiler, newTree)
     
-    println(partitionedModified filter (!_.isWhiteSpace) mkString " → ")
+    println(partitionedModified filter (!_.isWhitespace) mkString " → ")
     
-    val merged = merge(partitionedOriginal, partitionedModified filter (!_.isWhiteSpace))
+    val merged = merge(partitionedOriginal, partitionedModified filter (!_.isWhitespace))
     
-    println(merged mkString "")
+    println(merged mkString "|")
+    
+    val satisfied = satisfyRequirements(merged)
+    
+    println(satisfied mkString)
     
     // why?
     exit(0)

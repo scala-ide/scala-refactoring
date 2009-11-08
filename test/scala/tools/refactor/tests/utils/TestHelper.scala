@@ -10,9 +10,8 @@ trait TestHelper {
   
   class TestString(src: String) {
     def partitionsInto(expected: String) = {
-      val buffer = new java.lang.StringBuilder
-      Partitioner(compiler, treeFrom(src)) foreach { part => part.print(buffer); buffer append "|"}
-      assertEquals(expected, buffer.toString.substring(1).reverse.substring(2).reverse)
+      val generatedCode = Partitioner(compiler, treeFrom(src)) map (_.print) mkString "|"
+      assertEquals("|"+ expected+ "|", generatedCode)
     }
   }
   
