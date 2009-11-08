@@ -17,6 +17,7 @@ trait Merger {
       case(_, OpeningBrace(l, r), _) => (l, r)
       case(_, ClosingBrace(l, r), _) => (l, r)
       case(_, Comma(l, r),        _) => (l, r)
+      case(_, s                 , _) => (s, "")
     }) match {
       case(l, r) => 
         explain("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒.")
@@ -24,7 +25,7 @@ trait Merger {
     }
   }
   
-  def explain(what: String) = println(what)
+  private def explain(what: String) = println(what)
 
   def merge(original: List[Part], modified: List[Part]) = {
     

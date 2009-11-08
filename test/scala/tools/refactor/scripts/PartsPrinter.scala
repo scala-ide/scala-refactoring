@@ -3,7 +3,7 @@ package scala.tools.refactor.scripts
 import scala.tools.refactor.tests.utils._
 import scala.tools.refactor.printer._
 
-object PartsPrinter {
+object PartsPrinter extends Partitioner {
   
   def main(args : Array[String]) : Unit = {
     
@@ -22,24 +22,29 @@ object PartsPrinter {
     
     val newTree = transformer.transform(tree)
     
-    val partitionedOriginal = Partitioner(compiler, tree)
+    val partitionedOriginal = splitIntoParts(compiler, tree)
     
     println(""" 
 digraph structs {
   rankdir = LR;          
   ranksep = 0.2;
   edge[arrowsize=1, weight=100, arrowhead=none];
+  node[shape=record, fontname="Courier", margin=0.05, height=0.4, width=0]
     """)
     
     println(partitionedOriginal map {
-      case se: WhitespacePart => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0];"
-      case se: SymTreePart     => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0, style=filled, fillcolor=lightgrey];"
-      case se: FlagPart       => "  "+ se.hashCode +"[label=\""+ se +"\", shape=record, fontname=\"Courier\", margin=0.05, height=0.4, width=0, style=filled, fillcolor=lightgrey];"
+      case se: WhitespacePart => "  "+ se.hashCode +"[label=\""+ se +"\"];"
+      case se: SymTreePart    => "  "+ se.hashCode +"[label=\""+ se +"\", style=filled, fillcolor=lightgrey];"
+      case se: FlagPart       => "  "+ se.hashCode +"[label=\""+ se +"\", style=filled, fillcolor=lightgrey];"
+      case se: StringPart     => ()
+      case se: BeginOfFile    => "  "+ se.hashCode +"[label=\"BOF\", style=filled, fillcolor=lightgrey];"
+      case se: EndOfFile      => "  "+ se.hashCode +"[label=\"EOF\", style=filled, fillcolor=lightgrey];"
+      case     NullPart       => ()
     } mkString "\n")
     
     println((partitionedOriginal map (_.hashCode) mkString " -> ") + ";")
     
-    println((Partitioner(compiler, newTree) filter (!_.isWhitespace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
+    println((splitIntoParts(compiler, newTree) filter (!_.isWhitespace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
     
     println("\n}")
     
