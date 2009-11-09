@@ -9,21 +9,25 @@ object Parts2 extends Merger with Partitioner with Transform with CompilerProvid
   def main(args : Array[String]) : Unit = {
 
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
-    val tree = treeFrom("class A(i: Int, s: String)")
+    val tree = treeFrom("""
+        import scala._
+        import java._
+        import java.lang._
+    """)
     
     val newTree = reverseClassParameters.transform(tree)
     
     val partitionedOriginal = splitIntoParts(tree)
     
-    println(partitionedOriginal mkString "▒▒")
+    //println(partitionedOriginal mkString "▒▒")
     
     val partitionedModified = splitIntoParts(newTree)
     
-    println(partitionedModified filter (!_.isWhitespace) mkString " → ")
+    //println(partitionedModified filter (!_.isWhitespace) mkString " → ")
     
     val merged = merge(partitionedOriginal, partitionedModified filter (!_.isWhitespace))
     
-    println(merged mkString "|")
+    //println(merged mkString "|")
     
     val satisfied = satisfyRequirements(merged)
     

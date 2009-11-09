@@ -11,7 +11,7 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform {
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
     val tree = treeFrom("class A(i: Int, s: String)")
     
-    val newTree = transformer.transform(tree)
+    val newTree = reverseClassParameters.transform(tree)
     
     val partitionedOriginal = splitIntoParts(tree)
     
