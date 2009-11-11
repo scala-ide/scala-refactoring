@@ -99,6 +99,7 @@ case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourceP
     case ABSTRACT     => "abstract"
     case Tokens.VAL   => "val"
     case Tokens.TYPE  => "type"
+    case Tokens.DEF   => "def"
     case _            => "<unknown>: " + flagsToString(flag)
   }
 }

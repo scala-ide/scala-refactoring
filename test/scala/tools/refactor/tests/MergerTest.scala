@@ -18,16 +18,16 @@ class MergerTest extends TestCase with TestHelper {
   def testSortClassMembers() = {
     """
       class A { //the body:
-        val a: Int /*a comment*/
+        def a: Int = 42 /*a comment*/
         val b: String
-        val c: Int
+        val c: Int = { /*five*/ 5 }
       }
     """ transformsTo( 
     """
       class A { //the body:
-        val c: Int
+        val c: Int = { /*five*/ 5 }
         val b: String
-        val a: Int /*a comment*/
+        def a: Int = 42 /*a comment*/
       }
     """, 
       reverseClassParameters.transform(_))

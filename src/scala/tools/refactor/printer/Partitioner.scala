@@ -119,7 +119,7 @@ trait Partitioner {
         super.traverse(tree)
         
       case _ =>
-        println("Not handled: "+ tree.getClass())
+        //println("Not handled: "+ tree.getClass())
         super.traverse(tree)
     }
     
