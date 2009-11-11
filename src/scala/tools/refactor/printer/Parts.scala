@@ -70,7 +70,7 @@ case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart
     case _ => false
   }
   val start = tree.pos.point
-  val end = tree.pos.point +  tree.symbol.nameString.length
+  val end = tree.pos.point + tree.symbol.nameString.length
   val file = tree.pos.source.asInstanceOf[BatchSourceFile]
   def print = new String(file.content.slice(start, end))
 }

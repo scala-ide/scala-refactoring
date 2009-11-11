@@ -7,6 +7,7 @@ trait Merger {
     val OpeningBrace = """(.*?\()(.*)""".r
     val ClosingBrace = """(.*?)(\).*)""".r
     val Comma = """(.*?),\s*(.*)""".r
+    val NewLine = """(?ms)(.*?\n)(.*)""".r
     // strip comments!
     
     explain("Splitting whitespace between "+ parts._1 +" and "+ parts._3)
@@ -14,18 +15,19 @@ trait Merger {
     val whitespace = parts._2 mkString ""
     
     ((parts._1, whitespace, parts._3) match {
-      case(_, OpeningBrace(l, r), _) => (l, r)
-      case(_, ClosingBrace(l, r), _) => (l, r)
-      case(_, Comma(l, r),        _) => (l, r)
-      case(_, s                 , _) => (s, "")
+      case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
+      case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
+      case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
+      case(_, Comma(l, r),        _) => (l, r, "Comma")
+      case(_, s                 , _) => (s, "","NoMatch")
     }) match {
-      case(l, r) => 
-        explain("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒.")
+      case(l, r, why) => 
+        explain("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒ ("+ why +").")
         (l, r)
     }
   }
   
-  private def explain(what: String) = ()// println(what)
+  private def explain(what: String) = println(what)
 
   def merge(original: List[Part], modified: List[Part]) = {
     

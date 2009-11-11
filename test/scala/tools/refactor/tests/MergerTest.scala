@@ -14,5 +14,23 @@ class MergerTest extends TestCase with TestHelper {
     "class A(i1: Int, i2: Int, i3: Int, i4: Int, i5: Int)" transformsTo ("class A(i5: Int, i4: Int, i3: Int, i2: Int, i1: Int)", reverseClassParameters.transform(_))
     "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*//*1a*/, i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters.transform(_))
   }
+  
+  def testSortClassMembers() = {
+    """
+      class A { //the body:
+        val a: Int /*a comment*/
+        val b: String
+        val c: Int
+      }
+    """ transformsTo( 
+    """
+      class A { //the body:
+        val c: Int
+        val b: String
+        val a: Int /*a comment*/
+      }
+    """, 
+      reverseClassParameters.transform(_))
+  }
 }
 

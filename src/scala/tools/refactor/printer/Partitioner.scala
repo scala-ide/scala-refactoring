@@ -25,7 +25,12 @@ trait Partitioner {
       case t: TypeTree => if(t.original != null) traverse(t.original)
       
       case i: Ident =>
-        collector += new SymTreePart(i)
+        if (i.symbol.pos == NoPosition)
+          collector += new SymTreePart(i) {
+            override val end = start + i.name.length
+        }
+        else
+          collector += new SymTreePart(i)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
         mods.positions foreach addModifiers

@@ -14,5 +14,22 @@ class WhitespaceSplitterTest extends TestCase with TestHelper {
     "class A(i: Int, s: String, f: Float)"  splitsInto "class ▒A(▒i: ▒Int▒s: ▒String▒f: ▒Float▒)"
     "class A(/*->*/i: Int/*<-*/)"           splitsInto "class ▒A(▒/*->*/i: ▒Int/*<-*/▒)"
   }
+  
+  def testClassMembers() = {
+    """
+      class A {
+        val a: Int
+        val b: Int
+        val c: Int
+      }
+    """ splitsInto 
+    """
+▒      class A {
+▒        val a: ▒Int
+▒        val b: ▒Int
+▒        val c: ▒Int
+▒      }
+    """
+  }
 }
 
