@@ -77,7 +77,7 @@ case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart
 
 case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourcePart {
   val start = pos.start
-  val end = pos.end + print.length
+  val end = start + print.length
   val file = pos.source
   import Flags._
   def print = flag match {

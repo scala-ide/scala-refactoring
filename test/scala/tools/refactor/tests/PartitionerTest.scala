@@ -30,7 +30,7 @@ class PartitionerTest extends TestCase with TestHelper {
     """
 
 
-  def testPrettyPackages = "/**/ package /**/ x/**/./**/y/**/./**/z/**/" partitionsInto "/**/ |package /**/ |x|/**/./**/|y|/**/./**/|z|/**/"
+  def testPrettyPackages = "/**/ package /**/ x/**/./**/y/**/./**/z/**/" partitionsInto "/**/ package /**/ |x|/**/./**/|y|/**/./**/|z|/**/"
   
   def testPackageAndClass = 
     """
@@ -39,12 +39,12 @@ class PartitionerTest extends TestCase with TestHelper {
         final class A
     """ partitionsInto
     """
-        |package |x|
+        package |x|
         
         |final| class |A|
     """
 
-  def testClassExtends = "class X extends AnyRef" partitionsInto "class |X| |extends |AnyRef"
+  def testClassExtends = "class X extends AnyRef" partitionsInto "class |X| extends |AnyRef"
   
   def testClassExtendsWithTrait =
   """
@@ -53,7 +53,7 @@ class PartitionerTest extends TestCase with TestHelper {
   """ partitionsInto
   """
     |trait| |A|; |trait| |B|
-    |class |X| |extends |AnyRef| with |A| with |B|
+    class |X| extends |AnyRef| with |A| with |B|
   """
 
   def testClassWithBody = 
@@ -63,9 +63,9 @@ class PartitionerTest extends TestCase with TestHelper {
     }
   """ partitionsInto
   """
-    |class |X| |extends |AnyRef| {
+    class |X| extends |AnyRef| {
       
-    }|
+    }
   """
 
   def testCaseClass = "case class X(i: Int, s: String)" partitionsInto "case| class |X|(|i|: |Int|, |s|: |String|)" 
@@ -76,18 +76,19 @@ class PartitionerTest extends TestCase with TestHelper {
     }
   """ partitionsInto
   """
-    |class |Xyz|(|private| val |abc|: |String|, |var |int|: |Int|) {
-    }|
+    class |Xyz|(|private| val |abc|: |String|, var |int|: |Int|) {
+    }
   """
 
-  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; |class |Xyz| |extends |A| { |object |C| }|/*done*/" 
+  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends |A| { object |C| }/*done*/" 
     
   def testNestedPackages = "package x.y.z" partitionsInto "package |x|.|y|.|z"
 
   def testPackage = "class Abc //done" partitionsInto "class |Abc| //done"
   
-  def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "class |Xyz|(|i|: |Int|/**/)|/**/"
-  // not yet: def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "trait| |A|; |class |Xyz| |extends { |type |T| } with |A| {  }|/*done*/"
+  def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "class |Xyz|(|i|: |Int|/**/)/**/"
+  
+  //def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "trait| |A|; |class |Xyz| |extends { |type |T| } with |A| {  }|/*done*/"
 
   //  
 //  def testEarlyDefFromSpec5_1_8 = assert print
