@@ -69,9 +69,16 @@ case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart
     case that: SymTreePart => that.start == this.start && that.end == this.end && that.file == this.file
     case _ => false
   }
-  val end = tree.pos.point +  tree.symbol.nameString.length
   val start = tree.pos.point
+  val end = tree.pos.point +  tree.symbol.nameString.length
   val file = tree.pos.source.asInstanceOf[BatchSourceFile]
+  def print = new String(file.content.slice(start, end))
+}
+
+case class LiteralPart(tree: Trees#Literal) extends Part with OriginalSourcePart {
+  val start = tree.pos.start
+  val end = tree.pos.end
+  val file = tree.pos.source
   def print = new String(file.content.slice(start, end))
 }
 
@@ -91,6 +98,7 @@ case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourceP
     case CASE         => "case"
     case ABSTRACT     => "abstract"
     case Tokens.VAL   => "val"
+    case Tokens.TYPE  => "type"
     case _            => "<unknown>: " + flagsToString(flag)
   }
 }

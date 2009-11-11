@@ -25,7 +25,7 @@ trait Merger {
     }
   }
   
-  private def explain(what: String) = println(what)
+  private def explain(what: String) = ()// println(what)
 
   def merge(original: List[Part], modified: List[Part]) = {
     

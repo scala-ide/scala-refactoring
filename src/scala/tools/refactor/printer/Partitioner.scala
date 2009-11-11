@@ -20,7 +20,7 @@ trait Partitioner {
     
     override def traverse(tree: Tree) = tree match {
       
-      case tree if !tree.pos.isRange => ; //super.traverse(tree)
+      case tree if !tree.pos.isRange => ()
       
       case t: TypeTree => if(t.original != null) traverse(t.original)
       
@@ -43,13 +43,35 @@ trait Partitioner {
         super.traverse(tree)
 
       case select @ Select(qualifier, name)  =>
-        super.traverse(tree)
-        collector += new SymTreePart(select)
+        traverse(qualifier)
+        
+        // An ugly hack, sorry
+        if (qualifier.pos.isRange) {
+          collector += new SymTreePart(select) {
+            override val start = select.pos.end - select.symbol.nameString.length
+            override val end = select.pos.end
+          }
+        } else {
+          collector += new SymTreePart(select)
+        }
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         mods.positions foreach addModifiers
-        collector += new SymTreePart(defdef)
+        if(defdef.pos.point >=defdef.pos.start)
+          collector += new SymTreePart(defdef)
         super.traverse(tree)
+        
+     case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
+        mods.positions foreach addModifiers
+        collector += new SymTreePart(typeDef)
+        super.traverse(tree)
+        /*
+      case pkg @ PackageDef(pid, stats) if pkg.symbol.pos == NoPosition =>
+        super.traverse(tree)
+        
+      case pkg @ PackageDef(pid, stats) =>
+        collector += new SymTreePart(pkg)
+        super.traverse(tree)*/
         
       case t @ Template(parents, _, body) =>
         
@@ -75,12 +97,25 @@ trait Partitioner {
           case part: WithRequirement => part.requirePost(", ")
           case _ => ()
         }
+        
+        val(trueBody, earlyBody) = restBody.filter(withRange).partition( (t: Tree) => parents.forall(_.pos precedes t.pos))
 
+        visitAll(earlyBody)(part => ())
+        
         visitAll(parents)(part => ())        
                 
-        visitAll(restBody)(part => ())
-
-      case _ => super.traverse(tree)
+        visitAll(trueBody)(part => ())
+        
+      case apply @ Apply(fun, args) =>
+        super.traverse(tree)
+        
+      case lit @ Literal(constant) =>
+        collector += new LiteralPart(lit)
+        super.traverse(tree)
+        
+      case _ =>
+        println("Not handled: "+ tree.getClass())
+        super.traverse(tree)
     }
     
     def visit(tree: Tree) = {

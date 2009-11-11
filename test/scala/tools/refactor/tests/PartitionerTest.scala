@@ -88,19 +88,29 @@ class PartitionerTest extends TestCase with TestHelper {
   
   def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "class |Xyz|(|i|: |Int|/**/)/**/"
   
-  //def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "trait| |A|; |class |Xyz| |extends { |type |T| } with |A| {  }|/*done*/"
+  def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends { |type| |T| } with |A| {  }/*done*/"
 
-  //  
-//  def testEarlyDefFromSpec5_1_8 = assert print
-//  """
-//    trait Greeting {
-//      val name: String
-//      val msg = "How are you, " +name
-//    }
-//    class C extends {
-//      val name = "Bob"
-//    } with Greeting {
-//      println(msg)
-//    }
-//  """
+  def testEarlyDefFromSpec5_1_8 =
+  """
+    trait Greeting {
+      val name: String
+      val msg = "How are you, " +name
+    }
+    class C extends {
+      val name = "Bob"
+    } with Greeting {
+      println(msg)
+    }
+  """ partitionsInto 
+  """
+    |trait| |Greeting| {
+      val |name|: |String|
+      |val| |msg| = |"How are you, "| |+|name|
+    }
+    class |C| extends {
+      val |name| = |"Bob"|
+    } with |Greeting| {
+      |println|(|msg|)
+    }
+  """
 }
