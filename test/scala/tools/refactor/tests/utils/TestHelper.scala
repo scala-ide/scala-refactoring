@@ -16,6 +16,11 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
       assertEquals("|"+ expected+ "|", generatedCode)
     }
     
+    def essentialPartsAre(expected: String) = {
+      val generatedCode = essentialParts(treeFrom(src)) map (_.print) mkString "|"
+      assertEquals("|"+ expected+ "|", generatedCode)
+    }
+    
     def splitsInto(expected: String) = {
       def splitAllWhitespaces(parts: List[Part]): String = parts match {
         case x :: y :: xs =>

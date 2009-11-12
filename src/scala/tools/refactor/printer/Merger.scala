@@ -10,7 +10,7 @@ trait Merger {
     val NewLine = """(?ms)(.*?\n)(.*)""".r
     // strip comments!
     
-    explain("Splitting whitespace between "+ parts._1 +" and "+ parts._3)
+    println("Splitting whitespace between "+ parts._1 +" and "+ parts._3)
     
     val whitespace = parts._2 mkString ""
     
@@ -22,7 +22,7 @@ trait Merger {
       case(_, s                 , _) => (s, "","NoMatch")
     }) match {
       case(l, r, why) => 
-        explain("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒ ("+ why +").")
+        println("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒ ("+ why +").")
         (l, r)
     }
   }
@@ -44,6 +44,8 @@ trait Merger {
         explain("Whitespace ▒▒"+ (ws mkString "") +"▒▒ is between ▒▒"+ left +"▒▒ and ▒▒"+ right +"▒▒.")
         ws
       } else {
+        // at this point, we know that the order of parts has been changed.
+        // reset the stack and start collecting all opening braces.
         StringPart(whitespaceRightOf(parts._1) + whitespaceLeftOf(parts._2)) :: Nil
       }
     }

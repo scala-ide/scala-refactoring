@@ -132,19 +132,50 @@ trait Partitioner {
     }
   }
   
+  def essentialParts(root: Tree) = new Visitor().visit(root)
+  
   def splitIntoParts(root: Tree) : List[Part] = {
     
-    val essentialParts = new Visitor().visit(root)
+    var currentBraceCount = 0
     
+    def createWhitespaceParts(start: Int, end: Int, file: SourceFile): List[Part] = {
+      
+      // should ignore comments
+      
+      val ws = new String(file.content.slice(start, end))
+      
+      val ws2 = ws.foldRight(List[StringBuilder](new StringBuilder)) {
+        (c: Char, l: List[StringBuilder]) => c match {
+          case c if c == '{' => new StringBuilder :: (new StringBuilder("{")) :: l 
+          case c if c == '}' => new StringBuilder :: (new StringBuilder("}")) :: l
+          case c => l.first.insert(0, c); l
+        }
+      }
+      
+      val ws3 = ws2.map(_.toString).map {
+        case c if c == "{" =>
+          currentBraceCount += 1
+          OpeningBracePart("{", currentBraceCount)
+        case c if c == "}" =>
+          currentBraceCount -= 1
+          ClosingBracePart("}", currentBraceCount + 1)
+        case ws => StringWhitespacePart(ws)
+      }
+      
+//      println(ws2 map (_.toString) mkString "|")
+      
+      ws3
+    }
+        
     def whitespaceBetween(p: Part, ps: List[Part]): List[Part] = p :: ps match {
       case (eof: EndOfFile) :: Nil => eof :: Nil
       case (p1: OriginalSourcePart) :: (p2: OriginalSourcePart) :: _ => 
         if(p1.end < p2.start) {
-          p :: WhitespacePart(p1.end, p2.start, p1.file) :: ps
+          p :: createWhitespaceParts(p1.end, p2.start, p1.file) ::: ps
         } else
           p :: ps
     }
     
-    essentialParts.foldRight(List[Part]())(whitespaceBetween)
+    essentialParts(root).foldRight(List[Part]())(whitespaceBetween)
   }
 }

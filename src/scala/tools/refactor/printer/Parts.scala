@@ -59,6 +59,18 @@ case class WhitespacePart(val start: Int, val end: Int, file: SourceFile) extend
   def offset(off: Int) = new WhitespacePart(start + off, end, file)
 }
 
+case class OpeningBracePart(print: String, number: Int) extends Part {
+  override val isWhitespace = true 
+}
+
+case class ClosingBracePart(print: String, number: Int) extends Part {
+  override val isWhitespace = true 
+}
+
+case class StringWhitespacePart(print: String) extends Part {
+  override val isWhitespace = true 
+}
+
 case class StringPart(string: String) extends Part {
   val print = string
 }

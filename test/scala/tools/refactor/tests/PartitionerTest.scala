@@ -104,7 +104,7 @@ class PartitionerTest extends TestCase with TestHelper {
   """ partitionsInto 
   """
     |trait| |Greeting| {
-      val |name|: |String|
+      |val| |name|: |String|
       |val| |msg| = |"How are you, "| |+|name|
     }
     class |C| extends {
