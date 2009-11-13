@@ -2,7 +2,7 @@ package scala.tools.refactor.printer
 
 trait Merger {
   
-  def splitWhitespaceBetween(parts: Triple[Part,List[Part],Part]) = {
+  def splitWhitespaceBetween(parts: Triple[Part,List[Part],Part]): Pair[String, String] = {
           
     val OpeningBrace = """(.*?\()(.*)""".r
     val ClosingBrace = """(.*?)(\).*)""".r
@@ -28,7 +28,7 @@ trait Merger {
   }
   
   private def explain(what: String) = println(what)
-
+/*
   def merge(original: List[Part], modified: List[Part]) = {
     
     val partsHolder = new PartsHolder(original)
@@ -54,7 +54,7 @@ trait Merger {
       case p @ (BeginOfFile(_), right) => withWhitespace(p)
       case p @ (left, right) => left :: withWhitespace(p)
     }
-  }
+  }*/
   
   def satisfyRequirements(parts: List[Part]): List[Part] = parts match {
     case Nil => Nil

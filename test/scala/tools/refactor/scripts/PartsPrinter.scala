@@ -22,21 +22,21 @@ digraph structs {
   edge[arrowsize=1, weight=100, arrowhead=none];
   node[shape=record, fontname="Courier", margin=0.05, height=0.4, width=0]
     """)
-    
-    println(partitionedOriginal map {
-      case se: WhitespacePart => "  "+ se.hashCode +"[label=\""+ se +"\"];"
-      case se: SymTreePart    => "  "+ se.hashCode +"[label=\""+ se +"\", style=filled, fillcolor=lightgrey];"
-      case se: FlagPart       => "  "+ se.hashCode +"[label=\""+ se +"\", style=filled, fillcolor=lightgrey];"
-      case se: StringPart     => ()
-      case se: BeginOfFile    => "  "+ se.hashCode +"[label=\"BOF\", style=filled, fillcolor=lightgrey];"
-      case se: EndOfFile      => "  "+ se.hashCode +"[label=\"EOF\", style=filled, fillcolor=lightgrey];"
-      case     NullPart       => ()
-    } mkString "\n")
-    
-    println((partitionedOriginal map (_.hashCode) mkString " -> ") + ";")
-    
-    println((splitIntoParts(newTree) filter (!_.isWhitespace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
-    
+//    
+//    println(partitionedOriginal map {
+//      case se: WhitespacePart => "  "+ se.hashCode +"[label=\""+ se +"\"];"
+//      case se: SymTreePart    => "  "+ se.hashCode +"[label=\""+ se +"\", style=filled, fillcolor=lightgrey];"
+//      case se: FlagPart       => "  "+ se.hashCode +"[label=\""+ se +"\", style=filled, fillcolor=lightgrey];"
+//      case se: StringPart     => ()
+//      case se: BeginOfFile    => "  "+ se.hashCode +"[label=\"BOF\", style=filled, fillcolor=lightgrey];"
+//      case se: EndOfFile      => "  "+ se.hashCode +"[label=\"EOF\", style=filled, fillcolor=lightgrey];"
+//      case     NullPart       => ()
+//    } mkString "\n")
+//    
+//    println((partitionedOriginal map (_.hashCode) mkString " -> ") + ";")
+//    
+//    println((splitIntoParts(newTree) filter (!_.isWhitespace) map (_.hashCode) mkString " -> ") + "[weight=1, arrowhead=normal]")
+//    
     println("\n}")
     
     // why?
