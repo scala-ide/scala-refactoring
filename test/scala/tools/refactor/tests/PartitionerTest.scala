@@ -80,7 +80,7 @@ class PartitionerTest extends TestCase with TestHelper {
     }
   """
 
-  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends |A| { object |C| }/*done*/" 
+  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends |A|❨| { object |C| }|❩|/*done*/" 
     
   def testNestedPackages = "package x.y.z" partitionsInto "package |x|.|y|.|z"
 
@@ -103,14 +103,14 @@ class PartitionerTest extends TestCase with TestHelper {
     }
   """ partitionsInto 
   """
-    |trait| |Greeting| {
-      |val| |name|: |String|
+    |trait| |Greeting| |❨|{
+      val |name|: |String|
       |val| |msg| = |"How are you, "| |+|name|
-    }
+    }|❩|
     class |C| extends {
       val |name| = |"Bob"|
-    } with |Greeting| {
+    } with |Greeting|❨| {
       |println|(|msg|)
-    }
+    }|❩|
   """
 }

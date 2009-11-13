@@ -5,57 +5,19 @@ import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
 object Parts2 extends Merger with Partitioner with Transform with CompilerProvider {
-  
-  var partsHolder: PartsHolder = _
-  
-//  def whitespaceRightOf(part: Part) = splitWhitespaceBetween(partsHolder.nextPartToTheRight(part))._1
-//  def whitespaceLeftOf(part: Part)  = splitWhitespaceBetween(partsHolder.nextPartToTheLeft(part))._2
-      
-  def withWhitespace(current: Part, next: Part): List[Part] = {
-    
-    println("get ws after part: "+ current)
-    
-    val (currentFound, wsFound, nextFound) = partsHolder getNext current
-    
-    if (next == nextFound) {
-      println("Whitespace ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
-      wsFound
-    } else {   
-      
-      StringPart(splitWhitespaceBetween((currentFound, wsFound, nextFound))._1 + splitWhitespaceBetween(partsHolder getPrevious next)._2) :: Nil
-      
-      //StringPart(whitespaceRightOf(parts._1) + whitespaceLeftOf(parts._2)) :: Nil
-      //StringPart("·") :: Nil
-    }
-  }
-  
-  def traverseParts(part: CompositePart): List[Part] = {
-    
-    val list: List[(Part, Part)] = (part.children zip part.children.tail)
-    
-    println("traversing parts: "+ list)
-    
-    /*ws begin*/(list flatMap {
-      //case (current @ BeginOfFile(_), next) => withWhitespace(current, next)
-      case (current: CompositePart, next) => traverseParts(current) ::: withWhitespace(current, next)
-      case (current, next) => current :: withWhitespace(current, next)
-    }) /*ws end*/
-  }
-
+          
   def main(args : Array[String]) : Unit = {
 
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
 //      val tree = treeFrom("class A")
-    val tree = treeFrom("""class A {
-          type C
-          val i: Int
-        }
-    """)
+    val tree = treeFrom("""class A(i: Int) {
+        type A
+        type B
+  }""")
 
     val partitionedOriginal = splitIntoParts(tree)
-    partsHolder = new PartsHolder(partitionedOriginal)
     
-    println(partitionedOriginal)
+    println(partitionedOriginal.children)
     println("===========")
     
     val newTree = reverseClassParameters.transform(tree)
@@ -64,7 +26,7 @@ object Parts2 extends Merger with Partitioner with Transform with CompilerProvid
     println(partitionedModified)
     
     println("===========")
-    println(traverseParts(partitionedModified) map (_.print) mkString "")
+    println(merge(partitionedModified, partitionedOriginal) map (_.print) mkString "")
     
     /*
     

@@ -12,12 +12,13 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
   class TestString(src: String) {
     
     def partitionsInto(expected: String) = {
-      val generatedCode = ""//splitIntoParts(treeFrom(src)) map (_.print) mkString "|"
-      assertEquals("|"+ expected+ "|", generatedCode)
+      val p = splitIntoParts(treeFrom(src))
+      val generatedCode = p.toString
+      assertEquals("❨|"+ expected +"|❩", generatedCode)
     }
     
     def essentialPartsAre(expected: String) = {
-      val generatedCode = ""//essentialParts(treeFrom(src)) map (_.print) mkString "|"
+      val generatedCode = essentialParts(treeFrom(src)).toString
       assertEquals("|"+ expected+ "|", generatedCode)
     }
     
@@ -37,10 +38,14 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
     def transformsTo(expected: String, transform: compiler.Tree => compiler.Tree) {
       
       val tree = treeFrom(src)
-      
       val newTree = transform(tree)
       
-      val partitionedModified = splitIntoParts(newTree)
+      val partitionedOriginal = splitIntoParts(tree)
+      val partitionedModified = essentialParts(newTree)
+      
+      val merged = satisfyRequirements(merge(partitionedModified, partitionedOriginal))
+          
+      assertEquals(expected, merged map (_.print) mkString "")
       
 //      val satisfied = satisfyRequirements(merge(splitIntoParts(tree), partitionedModified filter (!_.isWhitespace)))
 //      

@@ -26,20 +26,6 @@ trait OriginalSourcePart extends Part {
   def end: Int
   def file: SourceFile
 }
-/*
-case class BeginOfFile(file: SourceFile) extends Part with OriginalSourcePart {
-  val start = 0
-  val end = 0
-  val print = ""
-  override def toString = "❰"
-}
-
-case class EndOfFile(file: SourceFile) extends Part with OriginalSourcePart {
-  val start = file.length
-  val end = file.length
-  val print = ""
-  override def toString = "❱"
-}*/
 
 trait OffsetablePart extends OriginalSourcePart {
   def offset(off: Int): OffsetablePart
@@ -60,14 +46,6 @@ case class WhitespacePart(val start: Int, val end: Int, file: SourceFile) extend
   def offset(off: Int) = new WhitespacePart(start + off, end, file)
 }
 
-case class OpeningBracePart(print: String, number: Int) extends Part {
-  override val isWhitespace = true 
-}
-
-case class ClosingBracePart(print: String, number: Int) extends Part {
-  override val isWhitespace = true 
-}
-
 case class StringWhitespacePart(print: String) extends Part {
   override val isWhitespace = true 
 }
@@ -77,40 +55,34 @@ case class StringPart(string: String) extends Part {
 }
 
 case class CompositePart(tree: Trees#Tree) extends Part with OriginalSourcePart {
-  self =>
   
-  case class BeginOfScope extends Part with OriginalSourcePart {
+  class BeginOfScope(val start: Int, val end: Int, val file: SourceFile) extends Part with OriginalSourcePart {
     override def toString = "❨"
-    def print = ""
-    def file = self.file
-    def start = self.start
-    def end = start
+    val print = ""
     override def equals(that: Any) = that match {
       case that: CompositePart#BeginOfScope => that.start == this.start && that.end == this.end && that.file == this.file
       case _ => false
     }
   }
   
-  case class EndOfScope extends Part with OriginalSourcePart {
-    override def toString = "❩"
-    def print = ""
-    def file = self.file
-    def start = self.end
-    def end = start
+  class EndOfScope(val start: Int, val end: Int, val file: SourceFile) extends Part with OriginalSourcePart {
+    override val toString = "❩"
+    val print = ""
     override def equals(that: Any) = that match {
       case that: CompositePart#EndOfScope => that.start == this.start && that.end == this.end && that.file == this.file
       case _ => false
     }
   }
   
-  val start = tree.pos.start
+  def start = tree.pos.start + offset
+  var offset = 0
   val end = tree.pos.end
   val file = tree.pos.source.asInstanceOf[BatchSourceFile]
   val trueChildren = new ListBuffer[Part]()
   def add(p: Part) = trueChildren += p //make sure they are in order
-  def children: List[Part] = BeginOfScope() :: trueChildren.toList ::: EndOfScope() :: Nil
-  override def toString = children mkString "❘"
-  def print = ""    
+  def children: List[Part] = new BeginOfScope(start, start, file) :: trueChildren.toList ::: new EndOfScope(end, end, file) :: Nil
+  override def toString = children mkString "|"
+  def print = children mkString
   override def equals(that: Any) = that match {
     case that: CompositePart => that.start == this.start && that.end == this.end && that.file == this.file
     case _ => false

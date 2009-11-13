@@ -16,11 +16,11 @@ trait Partitioner {
     
     private var scopes = new scala.collection.mutable.Stack[CompositePart]
     
-    def scope(t: Tree)(body: => Unit) = {
+    def scope(t: Tree)(body: CompositePart => Unit) = {
       val newScope = CompositePart(t)
       scopes.top add newScope
       scopes push newScope
-      body
+      body(newScope)
       scopes pop
     }
         
@@ -46,18 +46,14 @@ trait Partitioner {
         super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) => 
-        scope(tree) {
-          mods.positions foreach addModifiers
-          scopes.top add new SymTreePart(m)
-          super.traverse(tree)
-        }
+        mods.positions foreach addModifiers
+        scopes.top add new SymTreePart(m)
+        super.traverse(tree)
         
       case v @ ValDef(mods, name, typ, rhs) => 
-        scope(tree) {
-          mods.positions foreach addModifiers
-          scopes.top add new SymTreePart(v)
-          super.traverse(tree)
-        }
+        mods.positions foreach addModifiers
+        scopes.top add new SymTreePart(v)
+        super.traverse(tree)
 
       case select @ Select(qualifier, name)  =>
         traverse(qualifier)
@@ -99,7 +95,7 @@ trait Partitioner {
             traverse(x)
           case x :: xs => 
             traverse(x)
-            //FIXME separator(collector.last)
+            separator(scopes.top.trueChildren.last)
             visitAll(xs)(separator)
         }
         
@@ -122,7 +118,12 @@ trait Partitioner {
         visitAll(parents)(part => ())        
                 
         if(trueBody.size > 0) {
-          scope(tree) { // fix the start 
+          scope(tree) { scope =>// fix the start
+          
+            val realStart = (classParams ::: earlyBody ::: (parents filter (_.pos.isRange))).foldLeft(scope.start) ( _ max _.pos.end )
+            // actually need to skip even more
+            scope.offset = realStart - scope.start
+            
             visitAll(trueBody)(part => ())
           }
         }
@@ -141,15 +142,14 @@ trait Partitioner {
     
     def visit(tree: Tree) = {
       
-      val rootPart = CompositePart(tree)
-      
-      //rootPart add BeginOfFile(tree.pos.source)
+      val rootPart = new CompositePart(tree) {
+        override val start = 0
+        override val end = file.length
+      }
       
       scopes push rootPart
       
       traverse(tree)
-      
-      //rootPart add EndOfFile(tree.pos.source)
       
       rootPart
     }
@@ -163,66 +163,29 @@ trait Partitioner {
     
     def fillWs(part: Part): Part = part match {
       case p: CompositePart => 
-        val newCp = CompositePart(p.tree)
         
         val childrenPairs = p.children zip p.children.tail
         
+        p.trueChildren.clear
+        
         //println("pairs of children: "+ childrenPairs)
+        
+        def whitespace(start: Int, end: Int, file: SourceFile) {
+          if(start < end)
+            p add WhitespacePart(start, end, file)
+        }
 
         (childrenPairs) foreach {
           case (left: CompositePart#BeginOfScope, right: OriginalSourcePart) => ()
-            newCp add WhitespacePart(left.end, right.start, left.file)
+            whitespace(left.end, right.start, left.file)
           case (left: OriginalSourcePart, right: OriginalSourcePart) =>
-            newCp add (fillWs(left))
-            newCp add WhitespacePart(left.end, right.start, left.file)
+            p add (fillWs(left))
+            whitespace(left.end, right.start, left.file)
         }
-        newCp
+        p
       case _ => part
     }
     
     fillWs(parts).asInstanceOf[CompositePart]
-    
-    /*
-    var currentBraceCount = 0
-    
-    def createWhitespaceParts(start: Int, end: Int, file: SourceFile): List[Part] = {
-      
-      // should ignore comments
-      
-      val ws = new String(file.content.slice(start, end))
-      
-      val ws2 = ws.foldRight(List[StringBuilder](new StringBuilder)) {
-        (c: Char, l: List[StringBuilder]) => c match {
-          case c if c == '{' => new StringBuilder :: (new StringBuilder("{")) :: l 
-          case c if c == '}' => new StringBuilder :: (new StringBuilder("}")) :: l
-          case c => l.first.insert(0, c); l
-        }
-      }
-      
-      val ws3 = ws2.map(_.toString).map {
-        case c if c == "{" =>
-          currentBraceCount += 1
-          OpeningBracePart("{", currentBraceCount)
-        case c if c == "}" =>
-          currentBraceCount -= 1
-          ClosingBracePart("}", currentBraceCount + 1)
-        case ws => StringWhitespacePart(ws)
-      }
-      
-//      println(ws2 map (_.toString) mkString "|")
-      
-      ws3
-    }
-        
-    def whitespaceBetween(p: Part, ps: List[Part]): List[Part] = p :: ps match {
-      case (eof: EndOfFile) :: Nil => eof :: Nil
-      case (p1: OriginalSourcePart) :: (p2: OriginalSourcePart) :: _ => 
-        if(p1.end < p2.start) {
-          p :: createWhitespaceParts(p1.end, p2.start, p1.file) ::: ps
-        } else
-          p :: ps
-    }
-    
-    essentialParts(root).foldRight(List[Part]())(whitespaceBetween)*/
   }
 }

@@ -28,34 +28,40 @@ trait Merger {
   }
   
   private def explain(what: String) = println(what)
-/*
-  def merge(original: List[Part], modified: List[Part]) = {
+  
+  def merge(part: CompositePart, original: CompositePart): List[Part] = {
     
     val partsHolder = new PartsHolder(original)
-
-    def whitespaceRightOf(part: Part) = splitWhitespaceBetween(partsHolder.nextPartToTheRight(part))._1
-    def whitespaceLeftOf(part: Part)  = splitWhitespaceBetween(partsHolder.nextPartToTheLeft(part))._2
     
-    def withWhitespace(parts: Pair[Part, Part]): List[Part] = {
+    def withWhitespace(current: Part, next: Part): List[Part] = {
+    
+      explain("get ws after part: "+ current)
       
-      val(left, ws, right) = partsHolder.nextPartToTheRight(parts._1)
-            
-      if(right == parts._2) {
-        explain("Whitespace ▒▒"+ (ws mkString "") +"▒▒ is between ▒▒"+ left +"▒▒ and ▒▒"+ right +"▒▒.")
-        ws
+      val (currentFound, wsFound, nextFound) = partsHolder getNext current
+      
+      if (next == nextFound) {
+        explain("Whitespace ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
+        wsFound
       } else {
-        // at this point, we know that the order of parts has been changed.
-        // reset the stack and start collecting all opening braces.
-        StringPart(whitespaceRightOf(parts._1) + whitespaceLeftOf(parts._2)) :: Nil
+        StringPart(splitWhitespaceBetween((currentFound, wsFound, nextFound))._1 + splitWhitespaceBetween(partsHolder getPrevious next)._2) :: Nil
       }
     }
     
-    (modified zip modified.tail) flatMap {
-      case p @ (BeginOfFile(_), right) => withWhitespace(p)
-      case p @ (left, right) => left :: withWhitespace(p)
+    def innerMerge(part: CompositePart): List[Part] = {
+    
+      val list: List[(Part, Part)] = (part.children zip part.children.tail)
+      
+      explain("traversing parts: "+ list)
+      
+      list flatMap {
+        case (current: CompositePart, next) => innerMerge(current) ::: withWhitespace(current, next)
+        case (current, next) => current :: withWhitespace(current, next)
+      }
     }
-  }*/
-  
+    
+    innerMerge(part)
+  }
+
   def satisfyRequirements(parts: List[Part]): List[Part] = parts match {
     case Nil => Nil
     case (first: WithRequirement) :: second :: rest if first.hasRequirements => 
