@@ -46,24 +46,56 @@ class MergerTest extends TestCase with TestHelper {
       
   }
   
-//  def testSortClassMembers() = {
-//    """
-//      class A {
-//        val b: String
-//        def c: Unit = {
-//          5
-//        }
-//      }
-//    """ transformsTo( 
-//    """
-//      class A {
-//        def c: Unit = {
-//          5
-//        }
-//        val b: String
-//      }
-//    """, 
-//      reverseClassParameters.transform(_))
-//  }
+  def testSortClassMembers() = {
+    """
+      class A {
+        val b: String
+        def c: Unit = {
+          5
+        }
+        def d: Int = {
+          5
+        }
+      }
+    """ transformsTo( 
+    """
+      class A {
+        def d: Int = {
+          5
+        }
+        def c: Unit = {
+          5
+        }
+        val b: String
+      }
+    """, 
+      reverseClassParameters.transform(_))
+    ;
+        """
+      class A {
+        val b: String //b-string
+        def c: Unit = {
+          def d: Int = {
+            5
+          }
+          d
+        } //end of c
+        
+      }
+    """ transformsTo( 
+    """
+      class A {
+        def c: Unit = {
+          def d: Int = {
+            5
+          }
+          d
+        } //end of c
+        val b: String //b-string
+        
+      }
+    """, 
+      reverseClassParameters.transform(_))
+  }
 }
 

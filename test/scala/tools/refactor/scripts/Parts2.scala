@@ -10,10 +10,16 @@ object Parts2 extends Merger with Partitioner with Transform with CompilerProvid
 
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
 //      val tree = treeFrom("class A")
-    val tree = treeFrom("""class A(i: Int) {
-        type A
-        type B
-  }""")
+    val tree = treeFrom("""      
+      class A {
+        val b: String
+        def c: Unit = {
+          def d: Int = {
+            5
+          }
+          d
+        }
+      }""")
 
     val partitionedOriginal = splitIntoParts(tree)
     

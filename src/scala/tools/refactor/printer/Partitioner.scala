@@ -26,6 +26,17 @@ trait Partitioner {
         
     val addModifiers = (x: Pair[Long, Position]) => scopes.top add new FlagPart(x._1, x._2)
     
+    def visitAll(trees: List[Tree])(separator: Part => Unit ): Unit = trees match {
+      case Nil => 
+        ()
+      case x :: Nil => 
+        traverse(x)
+      case x :: xs => 
+        traverse(x)
+        separator(scopes.top.trueChildren.last)
+        visitAll(xs)(separator)
+    }
+    
     override def traverse(tree: Tree) = tree match {
       
       case tree if !tree.pos.isRange => ()
@@ -49,6 +60,31 @@ trait Partitioner {
         mods.positions foreach addModifiers
         scopes.top add new SymTreePart(m)
         super.traverse(tree)
+       /* 
+      case v @ ValDef(mods, name, typ, rhs: Block) => 
+        
+        scope(tree) { scope =>
+          mods.positions foreach addModifiers
+          scopes.top add new SymTreePart(v)
+          super.traverse(tree)
+          
+          def forwardTo(file: SourceFile, currentPos: Int): Int = {
+            
+            def isWhitespace(c: Char) = c match {
+              case '\n' | '\t' | ' ' | '\r' => true
+              case _ => false
+            }
+            
+            var i = currentPos;
+            // remove the comment
+            do {
+              i += 1
+            } while(isWhitespace(file.content(i)))
+            i + 1
+          }
+          
+          scope.end = forwardTo(scope.file, scope.end)
+        }*/
         
       case v @ ValDef(mods, name, typ, rhs) => 
         mods.positions foreach addModifiers
@@ -69,10 +105,12 @@ trait Partitioner {
         }
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
+        scope(defdef) { scope =>
           mods.positions foreach addModifiers
           if(defdef.pos.point >=defdef.pos.start)
             scopes.top add new SymTreePart(defdef)
           super.traverse(tree)
+        }
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
           mods.positions foreach addModifiers
@@ -87,18 +125,7 @@ trait Partitioner {
         super.traverse(tree)*/
         
       case t @ Template(parents, _, body) =>
-        
-        def visitAll(trees: List[Tree])(separator: (Part) => Unit ): Unit = trees match {
-          case Nil => 
-            ()
-          case x :: Nil => 
-            traverse(x)
-          case x :: xs => 
-            traverse(x)
-            separator(scopes.top.trueChildren.last)
-            visitAll(xs)(separator)
-        }
-        
+
         def withRange(t: Tree) = t.pos.isRange
         
         val (classParams, restBody) = body.partition {
@@ -108,7 +135,7 @@ trait Partitioner {
         
         visitAll(classParams) {
           case part: WithRequirement => part.requirePost(", ")
-          case _ => ()
+          case _ => throw new Exception("Can't add requirement.")
         }
         
         val(trueBody, earlyBody) = restBody.filter(withRange).partition( (t: Tree) => parents.forall(_.pos precedes t.pos))
@@ -120,9 +147,9 @@ trait Partitioner {
         if(trueBody.size > 0) {
           scope(tree) { scope =>// fix the start
           
-            val realStart = (classParams ::: earlyBody ::: (parents filter (_.pos.isRange))).foldLeft(scope.start) ( _ max _.pos.end )
+            val realStart = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(scope.start) ( _ max _.pos.end )
             // actually need to skip even more
-            scope.offset = realStart - scope.start
+            scope.start = realStart
             
             visitAll(trueBody)(part => ())
           }
@@ -135,6 +162,9 @@ trait Partitioner {
         scopes.top add new LiteralPart(lit)
         super.traverse(tree)
         
+      /*case Block(stats, expr) =>
+        visitAll(stats)(part => ())*/
+        
       case _ =>
         //println("Not handled: "+ tree.getClass())
         super.traverse(tree)
@@ -143,8 +173,8 @@ trait Partitioner {
     def visit(tree: Tree) = {
       
       val rootPart = new CompositePart(tree) {
-        override val start = 0
-        override val end = file.length
+        start = 0
+        end = file.length
       }
       
       scopes push rootPart
