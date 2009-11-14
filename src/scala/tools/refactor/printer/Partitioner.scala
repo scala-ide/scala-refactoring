@@ -98,6 +98,10 @@ trait Partitioner {
         // An ugly hack. when can we actually print the name?
         if (qualifier.isInstanceOf[New]) {
           ()
+        } else if(qualifier.isInstanceOf[Super]) {
+          scopes.top add new SymTreePart(select) {
+            override val end = tree.pos.end
+          }
         } else if (qualifier.pos.isRange) {
           scopes.top add new SymTreePart(select) {
             override val start = select.pos.end - select.symbol.nameString.length
@@ -178,6 +182,12 @@ trait Partitioner {
       case New(tpt) =>
         scopes.top add new TreePart(tree)
         traverse(tpt)
+        
+      case s @ Super(qual, mix) =>
+        scopes.top add new SymTreePart(s) {
+          override val end = tree.pos.end
+        }
+        super.traverse(tree)
         
       case _ =>
         println("Not handled: "+ tree.getClass())

@@ -129,4 +129,16 @@ class PartitionerTest extends TestCase with TestHelper {
       }|❩|
     }|❩|
   """
+
+  def testSuper = 
+  """
+    class A {
+      override def toString = super.toString()
+    }
+  """ partitionsInto 
+  """
+    class |A| |❨|{
+      |❨|override| |def| |toString| = |super|.|toString|()|❩|
+    }|❩|
+  """
 }
