@@ -13,6 +13,14 @@ trait WithRequirement {
     postRequirements += text
   }
   def hasRequirements = postRequirements.size > 0
+  def copyRequirements(from: WithRequirement): this.type = {
+    from.postRequirements foreach (requirePost _)
+    this
+  }
+}
+
+trait WithTree {
+  def tree: Trees#Tree
 }
 
 abstract sealed class Part {
@@ -27,20 +35,13 @@ trait OriginalSourcePart extends Part {
   def file: SourceFile
 }
 
-case object NullPart extends Part {
-  def file = throw new Exception("No File in NullPart")
-  def end = throw new Exception("No End in NullPart")
-  def start = throw new Exception("No Start in NullPart")
-  def print = throw new Exception("Can't print NullPart")
-}
-
 case class WhitespacePart(val start: Int, val end: Int, file: SourceFile) extends Part with OriginalSourcePart {
   override val isWhitespace = true
   def print = new String(file.content.slice(start, end))
   override def toString = if(start == end) "❒" else new String(file.content.slice(start, end))
 }
 
-case class StringPart(string: String) extends Part {
+case class StringPart(string: String) extends Part with WithRequirement {
   val print = string
 }
 
@@ -72,13 +73,14 @@ case class CompositePart(tree: Trees#Tree) extends Part with OriginalSourcePart 
   def children: List[Part] = new BeginOfScope(start, start, file) :: trueChildren.toList ::: new EndOfScope(end, end, file) :: Nil
   override def toString = children mkString "|"
   def print = children mkString
+  // would it be enough to just check whether the trees are equal?
   override def equals(that: Any) = that match {
     case that: CompositePart => that.start == this.start && that.end == this.end && that.file == this.file
     case _ => false
   }
 }
 
-case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart with WithRequirement {
+case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart with WithRequirement with WithTree {
   override def hashCode = toString.hashCode + start * 31 * (end + 17)
   override def equals(that: Any) = that match {
     case that: SymTreePart => that.start == this.start && that.end == this.end && that.file == this.file
@@ -90,7 +92,7 @@ case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart
   def print = new String(file.content.slice(start, end))
 }
 
-case class LiteralPart(tree: Trees#Literal) extends Part with OriginalSourcePart {
+case class TreePart(tree: Trees#Tree) extends Part with OriginalSourcePart with WithRequirement with WithTree {
   val start = tree.pos.start
   val end = tree.pos.end
   val file = tree.pos.source

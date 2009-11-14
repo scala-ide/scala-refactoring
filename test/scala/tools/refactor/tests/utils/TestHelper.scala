@@ -43,7 +43,7 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
       val partitionedOriginal = splitIntoParts(tree)
       val partitionedModified = essentialParts(newTree)
       
-      val merged = satisfyRequirements(merge(partitionedModified, partitionedOriginal))
+      val merged = merge(partitionedModified, partitionedOriginal)
           
       assertEquals(expected, merged map (_.print) mkString "")
     }

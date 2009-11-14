@@ -29,7 +29,9 @@ class MergerTest extends TestCase with TestHelper {
       }
     """, 
       reverseClassParameters.transform(_))
-    ;
+  }
+  
+  def testSortClassMembersAndArguments() = {
     """
       class A(i: Int, j: Int) { //
         val b: String
@@ -70,7 +72,9 @@ class MergerTest extends TestCase with TestHelper {
       }
     """, 
       reverseClassParameters.transform(_))
-    ;
+  }
+  
+  def testSortNestedClassMembers() = {
         """
       class A {
         val b: String //b-string

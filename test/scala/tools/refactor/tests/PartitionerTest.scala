@@ -113,4 +113,20 @@ class PartitionerTest extends TestCase with TestHelper {
       |println|(|msg|)
     }|❩|
   """
+
+  def testNew = 
+  """
+    trait A {
+      def a = new A {
+        
+      }
+    }
+  """ partitionsInto 
+  """
+    |trait| |A| |❨|{
+      |❨|def| |a| = |new| |A| {
+        
+      }|❩|
+    }|❩|
+  """
 }

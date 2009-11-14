@@ -53,7 +53,8 @@ trait Partitioner {
         
       case c @ ClassDef(mods, name, tparams, impl) =>
         mods.positions foreach addModifiers
-        scopes.top add new SymTreePart(c)
+        if (!c.symbol.isAnonymousClass)
+          scopes.top add new SymTreePart(c)
         super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) => 
@@ -94,8 +95,10 @@ trait Partitioner {
       case select @ Select(qualifier, name)  =>
         traverse(qualifier)
         
-        // An ugly hack, sorry
-        if (qualifier.pos.isRange) {
+        // An ugly hack. when can we actually print the name?
+        if (qualifier.isInstanceOf[New]) {
+          ()
+        } else if (qualifier.pos.isRange) {
           scopes.top add new SymTreePart(select) {
             override val start = select.pos.end - select.symbol.nameString.length
             override val end = select.pos.end
@@ -151,22 +154,33 @@ trait Partitioner {
             // actually need to skip even more
             scope.start = realStart
             
-            visitAll(trueBody)(part => ())
+            visitAll(trueBody) {
+              case part: WithRequirement => part.requirePost("\n")
+              case part => throw new Exception("Can't add requirement to part of type: "+ part.getClass)
+            }
           }
         }
         
       case apply @ Apply(fun, args) =>
         super.traverse(tree)
         
-      case lit @ Literal(constant) =>
-        scopes.top add new LiteralPart(lit)
+      case Literal(constant) =>
+        scopes.top add new TreePart(tree)
         super.traverse(tree)
         
-      /*case Block(stats, expr) =>
-        visitAll(stats)(part => ())*/
+      case Block(stats, expr) =>
+        if(expr.pos precedes stats.first.pos) {
+          traverse(expr)
+          super.traverseTrees(stats)
+        } else
+          super.traverse(tree)
+        
+      case New(tpt) =>
+        scopes.top add new TreePart(tree)
+        traverse(tpt)
         
       case _ =>
-        //println("Not handled: "+ tree.getClass())
+        println("Not handled: "+ tree.getClass())
         super.traverse(tree)
     }
     
