@@ -19,7 +19,7 @@ class PartsHolder(root: CompositePart) {
   
   def getNext(part: Part) = {
     
-    println("get next after: "+ part)
+//    println("get next after: "+ part)
    
     val neighbourhood = traverse(root, part)
     
@@ -32,7 +32,7 @@ class PartsHolder(root: CompositePart) {
   
   def getPrevious(part: Part) = {
     
-    println("get previous before: "+ part)
+//    println("get previous before: "+ part)
    
     val neighbourhood = traverse(root, part)
     

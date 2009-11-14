@@ -2,6 +2,7 @@ package scala.tools.refactor.transform
 
 import scala.tools.refactor.Compiler
 import scala.tools.nsc.util.Position
+import scala.tools.nsc.util.RangePosition
 
 trait Transform {
   

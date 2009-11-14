@@ -12,7 +12,7 @@ class MergerTest extends TestCase with TestHelper {
   def testSortClassParameters() = {
     "class A(i: Int, s: String)" transformsTo ("class A(s: String, i: Int)", reverseClassParameters.transform(_))
     "class A(i1: Int, i2: Int, i3: Int, i4: Int, i5: Int)" transformsTo ("class A(i5: Int, i4: Int, i3: Int, i2: Int, i1: Int)", reverseClassParameters.transform(_))
-    "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*//*1a*/, i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters.transform(_))
+    "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*/, /*1a*/i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters.transform(_))
   }
   
   def testSortSimpleClassMembers() = {
@@ -100,6 +100,23 @@ class MergerTest extends TestCase with TestHelper {
       }
     """, 
       reverseClassParameters.transform(_))
+  }
+  
+  def testInsertVal() = {
+            """
+object A {
+  /*test*/ val a = ""
+  /*test2*/ val b = ""
+}
+    """ transformsTo( 
+    """
+object A {
+<next does not exist>private val sample = _<current does not exist>
+  /*test*/ val a = ""
+  /*test2*/ val b = ""
+}
+    """, 
+      insertValue.transform(_))
   }
 }
 

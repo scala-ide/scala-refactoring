@@ -69,7 +69,7 @@ trait Merger {
          * the whitespace that is adjacent to the current part) and the (right) slice of whitespace that is directly
          * before the next part in the tree. Combined, we get all whitespace we need.
          * */
-        StringPart(whitespaceAfterCurrent._1 + whitespaceBeforeNext._2) :: Nil
+        StringPart(whitespaceAfterCurrent._1) :: StringPart(whitespaceBeforeNext._2) :: Nil
       }
     }
     
