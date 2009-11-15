@@ -43,8 +43,15 @@ trait Partitioner {
       
       case t: TypeTree => if(t.original != null) traverse(t.original)
       
+      case PackageDef(pid, stats) => 
+        scope(tree) { scope =>
+          super.traverse(tree)
+        }
+      
       case i: Ident =>
-        if (i.symbol.pos == NoPosition)
+        if(i.symbol.hasFlag(Flags.SYNTHETIC)) {
+          ()
+        } else if (i.symbol.pos == NoPosition)
           scopes.top add new SymTreePart(i) {
             override val end = start + i.name.length
         }
@@ -88,8 +95,10 @@ trait Partitioner {
         }*/
         
       case v @ ValDef(mods, name, typ, rhs) => 
-        mods.positions foreach addModifiers
-        scopes.top add new SymTreePart(v)
+        if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
+          mods.positions foreach addModifiers
+          scopes.top add new SymTreePart(v)
+        }
         super.traverse(tree)
 
       case select @ Select(qualifier, name)  =>
@@ -165,12 +174,15 @@ trait Partitioner {
           }
         }
         
-      case apply @ Apply(fun, args) =>
+      case Apply(fun, args) =>
         super.traverse(tree)
         
       case Literal(constant) =>
         scopes.top add new TreePart(tree)
         super.traverse(tree)
+        
+      case Block(Nil, expr) =>
+          super.traverse(tree)
         
       case Block(stats, expr) =>
         if(expr.pos precedes stats.first.pos) {
@@ -188,6 +200,11 @@ trait Partitioner {
           override val end = tree.pos.end
         }
         super.traverse(tree)
+        
+      case Match(selector: Tree, cases: List[CaseDef]) =>
+        scope(tree) { scope =>
+          super.traverse(tree)
+        }
         
       case _ =>
         println("Not handled: "+ tree.getClass())

@@ -141,4 +141,25 @@ class PartitionerTest extends TestCase with TestHelper {
       |❨|override| |def| |toString| = |super|.|toString|()|❩|
     }|❩|
   """
+
+  def testFunctions = 
+  """
+    object A {
+      def main(args: Array[String]) {
+        args.foreach(println)
+        args.foreach(println _)
+        args.foreach(s => println(s))
+      }
+    }
+  """ partitionsInto 
+  """
+    object |A| |❨|{
+      |❨|def| |main|(|args|: |Array|[|String|]) {
+        |args|.|foreach|(|println|)
+        |args|.|foreach|(|println| _)
+        |args|.|foreach|(|s| => |println|(|s|))
+      }|❩|
+    }|❩|
+  """
+
 }
