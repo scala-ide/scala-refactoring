@@ -2,32 +2,35 @@ package scala.tools.refactor.printer
 
 trait Merger {
   
-  def splitWhitespaceBetween(parts: Triple[Part,List[Part],Part]): Pair[String, String] = {
+  def splitWhitespaceBetween(parts: Option[Triple[Part,List[Part],Part]]): Pair[String, String] = parts match {
+    
+    case Some((left, whitespaceParts, right)) =>
           
-    val OpeningBrace = """(.*?\()(.*)""".r
-    val ClosingBrace = """(.*?)(\).*)""".r
-    val Comma = """(.*?),\s*(.*)""".r
-    val NewLine = """(?ms)(.*?\n)(.*)""".r
-    // strip comments!
-    
-    println("Splitting whitespace between "+ parts._1 +" and "+ parts._3)
-    
-    val whitespace = parts._2 mkString ""
-    
-    ((parts._1, whitespace, parts._3) match {
-      case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
-      case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
-      case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
-      case(_, Comma(l, r),        _) => (l, r, "Comma")
-      case(_, s                 , _) => (s, "","NoMatch")
-    }) match {
-      case(l, r, why) => 
-        println("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒ ("+ why +").")
-        (l, r)
-    }
+      val OpeningBrace = """(.*?\()(.*)""".r
+      val ClosingBrace = """(.*?)(\).*)""".r
+      val Comma = """(.*?),\s*(.*)""".r
+      val NewLine = """(?ms)(.*?\n)(.*)""".r
+      // strip comments!
+      
+      explain("Splitting whitespace between "+ left +" and "+ right)
+      
+      val whitespace = whitespaceParts mkString ""
+      
+      ((left, whitespace, right) match {
+        case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
+        case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
+        case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
+        case(_, Comma(l, r),        _) => (l, r, "Comma")
+        case(_, s                 , _) => (s, "","NoMatch")
+      }) match {
+        case(l, r, why) => 
+          explain("Whitespace ▒▒"+ whitespace +"▒▒ partitions into ▒▒"+ l +"▒▒ and ▒▒"+ r +"▒▒ ("+ why +").")
+          (l, r)
+      }
+    case None => "" -> ""
   }
   
-  private def explain(what: String) = println(what)
+  private def explain(what: String) = ()//println(what)
   
   def merge(part: CompositePart, original: CompositePart): List[Part] = {
     
@@ -37,8 +40,8 @@ trait Merger {
     
       explain("get ws after part: "+ current)
       
-      if(partsHolder.exists(current) && partsHolder.getNext(current)._3 == next) {
-        val (_, wsFound, nextFound) = partsHolder getNext current
+      if(partsHolder.exists(current) && partsHolder.getNext(current).get._3 == next) {
+        val (_, wsFound, nextFound) = (partsHolder getNext current).get //FIXME
         explain("Whitespace ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
         wsFound
       } else {

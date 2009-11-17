@@ -17,7 +17,7 @@ class PartsHolder(root: CompositePart) {
   
   def exists(part: Part) = traverse(root, part).exists(_ == part)
   
-  def getNext(part: Part) = {
+  def getNext(part: Part): Option[Triple[Part, List[Part], Part]] = {
     
 //    println("get next after: "+ part)
    
@@ -25,21 +25,33 @@ class PartsHolder(root: CompositePart) {
     
     val partInOriginal = neighbourhood.dropWhile(_ != part)
     
+    if(partInOriginal == Nil)
+      return None
+    
     val (whitespaceBetween, rest) = partInOriginal.tail.span(_.isWhitespace)
     
-    (partInOriginal.head, whitespaceBetween, rest.head)
+    if(rest == Nil)
+      return None
+      
+    Some((partInOriginal.head, whitespaceBetween, rest.head))
   }
   
-  def getPrevious(part: Part) = {
+  def getPrevious(part: Part): Option[Triple[Part, List[Part], Part]] = {
     
 //    println("get previous before: "+ part)
    
     val neighbourhood = traverse(root, part)
     
     val partInOriginal = neighbourhood.reverse.dropWhile(_ != part)
+    
+    if(partInOriginal == Nil)
+      return None
               
     val (whitespaceBetween, rest) = partInOriginal.tail.span(_.isWhitespace)
     
-    (rest.head, whitespaceBetween.reverse, partInOriginal.head)
+    if(rest == Nil)
+      return None
+    
+    Some((rest.head, whitespaceBetween.reverse, partInOriginal.head))
   }
 }

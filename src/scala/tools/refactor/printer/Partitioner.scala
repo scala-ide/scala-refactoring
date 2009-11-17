@@ -43,10 +43,10 @@ trait Partitioner {
       
       case t: TypeTree => if(t.original != null) traverse(t.original)
       
-      case PackageDef(pid, stats) => 
+      /*case PackageDef(pid, stats) => 
         scope(tree) { scope =>
           super.traverse(tree)
-        }
+        }*/
       
       case i: Ident =>
         if(i.symbol.hasFlag(Flags.SYNTHETIC)) {

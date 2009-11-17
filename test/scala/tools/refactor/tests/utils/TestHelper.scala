@@ -26,7 +26,7 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
       def splitAllWhitespaces(parts: List[Part]): String = parts match {
         case x :: y :: xs =>
           val (ws, rest) = (y :: xs).span(_.isWhitespace)
-          val (left, right) = splitWhitespaceBetween(x, ws, rest.head)
+          val (left, right) = splitWhitespaceBetween(Some(x, ws, rest.head))
           
           x.print + left +"▒"+ right + splitAllWhitespaces(rest)
         case _ => ""
