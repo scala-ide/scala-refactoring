@@ -6,79 +6,79 @@ import scala.tools.refactor.transform._
 
 object PartsPrinter extends Partitioner with CompilerProvider with Transform with Merger {
   
-  def m(partsWithWs: CompositePart, part: CompositePart) {
+  def visualize(tree: compiler.Tree) {
     
-    val partsHolder = new PartsHolder(partsWithWs)
+    val partsHolder = new PartsHolder(splitIntoParts(tree))
     
     def id(part: Part) = part match {
       case part: OriginalSourcePart => ""+ part.start +"999"+ part.end
       case _ => "?"
     }
+    
+    def escape(s: String) = s.replace("\n", "\\n").replace(" ", "·").replace(">", "&gt;")
+    
+    def formatNode(id: String, left: String, middle: String, right: String, color: String = "bisque") = {
+      
+      val l = if(left != "") "<TD>" + escape(left) +"</TD>" else ""
+      val r = if(right != "") "<TD>" + escape(right) +"</TD>" else ""
+    
+      id +"[label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"2\"><TR>"+l+"<TD BGCOLOR=\""+ color +"\">"+ middle +"</TD>"+r+"</TR></TABLE>>];"
+    }
   
     def innerMerge(part: CompositePart): Unit = {
-      
-      def escape(s: String) = s.replace("\n", "\\\\n").replace("{", "\\{").replace("}", "\\}")
       
       val currentParent = id(part)
         
       val wsBefore = splitWhitespaceBetween(partsHolder getPrevious part)._2
       val wsAfter  = splitWhitespaceBetween(partsHolder getNext part)._1
     
-      println("  "+ currentParent +"[label=\""+ escape(wsBefore) +"|<1>"+ part.tree.getClass.toString.split("\\$").last +"|"+ escape(wsAfter) +"\"];")
+      println(formatNode(currentParent, wsBefore, part.tree.getClass.toString.split("\\$").last, wsAfter, "lightgrey"))
       
-      part.children  foreach {
+      part.children foreach {
         case current: CompositePart => 
           innerMerge(current)
-          println("  "+ currentParent +":1 -> "+ id(current)) +":1"
         case current: CompositePart#BeginOfScope =>
           val wsAfter  = splitWhitespaceBetween(partsHolder getNext current)._1
     
-          println("  "+ id(current) +"[label=\""+ current.toString +"|"+ escape(wsAfter) +"\"];")
-          println("  "+ currentParent +" -> "+ id(current))
+          println(formatNode(id(current), "", "◆", wsAfter))
         case current: CompositePart#EndOfScope =>
           val wsBefore = splitWhitespaceBetween(partsHolder getPrevious current)._2
     
-          println("  "+ id(current) +"[label=\""+ escape(wsBefore) +"|"+ current.toString +"\"];")
-          println("  "+ currentParent +" -> "+ id(current))
+          println(formatNode(id(current), wsBefore, "◆", ""))
         case current =>
           val wsBefore = splitWhitespaceBetween(partsHolder getPrevious current)._2
           val wsAfter  = splitWhitespaceBetween(partsHolder getNext current)._1
     
-          println("  "+ id(current) +"[label=\""+ escape(wsBefore) +"|"+ current.toString +"|"+ escape(wsAfter) +"\"];")
-          println("  "+ currentParent +" -> "+ id(current))
+          println(formatNode(id(current), wsBefore, current.toString, wsAfter))
       }
+            
+      part.children foreach (part => println("  "+ currentParent +" -> "+ id(part)))
     }
-    innerMerge(part)
-  }
-
-  
-  def main(args : Array[String]) : Unit = {
-
-//    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
-    val tree = treeFrom("""
-      class A(i: Int) {
-        val b: String //b-string
-        def c: Unit = {
-          def d: Int = {
-            5
-          }
-          d
-        } //end of c
-      }
-""")
     
     println(""" 
 digraph structs {   
   ordering=out
-  //ranksep = 0.2;
-  //edge[arrowsize=1, weight=100, arrowhead=none];
-  node[shape=record, fontname="Courier", margin=0.05, height=0.4, width=0]
+  node[shape=plaintext, fontname="Courier", margin=0.05, height=0.4, width=0]
     """)
- 
-    m(splitIntoParts(tree), essentialParts(tree))
+    
+    innerMerge(essentialParts(tree))
   
     println("\n}")
+  }
+  
+  def main(args : Array[String]) : Unit = {
+
+    val tree = treeFrom("""
+class A(i: Int) extends AnyRef {
+  val b: String //b-string
+  def c: Unit = {
+    5 * 5
+  } //end of c
+}
+""")
     
+    visualize(tree)
+  
     // why?
     exit(0)
   }
