@@ -138,7 +138,7 @@ class PartitionerTest extends TestCase with TestHelper {
   """ partitionsInto 
   """
     class |A| |❨|{
-      |❨|override| |def| |toString| = |super|.|toString|()|❩|
+      |❨|override| |def| |toString| = |❨|super|.|toString|()|❩|❩|
     }|❩|
   """
 
@@ -154,11 +154,11 @@ class PartitionerTest extends TestCase with TestHelper {
   """ partitionsInto 
   """
     object |A| |❨|{
-      |❨|def| |main|(|args|: |Array|[|String|]) {
+      |❨|def| |main|(|args|: |Array|[|String|]) |❨|{
         |args|.|foreach|(|println|)
         |args|.|foreach|(|println| _)
         |args|.|foreach|(|s| => |println|(|s|))
-      }|❩|
+      }|❩|❩|
     }|❩|
   """
 

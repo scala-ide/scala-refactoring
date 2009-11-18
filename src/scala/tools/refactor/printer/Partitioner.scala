@@ -5,6 +5,7 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
+import scala.tools.refactor.UnknownPosition
 
 trait Partitioner {
   self: scala.tools.refactor.Compiler =>
@@ -16,12 +17,64 @@ trait Partitioner {
     
     private var scopes = new scala.collection.mutable.Stack[CompositePart]
     
-    def scope(t: Tree)(body: CompositePart => Unit) = {
-      val newScope = CompositePart(t)
-      scopes.top add newScope
-      scopes push newScope
-      body(newScope)
-      scopes pop
+    def scope(t: Tree, adjustStart: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)), adjustEnd: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)) )(body: => Unit): Unit = t match {
+      case EmptyTree => 
+      case _ =>
+        // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
+        val (start: Int, end: Int) = (adjustStart(t.pos.start, t.pos.source),  adjustEnd(t.pos.end, t.pos.source)) match {
+          case (Some(start), Some(end)) => (start, end)
+          case _ => (t.pos.start, t.pos.end)
+        }
+        val newScope = CompositePart(start, end, t.pos.source)
+        scopes.top add newScope
+        scopes push newScope
+        body
+        scopes pop
+    }
+    
+    def noChange(offset: Int, file: SourceFile) = offset
+    
+    def forwardsTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
+      
+      def isWhitespace(c: Char) = c match {
+        case '\n' | '\t' | ' ' | '\r' => true
+        case _ => false
+      }
+            
+      var i = offset
+      // remove the comment
+      
+      while(isWhitespace(file.content(i))) {
+        i += 1
+      }
+      
+      if(file.content(i) == to)
+        Some(i + 1) //the end points to the character _after_ the found character
+      else
+        None
+    }
+    
+    def backwardsTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
+      
+      def isWhitespace(c: Char) = c match {
+        case '\n' | '\t' | ' ' | '\r' => true
+        case _ => false
+      }
+      
+      if(file.content(offset) == to) 
+        return Some(offset)
+            
+      var i = offset - 1
+      // remove the comment
+      
+      while(isWhitespace(file.content(i))) {
+        i -= 1
+      }
+      
+      if(file.content(i) == to)
+        Some(i)
+      else
+        None
     }
         
     val addModifiers = (x: Pair[Long, Position]) => scopes.top add new FlagPart(x._1, x._2)
@@ -33,11 +86,17 @@ trait Partitioner {
         traverse(x)
       case x :: xs => 
         traverse(x)
-        separator(scopes.top.trueChildren.last)
+        if(scopes.top.trueChildren != Nil)
+          separator(scopes.top.trueChildren.last)
         visitAll(xs)(separator)
     }
     
     override def traverse(tree: Tree) = tree match {
+      
+      case tree if tree.pos == UnknownPosition => 
+        println("*woot* a new node!")
+        scopes.top add ArtificialTreePart(tree)
+        super.traverse(tree)
       
       case tree if !tree.pos.isRange => ()
       
@@ -68,31 +127,6 @@ trait Partitioner {
         mods.positions foreach addModifiers
         scopes.top add new SymTreePart(m)
         super.traverse(tree)
-       /* 
-      case v @ ValDef(mods, name, typ, rhs: Block) => 
-        
-        scope(tree) { scope =>
-          mods.positions foreach addModifiers
-          scopes.top add new SymTreePart(v)
-          super.traverse(tree)
-          
-          def forwardTo(file: SourceFile, currentPos: Int): Int = {
-            
-            def isWhitespace(c: Char) = c match {
-              case '\n' | '\t' | ' ' | '\r' => true
-              case _ => false
-            }
-            
-            var i = currentPos;
-            // remove the comment
-            do {
-              i += 1
-            } while(isWhitespace(file.content(i)))
-            i + 1
-          }
-          
-          scope.end = forwardTo(scope.file, scope.end)
-        }*/
         
       case v @ ValDef(mods, name, typ, rhs) => 
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
@@ -121,11 +155,22 @@ trait Partitioner {
         }
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
-        scope(defdef) { scope =>
+        scope(defdef) {
           mods.positions foreach addModifiers
           if(defdef.pos.point >=defdef.pos.start)
             scopes.top add new SymTreePart(defdef)
-          super.traverse(tree)
+          
+          traverseTrees(mods.annotations)
+          traverseTrees(tparams)
+          traverseTreess(vparamss)
+          traverse(tpt)
+          rhs match {
+            case rhs: Block => traverse(rhs)
+            case _ => scope(rhs, backwardsTo('{'), forwardsTo('}')) {
+              traverse(rhs)
+            }
+          }
+
         }
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
@@ -154,21 +199,22 @@ trait Partitioner {
           case _ => throw new Exception("Can't add requirement.")
         }
         
-        val(trueBody, earlyBody) = restBody.filter(withRange).partition( (t: Tree) => parents.forall(_.pos precedes t.pos))
+        val(earlyBody, _) = restBody.filter(withRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
 
         visitAll(earlyBody)(part => ())
         
-        visitAll(parents)(part => ())        
-                
+        visitAll(parents)(part => ())
+        
+        val trueBody = (restBody -- earlyBody).filter(t => t.pos.isRange || t.pos == UnknownPosition)
+        
         if(trueBody.size > 0) {
-          scope(tree) { scope =>// fix the start
-          
-            val realStart = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(scope.start) ( _ max _.pos.end )
-            // actually need to skip even more
-            scope.start = realStart
-            
+          scope(tree, ((start, _) => Some((classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )))) {
+            // fix the start
+
             visitAll(trueBody) {
-              case part: WithRequirement => part.requirePost("\n")
+              case part: WithRequirement => 
+              println("add newline requirement to part "+ part)
+              part.requirePost("\n")
               case part => throw new Exception("Can't add requirement to part of type: "+ part.getClass)
             }
           }
@@ -182,14 +228,17 @@ trait Partitioner {
         super.traverse(tree)
         
       case Block(Nil, expr) =>
-          super.traverse(tree)
+        super.traverse(tree)
         
       case Block(stats, expr) =>
         if(expr.pos precedes stats.first.pos) {
           traverse(expr)
           super.traverseTrees(stats)
-        } else
-          super.traverse(tree)
+        } else {
+          scope (tree, backwardsTo('{'), forwardsTo('}')) {
+            super.traverse(tree)
+          }
+        }
         
       case New(tpt) =>
         scopes.top add new TreePart(tree)
@@ -202,7 +251,7 @@ trait Partitioner {
         super.traverse(tree)
         
       case Match(selector: Tree, cases: List[CaseDef]) =>
-        scope(tree) { scope =>
+        scope(tree) {
           super.traverse(tree)
         }
         
@@ -213,10 +262,7 @@ trait Partitioner {
     
     def visit(tree: Tree) = {
       
-      val rootPart = new CompositePart(tree) {
-        start = 0
-        end = file.length
-      }
+      val rootPart = CompositePart(0, tree.pos.source.length, tree.pos.source)
       
       scopes push rootPart
       
@@ -239,11 +285,12 @@ trait Partitioner {
         
         p.trueChildren.clear
         
-        //println("pairs of children: "+ childrenPairs)
+//        println("pairs of children: "+ childrenPairs)
         
         def whitespace(start: Int, end: Int, file: SourceFile) {
-          if(start < end)
+          if(start < end) {
             p add WhitespacePart(start, end, file)
+          }
         }
 
         (childrenPairs) foreach {

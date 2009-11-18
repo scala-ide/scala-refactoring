@@ -4,7 +4,7 @@ import scala.tools.refactor.tests.utils._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-object PartsPrinter extends Partitioner with CompilerProvider with Transform with Merger {
+object PartsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceSplitter with TreePrinter {
   
   def visualize(tree: compiler.Tree) {
     
@@ -32,7 +32,7 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform wit
       val wsBefore = splitWhitespaceBetween(partsHolder getPrevious part)._2
       val wsAfter  = splitWhitespaceBetween(partsHolder getNext part)._1
     
-      println(formatNode(currentParent, wsBefore, part.tree.getClass.toString.split("\\$").last, wsAfter, "lightgrey"))
+      println(formatNode(currentParent, wsBefore, /*part.tree.getClass.toString.split("\\$").last*/"<>", wsAfter, "lightgrey"))
       
       part.children foreach {
         case current: CompositePart => 
@@ -69,13 +69,13 @@ digraph structs {
   def main(args : Array[String]) : Unit = {
 
     val tree = treeFrom("""
-class A(i: Int) extends AnyRef {
-  val b: String //b-string
-  def c: Unit = {
-    5 * 5
-  } //end of c
+class A {
+  def test = {
+    5
+    5
+  }
 }
-""")
+        """)
     
     visualize(tree)
   

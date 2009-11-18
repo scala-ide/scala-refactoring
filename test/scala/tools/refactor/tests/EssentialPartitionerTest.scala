@@ -11,5 +11,5 @@ class EssentialPartitionerTest extends TestCase with TestHelper {
   
   def testClassBraces = "class A { type T }" essentialPartsAre "❨|A|❨|type|T|❩|❩"
   
-  def testClassBraces2 = "class A { def a = { 2 } }" essentialPartsAre "❨|A|❨|❨|def|a|2|❩|❩|❩"
+  def testClassBraces2 = "class A { def a = { 2 } }" essentialPartsAre "❨|A|❨|❨|def|a|❨|2|❩|❩|❩|❩"
 }
