@@ -56,7 +56,7 @@ case class RequirementPart(string: String) extends Part {
   val print = string
 }
 
-case class CompositePart(start: Int, end: Int, file: SourceFile) extends Part with OriginalSourcePart {
+case class CompositePart(start: Int, end: Int, file: SourceFile, origin: String = "Tree") extends Part with OriginalSourcePart {
 
   class BeginOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: CompositePart) extends Part with OriginalSourcePart {
     override def toString = "❨"

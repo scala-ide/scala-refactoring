@@ -18,21 +18,26 @@ trait Partitioner {
     private var scopes = new scala.collection.mutable.Stack[CompositePart]
     
     def scope(t: Tree, adjustStart: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)), adjustEnd: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)) )(body: => Unit): Unit = t match {
-      case EmptyTree => 
+      case EmptyTree => ()
+      case tree if tree.pos == UnknownPosition => 
+        body
+        ()
+      case tree if !tree.pos.isRange =>
+        ()
       case _ =>
         // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
         val (start: Int, end: Int) = (adjustStart(t.pos.start, t.pos.source),  adjustEnd(t.pos.end, t.pos.source)) match {
           case (Some(start), Some(end)) => (start, end)
           case _ => (t.pos.start, t.pos.end)
         }
-        val newScope = CompositePart(start, end, t.pos.source)
+        val newScope = CompositePart(start, end, t.pos.source, t.getClass.getSimpleName)
         scopes.top add newScope
         scopes push newScope
         body
         scopes pop
     }
     
-    def noChange(offset: Int, file: SourceFile) = offset
+    def noChange(offset: Int, file: SourceFile) = Some(offset)
     
     def forwardsTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
       
