@@ -90,7 +90,7 @@ trait Merger {
     
     parts match {
       case Nil => Nil
-      case previous :: (current: WithRequirement) :: next :: rest if current.hasRequirements => 
+      case previous :: current :: next :: rest if current.hasRequirements => 
   
         val whitespaceBefore = previous.print
         val whitespaceAfter = next.print
