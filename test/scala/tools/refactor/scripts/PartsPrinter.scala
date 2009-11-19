@@ -11,18 +11,19 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform wit
     val partsHolder = new PartsHolder(splitIntoParts(tree))
     
     def id(part: Part) = part match {
+      case part: CompositePart#EndOfScope => ""+ part.parent.hashCode
       case part: OriginalSourcePart => ""+ part.start +"999"+ part.end
       case _ => "?"
     }
     
-    def escape(s: String) = s.replace("\n", "\\n").replace(" ", "·").replace(">", "&gt;")
+    def escape(s: String) = s.replace("\n", "\\n").replace(" ", "·").replace(">", "&gt;").replace("<", "&lt;")
     
     def formatNode(id: String, left: String, middle: String, right: String, color: String = "bisque") = {
       
       val l = if(left != "") "<TD>" + escape(left) +"</TD>" else ""
       val r = if(right != "") "<TD>" + escape(right) +"</TD>" else ""
     
-      id +"[label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"2\"><TR>"+l+"<TD BGCOLOR=\""+ color +"\">"+ middle +"</TD>"+r+"</TR></TABLE>>];"
+      id +"[label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"2\"><TR>"+l+"<TD BGCOLOR=\""+ color +"\">"+ escape(middle) +"</TD>"+r+"</TR></TABLE>>];"
     }
   
     def innerMerge(part: CompositePart): Unit = {
@@ -43,7 +44,7 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform wit
           println(formatNode(id(current), "", "◆", wsAfter))
         case current: CompositePart#EndOfScope =>
           val wsBefore = splitWhitespaceBetween(partsHolder getPrevious current)._2
-    
+          
           println(formatNode(id(current), wsBefore, "◆", ""))
         case current =>
           val wsBefore = splitWhitespaceBetween(partsHolder getPrevious current)._2
@@ -72,6 +73,8 @@ digraph structs {
 class A {
   def test = {
     5
+  }
+  def test2 = {
     5
   }
 }
