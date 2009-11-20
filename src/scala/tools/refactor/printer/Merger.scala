@@ -24,21 +24,23 @@ trait Merger {
          * We have to split the whitespace between our current part and its next part in the original 
          * source
          * */
-        val whitespaceAfterCurrent = 
+        val (whitespaceAfterCurrent, _) = 
           if(partsHolder exists current) {
             splitWhitespaceBetween(partsHolder getNext current)
           } else {
-            ("<current does not exist>", "<current does not exist>")
+            //("<current does not exist>", "<current does not exist>")
+            ("", "")
           }
         
         /*
          * We also need the whitespace of our right neighbour:
          * */
-        val whitespaceBeforeNext = 
+        val (_, whitespaceBeforeNext) = 
           if(partsHolder exists next) {
             splitWhitespaceBetween(partsHolder getPrevious next)
           } else {
-            ("<next does not exist>", "<next does not exist>")
+            //("<next does not exist>", "<next does not exist>")
+            ("", "")
           }
         
         /*
@@ -46,12 +48,20 @@ trait Merger {
          * the whitespace that is adjacent to the current part) and the (right) slice of whitespace that is directly
          * before the next part in the tree. Combined, we get all whitespace we need.
          * */
-        StringPart(whitespaceAfterCurrent._1) :: StringPart(whitespaceBeforeNext._2) :: Nil
+        
+        val allWhitespace = whitespaceAfterCurrent + whitespaceBeforeNext
+        
+        // check for overlapping whitespaces and requirements! => testSortWithJustOne
+        val wsWithReqs1 = current.postRequirements.map( req => if(!allWhitespace.contains(req)) req else ""  ) mkString ""
+        val wsWithReqs2 = next.preRequirements.map( req => if(!allWhitespace.contains(req)) req else ""  ) mkString ""
+        
+        new StringPart(whitespaceAfterCurrent + wsWithReqs1 + whitespaceBeforeNext + wsWithReqs2) with Whitespace :: Nil
       }
     }
     
     def partFrom(part: Part) = part match {
       case part if partsHolder exists part => part
+      case part: FlagPart => StringPart(part.print) copyRequirements part
       case part: WithTree => print(part)
       case part: WithRequirement => StringPart("<non-tree part: "+ part.print +">") copyRequirements part
       case _ => StringPart("<non-tree part>")
@@ -64,18 +74,18 @@ trait Merger {
       explain("traversing parts: "+ list)
       
       list flatMap {
-        case (current: CompositePart, next) => 
-          val allInner: List[Part] = innerMerge(current)
-          allInner.last copyRequirements current
-          allInner ::: withWhitespace(current, next)
+        case (current: CompositePart, next) => innerMerge(current) ::: withWhitespace(current, next)
+        // do we need the end-of-scope thing? case (current, next: CompositePart#EndOfScope) => partFrom(current) :: withWhitespace(current, next) ::: next :: Nil
         case (current, next) => partFrom(current) :: withWhitespace(current, next)
       }
     }
     
-    satisfyRequirements(innerMerge(part))
+    innerMerge(part)
+    
+    //satisfyRequirements(merged)
   }
 
-  private def satisfyRequirements(parts: List[Part]): List[Part] = { 
+  private def satisfyRequirements(parts: List[Part], lastWhitespace: String = ""): List[Part] = { 
     
     val handleRequirement: (String) => ( (String, List[Part]) => List[Part] ) = (
       whitespace => (
@@ -87,20 +97,26 @@ trait Merger {
           }
       )
     )
-    
+     
     parts match {
       case Nil => Nil
-      case previous :: current :: next :: rest if current.hasRequirements => 
+      case (previous: Whitespace) :: current :: (next: Whitespace) :: rest if current.hasRequirements => 
   
-        val whitespaceBefore = previous.print
+        val whitespaceBefore = lastWhitespace + previous.print
         val whitespaceAfter = next.print
-     
+    
         previous :: 
           current.preRequirements.foldRight(List[Part]())(handleRequirement(whitespaceBefore)) ::: 
             current :: 
               next :: 
                 current.postRequirements.foldRight(List[Part]())(handleRequirement(whitespaceAfter)) ::: 
-                  satisfyRequirements(rest)
+                  satisfyRequirements(rest, whitespaceAfter)
+                  
+      case (previous: Whitespace) :: (current: Whitespace) :: rest =>
+        previous :: satisfyRequirements(current :: rest, previous.print + current.print)
+        
+      case (previous: Whitespace) :: current :: (next: Whitespace) :: rest =>
+        previous :: current :: next :: satisfyRequirements(rest, next.print)
         
       case x :: xs => x :: satisfyRequirements(xs)
     }

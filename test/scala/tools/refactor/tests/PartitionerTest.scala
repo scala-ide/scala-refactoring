@@ -5,20 +5,27 @@ import junit.framework.TestCase
 import org.junit.Test
 
 @Test
-class PartitionerTest extends TestCase with TestHelper {
-    
+class PartitionerTest extends TestHelper {
+   
+  @Test
   def testSingleObject = "object A" partitionsInto "object |A"
   
+  @Test
   def testSingleClass = "class A" partitionsInto "class |A"
   
+  @Test
   def testSingleAbstractClass = "abstract class A" partitionsInto "abstract| class |A"
   
+  @Test
   def testSingleTrait = "trait C" partitionsInto "trait| |C"
   
+  @Test
   def testClassWithManyModifiers = "final /*comment*/ class X" partitionsInto "final| /*comment*/ class |X"
   
+  @Test
   def testSingleTraitWithComment = "trait /*comment*/ C" partitionsInto "trait| /*comment*/ |C"
 
+  @Test
   def testObjectWithWS =
     """
         // here comes an object:
@@ -30,8 +37,10 @@ class PartitionerTest extends TestCase with TestHelper {
     """
 
 
+  @Test
   def testPrettyPackages = "/**/ package /**/ x/**/./**/y/**/./**/z/**/" partitionsInto "/**/ package /**/ |x|/**/./**/|y|/**/./**/|z|/**/"
   
+  @Test
   def testPackageAndClass = 
     """
         package x
@@ -44,8 +53,10 @@ class PartitionerTest extends TestCase with TestHelper {
         |final| class |A|
     """
 
+  @Test
   def testClassExtends = "class X extends AnyRef" partitionsInto "class |X| extends |AnyRef"
   
+  @Test
   def testClassExtendsWithTrait =
   """
     trait A; trait B
@@ -56,6 +67,7 @@ class PartitionerTest extends TestCase with TestHelper {
     class |X| extends |AnyRef| with |A| with |B|
   """
 
+  @Test
   def testClassWithBody = 
   """
     class X extends AnyRef {
@@ -68,8 +80,10 @@ class PartitionerTest extends TestCase with TestHelper {
     }
   """
 
+  @Test
   def testCaseClass = "case class X(i: Int, s: String)" partitionsInto "case| class |X|(|i|: |Int|, |s|: |String|)" 
   
+  @Test
   def testClassParamsWithBody =
   """
     class Xyz(private val abc: String, var int: Int) {
@@ -80,16 +94,22 @@ class PartitionerTest extends TestCase with TestHelper {
     }
   """
 
-  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends |A|❨| { object |C| }|❩|/*done*/" 
+  @Test
+  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends |A| |❨|{ object |C| }|❩|/*done*/" 
     
+  @Test
   def testNestedPackages = "package x.y.z" partitionsInto "package |x|.|y|.|z"
 
+  @Test
   def testPackage = "class Abc //done" partitionsInto "class |Abc| //done"
   
+  @Test
   def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "class |Xyz|(|i|: |Int|/**/)/**/"
   
+  @Test
   def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends { |type| |T| } with |A| {  }/*done*/"
 
+  @Test
   def testEarlyDefFromSpec5_1_8 =
   """
     trait Greeting {
@@ -108,12 +128,15 @@ class PartitionerTest extends TestCase with TestHelper {
       |val| |msg| = |"How are you, "| |+|name|
     }|❩|
     class |C| extends {
-      |❨|val |name| = |"Bob"|❩|
-    } with |Greeting|❨| {
+      |❨|❨|{
+      val |name| = |"Bob"|
+    }|❩|❩|
+    } with |Greeting| |❨|{
       |println|(|msg|)
     }|❩|
   """
 
+  @Test
   def testNew = 
   """
     trait A {
@@ -130,6 +153,7 @@ class PartitionerTest extends TestCase with TestHelper {
     }|❩|
   """
 
+  @Test
   def testSuper = 
   """
     class A {
@@ -142,6 +166,7 @@ class PartitionerTest extends TestCase with TestHelper {
     }|❩|
   """
 
+  @Test
   def testFunctions = 
   """
     object A {

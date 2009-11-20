@@ -1,8 +1,11 @@
 package scala.tools.refactor.transform
 
 import scala.tools.refactor.Compiler
+import scala.tools.refactor.UnknownPosition
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.util.RangePosition
+import scala.tools.nsc.ast.parser.Tokens
+import scala.tools.nsc.symtab.Flags
 
 trait Transform {
   
@@ -24,10 +27,21 @@ trait Transform {
       tree1 match {
         
         case tpl @ Template(parents, self, body) => 
-              
-          val v = atPos(tree1.pos)(ValDef(Modifiers(scala.tools.nsc.symtab.Flags.PRIVATE), newTermName("sample"), TypeTree(NoType), EmptyTree)) 
           
-          new Template(parents, self, v :: body).copyAttrs(tree)
+          val typ: TypeTree = body(1) match {
+            case tree: DefDef => tree.tpt.asInstanceOf[TypeTree]
+          }
+          
+          val v = ValDef(Modifiers(Flags.PARAM), newTermName("sample"), TypeTree(typ.tpe) setPos UnknownPosition, EmptyTree) setPos UnknownPosition
+          
+          val rhs = body.last match {
+            case tree: ValOrDefDef => tree.rhs
+          }
+
+          
+          val d =  DefDef(Modifiers(0) withPosition (Tokens.DEF, UnknownPosition), newTermName("newDefDef"), Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe) setPos UnknownPosition, rhs) setPos UnknownPosition
+          
+          new Template(parents, self, d :: body).copyAttrs(tree)
         
         case x => x
       }

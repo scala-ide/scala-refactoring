@@ -7,14 +7,29 @@ import org.junit.Assert._
 import scala.tools.refactor.printer._
 
 @Test
-class MergerTest extends TestCase with TestHelper {
+class MergerTest extends TestHelper {
 
+  @Test
   def testSortClassParameters() = {
     "class A(i: Int, s: String)" transformsTo ("class A(s: String, i: Int)", reverseClassParameters.transform(_))
     "class A(i1: Int, i2: Int, i3: Int, i4: Int, i5: Int)" transformsTo ("class A(i5: Int, i4: Int, i3: Int, i2: Int, i1: Int)", reverseClassParameters.transform(_))
     "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*/, /*1a*/i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters.transform(_))
   }
   
+  @Test
+  def testSortClassParametersAndComment() = {
+    """
+      class A(i: Int, s: String)
+      // comment 
+    """ transformsTo (
+    """
+      class A(s: String, i: Int)
+      // comment 
+    """,
+      reverseClassParameters.transform(_))
+  }
+  
+  @Test
   def testSortSimpleClassMembers() = {
      """
       class A { //
@@ -29,8 +44,28 @@ class MergerTest extends TestCase with TestHelper {
       }
     """, 
       reverseClassParameters.transform(_))
+  }  
+  
+  @Test
+  def testSortWithJustOne() = {
+     """
+      class A { //
+        def a(i: Int) {
+          i
+        }
+      }
+    """ transformsTo( 
+    """
+      class A { //
+        def a(i: Int)  = {
+          i
+        }
+      }
+    """, 
+      reverseClassParameters.transform(_))
   }
   
+  @Test
   def testSortClassMembersAndArguments() = {
     """
       class A(i: Int, j: Int) { //
@@ -48,6 +83,7 @@ class MergerTest extends TestCase with TestHelper {
       
   }
   
+  @Test
   def testSortClassMembers() = {
     """
       class A {
@@ -74,6 +110,7 @@ class MergerTest extends TestCase with TestHelper {
       reverseClassParameters.transform(_))
   }
   
+  @Test
   def testSortNestedClassMembers() = {
         """
       class A {
@@ -102,18 +139,28 @@ class MergerTest extends TestCase with TestHelper {
       reverseClassParameters.transform(_))
   }
   
+  @Test
   def testInsertVal() = {
             """
 object A {
-  /*test*/ val a = ""
-  /*test2*/ val b = ""
+  /*test*/ def abc(i: Int) = {
+    42
+  }
+  /*test2*/ def b = {
+    println("hello")
+    5
+  }
 }
     """ transformsTo( 
     """
 object A {
-<next does not exist>private val sample = _<current does not exist>
-  /*test*/ val a = ""
-  /*test2*/ val b = ""
+  /*test*/ def abc(i: Int) = {
+    42
+  }
+  /*test2*/ def b = {
+    println("hello")
+    5
+  }
 }
     """, 
       insertValue.transform(_))

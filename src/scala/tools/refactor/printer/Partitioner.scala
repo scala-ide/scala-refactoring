@@ -12,16 +12,31 @@ trait Partitioner {
   import compiler._
   
   private class Visitor extends Traverser {
-    
-    type PartList = ListBuffer[OriginalSourcePart]
-    
+        
     private var scopes = new scala.collection.mutable.Stack[CompositePart]
     
-    def scope(t: Tree, adjustStart: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)), adjustEnd: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)) )(body: => Unit): Unit = t match {
+    private val preRequirements = new ListBuffer[String]
+    
+    def requirePre(r: String) = preRequirements += r
+    
+    def requirePost(r: String) = {
+      if(preRequirements.size > 0)
+        requirePre(r)
+      else
+        scopes.top.trueChildren.last.requirePost(r)
+    }
+    
+    def requirePostOrPre(r: String) = {
+      if(scopes.top.trueChildren == Nil)
+        requirePre(r)
+      else
+        requirePost(r)
+    }
+    
+    def scope(t: Tree, adjustStart: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)), adjustEnd: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)) )(body: => Unit) = t match {
       case EmptyTree => ()
       case tree if tree.pos == UnknownPosition => 
         body
-        ()
       case tree if !tree.pos.isRange =>
         ()
       case _ =>
@@ -30,7 +45,14 @@ trait Partitioner {
           case (Some(start), Some(end)) => (start, end)
           case _ => (t.pos.start, t.pos.end)
         }
+        
         val newScope = CompositePart(start, end, t.pos.source, t.getClass.getSimpleName)
+        
+        if(preRequirements.size > 0) {
+          preRequirements.foreach(newScope requirePre _)
+          preRequirements.clear
+        }
+        
         scopes.top add newScope
         scopes push newScope
         body
@@ -39,7 +61,20 @@ trait Partitioner {
     
     def noChange(offset: Int, file: SourceFile) = Some(offset)
     
-    def forwardsTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
+    def forwardsTo(to: Char, max: Int)(offset: Int, file: SourceFile): Option[Int] = {
+      var i = offset
+      
+      while(file.content(i) != to && i < max) {
+        i += 1
+      }
+      
+      if(file.content(i) == to)
+        Some(i)
+      else
+        None
+    }
+    
+    def skipWhitespaceTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
       
       def isWhitespace(c: Char) = c match {
         case '\n' | '\t' | ' ' | '\r' => true
@@ -59,7 +94,7 @@ trait Partitioner {
         None
     }
     
-    def backwardsTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
+    def backwardsSkipWhitespaceTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
       
       def isWhitespace(c: Char) = c match {
         case '\n' | '\t' | ' ' | '\r' => true
@@ -82,7 +117,22 @@ trait Partitioner {
         None
     }
         
-    val addModifiers = (x: Pair[Long, Position]) => scopes.top add new FlagPart(x._1, x._2)
+    def addModifiers(x: Pair[Long, Position]) = scopes.top add new FlagPart(x._1, x._2)
+    def addPart(tree: Tree): Part = {
+      val part = tree match {
+        case tree if tree.pos == UnknownPosition => ArtificialTreePart(tree)
+        case tree: SymTree => SymTreePart(tree)
+        case _ => TreePart(tree)
+      }
+      addPart(part)
+      part
+    }
+    
+    def addPart(part: Part) = {
+      scopes.top add part
+      preRequirements.foreach(part requirePre _)
+      preRequirements.clear
+    }
     
     def visitAll(trees: List[Tree])(separator: Part => Unit ): Unit = trees match {
       case Nil => 
@@ -96,49 +146,56 @@ trait Partitioner {
         visitAll(xs)(separator)
     }
     
-    override def traverse(tree: Tree) = tree match {
+    override def traverse(tree: Tree): Unit = {
       
-      case tree if tree.pos == UnknownPosition => 
-        println("*woot* a new node!")
-        scopes.top add ArtificialTreePart(tree)
-        super.traverse(tree)
+      if(tree.pos != UnknownPosition && !tree.pos.isRange)
+        return
       
-      case tree if !tree.pos.isRange => ()
+      tree match {
       
-      case t: TypeTree => if(t.original != null) traverse(t.original)
+      case t: TypeTree => 
+        if(t.original != null) 
+          traverse(t.original)
+        else if(t.pos == UnknownPosition)
+          addPart(t)
       
       /*case PackageDef(pid, stats) => 
-        scope(tree) { scope =>
+        scope(tree) {
           super.traverse(tree)
         }*/
       
       case i: Ident =>
-        if(i.symbol.hasFlag(Flags.SYNTHETIC)) {
+        if(i.symbol.hasFlag(Flags.SYNTHETIC))
           ()
-        } else if (i.symbol.pos == NoPosition)
-          scopes.top add new SymTreePart(i) {
+        else if (i.symbol.pos == NoPosition)
+          addPart(new SymTreePart(i) {
             override val end = start + i.name.length
-        }
+          })
         else
-          scopes.top add new SymTreePart(i)
+          addPart(i)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
         mods.positions foreach addModifiers
         if (!c.symbol.isAnonymousClass)
-          scopes.top add new SymTreePart(c)
+          addPart(c)
         super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) => 
         mods.positions foreach addModifiers
-        scopes.top add new SymTreePart(m)
+        addPart(m)
         super.traverse(tree)
         
-      case v @ ValDef(mods, name, typ, rhs) => 
+      case v @ ValDef(mods, name, tpt, rhs) => 
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
           mods.positions foreach addModifiers
-          scopes.top add new SymTreePart(v)
+          addPart(v)
         }
-        super.traverse(tree)
+        traverseTrees(mods.annotations)
+        if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
+          requirePre(": ")
+          traverse(tpt)
+        }
+        traverse(rhs)
 
       case select @ Select(qualifier, name)  =>
         traverse(qualifier)
@@ -155,41 +212,50 @@ trait Partitioner {
             override val start = select.pos.end - select.symbol.nameString.length
             override val end = select.pos.end
           }
-        } else {
-          scopes.top add new SymTreePart(select)
-        }
+        } else
+          addPart(select)
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         scope(defdef) {
           mods.positions foreach addModifiers
-          if(defdef.pos.point >=defdef.pos.start)
-            scopes.top add new SymTreePart(defdef)
-          
-          traverseTrees(mods.annotations)
-          traverseTrees(tparams)
-          traverseTreess(vparamss)
-          traverse(tpt)
-          rhs match {
-            case rhs: Block => traverse(rhs)
-            case _ => scope(rhs, backwardsTo('{'), forwardsTo('}')) {
-              traverse(rhs)
+          if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
+            requirePostOrPre(" ")
+            addPart(defdef)
+                      
+            traverseTrees(mods.annotations)
+            traverseTrees(tparams)
+            
+            if(!vparamss.isEmpty) {
+              requirePost("(")
+	            traverseTreess(vparamss)
+              requirePre(")")
             }
-          }
-
+            
+            if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
+              requirePre(": ")
+              traverse(tpt)              
+            }
+            
+            rhs match {
+              case EmptyTree =>
+              case rhs: Block =>
+                requirePost(" = ")
+                traverse(rhs) //Block creates its own Scope
+              case _ =>
+                requirePost(" = ")
+                scope(rhs, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
+                traverse(rhs)
+              }
+            }
+          } else
+            super.traverse(tree)
         }
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
           mods.positions foreach addModifiers
-          scopes.top add new SymTreePart(typeDef)
+          addPart(typeDef)
           super.traverse(tree)
-        /*
-      case pkg @ PackageDef(pid, stats) if pkg.symbol.pos == NoPosition =>
-        super.traverse(tree)
-        
-      case pkg @ PackageDef(pid, stats) =>
-        collector += new SymTreePart(pkg)
-        super.traverse(tree)*/
-        
+
       case t @ Template(parents, _, body) =>
 
         def withRange(t: Tree) = t.pos.isRange
@@ -213,46 +279,47 @@ trait Partitioner {
         val trueBody = (restBody -- earlyBody).filter(t => t.pos.isRange || t.pos == UnknownPosition)
         
         if(trueBody.size > 0) {
-          scope(tree, ((start, _) => Some((classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )))) {
+          scope(tree, {
+            (start, file) =>
+              val abortOn = (trueBody filter withRange) map (_.pos.start) reduceLeft (_ min _)
+              val startFrom = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )
+              forwardsTo('{', abortOn)(startFrom, file)
+            }) {
+            
             // fix the start
 
             visitAll(trueBody) {
-              case part: WithRequirement => 
-              println("add newline requirement to part "+ part)
-              part.requirePost("\n")
+              case part: WithRequirement => part.requirePost("\n")
               case part => throw new Exception("Can't add requirement to part of type: "+ part.getClass)
             }
           }
         }
         
-      case Apply(fun, args) =>
-        super.traverse(tree)
-        
       case Literal(constant) =>
-        scopes.top add new TreePart(tree)
+        addPart(tree)
         super.traverse(tree)
         
       case Block(Nil, expr) =>
         super.traverse(tree)
         
       case Block(stats, expr) =>
-        if(expr.pos precedes stats.first.pos) {
+        if(expr.pos.isRange && (expr.pos precedes stats.first.pos)) {
           traverse(expr)
           super.traverseTrees(stats)
         } else {
-          scope (tree, backwardsTo('{'), forwardsTo('}')) {
+          scope (tree, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
             super.traverse(tree)
           }
         }
         
       case New(tpt) =>
-        scopes.top add new TreePart(tree)
+        addPart(tree)
         traverse(tpt)
         
       case s @ Super(qual, mix) =>
-        scopes.top add new SymTreePart(s) {
+        addPart(new SymTreePart(s) {
           override val end = tree.pos.end
-        }
+        })
         super.traverse(tree)
         
       case Match(selector: Tree, cases: List[CaseDef]) =>
@@ -263,7 +330,7 @@ trait Partitioner {
       case _ =>
         println("Not handled: "+ tree.getClass())
         super.traverse(tree)
-    }
+    }}
     
     def visit(tree: Tree) = {
       

@@ -14,6 +14,8 @@ trait TreePrinter {
   }
   
   private def printTree(tree: Trees#Tree) = tree match {
-    case DefDef(mods, name, tparams, vparamss, tpt, rhs) => StringPart(name.toString) requirePre("def ") requirePost(" = ") 
+    case DefDef(_, name, _, _, _, _) => StringPart(name.toString)// requirePre("def ") requirePost(" = ") 
+    case ValDef(_, name, _, _) => StringPart(name.toString)// requirePre("val ") requirePost(" = ") 
+    case tree: TypeTree => StringPart(tree.tpe.toString)
   }
 }

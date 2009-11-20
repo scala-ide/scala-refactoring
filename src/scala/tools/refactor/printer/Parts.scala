@@ -42,7 +42,9 @@ trait OriginalSourcePart extends Part {
   def file: SourceFile
 }
 
-case class WhitespacePart(val start: Int, val end: Int, file: SourceFile) extends Part with OriginalSourcePart {
+trait Whitespace
+
+case class WhitespacePart(val start: Int, val end: Int, file: SourceFile) extends Part with OriginalSourcePart with Whitespace {
   override val isWhitespace = true
   def print = new String(file.content.slice(start, end))
   override def toString = if(start == end) "❒" else new String(file.content.slice(start, end))
@@ -112,9 +114,9 @@ case class TreePart(tree: Trees#Tree) extends Part with OriginalSourcePart with 
 }
 
 case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourcePart {
-  val start = pos.start
-  val end = start + print.length
-  val file = pos.source
+  lazy val start = pos.start
+  lazy val end = start + print.length
+  lazy val file = pos.source
   import Flags._
   def print = flag match {
     case TRAIT        => "trait"

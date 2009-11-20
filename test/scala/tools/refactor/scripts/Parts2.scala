@@ -8,7 +8,7 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.symtab._
 import scala.tools.nsc.util.Position
 
-object Parts2 extends Merger with Partitioner with Transform with CompilerProvider with TreeDSL {
+object Parts2 extends Merger with Partitioner with Transform with CompilerProvider with TreeDSL with WhitespaceSplitter with TreePrinter {
   
   val global = compiler
           
@@ -20,20 +20,17 @@ object Parts2 extends Merger with Partitioner with Transform with CompilerProvid
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
 //      val tree = treeFrom("class A")
     val tree = treeFrom("""
-class Empty {
-  
-  override def toString = {
-    
-    if(true)
-      ""
-    else ""
-    
-  }
-}
+    object A {
+      def main(args: Array[String]) {
+        args.foreach(println)
+        args.foreach(println _)
+        args.foreach(s => println(s))
+      }
+    }
         """)
 
-    val res = insertValue.transform(tree)
-
+//    val res = insertValue.transform(tree)
+//
     val ess = essentialParts(tree)
 
     println(ess)
@@ -45,6 +42,7 @@ class Empty {
     println("===========")
     
     val newTree = insertValue.transform(tree)
+    //val newTree = reverseClassParameters.transform(tree)
     val partitionedModified = essentialParts(newTree)
     
     println("Modified: "+ partitionedModified)

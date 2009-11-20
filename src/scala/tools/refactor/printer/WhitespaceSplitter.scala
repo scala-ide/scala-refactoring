@@ -7,7 +7,7 @@ trait WhitespaceSplitter {
     case Some((left, whitespaceParts, right)) =>
           
       val OpeningBrace = """(.*?\()(.*)""".r
-      val ClosingBrace = """(.*?)(\).*)""".r
+      val ClosingBrace = """(?ms)(.*?)(\).*)""".r
       val Comma = """(.*?),\s*(.*)""".r
       val NewLine = """(?ms)(.*?\n)(.*)""".r
       // strip comments!
@@ -17,9 +17,9 @@ trait WhitespaceSplitter {
       val whitespace = whitespaceParts mkString ""
       
       ((left, whitespace, right) match {
-        case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
         case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
         case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
+        case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
         case(_, Comma(l, r),        _) => (l, r, "Comma")
         case(_, s                 , _) => (s, "","NoMatch")
       }) match {
