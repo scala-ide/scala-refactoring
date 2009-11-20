@@ -15,22 +15,24 @@ trait Partitioner {
         
     private var scopes = new scala.collection.mutable.Stack[CompositePart]
     
-    private val preRequirements = new ListBuffer[String]
+    private val preRequirements = new ListBuffer[Required]
     
-    def requirePre(r: String) = preRequirements += r
+    def requirePre(check: String): Unit = requirePre(check, check)
+    def requirePre(check: String, write: String) = preRequirements += Required(check, write)
     
-    def requirePost(r: String) = {
+    def requirePost(check: String): Unit = requirePost(check, check)
+    def requirePost(check: String, write: String) = {
       if(preRequirements.size > 0)
-        requirePre(r)
+        requirePre(check, write)
       else
-        scopes.top.trueChildren.last.requirePost(r)
+        scopes.top.trueChildren.last.requirePost(new Required(check, write))
     }
     
     def requirePostOrPre(r: String) = {
       if(scopes.top.trueChildren == Nil)
         requirePre(r)
       else
-        requirePost(r)
+        requirePost(r, r)
     }
     
     def scope(t: Tree, adjustStart: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)), adjustEnd: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)) )(body: => Unit) = t match {
@@ -192,7 +194,7 @@ trait Partitioner {
         }
         traverseTrees(mods.annotations)
         if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
-          requirePre(": ")
+          requirePre(":", ": ")
           traverse(tpt)
         }
         traverse(rhs)
@@ -232,17 +234,17 @@ trait Partitioner {
             }
             
             if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
-              requirePre(": ")
+              requirePre(":", ": ")
               traverse(tpt)              
             }
             
             rhs match {
               case EmptyTree =>
               case rhs: Block =>
-                requirePost(" = ")
+                requirePost("=", " = ")
                 traverse(rhs) //Block creates its own Scope
               case _ =>
-                requirePost(" = ")
+                requirePost("=", " = ")
                 scope(rhs, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
                 traverse(rhs)
               }
@@ -266,7 +268,7 @@ trait Partitioner {
         }
         
         visitAll(classParams) {
-          case part: WithRequirement => part.requirePost(", ")
+          case part: WithRequirement => part.requirePost(Required(",", ", "))
           case _ => throw new Exception("Can't add requirement.")
         }
         
@@ -289,7 +291,7 @@ trait Partitioner {
             // fix the start
 
             visitAll(trueBody) {
-              case part: WithRequirement => part.requirePost("\n")
+              case part: WithRequirement => part.requirePost(new Required("\n"))
               case part => throw new Exception("Can't add requirement to part of type: "+ part.getClass)
             }
           }

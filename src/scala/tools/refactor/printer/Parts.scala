@@ -7,15 +7,19 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 import scala.collection.mutable.ListBuffer
 
+case class Required(check: String, write: String) {
+  def this(check: String) = this(check, check)
+}
+
 trait WithRequirement {
-  val postRequirements = new ListBuffer[String]
-  val preRequirements = new ListBuffer[String]
-  def requirePost(text: String): this.type = {
-    postRequirements += text
+  val postRequirements = new ListBuffer[Required]
+  val preRequirements = new ListBuffer[Required]
+  def requirePost(r: Required): this.type = {
+    postRequirements += r
     this
   }
-  def requirePre(text: String): this.type = {
-    preRequirements += text
+  def requirePre(r: Required): this.type = {
+    preRequirements += r
     this
   }
   def hasRequirements = postRequirements.size > 0 || preRequirements.size > 0

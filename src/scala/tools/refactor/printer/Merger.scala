@@ -52,8 +52,8 @@ trait Merger {
         val allWhitespace = whitespaceAfterCurrent + whitespaceBeforeNext
         
         // check for overlapping whitespaces and requirements! => testSortWithJustOne
-        val wsWithReqs1 = current.postRequirements.map( req => if(!allWhitespace.contains(req)) req else ""  ) mkString ""
-        val wsWithReqs2 = next.preRequirements.map( req => if(!allWhitespace.contains(req)) req else ""  ) mkString ""
+        val wsWithReqs1 = current.postRequirements.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
+        val wsWithReqs2 = next.preRequirements.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
         
         new StringPart(whitespaceAfterCurrent + wsWithReqs1 + whitespaceBeforeNext + wsWithReqs2) with Whitespace :: Nil
       }
@@ -81,44 +81,5 @@ trait Merger {
     }
     
     innerMerge(part)
-    
-    //satisfyRequirements(merged)
-  }
-
-  private def satisfyRequirements(parts: List[Part], lastWhitespace: String = ""): List[Part] = { 
-    
-    val handleRequirement: (String) => ( (String, List[Part]) => List[Part] ) = (
-      whitespace => (
-        (required, ps) =>
-          if(whitespace contains required) {
-              ps
-          } else {
-              RequirementPart(required) :: ps
-          }
-      )
-    )
-     
-    parts match {
-      case Nil => Nil
-      case (previous: Whitespace) :: current :: (next: Whitespace) :: rest if current.hasRequirements => 
-  
-        val whitespaceBefore = lastWhitespace + previous.print
-        val whitespaceAfter = next.print
-    
-        previous :: 
-          current.preRequirements.foldRight(List[Part]())(handleRequirement(whitespaceBefore)) ::: 
-            current :: 
-              next :: 
-                current.postRequirements.foldRight(List[Part]())(handleRequirement(whitespaceAfter)) ::: 
-                  satisfyRequirements(rest, whitespaceAfter)
-                  
-      case (previous: Whitespace) :: (current: Whitespace) :: rest =>
-        previous :: satisfyRequirements(current :: rest, previous.print + current.print)
-        
-      case (previous: Whitespace) :: current :: (next: Whitespace) :: rest =>
-        previous :: current :: next :: satisfyRequirements(rest, next.print)
-        
-      case x :: xs => x :: satisfyRequirements(xs)
-    }
   }
 }
