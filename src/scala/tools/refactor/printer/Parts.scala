@@ -36,6 +36,7 @@ trait WithTree {
 
 abstract sealed class Part extends WithRequirement {
   val isWhitespace = false
+  val isEndOfScope = false
   def print: String
   override def toString = print
 }
@@ -62,7 +63,27 @@ case class RequirementPart(string: String) extends Part {
   val print = string
 }
 
-case class CompositePart(start: Int, end: Int, file: SourceFile, origin: String = "Tree") extends Part with OriginalSourcePart {
+abstract class ScopePart extends Part {
+  val indentation: Int
+  def children: List[Part]
+  def lastChild: Option[Part] = if(trueChildren.isEmpty) None else Some(trueChildren.last)
+  protected val trueChildren = new ListBuffer[Part]()
+  def add(p: Part) = trueChildren += p //make sure they are in order
+  def print = children mkString
+  override def toString = children mkString "|"
+}
+
+case class SimpleScope(indentation: Int) extends ScopePart {
+  
+  object beginOfScope extends StringPart("")
+  object endOfScope extends StringPart("") {
+    override val isEndOfScope = true 
+  }
+  
+  def children = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
+}
+
+case class CompositePart(start: Int, end: Int, file: SourceFile, override val indentation: Int, origin: String = "Tree") extends ScopePart with OriginalSourcePart {
 
   class BeginOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: CompositePart) extends Part with OriginalSourcePart {
     override def toString = "❨"
@@ -75,6 +96,7 @@ case class CompositePart(start: Int, end: Int, file: SourceFile, origin: String 
   
   class EndOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: CompositePart) extends Part with OriginalSourcePart {
     override val toString = "❩"
+    override val isEndOfScope = true 
     val print = ""
     override def equals(that: Any) = that match {
       case that: CompositePart#EndOfScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
@@ -82,11 +104,11 @@ case class CompositePart(start: Int, end: Int, file: SourceFile, origin: String 
     }
   }
   
-  val trueChildren = new ListBuffer[Part]()
-  def add(p: Part) = trueChildren += p //make sure they are in order
-  def children: List[Part] = new BeginOfScope(start, start, file, this) :: trueChildren.toList ::: new EndOfScope(end, end, file, this) :: Nil
+  private val beginOfScope = new BeginOfScope(start, start, file, this)
+  private val endOfScope = new EndOfScope(end, end, file, this)
+  
+  def children: List[Part] = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
   override def toString = children mkString "|"
-  def print = children mkString
   // would it be enough to just check whether the trees are equal?
   override def equals(that: Any) = that match {
     case that: CompositePart => that.start == this.start && that.end == this.end && that.file == this.file
@@ -107,7 +129,7 @@ case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart
 }
 
 case class ArtificialTreePart(tree: Trees#Tree) extends Part with WithTree {
-  def print = "?"
+  def print = "?"+ tree.toString
 }
 
 case class TreePart(tree: Trees#Tree) extends Part with OriginalSourcePart with WithTree {

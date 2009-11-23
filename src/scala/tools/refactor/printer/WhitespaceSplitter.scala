@@ -24,7 +24,7 @@ trait WhitespaceSplitter {
         case(_, s                 , _) => (s, "","NoMatch")
       }) match {
         case(l, r, why) => 
-          println("Whitespace ▒▒"+ whitespace.replace("\n", "\\n") +"▒▒ partitions into ▒▒"+ l.replace("\n", "\\n") +"▒▒ and ▒▒"+ r.replace("\n", "\\n") +"▒▒ ("+ why +").")
+          //println("Whitespace ▒▒"+ whitespace.replace("\n", "\\n") +"▒▒ partitions into ▒▒"+ l.replace("\n", "\\n") +"▒▒ and ▒▒"+ r.replace("\n", "\\n") +"▒▒ ("+ why +").")
           (l, r)
       }
     case None => ("", "")

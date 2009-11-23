@@ -13,7 +13,7 @@ trait Partitioner {
   
   private class Visitor extends Traverser {
         
-    private var scopes = new scala.collection.mutable.Stack[CompositePart]
+    private var scopes = new scala.collection.mutable.Stack[ScopePart]
     
     private val preRequirements = new ListBuffer[Required]
     
@@ -25,30 +25,40 @@ trait Partitioner {
       if(preRequirements.size > 0)
         requirePre(check, write)
       else
-        scopes.top.trueChildren.last.requirePost(new Required(check, write))
+        scopes.top.lastChild match {
+        case Some(part) => part.requirePost(new Required(check, write))
+        case None => () //??
+      }
     }
     
-    def requirePostOrPre(r: String) = {
-      if(scopes.top.trueChildren == Nil)
-        requirePre(r)
-      else
-        requirePost(r, r)
+    def requirePostOrPre(r: String) = scopes.top.lastChild match {
+      case Some(_) => requirePost(r, r)
+      case _ => requirePre(r)
     }
-    
-    def scope(t: Tree, adjustStart: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)), adjustEnd: (Int, SourceFile) => Option[Int] = ((i, f) => Some(i)) )(body: => Unit) = t match {
+
+    def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, SourceFile) => Option[Int] = noChange, adjustEnd: (Int, SourceFile) => Option[Int] = noChange)(body: => Unit) = tree match {
       case EmptyTree => ()
-      case tree if tree.pos == UnknownPosition => 
-        body
+      case tree if tree.pos == UnknownPosition =>
+        if(indent) {
+          val newScope = new SimpleScope(scopes.top.indentation + 2)
+          
+          scopes.top add newScope
+          scopes push newScope
+          body
+          scopes pop
+        } else
+          body
+        
       case tree if !tree.pos.isRange =>
         ()
       case _ =>
         // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
-        val (start: Int, end: Int) = (adjustStart(t.pos.start, t.pos.source),  adjustEnd(t.pos.end, t.pos.source)) match {
+        val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source),  adjustEnd(tree.pos.end, tree.pos.source)) match {
           case (Some(start), Some(end)) => (start, end)
-          case _ => (t.pos.start, t.pos.end)
+          case _ => (tree.pos.start, tree.pos.end)
         }
-        
-        val newScope = CompositePart(start, end, t.pos.source, t.getClass.getSimpleName)
+
+        val newScope = CompositePart(start, end, tree.pos.source, SourceHelper.indentationLength(tree), tree.getClass.getSimpleName)
         
         if(preRequirements.size > 0) {
           preRequirements.foreach(newScope requirePre _)
@@ -143,8 +153,11 @@ trait Partitioner {
         traverse(x)
       case x :: xs => 
         traverse(x)
-        if(scopes.top.trueChildren != Nil)
-          separator(scopes.top.trueChildren.last)
+        scopes.top.lastChild match {
+          case Some(part) => separator(part)
+          case _ => ()
+        }
+          
         visitAll(xs)(separator)
     }
     
@@ -245,9 +258,9 @@ trait Partitioner {
                 traverse(rhs) //Block creates its own Scope
               case _ =>
                 requirePost("=", " = ")
-                scope(rhs, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
-                traverse(rhs)
-              }
+                scope(rhs, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
+                  traverse(rhs)
+                }
             }
           } else
             super.traverse(tree)
@@ -281,19 +294,17 @@ trait Partitioner {
         val trueBody = (restBody -- earlyBody).filter(t => t.pos.isRange || t.pos == UnknownPosition)
         
         if(trueBody.size > 0) {
-          scope(tree, {
-            (start, file) =>
-              val abortOn = (trueBody filter withRange) map (_.pos.start) reduceLeft (_ min _)
-              val startFrom = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )
-              forwardsTo('{', abortOn)(startFrom, file)
-            }) {
-            
-            // fix the start
-
-            visitAll(trueBody) {
-              case part: WithRequirement => part.requirePost(new Required("\n"))
-              case part => throw new Exception("Can't add requirement to part of type: "+ part.getClass)
-            }
+          scope(
+              tree, 
+              indent = true, 
+              adjustStart = {
+                (start, file) =>
+                  val abortOn = (trueBody filter withRange) map (_.pos.start) reduceLeft (_ min _)
+                  val startFrom = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )
+                  forwardsTo('{', abortOn)(startFrom, file)
+                }, 
+            adjustEnd = noChange) {
+            visitAll(trueBody)(_.requirePost(new Required("\n")))
           }
         }
         
@@ -305,12 +316,22 @@ trait Partitioner {
         super.traverse(tree)
         
       case Block(stats, expr) =>
+        
+        val newline: Part => Unit = _.requirePost(new Required("\n"))
+        
         if(expr.pos.isRange && (expr.pos precedes stats.first.pos)) {
           traverse(expr)
-          super.traverseTrees(stats)
+          visitAll(stats)(newline)
         } else {
-          scope (tree, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
-            super.traverse(tree)
+          scope (tree, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
+            if(stats.size > 1) {
+              requirePre("{", "{\n")
+              visitAll(stats)(newline)
+              requirePost("}", "\n}")
+            } else {
+              visitAll(stats)(newline)
+            }
+            traverse(expr)
           }
         }
         
@@ -336,7 +357,7 @@ trait Partitioner {
     
     def visit(tree: Tree) = {
       
-      val rootPart = CompositePart(0, tree.pos.source.length, tree.pos.source)
+      val rootPart = CompositePart(0, tree.pos.source.length, tree.pos.source, 0)
       
       scopes push rootPart
       
@@ -354,27 +375,23 @@ trait Partitioner {
     
     def fillWs(part: Part): Part = part match {
       case p: CompositePart => 
-        
-        val childrenPairs = p.children zip p.children.tail
-        
-        p.trueChildren.clear
-        
-//        println("pairs of children: "+ childrenPairs)
+      
+        val part = new CompositePart(p.start, p.end, p.file, p.indentation, p.origin)
         
         def whitespace(start: Int, end: Int, file: SourceFile) {
           if(start < end) {
-            p add WhitespacePart(start, end, file)
+            part add WhitespacePart(start, end, file)
           }
         }
 
-        (childrenPairs) foreach {
+        (p.children zip p.children.tail) foreach {
           case (left: CompositePart#BeginOfScope, right: OriginalSourcePart) => ()
             whitespace(left.end, right.start, left.file)
           case (left: OriginalSourcePart, right: OriginalSourcePart) =>
-            p add (fillWs(left))
+            part add (fillWs(left))
             whitespace(left.end, right.start, left.file)
         }
-        p
+        part
       case _ => part
     }
     

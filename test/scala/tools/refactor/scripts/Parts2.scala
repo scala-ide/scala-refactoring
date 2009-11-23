@@ -20,13 +20,15 @@ object Parts2 extends Merger with Partitioner with Transform with CompilerProvid
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
 //      val tree = treeFrom("class A")
     val tree = treeFrom("""
-    object A {
-      def main(args: Array[String]) {
-        args.foreach(println)
-        args.foreach(println _)
-        args.foreach(s => println(s))
-      }
-    }
+class Abc {
+  /*test*/ def abc(i: Int) = {
+    42
+  }
+  /*test2*/ def b = {
+    println("hello")
+    5
+  }
+}
         """)
 
 //    val res = insertValue.transform(tree)

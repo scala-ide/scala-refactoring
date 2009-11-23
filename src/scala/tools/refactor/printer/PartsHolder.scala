@@ -1,27 +1,35 @@
 package scala.tools.refactor.printer
 
 // cache, optimize, whatever!
-class PartsHolder(root: CompositePart) {
+class PartsHolder(root: ScopePart) {
   
-  private def traverse(part: CompositePart, find: Part): List[Part] = {
+  private def traverse(part: ScopePart, find: Part): Option[ScopePart] = {
     part.children foreach {
-      case p if p == find => return part.children
-      case p: CompositePart => val res = traverse(p, find) match {
-        case Nil => ()
-        case found => return found
+      case p if p == find => return Some(part)
+      case p: ScopePart => traverse(p, find) match {
+        case None => ()
+        case Some(found) => return Some(found)
       }
-      case p => ()
+      case _ => ()
     }
-    Nil
+    None
   }
   
-  def exists(part: Part) = traverse(root, part).exists(_ == part)
+  def exists(part: Part) = traverse(root, part) match {
+    case Some(found) => found.children.exists(_ == part)
+    case None => false
+  }
+  
+  def parentIndentation(part: Part) = traverse(root, part) match {
+    case Some(found) => Some(found.indentation)
+    case None => None//throw new Exception("parent not found")
+  }
   
   def getNext(part: Part): Option[Triple[Part, List[Part], Part]] = {
     
 //    println("get next after: "+ part)
    
-    val neighbourhood = traverse(root, part)
+    val neighbourhood = traverse(root, part).getOrElse(return None).children
     
     val partInOriginal = neighbourhood.dropWhile(_ != part)
     
@@ -40,7 +48,7 @@ class PartsHolder(root: CompositePart) {
     
 //    println("get previous before: "+ part)
    
-    val neighbourhood = traverse(root, part)
+    val neighbourhood = traverse(root, part).getOrElse(return None).children
     
     val partInOriginal = neighbourhood.reverse.dropWhile(_ != part)
     

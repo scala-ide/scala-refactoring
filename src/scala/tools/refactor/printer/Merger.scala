@@ -6,17 +6,19 @@ trait Merger {
 
   private def explain(what: String) = println(what)
   
-  def merge(part: CompositePart, original: CompositePart): List[Part] = {
+  def merge(part: ScopePart, original: ScopePart): List[Part] = {
     
     val partsHolder = new PartsHolder(original)
     
-    def withWhitespace(current: Part, next: Part): List[Part] = {
+    def withWhitespace(current: Part, next: Part, parent: ScopePart): List[Part] = {
     
-      explain("get ws after part: "+ current)
+      //explain("get ws after part: "+ current)
       
-      /*if(partsHolder.exists(current) && partsHolder.getNext(current).get._3 == next) {
+      val currentExists = partsHolder exists current
+      
+      /*if(currentExists && partsHolder.getNext(current).get._3 == next) {
         val (_, wsFound, nextFound) = (partsHolder getNext current).get //FIXME
-        explain("Whitespace ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
+        //explain("Whitespace ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
         wsFound
       } else */{
         /*
@@ -25,7 +27,7 @@ trait Merger {
          * source
          * */
         val (whitespaceAfterCurrent, _) = 
-          if(partsHolder exists current) {
+          if(currentExists) {
             splitWhitespaceBetween(partsHolder getNext current)
           } else {
             //("<current does not exist>", "<current does not exist>")
@@ -50,12 +52,39 @@ trait Merger {
          * */
         
         val allWhitespace = whitespaceAfterCurrent + whitespaceBeforeNext
-        
+                
         // check for overlapping whitespaces and requirements! => testSortWithJustOne
         val wsWithReqs1 = current.postRequirements.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
         val wsWithReqs2 = next.preRequirements.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
         
-        new StringPart(whitespaceAfterCurrent + wsWithReqs1 + whitespaceBeforeNext + wsWithReqs2) with Whitespace :: Nil
+        var completeWhitespace = whitespaceAfterCurrent + wsWithReqs1 + whitespaceBeforeNext + wsWithReqs2
+        
+        if(completeWhitespace.contains('\n')) {
+                    
+          partsHolder.parentIndentation(next) match {
+            case Some(indentation) => 
+            
+              val currentIndentation = SourceHelper.indentationLength(next)
+              val originalParentIndentation = partsHolder.parentIndentation(next).getOrElse(0)
+              
+              val desiredRelativeIndentation = currentIndentation - originalParentIndentation
+              val newIndentation = parent.indentation + desiredRelativeIndentation
+              
+              if(newIndentation != SourceHelper.indentationLength(next)) {
+                println("need to indent "+ next)
+                completeWhitespace = completeWhitespace.replaceAll("""(?ms)\n\s*""", "\n" + " " * newIndentation )
+              }
+              
+            case None =>
+              if(next.isEndOfScope) {
+                completeWhitespace = completeWhitespace.replaceAll("""(?ms)\n\s*""", "\n" + " " * (parent.indentation))
+              } else {
+                completeWhitespace = completeWhitespace.replaceAll("""(?ms)\n\s*""", "\n" + " " * (parent.indentation + 2))
+              }
+          }
+        }
+        
+        new StringPart(completeWhitespace) :: Nil
       }
     }
     
@@ -67,16 +96,16 @@ trait Merger {
       case _ => StringPart("<non-tree part>")
     }
     
-    def innerMerge(part: CompositePart): List[Part] = {
+    def innerMerge(part: ScopePart): List[Part] = {
     
       val list: List[(Part, Part)] = (part.children zip part.children.tail)
       
-      explain("traversing parts: "+ list)
+      //explain("traversing parts: "+ list)
       
       list flatMap {
-        case (current: CompositePart, next) => innerMerge(current) ::: withWhitespace(current, next)
+        case (current: ScopePart, next) => innerMerge(current) ::: withWhitespace(current, next, part)
         // do we need the end-of-scope thing? case (current, next: CompositePart#EndOfScope) => partFrom(current) :: withWhitespace(current, next) ::: next :: Nil
-        case (current, next) => partFrom(current) :: withWhitespace(current, next)
+        case (current, next) => partFrom(current) :: withWhitespace(current, next, part)
       }
     }
     

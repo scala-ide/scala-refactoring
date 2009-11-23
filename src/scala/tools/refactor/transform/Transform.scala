@@ -32,14 +32,19 @@ trait Transform {
             case tree: DefDef => tree.tpt.asInstanceOf[TypeTree]
           }
           
-          val v = ValDef(Modifiers(Flags.PARAM), newTermName("sample"), TypeTree(typ.tpe) setPos UnknownPosition, EmptyTree) setPos UnknownPosition
+          val v = ValDef(Modifiers(/*Flags.PARAM*/0), newTermName("sample"), TypeTree(typ.tpe) setPos UnknownPosition, EmptyTree) setPos UnknownPosition
           
           val rhs = body.last match {
             case tree: ValOrDefDef => tree.rhs
           }
-
           
-          val d =  DefDef(Modifiers(0) withPosition (Tokens.DEF, UnknownPosition), newTermName("newDefDef"), Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe) setPos UnknownPosition, rhs) setPos UnknownPosition
+          val l = Literal(555) setPos UnknownPosition
+
+          val block = Block( l :: v :: Nil, EmptyTree) setPos UnknownPosition
+          
+          //val d =  DefDef(Modifiers(0) withPosition (Tokens.DEF, UnknownPosition), newTermName("newDefDef"), Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe) setPos UnknownPosition, rhs) setPos UnknownPosition
+          
+          val d =  DefDef(Modifiers(0) withPosition (Tokens.DEF, UnknownPosition), newTermName("method"), Nil, Nil, TypeTree(typ.tpe) setPos UnknownPosition, block) setPos UnknownPosition
           
           new Template(parents, self, d :: body).copyAttrs(tree)
         
