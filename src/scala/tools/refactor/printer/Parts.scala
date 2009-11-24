@@ -9,6 +9,7 @@ import scala.collection.mutable.ListBuffer
 
 case class Required(check: String, write: String) {
   def this(check: String) = this(check, check)
+  override def toString = check
 }
 
 trait WithRequirement {
