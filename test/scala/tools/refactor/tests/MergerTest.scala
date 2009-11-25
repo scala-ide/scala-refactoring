@@ -1,5 +1,10 @@
 package scala.tools.refactor.tests
 
+
+import scala.tools.refactor.UnknownPosition
+import scala.tools.nsc.symtab.Flags
+import scala.tools.nsc.ast.parser.Tokens
+
 import utils.TestHelper
 import org.junit.Test
 import junit.framework.TestCase
@@ -141,6 +146,35 @@ class MergerTest extends TestHelper {
   
   @Test
   def testInsertVal() = {
+    
+    import compiler._
+    
+    def insertNewMethod(tree: Tree) = (new Transformer {
+      override def transform(tree: Tree): Tree = {
+        super.transform(tree) match {
+          
+          case tpl @ Template(parents, self, body) => 
+            
+            val typ: TypeTree = body(1) match {
+              case tree: DefDef => tree.tpt.asInstanceOf[TypeTree]
+            }
+            
+            val v = ValDef(Modifiers(0), newTermName("sample"), TypeTree(typ.tpe) setPos UnknownPosition, EmptyTree) setPos UnknownPosition
+
+            val l = Literal(555) setPos UnknownPosition
+  
+            val block = Block( l :: v :: Nil, EmptyTree) setPos UnknownPosition
+                      
+            val d = DefDef(Modifiers(0) withPosition (Tokens.DEF, UnknownPosition), newTermName("method"), Nil, Nil, TypeTree(typ.tpe) setPos UnknownPosition, block) setPos UnknownPosition
+            
+            new Template(parents, self, d :: body).copyAttrs(tree)
+          
+          case x => x
+        }
+      }
+    }).transform(tree)
+    ;
+    
             """
 object A {
   /*test*/ def abc(i: Int) = {
@@ -154,6 +188,10 @@ object A {
     """ transformsTo( 
     """
 object A {
+  def method: Int = {
+    555
+    sample: Int
+  }
   /*test*/ def abc(i: Int) = {
     42
   }
@@ -163,7 +201,7 @@ object A {
   }
 }
     """, 
-      insertValue.transform(_))
+      insertNewMethod)
   }
 }
 

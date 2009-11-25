@@ -92,7 +92,7 @@ trait Merger {
       case part if partsHolder exists part => part
       case part: FlagPart => StringPart(part.print) copyRequirements part
       case part: WithTree => print(part)
-      case part: WithRequirement => StringPart("<non-tree part: "+ part.print +">") copyRequirements part
+      case part: WithRequirement => StringPart("") copyRequirements part
       case _ => StringPart("<non-tree part>")
     }
     

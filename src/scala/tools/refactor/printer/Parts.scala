@@ -7,6 +7,11 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 import scala.collection.mutable.ListBuffer
 
+/*
+ * Terminology: Layout instead of Whitespace? 
+ * */
+
+
 case class Required(check: String, write: String) {
   def this(check: String) = this(check, check)
   override def toString = check
@@ -140,6 +145,7 @@ case class TreePart(tree: Trees#Tree) extends Part with OriginalSourcePart with 
   def print = new String(file.content.slice(start, end))
 }
 
+// add requirements here?
 case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourcePart {
   lazy val start = pos.start
   lazy val end = start + print.length

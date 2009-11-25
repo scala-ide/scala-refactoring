@@ -32,7 +32,7 @@ trait Transform {
             case tree: DefDef => tree.tpt.asInstanceOf[TypeTree]
           }
           
-          val v = ValDef(Modifiers(/*Flags.PARAM*/0), newTermName("sample"), TypeTree(typ.tpe) setPos UnknownPosition, EmptyTree) setPos UnknownPosition
+          val v = ValDef(Modifiers(/*Flags.PARAM*/0), newTermName("sample"), TypeTree(typ.tpe) setPos UnknownPosition, Literal(5)) setPos UnknownPosition
           
           val rhs = body.last match {
             case tree: ValOrDefDef => tree.rhs
