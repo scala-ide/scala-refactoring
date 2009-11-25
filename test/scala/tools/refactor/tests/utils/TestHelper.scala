@@ -5,7 +5,7 @@ import org.junit.Assert._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-trait TestHelper extends Partitioner with Merger with CompilerProvider with TestTransform with WhitespaceSplitter with TreePrinter {
+trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with WhitespaceSplitter with TreePrinter {
   
   def parts(src: String) = splitIntoParts(treeFrom(src))
   

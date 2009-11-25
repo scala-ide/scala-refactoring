@@ -152,7 +152,9 @@ case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourceP
   lazy val file = pos.source
   import Flags._
   def print = flag match {
+    case 0            => ""
     case TRAIT        => "trait"
+    case METHOD       => "def"
     case FINAL        => "final"
     case IMPLICIT     => "implicit"
     case PRIVATE      => "private"

@@ -129,7 +129,11 @@ trait Partitioner {
         None
     }
         
-    def addModifiers(x: Pair[Long, Position]) = scopes.top add new FlagPart(x._1, x._2)
+    def modifiers(tree: { def mods: Modifiers; def pos: Position }) = tree.pos match {
+      case UnknownPosition => scopes.top add new FlagPart(tree.mods.flags, UnknownPosition)
+      case _ => tree.mods.positions.foreach (x => scopes.top add new FlagPart(x._1, x._2))
+    }
+        
     def addPart(tree: Tree): Part = {
       val part = tree match {
         case tree if tree.pos == UnknownPosition => ArtificialTreePart(tree)
@@ -190,19 +194,19 @@ trait Partitioner {
           addPart(i)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
-        mods.positions foreach addModifiers
+        modifiers(c)
         if (!c.symbol.isAnonymousClass)
           addPart(c)
         super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) => 
-        mods.positions foreach addModifiers
+        modifiers(m)
         addPart(m)
         super.traverse(tree)
         
       case v @ ValDef(mods, name, tpt, rhs) => 
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
-          mods.positions foreach addModifiers
+          modifiers(v)
           addPart(v)
         }
         traverseTrees(mods.annotations)
@@ -232,7 +236,7 @@ trait Partitioner {
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         scope(defdef) {
-          mods.positions foreach addModifiers
+          modifiers(defdef)
           if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
             requirePostOrPre(" ")
             addPart(defdef)
@@ -267,7 +271,7 @@ trait Partitioner {
         }
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
-          mods.positions foreach addModifiers
+          modifiers(typeDef)
           addPart(typeDef)
           super.traverse(tree)
 
@@ -299,7 +303,7 @@ trait Partitioner {
               indent = true, 
               adjustStart = {
                 (start, file) =>
-                  val abortOn = (trueBody filter withRange) map (_.pos.start) reduceLeft (_ min _)
+                  val abortOn = (trueBody filter withRange).map(_.pos.start).foldLeft(file.content.length)(_ min _)
                   val startFrom = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )
                   forwardsTo('{', abortOn)(startFrom, file)
                 }, 

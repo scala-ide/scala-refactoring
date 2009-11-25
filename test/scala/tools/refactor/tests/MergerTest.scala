@@ -1,6 +1,6 @@
 package scala.tools.refactor.tests
 
-
+import scala.tools.refactor.tests.utils.TestTransform
 import scala.tools.refactor.UnknownPosition
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.ast.parser.Tokens
@@ -12,7 +12,7 @@ import org.junit.Assert._
 import scala.tools.refactor.printer._
 
 @Test
-class MergerTest extends TestHelper {
+class MergerTest extends TestHelper with TestTransform {
 
   @Test
   def testSortClassParameters() = {
@@ -146,35 +146,6 @@ class MergerTest extends TestHelper {
   
   @Test
   def testInsertVal() = {
-    
-    import compiler._
-    
-    def insertNewMethod(tree: Tree) = (new Transformer {
-      override def transform(tree: Tree): Tree = {
-        super.transform(tree) match {
-          
-          case tpl @ Template(parents, self, body) => 
-            
-            val typ: TypeTree = body(1) match {
-              case tree: DefDef => tree.tpt.asInstanceOf[TypeTree]
-            }
-            
-            val v = ValDef(Modifiers(0), newTermName("sample"), TypeTree(typ.tpe) setPos UnknownPosition, EmptyTree) setPos UnknownPosition
-
-            val l = Literal(555) setPos UnknownPosition
-  
-            val block = Block( l :: v :: Nil, EmptyTree) setPos UnknownPosition
-                      
-            val d = DefDef(Modifiers(0) withPosition (Tokens.DEF, UnknownPosition), newTermName("method"), Nil, Nil, TypeTree(typ.tpe) setPos UnknownPosition, block) setPos UnknownPosition
-            
-            new Template(parents, self, d :: body).copyAttrs(tree)
-          
-          case x => x
-        }
-      }
-    }).transform(tree)
-    ;
-    
             """
 object A {
   /*test*/ def abc(i: Int) = {
@@ -201,7 +172,66 @@ object A {
   }
 }
     """, 
-      insertNewMethod)
+      insertNewMethod.transform(_))
+  }    
+  
+  @Test
+  def testCopyLastMethod() = {
+            """
+object A {
+
+  /*test*/ def abc(i: Int) = {
+    42
   }
+  /*test2*/ def b = {
+    println("hello")
+    5
+  }
+}
+    """ transformsTo( 
+    """
+object A {
+  /*test2*/ def b = {
+    println("hello")
+    5
+  }
+
+  /*test*/ def abc(i: Int) = {
+    42
+  }
+  /*test2*/ def b = {
+    println("hello")
+    5
+  }
+}
+    """, 
+      copyLastMethod.transform(_))
+  }
+  
+  @Test
+  def testMethodFromExistingBody() = {
+            """
+object A {
+  /*test2*/ def b = {
+    println("hello, this is method b")
+    5
+  }
+}
+    """ transformsTo( 
+    """
+object A {
+  def newMethod(arg: Int): Int = {
+    println("hello, this is method b")
+    5
+  }
+  /*test2*/ def b = {
+    println("hello, this is method b")
+    5
+  }
+}
+    """, 
+      newMethodFromExistingBody.transform(_))
+  }  
+
 }
 

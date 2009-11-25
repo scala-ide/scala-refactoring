@@ -8,7 +8,7 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.symtab._
 import scala.tools.nsc.util.Position
 
-object Parts2 extends Merger with Partitioner with Transform with CompilerProvider with TreeDSL with WhitespaceSplitter with TreePrinter {
+object Parts2 extends Merger with Partitioner with TestTransform with CompilerProvider with TreeDSL with WhitespaceSplitter with TreePrinter {
   
   val global = compiler
           
@@ -43,7 +43,8 @@ class Abc {
     println(partitionedOriginal.children)
     println("===========")
     
-    val newTree = insertValue.transform(tree)
+    val newTree = newMethodFromExistingBody.transform(tree)
+    //val newTree = insertValue.transform(tree)
     //val newTree = reverseClassParameters.transform(tree)
     val partitionedModified = essentialParts(newTree)
     
