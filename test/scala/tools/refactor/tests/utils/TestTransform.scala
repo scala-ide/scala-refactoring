@@ -61,17 +61,40 @@ trait TestTransform extends Transform {
             case tree: DefDef => tree.tpt.asInstanceOf[TypeTree]
           }
           
-          val v = ValDef(NoMods, newTermName("arg"), TypeTree(typ.tpe), EmptyTree)
+          val v = ValDef(NoMods, "arg", TypeTree(typ.tpe), EmptyTree)
           
           val rhs = body.last match {
             case tree: ValOrDefDef => tree.rhs
           }
 
           val d = cleanTree {
-            DefDef(Modifiers(Flags.METHOD), newTermName("newMethod"), Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe), rhs)
+            DefDef(Modifiers(Flags.METHOD), "newMethod", Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe), rhs)
           }
           
           new Template(parents, self, d :: body).copyAttrs(tree)
+        case x => x
+      }
+    }
+  }  
+  
+  def bodyInBody = new Transformer {
+    override def transform(tree: Tree): Tree = {
+      super.transform(tree) match {
+        
+        case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange =>
+        
+          val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, Nil, TypeTree(rhs.expr.tpe), rhs) 
+        
+          val newRhs = cleanTree {
+            Block(
+                newDef
+                :: Nil
+                , Apply(Select(This(""), "innerMethod"), Nil))
+          }
+          
+          new DefDef(mods, name, tparams, vparamss, tpt, newRhs).copyAttrs(tree)
+        
+
         case x => x
       }
     }

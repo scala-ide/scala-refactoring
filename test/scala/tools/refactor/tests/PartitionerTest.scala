@@ -8,22 +8,22 @@ import org.junit.Test
 class PartitionerTest extends TestHelper {
    
   @Test
-  def testSingleObject = "object A" partitionsInto "object |A"
+  def testSingleObject = "object A" partitionsInto "→0(0)❨|object |A|❩"
   
   @Test
-  def testSingleClass = "class A" partitionsInto "class |A"
+  def testSingleClass = "class A" partitionsInto "→0(0)❨|class |A|❩"
   
   @Test
-  def testSingleAbstractClass = "abstract class A" partitionsInto "abstract| class |A"
+  def testSingleAbstractClass = "abstract class A" partitionsInto "→0(0)❨|abstract| class |A|❩"
   
   @Test
-  def testSingleTrait = "trait C" partitionsInto "trait| |C"
+  def testSingleTrait = "trait C" partitionsInto "→0(0)❨|trait| |C|❩"
   
   @Test
-  def testClassWithManyModifiers = "final /*comment*/ class X" partitionsInto "final| /*comment*/ class |X"
+  def testClassWithManyModifiers = "final /*comment*/ class X" partitionsInto "→0(0)❨|final| /*comment*/ class |X|❩"
   
   @Test
-  def testSingleTraitWithComment = "trait /*comment*/ C" partitionsInto "trait| /*comment*/ |C"
+  def testSingleTraitWithComment = "trait /*comment*/ C" partitionsInto "→0(0)❨|trait| /*comment*/ |C|❩"
 
   @Test
   def testObjectWithWS =
@@ -31,14 +31,14 @@ class PartitionerTest extends TestHelper {
         // here comes an object:
         private object A
     """	partitionsInto
-    """
+    """→0(0)❨|
         // here comes an object:
         |private| object |A|
-    """
+    |❩"""
 
 
   @Test
-  def testPrettyPackages = "/**/ package /**/ x/**/./**/y/**/./**/z/**/" partitionsInto "/**/ package /**/ |x|/**/./**/|y|/**/./**/|z|/**/"
+  def testPrettyPackages = "/**/ package /**/ x/**/./**/y/**/./**/z/**/" partitionsInto "→0(0)❨|/**/ package /**/ |x|/**/./**/|y|/**/./**/|z|/**/|❩"
   
   @Test
   def testPackageAndClass = 
@@ -47,14 +47,14 @@ class PartitionerTest extends TestHelper {
         
         final class A
     """ partitionsInto
-    """
+    """→0(0)❨|
         package |x|
         
         |final| class |A|
-    """
+    |❩"""
 
   @Test
-  def testClassExtends = "class X extends AnyRef" partitionsInto "class |X| extends |AnyRef"
+  def testClassExtends = "class X extends AnyRef" partitionsInto "→0(0)❨|class |X| extends |AnyRef|❩"
   
   @Test
   def testClassExtendsWithTrait =
@@ -62,10 +62,10 @@ class PartitionerTest extends TestHelper {
     trait A; trait B
     class X extends AnyRef with A with B
   """ partitionsInto
-  """
+  """→0(0)❨|
     |trait| |A|; |trait| |B|
     class |X| extends |AnyRef| with |A| with |B|
-  """
+  |❩"""
 
   @Test
   def testClassWithBody = 
@@ -74,14 +74,14 @@ class PartitionerTest extends TestHelper {
       
     }
   """ partitionsInto
-  """
-    class |X| extends |AnyRef| |❨|{
+  """→0(0)❨|
+    class |X| extends |AnyRef| |→4(4)❨|{
       
     }|❩|
-  """
+  |❩"""
 
   @Test
-  def testCaseClass = "case class X(i: Int, s: String)" partitionsInto "case| class |X|(|i|: |Int|, |s|: |String|)" 
+  def testCaseClass = "case class X(i: Int, s: String)" partitionsInto "→0(0)❨|case| class |X|(|i|: |Int|, |s|: |String|)|❩" 
   
   @Test
   def testClassParamsWithBody =
@@ -89,25 +89,25 @@ class PartitionerTest extends TestHelper {
     class Xyz(private val abc: String, var int: Int) {
     }
   """ partitionsInto
-  """
-    class |Xyz|(|private| val |abc|: |String|, var |int|: |Int|) |❨|{
+  """→0(0)❨|
+    class |Xyz|(|private| val |abc|: |String|, var |int|: |Int|) |→4(4)❨|{
     }|❩|
-  """
+  |❩"""
 
   @Test
-  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends |A| |❨|{ object |C| }|❩|/*done*/" 
+  def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "→0(0)❨|trait| |A|; class |Xyz| extends |A| |→0(0)❨|{ object |C| }|❩|/*done*/|❩" 
     
   @Test
-  def testNestedPackages = "package x.y.z" partitionsInto "package |x|.|y|.|z"
+  def testNestedPackages = "package x.y.z" partitionsInto "→0(0)❨|package |x|.|y|.|z|❩"
 
   @Test
-  def testPackage = "class Abc //done" partitionsInto "class |Abc| //done"
+  def testPackage = "class Abc //done" partitionsInto "→0(0)❨|class |Abc| //done|❩"
   
   @Test
-  def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "class |Xyz|(|i|: |Int|/**/)/**/"
+  def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "→0(0)❨|class |Xyz|(|i|: |Int|/**/)/**/|❩"
   
   @Test
-  def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "trait| |A|; class |Xyz| extends { |type| |T| } with |A| |❨|{  }|❩|/*done*/"
+  def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "→0(0)❨|trait| |A|; class |Xyz| extends { |type| |T| } with |A| |→0(0)❨|{  }|❩|/*done*/|❩"
 
   @Test
   def testEarlyDefFromSpec5_1_8 =
@@ -122,19 +122,17 @@ class PartitionerTest extends TestHelper {
       println(msg)
     }
   """ partitionsInto 
-  """
-    |trait| |Greeting| |❨|{
-      |❨|val |name|: |String|❩|
+  """→0(0)❨|
+    |trait| |Greeting| |→4(4)❨|{
+      val |name|: |String|
       |val| |msg| = |"How are you, "| |+|name|
     }|❩|
-    class |C| extends {
-      |❨|❨|{
+    class |C| extends |→4(4)❨|{
       val |name| = |"Bob"|
-    }|❩|❩|
-    } with |Greeting| |❨|{
+    }|❩| with |Greeting| |→4(4)❨|{
       |println|(|msg|)
     }|❩|
-  """
+  |❩"""
 
   @Test
   def testNew = 
@@ -145,13 +143,13 @@ class PartitionerTest extends TestHelper {
       }
     }
   """ partitionsInto 
-  """
-    |trait| |A| |❨|{
-      |❨|def| |a| = |new| |A| |❨|{
+  """→0(0)❨|
+    |trait| |A| |→4(4)❨|{
+      |def| |a| = |new| |A| |→6(2)❨|{
         
-      }|❩|❩|
+      }|❩|
     }|❩|
-  """
+  |❩"""
 
   @Test
   def testSuper = 
@@ -160,11 +158,11 @@ class PartitionerTest extends TestHelper {
       override def toString = super.toString()
     }
   """ partitionsInto 
-  """
-    class |A| |❨|{
-      |❨|override| |def| |toString| = |❨|super|.|toString|()|❩|❩|
+  """→0(0)❨|
+    class |A| |→4(4)❨|{
+      |override| |def| |toString| = |→6(2)❨|super|.|toString|()|❩|
     }|❩|
-  """
+  |❩"""
 
   @Test
   def testFunctions = 
@@ -177,14 +175,14 @@ class PartitionerTest extends TestHelper {
       }
     }
   """ partitionsInto 
-  """
-    object |A| |❨|{
-      |❨|def| |main|(|args|: |Array|[|String|]) |❨|{
+  """→0(0)❨|
+    object |A| |→4(4)❨|{
+      |def| |main|(|args|: |Array|[|String|]) |→6(2)❨|{
         |args|.|foreach|(|println|)
         |args|.|foreach|(|println| _)
         |args|.|foreach|(|s| => |println|(|s|))
-      }|❩|❩|
+      }|❩|
     }|❩|
-  """
+  |❩"""
 
 }

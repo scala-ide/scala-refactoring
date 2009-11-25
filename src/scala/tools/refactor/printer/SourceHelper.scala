@@ -18,10 +18,10 @@ object SourceHelper {
     indentationLength(tree.pos.start, tree.pos.source.content)
   }
   
-  private def indentationLength(start: Int, content: Array[Char]) = {
+  def indentationLength(start: Int, content: Array[Char]) = {
     var i = if(start == content.length) start - 1 else start
         
-    while(content(i) != '\n' && i > 1)
+    while(i >= 0 && content(i) != '\n')
       i -= 1
     i += 1
         

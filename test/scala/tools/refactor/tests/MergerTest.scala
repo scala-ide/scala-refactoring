@@ -24,12 +24,12 @@ class MergerTest extends TestHelper with TestTransform {
   @Test
   def testSortClassParametersAndComment() = {
     """
-      class A(i: Int, s: String)
       // comment 
+      class A(i: Int, s: String)
     """ transformsTo (
     """
-      class A(s: String, i: Int)
       // comment 
+      class A(s: String, i: Int)
     """,
       reverseClassParameters.transform(_))
   }
@@ -138,7 +138,6 @@ class MergerTest extends TestHelper with TestTransform {
           d
         } //end of c
         val b: String //b-string
-        
       }
     """, 
       reverseClassParameters.transform(_))

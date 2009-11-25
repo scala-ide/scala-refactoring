@@ -11,7 +11,7 @@ trait Partitioner {
   self: scala.tools.refactor.Compiler =>
   import compiler._
   
-  private class Visitor extends Traverser {
+  private class Visitor(partsHolder: Option[PartsHolder]) extends Traverser {
         
     private var scopes = new scala.collection.mutable.Stack[ScopePart]
     
@@ -40,11 +40,13 @@ trait Partitioner {
       case EmptyTree => ()
       case tree if tree.pos == UnknownPosition =>
         if(indent) {
-          val newScope = new SimpleScope(scopes.top.indentation + 2)
+          val newScope = new SimpleScope(Some(scopes.top), 2)
           
           scopes.top add newScope
           scopes push newScope
+          requirePre("{", "{\n")
           body
+          requirePost("}", "\n}")
           scopes pop
         } else
           body
@@ -57,8 +59,28 @@ trait Partitioner {
           case (Some(start), Some(end)) => (start, end)
           case _ => (tree.pos.start, tree.pos.end)
         }
-
-        val newScope = CompositePart(start, end, tree.pos.source, SourceHelper.indentationLength(tree), tree.getClass.getSimpleName)
+        
+        val i = partsHolder match {
+          
+          case Some(partsHolder) => partsHolder.scopeIndentation(tree) match {
+        
+            case Some(indentation) => 
+              val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
+              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
+              partsHolder.scopeIndentation(tree)
+              thisIndentation - indentation
+            case None => 
+              println("part not found, default to 2")
+              2
+          }
+          case None => 
+            println("top indentation is: "+ scopes.top.indentation) 
+            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
+            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
+            SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
+        }
+        
+        val newScope = CompositePart(Some(scopes.top), start, end, tree.pos.source, i, tree)
         
         if(preRequirements.size > 0) {
           preRequirements.foreach(newScope requirePre _)
@@ -130,8 +152,8 @@ trait Partitioner {
     }
         
     def modifiers(tree: { def mods: Modifiers; def pos: Position }) = tree.pos match {
-      case UnknownPosition => scopes.top add new FlagPart(tree.mods.flags, UnknownPosition)
-      case _ => tree.mods.positions.foreach (x => scopes.top add new FlagPart(x._1, x._2))
+      case UnknownPosition => addPart(new FlagPart(tree.mods.flags, UnknownPosition))
+      case _ => tree.mods.positions.foreach (x => addPart(new FlagPart(x._1, x._2)))
     }
         
     def addPart(tree: Tree): Part = {
@@ -235,7 +257,7 @@ trait Partitioner {
           addPart(select)
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
-        scope(defdef) {
+        {
           modifiers(defdef)
           if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
             requirePostOrPre(" ")
@@ -328,13 +350,7 @@ trait Partitioner {
           visitAll(stats)(newline)
         } else {
           scope (tree, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
-            if(stats.size > 1) {
-              requirePre("{", "{\n")
-              visitAll(stats)(newline)
-              requirePost("}", "\n}")
-            } else {
-              visitAll(stats)(newline)
-            }
+            visitAll(stats)(newline)
             traverse(expr)
           }
         }
@@ -355,13 +371,13 @@ trait Partitioner {
         }
         
       case _ =>
-        println("Not handled: "+ tree.getClass())
+        //println("Not handled: "+ tree.getClass())
         super.traverse(tree)
     }}
     
     def visit(tree: Tree) = {
       
-      val rootPart = CompositePart(0, tree.pos.source.length, tree.pos.source, 0)
+      val rootPart = CompositePart(None, 0, tree.pos.source.length, tree.pos.source, /*SourceHelper.indentationLength(tree)*/0, tree)
       
       scopes push rootPart
       
@@ -371,16 +387,16 @@ trait Partitioner {
     }
   }
   
-  def essentialParts(root: Tree) = new Visitor().visit(root)
+  def essentialParts(root: Tree, partsHolder: PartsHolder) = new Visitor(Some(partsHolder)).visit(root)
   
   def splitIntoParts(root: Tree): CompositePart = {
     
-    val parts = essentialParts(root)
+    val parts = new Visitor(None).visit(root)
     
     def fillWs(part: Part): Part = part match {
       case p: CompositePart => 
       
-        val part = new CompositePart(p.start, p.end, p.file, p.indentation, p.origin)
+        val part = new CompositePart(p.parent, p.start, p.end, p.file, p.relativeIndentation, p.tree)
         
         def whitespace(start: Int, end: Int, file: SourceFile) {
           if(start < end) {

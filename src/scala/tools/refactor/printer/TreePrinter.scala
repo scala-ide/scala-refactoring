@@ -18,5 +18,7 @@ trait TreePrinter {
     case ValDef(_, name, _, _) => StringPart(name.toString)// requirePre("val ") requirePost(" = ") 
     case Literal(_) => StringPart(tree.toString)
     case tree: TypeTree => StringPart(tree.tpe.toString)
+    case Select(qualifier, name) => StringPart(name.toString)
+    case _ => throw new Exception("don't know how to create "+ tree.getClass)
   }
 }

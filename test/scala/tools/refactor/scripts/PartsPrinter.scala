@@ -35,7 +35,7 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform wit
       val wsBefore = splitWhitespaceBetween(partsHolder getPrevious part)._2
       val wsAfter  = splitWhitespaceBetween(partsHolder getNext part)._1
     
-      println(formatNode(part, wsBefore, part.origin, wsAfter, "lightgrey"))
+      println(formatNode(part, wsBefore, part.tree.getClass.getSimpleName, wsAfter, "lightgrey"))
       
       part.children foreach {
         case current: CompositePart => 
@@ -66,7 +66,7 @@ digraph structs {
   node[shape=plaintext, fontname="Courier", margin=0.05, height=0.4, width=0]
     """)
     
-    innerMerge(essentialParts(tree))
+    innerMerge(essentialParts(tree, partsHolder))
     //innerMerge(essentialParts(reverseClassParameters.transform(tree)))
     //innerMerge(essentialParts(insertValue.transform(tree)))
   

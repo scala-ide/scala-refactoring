@@ -1,16 +1,16 @@
 package scala.tools.refactor.printer
 
+import java.util.regex._
+
 trait Merger {
   
   self: WhitespaceSplitter with TreePrinter =>
 
   private def explain(what: String) = println(what)
   
-  def merge(part: ScopePart, original: ScopePart): List[Part] = {
+  def merge(part: ScopePart, partsHolder: PartsHolder): List[Part] = {
     
-    val partsHolder = new PartsHolder(original)
-    
-    def withWhitespace(current: Part, next: Part, parent: ScopePart): List[Part] = {
+    def withWhitespace(current: Part, next: Part, scope: ScopePart): List[Part] = {
     
       //explain("get ws after part: "+ current)
       
@@ -59,30 +59,87 @@ trait Merger {
         
         var completeWhitespace = whitespaceAfterCurrent + wsWithReqs1 + whitespaceBeforeNext + wsWithReqs2
         
+        def indentString(ws: String, length: Int) = {
+          
+          val parts = ws.split("""(?ms)\n\s*""")
+          val replaceStr = "\n" + (" " * length)
+          
+          val result = parts mkString replaceStr
+          
+          /*if(ws.matches("""(?ms).+?\n$"""))
+            result + "\n" 
+          else */if(ws.matches("""(?ms).*?\n\s*$"""))
+            result + replaceStr
+          else
+            result
+          
+          ws.replaceAll("""(?ms)\n\s*""", "\n" + (" " * length))
+        }
+        
+        
         if(completeWhitespace.contains('\n')) {
+          
+          println("\n==============\nWhitespace contains newlines: «"+ completeWhitespace +"» and we are currently handling: "+ next)
                     
-          partsHolder.parentIndentation(next) match {
-            case Some(indentation) => 
+          partsHolder.scopeIndentation(next) match {
+            case Some(originalscopeIndentation) => 
             
-              val currentIndentation = SourceHelper.indentationLength(next)
-              val originalParentIndentation = partsHolder.parentIndentation(next).getOrElse(0)
+              if(next.isEndOfScope) {
+                
+                println("at the end of scope, so we take the parent's indentation: "+ (scope.indentation))
+                if(completeWhitespace.matches("""\s+"""))                  
+                  () // if its just spaces, then leave it alone
+                else
+                  completeWhitespace = indentString(completeWhitespace, scope.indentation)
+
+              } else {
               
-              val desiredRelativeIndentation = currentIndentation - originalParentIndentation
-              val newIndentation = parent.indentation + desiredRelativeIndentation
-              
-              if(newIndentation != SourceHelper.indentationLength(next)) {
-                println("need to indent "+ next)
-                completeWhitespace = completeWhitespace.replaceAll("""(?ms)\n\s*""", "\n" + " " * newIndentation )
+                val currentIndentation = SourceHelper.indentationLength(next)
+                println("Our original indentation was: "+ currentIndentation)
+                println("Our original scope's indentation was: "+ originalscopeIndentation)
+                val desiredRelativeIndentation = currentIndentation - originalscopeIndentation
+                println("Relative to our scope, we need an indentation of: "+ desiredRelativeIndentation)
+                val newIndentation = scope.indentation + desiredRelativeIndentation
+                println("Our new scope's indentation is: "+ scope.indentation)
+                println("This means we want an indentation of : "+ newIndentation)
+                
+                if(newIndentation != currentIndentation) {
+                  println("need to indent "+ next)
+                  completeWhitespace = indentString(completeWhitespace, newIndentation)
+                }
               }
               
             case None =>
+            
+              println("We are a new node! "+ next)
+            
               if(next.isEndOfScope) {
-                completeWhitespace = completeWhitespace.replaceAll("""(?ms)\n\s*""", "\n" + " " * (parent.indentation))
+                println("at the end of the scope, so we want the scope's parent indentation")
+                  scope.parent match {
+                    case Some(p) => 
+                      println(", that is: "+ p.indentation + 2)
+                      completeWhitespace = indentString(completeWhitespace, p.indentation + 2)
+                    case None => 
+                      println(", oh, no parent, then 0")
+                      completeWhitespace = indentString(completeWhitespace, 0)
+                  }
               } else {
-                completeWhitespace = completeWhitespace.replaceAll("""(?ms)\n\s*""", "\n" + " " * (parent.indentation + 2))
+                println("our scope has an indentation of: "+ scope.indentation)
+                println("and we want to be indented, to: "+ (scope.indentation + 2))
+                completeWhitespace = indentString(completeWhitespace, scope.indentation + 2)
               }
           }
-        }
+        }/* else if (next.isEndOfScope && completeWhitespace.contains('}')){
+          println("\n==============\nWS contains } but no linebreak: «"+ completeWhitespace +"»")
+          scope.parent match {
+            case Some(p) => 
+              println(", that is: "+ p.indentation)
+              completeWhitespace = completeWhitespace.replaceAll("""^\s*""", " " * (p.indentation))
+            case None => 
+              println(", oh, no parent, then 0")
+              completeWhitespace = completeWhitespace.replaceAll("""^\s*""", "")
+          }
+        }*/
         
         new StringPart(completeWhitespace) :: Nil
       }
