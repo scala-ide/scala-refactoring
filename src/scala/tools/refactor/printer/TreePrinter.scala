@@ -9,7 +9,7 @@ trait TreePrinter {
   import compiler._
 
   def print(part: WithTree) = part match {
-    case part: WithRequirement => printTree(part.tree) copyRequirements part
+    case part: WithRequisite => printTree(part.tree) copyRequirements part
     case _ => printTree(part.tree)
   }
   

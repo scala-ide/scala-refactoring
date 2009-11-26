@@ -8,7 +8,7 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.symtab._
 import scala.tools.nsc.util.Position
 
-object Parts2 extends Merger with Partitioner with TestTransform with CompilerProvider with TreeDSL with WhitespaceSplitter with TreePrinter {
+object Parts2 extends Merger with Partitioner with TestTransform with CompilerProvider with TreeDSL with WhitespaceHandler with TreePrinter {
   
   val global = compiler
           

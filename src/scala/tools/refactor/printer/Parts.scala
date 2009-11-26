@@ -11,36 +11,11 @@ import scala.collection.mutable.ListBuffer
  * Terminology: Layout instead of Whitespace? 
  * */
 
-
-case class Required(check: String, write: String) {
-  def this(check: String) = this(check, check)
-  override def toString = check
-}
-
-trait WithRequirement {
-  val postRequirements = new ListBuffer[Required]
-  val preRequirements = new ListBuffer[Required]
-  def requirePost(r: Required): this.type = {
-    postRequirements += r
-    this
-  }
-  def requirePre(r: Required): this.type = {
-    preRequirements += r
-    this
-  }
-  def hasRequirements = postRequirements.size > 0 || preRequirements.size > 0
-  def copyRequirements(from: WithRequirement): this.type = {
-    from.postRequirements foreach (requirePost _)
-    from.preRequirements foreach (requirePre _)
-    this
-  }
-}
-
 trait WithTree {
   def tree: Trees#Tree
 }
 
-abstract sealed class Part extends WithRequirement {
+abstract sealed class Part extends WithRequisite {
   val isWhitespace = false
   val isEndOfScope = false
   val isBeginOfScope = false

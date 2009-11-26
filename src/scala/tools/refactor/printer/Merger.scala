@@ -4,7 +4,7 @@ import java.util.regex._
 
 trait Merger {
   
-  self: WhitespaceSplitter with TreePrinter =>
+  self: WhitespaceHandler with TreePrinter =>
 
   private def explain(what: String) = println(what)
   
@@ -12,8 +12,6 @@ trait Merger {
     
     def withWhitespace(current: Part, next: Part, scope: ScopePart): List[Part] = {
     
-      //explain("get ws after part: "+ current)
-      
       val currentExists = partsHolder exists current
       
       /*if(currentExists && partsHolder.getNext(current).get._3 == next) {
@@ -52,10 +50,12 @@ trait Merger {
          * */
         
         val allWhitespace = whitespaceAfterCurrent + whitespaceBeforeNext
+        
+        //def insertRequire
                 
         // check for overlapping whitespaces and requirements! => testSortWithJustOne
-        val wsWithReqs1 = current.postRequirements.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
-        val wsWithReqs2 = next.preRequirements.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
+        val wsWithReqs1 = current.requiredAfter.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
+        val wsWithReqs2 = next.requiredBefore.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
         
         var completeWhitespace = whitespaceAfterCurrent + wsWithReqs1 + whitespaceBeforeNext + wsWithReqs2
         
@@ -131,17 +131,6 @@ trait Merger {
           }
         }
         println("the resulting whitespace is thus: «"+ completeWhitespace +"»")
-        /* else if (next.isEndOfScope && completeWhitespace.contains('}')){
-          println("\n==============\nWS contains } but no linebreak: «"+ completeWhitespace +"»")
-          scope.parent match {
-            case Some(p) => 
-              println(", that is: "+ p.indentation)
-              completeWhitespace = completeWhitespace.replaceAll("""^\s*""", " " * (p.indentation))
-            case None => 
-              println(", oh, no parent, then 0")
-              completeWhitespace = completeWhitespace.replaceAll("""^\s*""", "")
-          }
-        }*/
         
         new StringPart(completeWhitespace) :: Nil
       }
@@ -151,7 +140,7 @@ trait Merger {
       case part if partsHolder exists part => part
       case part: FlagPart => StringPart(part.print) copyRequirements part
       case part: WithTree => print(part)
-      case part: WithRequirement => StringPart("") copyRequirements part
+      case part: WithRequisite => StringPart("") copyRequirements part
       case _ => StringPart("<non-tree part>")
     }
     
@@ -159,11 +148,8 @@ trait Merger {
     
       val list: List[(Part, Part)] = (part.children zip part.children.tail)
       
-      //explain("traversing parts: "+ list)
-      
       list flatMap {
         case (current: ScopePart, next) => innerMerge(current) ::: withWhitespace(current, next, part)
-        // do we need the end-of-scope thing? case (current, next: CompositePart#EndOfScope) => partFrom(current) :: withWhitespace(current, next) ::: next :: Nil
         case (current, next) => partFrom(current) :: withWhitespace(current, next, part)
       }
     }

@@ -4,7 +4,7 @@ import scala.tools.refactor.tests.utils._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-object PartsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceSplitter with TreePrinter {
+object PartsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceHandler with TreePrinter {
   
   def visualize(tree: compiler.Tree) {
     
@@ -20,8 +20,8 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform wit
     
     def formatNode(part: Part, left: String, middle: String, right: String, color: String = "bisque") = {
       
-      val lReq = if(part.preRequirements.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.preRequirements mkString "") +"</TD>" else ""
-      val rReq = if(part.postRequirements.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.postRequirements mkString "") +"</TD>" else ""
+      val lReq = if(part.requiredBefore.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredBefore mkString "") +"</TD>" else ""
+      val rReq = if(part.requiredAfter.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredAfter mkString "") +"</TD>" else ""
       val l = if(left != "") "<TD>" + escape(left) +"</TD>" else ""
       val r = if(right != "") "<TD>" + escape(right) +"</TD>" else ""
     

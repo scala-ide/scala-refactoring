@@ -15,25 +15,25 @@ trait Partitioner {
         
     private var scopes = new scala.collection.mutable.Stack[ScopePart]
     
-    private val preRequirements = new ListBuffer[Required]
+    private val preRequirements = new ListBuffer[Requisite]
     
-    def requirePre(check: String): Unit = requirePre(check, check)
-    def requirePre(check: String, write: String) = preRequirements += Required(check, write)
+    def requireBefore(check: String): Unit = requireBefore(check, check)
+    def requireBefore(check: String, write: String) = preRequirements += Requisite(check, write)
     
-    def requirePost(check: String): Unit = requirePost(check, check)
-    def requirePost(check: String, write: String) = {
+    def requireAfter(check: String): Unit = requireAfter(check, check)
+    def requireAfter(check: String, write: String) = {
       if(preRequirements.size > 0)
-        requirePre(check, write)
+        requireBefore(check, write)
       else
         scopes.top.lastChild match {
-        case Some(part) => part.requirePost(new Required(check, write))
+        case Some(part) => part.requireAfter(new Requisite(check, write))
         case None => () //??
       }
     }
     
-    def requirePostOrPre(r: String) = scopes.top.lastChild match {
-      case Some(_) => requirePost(r, r)
-      case _ => requirePre(r)
+    def requireAfterOrBefore(r: String) = scopes.top.lastChild match {
+      case Some(_) => requireAfter(r, r)
+      case _ => requireBefore(r)
     }
 
     def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, SourceFile) => Option[Int] = noChange, adjustEnd: (Int, SourceFile) => Option[Int] = noChange)(body: => Unit) = tree match {
@@ -44,9 +44,9 @@ trait Partitioner {
           
           scopes.top add newScope
           scopes push newScope
-          requirePre("{", "{\n")
+          requireBefore("{", "{\n")
           body
-          requirePost("}", "\n}")
+          requireAfter("}", "\n}")
           scopes pop
         } else
           body
@@ -83,7 +83,7 @@ trait Partitioner {
         val newScope = CompositePart(Some(scopes.top), start, end, tree.pos.source, i, tree)
         
         if(preRequirements.size > 0) {
-          preRequirements.foreach(newScope requirePre _)
+          preRequirements.foreach(newScope requireBefore _)
           preRequirements.clear
         }
         
@@ -168,7 +168,7 @@ trait Partitioner {
     
     def addPart(part: Part) = {
       scopes.top add part
-      preRequirements.foreach(part requirePre _)
+      preRequirements.foreach(part requireBefore _)
       preRequirements.clear
     }
     
@@ -233,7 +233,7 @@ trait Partitioner {
         }
         traverseTrees(mods.annotations)
         if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
-          requirePre(":", ": ")
+          requireBefore(":", ": ")
           traverse(tpt)
         }
         traverse(rhs)
@@ -260,30 +260,30 @@ trait Partitioner {
         {
           modifiers(defdef)
           if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
-            requirePostOrPre(" ")
+            requireAfterOrBefore(" ")
             addPart(defdef)
                       
             traverseTrees(mods.annotations)
             traverseTrees(tparams)
             
             if(!vparamss.isEmpty) {
-              requirePost("(")
+              requireAfter("(")
 	            traverseTreess(vparamss)
-              requirePre(")")
+              requireBefore(")")
             }
             
             if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
-              requirePre(":", ": ")
+              requireBefore(":", ": ")
               traverse(tpt)              
             }
             
             rhs match {
               case EmptyTree =>
               case rhs: Block =>
-                requirePost("=", " = ")
+                requireAfter("=", " = ")
                 traverse(rhs) //Block creates its own Scope
               case _ =>
-                requirePost("=", " = ")
+                requireAfter("=", " = ")
                 scope(rhs, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
                   traverse(rhs)
                 }
@@ -307,7 +307,7 @@ trait Partitioner {
         }
         
         visitAll(classParams) {
-          case part: WithRequirement => part.requirePost(Required(",", ", "))
+          case part: WithRequisite => part.requireAfter(Requisite(",", ", "))
           case _ => throw new Exception("Can't add requirement.")
         }
         
@@ -330,8 +330,8 @@ trait Partitioner {
                   forwardsTo('{', abortOn)(startFrom, file)
                 }, 
             adjustEnd = noChange) {
-            visitAll(trueBody)(_.requirePost(new Required("\n")))
-            requirePost("\n")
+            visitAll(trueBody)(_.requireAfter(new Requisite("\n")))
+            requireAfter("\n")
           }
         }
         
@@ -344,7 +344,7 @@ trait Partitioner {
         
       case Block(stats, expr) =>
         
-        val newline: Part => Unit = _.requirePost(new Required("\n"))
+        val newline: Part => Unit = _.requireAfter(new Requisite("\n"))
         
         if(expr.pos.isRange && (expr.pos precedes stats.first.pos)) {
           traverse(expr)
