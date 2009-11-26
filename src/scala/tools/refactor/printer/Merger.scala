@@ -73,7 +73,7 @@ trait Merger {
           else
             result
           
-          ws.replaceAll("""(?ms)\n\s*""", "\n" + (" " * length))
+          ws.replaceAll("""(?ms)\n[\t ]*""", "\n" + (" " * length))
         }
         
         
@@ -117,7 +117,7 @@ trait Merger {
                 println("at the end of the scope, so we want the scope's parent indentation")
                   scope.parent match {
                     case Some(p) => 
-                      println(", that is: "+ p.indentation + 2)
+                      println(", that is: "+ (p.indentation + 2))
                       completeWhitespace = indentString(completeWhitespace, p.indentation + 2)
                     case None => 
                       println(", oh, no parent, then 0")
@@ -129,7 +129,9 @@ trait Merger {
                 completeWhitespace = indentString(completeWhitespace, scope.indentation + 2)
               }
           }
-        }/* else if (next.isEndOfScope && completeWhitespace.contains('}')){
+        }
+        println("the resulting whitespace is thus: «"+ completeWhitespace +"»")
+        /* else if (next.isEndOfScope && completeWhitespace.contains('}')){
           println("\n==============\nWS contains } but no linebreak: «"+ completeWhitespace +"»")
           scope.parent match {
             case Some(p) => 

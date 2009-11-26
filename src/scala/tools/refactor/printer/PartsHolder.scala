@@ -18,9 +18,9 @@ class PartsHolder(root: ScopePart) {
   }    
   
   private def visit(part: ScopePart, find: Trees#Tree): Option[ScopePart] = {
-    println("now at part: "+ part)
+//    println("now at part: "+ part)
     part.children foreach { child =>
-      println("child: "+ child)
+//      println("child: "+ child)
       
       child match {
         case child: WithTree if child.tree.pos == find.pos => return Some(part)
@@ -30,7 +30,7 @@ class PartsHolder(root: ScopePart) {
       child match {
         case scope: ScopePart => 
         
-        println("going down into: "+ scope)
+//        println("going down into: "+ scope)
         
           visit(scope, find) match {
             case Some(res) => return Some(res)

@@ -331,6 +331,7 @@ trait Partitioner {
                 }, 
             adjustEnd = noChange) {
             visitAll(trueBody)(_.requirePost(new Required("\n")))
+            requirePost("\n")
           }
         }
         

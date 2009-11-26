@@ -138,6 +138,7 @@ class MergerTest extends TestHelper with TestTransform {
           d
         } //end of c
         val b: String //b-string
+      
       }
     """, 
       reverseClassParameters.transform(_))
@@ -230,6 +231,36 @@ object A {
 }
     """, 
       newMethodFromExistingBody.transform(_))
+  }  
+  
+  @Test
+  def testbodyInBody() = {
+    """
+      class A {
+        val b: String //b-string
+        def c: Unit = {
+          def d: Int = {
+            5
+          }
+          d
+        }
+      }
+    """ transformsTo( 
+    """
+      class A {
+        val b: String //b-string
+        def c: Unit = {
+          def innerMethod: Unit = {
+            def d: Int = {
+              5
+            }
+            d
+          }
+          innerMethod
+        }
+      }
+    """, 
+      bodyInBody.transform(_))
   }  
 
 }
