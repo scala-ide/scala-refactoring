@@ -4,9 +4,9 @@ import scala.tools.nsc.ast.Trees
 
 object SourceHelper {
   
-  def indentationLength(part: Part): Int = part match {
-    case part: OriginalSourcePart => try {
-        indentationLength(part.start, part.file.content)
+  def indentationLength(f: Fragment): Int = f match {
+    case f: OriginalSourceFragment => try {
+        indentationLength(f.start, f.file.content)
     } catch {
       case _: UnsupportedOperationException => 0
       case e => throw e

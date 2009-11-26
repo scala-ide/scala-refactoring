@@ -14,11 +14,11 @@ trait TreePrinter {
   }
   
   private def printTree(tree: Trees#Tree) = tree match {
-    case DefDef(_, name, _, _, _, _) => StringPart(name.toString)// requirePre("def ") requirePost(" = ") 
-    case ValDef(_, name, _, _) => StringPart(name.toString)// requirePre("val ") requirePost(" = ") 
-    case Literal(_) => StringPart(tree.toString)
-    case tree: TypeTree => StringPart(tree.tpe.toString)
-    case Select(qualifier, name) => StringPart(name.toString)
+    case DefDef(_, name, _, _, _, _) => StringFragment(name.toString)// requirePre("def ") requirePost(" = ") 
+    case ValDef(_, name, _, _) => StringFragment(name.toString)// requirePre("val ") requirePost(" = ") 
+    case Literal(_) => StringFragment(tree.toString)
+    case tree: TypeTree => StringFragment(tree.tpe.toString)
+    case Select(qualifier, name) => StringFragment(name.toString)
     case _ => throw new Exception("don't know how to create "+ tree.getClass)
   }
 }

@@ -15,7 +15,7 @@ trait WithTree {
   def tree: Trees#Tree
 }
 
-abstract sealed class Part extends WithRequisite {
+abstract sealed class Fragment extends WithRequisite {
   val isWhitespace = false
   val isEndOfScope = false
   val isBeginOfScope = false
@@ -23,7 +23,7 @@ abstract sealed class Part extends WithRequisite {
   override def toString = print
 }
 
-trait OriginalSourcePart extends Part {
+trait OriginalSourceFragment extends Fragment {
   def start: Int
   def end: Int
   def file: SourceFile
@@ -31,65 +31,65 @@ trait OriginalSourcePart extends Part {
 
 trait Whitespace
 
-case class WhitespacePart(val start: Int, val end: Int, file: SourceFile) extends Part with OriginalSourcePart with Whitespace {
+case class WhitespaceFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment with Whitespace {
   override val isWhitespace = true
   def print = new String(file.content.slice(start, end))
   override def toString = if(start == end) "❒" else new String(file.content.slice(start, end))
 }
 
-case class StringPart(string: String) extends Part {
+case class StringFragment(string: String) extends Fragment {
   val print = string
 }
 
-case class RequirementPart(string: String) extends Part {
+case class RequirementFragment(string: String) extends Fragment {
   val print = string
 }
 
-abstract class ScopePart extends Part {
-  val parent: Option[ScopePart]
+abstract class Scope extends Fragment {
+  val parent: Option[Scope]
   def relativeIndentation: Int
-  def children: List[Part]
-  def lastChild: Option[Part] = if(trueChildren.isEmpty) None else Some(trueChildren.last)
+  def children: List[Fragment]
+  def lastChild: Option[Fragment] = if(trueChildren.isEmpty) None else Some(trueChildren.last)
   def indentation: Int = parent match {
-    case Some(part) => part.indentation + relativeIndentation
+    case Some(fragment) => fragment.indentation + relativeIndentation
     case None => relativeIndentation
   }
-  protected val trueChildren = new ListBuffer[Part]()
-  def add(p: Part) = trueChildren += p //make sure they are in order
+  protected val trueChildren = new ListBuffer[Fragment]()
+  def add(p: Fragment) = trueChildren += p //make sure they are in order
   def print = children mkString
   override def toString = "→"+ indentation +"("+ relativeIndentation +")"+ (children mkString "|")
 }
 
-case class SimpleScope(parent: Option[ScopePart], relativeIndentation: Int) extends ScopePart {
+case class SimpleScope(parent: Option[Scope], relativeIndentation: Int) extends Scope {
   
-  object beginOfScope extends StringPart("❨") {
+  object beginOfScope extends StringFragment("❨") {
     override val isBeginOfScope = true 
   }
-  object endOfScope extends StringPart("❩") {
+  object endOfScope extends StringFragment("❩") {
     override val isEndOfScope = true 
   }
   
   def children = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
 }
 
-case class CompositePart(parent: Option[ScopePart], start: Int, end: Int, file: SourceFile, relativeIndentation: Int, tree: Trees#Tree) extends ScopePart with OriginalSourcePart with WithTree {
+case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFile, relativeIndentation: Int, tree: Trees#Tree) extends Scope with OriginalSourceFragment with WithTree {
 
-  class BeginOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: CompositePart) extends Part with OriginalSourcePart {
+  class BeginOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: TreeScope) extends Fragment with OriginalSourceFragment {
     override def toString = "❨"
     override val isBeginOfScope = true 
     val print = ""
     override def equals(that: Any) = that match {
-      case that: CompositePart#BeginOfScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
+      case that: TreeScope#BeginOfScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
       case _ => false
     }
   }
   
-  class EndOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: CompositePart) extends Part with OriginalSourcePart {
+  class EndOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: TreeScope) extends Fragment with OriginalSourceFragment {
     override val toString = "❩"
     override val isEndOfScope = true 
     val print = ""
     override def equals(that: Any) = that match {
-      case that: CompositePart#EndOfScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
+      case that: TreeScope#EndOfScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
       case _ => false
     }
   }
@@ -97,18 +97,18 @@ case class CompositePart(parent: Option[ScopePart], start: Int, end: Int, file: 
   private val beginOfScope = new BeginOfScope(start, start, file, this)
   private val endOfScope = new EndOfScope(end, end, file, this)
   
-  def children: List[Part] = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
+  def children: List[Fragment] = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
   // would it be enough to just check whether the trees are equal?
   override def equals(that: Any) = that match {
-    case that: CompositePart => that.start == this.start && that.end == this.end && that.file == this.file
+    case that: TreeScope => that.start == this.start && that.end == this.end && that.file == this.file
     case _ => false
   }
 }
 
-case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart with WithTree {
+case class SymTreeFragment(tree: Trees#SymTree) extends Fragment with OriginalSourceFragment with WithTree {
   override def hashCode = toString.hashCode + start * 31 * (end + 17)
   override def equals(that: Any) = that match {
-    case that: SymTreePart => that.start == this.start && that.end == this.end && that.file == this.file
+    case that: SymTreeFragment => that.start == this.start && that.end == this.end && that.file == this.file
     case _ => false
   }
   val start = tree.pos.point
@@ -117,11 +117,11 @@ case class SymTreePart(tree: Trees#SymTree) extends Part with OriginalSourcePart
   def print = new String(file.content.slice(start, end))
 }
 
-case class ArtificialTreePart(tree: Trees#Tree) extends Part with WithTree {
+case class ArtificialTreeFragment(tree: Trees#Tree) extends Fragment with WithTree {
   def print = "?"+ tree.getClass.getSimpleName
 }
 
-case class TreePart(tree: Trees#Tree) extends Part with OriginalSourcePart with WithTree {
+case class TreeFragment(tree: Trees#Tree) extends Fragment with OriginalSourceFragment with WithTree {
   val start = tree.pos.start
   val end = tree.pos.end
   val file = tree.pos.source
@@ -129,7 +129,7 @@ case class TreePart(tree: Trees#Tree) extends Part with OriginalSourcePart with 
 }
 
 // add requirements here?
-case class FlagPart(flag: Long, pos: Position) extends Part with OriginalSourcePart {
+case class FlagFragment(flag: Long, pos: Position) extends Fragment with OriginalSourceFragment {
   lazy val start = pos.start
   lazy val end = start + print.length
   lazy val file = pos.source

@@ -7,24 +7,24 @@ import scala.tools.refactor.transform._
 
 trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with WhitespaceHandler with TreePrinter {
   
-  def parts(src: String) = splitIntoParts(treeFrom(src))
+  def parts(src: String) = splitIntoFragments(treeFrom(src))
   
   class TestString(src: String) {
     
     def partitionsInto(expected: String) = {
-      val p = splitIntoParts(treeFrom(src))
+      val p = splitIntoFragments(treeFrom(src))
       val generatedCode = p.toString
       assertEquals(expected, generatedCode)
     }
     
-    def essentialPartsAre(expected: String) = {
+    def essentialFragmentsAre(expected: String) = {
       val tree = treeFrom(src)
-      val generatedCode = essentialParts(tree, new PartsHolder(splitIntoParts(tree))).toString
+      val generatedCode = essentialFragments(tree, new PartsHolder(splitIntoFragments(tree))).toString
       assertEquals(expected, generatedCode)
     }
     
     def splitsInto(expected: String) = {
-      def splitAllWhitespaces(parts: List[Part]): String = parts match {
+      def splitAllWhitespaces(parts: List[Fragment]): String = parts match {
         case x :: y :: xs =>
           val (ws, rest) = (y :: xs).span(_.isWhitespace)
           val (left, right) = splitWhitespaceBetween(Some(x, ws, rest.head))
@@ -41,9 +41,9 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
       val tree = treeFrom(src)
       val newTree = transform(tree)
       
-      val partitionedOriginal = splitIntoParts(tree)
+      val partitionedOriginal = splitIntoFragments(tree)
       val parts = new PartsHolder(partitionedOriginal)
-      val partitionedModified = essentialParts(newTree, parts)
+      val partitionedModified = essentialFragments(newTree, parts)
       
       val merged = merge(partitionedModified, parts)
           

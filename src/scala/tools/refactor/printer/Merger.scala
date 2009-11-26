@@ -8,9 +8,9 @@ trait Merger {
 
   private def explain(what: String) = println(what)
   
-  def merge(part: ScopePart, partsHolder: PartsHolder): List[Part] = {
+  def merge(part: Scope, partsHolder: PartsHolder): List[Fragment] = {
     
-    def withWhitespace(current: Part, next: Part, scope: ScopePart): List[Part] = {
+    def withWhitespace(current: Fragment, next: Fragment, scope: Scope): List[Fragment] = {
     
       val currentExists = partsHolder exists current
       
@@ -132,24 +132,24 @@ trait Merger {
         }
         println("the resulting whitespace is thus: «"+ completeWhitespace +"»")
         
-        new StringPart(completeWhitespace) :: Nil
+        new StringFragment(completeWhitespace) :: Nil
       }
     }
     
-    def partFrom(part: Part) = part match {
+    def partFrom(part: Fragment) = part match {
       case part if partsHolder exists part => part
-      case part: FlagPart => StringPart(part.print) copyRequirements part
+      case part: FlagFragment => StringFragment(part.print) copyRequirements part
       case part: WithTree => print(part)
-      case part: WithRequisite => StringPart("") copyRequirements part
-      case _ => StringPart("<non-tree part>")
+      case part: WithRequisite => StringFragment("") copyRequirements part
+      case _ => StringFragment("<non-tree part>")
     }
     
-    def innerMerge(part: ScopePart): List[Part] = {
+    def innerMerge(part: Scope): List[Fragment] = {
     
-      val list: List[(Part, Part)] = (part.children zip part.children.tail)
+      val list: List[(Fragment, Fragment)] = (part.children zip part.children.tail)
       
       list flatMap {
-        case (current: ScopePart, next) => innerMerge(current) ::: withWhitespace(current, next, part)
+        case (current: Scope, next) => innerMerge(current) ::: withWhitespace(current, next, part)
         case (current, next) => partFrom(current) :: withWhitespace(current, next, part)
       }
     }

@@ -33,12 +33,12 @@ object Parts2 extends Merger with Partitioner with TestTransform with CompilerPr
 //    val res = insertValue.transform(tree)
         
         
-    val partitionedOriginal = splitIntoParts(tree)
+    val partitionedOriginal = splitIntoFragments(tree)
     
     println(partitionedOriginal)
     println("===========")
 
-    val ess = essentialParts(tree, new PartsHolder(partitionedOriginal))
+    val ess = essentialFragments(tree, new PartsHolder(partitionedOriginal))
 
     println(ess)
     println("===========")
@@ -47,7 +47,7 @@ object Parts2 extends Merger with Partitioner with TestTransform with CompilerPr
     val newTree = bodyInBody.transform(tree)
     //val newTree = insertValue.transform(tree)
 //    val newTree = reverseClassParameters.transform(tree)
-    val partitionedModified = essentialParts(newTree, new PartsHolder(partitionedOriginal))
+    val partitionedModified = essentialFragments(newTree, new PartsHolder(partitionedOriginal))
     
     println("Modified: "+ partitionedModified)
     

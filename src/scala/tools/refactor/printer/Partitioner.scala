@@ -9,11 +9,11 @@ import scala.tools.refactor.UnknownPosition
 
 trait Partitioner {
   self: scala.tools.refactor.Compiler =>
-  import compiler._
+  import compiler.{Scope => _, _}
   
   private class Visitor(partsHolder: Option[PartsHolder]) extends Traverser {
         
-    private var scopes = new scala.collection.mutable.Stack[ScopePart]
+    private var scopes = new scala.collection.mutable.Stack[Scope]
     
     private val preRequirements = new ListBuffer[Requisite]
     
@@ -80,7 +80,7 @@ trait Partitioner {
             SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
         }
         
-        val newScope = CompositePart(Some(scopes.top), start, end, tree.pos.source, i, tree)
+        val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, i, tree)
         
         if(preRequirements.size > 0) {
           preRequirements.foreach(newScope requireBefore _)
@@ -152,27 +152,27 @@ trait Partitioner {
     }
         
     def modifiers(tree: { def mods: Modifiers; def pos: Position }) = tree.pos match {
-      case UnknownPosition => addPart(new FlagPart(tree.mods.flags, UnknownPosition))
-      case _ => tree.mods.positions.foreach (x => addPart(new FlagPart(x._1, x._2)))
+      case UnknownPosition => addFragment(new FlagFragment(tree.mods.flags, UnknownPosition))
+      case _ => tree.mods.positions.foreach (x => addFragment(new FlagFragment(x._1, x._2)))
     }
         
-    def addPart(tree: Tree): Part = {
+    def addFragment(tree: Tree): Fragment = {
       val part = tree match {
-        case tree if tree.pos == UnknownPosition => ArtificialTreePart(tree)
-        case tree: SymTree => SymTreePart(tree)
-        case _ => TreePart(tree)
+        case tree if tree.pos == UnknownPosition => ArtificialTreeFragment(tree)
+        case tree: SymTree => SymTreeFragment(tree)
+        case _ => TreeFragment(tree)
       }
-      addPart(part)
+      addFragment(part)
       part
     }
     
-    def addPart(part: Part) = {
+    def addFragment(part: Fragment) = {
       scopes.top add part
       preRequirements.foreach(part requireBefore _)
       preRequirements.clear
     }
     
-    def visitAll(trees: List[Tree])(separator: Part => Unit ): Unit = trees match {
+    def visitAll(trees: List[Tree])(separator: Fragment => Unit ): Unit = trees match {
       case Nil => 
         ()
       case x :: Nil => 
@@ -198,7 +198,7 @@ trait Partitioner {
         if(t.original != null) 
           traverse(t.original)
         else if(t.pos == UnknownPosition)
-          addPart(t)
+          addFragment(t)
       
       /*case PackageDef(pid, stats) => 
         scope(tree) {
@@ -209,27 +209,27 @@ trait Partitioner {
         if(i.symbol.hasFlag(Flags.SYNTHETIC))
           ()
         else if (i.symbol.pos == NoPosition)
-          addPart(new SymTreePart(i) {
+          addFragment(new SymTreeFragment(i) {
             override val end = start + i.name.length
           })
         else
-          addPart(i)
+          addFragment(i)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
         modifiers(c)
         if (!c.symbol.isAnonymousClass)
-          addPart(c)
+          addFragment(c)
         super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) => 
         modifiers(m)
-        addPart(m)
+        addFragment(m)
         super.traverse(tree)
         
       case v @ ValDef(mods, name, tpt, rhs) => 
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
           modifiers(v)
-          addPart(v)
+          addFragment(v)
         }
         traverseTrees(mods.annotations)
         if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
@@ -245,23 +245,23 @@ trait Partitioner {
         if (qualifier.isInstanceOf[New]) {
           ()
         } else if(qualifier.isInstanceOf[Super]) {
-          scopes.top add new SymTreePart(select) {
+          scopes.top add new SymTreeFragment(select) {
             override val end = tree.pos.end
           }
         } else if (qualifier.pos.isRange) {
-          scopes.top add new SymTreePart(select) {
+          scopes.top add new SymTreeFragment(select) {
             override val start = select.pos.end - select.symbol.nameString.length
             override val end = select.pos.end
           }
         } else
-          addPart(select)
+          addFragment(select)
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         {
           modifiers(defdef)
           if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
             requireAfterOrBefore(" ")
-            addPart(defdef)
+            addFragment(defdef)
                       
             traverseTrees(mods.annotations)
             traverseTrees(tparams)
@@ -294,7 +294,7 @@ trait Partitioner {
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
           modifiers(typeDef)
-          addPart(typeDef)
+          addFragment(typeDef)
           super.traverse(tree)
 
       case t @ Template(parents, _, body) =>
@@ -336,7 +336,7 @@ trait Partitioner {
         }
         
       case Literal(constant) =>
-        addPart(tree)
+        addFragment(tree)
         super.traverse(tree)
         
       case Block(Nil, expr) =>
@@ -344,7 +344,7 @@ trait Partitioner {
         
       case Block(stats, expr) =>
         
-        val newline: Part => Unit = _.requireAfter(new Requisite("\n"))
+        val newline: Fragment => Unit = _.requireAfter(new Requisite("\n"))
         
         if(expr.pos.isRange && (expr.pos precedes stats.first.pos)) {
           traverse(expr)
@@ -357,11 +357,11 @@ trait Partitioner {
         }
         
       case New(tpt) =>
-        addPart(tree)
+        addFragment(tree)
         traverse(tpt)
         
       case s @ Super(qual, mix) =>
-        addPart(new SymTreePart(s) {
+        addFragment(new SymTreeFragment(s) {
           override val end = tree.pos.end
         })
         super.traverse(tree)
@@ -378,37 +378,37 @@ trait Partitioner {
     
     def visit(tree: Tree) = {
       
-      val rootPart = CompositePart(None, 0, tree.pos.source.length, tree.pos.source, /*SourceHelper.indentationLength(tree)*/0, tree)
+      val rootFragment = TreeScope(None, 0, tree.pos.source.length, tree.pos.source, /*SourceHelper.indentationLength(tree)*/0, tree)
       
-      scopes push rootPart
+      scopes push rootFragment
       
       traverse(tree)
       
-      rootPart
+      rootFragment
     }
   }
   
-  def essentialParts(root: Tree, partsHolder: PartsHolder) = new Visitor(Some(partsHolder)).visit(root)
+  def essentialFragments(root: Tree, partsHolder: PartsHolder) = new Visitor(Some(partsHolder)).visit(root)
   
-  def splitIntoParts(root: Tree): CompositePart = {
+  def splitIntoFragments(root: Tree): TreeScope = {
     
     val parts = new Visitor(None).visit(root)
     
-    def fillWs(part: Part): Part = part match {
-      case p: CompositePart => 
+    def fillWs(part: Fragment): Fragment = part match {
+      case p: TreeScope => 
       
-        val part = new CompositePart(p.parent, p.start, p.end, p.file, p.relativeIndentation, p.tree)
+        val part = new TreeScope(p.parent, p.start, p.end, p.file, p.relativeIndentation, p.tree)
         
         def whitespace(start: Int, end: Int, file: SourceFile) {
           if(start < end) {
-            part add WhitespacePart(start, end, file)
+            part add WhitespaceFragment(start, end, file)
           }
         }
 
         (p.children zip p.children.tail) foreach {
-          case (left: CompositePart#BeginOfScope, right: OriginalSourcePart) => ()
+          case (left: TreeScope#BeginOfScope, right: OriginalSourceFragment) => ()
             whitespace(left.end, right.start, left.file)
-          case (left: OriginalSourcePart, right: OriginalSourcePart) =>
+          case (left: OriginalSourceFragment, right: OriginalSourceFragment) =>
             part add (fillWs(left))
             whitespace(left.end, right.start, left.file)
         }
@@ -416,6 +416,6 @@ trait Partitioner {
       case _ => part
     }
     
-    fillWs(parts).asInstanceOf[CompositePart]
+    fillWs(parts).asInstanceOf[TreeScope]
   }
 }

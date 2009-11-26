@@ -3,12 +3,12 @@ package scala.tools.refactor.printer
 import scala.tools.nsc.ast.Trees
 
 // cache, optimize, whatever!
-class PartsHolder(root: ScopePart) {
+class PartsHolder(root: Scope) {
     
-  private def visit(part: ScopePart, find: Part): Option[ScopePart] = {
+  private def visit(part: Scope, find: Fragment): Option[Scope] = {
     part.children foreach {
       case p if p == find => return Some(part)
-      case p: ScopePart => visit(p, find) match {
+      case p: Scope => visit(p, find) match {
         case None => ()
         case Some(found) => return Some(found)
       }
@@ -17,7 +17,7 @@ class PartsHolder(root: ScopePart) {
     None
   }    
   
-  private def visit(part: ScopePart, find: Trees#Tree): Option[ScopePart] = {
+  private def visit(part: Scope, find: Trees#Tree): Option[Scope] = {
 //    println("now at part: "+ part)
     part.children foreach { child =>
 //      println("child: "+ child)
@@ -28,7 +28,7 @@ class PartsHolder(root: ScopePart) {
       }
 
       child match {
-        case scope: ScopePart => 
+        case scope: Scope => 
         
 //        println("going down into: "+ scope)
         
@@ -42,12 +42,12 @@ class PartsHolder(root: ScopePart) {
     None
   }
   
-  def exists(part: Part) = visit(root, part) match {
+  def exists(part: Fragment) = visit(root, part) match {
     case Some(found) => found.children.exists(_ == part)
     case None => false
   }
   
-  def scopeIndentation(part: Part) = visit(root, part) match {
+  def scopeIndentation(part: Fragment) = visit(root, part) match {
     case Some(found) => Some(found.indentation)
     case None => None//throw new Exception("parent not found")
   }
@@ -57,7 +57,7 @@ class PartsHolder(root: ScopePart) {
     case None => None//throw new Exception("parent not found")
   }
   
-  def getNext(part: Part): Option[Triple[Part, List[Part], Part]] = {
+  def getNext(part: Fragment): Option[Triple[Fragment, List[Fragment], Fragment]] = {
     
 //    println("get next after: "+ part)
    
@@ -76,7 +76,7 @@ class PartsHolder(root: ScopePart) {
     Some((partInOriginal.head, whitespaceBetween, rest.head))
   }
   
-  def getPrevious(part: Part): Option[Triple[Part, List[Part], Part]] = {
+  def getPrevious(part: Fragment): Option[Triple[Fragment, List[Fragment], Fragment]] = {
     
 //    println("get previous before: "+ part)
    

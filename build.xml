@@ -33,7 +33,7 @@
 
 	<target name="build-tests" depends="build">
 		<mkdir dir="${build.dir}" />
-		<scalac srcdir="${test.dir}" destdir="${build.dir}" classpathref="build.classpath">
+		<scalac srcdir="${test.dir}" destdir="${build.dir}" classpathref="build.classpath" deprecation="yes" unchecked="yes">
 			<include name="**/*.scala" />
 		</scalac>
 	</target>

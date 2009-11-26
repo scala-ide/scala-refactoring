@@ -4,21 +4,21 @@ import scala.tools.refactor.tests.utils._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-object PartsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceHandler with TreePrinter {
+object FragmentsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceHandler with TreePrinter {
   
   def visualize(tree: compiler.Tree) {
     
-    val partsHolder = new PartsHolder(splitIntoParts(tree))
+    val partsHolder = new PartsHolder(splitIntoFragments(tree))
     
-    def id(part: Part) = part.hashCode.toString /*part match {
-      case part: CompositePart#EndOfScope => ""+ part.parent.hashCode
-      case part: OriginalSourcePart => ""+ part.start.toString + part.toString.hashCode.toString + part.end.toString
+    def id(part: Fragment) = part.hashCode.toString /*part match {
+      case part: CompositeFragment#EndOfScope => ""+ part.parent.hashCode
+      case part: OriginalSourceFragment => ""+ part.start.toString + part.toString.hashCode.toString + part.end.toString
       case _ => "?"
     }*/
     
     def escape(s: String) = s.replace("\n", "\\n").replace(" ", "·").replace(">", "&gt;").replace("<", "&lt;")
     
-    def formatNode(part: Part, left: String, middle: String, right: String, color: String = "bisque") = {
+    def formatNode(part: Fragment, left: String, middle: String, right: String, color: String = "bisque") = {
       
       val lReq = if(part.requiredBefore.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredBefore mkString "") +"</TD>" else ""
       val rReq = if(part.requiredAfter.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredAfter mkString "") +"</TD>" else ""
@@ -28,7 +28,7 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform wit
       id(part) +"[label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"2\"><TR>"+l+lReq+"<TD BGCOLOR=\""+ color +"\">"+ escape(middle) +"</TD>"+r+rReq+"</TR></TABLE>>];"
     }
   
-    def innerMerge(part: CompositePart): Unit = {
+    def innerMerge(part: TreeScope): Unit = {
       
       val currentParent = id(part)
         
@@ -38,15 +38,15 @@ object PartsPrinter extends Partitioner with CompilerProvider with Transform wit
       println(formatNode(part, wsBefore, part.tree.getClass.getSimpleName, wsAfter, "lightgrey"))
       
       part.children foreach {
-        case current: CompositePart => 
+        case current: TreeScope => 
           innerMerge(current)          
           println("  "+ currentParent +" -> "+ id(current))
-        case current: CompositePart#BeginOfScope =>
+        case current: TreeScope#BeginOfScope =>
           val wsAfter  = splitWhitespaceBetween(partsHolder getNext current)._1
     
           println(formatNode(current, "", "◆", wsAfter))
           println("  "+ currentParent +" -> "+ id(current))
-        case current: CompositePart#EndOfScope =>
+        case current: TreeScope#EndOfScope =>
           val wsBefore = splitWhitespaceBetween(partsHolder getPrevious current)._2
           
           println(formatNode(current, wsBefore, "◆", ""))
@@ -66,9 +66,9 @@ digraph structs {
   node[shape=plaintext, fontname="Courier", margin=0.05, height=0.4, width=0]
     """)
     
-    innerMerge(essentialParts(tree, partsHolder))
-    //innerMerge(essentialParts(reverseClassParameters.transform(tree)))
-    //innerMerge(essentialParts(insertValue.transform(tree)))
+    innerMerge(essentialFragments(tree, partsHolder))
+    //innerMerge(essentialFragments(reverseClassParameters.transform(tree)))
+    //innerMerge(essentialFragments(insertValue.transform(tree)))
   
     println("\n}")
   }
