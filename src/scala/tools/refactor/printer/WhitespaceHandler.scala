@@ -14,21 +14,24 @@ trait WhitespaceHandler {
     whitespaceAfterCurrent + mapRequirements(current.requiredAfter) + whitespaceBeforeNext + mapRequirements(next.requiredBefore)
   }
   
-  def fixIndentation(whitespace: String, allFragments: FragmentRepository, next: Fragment, scope: Scope) = {
+  def fixIndentation(whitespace: String, originalScopeIndentation: Option[Int], next: Fragment, scope: Scope) = {
+    
+    val isEndOfScope = next.isEndOfScope
+    val currentIndentation = SourceHelper.indentationLength(next)
     
     if(whitespace.contains('\n')) {
       
       def indentString(length: Int) = {
-        // exclude comments
         whitespace.replaceAll("""(?ms)\n[\t ]*""", "\n" + (" " * length))
       }
       
       println("\n==============\nWhitespace contains newlines: «"+ whitespace +"» and we are currently handling: "+ next)
-                
-      allFragments.scopeIndentation(next) match {
-        case Some(originalscopeIndentation) => 
+              
+      
+      originalScopeIndentation match {
+        case Some(originalScopeIndentation) => 
         
-          if(next.isEndOfScope) {
+          if(isEndOfScope) {
             
             println("at the end of scope, so we take the parent's indentation: "+ (scope.indentation))
             if(whitespace.matches("""\s+"""))                  
@@ -38,10 +41,9 @@ trait WhitespaceHandler {
 
           } else {
           
-            val currentIndentation = SourceHelper.indentationLength(next)
             println("Our original indentation was: "+ currentIndentation)
-            println("Our original scope's indentation was: "+ originalscopeIndentation)
-            val desiredRelativeIndentation = currentIndentation - originalscopeIndentation
+            println("Our original scope's indentation was: "+ originalScopeIndentation)
+            val desiredRelativeIndentation = currentIndentation - originalScopeIndentation
             println("Relative to our scope, we need an indentation of: "+ desiredRelativeIndentation)
             val newIndentation = scope.indentation + desiredRelativeIndentation
             println("Our new scope's indentation is: "+ scope.indentation)
@@ -57,16 +59,9 @@ trait WhitespaceHandler {
         
           println("We are a new node! "+ next)
         
-          if(next.isEndOfScope) {
+          if(isEndOfScope) {
             println("at the end of the scope, so we want the scope's parent indentation")
-              scope.parent match {
-                case Some(p) => 
-                  println(", that is: "+ (p.indentation + 2))
-                  indentString(p.indentation + 2)
-                case None => 
-                  println(", oh, no parent, then 0")
-                  indentString(0)
-              }
+            indentString(scope.indentation)
           } else {
             println("our scope has an indentation of: "+ scope.indentation)
             println("and we want to be indented, to: "+ (scope.indentation + 2))

@@ -52,7 +52,7 @@ trait Merger {
         
         val whitespace = processRequisites(current, whitespaceAfterCurrent, whitespaceBeforeNext, next)
         
-        val indentedWhitespace = fixIndentation(whitespace, allFragments, next, scope)
+        val indentedWhitespace = fixIndentation(whitespace, allFragments.scopeIndentation(next), next, scope)
     
         println("the resulting whitespace is thus: «"+ indentedWhitespace +"»")
         
