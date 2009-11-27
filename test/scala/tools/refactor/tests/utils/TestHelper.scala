@@ -2,10 +2,11 @@ package scala.tools.refactor.tests.utils
 
 import org.junit.Assert._
 
+import scala.tools.refactor._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with WhitespaceHandler with TreePrinter {
+trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with WhitespaceHandler with TreePrinter with Tracing {
   
   def parts(src: String) = splitIntoFragments(treeFrom(src))
   
@@ -33,7 +34,7 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
         case _ => ""
       }
       
-      //assertEquals(expected, splitAllWhitespaces(parts(src)))
+      //XXX assertEquals(expected, splitAllWhitespaces(parts(src)))
     }
     
     def transformsTo(expected: String, transform: compiler.Tree => compiler.Tree) {

@@ -1,11 +1,13 @@
 package scala.tools.refactor.printer
 
+import scala.tools.refactor.Tracing
+
 import java.util.regex._
 
 trait Merger {
-  self: WhitespaceHandler with TreePrinter =>
+  self: WhitespaceHandler with TreePrinter with Tracing =>
   
-  def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = {
+  def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = context("merge fragments") {
     
     def withWhitespace(current: Fragment, next: Fragment, scope: Scope): List[Fragment] = {
     
@@ -52,25 +54,38 @@ trait Merger {
         
         val whitespace = processRequisites(current, whitespaceAfterCurrent, whitespaceBeforeNext, next)
         
-        val indentedWhitespace = fixIndentation(whitespace, allFragments.scopeIndentation(next), next, scope)
+		    trace("whitespace is %s", whitespace)
+		    trace("the next fragment is %s", next)
+		    
+		    val existingIndentation: Option[Tuple2[Int, Int]] = allFragments.scopeIndentation(next).map {
+          s: Int => (s, SourceHelper.indentationLength(next))
+        }
+		    
+		    val indentedWhitespace = fixIndentation(
+          whitespace, 
+          existingIndentation,
+          next.isEndOfScope, 
+          scope.indentation)
     
-        println("the resulting whitespace is thus: «"+ indentedWhitespace +"»")
+        trace("the resulting whitespace is %s", indentedWhitespace)
         
         new StringFragment(indentedWhitespace) :: Nil
       }
     }
 
-    def innerMerge(scope: Scope): List[Fragment] = (scope.children zip scope.children.tail) flatMap {
-      case (current: Scope, next) => innerMerge(current) ::: withWhitespace(current, next, scope)
-      case (current, next) => (current match {
-        case f if allFragments exists f => f
-        case f: FlagFragment => StringFragment(f.print) copyRequirements f
-        case f: WithTree => print(f)
-        case f: WithRequisite => StringFragment("") copyRequirements f
-        case _ => StringFragment("<non-tree part>")
-      }) :: withWhitespace(current, next, scope)
+    def innerMerge(scope: Scope): List[Fragment] = context("inner merger loop") {
+      trace("current scope is %s", scope)
+      (scope.children zip scope.children.tail) flatMap {
+        case (current: Scope, next) => innerMerge(current) ::: withWhitespace(current, next, scope)
+        case (current, next) => (current match {
+          case f if allFragments exists f => f
+          case f: FlagFragment => StringFragment(f.print) copyRequirements f
+          case f: WithTree => print(f)
+          case f: WithRequisite => StringFragment("") copyRequirements f
+          case _ => StringFragment("<non-tree part>")
+        }) :: withWhitespace(current, next, scope)
+      }
     }
-    
     
     innerMerge(scope)
   }

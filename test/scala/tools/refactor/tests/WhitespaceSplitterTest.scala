@@ -8,6 +8,55 @@ import scala.tools.refactor.printer._
 
 @Test
 class WhitespaceSplitterTest extends TestHelper {
+      
+  // parameters are: whitespace, existing indentation (scope, element), isEndOfScope, currentScopeIndentation
+  def → = fixIndentation _
+  
+  @Test
+  def testFixExistingIndentation() = {
+
+    assertEquals("\n  A",       →("\n  A"  , Some(0, 2), false, 0))
+    assertEquals("\n    A",     →("\n    A", Some(0, 4), false, 0))
+    
+    assertEquals("\n    A",     →("\n  A"  , Some(0, 2), false, 2))
+    assertEquals("\n      A",   →("\n    A", Some(0, 4), false, 2))
+  }
+  
+  @Test
+  def testFixExistingIndentationMultipleLines() = {
+
+    assertEquals("\n  \n  A",           →("\n  \n  A", Some(0, 2), false, 0))
+    assertEquals("\n    \n    A",       →("\n  \n  A", Some(0, 2), false, 2))
+    assertEquals("\n      \n      A",   →("\n  \n  A", Some(0, 2), false, 4))
+  }
+  
+  @Test
+  def testFixExistingIndentationEndOfScope() = {
+
+    assertEquals("\n A", →("\n  A"  , Some(0, 2), true, 1))
+    assertEquals("\n A", →("\n    A", Some(0, 4), true, 1))
+    
+    assertEquals("\nA",  →("\n  A"  , Some(0, 2), true, 0))
+    assertEquals("\nA",  →("\n    A", Some(0, 8), true, 0))
+  }
+  
+  @Test
+  def testNewIndentation() = { 
+    // should just indent for the scope + default indentation (2)
+    assertEquals("\n  C",       →("\nC"  , None, false, 0))
+    assertEquals("\n   C",      →("\nC"  , None, false, 1))
+    assertEquals("\n    C",     →("\nC"  , None, false, 2))
+    assertEquals("\n      C",   →("\nC"  , None, false, 4))
+  }
+    
+  @Test
+  def testNewIndentationEndOfScope() = { 
+    // should just indent for the scope's indentation
+    assertEquals("\nC",       →("\nC"  , None, true, 0))
+    assertEquals("\n C",      →("\nC"  , None, true, 1))
+    assertEquals("\n  C",     →("\nC"  , None, true, 2))
+    assertEquals("\n    C",   →("\nC"  , None, true, 4))
+  }
   
   @Test
   def simpleRequisites() = {

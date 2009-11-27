@@ -30,7 +30,7 @@ class MergerTest extends TestHelper with TestTransform {
     """
       // comment 
       class A(s: String, i: Int)
-    """,
+""",
       reverseClassParameters.transform(_))
   }
   

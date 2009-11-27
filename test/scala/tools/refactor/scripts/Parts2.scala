@@ -1,6 +1,7 @@
 package scala.tools.refactor.scripts
 
 import scala.tools.refactor.tests.utils._
+import scala.tools.refactor._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
@@ -8,7 +9,7 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.symtab._
 import scala.tools.nsc.util.Position
 
-object Parts2 extends Merger with Partitioner with TestTransform with CompilerProvider with TreeDSL with WhitespaceHandler with TreePrinter {
+object Parts2 extends Merger with Partitioner with TestTransform with CompilerProvider with TreeDSL with WhitespaceHandler with TreePrinter with Tracing {
   
   val global = compiler
   import CODE._

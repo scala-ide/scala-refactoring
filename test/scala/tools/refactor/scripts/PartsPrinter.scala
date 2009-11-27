@@ -1,10 +1,11 @@
 package scala.tools.refactor.scripts
 
 import scala.tools.refactor.tests.utils._
+import scala.tools.refactor._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-object FragmentsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceHandler with TreePrinter {
+object FragmentsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceHandler with TreePrinter with SilentTracing {
   
   def visualize(tree: compiler.Tree) {
     
