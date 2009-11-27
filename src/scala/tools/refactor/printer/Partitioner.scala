@@ -11,7 +11,7 @@ trait Partitioner {
   self: scala.tools.refactor.Compiler =>
   import compiler.{Scope => _, _}
   
-  private class Visitor(partsHolder: Option[PartsHolder]) extends Traverser {
+  private class Visitor(allFragments: Option[FragmentRepository]) extends Traverser {
         
     private var scopes = new scala.collection.mutable.Stack[Scope]
     
@@ -60,14 +60,14 @@ trait Partitioner {
           case _ => (tree.pos.start, tree.pos.end)
         }
         
-        val i = partsHolder match {
+        val i = allFragments match {
           
-          case Some(partsHolder) => partsHolder.scopeIndentation(tree) match {
+          case Some(allFragments) => allFragments.scopeIndentation(tree) match {
         
             case Some(indentation) => 
               val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
               println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
-              partsHolder.scopeIndentation(tree)
+              allFragments.scopeIndentation(tree)
               thisIndentation - indentation
             case None => 
               println("part not found, default to 2")
@@ -98,7 +98,7 @@ trait Partitioner {
     def forwardsTo(to: Char, max: Int)(offset: Int, file: SourceFile): Option[Int] = {
       var i = offset
       
-      while(file.content(i) != to && i < max) {
+      while(file.content(i) != to && i < max && i < file.content.length - 1) {
         i += 1
       }
       
@@ -333,6 +333,8 @@ trait Partitioner {
             visitAll(trueBody)(_.requireAfter(new Requisite("\n")))
             requireAfter("\n")
           }
+        } else {
+          // there might be an empty body that needs a scope :-(
         }
         
       case Literal(constant) =>
@@ -388,7 +390,7 @@ trait Partitioner {
     }
   }
   
-  def essentialFragments(root: Tree, partsHolder: PartsHolder) = new Visitor(Some(partsHolder)).visit(root)
+  def essentialFragments(root: Tree, allFragments: FragmentRepository) = new Visitor(Some(allFragments)).visit(root)
   
   def splitIntoFragments(root: Tree): TreeScope = {
     

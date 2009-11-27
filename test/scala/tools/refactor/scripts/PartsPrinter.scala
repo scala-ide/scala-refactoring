@@ -8,7 +8,7 @@ object FragmentsPrinter extends Partitioner with CompilerProvider with Transform
   
   def visualize(tree: compiler.Tree) {
     
-    val partsHolder = new PartsHolder(splitIntoFragments(tree))
+    val partsHolder = new FragmentRepository(splitIntoFragments(tree))
     
     def id(part: Fragment) = part.hashCode.toString /*part match {
       case part: CompositeFragment#EndOfScope => ""+ part.parent.hashCode

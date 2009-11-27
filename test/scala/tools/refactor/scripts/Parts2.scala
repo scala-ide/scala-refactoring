@@ -20,15 +20,9 @@ object Parts2 extends Merger with Partitioner with TestTransform with CompilerPr
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
 //      val tree = treeFrom("class A")
     val tree = treeFrom("""
-      class A {
-        val b: String //b-string
-        def c: Unit = {
-          def d: Int = {
-            5
-          } // after d
-          d
-        } // after c
-      } // after A
+    class Xyz(private val abc: String, var int: Int) {
+
+        }
 """)
 //    val res = insertValue.transform(tree)
         
@@ -38,7 +32,7 @@ object Parts2 extends Merger with Partitioner with TestTransform with CompilerPr
     println(partitionedOriginal)
     println("===========")
 
-    val ess = essentialFragments(tree, new PartsHolder(partitionedOriginal))
+    val ess = essentialFragments(tree, new FragmentRepository(partitionedOriginal))
 
     println(ess)
     println("===========")
@@ -47,12 +41,12 @@ object Parts2 extends Merger with Partitioner with TestTransform with CompilerPr
     val newTree = bodyInBody.transform(tree)
     //val newTree = insertValue.transform(tree)
 //    val newTree = reverseClassParameters.transform(tree)
-    val partitionedModified = essentialFragments(newTree, new PartsHolder(partitionedOriginal))
+    val partitionedModified = essentialFragments(newTree, new FragmentRepository(partitionedOriginal))
     
     println("Modified: "+ partitionedModified)
     
     println("===========")
-    val merged = merge(partitionedModified, new PartsHolder(partitionedOriginal))
+    val merged = merge(partitionedModified, new FragmentRepository(partitionedOriginal))
     println(merged map (_.print) mkString "")
  
     // why?

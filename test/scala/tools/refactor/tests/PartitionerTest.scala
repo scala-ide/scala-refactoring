@@ -139,14 +139,14 @@ class PartitionerTest extends TestHelper {
   """
     trait A {
       def a = new A {
-        
+        val i = 1
       }
     }
   """ partitionsInto 
   """→0(0)❨|
     |trait| |A| |→4(4)❨|{
       |def| |a| = |new| |A| |→6(2)❨|{
-        
+        val |i| = |1|
       }|❩|
     }|❩|
   |❩"""

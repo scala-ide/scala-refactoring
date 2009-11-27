@@ -23,25 +23,19 @@ abstract sealed class Fragment extends WithRequisite {
   override def toString = print
 }
 
-trait OriginalSourceFragment extends Fragment {
+trait OriginalSourceFragment {
   def start: Int
   def end: Int
   def file: SourceFile
 }
 
-trait Whitespace
-
-case class WhitespaceFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment with Whitespace {
+case class WhitespaceFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment {
   override val isWhitespace = true
   def print = new String(file.content.slice(start, end))
   override def toString = if(start == end) "❒" else new String(file.content.slice(start, end))
 }
 
 case class StringFragment(string: String) extends Fragment {
-  val print = string
-}
-
-case class RequirementFragment(string: String) extends Fragment {
   val print = string
 }
 
@@ -55,7 +49,7 @@ abstract class Scope extends Fragment {
     case None => relativeIndentation
   }
   protected val trueChildren = new ListBuffer[Fragment]()
-  def add(p: Fragment) = trueChildren += p //make sure they are in order
+  def add(p: Fragment) = trueChildren += p //assert that they are in order?
   def print = children mkString
   override def toString = "→"+ indentation +"("+ relativeIndentation +")"+ (children mkString "|")
 }
@@ -128,7 +122,6 @@ case class TreeFragment(tree: Trees#Tree) extends Fragment with OriginalSourceFr
   def print = new String(file.content.slice(start, end))
 }
 
-// add requirements here?
 case class FlagFragment(flag: Long, pos: Position) extends Fragment with OriginalSourceFragment {
   lazy val start = pos.start
   lazy val end = start + print.length

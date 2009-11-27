@@ -39,8 +39,9 @@
 	</target>
 
 	<target name="test" depends="build-tests">
-		<junit printsummary="yes" haltonfailure="yes">
+		<junit printsummary="yes" haltonfailure="no">
 			<formatter type="xml" />
+			<formatter type="plain"/>
 			<classpath refid="build.classpath" />
 			<batchtest fork="yes" todir="${build.dir}">
 				<fileset dir="${build.dir}" includes="**/tests/*" excludes="**/*$*.class" />

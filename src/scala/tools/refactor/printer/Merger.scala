@@ -3,19 +3,16 @@ package scala.tools.refactor.printer
 import java.util.regex._
 
 trait Merger {
-  
   self: WhitespaceHandler with TreePrinter =>
-
-  private def explain(what: String) = println(what)
   
-  def merge(part: Scope, partsHolder: PartsHolder): List[Fragment] = {
+  def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = {
     
     def withWhitespace(current: Fragment, next: Fragment, scope: Scope): List[Fragment] = {
     
-      val currentExists = partsHolder exists current
+      val currentExists = allFragments exists current
       
-      /*if(currentExists && partsHolder.getNext(current).get._3 == next) {
-        val (_, wsFound, nextFound) = (partsHolder getNext current).get //FIXME
+      /*if(currentExists && allFragments.getNext(current).get._3 == next) {
+        val (_, wsFound, nextFound) = (allFragments getNext current).get //FIXME
         //explain("Whitespace ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
         wsFound
       } else */{
@@ -26,7 +23,7 @@ trait Merger {
          * */
         val (whitespaceAfterCurrent, _) = 
           if(currentExists) {
-            splitWhitespaceBetween(partsHolder getNext current)
+            splitWhitespaceBetween(allFragments getNext current)
           } else {
             //("<current does not exist>", "<current does not exist>")
             ("", "")
@@ -36,124 +33,45 @@ trait Merger {
          * We also need the whitespace of our right neighbour:
          * */
         val (_, whitespaceBeforeNext) = 
-          if(partsHolder exists next) {
-            splitWhitespaceBetween(partsHolder getPrevious next)
+          if(allFragments exists next) {
+            splitWhitespaceBetween(allFragments getPrevious next)
           } else {
             //("<next does not exist>", "<next does not exist>")
             ("", "")
           }
         
         /*
-         * We now have 4 parts of whitespace, we only need the left slice of our current part (that is, 
-         * the whitespace that is adjacent to the current part) and the (right) slice of whitespace that is directly
-         * before the next part in the tree. Combined, we get all whitespace we need.
+         * We now have 4 fragments of whitespace, we only need the left slice of our current fragment (that is, 
+         * the whitespace that is adjacent to the current fragment) and the (right) slice of whitespace that is directly
+         * before the next fragment in the tree. Combined, we get all whitespace we need.
          * */
         
-        val allWhitespace = whitespaceAfterCurrent + whitespaceBeforeNext
+        /*
+         * Fragments may define required strings that need to be present in the whitespace before or after them.
+         * */
         
-        //def insertRequire
-                
-        // check for overlapping whitespaces and requirements! => testSortWithJustOne
-        val wsWithReqs1 = current.requiredAfter.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
-        val wsWithReqs2 = next.requiredBefore.map( req => if(!allWhitespace.contains(req.check)) req.write else ""  ) mkString ""
+        val whitespace = processRequisites(current, whitespaceAfterCurrent, whitespaceBeforeNext, next)
         
-        var completeWhitespace = whitespaceAfterCurrent + wsWithReqs1 + whitespaceBeforeNext + wsWithReqs2
+        val indentedWhitespace = fixIndentation(whitespace, allFragments, next, scope)
+    
+        println("the resulting whitespace is thus: «"+ indentedWhitespace +"»")
         
-        def indentString(ws: String, length: Int) = {
-          
-          val parts = ws.split("""(?ms)\n\s*""")
-          val replaceStr = "\n" + (" " * length)
-          
-          val result = parts mkString replaceStr
-          
-          /*if(ws.matches("""(?ms).+?\n$"""))
-            result + "\n" 
-          else */if(ws.matches("""(?ms).*?\n\s*$"""))
-            result + replaceStr
-          else
-            result
-          
-          ws.replaceAll("""(?ms)\n[\t ]*""", "\n" + (" " * length))
-        }
-        
-        
-        if(completeWhitespace.contains('\n')) {
-          
-          println("\n==============\nWhitespace contains newlines: «"+ completeWhitespace +"» and we are currently handling: "+ next)
-                    
-          partsHolder.scopeIndentation(next) match {
-            case Some(originalscopeIndentation) => 
-            
-              if(next.isEndOfScope) {
-                
-                println("at the end of scope, so we take the parent's indentation: "+ (scope.indentation))
-                if(completeWhitespace.matches("""\s+"""))                  
-                  () // if its just spaces, then leave it alone
-                else
-                  completeWhitespace = indentString(completeWhitespace, scope.indentation)
+        new StringFragment(indentedWhitespace) :: Nil
+      }
+    }
 
-              } else {
-              
-                val currentIndentation = SourceHelper.indentationLength(next)
-                println("Our original indentation was: "+ currentIndentation)
-                println("Our original scope's indentation was: "+ originalscopeIndentation)
-                val desiredRelativeIndentation = currentIndentation - originalscopeIndentation
-                println("Relative to our scope, we need an indentation of: "+ desiredRelativeIndentation)
-                val newIndentation = scope.indentation + desiredRelativeIndentation
-                println("Our new scope's indentation is: "+ scope.indentation)
-                println("This means we want an indentation of : "+ newIndentation)
-                
-                if(newIndentation != currentIndentation) {
-                  println("need to indent "+ next)
-                  completeWhitespace = indentString(completeWhitespace, newIndentation)
-                }
-              }
-              
-            case None =>
-            
-              println("We are a new node! "+ next)
-            
-              if(next.isEndOfScope) {
-                println("at the end of the scope, so we want the scope's parent indentation")
-                  scope.parent match {
-                    case Some(p) => 
-                      println(", that is: "+ (p.indentation + 2))
-                      completeWhitespace = indentString(completeWhitespace, p.indentation + 2)
-                    case None => 
-                      println(", oh, no parent, then 0")
-                      completeWhitespace = indentString(completeWhitespace, 0)
-                  }
-              } else {
-                println("our scope has an indentation of: "+ scope.indentation)
-                println("and we want to be indented, to: "+ (scope.indentation + 2))
-                completeWhitespace = indentString(completeWhitespace, scope.indentation + 2)
-              }
-          }
-        }
-        println("the resulting whitespace is thus: «"+ completeWhitespace +"»")
-        
-        new StringFragment(completeWhitespace) :: Nil
-      }
+    def innerMerge(scope: Scope): List[Fragment] = (scope.children zip scope.children.tail) flatMap {
+      case (current: Scope, next) => innerMerge(current) ::: withWhitespace(current, next, scope)
+      case (current, next) => (current match {
+        case f if allFragments exists f => f
+        case f: FlagFragment => StringFragment(f.print) copyRequirements f
+        case f: WithTree => print(f)
+        case f: WithRequisite => StringFragment("") copyRequirements f
+        case _ => StringFragment("<non-tree part>")
+      }) :: withWhitespace(current, next, scope)
     }
     
-    def partFrom(part: Fragment) = part match {
-      case part if partsHolder exists part => part
-      case part: FlagFragment => StringFragment(part.print) copyRequirements part
-      case part: WithTree => print(part)
-      case part: WithRequisite => StringFragment("") copyRequirements part
-      case _ => StringFragment("<non-tree part>")
-    }
     
-    def innerMerge(part: Scope): List[Fragment] = {
-    
-      val list: List[(Fragment, Fragment)] = (part.children zip part.children.tail)
-      
-      list flatMap {
-        case (current: Scope, next) => innerMerge(current) ::: withWhitespace(current, next, part)
-        case (current, next) => partFrom(current) :: withWhitespace(current, next, part)
-      }
-    }
-    
-    innerMerge(part)
+    innerMerge(scope)
   }
 }

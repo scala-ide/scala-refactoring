@@ -3,7 +3,7 @@ package scala.tools.refactor.printer
 import scala.tools.nsc.ast.Trees
 
 // cache, optimize, whatever!
-class PartsHolder(root: Scope) {
+class FragmentRepository(root: Scope) {
     
   private def visit(part: Scope, find: Fragment): Option[Scope] = {
     part.children foreach {
