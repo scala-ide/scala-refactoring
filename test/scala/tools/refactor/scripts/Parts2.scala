@@ -11,11 +11,11 @@ import scala.tools.nsc.util.Position
 object Parts2 extends Merger with Partitioner with TestTransform with CompilerProvider with TreeDSL with WhitespaceHandler with TreePrinter {
   
   val global = compiler
-          
+  import CODE._
+  import global._          
+
   def main(args : Array[String]) : Unit = {
     
-    import CODE._
-    import global._
     
 //    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
 //      val tree = treeFrom("class A")

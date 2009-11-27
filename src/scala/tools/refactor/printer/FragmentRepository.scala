@@ -15,13 +15,10 @@ class FragmentRepository(root: Scope) {
       case _ => ()
     }
     None
-  }    
+  }
   
   private def visit(part: Scope, find: Trees#Tree): Option[Scope] = {
-//    println("now at part: "+ part)
     part.children foreach { child =>
-//      println("child: "+ child)
-      
       child match {
         case child: WithTree if child.tree.pos == find.pos => return Some(part)
         case _ =>
@@ -29,9 +26,6 @@ class FragmentRepository(root: Scope) {
 
       child match {
         case scope: Scope => 
-        
-//        println("going down into: "+ scope)
-        
           visit(scope, find) match {
             case Some(res) => return Some(res)
             case None =>
