@@ -15,7 +15,7 @@ trait WithTree {
   def tree: Trees#Tree
 }
 
-abstract sealed class Fragment extends WithRequisite {
+abstract class Fragment extends WithRequisite {
   val isWhitespace = false
   val isEndOfScope = false
   val isBeginOfScope = false
