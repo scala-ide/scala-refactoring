@@ -57,8 +57,12 @@ trait Merger {
 		    trace("whitespace is %s", whitespace)
 		    trace("the next fragment is %s", next)
 		    
-		    val existingIndentation: Option[Tuple2[Int, Int]] = allFragments.scopeIndentation(next).map {
-          s: Int => (s, SourceHelper.indentationLength(next))
+		    val existingIndentation: Option[Tuple2[Int, Int]] = allFragments.scopeIndentation(next) match {
+		      case Some(s) => SourceHelper.indentationLength(next) match {
+            case Some(indentation) => Some(s, indentation)
+            case _ => None
+          }
+		      case None => None
         }
 		    
 		    val indentedWhitespace = fixIndentation(

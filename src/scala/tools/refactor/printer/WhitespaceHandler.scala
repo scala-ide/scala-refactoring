@@ -31,23 +31,14 @@ trait WhitespaceHandler {
       existingIndentation match {
         case Some((originalScopeIndentation, originalIndentation)) =>
           trace("this is a reused fragment")
-          if(isEndOfScope) {
-            if(whitespace.matches("""\s+""")) {
-              trace("at the end of scope, only whitespace, don't indent")
-              whitespace
-            } else {
-              trace("at the end of scope, take parent indentation %d ", currentScopeIndentation)
-              indentString(currentScopeIndentation)
-            }
-          } else {
-            val desiredRelativeIndentation = originalIndentation - originalScopeIndentation
-            val newIndentation = currentScopeIndentation + desiredRelativeIndentation
+
+            val newIndentation = currentScopeIndentation + (originalIndentation - originalScopeIndentation)
             
             trace("original indentation was %d, original scope indentation was %d", originalIndentation, originalScopeIndentation)
             trace("new scope's indentation is %d → indent to %d", currentScopeIndentation, newIndentation)
             
             if(newIndentation != originalIndentation) indentString(newIndentation) else whitespace
-          }
+          
         case None =>
           trace("this is a new fragment")
         
@@ -55,7 +46,7 @@ trait WhitespaceHandler {
             trace("at the end of the scope, take scope's parent indentation %d", currentScopeIndentation)
             indentString(currentScopeIndentation)
           } else {
-            println("new scope's indentation is %d → indent to %d ", currentScopeIndentation, currentScopeIndentation + 2)
+            trace("new scope's indentation is %d → indent to %d ", currentScopeIndentation, currentScopeIndentation + 2)
             indentString(currentScopeIndentation + 2)
           }
       }

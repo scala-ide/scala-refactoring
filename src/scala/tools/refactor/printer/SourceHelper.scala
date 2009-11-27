@@ -4,14 +4,17 @@ import scala.tools.nsc.ast.Trees
 
 object SourceHelper {
   
-  def indentationLength(f: Fragment): Int = f match {
+  def indentationLength(f: Fragment): Option[Int] = f match {
     case f: OriginalSourceFragment => try {
-        indentationLength(f.start, f.file.content)
+      if(f.isEndOfScope) // end of scope start points to end
+	      Some(indentationLength(f.start-1, f.file.content))
+	    else
+	      Some(indentationLength(f.start, f.file.content))
     } catch {
-      case _: UnsupportedOperationException => 0
+      case _: UnsupportedOperationException => None
       case e => throw e
     }
-    case _ => 0
+    case _ => None
   }
 
   def indentationLength(tree: Trees#Tree): Int = {

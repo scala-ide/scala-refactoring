@@ -30,15 +30,15 @@ class WhitespaceSplitterTest extends TestHelper {
     assertEquals("\n      \n      A",   →("\n  \n  A", Some(0, 2), false, 4))
   }
   
-  @Test
-  def testFixExistingIndentationEndOfScope() = {
-
-    assertEquals("\n A", →("\n  A"  , Some(0, 2), true, 1))
-    assertEquals("\n A", →("\n    A", Some(0, 4), true, 1))
-    
-    assertEquals("\nA",  →("\n  A"  , Some(0, 2), true, 0))
-    assertEquals("\nA",  →("\n    A", Some(0, 8), true, 0))
-  }
+//  @Test
+//  def testFixExistingIndentationEndOfScope() = {
+//
+//    assertEquals("\n A", →("\n  A"  , Some(0, 2), true, 1))
+//    assertEquals("\n A", →("\n    A", Some(0, 4), true, 1))
+//    
+//    assertEquals("\nA",  →("\n  A"  , Some(0, 2), true, 0))
+//    assertEquals("\nA",  →("\n    A", Some(0, 8), true, 0))
+//  }
   
   @Test
   def testNewIndentation() = { 
@@ -56,6 +56,12 @@ class WhitespaceSplitterTest extends TestHelper {
     assertEquals("\n C",      →("\nC"  , None, true, 1))
     assertEquals("\n  C",     →("\nC"  , None, true, 2))
     assertEquals("\n    C",   →("\nC"  , None, true, 4))
+  }
+  
+  @Test
+  def testExtraSpaces() = { 
+    // should just indent for the scope's indentation
+    assertEquals("  \nC", →("  \nC"  , None, true, 0))
   }
   
   @Test
