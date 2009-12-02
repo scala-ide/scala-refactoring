@@ -62,12 +62,12 @@ class FragmentRepository(root: Scope) {
     if(partInOriginal == Nil)
       return None
     
-    val (whitespaceBetween, rest) = partInOriginal.tail.span(_.isWhitespace)
+    val (layoutBetween, rest) = partInOriginal.tail.span(_.isLayout)
     
     if(rest == Nil)
       return None
       
-    Some((partInOriginal.head, whitespaceBetween, rest.head))
+    Some((partInOriginal.head, layoutBetween, rest.head))
   }
   
   def getPrevious(part: Fragment): Option[Triple[Fragment, List[Fragment], Fragment]] = {
@@ -81,11 +81,11 @@ class FragmentRepository(root: Scope) {
     if(partInOriginal == Nil)
       return None
               
-    val (whitespaceBetween, rest) = partInOriginal.tail.span(_.isWhitespace)
+    val (layoutBetween, rest) = partInOriginal.tail.span(_.isLayout)
     
     if(rest == Nil)
       return None
     
-    Some((rest.head, whitespaceBetween.reverse, partInOriginal.head))
+    Some((rest.head, layoutBetween.reverse, partInOriginal.head))
   }
 }

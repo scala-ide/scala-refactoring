@@ -7,9 +7,9 @@ import org.junit.Assert._
 import scala.tools.refactor.printer._
 
 @Test
-class WhitespaceSplitterTest extends TestHelper {
+class LayoutHandlerTest extends TestHelper {
   
-  // parameters are: whitespace, existing indentation (scope, element), isEndOfScope, currentScopeIndentation
+  // parameters are: layout, existing indentation (scope, element), isEndOfScope, currentScopeIndentation
   def → = fixIndentation _
   
   @Test

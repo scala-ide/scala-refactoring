@@ -24,29 +24,29 @@ class SourceHelperTest extends TestHelper {
   }
     
   @Test
-  def testSkipWhitespace() = {
-    assertEquals(Some(3), skipWhitespaceTo('{')(0, "  {"))
-    assertEquals(Some(3), skipWhitespaceTo('{')(1, "  {"))
-    assertEquals(Some(3), skipWhitespaceTo('{')(2, "  {"))
-    assertEquals(None   , skipWhitespaceTo('{')(3, "  {"))
+  def testSkipLayout() = {
+    assertEquals(Some(3), skipLayoutTo('{')(0, "  {"))
+    assertEquals(Some(3), skipLayoutTo('{')(1, "  {"))
+    assertEquals(Some(3), skipLayoutTo('{')(2, "  {"))
+    assertEquals(None   , skipLayoutTo('{')(3, "  {"))
     
-    assertEquals(Some(4), skipWhitespaceTo('{')(2, "{  {"))
-    assertEquals(None, skipWhitespaceTo('{')(0, "xxx{"))
-    assertEquals(None, skipWhitespaceTo('{')(0, "    "))
-    assertEquals(None, skipWhitespaceTo('{')(10, "    "))
+    assertEquals(Some(4), skipLayoutTo('{')(2, "{  {"))
+    assertEquals(None, skipLayoutTo('{')(0, "xxx{"))
+    assertEquals(None, skipLayoutTo('{')(0, "    "))
+    assertEquals(None, skipLayoutTo('{')(10, "    "))
   }
   
   @Test
-  def testBackwardsSkipWhitespace() = {
-    assertEquals(Some(1), backwardsSkipWhitespaceTo('{')(4, " {  "))
-    assertEquals(Some(1), backwardsSkipWhitespaceTo('{')(3, " {  "))
-    assertEquals(Some(1), backwardsSkipWhitespaceTo('{')(2, " {  "))
-    assertEquals(Some(1), backwardsSkipWhitespaceTo('{')(1, " {  "))
-    assertEquals(None   , backwardsSkipWhitespaceTo('{')(0, " {  "))
+  def testBackwardsSkipLayout() = {
+    assertEquals(Some(1), backwardsSkipLayoutTo('{')(4, " {  "))
+    assertEquals(Some(1), backwardsSkipLayoutTo('{')(3, " {  "))
+    assertEquals(Some(1), backwardsSkipLayoutTo('{')(2, " {  "))
+    assertEquals(Some(1), backwardsSkipLayoutTo('{')(1, " {  "))
+    assertEquals(None   , backwardsSkipLayoutTo('{')(0, " {  "))
     
-    assertEquals(None   , backwardsSkipWhitespaceTo('{')(3, " {x "))
-    assertEquals(None   , backwardsSkipWhitespaceTo('{')(3, " xx "))
-    assertEquals(None   , backwardsSkipWhitespaceTo('{')(3, "    "))
+    assertEquals(None   , backwardsSkipLayoutTo('{')(3, " {x "))
+    assertEquals(None   , backwardsSkipLayoutTo('{')(3, " xx "))
+    assertEquals(None   , backwardsSkipLayoutTo('{')(3, "    "))
   }
   
   @Test

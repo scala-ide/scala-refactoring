@@ -3,29 +3,29 @@ package scala.tools.refactor.printer
 import scala.tools.refactor.Tracing
 import scala.collection.mutable.ListBuffer
 
-trait WhitespaceHandler {
+trait LayoutHandler {
   self: Tracing =>
   
-  def processRequisites(current: Fragment, whitespaceAfterCurrent: String, whitespaceBeforeNext: String, next: Fragment) = context("requisites") {
+  def processRequisites(current: Fragment, layoutAfterCurrent: String, layoutBeforeNext: String, next: Fragment) = context("requisites") {
   
-    trace("whitespace %s", whitespaceAfterCurrent + whitespaceBeforeNext)
+    trace("layout %s", layoutAfterCurrent + layoutBeforeNext)
     
-    // check for overlapping whitespaces and requirements! => testSortWithJustOne
-    def getRequisite(r: Requisite) = if(!(whitespaceAfterCurrent + whitespaceBeforeNext).contains(r.check)) r.write else ""
+    // check for overlapping layouts and requirements! => testSortWithJustOne
+    def getRequisite(r: Requisite) = if(!(layoutAfterCurrent + layoutBeforeNext).contains(r.check)) r.write else ""
       
     def mapRequirements(rs: ListBuffer[Requisite]) = rs.map( getRequisite ) mkString ""
 
-    using(whitespaceAfterCurrent + mapRequirements(current.requiredAfter) + whitespaceBeforeNext + mapRequirements(next.requiredBefore)) {
+    using(layoutAfterCurrent + mapRequirements(current.requiredAfter) + layoutBeforeNext + mapRequirements(next.requiredBefore)) {
       trace("results in %s", _)
     }
   }
   
-  def fixIndentation(whitespace: String, existingIndentation: Option[Tuple2[Int, Int]], isEndOfScope: Boolean, currentScopeIndentation: Int): String = context("fix indentation") {
+  def fixIndentation(layout: String, existingIndentation: Option[Tuple2[Int, Int]], isEndOfScope: Boolean, currentScopeIndentation: Int): String = context("fix indentation") {
 
-    if(whitespace.contains('\n')) {
+    if(layout.contains('\n')) {
       
       def indentString(length: Int) = {
-        whitespace.replaceAll("""(?ms)\n[\t ]*""", "\n" + (" " * length))
+        layout.replaceAll("""(?ms)\n[\t ]*""", "\n" + (" " * length))
       }
       
       existingIndentation match {
@@ -37,7 +37,7 @@ trait WhitespaceHandler {
             trace("original indentation was %d, original scope indentation was %d", originalIndentation, originalScopeIndentation)
             trace("new scope's indentation is %d → indent to %d", currentScopeIndentation, newIndentation)
             
-            if(newIndentation != originalIndentation) indentString(newIndentation) else whitespace
+            if(newIndentation != originalIndentation) indentString(newIndentation) else layout
           
         case None =>
           trace("this is a new fragment")
@@ -50,24 +50,24 @@ trait WhitespaceHandler {
             indentString(currentScopeIndentation + 2)
           }
       }
-    } else whitespace
+    } else layout
   }
 
-  def splitWhitespaceBetween(parts: Option[Triple[Fragment,List[Fragment],Fragment]]) = parts match {
+  def splitLayoutBetween(parts: Option[Triple[Fragment,List[Fragment],Fragment]]) = parts match {
     
-    case Some((left, whitespaceFragments, right)) =>
-      context("split whitespace") {
+    case Some((left, layoutFragments, right)) =>
+      context("split layout") {
         val OpeningBrace = """(.*?\()(.*)""".r
         val ClosingBrace = """(?ms)(.*?)(\).*)""".r
         val Comma = """(.*?),\s*(.*)""".r
         val NewLine = """(?ms)(.*?\n)(.*)""".r
         
         // strip comments!
-        val whitespace = whitespaceFragments mkString ""
+        val layout = layoutFragments mkString ""
 
-        trace("splitting whitespace %s between %s and %s", whitespace, left, right)
+        trace("splitting layout %s between %s and %s", layout, left, right)
         
-        ((left, whitespace, right) match {
+        ((left, layout, right) match {
           case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
           case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
           case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
@@ -75,7 +75,7 @@ trait WhitespaceHandler {
           case(_, s                 , _) => (s, "","NoMatch")
         }) match {
           case(l, r, why) => 
-            trace("whitespace splits into %s and %s", l, r)
+            trace("layout splits into %s and %s", l, r)
             (l, r)
         }
       }

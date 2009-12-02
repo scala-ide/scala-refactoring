@@ -47,7 +47,7 @@ object SourceHelper {
       None
   }
     
-  def skipWhitespaceTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
+  def skipLayoutTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
     
     var i = offset
     // remove the comment
@@ -62,7 +62,7 @@ object SourceHelper {
       None
   }
   
-  def backwardsSkipWhitespaceTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
+  def backwardsSkipLayoutTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
     
     if( offset >= 0 && offset < content.length && content(offset) == to) 
       return Some(offset)

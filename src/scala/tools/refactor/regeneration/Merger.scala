@@ -5,56 +5,56 @@ import scala.tools.refactor.Tracing
 import java.util.regex._
 
 trait Merger {
-  self: WhitespaceHandler with TreePrinter with Tracing =>
+  self: LayoutHandler with TreePrinter with Tracing =>
   
   def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = context("merge fragments") {
     
-    def withWhitespace(current: Fragment, next: Fragment, scope: Scope): List[Fragment] = {
+    def withLayout(current: Fragment, next: Fragment, scope: Scope): List[Fragment] = {
     
       val currentExists = allFragments exists current
       
       /*if(currentExists && allFragments.getNext(current).get._3 == next) {
         val (_, wsFound, nextFound) = (allFragments getNext current).get //FIXME
-        //explain("Whitespace ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
+        //explain("Layout ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
         wsFound
       } else */{
         /*
          * The tree has been re-arranged, the next part in the original source isn't our current next. 
-         * We have to split the whitespace between our current part and its next part in the original 
+         * We have to split the layout between our current part and its next part in the original 
          * source
          * */
-        val (whitespaceAfterCurrent, _) = 
+        val (layoutAfterCurrent, _) = 
           if(currentExists) {
-            splitWhitespaceBetween(allFragments getNext current)
+            splitLayoutBetween(allFragments getNext current)
           } else {
             //("<current does not exist>", "<current does not exist>")
             ("", "")
           }
         
         /*
-         * We also need the whitespace of our right neighbour:
+         * We also need the layout of our right neighbour:
          * */
-        val (_, whitespaceBeforeNext) = 
+        val (_, layoutBeforeNext) = 
           if(allFragments exists next) {
-            splitWhitespaceBetween(allFragments getPrevious next)
+            splitLayoutBetween(allFragments getPrevious next)
           } else {
             //("<next does not exist>", "<next does not exist>")
             ("", "")
           }
         
         /*
-         * We now have 4 fragments of whitespace, we only need the left slice of our current fragment (that is, 
-         * the whitespace that is adjacent to the current fragment) and the (right) slice of whitespace that is directly
-         * before the next fragment in the tree. Combined, we get all whitespace we need.
+         * We now have 4 fragments of layout, we only need the left slice of our current fragment (that is, 
+         * the layout that is adjacent to the current fragment) and the (right) slice of layout that is directly
+         * before the next fragment in the tree. Combined, we get all layout we need.
          * */
         
         /*
-         * Fragments may define required strings that need to be present in the whitespace before or after them.
+         * Fragments may define required strings that need to be present in the layout before or after them.
          * */
         
-        val whitespace = processRequisites(current, whitespaceAfterCurrent, whitespaceBeforeNext, next)
+        val layout = processRequisites(current, layoutAfterCurrent, layoutBeforeNext, next)
         
-		    trace("whitespace is %s", whitespace)
+		    trace("layout is %s", layout)
 		    trace("the next fragment is %s", next)
 		    
 		    val existingIndentation: Option[Tuple2[Int, Int]] = allFragments.scopeIndentation(next) match {
@@ -65,15 +65,15 @@ trait Merger {
 		      case None => None
         }
 		    
-		    val indentedWhitespace = fixIndentation(
-          whitespace, 
+		    val indentedLayout = fixIndentation(
+          layout, 
           existingIndentation,
           next.isEndOfScope, 
           scope.indentation)
     
-        trace("the resulting whitespace is %s", indentedWhitespace)
+        trace("the resulting layout is %s", indentedLayout)
         
-        new StringFragment(indentedWhitespace) :: Nil
+        new StringFragment(indentedLayout) :: Nil
       }
     }
     
@@ -88,8 +88,8 @@ trait Merger {
     def innerMerge(scope: Scope): List[Fragment] = context("inner merger loop") {
       trace("current scope is %s", scope)
       (scope.children zip scope.children.tail) flatMap {
-        case (current: Scope, next) => innerMerge(current) ::: withWhitespace(current, next, scope)
-        case (current, next) => printFragment(current) :: withWhitespace(current, next, scope)
+        case (current: Scope, next) => innerMerge(current) ::: withLayout(current, next, scope)
+        case (current, next) => printFragment(current) :: withLayout(current, next, scope)
       }
     }
     

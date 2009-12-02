@@ -8,7 +8,7 @@ import scala.tools.nsc.symtab.Flags
 import scala.collection.mutable.ListBuffer
 
 /*
- * Terminology: Layout instead of Whitespace? 
+ * Terminology: Layout instead of Layout? 
  * */
 
 trait WithTree {
@@ -16,7 +16,7 @@ trait WithTree {
 }
 
 abstract class Fragment extends WithRequisite {
-  val isWhitespace = false
+  val isLayout = false
   val isEndOfScope = false
   val isBeginOfScope = false
   def print: String
@@ -29,8 +29,8 @@ trait OriginalSourceFragment {
   def file: SourceFile
 }
 
-case class WhitespaceFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment {
-  override val isWhitespace = true
+case class LayoutFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment {
+  override val isLayout = true
   def print = new String(file.content.slice(start, end))
   override def toString = if(start == end) "❒" else new String(file.content.slice(start, end))
 }

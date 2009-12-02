@@ -5,7 +5,7 @@ import scala.tools.refactor._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-object FragmentsPrinter extends Partitioner with CompilerProvider with Transform with Merger with WhitespaceHandler with TreePrinter with SilentTracing {
+object FragmentsPrinter extends Partitioner with CompilerProvider with Transform with Merger with LayoutHandler with TreePrinter with SilentTracing {
   
   def visualize(tree: compiler.Tree) {
     
@@ -29,8 +29,8 @@ object FragmentsPrinter extends Partitioner with CompilerProvider with Transform
       
       val currentParent = id(part)
         
-      val wsBefore = splitWhitespaceBetween(partsHolder getPrevious part)._2
-      val wsAfter  = splitWhitespaceBetween(partsHolder getNext part)._1
+      val wsBefore = splitLayoutBetween(partsHolder getPrevious part)._2
+      val wsAfter  = splitLayoutBetween(partsHolder getNext part)._1
     
       println(formatNode(part, wsBefore, part.tree.getClass.getSimpleName, wsAfter, "lightgrey"))
       
@@ -39,18 +39,18 @@ object FragmentsPrinter extends Partitioner with CompilerProvider with Transform
           innerMerge(current)          
           println("  "+ currentParent +" -> "+ id(current))
         case current: TreeScope#BeginOfScope =>
-          val wsAfter  = splitWhitespaceBetween(partsHolder getNext current)._1
+          val wsAfter  = splitLayoutBetween(partsHolder getNext current)._1
     
           println(formatNode(current, "", "◆", wsAfter))
           println("  "+ currentParent +" -> "+ id(current))
         case current: TreeScope#EndOfScope =>
-          val wsBefore = splitWhitespaceBetween(partsHolder getPrevious current)._2
+          val wsBefore = splitLayoutBetween(partsHolder getPrevious current)._2
           
           println(formatNode(current, wsBefore, "◆", ""))
           println("  "+ currentParent +" -> "+ id(current))
         case current =>
-          val wsBefore = splitWhitespaceBetween(partsHolder getPrevious current)._2
-          val wsAfter  = splitWhitespaceBetween(partsHolder getNext current)._1
+          val wsBefore = splitLayoutBetween(partsHolder getPrevious current)._2
+          val wsAfter  = splitLayoutBetween(partsHolder getNext current)._1
     
           println(formatNode(current, wsBefore, current.toString, wsAfter))
           println("  "+ currentParent +" -> "+ id(current))

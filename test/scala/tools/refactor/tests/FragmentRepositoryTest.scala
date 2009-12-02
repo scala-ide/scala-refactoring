@@ -12,23 +12,23 @@ class FragmentRepositoryTest extends TestHelper {
   
   import compiler.Tree
       
-  class Whitespace(val print: String) extends Fragment {
-    override val isWhitespace = true
+  class Layout(val print: String) extends Fragment {
+    override val isLayout = true
   }
   
   val scope = new SimpleScope(None, 2) 
   
   val c1 = new StringFragment("aa"); scope.add(c1)
-  val c2 = new Whitespace    (" {"); scope.add(c2)
+  val c2 = new Layout    (" {"); scope.add(c2)
   val c3 = new StringFragment("bb"); scope.add(c3)
-  val c4 = new Whitespace    (" }"); scope.add(c4)
-  val c5 = new Whitespace    (" ;"); scope.add(c5)
+  val c4 = new Layout    (" }"); scope.add(c4)
+  val c5 = new Layout    (" ;"); scope.add(c5)
   val c6 = new StringFragment("cc"); scope.add(c6)
   
   val root = new SimpleScope(None, 0)
-  root.add(new Whitespace    ("("))
+  root.add(new Layout    ("("))
   root.add(scope)
-  root.add(new Whitespace    (")"))
+  root.add(new Layout    (")"))
   
   val fs = new FragmentRepository(root)
 
@@ -79,7 +79,7 @@ class FragmentRepositoryTest extends TestHelper {
   @Test
   def notExists() = {
     assertFalse(fs exists new StringFragment("xx"))
-    assertFalse(fs exists new Whitespace    (" ;"))
+    assertFalse(fs exists new Layout    (" ;"))
   }
   
   //@Test

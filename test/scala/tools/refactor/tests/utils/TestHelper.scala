@@ -6,7 +6,7 @@ import scala.tools.refactor._
 import scala.tools.refactor.printer._
 import scala.tools.refactor.transform._
 
-trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with WhitespaceHandler with TreePrinter with Tracing {
+trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with LayoutHandler with TreePrinter with Tracing {
   
   def parts(src: String) = splitIntoFragments(treeFrom(src))
   
@@ -25,16 +25,16 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
     }
     
     def splitsInto(expected: String) = {
-      def splitAllWhitespaces(parts: List[Fragment]): String = parts match {
+      def splitAllLayouts(parts: List[Fragment]): String = parts match {
         case x :: y :: xs =>
-          val (ws, rest) = (y :: xs).span(_.isWhitespace)
-          val (left, right) = splitWhitespaceBetween(Some(x, ws, rest.head))
+          val (ws, rest) = (y :: xs).span(_.isLayout)
+          val (left, right) = splitLayoutBetween(Some(x, ws, rest.head))
           
-          x.print + left +"▒"+ right + splitAllWhitespaces(rest)
+          x.print + left +"▒"+ right + splitAllLayouts(rest)
         case _ => ""
       }
       
-      //XXX assertEquals(expected, splitAllWhitespaces(parts(src)))
+      //XXX assertEquals(expected, splitAllLayouts(parts(src)))
     }
     
     def transformsTo(expected: String, transform: compiler.Tree => compiler.Tree) {

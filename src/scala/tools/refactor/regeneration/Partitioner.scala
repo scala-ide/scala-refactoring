@@ -234,7 +234,7 @@ trait Partitioner {
               traverse(rhs) //Block creates its own Scope
             case _ =>
               requireAfter("=", " = ")
-              scope(rhs, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
+              scope(rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
                 traverse(rhs)
               }
           }
@@ -300,7 +300,7 @@ trait Partitioner {
           traverse(expr)
           visitAll(stats)(newline)
         } else {
-          scope (tree, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
+          scope (tree, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
             visitAll(stats ::: expr :: Nil)(newline)
           }
         }
@@ -347,18 +347,18 @@ trait Partitioner {
       
         val part = TreeScope(scope.parent, scope.start, scope.end, scope.file, scope.relativeIndentation, scope.tree)
         
-        def whitespace(start: Int, end: Int, file: SourceFile) {
+        def layout(start: Int, end: Int, file: SourceFile) {
           if(start < end) {
-            part add WhitespaceFragment(start, end, file)
+            part add LayoutFragment(start, end, file)
           }
         }
 
         (scope.children zip scope.children.tail) foreach {
           case (left: TreeScope#BeginOfScope, right: OriginalSourceFragment) => ()
-            whitespace(left.end, right.start, left.file)
+            layout(left.end, right.start, left.file)
           case (left: OriginalSourceFragment, right: OriginalSourceFragment) =>
             part add (fillWs(left))
-            whitespace(left.end, right.start, left.file)
+            layout(left.end, right.start, left.file)
         }
         part
       case _ => part
