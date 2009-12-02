@@ -11,18 +11,14 @@ object FragmentsPrinter extends Partitioner with CompilerProvider with Transform
     
     val partsHolder = new FragmentRepository(splitIntoFragments(tree))
     
-    def id(part: Fragment) = part.hashCode.toString /*part match {
-      case part: CompositeFragment#EndOfScope => ""+ part.parent.hashCode
-      case part: OriginalSourceFragment => ""+ part.start.toString + part.toString.hashCode.toString + part.end.toString
-      case _ => "?"
-    }*/
+    def id(part: Fragment) = part.hashCode.toString
     
     def escape(s: String) = s.replace("\n", "\\n").replace(" ", "·").replace(">", "&gt;").replace("<", "&lt;")
     
     def formatNode(part: Fragment, left: String, middle: String, right: String, color: String = "bisque") = {
       
-      val lReq = if(part.requiredBefore.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredBefore mkString "") +"</TD>" else ""
-      val rReq = if(part.requiredAfter.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredAfter mkString "") +"</TD>" else ""
+      val lReq = ""//if(part.requiredBefore.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredBefore mkString "") +"</TD>" else ""
+      val rReq = ""//if(part.requiredAfter.length > 0) "<TD BGCOLOR=\"red\">" + escape(part.requiredAfter mkString "") +"</TD>" else ""
       val l = if(left != "") "<TD>" + escape(left) +"</TD>" else ""
       val r = if(right != "") "<TD>" + escape(right) +"</TD>" else ""
     
@@ -74,15 +70,18 @@ digraph structs {
     println("\n}")
   }
   
-  def main(args : Array[String]) : Unit = {
+  def main(args: Array[String]) : Unit = {
+
+//    val tree = treeFrom("""
+//trait Person { //
+//  def name: String
+//  def sex: String 
+//}
+//""")
 
     val tree = treeFrom("""
-      class A(i: Int, j: Int) { //
-        val b: String
-        val c: Int = 5
-      }
+class LR(left: Int, right: String)
 """)
-
     
     visualize(tree)
   

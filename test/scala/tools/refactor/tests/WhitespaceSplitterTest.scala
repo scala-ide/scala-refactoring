@@ -8,7 +8,7 @@ import scala.tools.refactor.printer._
 
 @Test
 class WhitespaceSplitterTest extends TestHelper {
-      
+  
   // parameters are: whitespace, existing indentation (scope, element), isEndOfScope, currentScopeIndentation
   def → = fixIndentation _
   
@@ -29,17 +29,7 @@ class WhitespaceSplitterTest extends TestHelper {
     assertEquals("\n    \n    A",       →("\n  \n  A", Some(0, 2), false, 2))
     assertEquals("\n      \n      A",   →("\n  \n  A", Some(0, 2), false, 4))
   }
-  
-//  @Test
-//  def testFixExistingIndentationEndOfScope() = {
-//
-//    assertEquals("\n A", →("\n  A"  , Some(0, 2), true, 1))
-//    assertEquals("\n A", →("\n    A", Some(0, 4), true, 1))
-//    
-//    assertEquals("\nA",  →("\n  A"  , Some(0, 2), true, 0))
-//    assertEquals("\nA",  →("\n    A", Some(0, 8), true, 0))
-//  }
-  
+
   @Test
   def testNewIndentation() = { 
     // should just indent for the scope + default indentation (2)

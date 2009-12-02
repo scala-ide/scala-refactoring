@@ -76,18 +76,20 @@ trait Merger {
         new StringFragment(indentedWhitespace) :: Nil
       }
     }
+    
+    def printFragment(f: Fragment) = f match {
+      case f if allFragments exists f => f
+      case f: FlagFragment => StringFragment(f.print) copyRequirements f
+      case f: WithTree => print(f)
+      case f: WithRequisite => StringFragment("") copyRequirements f
+      case _ => StringFragment("<non-tree part>")
+    }
 
     def innerMerge(scope: Scope): List[Fragment] = context("inner merger loop") {
       trace("current scope is %s", scope)
       (scope.children zip scope.children.tail) flatMap {
         case (current: Scope, next) => innerMerge(current) ::: withWhitespace(current, next, scope)
-        case (current, next) => (current match {
-          case f if allFragments exists f => f
-          case f: FlagFragment => StringFragment(f.print) copyRequirements f
-          case f: WithTree => print(f)
-          case f: WithRequisite => StringFragment("") copyRequirements f
-          case _ => StringFragment("<non-tree part>")
-        }) :: withWhitespace(current, next, scope)
+        case (current, next) => printFragment(current) :: withWhitespace(current, next, scope)
       }
     }
     

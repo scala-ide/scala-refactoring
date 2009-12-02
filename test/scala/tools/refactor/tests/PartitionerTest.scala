@@ -146,7 +146,7 @@ class PartitionerTest extends TestHelper {
   """→0(0)❨|
     |trait| |A| |→4(4)❨|{
       |def| |a| = |new| |A| |→6(2)❨|{
-        val |i| = |1|
+        |val| |i| = |1|
       }|❩|
     }|❩|
   |❩"""

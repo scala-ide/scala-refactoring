@@ -1,5 +1,7 @@
 package scala.tools.refactor.printer
 
+import scala.tools.refactor.Tracing
+
 import scala.tools.nsc.util._
 import scala.tools.nsc.ast._
 import scala.tools.nsc.ast.parser.Tokens
@@ -8,11 +10,13 @@ import scala.collection.mutable.ListBuffer
 import scala.tools.refactor.UnknownPosition
 
 trait Partitioner {
-  self: scala.tools.refactor.Compiler =>
+  self: scala.tools.refactor.Compiler with Tracing =>
   import compiler.{Scope => _, _}
   
   private class Visitor(allFragments: Option[FragmentRepository]) extends Traverser {
-        
+    
+    import SourceHelper._
+    
     private var scopes = new scala.collection.mutable.Stack[Scope]
     
     private val preRequirements = new ListBuffer[Requisite]
@@ -27,7 +31,7 @@ trait Partitioner {
       else
         scopes.top.lastChild match {
         case Some(part) => part.requireAfter(new Requisite(check, write))
-        case None => () //??
+        case None => //throw new Exception("No place to attach requisite"+ check +"!") //??
       }
     }
     
@@ -36,7 +40,7 @@ trait Partitioner {
       case _ => requireBefore(r)
     }
 
-    def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, SourceFile) => Option[Int] = noChange, adjustEnd: (Int, SourceFile) => Option[Int] = noChange)(body: => Unit) = tree match {
+    def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
       case EmptyTree => ()
       case tree if tree.pos == UnknownPosition =>
         if(indent) {
@@ -55,7 +59,7 @@ trait Partitioner {
         ()
       case _ =>
         // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
-        val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source),  adjustEnd(tree.pos.end, tree.pos.source)) match {
+        val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source.content),  adjustEnd(tree.pos.end, tree.pos.source.content)) match {
           case (Some(start), Some(end)) => (start, end)
           case _ => (tree.pos.start, tree.pos.end)
         }
@@ -66,17 +70,17 @@ trait Partitioner {
         
             case Some(indentation) => 
               val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
+//              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
               allFragments.scopeIndentation(tree)
               thisIndentation - indentation
             case None => 
-              println("part not found, default to 2")
+//              println("part not found, default to 2")
               2
           }
           case None => 
-            println("top indentation is: "+ scopes.top.indentation) 
-            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
-            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
+//            println("top indentation is: "+ scopes.top.indentation) 
+//            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
+//            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
             SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
         }
         
@@ -93,63 +97,7 @@ trait Partitioner {
         scopes pop
     }
     
-    def noChange(offset: Int, file: SourceFile) = Some(offset)
-    
-    def forwardsTo(to: Char, max: Int)(offset: Int, file: SourceFile): Option[Int] = {
-      var i = offset
-      
-      while(file.content(i) != to && i < max && i < file.content.length - 1) {
-        i += 1
-      }
-      
-      if(file.content(i) == to)
-        Some(i)
-      else
-        None
-    }
-    
-    def skipWhitespaceTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
-      
-      def isWhitespace(c: Char) = c match {
-        case '\n' | '\t' | ' ' | '\r' => true
-        case _ => false
-      }
-            
-      var i = offset
-      // remove the comment
-      
-      while(isWhitespace(file.content(i))) {
-        i += 1
-      }
-      
-      if(file.content(i) == to)
-        Some(i + 1) //the end points to the character _after_ the found character
-      else
-        None
-    }
-    
-    def backwardsSkipWhitespaceTo(to: Char)(offset: Int, file: SourceFile): Option[Int] = {
-      
-      def isWhitespace(c: Char) = c match {
-        case '\n' | '\t' | ' ' | '\r' => true
-        case _ => false
-      }
-      
-      if(file.content(offset) == to) 
-        return Some(offset)
-            
-      var i = offset - 1
-      // remove the comment
-      
-      while(isWhitespace(file.content(i))) {
-        i -= 1
-      }
-      
-      if(file.content(i) == to)
-        Some(i)
-      else
-        None
-    }
+    def noChange(offset: Int, content: Seq[Char]) = Some(offset) 
         
     def modifiers(tree: { def mods: Modifiers; def pos: Position }) = tree.pos match {
       case UnknownPosition => addFragment(new FlagFragment(tree.mods.flags, UnknownPosition))
@@ -171,8 +119,11 @@ trait Partitioner {
       preRequirements.foreach(part requireBefore _)
       preRequirements.clear
     }
+        
+    def rangeOrUnknown(t: Tree) = t.pos.isRange || t.pos == UnknownPosition
+    def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrUnknown(t)  
     
-    def visitAll(trees: List[Tree])(separator: Fragment => Unit ): Unit = trees match {
+    def visitAll(trees: List[Tree])(separator: Fragment => Unit ): Unit = trees.filter(notEmptyRangeOrUnknown) match {
       case Nil => 
         ()
       case x :: Nil => 
@@ -257,45 +208,42 @@ trait Partitioner {
           addFragment(select)
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
-        {
-          modifiers(defdef)
-          if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
-            requireAfterOrBefore(" ")
-            addFragment(defdef)
-                      
-            traverseTrees(mods.annotations)
-            traverseTrees(tparams)
-            
-            if(!vparamss.isEmpty) {
-              requireAfter("(")
-	            traverseTreess(vparamss)
-              requireBefore(")")
-            }
-            
-            if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
-              requireBefore(":", ": ")
-              traverse(tpt)              
-            }
-            
-            rhs match {
-              case EmptyTree =>
-              case rhs: Block =>
-                requireAfter("=", " = ")
-                traverse(rhs) //Block creates its own Scope
-              case _ =>
-                requireAfter("=", " = ")
-                scope(rhs, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
-                  traverse(rhs)
-                }
-            }
-          } else
-            super.traverse(tree)
-        }
+        modifiers(defdef)
+        if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
+          requireAfterOrBefore(" ")
+          addFragment(defdef)
+                    
+          traverseTrees(mods.annotations)
+          traverseTrees(tparams)
+          
+          if(!vparamss.isEmpty) {
+            requireAfter("(")
+            traverseTreess(vparamss)
+            requireBefore(")")
+          }
+          
+          if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
+            requireBefore(":", ": ")
+            traverse(tpt)              
+          }
+          
+          rhs match {
+            case EmptyTree =>
+            case rhs: Block =>
+              requireAfter("=", " = ")
+              traverse(rhs) //Block creates its own Scope
+            case _ =>
+              requireAfter("=", " = ")
+              scope(rhs, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
+                traverse(rhs)
+              }
+          }
+        } else super.traverse(tree)
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
-          modifiers(typeDef)
-          addFragment(typeDef)
-          super.traverse(tree)
+        modifiers(typeDef)
+        addFragment(typeDef)
+        super.traverse(tree)
 
       case t @ Template(parents, _, body) =>
 
@@ -317,17 +265,17 @@ trait Partitioner {
         
         visitAll(parents)(part => ())
         
-        val trueBody = (restBody -- earlyBody).filter(t => t.pos.isRange || t.pos == UnknownPosition)
+        val trueBody = (restBody -- earlyBody).filter(rangeOrUnknown)
         
         if(trueBody.size > 0) {
           scope(
               tree, 
               indent = true, 
               adjustStart = {
-                (start, file) =>
-                  val abortOn = (trueBody filter withRange).map(_.pos.start).foldLeft(file.content.length)(_ min _)
+                (start, content) =>
+                  val abortOn = (trueBody filter withRange).map(_.pos.start).foldLeft(content.length)(_ min _)
                   val startFrom = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )
-                  forwardsTo('{', abortOn)(startFrom, file)
+                  forwardsTo('{', abortOn)(startFrom, content)
                 }, 
             adjustEnd = noChange) {
             visitAll(trueBody)(_.requireAfter(new Requisite("\n")))
@@ -353,8 +301,8 @@ trait Partitioner {
           visitAll(stats)(newline)
         } else {
           scope (tree, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
-            visitAll(stats)(newline)
-            traverse(expr)
+            visitAll(stats ::: expr :: Nil)(newline)
+            //traverse(expr)
           }
         }
         
@@ -374,18 +322,17 @@ trait Partitioner {
         }
         
       case _ =>
-        //println("Not handled: "+ tree.getClass())
         super.traverse(tree)
     }}
     
     def visit(tree: Tree) = {
       
       val rootFragment = TreeScope(None, 0, tree.pos.source.length, tree.pos.source, /*SourceHelper.indentationLength(tree)*/0, tree)
-      
+
       scopes push rootFragment
       
       traverse(tree)
-      
+
       rootFragment
     }
   }
@@ -397,9 +344,9 @@ trait Partitioner {
     val parts = new Visitor(None).visit(root)
     
     def fillWs(part: Fragment): Fragment = part match {
-      case p: TreeScope => 
+      case scope: TreeScope => 
       
-        val part = new TreeScope(p.parent, p.start, p.end, p.file, p.relativeIndentation, p.tree)
+        val part = TreeScope(scope.parent, scope.start, scope.end, scope.file, scope.relativeIndentation, scope.tree)
         
         def whitespace(start: Int, end: Int, file: SourceFile) {
           if(start < end) {
@@ -407,7 +354,7 @@ trait Partitioner {
           }
         }
 
-        (p.children zip p.children.tail) foreach {
+        (scope.children zip scope.children.tail) foreach {
           case (left: TreeScope#BeginOfScope, right: OriginalSourceFragment) => ()
             whitespace(left.end, right.start, left.file)
           case (left: OriginalSourceFragment, right: OriginalSourceFragment) =>
