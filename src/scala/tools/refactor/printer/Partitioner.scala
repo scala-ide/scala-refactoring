@@ -218,7 +218,7 @@ trait Partitioner {
           
           if(!vparamss.isEmpty) {
             requireAfter("(")
-            traverseTreess(vparamss)
+            vparamss foreach (visitAll(_)(_.requireAfter(Requisite(",", ", "))))
             requireBefore(")")
           }
           
@@ -302,7 +302,6 @@ trait Partitioner {
         } else {
           scope (tree, indent = true, backwardsSkipWhitespaceTo('{'), skipWhitespaceTo('}')) {
             visitAll(stats ::: expr :: Nil)(newline)
-            //traverse(expr)
           }
         }
         
