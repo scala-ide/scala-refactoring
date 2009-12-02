@@ -1,4 +1,4 @@
-package scala.tools.refactor.printer
+package scala.tools.refactoring.regeneration
 
 import scala.collection.mutable.ListBuffer
 

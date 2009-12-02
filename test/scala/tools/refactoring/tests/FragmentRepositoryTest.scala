@@ -1,16 +1,16 @@
-package scala.tools.refactor.tests
+package scala.tools.refactoring.tests
 
-import utils.TestHelper
+import scala.tools.refactoring.tests.utils.TestHelper
 import org.junit.Test
 import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactor.printer._
+import scala.tools.refactoring.regeneration._
 import scala.tools.nsc.ast.Trees
 
 @Test
 class FragmentRepositoryTest extends TestHelper {
   
-  import compiler.Tree
+  import global.Tree
       
   class Layout(val print: String) extends Fragment {
     override val isLayout = true
@@ -89,7 +89,7 @@ class FragmentRepositoryTest extends TestHelper {
 
     def collectAll(t: Tree): List[Tree] = {
       
-      def children(t: Tree): List[Tree] = compiler.treeBrowsers.TreeInfo.children(t) filter (_.pos.isRange)
+      def children(t: Tree): List[Tree] = global.treeBrowsers.TreeInfo.children(t) filter (_.pos.isRange)
       
       t :: (children(t) flatMap ( child => collectAll(child)))
     }

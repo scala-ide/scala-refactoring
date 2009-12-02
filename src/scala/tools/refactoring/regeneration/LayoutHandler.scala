@@ -1,6 +1,6 @@
-package scala.tools.refactor.printer
+package scala.tools.refactoring.regeneration
 
-import scala.tools.refactor.Tracing
+import scala.tools.refactoring.Tracing
 import scala.collection.mutable.ListBuffer
 
 trait LayoutHandler {

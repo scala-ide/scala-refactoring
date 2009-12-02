@@ -1,13 +1,13 @@
-package scala.tools.refactor.scripts
+package scala.tools.refactoring.scripts
 
-import scala.tools.refactor.tests.utils._
-import scala.tools.refactor._
-import scala.tools.refactor.printer._
-import scala.tools.refactor.transform._
+import scala.tools.refactoring._
+import scala.tools.refactoring.tests.utils._
+import scala.tools.refactoring.regeneration._
+import scala.tools.refactoring.transformation._
 
 object FragmentsPrinter extends Partitioner with CompilerProvider with Transform with Merger with LayoutHandler with TreePrinter with SilentTracing {
   
-  def visualize(tree: compiler.Tree) {
+  def visualize(tree: global.Tree) {
     
     val partsHolder = new FragmentRepository(splitIntoFragments(tree))
     

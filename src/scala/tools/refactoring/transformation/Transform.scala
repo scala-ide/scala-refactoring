@@ -1,7 +1,7 @@
-package scala.tools.refactor.transform
+package scala.tools.refactoring.transformation
 
-import scala.tools.refactor.Compiler
-import scala.tools.refactor.UnknownPosition
+import scala.tools.refactoring.Compiler
+import scala.tools.refactoring.UnknownPosition
 import scala.tools.nsc.util.NoPosition
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens
@@ -9,8 +9,8 @@ import scala.tools.nsc.symtab.Flags
 
 trait Transform {
   
-  self: scala.tools.refactor.Compiler =>
-  import compiler._
+  self: scala.tools.refactoring.Compiler =>
+  import global._
   
   private object PositionSetter extends Traverser {
      override def traverse(tree: Tree): Unit = {

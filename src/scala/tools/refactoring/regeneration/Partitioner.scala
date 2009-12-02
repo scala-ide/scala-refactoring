@@ -1,17 +1,17 @@
-package scala.tools.refactor.printer
+package scala.tools.refactoring.regeneration
 
-import scala.tools.refactor.Tracing
+import scala.tools.refactoring.Tracing
 
 import scala.tools.nsc.util._
 import scala.tools.nsc.ast._
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
-import scala.tools.refactor.UnknownPosition
+import scala.tools.refactoring.UnknownPosition
 
 trait Partitioner {
-  self: scala.tools.refactor.Compiler with Tracing =>
-  import compiler.{Scope => _, _}
+  self: scala.tools.refactoring.Compiler with Tracing =>
+  import global.{Scope => _, _}
   
   private class Visitor(allFragments: Option[FragmentRepository]) extends Traverser {
     

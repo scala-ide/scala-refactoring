@@ -1,10 +1,10 @@
-package scala.tools.refactor.tests
+package scala.tools.refactoring.tests
 
-import utils.TestHelper
+import scala.tools.refactoring.tests.utils.TestHelper
 import org.junit.Test
 import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactor.printer._
+import scala.tools.refactoring.regeneration._
 
 @Test
 class LayoutHandlerTest extends TestHelper {

@@ -1,10 +1,10 @@
-package scala.tools.refactor.tests
+package scala.tools.refactoring.tests
 
 import utils.TestHelper
 import org.junit.Test
 import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactor.printer._
+import scala.tools.refactoring.regeneration._
 import scala.tools.nsc.ast.Trees
 
 @Test

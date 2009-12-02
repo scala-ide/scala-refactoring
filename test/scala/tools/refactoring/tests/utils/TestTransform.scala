@@ -1,17 +1,19 @@
-package scala.tools.refactor.tests.utils
+package scala.tools.refactoring.tests.utils
 
-import scala.tools.refactor.Compiler
-import scala.tools.refactor.transform.Transform
-import scala.tools.refactor.UnknownPosition
+import scala.tools.refactoring.Compiler
+import scala.tools.refactoring.transformation.Transform
+import scala.tools.refactoring.UnknownPosition
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens
+import scala.tools.nsc.ast.TreeDSL
 import scala.tools.nsc.symtab.Flags
 
-trait TestTransform extends Transform {
+trait TestTransform extends Transform with TreeDSL {
   
-  self: scala.tools.refactor.Compiler =>
-  import compiler._
+  self: scala.tools.refactoring.Compiler =>
+  import CODE._
+  import global._
   
   def insertNewMethod = new Transformer {
     override def transform(tree: Tree): Tree = {
@@ -107,6 +109,7 @@ trait TestTransform extends Transform {
         case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange =>
         
           val v = ValDef(NoMods, newTermName("arg1"), TypeTree(ConstantType(Constant("Int"))), EmptyTree)
+          val v2 = VAL(defdef.symbol.newValue(UnknownPosition, "v2"))
         
           val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, (v :: v :: Nil) :: Nil, TypeTree(rhs.expr.tpe), rhs) 
         

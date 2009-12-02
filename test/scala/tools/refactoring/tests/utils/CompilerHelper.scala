@@ -1,0 +1,49 @@
+package scala.tools.refactoring.tests.utils
+
+import scala.tools.nsc.Settings
+import scala.tools.nsc.interactive.Global
+import scala.tools.nsc.reporters.ConsoleReporter
+import scala.tools.nsc.util.BatchSourceFile
+import scala.tools.refactoring.regeneration._
+
+private object CompilerInstance {
+  
+  val settings = new Settings( msg => () )
+  
+  val scalaObjectSource = Class.forName("scala.ScalaObject").getProtectionDomain.getCodeSource
+  
+  val origBootclasspath = settings.bootclasspath.value
+    
+  // is null in Eclipse/OSGI but luckily we don't need it there
+  if(scalaObjectSource != null) {
+    val compilerPath = Class.forName("scala.tools.nsc.Interpreter").getProtectionDomain.getCodeSource.getLocation
+    val libPath = scalaObjectSource.getLocation          
+    val pathList = List(compilerPath,libPath)
+    settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
+  }/* else {
+    def jarPathOfClass(className: String) = {
+      val resource = className.split('.').mkString("/", "/", ".class")
+      val path = getClass.getResource(resource).getPath
+      val indexOfFile = path.indexOf("file:")
+      val indexOfSeparator = path.lastIndexOf('!')
+      path.substring(indexOfFile, indexOfSeparator)
+    }
+    val compilerPath = jarPathOfClass("scala.tools.nsc.Interpreter")
+    val libPath = jarPathOfClass("scala.ScalaObject")
+    val pathList = List(compilerPath,libPath)
+    settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
+  }*/
+  
+  val compiler = new Global(settings, new ConsoleReporter(settings))
+}
+
+trait CompilerProvider extends scala.tools.refactoring.Compiler {
+
+  val global = CompilerInstance.compiler
+  
+  new global.Run
+  
+  def treeFrom(source: String) = {
+   global.typedTree(new BatchSourceFile("test", source), true)
+  }
+}

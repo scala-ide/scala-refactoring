@@ -1,4 +1,4 @@
-package scala.tools.refactor.tests
+package scala.tools.refactoring.tests
 
 import utils.TestHelper
 import junit.framework.TestCase

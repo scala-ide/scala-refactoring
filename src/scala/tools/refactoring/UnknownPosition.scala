@@ -1,4 +1,4 @@
-package scala.tools.refactor
+package scala.tools.refactoring
 
 import scala.tools.nsc.util.Position
 

@@ -1,10 +1,10 @@
-package scala.tools.refactor.tests.utils
+package scala.tools.refactoring.tests.utils
 
 import org.junit.Assert._
 
-import scala.tools.refactor._
-import scala.tools.refactor.printer._
-import scala.tools.refactor.transform._
+import scala.tools.refactoring._
+import scala.tools.refactoring.regeneration._
+import scala.tools.refactoring.transformation._
 
 trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with LayoutHandler with TreePrinter with Tracing {
   
@@ -37,7 +37,7 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
       //XXX assertEquals(expected, splitAllLayouts(parts(src)))
     }
     
-    def transformsTo(expected: String, transform: compiler.Tree => compiler.Tree) {
+    def transformsTo(expected: String, transform: global.Tree => global.Tree) {
       
       val tree = treeFrom(src)
       val newTree = transform(tree)

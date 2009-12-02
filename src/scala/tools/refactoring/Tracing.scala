@@ -1,6 +1,6 @@
-package scala.tools.refactor
+package scala.tools.refactoring
 
-import printer._
+import scala.tools.refactoring.regeneration._
 
 trait Tracing {
   

@@ -1,12 +1,12 @@
-package scala.tools.refactor.printer
+package scala.tools.refactoring.regeneration
 
 import scala.tools.nsc.ast.Trees
 
 trait TreePrinter {
   
-  self: scala.tools.refactor.Compiler =>
+  self: scala.tools.refactoring.Compiler =>
   
-  import compiler._
+  import global._
 
   def print(part: WithTree) = part match {
     case part: WithRequisite => printTree(part.tree) copyRequirements part

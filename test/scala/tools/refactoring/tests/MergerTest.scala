@@ -1,15 +1,15 @@
-package scala.tools.refactor.tests
+package scala.tools.refactoring.tests
 
-import scala.tools.refactor.tests.utils.TestTransform
-import scala.tools.refactor.UnknownPosition
+import scala.tools.refactoring.tests.utils.TestTransform
+import scala.tools.refactoring.UnknownPosition
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.ast.parser.Tokens
 
-import utils.TestHelper
+import scala.tools.refactoring.tests.utils.TestHelper
 import org.junit.Test
 import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactor.printer._
+import scala.tools.refactoring.transformation._
 
 @Test
 class MergerTest extends TestHelper with TestTransform {
