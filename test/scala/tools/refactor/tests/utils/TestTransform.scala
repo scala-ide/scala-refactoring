@@ -98,5 +98,29 @@ trait TestTransform extends Transform {
         case x => x
       }
     }
+  }  
+  
+  def newMethod = new Transformer {
+    override def transform(tree: Tree): Tree = {
+      super.transform(tree) match {
+        
+        case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange =>
+        
+          val v = ValDef(NoMods, newTermName("arg1"), TypeTree(ConstantType(Constant("Int"))), EmptyTree)
+        
+          val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, (v :: v :: Nil) :: Nil, TypeTree(rhs.expr.tpe), rhs) 
+        
+          val newRhs = cleanTree {
+            Block(
+                newDef :: rhs.stats ::: rhs.expr :: Nil
+                , Apply(Select(This(""), "innerMethod"), Nil))
+          }
+          
+          new DefDef(mods, name, tparams, vparamss, tpt, newRhs).copyAttrs(tree)
+        
+
+        case x => x
+      }
+    }
   }
 }

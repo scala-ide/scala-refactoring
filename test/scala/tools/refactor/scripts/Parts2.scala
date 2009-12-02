@@ -24,10 +24,9 @@ object Parts2 extends Merger with Partitioner with TestTransform with CompilerPr
       class A {
         val b: String //b-string
         def c: Unit = {
-          def d: Int = {
-            5
-          }
-          d
+          val x = 
+            "abc" //assign
+              println(x)
         }
       }
 """)
