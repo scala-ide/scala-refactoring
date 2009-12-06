@@ -240,7 +240,7 @@ trait Partitioner {
           }
         } else super.traverse(tree)
         
-      case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams: List[TypeDef], rhs: Tree) =>
+      case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams, rhs: Tree) =>
         modifiers(typeDef)
         addFragment(typeDef)
         super.traverse(tree)
@@ -265,7 +265,7 @@ trait Partitioner {
         
         visitAll(parents)(part => ())
         
-        val trueBody = (restBody -- earlyBody).filter(rangeOrUnknown)
+        val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrUnknown)
         
         if(trueBody.size > 0) {
           scope(
@@ -296,7 +296,7 @@ trait Partitioner {
         
         val newline: Fragment => Unit = _.requireAfter(new Requisite("\n"))
         
-        if(expr.pos.isRange && (expr.pos precedes stats.first.pos)) {
+        if(expr.pos.isRange && (expr.pos precedes stats.head.pos)) {
           traverse(expr)
           visitAll(stats)(newline)
         } else {
@@ -315,7 +315,7 @@ trait Partitioner {
         })
         super.traverse(tree)
         
-      case Match(selector: Tree, cases: List[CaseDef]) =>
+      case Match(selector: Tree, cases) =>
         scope(tree) {
           super.traverse(tree)
         }
