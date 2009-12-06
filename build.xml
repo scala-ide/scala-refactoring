@@ -39,11 +39,11 @@
 	</target>
 
 	<target name="test" depends="build-tests">
-		<junit printsummary="yes" haltonfailure="no">
+		<junit printsummary="yes" haltonfailure="no" fork="yes" forkmode="once">
 			<formatter type="xml" />
 			<formatter type="plain"/>
 			<classpath refid="build.classpath" />
-			<batchtest fork="yes" todir="${build.dir}">
+			<batchtest todir="${build.dir}">
 				<fileset dir="${build.dir}" includes="**/tests/*" excludes="**/*$*.class" />
 			</batchtest>
 		</junit>

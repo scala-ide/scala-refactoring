@@ -108,10 +108,10 @@ trait TestTransform extends Transform with TreeDSL {
         
         case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange =>
         
-          val v = ValDef(NoMods, newTermName("arg1"), TypeTree(ConstantType(Constant("Int"))), EmptyTree)
-          val v2 = VAL(defdef.symbol.newValue(UnknownPosition, "v2"))
+          val v = ValDef(NoMods, "arg1", TypeTree(definitions.IntClass.tpe), EmptyTree)
+          val v2 = VAL(defdef.symbol.newValue(UnknownPosition, "v2") setInfo definitions.StringClass.tpe) === NULL
         
-          val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, (v :: v :: Nil) :: Nil, TypeTree(rhs.expr.tpe), rhs) 
+          val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, (v :: v2 :: Nil) :: Nil, TypeTree(rhs.expr.tpe), rhs) 
         
           val newRhs = cleanTree {
             Block(

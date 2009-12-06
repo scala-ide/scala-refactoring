@@ -20,6 +20,7 @@ private object CompilerInstance {
     val libPath = scalaObjectSource.getLocation          
     val pathList = List(compilerPath,libPath)
     settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
+    println(settings.bootclasspath.value)
   }/* else {
     def jarPathOfClass(className: String) = {
       val resource = className.split('.').mkString("/", "/", ".class")
@@ -35,14 +36,14 @@ private object CompilerInstance {
   }*/
   
   val compiler = new Global(settings, new ConsoleReporter(settings))
+  
+  new compiler.Run
 }
 
 trait CompilerProvider extends scala.tools.refactoring.Compiler {
 
   val global = CompilerInstance.compiler
-  
-  new global.Run
-  
+    
   def treeFrom(source: String) = {
    global.typedTree(new BatchSourceFile("test", source), true)
   }
