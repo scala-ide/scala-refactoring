@@ -18,8 +18,7 @@ trait DeclarationIndexes {
     private object defTreeTraverser extends Traverser {
       override def traverse(t: Tree) = {
         t match {
-          case t: DefTree if t.pos.isRange => 
-            println("adding "+ t.symbol +" to the index")
+          case t: DefTree => 
             defs += t.symbol → t
           case _ => ()
         }
@@ -28,7 +27,6 @@ trait DeclarationIndexes {
     }
     
     def apply(s: Symbol) = {
-      println("querying "+ s +" in the index")
       defs(s)
     }
     

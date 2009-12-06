@@ -83,5 +83,20 @@ class DeclarationIndexTest extends TestHelper with DeclarationIndexes {
       """)
   }
   
+  @Test
+  def findMethodFromOtherClass() = {
+    assertDeclarationOfSelection("""<stable> <accessor> def x: Int = A.this.x""", """
+      class A {
+        val x = 5
+      }
+      object B {
+        def go  = {
+          val a = new A
+          val y = /*(*/  a.x  /*)*/
+          y
+        }
+      }
+      """)
+  }
 }
 

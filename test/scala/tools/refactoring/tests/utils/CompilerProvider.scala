@@ -20,7 +20,6 @@ private object CompilerInstance {
     val libPath = scalaObjectSource.getLocation          
     val pathList = List(compilerPath,libPath)
     settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
-    println(settings.bootclasspath.value)
   }/* else {
     def jarPathOfClass(className: String) = {
       val resource = className.split('.').mkString("/", "/", ".class")

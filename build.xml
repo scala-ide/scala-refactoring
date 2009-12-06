@@ -39,7 +39,7 @@
 	</target>
 
 	<target name="test" depends="build-tests">
-		<junit printsummary="yes" haltonfailure="no" fork="yes" forkmode="once">
+		<junit printsummary="yes" haltonfailure="yes" fork="yes" forkmode="once">
 			<formatter type="xml" />
 			<formatter type="plain"/>
 			<classpath refid="build.classpath" />
