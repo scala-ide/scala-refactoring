@@ -16,24 +16,15 @@ object Parts2 extends Merger with Partitioner with TestTransform with LayoutHand
 
   def main(args : Array[String]) : Unit = {
     
-//    val tree = treeFrom("class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef")
-//      val tree = treeFrom("class A")
     val tree = treeFrom("""
       class A {
-        val y = 5
-        val b: String //b-string
-        def c: Unit = {
-          val x = "abc" //assign
-          println(x)
-          println(y)
+        def get: Int = {
+          val a = 1
+          val b = a + 1
+          b + 1
         }
       }
 """)
-//    val res = insertValue.transform(tree)
-
-
-    global.treeBrowser.browse(tree)
-        
         
     val partitionedOriginal = splitIntoFragments(tree)
     

@@ -7,7 +7,7 @@ import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
 
-trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with LayoutHandler with TreePrinter with Tracing {
+trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with LayoutHandler with TreePrinter with Tracing with Selections {
   
   def parts(src: String) = splitIntoFragments(treeFrom(src))
   
@@ -15,20 +15,8 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
     
     val start = src.indexOf("/*(*/")
     val end   = src.indexOf("/*)*/")
-      
-    class FilterTree extends global.Traverser {
-      val hits = new ListBuffer[global.Tree]
-      override def traverse(t: global.Tree) {
-        if (t.pos.isRange && t.pos.start >= start && t.pos.end < end)
-          hits += t
-        else
-          super.traverse(t)
-      }
-    }
     
-    val f = new FilterTree
-    f.traverse(tree)
-    f.hits.toList
+    TreeSelection(tree, start, end)
   }
   
   class TestString(src: String) {
