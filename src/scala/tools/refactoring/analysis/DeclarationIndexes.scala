@@ -34,6 +34,4 @@ trait DeclarationIndexes {
    
     def processTree(t: Tree) = defTreeTraverser traverse t
   }
-  
-  object declarationIndex extends DeclarationIndex
 }
