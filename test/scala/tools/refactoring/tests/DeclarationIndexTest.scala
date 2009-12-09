@@ -24,21 +24,23 @@ class DeclarationIndexTest extends TestHelper with DeclarationIndexes with TreeA
   
   def assertDeclarationOfSelection(expected: String, src: String) = withIndex(src) { (tree, index) =>
   
-    def findDeclarationFromSelection(src: String) = findMarkedNodes(src, tree).trees.head match {
-      case t: SymTree => 
+    val declarations = findMarkedNodes(src, tree).trees.head match {
+      case t: RefTree => 
         assertTrue(index.children(t.symbol.owner) exists (t.symbol ==))
         index.declaration(t.symbol)
       case t => throw new Exception("found: "+ t)
     }
-    assertEquals(expected, findDeclarationFromSelection(src).toString)
-  }
+    assertEquals(expected, declarations.toString)
+  }  
   
+  def assertReferencesOfSelection(expected: String, src: String) = withIndex(src) { (tree, index) =>
   
-  def assertInboundLocalDependencies(expected: String, src: String) = withIndex(src) { (tree, index) =>
-
-    val selection = findMarkedNodes(src, tree)
-    val in = inboundLocalDependencies(index, selection, selection.symbols.head.owner)
-    assertEquals(expected, in mkString ", ")
+    val references = findMarkedNodes(src, tree).trees.head match {
+      case t: DefTree => 
+        index.references(t.symbol) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
+      case t => throw new Exception("found: "+ t)
+    }
+    assertEquals(expected, references mkString ", ")
   }
   
   @Test
@@ -75,7 +77,10 @@ class DeclarationIndexTest extends TestHelper with DeclarationIndexes with TreeA
         }
       }
       """)
+  }
 
+  @Test
+  def findShadowedWithThis() = {
     assertDeclarationOfSelection("""private[this] val x: Int = 1""", """
       object A {
         private[this] val x = 1
@@ -117,63 +122,43 @@ class DeclarationIndexTest extends TestHelper with DeclarationIndexes with TreeA
   }  
   
   @Test
-  def findInboudLocalAndParameter() = {
-    
-    assertInboundLocalDependencies("value i, value a", """
+  def findReferencesToLocal() = {
+    assertReferencesOfSelection("a (86, 87), a (98, 99)", """
       class A {
-        def addThree(i: Int) = {
-          val a = 1
- /*(*/    val b = a + 1 + i  /*)*/
-          val c = b + 1
-          c
+        def go  = {
+ /*(*/    val a = 5      /*)*/
+          val y = a
+          a
         }
       }
-    """)
-  }  
+      """)
+  }
   
   @Test
-  def findParameterDependency() = {
-    
-    assertInboundLocalDependencies("value i", """
+  def findReferencesToMethod() = {
+    assertReferencesOfSelection("""A.this.go (96, 98)""", """
       class A {
-        def addThree(i: Int) = {
-          val a = 1
- /*(*/    val b = for(x <- 0 to i) yield x  /*)*/
-          "done"
-        }
-      }
-    """)
-  }  
-  
-  @Test
-  def findNoDependency() = {
-    
-    assertInboundLocalDependencies("", """
-      class A {
-        def addThree(i: Int) = {
-          val a = 1
- /*(*/    val b = 2 * 21  /*)*/
-          b
-        }
-      }
-    """)
-  }  
-  
-  @Test
-  def findOnClassLevel() = {
-    
-    assertInboundLocalDependencies("value a", """
-      class A {
-        val a = 1
- /*(*/  val b = a + 1 /*)*/
+ /*(*/       
+        def go() = {
+          5
+        } /*)*/
+        val g = go()
+      } 
 
-        def addThree(i: Int) = {
-          val a = 1
-          val b = 2 * 21  
-          b
-        }
+      """)
+  }  
+  
+  @Test
+  def findReferencesToClass() = {
+    assertReferencesOfSelection("""A (48, 49), A (104, 105)""", """
+ /*(*/  class A   /*)*/
+
+      class B extends A
+
+      class C(a: A) {
+        def get(a: A): A = new A
       }
-    """)
+      """)
   }
 }
 
