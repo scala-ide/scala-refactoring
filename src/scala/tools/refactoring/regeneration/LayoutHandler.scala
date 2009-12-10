@@ -8,14 +8,21 @@ trait LayoutHandler {
   
   def processRequisites(current: Fragment, layoutAfterCurrent: String, layoutBeforeNext: String, next: Fragment) = context("requisites") {
   
-    trace("layout %s", layoutAfterCurrent + layoutBeforeNext)
+    trace("layout     %s, %s", layoutAfterCurrent, layoutBeforeNext)
     
     // check for overlapping layouts and requirements! => testSortWithJustOne
     def getRequisite(r: Requisite) = if(!(layoutAfterCurrent + layoutBeforeNext).contains(r.check)) r.write else ""
       
     def mapRequirements(rs: ListBuffer[Requisite]) = rs.map( getRequisite ) mkString ""
 
-    using(layoutAfterCurrent + mapRequirements(current.requiredAfter) + layoutBeforeNext + mapRequirements(next.requiredBefore)) {
+    val NewlineSeparator = """(?ms)(.*?)(\n.*)""".r
+    
+    val(layoutBeforeNewline, layoutAfterNewline) = layoutAfterCurrent match {
+      case NewlineSeparator(before, after) => (before, after)
+      case s => (s, "")
+    }
+    
+    using(layoutBeforeNewline + mapRequirements(current.requiredAfter) + layoutAfterNewline + layoutBeforeNext + mapRequirements(next.requiredBefore)) {
       trace("results in %s", _)
     }
   }

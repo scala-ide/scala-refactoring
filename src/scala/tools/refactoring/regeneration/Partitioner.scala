@@ -48,7 +48,8 @@ trait Partitioner {
           
           scopes.top add newScope
           scopes push newScope
-          requireBefore("{", "{\n")
+          // klammern zum scope?
+          scopes.top.children.head.requireAfter(new Requisite("{", "{\n"))
           body
           requireAfter("}", "\n}")
           scopes pop
@@ -318,6 +319,15 @@ trait Partitioner {
       case Match(selector: Tree, cases) =>
         scope(tree) {
           super.traverse(tree)
+        }
+        
+      case Apply(fun, args) =>
+      //scope for ()?
+        traverse(fun)
+        if(args.size > 0) {
+          requireAfter("(")
+          visitAll(args)(_.requireAfter(Requisite(",", ", ")))
+          requireAfter(")")
         }
         
       case _ =>

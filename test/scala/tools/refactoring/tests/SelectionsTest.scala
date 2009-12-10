@@ -25,7 +25,7 @@ class SelectionsTest extends TestHelper with DeclarationIndexes with TreePath {
     
     val selection = findMarkedNodes(src, tree)
     
-    assertEquals(expectedTrees, selection.trees map (_.getClass.getSimpleName) mkString ", ")
+    assertEquals(expectedTrees, selection.treesWithSubtrees map (_.getClass.getSimpleName) mkString ", ")
     assertEquals(expectedSymbols, selection.symbols mkString ", ")
   }
   

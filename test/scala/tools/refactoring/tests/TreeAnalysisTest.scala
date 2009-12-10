@@ -113,7 +113,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   @Test
   def findOutboundDeclarations() = {
     
-    assertOutboundLocalDependencies("b, b, b", """
+    assertOutboundLocalDependencies("value b, value b, value b", """
       class A {
         def addThree = {
  /*(*/    val b = 1  /*)*/
@@ -126,7 +126,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   @Test
   def multipleReturnValues() = {
     
-    assertOutboundLocalDependencies("a, b, c", """
+    assertOutboundLocalDependencies("value a, value b, value c", """
       class A {
         def addThree = {
  /*(*/    val a = 'a'

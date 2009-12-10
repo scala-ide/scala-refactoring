@@ -19,6 +19,7 @@ trait TreePrinter {
     case Literal(_) => StringFragment(tree.toString)
     case tree: TypeTree => StringFragment(tree.tpe.toString)
     case Select(qualifier, name) => StringFragment(name.toString)
+    case Ident(name) => StringFragment(name.toString)
     case _ => throw new Exception("don't know how to create "+ tree.getClass)
   }
 }

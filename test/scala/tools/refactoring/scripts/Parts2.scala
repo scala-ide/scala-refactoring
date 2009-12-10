@@ -18,14 +18,12 @@ object Parts2 extends Merger with Partitioner with TestTransform with LayoutHand
     
     val tree = treeFrom("""
       class A {
-        def get: Int = {
-          val a = 1
-          val b = a + 1
-          b + 1
+        def get(a: Int)(b: String): Int = {
+          5
         }
       }
 """)
-        
+
     val partitionedOriginal = splitIntoFragments(tree)
     
     println(partitionedOriginal)

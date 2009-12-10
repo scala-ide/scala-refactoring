@@ -35,7 +35,7 @@ trait DeclarationIndexes {
     def declaration(s: Symbol) = defs(s)
     
     // Symbol must be from a DefTree. Does not yet include TypTrees.
-    def references (s: Symbol) = refs(s)
+    def references (s: Symbol) = refs.getOrElse(s, ListBuffer[RefTree]()) toList
     
     def children(s: Symbol): List[Symbol] = this.children_(s) toList
    

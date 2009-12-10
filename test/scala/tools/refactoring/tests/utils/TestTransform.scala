@@ -1,7 +1,9 @@
 package scala.tools.refactoring.tests.utils
 
 import scala.tools.refactoring.Compiler
+import scala.tools.refactoring.Selections
 import scala.tools.refactoring.transformation.Transform
+import scala.tools.refactoring.analysis._
 import scala.tools.refactoring.UnknownPosition
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.util.RangePosition
@@ -9,7 +11,7 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.ast.TreeDSL
 import scala.tools.nsc.symtab.Flags
 
-trait TestTransform extends Transform with TreeDSL {
+trait TestTransform extends Transform with TreeDSL with Selections with TreeAnalysis with DeclarationIndexes {
   
   self: scala.tools.refactoring.Compiler =>
   import CODE._
@@ -29,7 +31,7 @@ trait TestTransform extends Transform with TreeDSL {
 
             val block = Block( Literal(555) :: v :: Nil, EmptyTree)
                       
-            val d = cleanTree {
+            val d = cleanNoPos {
               DefDef(Modifiers(Flags.METHOD), newTermName("method"), Nil, Nil, TypeTree(typ.tpe), block)
             }
             
@@ -69,7 +71,7 @@ trait TestTransform extends Transform with TreeDSL {
             case tree: ValOrDefDef => tree.rhs
           }
 
-          val d = cleanTree {
+          val d = cleanNoPos {
             DefDef(Modifiers(Flags.METHOD), "newMethod", Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe), rhs)
           }
           
@@ -87,7 +89,7 @@ trait TestTransform extends Transform with TreeDSL {
         
           val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, Nil, TypeTree(rhs.expr.tpe), rhs) 
         
-          val newRhs = cleanTree {
+          val newRhs = cleanNoPos {
             Block(
                 newDef
                 :: Nil
@@ -107,16 +109,29 @@ trait TestTransform extends Transform with TreeDSL {
       super.transform(tree) match {
         
         case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange =>
-        
-          val v = ValDef(NoMods, "arg1", TypeTree(definitions.IntClass.tpe), EmptyTree)
-          val v2 = VAL(defdef.symbol.newValue(UnknownPosition, "v2") setInfo definitions.StringClass.tpe) === NULL
-        
-          val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, (v :: v2 :: Nil) :: Nil, TypeTree(rhs.expr.tpe), rhs) 
-        
-          val newRhs = cleanTree {
+
+          val index = new DeclarationIndex
+          index.processTree(tree)
+          
+          val selection = new TreeSelection(rhs.stats(1))
+          
+          val selected = selection.trees.head
+          val parameters = inboundLocalDependencies(index, selection, defdef.symbol) 
+          val formalParameters = parameters map (s => cleanAll(ValDef(s, EmptyTree)))
+          val actualParameters = parameters map (s => cleanAll(Ident(s))) 
+          
+          val returns = cleanNoPos(outboundLocalDependencies(index, selection, defdef.symbol) match {
+            case Nil => EmptyTree
+            case x :: Nil => Ident(x) 
+            case xs => gen.mkTuple(xs map (Ident(_))) // ?
+          })
+          
+          val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, formalParameters :: Nil, TypeTree(rhs.expr.tpe), Block(selected :: Nil, returns))
+          
+          val newRhs = cleanNoPos {
             Block(
-                newDef :: rhs.stats ::: rhs.expr :: Nil
-                , Apply(Select(This(""), "innerMethod"), Nil))
+                newDef :: rhs.stats.head :: cleanNoPos(Apply(Select(This(""), "innerMethod"), actualParameters)) :: Nil
+                , rhs.expr)
           }
           
           new DefDef(mods, name, tparams, vparamss, tpt, newRhs).copyAttrs(tree)

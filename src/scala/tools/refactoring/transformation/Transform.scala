@@ -12,20 +12,29 @@ trait Transform {
   self: scala.tools.refactoring.Compiler =>
   import global._
   
-  private object PositionSetter extends Traverser {
-     override def traverse(tree: Tree): Unit = {
+  private class PositionSetter(guard: Tree => Boolean) extends Traverser {
+     override def traverse(t: Tree): Unit = {
        
-       if(tree.pos == NoPosition) {
-         tree setPos UnknownPosition
+       if(guard(t)) {
+         t setPos UnknownPosition
        }
 
-       super.traverse(tree)
+       super.traverse(t)
      }
   }
   
-  def cleanTree[T <: Tree](body: => T): T = {
+  private object noPositionSetter  extends PositionSetter( _.pos == NoPosition )
+  private object allPositionSetter extends PositionSetter( _ => true )
+  
+  def cleanAll[T <: Tree](body: => T): T = {
     val tree: T = body
-    PositionSetter.traverse(tree)
+    allPositionSetter.traverse(tree)
+    tree
+  }
+  
+  def cleanNoPos[T <: Tree](body: => T): T = {
+    val tree: T = body
+    noPositionSetter.traverse(tree)
     tree
   }
   

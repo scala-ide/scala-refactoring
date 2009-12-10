@@ -16,7 +16,7 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
     val start = src.indexOf("/*(*/")
     val end   = src.indexOf("/*)*/")
     
-    TreeSelection(tree, start, end)
+    new TreeSelection(tree, start, end)
   }
   
   class TestString(src: String) {

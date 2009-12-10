@@ -10,28 +10,38 @@ trait Selections {
   
   import global._
   
-  private class FilterTree(start: Int, end: Int) extends Traverser {
+  private class FilterTree(start: Int, end: Int, includeChildren: Boolean) extends Traverser {
     
     val hits = new ListBuffer[Tree]
     
     override def traverse(t: Tree) {
-      if (t.pos.isRange && t.pos.start >= start && t.pos.end < end)
+      if (t.pos.isRange && t.pos.start >= start && t.pos.end <= end) {
         hits += t
-      super.traverse(t)
+        if(includeChildren) super.traverse(t)
+      } else 
+        super.traverse(t)
     }
   }
   
-  case class TreeSelection(root: Tree, start: Int, end: Int) {
+  class TreeSelection(root: Tree, start: Int, end: Int) {
+    
+    def this(root: Tree) = this(root, root.pos.start, root.pos.end)
     
     lazy val pos = new RangePosition(root.pos.source, start, start, end)
     
     lazy val trees: List[Tree] = {
-      val f = new FilterTree(start, end)
+      val f = new FilterTree(start, end, false)
       f.traverse(root)
       f.hits.toList
-    }
+    }    
     
-    lazy val symbols = trees flatMap {
+    lazy val treesWithSubtrees: List[Tree] = {
+      val f = new FilterTree(start, end, true)
+      trees foreach f.traverse
+      f.hits.toList
+    }
+ 
+    lazy val symbols = treesWithSubtrees flatMap {
       case t: SymTree => Some(t.symbol)
       case _ => None
     }
