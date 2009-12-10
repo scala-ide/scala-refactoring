@@ -12,17 +12,21 @@ import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.ConsoleReporter
 
-object Parts2 extends Merger with Partitioner with TestTransform with LayoutHandler with TreePrinter with Tracing with CompilerProvider {
+object Parts2 extends TestHelper with TestTransform {
 
   def main(args : Array[String]) : Unit = {
     
-    val tree = treeFrom("""
+    val src = """
       class A {
-        def get(a: Int)(b: String): Int = {
-          5
+        def get(i: Int): Int = {
+          val a = 1
+/*(*/     val b = a + i    /*)*/
+          b
         }
       }
-""")
+"""
+    
+    val tree = treeFrom(src)
 
     val partitionedOriginal = splitIntoFragments(tree)
     
@@ -33,6 +37,13 @@ object Parts2 extends Merger with Partitioner with TestTransform with LayoutHand
 
     println(ess)
     println("===========")
+    
+    val selection = findMarkedNodes(src, tree)
+    val index = new DeclarationIndex
+    index.processTree(tree)
+    
+    
+    
 
     
     val newTree = newMethod.transform(tree)

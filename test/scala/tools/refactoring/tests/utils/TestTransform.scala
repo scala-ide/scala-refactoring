@@ -126,11 +126,17 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
             case xs => gen.mkTuple(xs map (Ident(_))) // ?
           })
           
+          val call = cleanNoPos(ValDef(NoMods, (outboundLocalDependencies(index, selection, defdef.symbol) match {
+            case Nil => ""
+            case x :: Nil => "val "+ x.name
+            case xs => "val ("+ (xs mkString ", ") +")" 
+          }), TypeTree(returns.tpe), Apply(Select(This(""), "innerMethod"), actualParameters)))
+                    
           val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, formalParameters :: Nil, TypeTree(rhs.expr.tpe), Block(selected :: Nil, returns))
           
           val newRhs = cleanNoPos {
             Block(
-                newDef :: rhs.stats.head :: cleanNoPos(Apply(Select(This(""), "innerMethod"), actualParameters)) :: Nil
+                newDef :: rhs.stats.head :: call :: Nil
                 , rhs.expr)
           }
           

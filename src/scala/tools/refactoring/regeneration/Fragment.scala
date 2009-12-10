@@ -139,6 +139,7 @@ case class FlagFragment(flag: Long, pos: Position) extends Fragment with Origina
     case OVERRIDE     => "override"
     case CASE         => "case"
     case ABSTRACT     => "abstract"
+    case PARAM        => ""
     case Tokens.VAL   => "val"
     case Tokens.TYPE  => "type"
     case Tokens.DEF   => "def"

@@ -14,11 +14,9 @@ trait Transform {
   
   private class PositionSetter(guard: Tree => Boolean) extends Traverser {
      override def traverse(t: Tree): Unit = {
-       
        if(guard(t)) {
          t setPos UnknownPosition
        }
-
        super.traverse(t)
      }
   }
@@ -38,11 +36,18 @@ trait Transform {
     tree
   }
   
-  def reverseClassParameters = new Transformer {
-    override def transform(tree: Tree): Tree = super.transform(tree) match {
-      case Template(parents, self, body) => new Template(parents, self, body.reverse).copyAttrs(tree)
-      case x => x
+  def transform(root: Tree)(body: PartialFunction[Tree, Tree]): Tree = new Transformer {
+    override def transform(tree: Tree): Tree = {
+      val res = super.transform(tree)
+      if(body.isDefinedAt(res)) {
+        body(res)
+      } else { 
+        res
+      }
     }
+  }.transform(root)
+  
+  def reverseClassParameters(t: Tree) = transform(t) {
+    case tree @ Template(parents, self, body) => new Template(parents, self, body.reverse).copyAttrs(tree)
   }
-
 }

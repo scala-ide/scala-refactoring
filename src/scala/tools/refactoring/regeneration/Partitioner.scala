@@ -184,11 +184,14 @@ trait Partitioner {
           addFragment(v)
         }
         traverseTrees(mods.annotations)
-        if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
+        if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == UnknownPosition)) {
           requireBefore(":", ": ")
           traverse(tpt)
         }
-        traverse(rhs)
+        if(rhs != EmptyTree) {
+          requireBefore("=", " = ")
+          traverse(rhs)
+        }
 
       case select @ Select(qualifier, name)  =>
         traverse(qualifier)

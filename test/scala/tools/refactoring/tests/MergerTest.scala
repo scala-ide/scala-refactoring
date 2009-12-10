@@ -16,9 +16,9 @@ class MergerTest extends TestHelper with TestTransform {
 
   @Test
   def testSortClassParameters() = {
-    "class A(i: Int, s: String)" transformsTo ("class A(s: String, i: Int)", reverseClassParameters.transform(_))
-    "class A(i1: Int, i2: Int, i3: Int, i4: Int, i5: Int)" transformsTo ("class A(i5: Int, i4: Int, i3: Int, i2: Int, i1: Int)", reverseClassParameters.transform(_))
-    "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*/, /*1a*/i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters.transform(_))
+    "class A(i: Int, s: String)" transformsTo ("class A(s: String, i: Int)", reverseClassParameters)
+    "class A(i1: Int, i2: Int, i3: Int, i4: Int, i5: Int)" transformsTo ("class A(i5: Int, i4: Int, i3: Int, i2: Int, i1: Int)", reverseClassParameters)
+    "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*/, /*1a*/i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters)
   }
   
   @Test
@@ -31,7 +31,7 @@ class MergerTest extends TestHelper with TestTransform {
       // comment 
       class A(s: String, i: Int)
     """,
-      reverseClassParameters.transform(_))
+      reverseClassParameters)
   }
   
   @Test
@@ -48,7 +48,7 @@ class MergerTest extends TestHelper with TestTransform {
         val b: String
       }
     """, 
-      reverseClassParameters.transform(_))
+      reverseClassParameters)
   }  
   
   @Test
@@ -67,7 +67,7 @@ class MergerTest extends TestHelper with TestTransform {
         }
       }
     """, 
-      reverseClassParameters.transform(_))
+      reverseClassParameters)
   }
   
   @Test
@@ -84,7 +84,7 @@ class MergerTest extends TestHelper with TestTransform {
         val b: String
       }
     """, 
-      reverseClassParameters.transform(_))   
+      reverseClassParameters)   
       
   }
   
@@ -112,7 +112,7 @@ class MergerTest extends TestHelper with TestTransform {
         val b: String
       }
     """, 
-      reverseClassParameters.transform(_))
+      reverseClassParameters)
   }
   
   @Test
@@ -141,7 +141,7 @@ class MergerTest extends TestHelper with TestTransform {
         
       }
     """, 
-      reverseClassParameters.transform(_))
+      reverseClassParameters)
   }
   
   @Test
