@@ -18,7 +18,7 @@ trait TreeFactory {
     case xs => gen.mkTuple(xs map (s => Ident(s) setType s.tpe))
   })
   
-  def mkCallDefDef(mods: Modifiers = NoMods, name: Name, arguments: List[List[global.Symbol]] = Nil :: Nil, returns: List[global.Symbol] = Nil): Tree = cleanNoPos {
+  def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[global.Symbol]] = Nil :: Nil, returns: List[global.Symbol] = Nil): Tree = cleanNoPos {
     
      // currying not yet supported
     val args = arguments.head map (s => cleanAll(Ident(s)))
@@ -38,7 +38,7 @@ trait TreeFactory {
     }
   }
   
-  def mkDefDef(mods: Modifiers = NoMods, name: Name, parameters: List[List[global.Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = cleanNoPos {
+  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[global.Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = cleanNoPos {
     
     val formalParameters = parameters map ( _ map (s => cleanAll(ValDef(s, EmptyTree))))
     

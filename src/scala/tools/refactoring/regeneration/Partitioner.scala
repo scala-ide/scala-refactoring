@@ -10,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.UnknownPosition
 
 trait Partitioner {
-  self: scala.tools.refactoring.Compiler with Tracing =>
+  self: scala.tools.refactoring.Compiler with Tracing with scala.tools.refactoring.LayoutPreferences =>
   import global.{Scope => _, _}
   
   private class Visitor(allFragments: Option[FragmentRepository]) extends Traverser {
@@ -44,7 +44,7 @@ trait Partitioner {
       case EmptyTree => ()
       case tree if tree.pos == UnknownPosition =>
         if(indent) {
-          val newScope = new SimpleScope(Some(scopes.top), 2)
+          val newScope = new SimpleScope(Some(scopes.top), indentationStep)
           
           scopes.top add newScope
           scopes push newScope
@@ -71,17 +71,17 @@ trait Partitioner {
         
             case Some(indentation) => 
               val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-//              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
-              allFragments.scopeIndentation(tree)
+              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
               thisIndentation - indentation
             case None => 
-//              println("part not found, default to 2")
-              2
+              val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
+              println("part not found, default to 2")
+              thisIndentation
           }
           case None => 
-//            println("top indentation is: "+ scopes.top.indentation) 
-//            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
-//            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
+            println("top indentation is: "+ scopes.top.indentation) 
+            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
+            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
             SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
         }
         
@@ -341,7 +341,7 @@ trait Partitioner {
     
     def visit(tree: Tree) = {
       
-      val rootFragment = TreeScope(None, 0, tree.pos.source.length, tree.pos.source, /*SourceHelper.indentationLength(tree)*/0, tree)
+      val rootFragment = TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
 
       scopes push rootFragment
       

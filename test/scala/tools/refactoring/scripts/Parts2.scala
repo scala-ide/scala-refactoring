@@ -13,6 +13,8 @@ import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.ConsoleReporter
 
 object Parts2 extends TestHelper with TestTransform {
+  
+  import global._
 
   def main(args : Array[String]) : Unit = {
     
@@ -46,16 +48,27 @@ object Parts2 extends TestHelper with TestTransform {
       // what happens with nested defs? should we use filter and take the last (== smallest) one?
       case t: global.DefDef if selection isContainedIn t => true
       case _ => false
-    } match {
-      case Some(tree: global.DefDef) => tree
-      case None => throw new Exception("no enclosing defdef found")
+    } getOrElse(throw new Exception("no enclosing defdef found"))
+    
+    val parameters = inboundLocalDependencies(index, selection, selectedMethod.symbol)
+    
+    val call = mkCallDefDef(
+        NoMods,
+        "innerMethod", 
+        parameters :: Nil, 
+        outboundLocalDependencies(index, selection, selectedMethod.symbol))
+ 
+    val returns = mkReturn(outboundLocalDependencies(index, selection, selectedMethod.symbol))
+    
+    val newDef  = mkDefDef(NoMods, "innerMethod", parameters :: Nil, selection.trees ::: returns :: Nil)
+          
+    val newTree = transform(tree) {
+      case Template(parents, self, body) if body exists (_ == selectedMethod) =>
+        new Template(parents, self, newDef :: body).copyAttrs(tree)
     }
     
-    val parameters = inboundLocalDependencies(index, selection, selectedMethod.symbol) 
     
-
-    
-    val newTree = newMethod.transform(tree)
+    //val newTree = newMethod.transform(tree)
     //val newTree = insertValue.transform(tree)
 //    val newTree = reverseClassParameters.transform(tree)
     val partitionedModified = essentialFragments(newTree, new FragmentRepository(partitionedOriginal))
