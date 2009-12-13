@@ -42,7 +42,16 @@ object Parts2 extends TestHelper with TestTransform {
     val index = new DeclarationIndex
     index.processTree(tree)
     
+    val selectedMethod = tree find {
+      // what happens with nested defs? should we use filter and take the last (== smallest) one?
+      case t: global.DefDef if selection isContainedIn t => true
+      case _ => false
+    } match {
+      case Some(tree: global.DefDef) => tree
+      case None => throw new Exception("no enclosing defdef found")
+    }
     
+    val parameters = inboundLocalDependencies(index, selection, selectedMethod.symbol) 
     
 
     

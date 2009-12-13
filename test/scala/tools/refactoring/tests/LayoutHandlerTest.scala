@@ -53,12 +53,12 @@ class LayoutHandlerTest extends TestHelper {
     // should just indent for the scope's indentation
     assertEquals("  \nC", →("  \nC"  , None, true, 0))
   }
+
+  def req(r: String) = (new Fragment { requireAfter(new Requisite(r)); requireBefore(new Requisite(r)); val print = "" })
+  def req(r1: String, r2: String) = (new Fragment { requireAfter(Requisite(r1, r2)); requireBefore(Requisite(r1, r2)); val print = "" })
   
   @Test
   def simpleRequisites() = {
-    
-    def req(r: String) = (new Fragment { requireAfter(new Requisite(r)); requireBefore(new Requisite(r)); val print = "" })
-    
     assertEquals("{}", processRequisites(req("{"), "", "", req("}")))
     assertEquals("{}", processRequisites(req("{"), "{", "", req("}")))
     assertEquals("{}", processRequisites(req("{"), "", "}", req("}")))
@@ -69,13 +69,21 @@ class LayoutHandlerTest extends TestHelper {
   
   @Test
   def checkWriteRequisites() = {
-    
-    def req(r1: String, r2: String) = (new Fragment { requireAfter(Requisite(r1, r2)); requireBefore(Requisite(r1, r2)); val print = "" })
-    
     assertEquals("x{xy}y", processRequisites(req("{", "x{x"), "", "", req("}", "y}y")))
     assertEquals("{y}y",   processRequisites(req("{", "x{x"), "{", "", req("}", "y}y")))
     assertEquals("x{x}",   processRequisites(req("{", "x{x"), "", "}", req("}", "y}y")))
     assertEquals("{}",     processRequisites(req("{", "x{x"), "{", "}", req("}", "y}y")))
+  }
+  
+  @Test
+  def requisitesWithComments() = {
+    assertEquals("/*{*/{}", processRequisites(req("{"), "/*{*/", "", req("}")))
+    assertEquals("{/*{*/}", processRequisites(req("{"), "", "/*{*/", req("}")))
+  }
+  
+  @Test
+  def insertsBeforeFirstNewline() = {
+    assertEquals("aaa{\naaabbb\nbbb}", processRequisites(req("{"), "aaa\naaa", "bbb\nbbb", req("}")))
   }
   
   //@Test
@@ -91,9 +99,9 @@ class LayoutHandlerTest extends TestHelper {
   
   @Test
   def testClassParameters() = {
-    "class A ( i: /*c*/Int, s: String)"     splitsInto "class ▒A (▒ i: /*c*/▒Int▒s: ▒String▒)"
-    "class A(i: Int, s: String, f: Float)"  splitsInto "class ▒A(▒i: ▒Int▒s: ▒String▒f: ▒Float▒)"
-    "class A(/*->*/i: Int/*<-*/)"           splitsInto "class ▒A(▒/*->*/i: ▒Int/*<-*/▒)"
+    "class A ( i: /*c*/Int, s: String)"     splitsInto "class ▒A (▒ i: /*c*/▒Int▒s: ▒String▒)▒"
+    "class A(i: Int, s: String, f: Float)"  splitsInto "class ▒A(▒i: ▒Int▒s: ▒String▒f: ▒Float▒)▒"
+    "class A(/*->*/i: Int/*<-*/)"           splitsInto "class ▒A(▒/*->*/i: ▒Int/*<-*/▒)▒"
   }
   
   @Test
@@ -106,12 +114,27 @@ class LayoutHandlerTest extends TestHelper {
       }
     """ splitsInto 
     """
-▒      class A {
+▒      class A ▒{
 ▒        val a: ▒Int
 ▒        val b: ▒Int
 ▒        val c: ▒Int
-▒      }
-    """
+▒      }▒
+▒    ▒"""
+  }
+  
+  @Test
+  def splitCommentWithComma(): Unit = {
+    "class A ( i: /*,*/ Int )" splitsInto "class ▒A (▒ i: /*,*/ ▒Int ▒)▒"
+  }  
+  
+  @Test
+  def splitCommentWithClosingParenthesis(): Unit = {
+    "class A ( i: /*(*/ Int )" splitsInto "class ▒A (▒ i: /*(*/ ▒Int ▒)▒"
+  }  
+  
+  @Test
+  def splitCommentWithOpeningParenthesis(): Unit = {
+    "class A ( i: /*)*/ Int )" splitsInto "class ▒A (▒ i: /*)*/ ▒Int ▒)▒"
   }
 }
 

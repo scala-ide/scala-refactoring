@@ -34,16 +34,24 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
     }
     
     def splitsInto(expected: String) = {
-      def splitAllLayouts(parts: List[Fragment]): String = parts match {
-        case x :: y :: xs =>
-          val (ws, rest) = (y :: xs).span(_.isLayout)
-          val (left, right) = splitLayoutBetween(Some(x, ws, rest.head))
-          
-          x.print + left +"▒"+ right + splitAllLayouts(rest)
-        case _ => ""
+      
+      val root = parts(src)
+      
+      val fs = new FragmentRepository(root)
+      
+      def withLayout(current: Fragment): String = {
+        splitLayoutBetween(fs getNext current) match {
+          case(l, r) => l +"▒"+ r
+        }
       }
       
-      //XXX assertEquals(expected, splitAllLayouts(parts(src)))
+      def innerMerge(scope: Scope): List[String] = scope.children flatMap {
+        case current: Scope => innerMerge(current) ::: withLayout(current) ::  Nil
+        case current if current.isLayout => "" :: Nil
+        case current => current.print :: withLayout(current) :: Nil
+      }
+      
+      assertEquals(expected, innerMerge(root) mkString)
     }
     
     def transformsTo(expected: String, transform: global.Tree => global.Tree) {

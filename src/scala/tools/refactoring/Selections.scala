@@ -47,5 +47,6 @@ trait Selections {
     }
     
     def contains(t: Tree) = t.pos.source == root.pos.source && pos.includes(t.pos)
+    def isContainedIn(t: Tree) = t.pos.source == root.pos.source && t.pos.includes(pos)
   }
 }

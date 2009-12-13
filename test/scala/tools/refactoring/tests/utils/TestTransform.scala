@@ -2,7 +2,7 @@ package scala.tools.refactoring.tests.utils
 
 import scala.tools.refactoring.Compiler
 import scala.tools.refactoring.Selections
-import scala.tools.refactoring.transformation.Transform
+import scala.tools.refactoring.transformation.{Transform, TreeFactory}
 import scala.tools.refactoring.analysis._
 import scala.tools.refactoring.UnknownPosition
 import scala.tools.nsc.util.Position
@@ -11,7 +11,7 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.ast.TreeDSL
 import scala.tools.nsc.symtab.Flags
 
-trait TestTransform extends Transform with TreeDSL with Selections with TreeAnalysis with DeclarationIndexes {
+trait TestTransform extends Transform with TreeDSL with Selections with TreeAnalysis with DeclarationIndexes with TreeFactory {
   
   self: scala.tools.refactoring.Compiler =>
   import CODE._
@@ -116,23 +116,12 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
           val selection = new TreeSelection(rhs.stats(1))
           
           val selected = selection.trees.head
-          val parameters = inboundLocalDependencies(index, selection, defdef.symbol) 
-          val formalParameters = parameters map (s => cleanAll(ValDef(s, EmptyTree)))
-          val actualParameters = parameters map (s => cleanAll(Ident(s))) 
+          val parameters = inboundLocalDependencies(index, selection, defdef.symbol)
           
-          val returns = cleanNoPos(outboundLocalDependencies(index, selection, defdef.symbol) match {
-            case Nil => EmptyTree
-            case x :: Nil => Ident(x) 
-            case xs => gen.mkTuple(xs map (Ident(_))) // ?
-          })
+          val call    = mkCallDefDef( name = "innerMethod", arguments = parameters :: Nil, returns = outboundLocalDependencies(index, selection, defdef.symbol))
           
-          val call = cleanNoPos(ValDef(NoMods, (outboundLocalDependencies(index, selection, defdef.symbol) match {
-            case Nil => ""
-            case x :: Nil => "val "+ x.name
-            case xs => "val ("+ (xs mkString ", ") +")" 
-          }), TypeTree(returns.tpe), Apply(Select(This(""), "innerMethod"), actualParameters)))
-                    
-          val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, formalParameters :: Nil, TypeTree(rhs.expr.tpe), Block(selected :: Nil, returns))
+          val returns = mkReturn(outboundLocalDependencies(index, selection, defdef.symbol))
+          val newDef  = mkDefDef(name = "innerMethod", parameters = parameters :: Nil, body = selected :: returns :: Nil)
           
           val newRhs = cleanNoPos {
             Block(

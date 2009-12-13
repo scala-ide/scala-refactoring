@@ -184,7 +184,7 @@ trait Partitioner {
           addFragment(v)
         }
         traverseTrees(mods.annotations)
-        if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == UnknownPosition)) {
+        if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == UnknownPosition) && tpt.tpe != EmptyTree.tpe) {
           requireBefore(":", ": ")
           traverse(tpt)
         }
@@ -327,10 +327,12 @@ trait Partitioner {
       case Apply(fun, args) =>
       //scope for ()?
         traverse(fun)
-        if(args.size > 0) {
+        if(args.size > 1) {
           requireAfter("(")
           visitAll(args)(_.requireAfter(Requisite(",", ", ")))
           requireAfter(")")
+        } else if(args.size > 0) {
+          traverse(args.head)
         }
         
       case _ =>

@@ -79,4 +79,66 @@ object SourceHelper {
     else
       None
   }
+  
+  def stripComment(s: String) = splitComment(s)._1
+  
+  def splitComment(s: String): Pair[String, String] = {
+           
+    var nestingLevel = 0
+    var lineComment = false
+    var nextToComment = false
+    
+    val(comment: Seq[_], text: Seq[_]) = ((s.toList zip (s +" ").toList.tail) map {
+      
+      case (_1, _) if nextToComment =>
+        nextToComment = false
+        (_1, ' ')
+      
+      case ('/', '/') if !lineComment && nestingLevel == 0 => 
+        lineComment = true
+        nextToComment = true
+        ('/', ' ')
+      
+      case ('\n', _ ) =>
+        lineComment = false
+        ('\n', '\n')
+        
+      case ('/', '*') if !lineComment =>
+        nestingLevel += 1
+        nextToComment = true
+        ('/', ' ')
+        
+      case ('*', '/') if !lineComment && nestingLevel > 0 =>
+        nestingLevel -= 1
+        nextToComment = true
+        ('*', ' ')
+        
+      case (_1 , _  ) if lineComment || nestingLevel > 0 => 
+        (_1, ' ')
+        
+      case (_1 , _  ) =>
+        (' ', _1)
+        
+    }).foldRight(List[Char](), List[Char]()) {
+      (c, l) => (c._1 :: l._1, c._2 :: l._2)
+    }
+    
+    (text mkString, comment mkString)
+  }
+  
+  def liftComment(s: String)(body: String => String) = {
+   
+    val(rest, comments) = splitComment(s)
+
+    val res = body(rest mkString)
+    
+    assert(res.length == rest.length)
+    
+    (res zip comments) map {
+      case (' ', _1 ) => _1
+      case (_1 , ' ') => _1
+      case ('\n', '\n') => '\n'
+      case _ => throw new Exception("argh!")
+    } mkString
+  }
 }

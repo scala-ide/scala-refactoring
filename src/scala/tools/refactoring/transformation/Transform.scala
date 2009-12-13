@@ -1,6 +1,5 @@
 package scala.tools.refactoring.transformation
 
-import scala.tools.refactoring.Compiler
 import scala.tools.refactoring.UnknownPosition
 import scala.tools.nsc.util.NoPosition
 import scala.tools.nsc.util.RangePosition

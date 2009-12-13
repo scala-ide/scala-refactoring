@@ -11,7 +11,7 @@ trait LayoutHandler {
     trace("layout     %s, %s", layoutAfterCurrent, layoutBeforeNext)
     
     // check for overlapping layouts and requirements! => testSortWithJustOne
-    def getRequisite(r: Requisite) = if(!(layoutAfterCurrent + layoutBeforeNext).contains(r.check)) r.write else ""
+    def getRequisite(r: Requisite) = if(!(SourceHelper.stripComment(layoutAfterCurrent + layoutBeforeNext)).contains(r.check)) r.write else ""
       
     def mapRequirements(rs: ListBuffer[Requisite]) = rs.map( getRequisite ) mkString ""
 
@@ -21,7 +21,7 @@ trait LayoutHandler {
       case NewlineSeparator(before, after) => (before, after)
       case s => (s, "")
     }
-    
+      
     using(layoutBeforeNewline + mapRequirements(current.requiredAfter) + layoutAfterNewline + layoutBeforeNext + mapRequirements(next.requiredBefore)) {
       trace("results in %s", _)
     }
@@ -63,28 +63,33 @@ trait LayoutHandler {
   def splitLayoutBetween(parts: Option[Triple[Fragment,List[Fragment],Fragment]]) = parts match {
     
     case Some((left, layoutFragments, right)) =>
+    
+      def mergeLayoutWithComment(l: Seq[Char], c: Seq[Char]) = l zip c map {
+        case (' ', _1) => _1
+        case (_1, ' ') => _1
+        case ('\n', '\n') => '\n'
+      } mkString
+    
       context("split layout") {
         val OpeningBrace = """(.*?\()(.*)""".r
         val ClosingBrace = """(?ms)(.*?)(\).*)""".r
-        val Comma = """(.*?),\s*(.*)""".r
+        val Comma = """(.*?),\s?(.*)""".r
         val NewLine = """(?ms)(.*?\n)(.*)""".r
         
-        // strip comments!
-        val layout = layoutFragments mkString ""
+        val (layout, comments) = SourceHelper splitComment (layoutFragments mkString)
 
-        trace("splitting layout %s between %s and %s", layout, left, right)
+        trace("splitting layout %s between %s and %s. Comments are %s", layout, left, right, comments)
         
-        ((left, layout, right) match {
+        val(l, r, why) = (left, layout, right) match {
           case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
           case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
           case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
           case(_, Comma(l, r),        _) => (l, r, "Comma")
           case(_, s                 , _) => (s, "","NoMatch")
-        }) match {
-          case(l, r, why) => 
-            trace("layout splits into %s and %s", l, r)
-            (l, r)
         }
+        trace("Rule %s splits layout into %s and %s", why, l, r)
+        
+        (mergeLayoutWithComment(l, comments), mergeLayoutWithComment(r reverse, comments reverse) reverse)
       }
     case None => ("", "")
   }
