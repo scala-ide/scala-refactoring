@@ -56,12 +56,12 @@ trait Partitioner {
         case _ => super.apply
       }
     }
-      
+    
     trait RequisitesContribution extends AstContribution {
       abstract override def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
         case (t: DefDef, 'vparamss) =>
           requireAfter("(")
-          t.vparamss foreach (visitAll(_)(_.requireAfter(Requisite(",", ", "))))
+          super.apply
           requireBefore(")")
           
         case (_, 'tpt) =>
@@ -76,6 +76,14 @@ trait Partitioner {
           requireAfter(" ", " ")
           super.apply
           
+        case (_, 'argumentlist_separator) =>
+          requireAfter(",", ", ")
+          super.apply
+          
+        case (_, 'statements_separator) =>
+          requireAfter("\n", "\n")
+          super.apply
+          
         case _ => 
           super.apply
       }
@@ -83,6 +91,9 @@ trait Partitioner {
     
     class BasicContribution extends AstContribution {
       def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
+        
+        case (t: DefDef, 'vparamss) =>
+          t.vparamss foreach (visitAll(_, 'argumentlist_separator))
  
         case (t: ValOrDefDef, 'tpt) =>
           traverse(t.tpt)
@@ -94,7 +105,7 @@ trait Partitioner {
           ()
             
         case x => 
-          throw new Exception("don't know what to do with "+ x)
+          //throw new Exception("don't know what to do with "+ x)
       }
     }
     
@@ -202,15 +213,15 @@ trait Partitioner {
     def rangeOrUnknown(t: Tree) = t.pos.isRange || t.pos == UnknownPosition
     def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrUnknown(t)  
     
-    def visitAll(trees: List[Tree])(separator: Fragment => Unit ): Unit = trees.filter(notEmptyRangeOrUnknown) match {
+    def visitAll(trees: List[Tree], role: scala.Symbol): Unit = trees.filter(notEmptyRangeOrUnknown) match {
       case Nil => 
         ()
       case x :: Nil => 
         traverse(x)
       case x :: xs => 
         traverse(x)
-        scopes.top.lastChild foreach separator
-        visitAll(xs)(separator)
+        handle(x → role)
+        visitAll(xs, role)
     }
     
     override def traverse(tree: Tree): Unit = {
@@ -319,16 +330,13 @@ trait Partitioner {
           case _ => false
         }
         
-        visitAll(classParams) {
-          case part: WithRequisite => part.requireAfter(Requisite(",", ", "))
-          case _ => throw new Exception("Can't add requirement.")
-        }
+        visitAll(classParams, 'argumentlist_separator)
         
         val(earlyBody, _) = restBody.filter(withRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
 
-        visitAll(earlyBody)(part => ())
+        earlyBody foreach traverse
         
-        visitAll(parents)(part => ())
+        parents foreach traverse
         
         val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrUnknown)
         
@@ -343,7 +351,7 @@ trait Partitioner {
                   forwardsTo('{', abortOn)(startFrom, content)
                 }, 
             adjustEnd = noChange) {
-            visitAll(trueBody)(_.requireAfter(new Requisite("\n")))
+            visitAll(trueBody, 'statements_separator)
             requireAfter("\n")
           }
         } else {
@@ -363,10 +371,10 @@ trait Partitioner {
         
         if(expr.pos.isRange && (expr.pos precedes stats.head.pos)) {
           traverse(expr)
-          visitAll(stats)(newline)
+          visitAll(stats, 'statements_separator)
         } else {
           scope (tree, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
-            visitAll(stats ::: expr :: Nil)(newline)
+            visitAll(stats ::: expr :: Nil, 'statements_separator)
           }
         }
         
@@ -390,7 +398,7 @@ trait Partitioner {
         traverse(fun)
         if(args.size > 1) {
           requireAfter("(")
-          visitAll(args)(_.requireAfter(Requisite(",", ", ")))
+          visitAll(args, 'argumentslist_separator)//(_.requireAfter(Requisite(",", ", ")))
           requireAfter(")")
         } else if(args.size > 0) {
           traverse(args.head)
