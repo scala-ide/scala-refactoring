@@ -17,6 +17,89 @@ trait Partitioner {
     
     import SourceHelper._
     
+    abstract class AstContribution {
+      def apply(implicit p: Pair[Tree, scala.Symbol])
+    }
+    
+    trait ScopeContribution extends AstContribution {
+      abstract override def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
+        case (t: DefDef, 'rhs) if !t.rhs.isInstanceOf[Block] =>
+          scope(t.rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
+            super.apply
+          }
+        case _ => super.apply
+      }
+    }    
+      
+    type WithModifiers = { def mods: Modifiers; def pos: Position }
+    
+    trait ModifiersContribution extends AstContribution {
+      
+      def hasModifiers(tree: WithModifiers) = tree.pos match {
+        case UnknownPosition => tree.mods.flags != 0
+        case _ => tree.mods.positions.size > 0
+      }
+      
+      def modifiers(tree: WithModifiers) = tree.pos match {
+        case UnknownPosition=> 
+          addFragment(new FlagFragment(tree.mods.flags, UnknownPosition))
+        case _ =>
+          tree.mods.positions.foreach (x => addFragment(new FlagFragment(x._1, x._2)))
+      }
+      
+      abstract override def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
+        case (t: WithModifiers, 'mods) =>
+          if(hasModifiers(t)) {
+            modifiers(t)
+            super.apply
+          }
+        case _ => super.apply
+      }
+    }
+      
+    trait RequisitesContribution extends AstContribution {
+      abstract override def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
+        case (t: DefDef, 'vparamss) =>
+          requireAfter("(")
+          t.vparamss foreach (visitAll(_)(_.requireAfter(Requisite(",", ", "))))
+          requireBefore(")")
+          
+        case (_, 'tpt) =>
+          requireBefore(":", ": ")
+          super.apply
+          
+        case (_, 'rhs) =>
+          requireAfter("=", " = ")
+          super.apply
+                    
+        case (_, 'mods) =>
+          requireAfter(" ", " ")
+          super.apply
+          
+        case _ => 
+          super.apply
+      }
+    }
+    
+    class BasicContribution extends AstContribution {
+      def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
+ 
+        case (t: ValOrDefDef, 'tpt) =>
+          traverse(t.tpt)
+          
+        case (t: ValOrDefDef, 'rhs) =>
+          traverse(t.rhs)  
+          
+        case (_, 'mods) =>
+          ()
+            
+        case x => 
+          throw new Exception("don't know what to do with "+ x)
+      }
+    }
+    
+    private val handle = new BasicContribution with ScopeContribution with RequisitesContribution with ModifiersContribution
+    
     private var scopes = new scala.collection.mutable.Stack[Scope]
     
     private val preRequirements = new ListBuffer[Requisite]
@@ -71,17 +154,17 @@ trait Partitioner {
         
             case Some(indentation) => 
               val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
+//              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
               thisIndentation - indentation
             case None => 
               val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-              println("part not found, default to 2")
+//              println("part not found, default to 2")
               thisIndentation
           }
           case None => 
-            println("top indentation is: "+ scopes.top.indentation) 
-            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
-            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
+//            println("top indentation is: "+ scopes.top.indentation) 
+//            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
+//            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
             SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
         }
         
@@ -99,11 +182,6 @@ trait Partitioner {
     }
     
     def noChange(offset: Int, content: Seq[Char]) = Some(offset) 
-        
-    def modifiers(tree: { def mods: Modifiers; def pos: Position }) = tree.pos match {
-      case UnknownPosition => addFragment(new FlagFragment(tree.mods.flags, UnknownPosition))
-      case _ => tree.mods.positions.foreach (x => addFragment(new FlagFragment(x._1, x._2)))
-    }
         
     def addFragment(tree: Tree): Fragment = {
       val part = tree match {
@@ -131,15 +209,13 @@ trait Partitioner {
         traverse(x)
       case x :: xs => 
         traverse(x)
-        scopes.top.lastChild match {
-          case Some(part) => separator(part)
-          case _ => ()
-        }
-          
+        scopes.top.lastChild foreach separator
         visitAll(xs)(separator)
     }
     
     override def traverse(tree: Tree): Unit = {
+    	
+      implicit val currentTree = tree
       
       if(tree.pos != UnknownPosition && !tree.pos.isRange)
         return
@@ -147,15 +223,10 @@ trait Partitioner {
       tree match {
       
       case t: TypeTree => 
-        if(t.original != null) 
+        if(t.original != null)
           traverse(t.original)
         else if(t.pos == UnknownPosition)
           addFragment(t)
-      
-      /*case PackageDef(pid, stats) => 
-        scope(tree) {
-          super.traverse(tree)
-        }*/
       
       case i: Ident =>
         if(i.symbol.hasFlag(Flags.SYNTHETIC))
@@ -168,29 +239,28 @@ trait Partitioner {
           addFragment(i)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
-        modifiers(c)
+        handle(tree, 'mods)
         if (!c.symbol.isAnonymousClass)
           addFragment(c)
         super.traverse(tree)
         
-      case m @ ModuleDef(mods, name, impl) => 
-        modifiers(m)
+      case m @ ModuleDef(mods, name, impl) =>
+        handle(tree, 'mods)
         addFragment(m)
         super.traverse(tree)
         
-      case v @ ValDef(mods, name, tpt, rhs) => 
+      case v @ ValDef(mods, name, tpt, rhs) =>
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
-          modifiers(v)
+          handle(tree, 'mods)
           addFragment(v)
         }
         traverseTrees(mods.annotations)
         if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == UnknownPosition) && tpt.tpe != EmptyTree.tpe) {
-          requireBefore(":", ": ")
-          traverse(tpt)
+          handle(tree, 'tpt)
         }
+        
         if(rhs != EmptyTree) {
-          requireBefore("=", " = ")
-          traverse(rhs)
+          handle(tree, 'rhs)
         }
 
       case select @ Select(qualifier, name)  =>
@@ -212,40 +282,31 @@ trait Partitioner {
           addFragment(select)
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
-        modifiers(defdef)
+        
         if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
-          requireAfterOrBefore(" ")
+          handle(tree, 'mods)
+          
           addFragment(defdef)
                     
           traverseTrees(mods.annotations)
           traverseTrees(tparams)
           
           if(!vparamss.isEmpty) {
-            requireAfter("(")
-            vparamss foreach (visitAll(_)(_.requireAfter(Requisite(",", ", "))))
-            requireBefore(")")
+            handle(tree, 'vparamss)
           }
           
           if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
-            requireBefore(":", ": ")
-            traverse(tpt)              
+            handle(tree, 'tpt)  
           }
           
-          rhs match {
-            case EmptyTree =>
-            case rhs: Block =>
-              requireAfter("=", " = ")
-              traverse(rhs) //Block creates its own Scope
-            case _ =>
-              requireAfter("=", " = ")
-              scope(rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
-                traverse(rhs)
-              }
+          if(rhs != EmptyTree) {
+            handle(tree, 'rhs)
           }
+ 
         } else super.traverse(tree)
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams, rhs: Tree) =>
-        modifiers(typeDef)
+        handle(tree, 'mods)
         addFragment(typeDef)
         super.traverse(tree)
 

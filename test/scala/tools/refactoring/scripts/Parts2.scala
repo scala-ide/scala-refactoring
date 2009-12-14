@@ -70,7 +70,7 @@ object Parts2 extends TestHelper with TestTransform {
     
     //val newTree = newMethod.transform(tree)
     //val newTree = insertValue.transform(tree)
-//    val newTree = reverseClassParameters.transform(tree)
+    //val newTree = reverseClassParameters.transform(tree)
     val partitionedModified = essentialFragments(newTree, new FragmentRepository(partitionedOriginal))
     
     println("Modified: "+ partitionedModified)
