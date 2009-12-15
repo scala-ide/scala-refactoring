@@ -17,7 +17,7 @@ trait Partitioner {
     
     import SourceHelper._
     
-    abstract class TreeElement
+    class TreeElement
     case object Mods extends TreeElement
     case object Tpt extends TreeElement
     case object Rhs extends TreeElement
@@ -42,6 +42,25 @@ trait Partitioner {
           
         case (t @ Block(stats, expr), BlockBody) if !(expr.pos.isRange && (expr.pos precedes stats.head.pos)) =>
           scope (t, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
+            super.apply
+          }
+          
+        case (t: Match, _) =>
+          scope(t) {
+            super.apply
+          }
+          
+        case (t @ Template(parents, _, body), ClassBody(ts)) if ts.size > 0 =>
+          scope(
+              t, 
+              indent = true, 
+              adjustStart = {
+                (start, content) =>
+                  val abortOn = (ts filter (_.pos.isRange)).map(_.pos.start).foldLeft(content.length)(_ min _)
+                  val startFrom = ((body ::: parents filter (_.pos.isRange)) -- ts) .foldLeft(start) ( _ max _.pos.end )
+                  forwardsTo('{', abortOn)(startFrom, content)
+                }, 
+              adjustEnd = noChange) {
             super.apply
           }
           
@@ -105,7 +124,11 @@ trait Partitioner {
           
         case (_, StmtsSeparator) =>
           requireAfter("\n", "\n")
+          super.apply  
+          
+        case (_, ClassBody(ts)) if ts.size > 0 =>
           super.apply
+          requireAfter("\n", "\n")
           
         case _ => 
           super.apply
@@ -159,7 +182,7 @@ trait Partitioner {
       }
     }
     
-    private val handle = new BasicContribution with ScopeContribution with RequisitesContribution with ModifiersContribution
+    private val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution
     
     private var scopes = new scala.collection.mutable.Stack[Scope]
     
@@ -362,42 +385,24 @@ trait Partitioner {
         super.traverse(tree)
 
       case t @ Template(parents, _, body) =>
-
-        def withRange(t: Tree) = t.pos.isRange
         
         val (classParams, restBody) = body.partition {
           case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
           case _ => false
         }
         
-        handle(tree → ClassParams(classParams))
+        val(earlyBody, _) = restBody.filter(_.pos.isRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
                 
-        val(earlyBody, _) = restBody.filter(withRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
+        val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrUnknown)
+
+        handle(tree → ClassParams(classParams))
 
         earlyBody foreach traverse
         
         parents foreach traverse
-        
-        val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrUnknown)
-        
-        if(trueBody.size > 0) {
-          scope(
-              tree, 
-              indent = true, 
-              adjustStart = {
-                (start, content) =>
-                  val abortOn = (trueBody filter withRange).map(_.pos.start).foldLeft(content.length)(_ min _)
-                  val startFrom = (classParams ::: earlyBody ::: (parents filter withRange)).foldLeft(start) ( _ max _.pos.end )
-                  forwardsTo('{', abortOn)(startFrom, content)
-                }, 
-            adjustEnd = noChange) {
-            handle(tree → ClassBody(trueBody))
-            requireAfter("\n")
-          }
-        } else {
-          // there might be an empty body that needs a scope :-(
-        }
-        
+                
+        handle(tree → ClassBody(trueBody))
+
       case Literal(constant) =>
         addFragment(tree)
         super.traverse(tree)
@@ -419,9 +424,7 @@ trait Partitioner {
         super.traverse(tree)
         
       case Match(selector: Tree, cases) =>
-        scope(tree) {
-          super.traverse(tree)
-        }
+        handle(tree → new TreeElement)
         
       case Apply(fun, args) =>
       //scope for ()?
