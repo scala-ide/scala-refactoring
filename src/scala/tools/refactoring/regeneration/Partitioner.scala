@@ -12,10 +12,14 @@ import scala.tools.refactoring.UnknownPosition
 trait Partitioner {
   self: scala.tools.refactoring.Compiler with Tracing with scala.tools.refactoring.LayoutPreferences =>
   import global.{Scope => _, _}
-  
-  private class Visitor(allFragments: Option[FragmentRepository]) extends Traverser {
+     
+  private abstract class Visitor extends Traverser {
+
+    val handle: Contribution
     
-    import SourceHelper._
+    private var scopes = new scala.collection.mutable.Stack[Scope]
+      
+    private val preRequirements = new ListBuffer[Requisite]
     
     abstract class TreeElement
     case object Mods extends TreeElement
@@ -29,11 +33,12 @@ trait Partitioner {
     case class  ClassBody(ps: List[Tree]) extends TreeElement
     case object BlockBody extends TreeElement
     
-    abstract class AstContribution {
+    abstract class Contribution {
+
       def apply(implicit p: Pair[Tree, TreeElement])
     }
     
-    trait FragmentContribution extends AstContribution {
+    trait FragmentContribution extends Contribution {
       
       private def addFragment(tree: Tree): Fragment = {
         val part = tree match {
@@ -89,9 +94,11 @@ trait Partitioner {
           
         case _ => super.apply 
       }
-    }  
+    }
       
-    trait ScopeContribution extends AstContribution {
+    trait ScopeContribution extends Contribution {
+      
+      def getIndentation(start: Int, tree: Tree, scope: Scope): Int
       
       private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
         case EmptyTree => ()
@@ -118,27 +125,7 @@ trait Partitioner {
             case _ => (tree.pos.start, tree.pos.end)
           }
           
-          val i = allFragments match {
-            
-            case Some(allFragments) => allFragments.scopeIndentation(tree) match {
-          
-              case Some(indentation) => 
-                val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-  //              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
-                thisIndentation - indentation
-              case None => 
-                val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-  //              println("part not found, default to 2")
-                thisIndentation
-            }
-            case None => 
-  //            println("top indentation is: "+ scopes.top.indentation) 
-  //            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
-  //            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
-              SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
-          }
-          
-          val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, i, tree)
+          val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, getIndentation(start, tree, scopes.top), tree)
           
           if(preRequirements.size > 0) {
             preRequirements.foreach(newScope requireBefore _)
@@ -152,6 +139,8 @@ trait Partitioner {
       }
       
       private def noChange(offset: Int, content: Seq[Char]) = Some(offset) 
+      
+      import SourceHelper._
 
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         
@@ -186,7 +175,7 @@ trait Partitioner {
           
         case _ => super.apply
       }
-    }    
+    }
       
     type WithModifiers = { def mods: Modifiers; def pos: Position }
     
@@ -214,9 +203,8 @@ trait Partitioner {
       }
     }
     
-    trait RequisitesContribution extends AstContribution {
-      
-    
+    trait RequisitesContribution extends Contribution {
+          
       def requireBefore(check: String): Unit = requireBefore(check, check)
       def requireBefore(check: String, write: String) = preRequirements += Requisite(check, write)
       
@@ -273,10 +261,7 @@ trait Partitioner {
           
         case(_, Itself) =>
           
-          scopes.top.lastChild match {
-            case Some(part) => preRequirements.foreach (part.requireBefore)
-            case None => //throw new Exception("No place to attach requisite"+ check +"!") //??
-          }
+          scopes.top.lastChild foreach (x => preRequirements foreach (x.requireBefore))
         
           preRequirements.clear
           super.apply
@@ -286,7 +271,7 @@ trait Partitioner {
       }
     }
     
-    class BasicContribution extends AstContribution {
+    class BasicContribution extends Contribution {
       
       private def handleList(ts: List[Tree], t: TreeElement): Unit = ts.filter(notEmptyRangeOrUnknown) match {
         case Nil => 
@@ -333,15 +318,8 @@ trait Partitioner {
       }
     }
     
-    
-    
-    private val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution
-    
-    private var scopes = new scala.collection.mutable.Stack[Scope]
-    
-    private val preRequirements = new ListBuffer[Requisite]
-
     def rangeOrUnknown(t: Tree) = t.pos.isRange || t.pos == UnknownPosition
+    
     def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrUnknown(t)  
         
     override def traverse(tree: Tree): Unit = {
@@ -390,7 +368,6 @@ trait Partitioner {
       case select @ Select(qualifier, name)  =>
         traverse(qualifier)
         handle(tree, Itself)
-        //NO super.traverse(tree)
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         
@@ -482,11 +459,19 @@ trait Partitioner {
     }
   }
   
-  def essentialFragments(root: Tree, allFragments: FragmentRepository) = new Visitor(Some(allFragments)).visit(root)
+  def essentialFragments(root: Tree, fs: FragmentRepository) = new Visitor {
+     val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
+       def getIndentation(start: Int, tree: Tree, scope: Scope) = SourceHelper.indentationLength(start, tree.pos.source.content) - fs.scopeIndentation(tree).getOrElse(0)
+     }
+  }.visit(root)
   
   def splitIntoFragments(root: Tree): TreeScope = {
     
-    val parts = new Visitor(None).visit(root)
+    val parts = new Visitor {
+      val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
+        def getIndentation(start: Int, tree: Tree, scope: Scope) = SourceHelper.indentationLength(start, tree.pos.source.content) - scope.indentation
+      }
+    }.visit(root)
     
     def fillWs(part: Fragment): Fragment = part match {
       case scope: TreeScope => 
