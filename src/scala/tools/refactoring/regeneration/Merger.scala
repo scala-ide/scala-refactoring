@@ -57,19 +57,9 @@ trait Merger {
 		    trace("layout is %s", layout)
 		    trace("the next fragment is %s", next)
 		    
-		    val existingIndentation: Option[Tuple2[Int, Int]] = allFragments.scopeIndentation(next) match {
-		      case Some(s) => SourceHelper.indentationLength(next) match {
-            case Some(indentation) => Some(s, indentation)
-            case _ => None
-          }
-		      case None => None
-        }
+		    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => SourceHelper.indentationLength(next) map (s → _))
 		    
-		    val indentedLayout = fixIndentation(
-          layout, 
-          existingIndentation,
-          next.isEndOfScope, 
-          scope.indentation)
+		    val indentedLayout = fixIndentation(layout, existingIndentation, next.isEndOfScope, scope.indentation)
     
         trace("the resulting layout is %s", indentedLayout)
         

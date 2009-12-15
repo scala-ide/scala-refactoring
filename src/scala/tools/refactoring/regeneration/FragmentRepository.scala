@@ -41,23 +41,19 @@ class FragmentRepository(root: Scope) {
     case None => false
   }
   
-  def scopeIndentation(part: Fragment) = visit(root, part) match {
-    case Some(found) => Some(found.indentation)
-    case None => None//throw new Exception("parent not found")
-  }
+  def scopeIndentation(part: Fragment) = visit(root, part) map (_.indentation)
+
+  def scopeIndentation(tree: Trees#Tree) = visit(root, tree) map (_.indentation)
   
-  def scopeIndentation(tree: Trees#Tree) = visit(root, tree) match {
-    case Some(found) => Some(found.indentation)
-    case None => None//throw new Exception("parent not found")
-  }
-  
-  def getNext(part: Fragment): Option[Triple[Fragment, List[Fragment], Fragment]] = {
+  def getNext(part: Fragment) = get(part, (xs => xs), (_, _, _))
+
+  def getPrevious(part: Fragment) = get(part, (_.reverse), (_1, _2, _3) => (_3, _2.reverse, _1))
+
+  private def get(part: Fragment, findPart: List[Fragment] => List[Fragment], mkReturn: (Fragment, List[Fragment], Fragment) => Triple[Fragment, List[Fragment], Fragment]): Option[Triple[Fragment, List[Fragment], Fragment]] = {
     
-//    println("get next after: "+ part)
-   
     val neighbourhood = visit(root, part).getOrElse(return None).children
     
-    val partInOriginal = neighbourhood.dropWhile(_ != part)
+    val partInOriginal = findPart(neighbourhood).dropWhile(_ != part)
     
     if(partInOriginal == Nil)
       return None
@@ -67,25 +63,6 @@ class FragmentRepository(root: Scope) {
     if(rest == Nil)
       return None
       
-    Some((partInOriginal.head, layoutBetween, rest.head))
-  }
-  
-  def getPrevious(part: Fragment): Option[Triple[Fragment, List[Fragment], Fragment]] = {
-    
-//    println("get previous before: "+ part)
-   
-    val neighbourhood = visit(root, part).getOrElse(return None).children
-    
-    val partInOriginal = neighbourhood.reverse.dropWhile(_ != part)
-    
-    if(partInOriginal == Nil)
-      return None
-              
-    val (layoutBetween, rest) = partInOriginal.tail.span(_.isLayout)
-    
-    if(rest == Nil)
-      return None
-    
-    Some((rest.head, layoutBetween.reverse, partInOriginal.head))
+    Some(mkReturn(partInOriginal.head, layoutBetween, rest.head))
   }
 }

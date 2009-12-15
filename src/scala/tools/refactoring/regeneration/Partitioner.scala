@@ -476,7 +476,7 @@ trait Partitioner {
     def fillWs(part: Fragment): Fragment = part match {
       case scope: TreeScope => 
       
-        val part = TreeScope(scope.parent, scope.start, scope.end, scope.file, scope.relativeIndentation, scope.tree)
+        val part = scope.copy()
         
         def layout(start: Int, end: Int, file: SourceFile) {
           if(start < end) {
