@@ -17,13 +17,22 @@ trait Partitioner {
     
     import SourceHelper._
     
+    abstract class TreeElement
+    case object Mods extends TreeElement
+    case object Tpt extends TreeElement
+    case object Rhs extends TreeElement
+    case object Vparamss extends TreeElement
+    case object ArgsSeparator extends TreeElement
+    case object StmtsSeparator extends TreeElement
+    
+    
     abstract class AstContribution {
-      def apply(implicit p: Pair[Tree, scala.Symbol])
+      def apply(implicit p: Pair[Tree, TreeElement])
     }
     
     trait ScopeContribution extends AstContribution {
-      abstract override def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
-        case (t: DefDef, 'rhs) if !t.rhs.isInstanceOf[Block] =>
+      abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+        case (t: DefDef, Rhs) if !t.rhs.isInstanceOf[Block] =>
           scope(t.rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
             super.apply
           }
@@ -47,8 +56,8 @@ trait Partitioner {
           tree.mods.positions.foreach (x => addFragment(new FlagFragment(x._1, x._2)))
       }
       
-      abstract override def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
-        case (t: WithModifiers, 'mods) =>
+      abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+        case (t: WithModifiers, Mods) =>
           if(hasModifiers(t)) {
             modifiers(t)
             super.apply
@@ -58,29 +67,29 @@ trait Partitioner {
     }
     
     trait RequisitesContribution extends AstContribution {
-      abstract override def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
-        case (t: DefDef, 'vparamss) =>
+      abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+        case (t: DefDef, Vparamss) =>
           requireAfter("(")
           super.apply
           requireBefore(")")
           
-        case (_, 'tpt) =>
+        case (_, Tpt) =>
           requireBefore(":", ": ")
           super.apply
           
-        case (_, 'rhs) =>
+        case (_, Rhs) =>
           requireAfter("=", " = ")
           super.apply
                     
-        case (_, 'mods) =>
+        case (_, Mods) =>
           requireAfter(" ", " ")
           super.apply
           
-        case (_, 'argumentlist_separator) =>
+        case (_, ArgsSeparator) =>
           requireAfter(",", ", ")
           super.apply
           
-        case (_, 'statements_separator) =>
+        case (_, StmtsSeparator) =>
           requireAfter("\n", "\n")
           super.apply
           
@@ -90,28 +99,29 @@ trait Partitioner {
     }
     
     class BasicContribution extends AstContribution {
-      def apply(implicit p: Pair[Tree, scala.Symbol]) = p match {
+      def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         
-        case (t: DefDef, 'vparamss) =>
-          t.vparamss foreach (visitAll(_, 'argumentlist_separator))
+        case (t: DefDef, Vparamss) =>
+          t.vparamss foreach (visitAll(_, ArgsSeparator))
  
-        case (t: ValOrDefDef, 'tpt) =>
+        case (t: ValOrDefDef, Tpt) =>
           traverse(t.tpt)
           
-        case (t: ValOrDefDef, 'rhs) =>
+        case (t: ValOrDefDef, Rhs) =>
           traverse(t.rhs)  
           
-        case (_, 'mods) =>
+        case (_, Mods) =>
           ()
             
         case x => 
-          //throw new Exception("don't know what to do with "+ x)
+          println("don't know what to do with "+ x)
       }
     }
     
     private val handle = new BasicContribution with ScopeContribution with RequisitesContribution with ModifiersContribution
     
     private var scopes = new scala.collection.mutable.Stack[Scope]
+    
     
     private val preRequirements = new ListBuffer[Requisite]
     
@@ -213,7 +223,7 @@ trait Partitioner {
     def rangeOrUnknown(t: Tree) = t.pos.isRange || t.pos == UnknownPosition
     def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrUnknown(t)  
     
-    def visitAll(trees: List[Tree], role: scala.Symbol): Unit = trees.filter(notEmptyRangeOrUnknown) match {
+    def visitAll(trees: List[Tree], role: TreeElement): Unit = trees.filter(notEmptyRangeOrUnknown) match {
       case Nil => 
         ()
       case x :: Nil => 
@@ -250,28 +260,28 @@ trait Partitioner {
           addFragment(i)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
-        handle(tree, 'mods)
+        handle(tree, Mods)
         if (!c.symbol.isAnonymousClass)
           addFragment(c)
         super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) =>
-        handle(tree, 'mods)
+        handle(tree, Mods)
         addFragment(m)
         super.traverse(tree)
         
       case v @ ValDef(mods, name, tpt, rhs) =>
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
-          handle(tree, 'mods)
+          handle(tree, Mods)
           addFragment(v)
         }
         traverseTrees(mods.annotations)
         if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == UnknownPosition) && tpt.tpe != EmptyTree.tpe) {
-          handle(tree, 'tpt)
+          handle(tree, Tpt)
         }
         
         if(rhs != EmptyTree) {
-          handle(tree, 'rhs)
+          handle(tree, Rhs)
         }
 
       case select @ Select(qualifier, name)  =>
@@ -295,7 +305,7 @@ trait Partitioner {
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         
         if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
-          handle(tree, 'mods)
+          handle(tree, Mods)
           
           addFragment(defdef)
                     
@@ -303,21 +313,21 @@ trait Partitioner {
           traverseTrees(tparams)
           
           if(!vparamss.isEmpty) {
-            handle(tree, 'vparamss)
+            handle(tree, Vparamss)
           }
           
           if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
-            handle(tree, 'tpt)  
+            handle(tree, Tpt)  
           }
           
           if(rhs != EmptyTree) {
-            handle(tree, 'rhs)
+            handle(tree, Rhs)
           }
  
         } else super.traverse(tree)
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams, rhs: Tree) =>
-        handle(tree, 'mods)
+        handle(tree, Mods)
         addFragment(typeDef)
         super.traverse(tree)
 
@@ -330,7 +340,7 @@ trait Partitioner {
           case _ => false
         }
         
-        visitAll(classParams, 'argumentlist_separator)
+        visitAll(classParams, ArgsSeparator)
         
         val(earlyBody, _) = restBody.filter(withRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
 
@@ -351,7 +361,7 @@ trait Partitioner {
                   forwardsTo('{', abortOn)(startFrom, content)
                 }, 
             adjustEnd = noChange) {
-            visitAll(trueBody, 'statements_separator)
+            visitAll(trueBody, StmtsSeparator)
             requireAfter("\n")
           }
         } else {
@@ -366,15 +376,12 @@ trait Partitioner {
         super.traverse(tree)
         
       case Block(stats, expr) =>
-        
-        val newline: Fragment => Unit = _.requireAfter(new Requisite("\n"))
-        
+                
         if(expr.pos.isRange && (expr.pos precedes stats.head.pos)) {
-          traverse(expr)
-          visitAll(stats, 'statements_separator)
+          visitAll(expr :: stats, StmtsSeparator)
         } else {
           scope (tree, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
-            visitAll(stats ::: expr :: Nil, 'statements_separator)
+            visitAll(stats ::: expr :: Nil, StmtsSeparator)
           }
         }
         
@@ -398,7 +405,7 @@ trait Partitioner {
         traverse(fun)
         if(args.size > 1) {
           requireAfter("(")
-          visitAll(args, 'argumentslist_separator)//(_.requireAfter(Requisite(",", ", ")))
+          visitAll(args, ArgsSeparator)
           requireAfter(")")
         } else if(args.size > 0) {
           traverse(args.head)
