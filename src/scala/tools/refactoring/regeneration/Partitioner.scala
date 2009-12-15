@@ -17,8 +17,9 @@ trait Partitioner {
     
     import SourceHelper._
     
-    class TreeElement
+    abstract class TreeElement
     case object Mods extends TreeElement
+    case object Itself extends TreeElement
     case object Tpt extends TreeElement
     case object Rhs extends TreeElement
     case object ParamList extends TreeElement
@@ -32,7 +33,126 @@ trait Partitioner {
       def apply(implicit p: Pair[Tree, TreeElement])
     }
     
+    trait FragmentContribution extends AstContribution {
+      
+      private def addFragment(tree: Tree): Fragment = {
+        val part = tree match {
+          case tree if tree.pos == UnknownPosition => ArtificialTreeFragment(tree)
+          case tree: SymTree => SymTreeFragment(tree)
+          case _ => TreeFragment(tree)
+        }
+        addFragment(part)
+        part
+      }
+      
+      protected def addFragment(part: Fragment) = scopes.top add part
+      
+      abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+
+        case (i: Ident, Itself) =>
+          if(i.symbol.hasFlag(Flags.SYNTHETIC))
+            ()
+          else if (i.symbol.pos == NoPosition)
+            addFragment(new SymTreeFragment(i) {
+              override val end = start + i.name.length
+            })
+          else
+            addFragment(i)
+          super.apply
+            
+        case(t @ Select(qualifier, name), Itself) =>
+          // An ugly hack. when can we actually print the name?
+          if (qualifier.isInstanceOf[New]) {
+            ()
+          } else if(qualifier.isInstanceOf[Super]) {
+            scopes.top add new SymTreeFragment(t) {
+              override val end = tree.pos.end
+            }
+          } else if (qualifier.pos.isRange) {
+            scopes.top add new SymTreeFragment(t) {
+              override val start = t.pos.end - t.symbol.nameString.length
+              override val end = t.pos.end
+            }
+          } else
+            addFragment(t)
+          super.apply 
+          
+         case (s : Super, Itself) =>
+           addFragment(new SymTreeFragment(s) {
+             override val end = tree.pos.end
+           })
+          super.apply 
+                   
+        case (t: Tree, Itself) =>
+          addFragment(t) 
+          super.apply 
+          
+        case _ => super.apply 
+      }
+    }  
+      
     trait ScopeContribution extends AstContribution {
+      
+      private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
+        case EmptyTree => ()
+        case tree if tree.pos == UnknownPosition =>
+          if(indent) {
+            val newScope = new SimpleScope(Some(scopes.top), indentationStep)
+            
+            scopes.top add newScope
+            scopes push newScope
+            // klammern zum scope?
+            scopes.top.children.head.requireAfter(new Requisite("{", "{\n"))
+            body
+            scopes.top.children.last.requireBefore(new Requisite("}", "\n}"))
+            scopes pop
+          } else
+            body
+          
+        case tree if !tree.pos.isRange =>
+          ()
+        case _ =>
+          // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
+          val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source.content),  adjustEnd(tree.pos.end, tree.pos.source.content)) match {
+            case (Some(start), Some(end)) => (start, end)
+            case _ => (tree.pos.start, tree.pos.end)
+          }
+          
+          val i = allFragments match {
+            
+            case Some(allFragments) => allFragments.scopeIndentation(tree) match {
+          
+              case Some(indentation) => 
+                val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
+  //              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
+                thisIndentation - indentation
+              case None => 
+                val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
+  //              println("part not found, default to 2")
+                thisIndentation
+            }
+            case None => 
+  //            println("top indentation is: "+ scopes.top.indentation) 
+  //            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
+  //            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
+              SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
+          }
+          
+          val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, i, tree)
+          
+          if(preRequirements.size > 0) {
+            preRequirements.foreach(newScope requireBefore _)
+            preRequirements.clear
+          }
+          
+          scopes.top add newScope
+          scopes push newScope
+          body
+          scopes pop
+      }
+      
+      private def noChange(offset: Int, content: Seq[Char]) = Some(offset) 
+
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         
         case (t: DefDef, Rhs) if !t.rhs.isInstanceOf[Block] =>
@@ -70,7 +190,7 @@ trait Partitioner {
       
     type WithModifiers = { def mods: Modifiers; def pos: Position }
     
-    trait ModifiersContribution extends AstContribution {
+    trait ModifiersContribution extends FragmentContribution {
       
       def hasModifiers(tree: WithModifiers) = tree.pos match {
         case UnknownPosition => tree.mods.flags != 0
@@ -95,6 +215,27 @@ trait Partitioner {
     }
     
     trait RequisitesContribution extends AstContribution {
+      
+    
+      def requireBefore(check: String): Unit = requireBefore(check, check)
+      def requireBefore(check: String, write: String) = preRequirements += Requisite(check, write)
+      
+      def requireAfter(check: String): Unit = requireAfter(check, check)
+      def requireAfter(check: String, write: String) = {
+        if(preRequirements.size > 0)
+          requireBefore(check, write)
+        else
+          scopes.top.lastChild match {
+            case Some(part) => part.requireAfter(new Requisite(check, write))
+            case None => //throw new Exception("No place to attach requisite"+ check +"!") //??
+          }
+      }
+      
+      def requireAfterOrBefore(r: String) = scopes.top.lastChild match {
+        case Some(_) => requireAfter(r, r)
+        case _ => requireBefore(r)
+      }
+      
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         case (t: DefDef, ParamList) =>
           requireAfter("(")
@@ -129,6 +270,16 @@ trait Partitioner {
         case (_, ClassBody(ts)) if ts.size > 0 =>
           super.apply
           requireAfter("\n", "\n")
+          
+        case(_, Itself) =>
+          
+          scopes.top.lastChild match {
+            case Some(part) => preRequirements.foreach (part.requireBefore)
+            case None => //throw new Exception("No place to attach requisite"+ check +"!") //??
+          }
+        
+          preRequirements.clear
+          super.apply
           
         case _ => 
           super.apply
@@ -182,115 +333,19 @@ trait Partitioner {
       }
     }
     
-    private val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution
+    
+    
+    private val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution
     
     private var scopes = new scala.collection.mutable.Stack[Scope]
     
-    
     private val preRequirements = new ListBuffer[Requisite]
-    
-    def requireBefore(check: String): Unit = requireBefore(check, check)
-    def requireBefore(check: String, write: String) = preRequirements += Requisite(check, write)
-    
-    def requireAfter(check: String): Unit = requireAfter(check, check)
-    def requireAfter(check: String, write: String) = {
-      if(preRequirements.size > 0)
-        requireBefore(check, write)
-      else
-        scopes.top.lastChild match {
-        case Some(part) => part.requireAfter(new Requisite(check, write))
-        case None => //throw new Exception("No place to attach requisite"+ check +"!") //??
-      }
-    }
-    
-    def requireAfterOrBefore(r: String) = scopes.top.lastChild match {
-      case Some(_) => requireAfter(r, r)
-      case _ => requireBefore(r)
-    }
 
-    def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
-      case EmptyTree => ()
-      case tree if tree.pos == UnknownPosition =>
-        if(indent) {
-          val newScope = new SimpleScope(Some(scopes.top), indentationStep)
-          
-          scopes.top add newScope
-          scopes push newScope
-          // klammern zum scope?
-          scopes.top.children.head.requireAfter(new Requisite("{", "{\n"))
-          body
-          requireAfter("}", "\n}")
-          scopes pop
-        } else
-          body
-        
-      case tree if !tree.pos.isRange =>
-        ()
-      case _ =>
-        // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
-        val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source.content),  adjustEnd(tree.pos.end, tree.pos.source.content)) match {
-          case (Some(start), Some(end)) => (start, end)
-          case _ => (tree.pos.start, tree.pos.end)
-        }
-        
-        val i = allFragments match {
-          
-          case Some(allFragments) => allFragments.scopeIndentation(tree) match {
-        
-            case Some(indentation) => 
-              val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-//              println("!!! tree has an indentation of: "+ (thisIndentation - indentation))
-              thisIndentation - indentation
-            case None => 
-              val thisIndentation = SourceHelper.indentationLength(start, tree.pos.source.content)
-//              println("part not found, default to 2")
-              thisIndentation
-          }
-          case None => 
-//            println("top indentation is: "+ scopes.top.indentation) 
-//            println("my indentation is: "+ SourceHelper.indentationLength(start, tree.pos.source.content))
-//            println("found nothing in the partsholder for tree"+ tree.pos +", so take "+ (SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation))
-            SourceHelper.indentationLength(start, tree.pos.source.content) - scopes.top.indentation
-        }
-        
-        val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, i, tree)
-        
-        if(preRequirements.size > 0) {
-          preRequirements.foreach(newScope requireBefore _)
-          preRequirements.clear
-        }
-        
-        scopes.top add newScope
-        scopes push newScope
-        body
-        scopes pop
-    }
-    
-    def noChange(offset: Int, content: Seq[Char]) = Some(offset) 
-        
-    def addFragment(tree: Tree): Fragment = {
-      val part = tree match {
-        case tree if tree.pos == UnknownPosition => ArtificialTreeFragment(tree)
-        case tree: SymTree => SymTreeFragment(tree)
-        case _ => TreeFragment(tree)
-      }
-      addFragment(part)
-      part
-    }
-    
-    def addFragment(part: Fragment) = {
-      scopes.top add part
-      preRequirements.foreach(part requireBefore _)
-      preRequirements.clear
-    }
-        
     def rangeOrUnknown(t: Tree) = t.pos.isRange || t.pos == UnknownPosition
     def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrUnknown(t)  
         
     override def traverse(tree: Tree): Unit = {
-    	
-      implicit val currentTree = tree
-      
+    	      
       if(tree.pos != UnknownPosition && !tree.pos.isRange)
         return
       
@@ -300,33 +355,28 @@ trait Partitioner {
         if(t.original != null)
           traverse(t.original)
         else if(t.pos == UnknownPosition)
-          addFragment(t)
+          handle(tree, Itself)
+        super.traverse(tree)
       
       case i: Ident =>
-        if(i.symbol.hasFlag(Flags.SYNTHETIC))
-          ()
-        else if (i.symbol.pos == NoPosition)
-          addFragment(new SymTreeFragment(i) {
-            override val end = start + i.name.length
-          })
-        else
-          addFragment(i)
+        handle(tree, Itself)
+        super.traverse(tree)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
         handle(tree, Mods)
         if (!c.symbol.isAnonymousClass)
-          addFragment(c)
+          handle(tree, Itself)
         super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) =>
         handle(tree, Mods)
-        addFragment(m)
+        handle(tree, Itself)
         super.traverse(tree)
         
       case v @ ValDef(mods, name, tpt, rhs) =>
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
           handle(tree, Mods)
-          addFragment(v)
+          handle(tree, Itself)
         }
         traverseTrees(mods.annotations)
         if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == UnknownPosition) && tpt.tpe != EmptyTree.tpe) {
@@ -339,28 +389,15 @@ trait Partitioner {
 
       case select @ Select(qualifier, name)  =>
         traverse(qualifier)
-        
-        // An ugly hack. when can we actually print the name?
-        if (qualifier.isInstanceOf[New]) {
-          ()
-        } else if(qualifier.isInstanceOf[Super]) {
-          scopes.top add new SymTreeFragment(select) {
-            override val end = tree.pos.end
-          }
-        } else if (qualifier.pos.isRange) {
-          scopes.top add new SymTreeFragment(select) {
-            override val start = select.pos.end - select.symbol.nameString.length
-            override val end = select.pos.end
-          }
-        } else
-          addFragment(select)
+        handle(tree, Itself)
+        //NO super.traverse(tree)
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         
         if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
           handle(tree, Mods)
           
-          addFragment(defdef)
+          handle(tree, Itself)
                     
           traverseTrees(mods.annotations)
           traverseTrees(tparams)
@@ -381,7 +418,7 @@ trait Partitioner {
         
       case typeDef @ TypeDef(mods: Modifiers, name: Name, tparams, rhs: Tree) =>
         handle(tree, Mods)
-        addFragment(typeDef)
+        handle(tree, Itself)
         super.traverse(tree)
 
       case t @ Template(parents, _, body) =>
@@ -404,7 +441,7 @@ trait Partitioner {
         handle(tree → ClassBody(trueBody))
 
       case Literal(constant) =>
-        addFragment(tree)
+        handle(tree, Itself)
         super.traverse(tree)
         
       case Block(Nil, expr) =>
@@ -414,17 +451,15 @@ trait Partitioner {
         handle(tree → BlockBody)
 
       case New(tpt) =>
-        addFragment(tree)
+        handle(tree, Itself)
         traverse(tpt)
         
       case s @ Super(qual, mix) =>
-        addFragment(new SymTreeFragment(s) {
-          override val end = tree.pos.end
-        })
+        handle(tree, Itself)
         super.traverse(tree)
         
       case Match(selector: Tree, cases) =>
-        handle(tree → new TreeElement)
+        handle(tree → Itself)
         
       case Apply(fun, args) =>
       //scope for ()?
