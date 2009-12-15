@@ -21,10 +21,12 @@ trait Partitioner {
     case object Mods extends TreeElement
     case object Tpt extends TreeElement
     case object Rhs extends TreeElement
-    case object Vparamss extends TreeElement
+    case object ParamList extends TreeElement
     case object ArgsSeparator extends TreeElement
     case object StmtsSeparator extends TreeElement
-    
+    case class  ClassParams(ps: List[Tree]) extends TreeElement
+    case class  ClassBody(ps: List[Tree]) extends TreeElement
+    case object BlockBody extends TreeElement
     
     abstract class AstContribution {
       def apply(implicit p: Pair[Tree, TreeElement])
@@ -32,10 +34,17 @@ trait Partitioner {
     
     trait ScopeContribution extends AstContribution {
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+        
         case (t: DefDef, Rhs) if !t.rhs.isInstanceOf[Block] =>
           scope(t.rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
             super.apply
           }
+          
+        case (t @ Block(stats, expr), BlockBody) if !(expr.pos.isRange && (expr.pos precedes stats.head.pos)) =>
+          scope (t, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
+            super.apply
+          }
+          
         case _ => super.apply
       }
     }    
@@ -68,7 +77,12 @@ trait Partitioner {
     
     trait RequisitesContribution extends AstContribution {
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
-        case (t: DefDef, Vparamss) =>
+        case (t: DefDef, ParamList) =>
+          requireAfter("(")
+          super.apply
+          requireBefore(")")
+          
+        case (Apply(_, args), ParamList) if args.size > 1 =>
           requireAfter("(")
           super.apply
           requireBefore(")")
@@ -99,10 +113,37 @@ trait Partitioner {
     }
     
     class BasicContribution extends AstContribution {
+      
+      private def handleList(ts: List[Tree], t: TreeElement): Unit = ts.filter(notEmptyRangeOrUnknown) match {
+        case Nil => 
+          ()
+        case x :: Nil => 
+          traverse(x)
+        case x :: xs => 
+          traverse(x)
+          handle(x → t)
+          handleList(xs, t)
+      }
+      
       def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         
-        case (t: DefDef, Vparamss) =>
-          t.vparamss foreach (visitAll(_, ArgsSeparator))
+        case (t: DefDef, ParamList) =>
+          t.vparamss foreach (handleList(_, ArgsSeparator))
+          
+        case (t: Apply, ParamList) =>
+           handleList(t.args, ArgsSeparator)
+        
+        case (t: Template, ClassParams(ts)) if ts != Nil =>
+          handleList(ts, ArgsSeparator)
+          
+        case (t: Template, ClassBody(ts)) if ts != Nil =>
+          handleList(ts, StmtsSeparator)
+          
+        case (Block(stats, expr), BlockBody) =>
+          if(expr.pos.isRange && (expr.pos precedes stats.head.pos))
+            handleList(expr :: stats, StmtsSeparator)
+          else
+            handleList(stats ::: expr :: Nil, StmtsSeparator)
  
         case (t: ValOrDefDef, Tpt) =>
           traverse(t.tpt)
@@ -222,18 +263,7 @@ trait Partitioner {
         
     def rangeOrUnknown(t: Tree) = t.pos.isRange || t.pos == UnknownPosition
     def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrUnknown(t)  
-    
-    def visitAll(trees: List[Tree], role: TreeElement): Unit = trees.filter(notEmptyRangeOrUnknown) match {
-      case Nil => 
-        ()
-      case x :: Nil => 
-        traverse(x)
-      case x :: xs => 
-        traverse(x)
-        handle(x → role)
-        visitAll(xs, role)
-    }
-    
+        
     override def traverse(tree: Tree): Unit = {
     	
       implicit val currentTree = tree
@@ -313,7 +343,7 @@ trait Partitioner {
           traverseTrees(tparams)
           
           if(!vparamss.isEmpty) {
-            handle(tree, Vparamss)
+            handle(tree, ParamList)
           }
           
           if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
@@ -340,8 +370,8 @@ trait Partitioner {
           case _ => false
         }
         
-        visitAll(classParams, ArgsSeparator)
-        
+        handle(tree → ClassParams(classParams))
+                
         val(earlyBody, _) = restBody.filter(withRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
 
         earlyBody foreach traverse
@@ -361,7 +391,7 @@ trait Partitioner {
                   forwardsTo('{', abortOn)(startFrom, content)
                 }, 
             adjustEnd = noChange) {
-            visitAll(trueBody, StmtsSeparator)
+            handle(tree → ClassBody(trueBody))
             requireAfter("\n")
           }
         } else {
@@ -376,15 +406,8 @@ trait Partitioner {
         super.traverse(tree)
         
       case Block(stats, expr) =>
-                
-        if(expr.pos.isRange && (expr.pos precedes stats.head.pos)) {
-          visitAll(expr :: stats, StmtsSeparator)
-        } else {
-          scope (tree, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
-            visitAll(stats ::: expr :: Nil, StmtsSeparator)
-          }
-        }
-        
+        handle(tree → BlockBody)
+
       case New(tpt) =>
         addFragment(tree)
         traverse(tpt)
@@ -403,14 +426,8 @@ trait Partitioner {
       case Apply(fun, args) =>
       //scope for ()?
         traverse(fun)
-        if(args.size > 1) {
-          requireAfter("(")
-          visitAll(args, ArgsSeparator)
-          requireAfter(")")
-        } else if(args.size > 0) {
-          traverse(args.head)
-        }
-        
+        handle(tree, ParamList)
+
       case _ =>
         super.traverse(tree)
     }}
