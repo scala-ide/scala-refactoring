@@ -113,7 +113,8 @@ trait Partitioner {
             // klammern zum scope?
             scopes.top.children.head.requireAfter(new Requisite("{", "{\n"))
             body
-            scopes.top.children.last.requireBefore(new Requisite("\n}", "\n}"))
+            scopes.top.children.last.requireBefore(new Requisite("\n", "\n"))
+            scopes.top.children.last.requireBefore(new Requisite("}", "}"))
             scopes pop
           } else
             body
