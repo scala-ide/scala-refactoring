@@ -12,12 +12,13 @@ trait Merger {
     def withLayout(current: Fragment, next: Fragment, scope: Scope): List[Fragment] = {
     
       val currentExists = allFragments exists current
+      val originalNext  = allFragments getNext current
       
-      /*if(currentExists && allFragments.getNext(current).get._3 == next) {
-        val (_, wsFound, nextFound) = (allFragments getNext current).get //FIXME
-        //explain("Layout ▒▒"+ (wsFound mkString "") +"▒▒ is between ▒▒"+ current +"▒▒ and ▒▒"+ next +"▒▒.")
-        wsFound
-      } else */{
+      val layout = if(currentExists && originalNext.isDefined && originalNext.get._3 == next) {
+        val layout = originalNext.get._2 mkString ""
+        trace("%s and %s are in the original order and enclose %s", current, next, layout)
+        processRequisites(current, layout, "", next)
+      } else {
         /*
          * The tree has been re-arranged, the next part in the original source isn't our current next. 
          * We have to split the layout between our current part and its next part in the original 
@@ -48,23 +49,21 @@ trait Merger {
          * before the next fragment in the tree. Combined, we get all layout we need.
          * */
         
-        /*
-         * Fragments may define required strings that need to be present in the layout before or after them.
-         * */
+        trace("the next fragment is %s", next)
         
-        val layout = processRequisites(current, layoutAfterCurrent, layoutBeforeNext, next)
-        
-		    trace("layout is %s", layout)
-		    trace("the next fragment is %s", next)
-		    
-		    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => SourceHelper.indentationLength(next) map (s → _))
-		    
-		    val indentedLayout = fixIndentation(layout, existingIndentation, next.isEndOfScope, scope.indentation)
-    
-        trace("the resulting layout is %s", indentedLayout)
-        
-        new StringFragment(indentedLayout) :: Nil
+        using(processRequisites(current, layoutAfterCurrent, layoutBeforeNext, next)) {
+          trace("layout is %s", _)
+        }
       }
+	    
+	    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => SourceHelper.indentationLength(next) map (s → _))
+	    
+	    val indentedLayout = fixIndentation(layout, existingIndentation, next.isEndOfScope, scope.indentation)
+  
+      trace("the resulting layout is %s", indentedLayout)
+      
+      new StringFragment(indentedLayout) :: Nil
+    
     }
     
     def printFragment(f: Fragment) = f match {
