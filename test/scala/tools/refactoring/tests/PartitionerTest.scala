@@ -130,7 +130,7 @@ class PartitionerTest extends TestHelper {
     class |C| extends |→4(4)❨|{
       val |name| = |"Bob"|
     }|❩| with |Greeting| |→4(4)❨|{
-      |println|(|msg|)
+      |println|→6(2)❨|(|msg|)|❩|
     }|❩|
   |❩"""
 
@@ -178,9 +178,9 @@ class PartitionerTest extends TestHelper {
   """→0(0)❨|
     object |A| |→4(4)❨|{
       |def| |main|(|args|: |Array|[|String|]) |→6(2)❨|{
-        |args|.|foreach|(|println|)
-        |args|.|foreach|(|println| _)
-        |args|.|foreach|(|s| => |println|(|s|))
+        |args|.|foreach|→8(2)❨|(|println|)|❩|
+        |args|.|foreach|→8(2)❨|(|println| _)|❩|
+        |args|.|foreach|(|s| => |println|→8(2)❨|(|s|))|❩|
       }|❩|
     }|❩|
   |❩"""

@@ -46,6 +46,12 @@ trait Transform {
     }
   }.transform(root)
   
+  def replaceTrees(from: List[Tree], what: List[Tree], through: Tree) = {
+    val (keep1, rest) = from break what.head.==
+    val (_, keep2) = rest span what.contains
+    keep1 ::: through :: keep2
+  }
+  
   def reverseClassParameters(t: Tree) = transform(t) {
     case tree @ Template(parents, self, body) => new Template(parents, self, body.reverse).copyAttrs(tree)
   }

@@ -21,8 +21,9 @@ object Parts2 extends TestHelper with TestTransform {
     val src = """
       class A {
         def get(i: Int): Int = {
-          val a = 1
-/*(*/     val b = a + i    /*)*/
+          println("hi there!")
+/*(*/     val a = 1
+          val b = a + i    /*)*/
           b
         }
       }
@@ -52,21 +53,26 @@ object Parts2 extends TestHelper with TestTransform {
     
     val parameters = inboundLocalDependencies(index, selection, selectedMethod.symbol)
     
-    val call = mkCallDefDef(
-        NoMods,
-        "innerMethod", 
-        parameters :: Nil, 
-        outboundLocalDependencies(index, selection, selectedMethod.symbol))
+    val call = mkCallDefDef(NoMods, "innerMethod", parameters :: Nil, outboundLocalDependencies(index, selection, selectedMethod.symbol))
  
     val returns = mkReturn(outboundLocalDependencies(index, selection, selectedMethod.symbol))
     
     val newDef  = mkDefDef(NoMods, "innerMethod", parameters :: Nil, selection.trees ::: returns :: Nil)
           
-    val newTree = transform(tree) {
+    var newTree = transform(tree) {
       case Template(parents, self, body) if body exists (_ == selectedMethod) =>
         new Template(parents, self, newDef :: body).copyAttrs(tree)
     }
     
+    newTree = transform(newTree) {
+      case d: DefDef if d == selectedMethod =>
+        transform(d) {
+          case Block(stats, expr) =>
+            cleanNoPos {
+              Block(replaceTrees(stats, selection.trees, call), expr)
+            }
+        }
+    }
     
     //val newTree = newMethod.transform(tree)
     //val newTree = insertValue.transform(tree)

@@ -53,6 +53,9 @@ trait Partitioner {
       protected def addFragment(part: Fragment) = scopes.top add part
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+        
+        case (t: Apply, Itself) => 
+          super.apply
 
         case (i: Ident, Itself) =>
           if(i.symbol.hasFlag(Flags.SYNTHETIC))
@@ -101,7 +104,6 @@ trait Partitioner {
       def getIndentation(start: Int, tree: Tree, scope: Scope): Int
       
       private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
-        case EmptyTree => ()
         case tree if tree.pos == UnknownPosition =>
           if(indent) {
             val newScope = new SimpleScope(Some(scopes.top), indentationStep)
@@ -111,13 +113,11 @@ trait Partitioner {
             // klammern zum scope?
             scopes.top.children.head.requireAfter(new Requisite("{", "{\n"))
             body
-            scopes.top.children.last.requireBefore(new Requisite("}", "\n}"))
+            scopes.top.children.last.requireBefore(new Requisite("\n}", "\n}"))
             scopes pop
           } else
             body
-          
-        case tree if !tree.pos.isRange =>
-          ()
+            
         case _ =>
           // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
           val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source.content),  adjustEnd(tree.pos.end, tree.pos.source.content)) match {
@@ -144,7 +144,7 @@ trait Partitioner {
 
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         
-        case (t: DefDef, Rhs) if !t.rhs.isInstanceOf[Block] =>
+        case (t: DefDef, Rhs) if !t.rhs.isInstanceOf[Block] && t.rhs != EmptyTree =>
           scope(t.rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
             super.apply
           }
@@ -173,6 +173,34 @@ trait Partitioner {
             super.apply
           }
           
+        case (t @ Apply(fun, args), ParamList) => 
+        
+          val numArgs = args filter {
+            case t: SymTree if t.symbol.hasFlag(Flags.SYNTHETIC) => false
+            case t: Tree if t.pos == UnknownPosition => false
+            case _ => true
+          } size
+          
+          if(numArgs > 0) {
+            val o = backwardsSkipLayoutTo('(')(args.head.pos.start - 1, t.pos.source.content)
+            val c = backwardsSkipLayoutTo(')')(t.pos.end, t.pos.source.content) map (1+)/*include the parenthesis*/           
+            
+            (o, c) match {
+              case (openingParenthesis @ Some(_), closingParenthesis @ Some(_)) =>
+                scope(
+                    t,
+                    indent = false,
+                    adjustStart = ((_, _) => openingParenthesis),
+                    adjustEnd = ((_, _) =>closingParenthesis)
+                    ) {
+                  super.apply 
+                }
+              case _ => super.apply
+            }
+          } else {
+            super.apply
+          }
+          
         case _ => super.apply
       }
     }
@@ -182,7 +210,7 @@ trait Partitioner {
     trait ModifiersContribution extends FragmentContribution {
       
       def hasModifiers(tree: WithModifiers) = tree.pos match {
-        case UnknownPosition => tree.mods.flags != 0
+        case UnknownPosition => tree.mods.flags != 0 && tree.mods.flags != Flags.PARAM
         case _ => tree.mods.positions.size > 0
       }
       
@@ -231,9 +259,9 @@ trait Partitioner {
           requireBefore(")")
           
         case (Apply(_, args), ParamList) if args.size > 1 =>
-          requireAfter("(")
+          requireBefore("(")
           super.apply
-          requireBefore(")")
+          requireAfter(")")
           
         case (_, Tpt) =>
           requireBefore(":", ": ")
@@ -243,7 +271,7 @@ trait Partitioner {
           requireAfter("=", " = ")
           super.apply
                     
-        case (_, Mods) =>
+        case (t: WithModifiers, Mods) =>
           requireAfter(" ", " ")
           super.apply
           
@@ -253,7 +281,7 @@ trait Partitioner {
           
         case (_, StmtsSeparator) =>
           requireAfter("\n", "\n")
-          super.apply  
+          super.apply
           
         case (_, ClassBody(ts)) if ts.size > 0 =>
           super.apply
@@ -310,11 +338,15 @@ trait Partitioner {
         case (t: ValOrDefDef, Rhs) =>
           traverse(t.rhs)  
           
+        case (t @ Apply(fun, _), Itself) =>
+          traverse(fun)
+          handle(t → ParamList)
+          
         case (_, Mods) =>
           ()
             
         case x => 
-          println("don't know what to do with "+ x)
+          //println("don't know what to do with "+ x)
       }
     }
     
@@ -418,7 +450,7 @@ trait Partitioner {
         handle(tree → ClassBody(trueBody))
 
       case Literal(constant) =>
-        handle(tree, Itself)
+        handle(tree → Itself)
         super.traverse(tree)
         
       case Block(Nil, expr) =>
@@ -428,11 +460,11 @@ trait Partitioner {
         handle(tree → BlockBody)
 
       case New(tpt) =>
-        handle(tree, Itself)
+        handle(tree → Itself)
         traverse(tpt)
         
       case s @ Super(qual, mix) =>
-        handle(tree, Itself)
+        handle(tree → Itself)
         super.traverse(tree)
         
       case Match(selector: Tree, cases) =>
@@ -440,8 +472,8 @@ trait Partitioner {
         
       case Apply(fun, args) =>
       //scope for ()?
-        traverse(fun)
-        handle(tree, ParamList)
+      //  traverse(fun)
+        handle(tree → Itself)
 
       case _ =>
         super.traverse(tree)
