@@ -1,6 +1,6 @@
 package scala.tools.refactoring.transformation
 
-import scala.tools.refactoring.UnknownPosition
+import scala.tools.refactoring.{UnknownPosition, InvisiblePosition}
 import scala.tools.nsc.util.NoPosition
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens
@@ -24,7 +24,7 @@ trait TreeFactory {
     val args = arguments.head map (s => cleanAll(Ident(s)))
     
     returns match {
-      case Nil => Apply(Select(This(""), name), args)
+      case Nil => Apply(Select(This("") setPos InvisiblePosition, name), args)
       
       case returns => 
       
@@ -34,7 +34,7 @@ trait TreeFactory {
           case xs => "val ("+ (xs mkString ", ") +")"
         }
                 
-        ValDef(NoMods, valName, TypeTree(EmptyTree.tpe), Apply(Select(This(""), name), args)) 
+        ValDef(NoMods, valName, TypeTree(EmptyTree.tpe), Apply(Select(This("") setPos InvisiblePosition, name), args)) 
     }
   }
   

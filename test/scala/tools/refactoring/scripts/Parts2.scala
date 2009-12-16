@@ -22,8 +22,10 @@ object Parts2 extends TestHelper with TestTransform {
       class A {
         def get(i: Int): Int = {
           println("hi there!")
-/*(*/     val a = 1
-          val b = a + i    /*)*/
+          val a = 1
+          val x = a + 1
+/*(*/     val y = a + x + 1
+          val b = a + i +x + y    /*)*/
           b
         }
       }

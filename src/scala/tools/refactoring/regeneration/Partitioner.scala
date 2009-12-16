@@ -7,7 +7,7 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
-import scala.tools.refactoring.UnknownPosition
+import scala.tools.refactoring.{UnknownPosition, InvisiblePosition}
 
 trait Partitioner {
   self: scala.tools.refactoring.Compiler with Tracing with scala.tools.refactoring.LayoutPreferences =>
@@ -258,11 +258,21 @@ trait Partitioner {
           super.apply
           requireBefore(")")
           
-        case (Apply(_, args), ParamList) if args.size > 1 =>
-          requireBefore("(")
-          super.apply
-          requireAfter(")")
+        case (Apply(fun, args), ParamList) if args.size > 0 =>
+        
+          val needsParenthesis = fun match {
+            case Select(qualifier, _) if qualifier.pos == UnknownPosition => false
+            case Select(qualifier, _) if !qualifier.pos.isRange => true
+            case _ => false
+          }
           
+          if(needsParenthesis) {
+            requireBefore("(")
+            super.apply
+            requireAfter(")")
+          } else
+            super.apply
+        
         case (_, Tpt) =>
           requireBefore(":", ": ")
           super.apply
