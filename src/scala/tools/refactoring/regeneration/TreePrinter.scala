@@ -4,8 +4,7 @@ import scala.tools.nsc.ast.Trees
 
 trait TreePrinter {
   
-  self: scala.tools.refactoring.Compiler =>
-  
+  val global: scala.tools.nsc.Global  
   import global._
 
   def print(part: WithTree) = part match {

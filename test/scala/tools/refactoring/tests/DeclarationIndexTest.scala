@@ -14,9 +14,9 @@ import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 class DeclarationIndexTest extends TestHelper with DeclarationIndexes with TreeAnalysis {
 
   import global._
+  protected val index = new DeclarationIndex
   
   def withIndex(src: String)(body: (Tree, DeclarationIndex) => Unit ) {
-    val index = new DeclarationIndex
     val tree = treeFrom(src)
     index.processTree(tree)
     body(tree, index)

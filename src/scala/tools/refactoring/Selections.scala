@@ -6,8 +6,7 @@ import scala.tools.nsc.util.RangePosition
 
 trait Selections {
   
-  self: scala.tools.refactoring.Compiler =>
-  
+  val global: scala.tools.nsc.Global
   import global._
   
   private class FilterTree(start: Int, end: Int, includeChildren: Boolean) extends Traverser {
@@ -44,6 +43,12 @@ trait Selections {
     lazy val symbols = treesWithSubtrees flatMap {
       case t: SymTree => Some(t.symbol)
       case _ => None
+    }
+    
+    lazy val enclosingDefDef = root find { // only head?
+      // what happens with nested defs? should we use filter and take the last (== smallest) one?
+      case t: DefDef if this isContainedIn t => true
+      case _ => false
     }
     
     def contains(t: Tree) = t.pos.source == root.pos.source && pos.includes(t.pos)

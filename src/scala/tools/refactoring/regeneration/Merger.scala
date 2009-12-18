@@ -17,8 +17,10 @@ trait Merger {
       val layout = if(currentExists && originalNext.isDefined && originalNext.get._3 == next) {
         val layout = originalNext.get._2 mkString ""
         trace("%s and %s are in the original order and enclose %s", current, next, layout)
-        processRequisites(current, layout, "", next)
+        layout
+        //processRequisites(current, layout, "", next)
       } else {
+        trace("%s and %s have been rearranged", current, next)
         /*
          * The tree has been re-arranged, the next part in the original source isn't our current next. 
          * We have to split the layout between our current part and its next part in the original 

@@ -135,6 +135,11 @@ class LayoutHandlerTest extends TestHelper {
   @Test
   def splitCommentWithOpeningParenthesis(): Unit = {
     "class A ( i: /*)*/ Int )" splitsInto "class ▒A (▒ i: /*)*/ ▒Int ▒)▒"
+  } 
+  
+  @Test
+  def dontSplitEmptyParenthesis(): Unit = {
+    "class A() extends AnyRef" splitsInto "class ▒A() ▒extends AnyRef▒▒"
   }
 }
 

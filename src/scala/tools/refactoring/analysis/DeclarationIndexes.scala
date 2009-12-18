@@ -1,14 +1,12 @@
 package scala.tools.refactoring.analysis
 
 import scala.tools.nsc.ast.Trees
-import scala.tools.refactoring.Compiler
 import scala.tools.nsc.symtab.Symbols
 import scala.collection.mutable.{HashMap, ListBuffer}
 
 trait DeclarationIndexes {
     
-  self: scala.tools.refactoring.Compiler =>
-  
+  val global: scala.tools.nsc.Global  
   import global._
   
   class DeclarationIndex {

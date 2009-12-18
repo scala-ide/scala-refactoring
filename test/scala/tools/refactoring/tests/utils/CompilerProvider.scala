@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests.utils
 
+import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.ConsoleReporter
@@ -39,11 +40,17 @@ private object CompilerInstance {
   new compiler.Run
 }
 
-trait CompilerProvider extends scala.tools.refactoring.Compiler {
+trait CompilerProvider {
 
   val global = CompilerInstance.compiler
     
   def treeFrom(source: String) = {
-   global.typedTree(new BatchSourceFile("test", source), true)
+    global.typedTree(new BatchSourceFile("test", source), true)
+  }
+  
+  def compile(source: String): AbstractFile = {
+    val file = new BatchSourceFile("test", source)
+    global.typedTree(new BatchSourceFile("test", source), true)
+    file.file
   }
 }

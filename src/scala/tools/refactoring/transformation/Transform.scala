@@ -6,9 +6,9 @@ import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 
-trait Transform {
+private[refactoring] trait Transform {
   
-  self: scala.tools.refactoring.Compiler =>
+  val global: scala.tools.nsc.Global
   import global._
   
   private class PositionSetter(guard: Tree => Boolean) extends Traverser {

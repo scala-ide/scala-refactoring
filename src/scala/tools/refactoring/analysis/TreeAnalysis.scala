@@ -5,9 +5,13 @@ import scala.tools.refactoring.Selections
 
 trait TreeAnalysis {
   
-  self: scala.tools.refactoring.Compiler with Selections with DeclarationIndexes =>
+  self: Selections with DeclarationIndexes =>
+  
+  val global: scala.tools.nsc.Global
+  
+  protected val index: DeclarationIndex
 
-  def inboundLocalDependencies(index: DeclarationIndex, selection: TreeSelection, currentOwner: global.Symbol) = {
+  def inboundLocalDependencies(selection: TreeSelection, currentOwner: global.Symbol) = {
         
     val allLocals = index children currentOwner
     
@@ -16,7 +20,7 @@ trait TreeAnalysis {
     selectedLocals filterNot (s => selection contains (index declaration s))
   }
   
-  def outboundLocalDependencies(index: DeclarationIndex, selection: TreeSelection, currentOwner: global.Symbol) = {
+  def outboundLocalDependencies(selection: TreeSelection, currentOwner: global.Symbol) = {
     
     val allLocals = index children currentOwner
     

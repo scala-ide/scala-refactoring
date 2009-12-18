@@ -1,6 +1,5 @@
 package scala.tools.refactoring.tests.utils
 
-import scala.tools.refactoring.Compiler
 import scala.tools.refactoring.Selections
 import scala.tools.refactoring.transformation.{Transform, TreeFactory}
 import scala.tools.refactoring.analysis._
@@ -13,7 +12,8 @@ import scala.tools.nsc.symtab.Flags
 
 trait TestTransform extends Transform with TreeDSL with Selections with TreeAnalysis with DeclarationIndexes with TreeFactory {
   
-  self: scala.tools.refactoring.Compiler =>
+  val global: scala.tools.nsc.Global
+  protected val index = new DeclarationIndex
   import CODE._
   import global._
   
@@ -116,11 +116,11 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
           val selection = new TreeSelection(rhs.stats(1))
           
           val selected = selection.trees.head
-          val parameters = inboundLocalDependencies(index, selection, defdef.symbol)
+          val parameters = inboundLocalDependencies(selection, defdef.symbol)
           
-          val call    = mkCallDefDef( name = "innerMethod", arguments = parameters :: Nil, returns = outboundLocalDependencies(index, selection, defdef.symbol))
+          val call    = mkCallDefDef( name = "innerMethod", arguments = parameters :: Nil, returns = outboundLocalDependencies(selection, defdef.symbol))
           
-          val returns = mkReturn(outboundLocalDependencies(index, selection, defdef.symbol))
+          val returns = mkReturn(outboundLocalDependencies(selection, defdef.symbol))
           val newDef  = mkDefDef(name = "innerMethod", parameters = parameters :: Nil, body = selected :: returns :: Nil)
           
           val newRhs = cleanNoPos {

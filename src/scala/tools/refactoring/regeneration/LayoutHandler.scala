@@ -78,6 +78,7 @@ trait LayoutHandler extends scala.tools.refactoring.LayoutPreferences {
       } mkString
     
       context("split layout") {
+        val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
         val OpeningBrace = """(.*?\()(.*)""".r
         val ClosingBrace = """(?ms)(.*?)(\).*)""".r
         val Comma = """(.*?),\s?(.*)""".r
@@ -88,6 +89,7 @@ trait LayoutHandler extends scala.tools.refactoring.LayoutPreferences {
         trace("splitting layout %s between %s and %s. Comments are %s", layout, left, right, comments)
         
         val(l, r, why) = (left, layout, right) match {
+          case(_, EmptyParens(l, r) , _) => (l, r, "EmptyParens")
           case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
           case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
           case(_, NewLine(l, r)     , _) => (l, r, "NewLine")

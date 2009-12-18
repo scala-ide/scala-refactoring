@@ -62,7 +62,7 @@ class MergerTest extends TestHelper with TestTransform {
     """ transformsTo( 
     """
       class A { //
-        def a(i: Int)  = {
+        def a(i: Int) {
           i
         }
       }

@@ -10,7 +10,8 @@ import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.{UnknownPosition, InvisiblePosition}
 
 trait Partitioner {
-  self: scala.tools.refactoring.Compiler with Tracing with scala.tools.refactoring.LayoutPreferences =>
+  self: Tracing with scala.tools.refactoring.LayoutPreferences =>
+  val global: scala.tools.nsc.Global
   import global.{Scope => _, _}
      
   private abstract class Visitor extends Traverser {
@@ -255,9 +256,9 @@ trait Partitioner {
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         case (t: DefDef, ParamList) =>
-          requireAfter("(")
+          requireBefore("(")
           super.apply
-          requireBefore(")")
+          requireAfter(")")
           
         case (Apply(fun, args), ParamList) if args.size > 0 =>
         
@@ -277,6 +278,11 @@ trait Partitioner {
         case (_, Tpt) =>
           requireBefore(":", ": ")
           super.apply
+                  
+        case (t: DefDef, Rhs) =>
+          //if(t.tpe != )
+            requireAfter("=", " = ")
+          super.apply 
           
         case (_, Rhs) =>
           requireAfter("=", " = ")

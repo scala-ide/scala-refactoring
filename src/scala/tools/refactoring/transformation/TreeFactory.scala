@@ -8,7 +8,8 @@ import scala.tools.nsc.symtab.Flags
 
 trait TreeFactory {
   
-  self: scala.tools.refactoring.Compiler with Transform =>
+  self: Transform =>
+  val global: scala.tools.nsc.Global
   //import scala.{Symbol => _, _}
   import global._
   

@@ -12,82 +12,74 @@ import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.ConsoleReporter
 
-object Parts2 extends TestHelper with TestTransform {
+object Parts2 extends CompilerProvider {
   
-  import global._
-
   def main(args : Array[String]) : Unit = {
+    
+    object checkClassNames extends global.Traverser {
+       override def traverse(t: global.Tree): Unit = t match {
+         case global.ClassDef(_, name, _, _) => if(name.toString.head.isLower) println(name)
+         case _ => super.traverse(t)
+       }
+    }
     
     val src = """
       class A {
-        def get(i: Int): Int = {
+        def get() {
           println("hi there!")
           val a = 1
-          val x = a + 1
-/*(*/     val y = a + x + 1
-          val b = a + i +x + y    /*)*/
-          b
+/*(*/     val x = a + 1    /*)*/
+          x
         }
       }
 """
     
-    val tree = treeFrom(src)
+    val file = compile(src)
+    
+    val refactoring = new Refactoring(global)
+    
+    import refactoring._
+    import refactoring.global._
+    
+    val tree: Tree = file
+    
+    refactoring indexFile file
+    
+    val (from, to) = (src.indexOf("/*(*/"), src.indexOf("/*)*/"))
+    
+    val selection = new Selection(file, from, to)
+    
+    val trees = selection.trees
+        
+    val selectedMethod = selection.enclosingDefDef getOrElse(throw new Exception("no enclosing defdef found"))
 
-    val partitionedOriginal = splitIntoFragments(tree)
+    val parameters = inboundLocalDependencies(selection, selectedMethod.symbol)
     
-    println(partitionedOriginal)
-    println("===========")
-
-    val ess = essentialFragments(tree, new FragmentRepository(partitionedOriginal))
-
-    println(ess)
-    println("===========")
-    
-    val selection = findMarkedNodes(src, tree)
-    val index = new DeclarationIndex
-    index.processTree(tree)
-    
-    val selectedMethod = tree find {
-      // what happens with nested defs? should we use filter and take the last (== smallest) one?
-      case t: global.DefDef if selection isContainedIn t => true
-      case _ => false
-    } getOrElse(throw new Exception("no enclosing defdef found"))
-    
-    val parameters = inboundLocalDependencies(index, selection, selectedMethod.symbol)
-    
-    val call = mkCallDefDef(NoMods, "innerMethod", parameters :: Nil, outboundLocalDependencies(index, selection, selectedMethod.symbol))
+    val call = mkCallDefDef(NoMods, "newMethod", parameters :: Nil, outboundLocalDependencies(selection, selectedMethod.symbol))
  
-    val returns = mkReturn(outboundLocalDependencies(index, selection, selectedMethod.symbol))
+    val returns = mkReturn(outboundLocalDependencies(selection, selectedMethod.symbol))
     
-    val newDef  = mkDefDef(NoMods, "innerMethod", parameters :: Nil, selection.trees ::: returns :: Nil)
+    val newDef  = mkDefDef(NoMods, "newMethod", parameters :: Nil, selection.trees ::: returns :: Nil)
           
-    var newTree = transform(tree) {
-      case Template(parents, self, body) if body exists (_ == selectedMethod) =>
+    var newTree = transform(file) {
+      case tree @ Template(parents, self, body) if body exists (_ == selectedMethod) =>
         new Template(parents, self, newDef :: body).copyAttrs(tree)
     }
     
     newTree = transform(newTree) {
-      case d: DefDef if d == selectedMethod =>
-        transform(d) {
-          case Block(stats, expr) =>
+      case defdef: DefDef if defdef == selectedMethod =>
+        refactoring.transform(defdef) {
+          case block @ Block(stats, expr) if block == defdef.rhs =>
             cleanNoPos {
-              Block(replaceTrees(stats, selection.trees, call), expr)
+              Block(replaceTrees(stats, selection.trees, call), expr).copyAttrs(block)
             }
         }
     }
     
-    //val newTree = newMethod.transform(tree)
-    //val newTree = insertValue.transform(tree)
-    //val newTree = reverseClassParameters.transform(tree)
-    val partitionedModified = essentialFragments(newTree, new FragmentRepository(partitionedOriginal))
+    val result = refactor(file, newTree)
+        
+    println(result)
     
-    println("Modified: "+ partitionedModified)
-    
-    println("===========")
-    val merged = merge(partitionedModified, new FragmentRepository(partitionedOriginal))
-    println(merged map (_.print) mkString "")
- 
-    // why?
     exit(0)
   }
 }

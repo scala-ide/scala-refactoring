@@ -5,7 +5,7 @@ import scala.tools.nsc.ast._
 
 trait TreePath {
 
-  self: scala.tools.refactoring.Compiler =>
+  val global: scala.tools.nsc.Global
     
   import global._
   

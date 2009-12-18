@@ -184,5 +184,24 @@ class PartitionerTest extends TestHelper {
       }|❩|
     }|❩|
   |❩"""
+  
+  @Test
+  def blockAtTheEnd =
+  """
+      class A {
+        def get(i: Int): Unit = {
+          val a = 1
+          a
+        }
+      }
+  """ partitionsInto 
+  """→0(0)❨|
+      class |A| |→6(6)❨|{
+        |def| |get|(|i|: |Int|): |Unit| = |→8(2)❨|{
+          |val| |a| = |1|
+          |→10(2)❨|a|❩|
+        }|❩|
+      }|❩|
+  |❩"""
 
 }
