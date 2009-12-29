@@ -71,7 +71,7 @@ trait Partitioner {
             
         case(t @ Select(qualifier, name), Itself) =>
           // An ugly hack. when can we actually print the name?
-          if (qualifier.isInstanceOf[New]) {
+          if (qualifier.isInstanceOf[New] || t.name.toString == "apply") {
             ()
           } else if(qualifier.isInstanceOf[Super]) {
             scopes.top add new SymTreeFragment(t) {

@@ -18,17 +18,16 @@ object Parts2 extends CompilerProvider {
     
     object checkClassNames extends global.Traverser {
        override def traverse(t: global.Tree): Unit = t match {
-         case global.ClassDef(_, name, _, _) => if(name.toString.head.isLower) println(name)
+         case global.ClassDef(_, name, _, _) if name.toString.head.isLower => println(name)
          case _ => super.traverse(t)
        }
     }
     
     val src = """
       class A {
-        def get() {
-          println("hi there!")
-          val a = 1
-/*(*/     val x = a + 1    /*)*/
+        def get(i: Int) {
+          val inc: Int => Int = _ + 1
+/*(*/     val x = inc(i)    /*)*/
           x
         }
       }

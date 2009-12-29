@@ -45,7 +45,7 @@ object TreePrinter extends CompilerProvider with SilentTracing {
           println("  "+ current +" -> "+ id(t.self) +"[label=\" self\"]")
           t.body foreach {p => innerMerge(p); println("  "+ current +" -> "+ id(p) +"[label=\" body\"]")}
         case t: DefDef =>
-          if(t.vparamss != Nil) {
+          if(t.vparamss != Nil && t.vparamss.head != Nil) {
             innerMerge(t.vparamss.head.head)
             println("  "+ current +" -> "+ id(t.vparamss.head.head) +"[label=\" parameter\"]")
           }
@@ -56,6 +56,8 @@ object TreePrinter extends CompilerProvider with SilentTracing {
         case t: ValDef =>
           innerMerge(t.tpt)
           println("  "+ current +" -> "+ id(t.tpt) +"[label=\" type\"]")
+          //innerMerge(t.rhs)
+          //println("  "+ current +" -> "+ id(t.rhs) +"[label=\" rhs\"]")
         case t: Select =>
           innerMerge(t.qualifier )
           println("  "+ current +" -> "+ id(t.qualifier) +"[label=\" qualifier\"]")

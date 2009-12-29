@@ -21,19 +21,7 @@ private object CompilerInstance {
     val libPath = scalaObjectSource.getLocation          
     val pathList = List(compilerPath,libPath)
     settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
-  }/* else {
-    def jarPathOfClass(className: String) = {
-      val resource = className.split('.').mkString("/", "/", ".class")
-      val path = getClass.getResource(resource).getPath
-      val indexOfFile = path.indexOf("file:")
-      val indexOfSeparator = path.lastIndexOf('!')
-      path.substring(indexOfFile, indexOfSeparator)
-    }
-    val compilerPath = jarPathOfClass("scala.tools.nsc.Interpreter")
-    val libPath = jarPathOfClass("scala.ScalaObject")
-    val pathList = List(compilerPath,libPath)
-    settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
-  }*/
+  }
   
   val compiler = new Global(settings, new ConsoleReporter(settings))
   

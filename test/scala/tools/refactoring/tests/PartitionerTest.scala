@@ -204,4 +204,22 @@ class PartitionerTest extends TestHelper {
       }|❩|
   |❩"""
 
+  @Test
+  def applySymbol =
+  """
+      class A {
+        def get {
+          val inc: Int => Int = _ + 1
+          inc(1)
+        }
+      }
+  """ partitionsInto
+  """→0(0)❨|
+      class |A| |→6(6)❨|{
+        |def| |get| |→8(2)❨|{
+          |val| |inc|: |Int| => |Int| = _ |+| |1|
+          |→10(2)❨|inc|→10(0)❨|(|1|)|❩|❩|
+        }|❩|
+      }|❩|
+  |❩"""
 }

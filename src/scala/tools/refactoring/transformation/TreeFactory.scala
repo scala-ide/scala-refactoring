@@ -10,7 +10,6 @@ trait TreeFactory {
   
   self: Transform =>
   val global: scala.tools.nsc.Global
-  //import scala.{Symbol => _, _}
   import global._
   
   def mkReturn(s: List[global.Symbol]) = cleanNoPos(s match {
@@ -19,7 +18,7 @@ trait TreeFactory {
     case xs => gen.mkTuple(xs map (s => Ident(s) setType s.tpe))
   })
   
-  def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[global.Symbol]] = Nil :: Nil, returns: List[global.Symbol] = Nil): Tree = cleanNoPos {
+  def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = cleanNoPos {
     
      // currying not yet supported
     val args = arguments.head map (s => cleanAll(Ident(s)))
@@ -35,11 +34,11 @@ trait TreeFactory {
           case xs => "val ("+ (xs mkString ", ") +")"
         }
                 
-        ValDef(NoMods, valName, TypeTree(EmptyTree.tpe), Apply(Select(This("") setPos InvisiblePosition, name), args)) 
+        ValDef(NoMods, valName, new TypeTree(), Apply(Select(This("") setPos InvisiblePosition, name), args)) 
     }
   }
   
-  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[global.Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = cleanNoPos {
+  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = cleanNoPos {
     
     val formalParameters = parameters map ( _ map (s => cleanAll(ValDef(s, EmptyTree))))
     
