@@ -14,7 +14,7 @@ import scala.tools.refactoring.regeneration.Partitioner
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.interactive.Global
 
-class Refactoring(val global: Global) extends Transform with Selections with Partitioner with Merger with LayoutHandler with TreePrinter with /*Silent*/Tracing with DeclarationIndexes with TreeAnalysis with TreeFactory {
+class Refactoring(val global: Global) extends Transform with Selections with Partitioner with Merger with LayoutHandler with TreePrinter with SilentTracing with DeclarationIndexes with TreeAnalysis with TreeFactory {
   
   protected val index = new DeclarationIndex
  
