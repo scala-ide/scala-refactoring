@@ -46,10 +46,10 @@ private[refactoring] trait Transform {
     }
   }.transform(root)
   
-  def replaceTrees(from: List[Tree], what: List[Tree], through: Tree) = {
+  def replaceTrees(from: List[Tree], what: List[Tree], replacement: List[Tree]) = {
     val (keep1, rest) = from span what.head.!=
     val (_, keep2) = rest span what.contains
-    keep1 ::: through :: keep2
+    keep1 ::: replacement ::: keep2
   }
   
   def reverseClassParameters(t: Tree) = transform(t) {

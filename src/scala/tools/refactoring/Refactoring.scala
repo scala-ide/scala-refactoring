@@ -24,24 +24,20 @@ class Refactoring(val global: Global) extends Transform with Selections with Par
  
   def indexFile(file: AbstractFile): Unit = index processTree file
   
-  def refactor(original: global.Tree, changed: global.Tree) = {
+  def refactor(original: global.Tree, changed: global.Tree) = context("main refactoring") {
           
     val partitionedOriginal = splitIntoFragments(original)
     
-    println("====== Original:")
-    println(partitionedOriginal)
+    trace("Original: %s", partitionedOriginal)
     
     val fr = new FragmentRepository(partitionedOriginal)
 
     val partitionedModified = essentialFragments(changed, fr)
         
-    println("====== Modified:")
-    println(partitionedModified)
+    trace("Modified: %s", partitionedModified)
     
-    val merged = merge(partitionedModified, fr)
-    
-    println("====== Result:")
-    
-    merged map (_.print) mkString
+    using(merge(partitionedModified, fr) map (_.print) mkString) {
+       trace("Result: %s", _)
+    }
   }
 }

@@ -118,10 +118,10 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
           val selected = selection.trees.head
           val parameters = inboundLocalDependencies(selection, defdef.symbol)
           
-          val call    = mkCallDefDef( name = "innerMethod", arguments = parameters :: Nil, returns = outboundLocalDependencies(selection, defdef.symbol))
+          val call    = mkCallDefDef(NoMods, "innerMethod", parameters :: Nil, outboundLocalDependencies(selection, defdef.symbol))
           
           val returns = mkReturn(outboundLocalDependencies(selection, defdef.symbol))
-          val newDef  = mkDefDef(name = "innerMethod", parameters = parameters :: Nil, body = selected :: returns :: Nil)
+          val newDef  = mkDefDef(NoMods, "innerMethod", parameters :: Nil, selected :: returns :: Nil)
           
           val newRhs = cleanNoPos {
             Block(
