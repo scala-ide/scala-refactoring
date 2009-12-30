@@ -1,9 +1,10 @@
-package scala.tools.refactoring.tests.utils
+package scala.tools.refactoring.tests.util
 
 import org.junit.Assert._
 
 import scala.tools.refactoring._
 import scala.tools.refactoring.regeneration._
+import scala.tools.refactoring.util._
 import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
 

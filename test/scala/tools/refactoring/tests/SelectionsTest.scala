@@ -1,10 +1,10 @@
 package scala.tools.refactoring.tests
 
-import scala.tools.refactoring.tests.utils.{TestHelper, TreePath}
+import scala.tools.refactoring.tests.util.{TestHelper, TreePath}
 import org.junit.{Test, Before}
 import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactoring.Selections
+import scala.tools.refactoring.util.Selections
 import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.analysis.DeclarationIndexes
 import scala.tools.nsc.ast.Trees

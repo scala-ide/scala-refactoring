@@ -1,9 +1,9 @@
-package scala.tools.refactoring.tests.utils
+package scala.tools.refactoring.tests.util
 
-import scala.tools.refactoring.Selections
+import scala.tools.refactoring.util.Selections
 import scala.tools.refactoring.transformation.{Transform, TreeFactory}
 import scala.tools.refactoring.analysis._
-import scala.tools.refactoring.UnknownPosition
+import scala.tools.refactoring.util.UnknownPosition
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens

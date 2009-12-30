@@ -1,12 +1,13 @@
-package scala.tools.refactoring
+package scala.tools.refactoring.util
 
 import scala.collection.mutable.ListBuffer
+import scala.tools.nsc.Global
 import scala.tools.nsc.util.SourceFile
 import scala.tools.nsc.util.RangePosition
 
 trait Selections {
   
-  val global: scala.tools.nsc.Global
+  val global: Global
   import global._
   
   private class FilterTree(start: Int, end: Int, includeChildren: Boolean) extends Traverser {

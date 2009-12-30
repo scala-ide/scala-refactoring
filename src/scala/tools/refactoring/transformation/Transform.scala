@@ -1,6 +1,6 @@
 package scala.tools.refactoring.transformation
 
-import scala.tools.refactoring.UnknownPosition
+import scala.tools.refactoring.util.UnknownPosition
 import scala.tools.nsc.util.NoPosition
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens

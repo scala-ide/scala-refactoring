@@ -1,16 +1,16 @@
 package scala.tools.refactoring.regeneration
 
-import scala.tools.refactoring.Tracing
+import scala.tools.refactoring.util._
 
 import scala.tools.nsc.util._
 import scala.tools.nsc.ast._
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
-import scala.tools.refactoring.{UnknownPosition, InvisiblePosition}
+import scala.tools.refactoring.util.{UnknownPosition, InvisiblePosition}
 
 trait Partitioner {
-  self: Tracing with scala.tools.refactoring.LayoutPreferences =>
+  self: Tracing with LayoutPreferences =>
   val global: scala.tools.nsc.Global
   import global.{Scope => _, _}
      
@@ -126,7 +126,7 @@ trait Partitioner {
             case (Some(start), Some(end)) => (start, end)
             case _ => (tree.pos.start, tree.pos.end)
           }
-          
+                    
           val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, getIndentation(start, tree, scopes.top), tree)
           
           if(preRequirements.size > 0) {
@@ -134,10 +134,14 @@ trait Partitioner {
             preRequirements.clear
           }
           
-          scopes.top add newScope
-          scopes push newScope
-          body
-          scopes pop
+          if(scopes.top == newScope) {
+            body
+          } else {
+            scopes.top add newScope
+	        scopes push newScope
+	        body
+	        scopes pop
+          }
       }
       
       private def noChange(offset: Int, content: Seq[Char]) = Some(offset) 

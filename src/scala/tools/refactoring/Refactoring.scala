@@ -1,5 +1,6 @@
 package scala.tools.refactoring
 
+import scala.tools.refactoring.util._
 import scala.tools.refactoring.regeneration.FragmentRepository
 import scala.tools.refactoring.transformation.TreeFactory
 import scala.tools.refactoring.analysis.TreeAnalysis

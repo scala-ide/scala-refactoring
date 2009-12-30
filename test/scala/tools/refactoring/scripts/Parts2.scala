@@ -1,6 +1,6 @@
 package scala.tools.refactoring.scripts
 
-import scala.tools.refactoring.tests.utils._
+import scala.tools.refactoring.tests.util._
 import scala.tools.refactoring._
 import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.transformation._

@@ -1,4 +1,4 @@
-package scala.tools.refactoring.tests.utils
+package scala.tools.refactoring.tests.util
 
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.Settings

@@ -1,4 +1,4 @@
-package scala.tools.refactoring.tests.utils
+package scala.tools.refactoring.tests.util
 
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.ast._

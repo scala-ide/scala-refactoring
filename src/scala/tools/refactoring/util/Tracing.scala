@@ -1,4 +1,4 @@
-package scala.tools.refactoring
+package scala.tools.refactoring.util
 
 import scala.tools.refactoring.regeneration._
 
@@ -43,7 +43,7 @@ trait Tracing {
       
     } toArray
     
-    print ((indent * level) + marker + msg.format(as: _* ))
+    print ((indent * level) + marker + msg.format(as: _*))
   }
   
   def print(s: String) = println(s)

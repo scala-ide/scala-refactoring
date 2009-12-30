@@ -1,6 +1,6 @@
 package scala.tools.refactoring.regeneration
 
-import scala.tools.refactoring.Tracing
+import scala.tools.refactoring.util.Tracing
 
 import java.util.regex._
 
