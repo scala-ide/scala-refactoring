@@ -94,7 +94,7 @@ case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFi
   def children: List[Fragment] = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
   // would it be enough to just check whether the trees are equal?
   override def equals(that: Any) = that match {
-    case that: TreeScope => that.start == this.start && that.end == this.end && that.file == this.file
+    case that: TreeScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
     case _ => false
   }
 }

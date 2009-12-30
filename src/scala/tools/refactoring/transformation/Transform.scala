@@ -39,7 +39,7 @@ private[refactoring] trait Transform {
     override def transform(tree: Tree): Tree = {
       val res = super.transform(tree)
       if(body.isDefinedAt(res)) {
-        body(res)
+        body(res).copyAttrs(tree)
       } else { 
         res
       }
@@ -47,7 +47,7 @@ private[refactoring] trait Transform {
   }.transform(root)
   
   def replaceTrees(from: List[Tree], what: List[Tree], through: Tree) = {
-    val (keep1, rest) = from break what.head.==
+    val (keep1, rest) = from span what.head.!=
     val (_, keep2) = rest span what.contains
     keep1 ::: through :: keep2
   }

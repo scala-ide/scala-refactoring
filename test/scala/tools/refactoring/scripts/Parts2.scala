@@ -16,21 +16,18 @@ object Parts2 extends CompilerProvider {
   
   def main(args : Array[String]) : Unit = {
     
-    object checkClassNames extends global.Traverser {
-       override def traverse(t: global.Tree): Unit = t match {
-         case global.ClassDef(_, name, _, _) if name.toString.head.isLower => println(name)
-         case _ => super.traverse(t)
-       }
-    }
-    
     val src = """
-      class A {
-        def get(i: Int) {
-          val inc: Int => Int = _ + 1
-/*(*/     val x = inc(i)    /*)*/
-          x
-        }
-      }
+class Test {
+  def calculate(i: Int): Int = {
+    val inc: (Int => Int) = _ + 1
+    //aaa
+    val b = 1 + inc(1) + get
+/*(*/val c = b + 1/*)*/
+    c
+  }
+  
+  def get = 5
+}
 """
     
     val file = compile(src)
@@ -62,7 +59,7 @@ object Parts2 extends CompilerProvider {
           
     var newTree = transform(file) {
       case tree @ Template(parents, self, body) if body exists (_ == selectedMethod) =>
-        new Template(parents, self, newDef :: body).copyAttrs(tree)
+        new Template(parents, self, newDef :: body)
     }
     
     newTree = transform(newTree) {
@@ -70,7 +67,7 @@ object Parts2 extends CompilerProvider {
         refactoring.transform(defdef) {
           case block @ Block(stats, expr) if block == defdef.rhs =>
             cleanNoPos {
-              Block(replaceTrees(stats, selection.trees, call), expr).copyAttrs(block)
+              Block(replaceTrees(stats, selection.trees, call), expr)
             }
         }
     }
