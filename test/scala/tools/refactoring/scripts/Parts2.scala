@@ -17,16 +17,10 @@ object Parts2 extends CompilerProvider {
   def main(args : Array[String]) : Unit = {
     
     val src = """
-class Test {
-  def calculate(i: Int): Int = {
-    val inc: (Int => Int) = _ + 1
-    //aaa
-    val b = 1 + inc(1) + get
-/*(*/val c = b + 1/*)*/
-    c
+class A {
+  def extractFrom {
+/*(*/println("hello")/*)*/
   }
-  
-  def get = 5
 }
 """
     

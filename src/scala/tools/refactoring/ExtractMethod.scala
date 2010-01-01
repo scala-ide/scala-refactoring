@@ -19,21 +19,21 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
 
     val parameters = inboundLocalDependencies(selection, selectedMethod.symbol)
     
-    val call = mkCallDefDef(NoMods, newName, parameters :: Nil, outboundLocalDependencies(selection, selectedMethod.symbol))
- 
-    val returns = mkReturn(outboundLocalDependencies(selection, selectedMethod.symbol))
-    
-    val newDef  = mkDefDef(NoMods, newName, parameters :: Nil, selection.trees ::: returns :: Nil)
+    val returns = outboundLocalDependencies(selection, selectedMethod.symbol)
+     
+    val newDef = mkDefDef(NoMods, newName, parameters :: Nil, selection.trees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
           
     var newTree = transform(file) {
       case tree @ Template(parents, self, body) if body exists (_ == selectedMethod) =>
         new Template(parents, self, replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
     }
     
+    val call = mkCallDefDef(NoMods, newName, parameters :: Nil, returns)
+    
     newTree = transform(newTree) {
-      case d: DefDef if d == selectedMethod =>
+      case d @ DefDef(_, _, _, _, _, rhs) if d == selectedMethod =>
         transform(d) {
-          case block @ Block(stats, expr) =>
+          case block @ Block(stats, expr) if block == rhs =>
             cleanNoPos {
               Block(replaceTrees(stats, selection.trees, call :: Nil), expr)
             }

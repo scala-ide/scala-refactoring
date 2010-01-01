@@ -16,7 +16,12 @@ trait TreeFactory {
   def mkReturn(s: List[global.Symbol]) = cleanNoPos(s match {
     case Nil => EmptyTree
     case x :: Nil => Ident(x) setType x.tpe
-    case xs => gen.mkTuple(xs map (s => Ident(s) setType s.tpe))
+    case xs =>
+      val tpl = typer.typed(gen.mkTuple(xs map (s => Ident(s) setType s.tpe)))
+      tpl match {
+        case t: Apply => t.fun setPos InvisiblePosition //don't show the TupleX..
+      }
+      tpl
   })
   
   def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = cleanNoPos {
@@ -32,7 +37,7 @@ trait TreeFactory {
         // 'val (a, b) =' is represented by various trees, so we cheat and create the assignment in the name of the value: 
         val valName = returns match {
           case x :: Nil => "val "+ x.name
-          case xs => "val ("+ (xs mkString ", ") +")"
+          case xs => "val ("+ (xs map (_.name) mkString ", ") +")"
         }
                 
         ValDef(NoMods, valName, new TypeTree(), Apply(Select(This("") setPos InvisiblePosition, name), args)) 
@@ -45,7 +50,7 @@ trait TreeFactory {
     
     val rhs = body match {
       case Nil => EmptyTree
-      case x :: Nil => x
+      case x :: Nil => Block(x :: Nil, EmptyTree)
       case xs => Block(xs.init, xs.last)
     }
 

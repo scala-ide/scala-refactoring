@@ -82,8 +82,9 @@ trait Partitioner {
               override val start = t.pos.end - t.symbol.nameString.length
               override val end = t.pos.end
             }
-          } else
+          } else /*if (!name.toString.matches("""Tuple\d+""")) */{
             addFragment(t)
+          }
           super.apply 
           
          case (s : Super, Itself) =>
@@ -259,14 +260,16 @@ trait Partitioner {
       }
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+      
         case (t: DefDef, ParamList) =>
           requireBefore("(")
           super.apply
-          requireAfter(")")
+          requireAfter(")")    
           
         case (Apply(fun, args), ParamList) if args.size > 0 =>
         
           val needsParenthesis = fun match {
+            case TypeApply(Select(Select(qualifier, name), _), _) if name.toString matches """Tuple\d+""" => true
             case Select(qualifier, _) if qualifier.pos == UnknownPosition => false
             case Select(qualifier, _) if !qualifier.pos.isRange => true
             case _ => false
@@ -337,6 +340,9 @@ trait Partitioner {
         
         case (t: DefDef, ParamList) =>
           t.vparamss foreach (handleList(_, ArgsSeparator))
+          
+        case (t: TypeApply, ParamList) =>
+          handleList(t.args, ArgsSeparator)
           
         case (t: Apply, ParamList) =>
            handleList(t.args, ArgsSeparator)

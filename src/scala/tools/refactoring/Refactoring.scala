@@ -36,8 +36,8 @@ class Refactoring(val global: Global) extends Transform with Selections with Par
         
     trace("Modified: %s", partitionedModified)
     
-    using(merge(partitionedModified, fr) map (_.print) mkString) {
-       trace("Result: %s", _)
+    using(merge(partitionedModified, fr) map (_.print) mkString) { x: String =>
+       trace("Result: "+ x)
     }
   }
 }
