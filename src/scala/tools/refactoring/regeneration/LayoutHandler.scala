@@ -25,13 +25,18 @@ trait LayoutHandler extends scala.tools.refactoring.util.LayoutPreferences {
       case NewlineSeparator(before, after) => (before, after)
       case s => (s, "")
     }
-      
-    using(layoutBeforeNewline + mapRequirements(current.requiredAfter) + layoutAfterNewline + layoutBeforeNext + mapRequirements(next.requiredBefore)) { res =>
-      if(res == "\n\n}") {
-        println("here")
-      }
-      trace("results in %s", res)
-    }
+    
+    val fixedFirst = layoutBeforeNewline + mapRequirements(current.requiredAfter) + layoutAfterNewline
+    
+    val finalLayout = (if(fixedFirst.endsWith("\n") && layoutBeforeNext.startsWith("\n")) {
+      fixedFirst.substring(0, fixedFirst.length-1)
+    } else {
+      fixedFirst
+    }) + layoutBeforeNext + mapRequirements(next.requiredBefore)
+     
+    trace("results in %s", finalLayout)
+    
+    finalLayout
   }
   
   def fixIndentation(layout: String, existingIndentation: Option[Tuple2[Int, Int]], isEndOfScope: Boolean, currentScopeIndentation: Int): String = context("fix indentation") {
@@ -92,7 +97,7 @@ trait LayoutHandler extends scala.tools.refactoring.util.LayoutPreferences {
           case(_, EmptyParens(l, r) , _) => (l, r, "EmptyParens")
           case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
           case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
-          case(_, NewLine(l, r)     , _) => (l, r, "NewLine")
+          case(_, NewLine(l, r)     , _) => (l, "\n"+r, "NewLine")
           case(_, Comma(l, r),        _) => (l, r, "Comma")
           case(_, s                 , _) => (s, "","NoMatch")
         }

@@ -114,12 +114,18 @@ class LayoutHandlerTest extends TestHelper {
       }
     """ splitsInto 
     """
-▒      class A ▒{
-▒        val a: ▒Int
-▒        val b: ▒Int
-▒        val c: ▒Int
-▒      }▒
-▒    ▒"""
+▒
+      class A ▒{
+▒
+        val a: ▒Int
+▒
+        val b: ▒Int
+▒
+        val c: ▒Int
+▒
+      }▒
+▒
+    ▒"""
   }
   
   @Test

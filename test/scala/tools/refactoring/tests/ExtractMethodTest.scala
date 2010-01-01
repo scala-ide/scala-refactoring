@@ -162,4 +162,46 @@ class ExtractMethodTest extends TestHelper {
       }
     }
     """)
+    
+  @Test
+  def extractBlockExpression = """
+    class A {
+      def extractFrom(): Int = {
+        val a = 1
+/*(*/   a + 1    /*)*/
+      }
+    }
+    """ extractMethod("inc",
+    """
+    class A {
+      def extractFrom(): Int = {
+        val a = 1
+        inc(a)
+      }
+      def inc(a: Int): Int = {
+/*(*/   a + 1    /*)*/
+      }
+    }
+    """)
+    
+  @Test
+  def replaceWholeMethod = """
+    class A {
+      def extractFrom(): Int = {
+/*(*/   val a = 1
+        a + 1    /*)*/
+      }
+    }
+    """ extractMethod("inc",
+    """
+    class A {
+      def extractFrom(): Int = {
+        inc
+      }
+      def inc(): Int = {
+/*(*/   val a = 1
+        a + 1    /*)*/
+      }
+    }
+    """)
 }

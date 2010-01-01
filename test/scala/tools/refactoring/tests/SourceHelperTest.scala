@@ -22,6 +22,12 @@ class SourceHelperTest extends TestHelper {
     assertEquals(None, forwardsTo('{', 10)(0, "  x  "))
     assertEquals(None, forwardsTo('{', 10)(10, " x  "))
   }
+  
+  @Test
+  def testSkipWithComments() = {
+    assertEquals(Some(10), forwardsTo('{', 10)(0, " x  /*{*/ {"))
+    assertEquals(Some(11), skipLayoutTo('{')(0, "   /*{*/  {"))
+  }
     
   @Test
   def testSkipLayout() = {
@@ -105,6 +111,23 @@ class SourceHelperTest extends TestHelper {
     assertEquals("xxx//x\na", liftComment("abc//x\na")(_ => "xxx   \na"))
     
     assertEquals("d/* \n//\n*/e", liftComment("a/* \n//\n*/b")(_ => "d   \n  \n  e"))
+  }
+  
+  @Test
+  def stripCommentInClass() = {
+    assertEquals("""
+    class A {
+      def extractFrom(): Int = {
+        val a = 1
+        a + 1         
+      }
+    }""", stripComment("""
+    class A {
+      def extractFrom(): Int = {
+        val a = 1
+/*(*/   a + 1    /*)*/
+      }
+    }"""))
   }
 }
 

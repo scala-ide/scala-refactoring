@@ -36,27 +36,27 @@ object SourceHelper {
   
   def forwardsTo(to: Char, max: Int)(offset: Int, content: Seq[Char]): Option[Int] = {
     var i = offset
+    val contentWithoutComment = stripComment(content)
     
-    while(i < max && i < content.length - 1 && content(i) != to) {
+    while(i < max && i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to) {
       i += 1
     }
     
-    if(i < content.length && content(i) == to)
+    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
       Some(i)
     else
       None
   }
     
   def skipLayoutTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
-    
     var i = offset
-    // remove the comment
+    val contentWithoutComment = stripComment(content)
     
-    while(i < content.length - 1 && Character.isWhitespace(content(i))) {
+    while(i < contentWithoutComment.length - 1 && Character.isWhitespace(contentWithoutComment(i))) {
       i += 1
     }
     
-    if(i < content.length && content(i) == to)
+    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
       Some(i + 1) //the end points to the character _after_ the found character
     else
       None
@@ -64,31 +64,32 @@ object SourceHelper {
   
   def backwardsSkipLayoutTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
     
-    if( offset >= 0 && offset < content.length && content(offset) == to) 
+    val contentWithoutComment = stripComment(content)
+    
+    if( offset >= 0 && offset < contentWithoutComment.length && contentWithoutComment(offset) == to) 
       return Some(offset)
       
     var i = offset - 1
-    // remove the comment
     
-    while(i > 0 && Character.isWhitespace(content(i))) {
+    while(i > 0 && Character.isWhitespace(contentWithoutComment(i))) {
       i -= 1
     }
     
-    if(i >= 0 && content(i) == to)
+    if(i >= 0 && contentWithoutComment(i) == to)
       Some(i)
     else
       None
   }
   
-  def stripComment(s: String) = splitComment(s)._1
+  def stripComment(s: Seq[Char]) = splitComment(s)._1
   
-  def splitComment(s: String): Pair[String, String] = {
+  def splitComment(s: Seq[Char]): Pair[String, String] = {
            
     var nestingLevel = 0
     var lineComment = false
     var nextToComment = false
     
-    val(comment: Seq[_], text: Seq[_]) = ((s.toList zip (s +" ").toList.tail) map {
+    val(comment: Seq[_], text: Seq[_]) = ((s.toList zip (s ++ " ").toList.tail) map {
       
       case (_1, _) if nextToComment =>
         nextToComment = false

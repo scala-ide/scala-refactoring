@@ -48,12 +48,12 @@ trait TreeFactory {
     
     val formalParameters = parameters map ( _ map (s => cleanAll(ValDef(s, EmptyTree))))
     
-    val rhs = body match {
-      case Nil => EmptyTree
-      case x :: Nil => Block(x :: Nil, EmptyTree)
-      case xs => Block(xs.init, xs.last)
-    }
-
-    DefDef(mods | Flags.METHOD, name, Nil /*type parameters*/, formalParameters, TypeTree(body.last.tpe), rhs)
+    DefDef(mods | Flags.METHOD, name, Nil /*type parameters*/, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
+  }
+  
+  def mkBlock(trees: List[Tree]) = trees match {
+    case Nil => throw new Exception("can't make block from 0 trees")
+    case x :: Nil => Block(x :: Nil, EmptyTree)// setPos UnknownPosition
+    case xs => Block(xs.init, xs.last)// setPos UnknownPosition
   }
 }

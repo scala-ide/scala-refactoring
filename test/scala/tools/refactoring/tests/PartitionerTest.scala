@@ -202,6 +202,25 @@ class PartitionerTest extends TestHelper {
           |→10(2)❨|a|❩|
         }|❩|
       }|❩|
+  |❩"""  
+  
+  @Test
+  def expressionAtEnd =
+  """
+    class A {
+      def extractFrom(): Int = {
+        val a = 1
+/*(*/   a + 1    /*)*/
+      }
+    }
+  """ partitionsInto 
+  """→0(0)❨|
+    class |A| |→4(4)❨|{
+      |def| |extractFrom|(): |Int| = |→6(2)❨|{
+        |val| |a| = |1|
+/*(*/   |a| |+| |1|    /*)*/
+      }|❩|
+    }|❩|
   |❩"""
 
   @Test
