@@ -39,19 +39,23 @@ private[refactoring] trait Transform {
     override def transform(tree: Tree): Tree = {
       val res = super.transform(tree)
       if(body.isDefinedAt(res)) {
-        body(res).copyAttrs(tree)
+        body(res)
       } else { 
         res
       }
     }
   }.transform(root)
   
-  def replaceTrees(from: List[Tree], what: List[Tree], replacement: List[Tree]) = {
+  def replaceTrees[T](from: List[T], what: List[T], replacement: List[T]): List[T] = {
+    if(!from.contains(what.head))
+      return from
+    
     val (keep1, rest) = from span what.head.!=
     val (_, keep2) = rest span what.contains
     keep1 ::: replacement ::: keep2
   }
   
+  // TODO remove
   def reverseClassParameters(t: Tree) = transform(t) {
     case tree @ Template(parents, self, body) => new Template(parents, self, body.reverse).copyAttrs(tree)
   }

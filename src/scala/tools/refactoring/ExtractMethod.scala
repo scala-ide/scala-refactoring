@@ -25,19 +25,27 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
           
     var newTree = transform(file) {
       case tree @ Template(parents, self, body) if body exists (_ == selectedMethod) =>
-        new Template(parents, self, replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
+        new Template(parents, self, replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil)).copyAttrs(tree)
     }
     
     val call = mkCallDefDef(NoMods, newName, parameters :: Nil, returns)
     
     newTree = transform(newTree) {
-      case d @ DefDef(_, _, _, _, _, rhs) if d == selectedMethod =>
-        transform(d) {
-          case block @ Block(stats, expr) if block == rhs =>
-            cleanNoPos {
-              mkBlock(replaceTrees(stats ::: expr :: Nil, selection.trees, call :: Nil))
+      case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
+        if(selection.trees.size > 1) {
+          transform(d) {
+            case b @ Block(stats, expr) => {
+              cleanNoPos {
+                mkBlock(replaceTrees(stats ::: expr :: Nil, selection.trees, call :: Nil))
+              } copyAttrs b
             }
+          }
+        } else {
+          transform(d) {
+            case t: Tree if t == selection.trees.head => call setPos t.pos // replaceTree
+          }
         }
+      }
     }
     
     refactor(file, newTree)

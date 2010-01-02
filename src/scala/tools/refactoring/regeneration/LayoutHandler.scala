@@ -51,12 +51,18 @@ trait LayoutHandler extends scala.tools.refactoring.util.LayoutPreferences {
         case Some((originalScopeIndentation, originalIndentation)) =>
           trace("this is a reused fragment")
 
+            trace("original indentation was %d, original scope indentation was %d", originalIndentation, originalScopeIndentation)
+            
             val newIndentation = currentScopeIndentation + (originalIndentation - originalScopeIndentation)
             
-            trace("original indentation was %d, original scope indentation was %d", originalIndentation, originalScopeIndentation)
-            trace("new scope's indentation is %d → indent to %d", currentScopeIndentation, newIndentation)
-            
-            if(newIndentation != originalIndentation) indentString(newIndentation) else layout
+            if(newIndentation != originalIndentation || layout.length < newIndentation) {
+              trace("new scope's indentation is %d → indent to %d", currentScopeIndentation, newIndentation)
+              indentString(newIndentation) 
+            }
+            else {
+              trace("is already correctly indented, layout length is %d", layout.length)
+              layout
+            }
           
         case None =>
           trace("this is a new fragment")

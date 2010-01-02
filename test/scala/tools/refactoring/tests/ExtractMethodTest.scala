@@ -204,4 +204,100 @@ class ExtractMethodTest extends TestHelper {
       }
     }
     """)
+    
+  @Test
+  def extractIfCond = """
+    class A {
+      def extractFrom(): Boolean = {
+        if/*aa*/( /*(*/ true == true /*)*/ )
+          true
+        else
+          false 
+      }
+    }
+    """ extractMethod("test",
+    """
+    class A {
+      def extractFrom(): Boolean = {
+        if/*aa*/(test)
+          true
+        else
+          false 
+      }
+      def test(): Boolean = {
+      /*(*/ true == true /*)*/ 
+      }
+    }
+    """)
+        
+  @Test
+  def extractIfThen = """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true)
+ /*(*/    true /*)*/
+        else
+          false 
+      }
+    }
+    """ extractMethod("test",
+    """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true)
+          test
+        else
+          false 
+      }
+      def test(): Boolean = {
+        /*(*/    true /*)*/
+      }
+    }
+    """)  
+    
+  @Test
+  def extractIfElse = """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true)
+          true
+        else {
+ /*(*/    false /*)*/
+        }
+      }
+    }
+    """ extractMethod("test",
+    """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true)
+          true
+        else {
+          test
+        }
+      }
+      def test(): Boolean = {
+        /*(*/    false /*)*/
+      }
+    }
+    """)
+    
+  @Test
+  def extractIfSingleLineElse = """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true) true else /*(*/ false /*)*/
+      }
+    }
+    """ extractMethod("test",
+    """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true) true else /*(*/ test
+      }
+      def test(): Boolean = {
+        false /*)*/
+      }
+    }
+    """)    
 }

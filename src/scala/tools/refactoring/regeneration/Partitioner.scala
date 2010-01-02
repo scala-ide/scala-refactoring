@@ -33,6 +33,9 @@ trait Partitioner {
     case class  ClassParams(ps: List[Tree]) extends TreeElement
     case class  ClassBody(ps: List[Tree]) extends TreeElement
     case object BlockBody extends TreeElement
+    case object Cond extends TreeElement
+    case object Then extends TreeElement
+    case object Else extends TreeElement
     
     abstract class Contribution {
 
@@ -94,7 +97,7 @@ trait Partitioner {
           super.apply 
                    
         case (t: Tree, Itself) =>
-          addFragment(t) 
+          addFragment(t)
           super.apply 
           
         case _ => super.apply 
@@ -118,8 +121,9 @@ trait Partitioner {
             scopes.top.children.last.requireBefore(new Requisite("\n", "\n"))
             scopes.top.children.last.requireBefore(new Requisite("}", "}"))
             scopes pop
-          } else
+          } else {
             body
+          }
             
         case _ =>
           // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
@@ -127,8 +131,10 @@ trait Partitioner {
             case (Some(start), Some(end)) => (start, end)
             case _ => (tree.pos.start, tree.pos.end)
           }
-                    
-          val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, getIndentation(start, tree, scopes.top), tree)
+          
+          val indentation = getIndentation(start, tree, scopes.top)
+          
+          val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, indentation, tree)
           
           if(preRequirements.size > 0) {
             preRequirements.foreach(newScope requireBefore _)
@@ -163,6 +169,33 @@ trait Partitioner {
           
         case (t: Match, _) =>
           scope(t) {
+            super.apply
+          }  
+
+        case (t: If, Cond) =>
+          scope(
+              t.cond, 
+              indent = false,
+              backwardsSkipLayoutTo('('),
+              skipLayoutTo(')')) {
+            super.apply
+          }
+                    
+        case (t: If, Then) if indentationLength(t.thenp) > indentationLength(t) =>
+          scope(
+              t.thenp, 
+              indent = true,
+              ((_1, _2) => backwardsSkipLayoutTo('{')(_1, _2) orElse backwardsSkipLayoutTo('\n')(_1, _2)),
+              ((_1, _2) => skipLayoutTo('}')(_1, _2) orElse (skipLayoutTo('\n')(_1, _2) map (_ - 1)))) {
+            super.apply
+          }  
+          
+        case (t: If, Else) if indentationLength(t.elsep) > indentationLength(t) =>
+          scope(
+              t.elsep,
+              indent = true,
+              ((_1, _2) => backwardsSkipLayoutTo('{')(_1, _2) orElse backwardsSkipLayoutTo('\n')(_1, _2)),
+              ((_1, _2) => skipLayoutTo('}')(_1, _2) orElse (skipLayoutTo('\n')(_1, _2) map (_ - 1)))) {
             super.apply
           }
           
@@ -264,7 +297,7 @@ trait Partitioner {
         case (t: DefDef, ParamList) =>
           requireBefore("(")
           super.apply
-          requireAfter(")")    
+          requireAfter(")")
           
         case (Apply(fun, args), ParamList) if args.size > 0 =>
         
@@ -287,8 +320,7 @@ trait Partitioner {
           super.apply
                   
         case (t: DefDef, Rhs) =>
-          //if(t.tpe != )
-            requireAfter("=", " = ")
+          requireAfter("=", " = ")
           super.apply 
           
         case (_, Rhs) =>
@@ -310,6 +342,11 @@ trait Partitioner {
         case (_, ClassBody(ts)) if ts.size > 0 =>
           super.apply
           requireAfter("\n", "\n")
+          
+        case (t: If, Cond) =>
+          requireAfter("(")
+          super.apply
+          requireAfter(")")
           
         case(_, Itself) =>
           
@@ -371,6 +408,15 @@ trait Partitioner {
           
         case (_, Mods) =>
           ()
+          
+        case (t: If, Cond) =>
+          traverse(t.cond)
+          
+        case (t: If, Then) =>
+          traverse(t.thenp)
+          
+        case (t: If, Else) =>
+          traverse(t.elsep)
             
         case x => 
           //println("don't know what to do with "+ x)
@@ -498,9 +544,12 @@ trait Partitioner {
         handle(tree → Itself)
         
       case Apply(fun, args) =>
-      //scope for ()?
-      //  traverse(fun)
         handle(tree → Itself)
+        
+      case If(cond, thenp, elsep) =>
+        handle(tree → Cond)
+        handle(tree → Then)
+        handle(tree → Else)
 
       case _ =>
         super.traverse(tree)
@@ -520,7 +569,11 @@ trait Partitioner {
   
   def essentialFragments(root: Tree, fs: FragmentRepository) = new Visitor {
      val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
-       def getIndentation(start: Int, tree: Tree, scope: Scope) = SourceHelper.indentationLength(start, tree.pos.source.content) - fs.scopeIndentation(tree).getOrElse(0)
+       def getIndentation(start: Int, tree: Tree, scope: Scope) = {
+         val v1 = SourceHelper.indentationLength(start, tree.pos.source.content)
+         val v2 = fs.scopeIndentation(tree).getOrElse(0)
+         v1 - v2
+       }
      }
   }.visit(root)
   
@@ -528,7 +581,11 @@ trait Partitioner {
     
     val parts = new Visitor {
       val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
-        def getIndentation(start: Int, tree: Tree, scope: Scope) = SourceHelper.indentationLength(start, tree.pos.source.content) - scope.indentation
+        def getIndentation(start: Int, tree: Tree, scope: Scope) = { 
+          val v1 = SourceHelper.indentationLength(start, tree.pos.source.content)
+          val v2 = scope.indentation
+          v1 - v2
+        }
       }
     }.visit(root)
     

@@ -69,11 +69,12 @@ class SourceHelperTest extends TestHelper {
   class A
     def x
     // type T
+    def y
 """
     
     assertEquals(2, indentationLength(5, src))
     assertEquals(4, indentationLength(17, src))
-    assertEquals(4, indentationLength(30, src))
+    assertEquals(12, indentationLength(33, src))
   }
   
   @Test

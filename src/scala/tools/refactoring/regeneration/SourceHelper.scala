@@ -23,13 +23,14 @@ object SourceHelper {
   }
   
   def indentationLength(start: Int, content: Seq[Char]) = {
-    var i = if(start == content.length) start - 1 else start
+    var i = if(start == content.length || content(start) == '\n') start - 1 else start
+    val contentWithoutComment = stripComment(content)
         
-    while(i >= 0 && content(i) != '\n')
+    while(i >= 0 && contentWithoutComment(i) != '\n')
       i -= 1
     i += 1
         
-    val indentation = """\s*""".r.findFirstIn(content.slice(i, start) mkString).getOrElse("")
+    val indentation = """\s*""".r.findFirstIn(contentWithoutComment.slice(i, start) mkString).getOrElse("")
 
     indentation.length
   }
@@ -52,7 +53,7 @@ object SourceHelper {
     var i = offset
     val contentWithoutComment = stripComment(content)
     
-    while(i < contentWithoutComment.length - 1 && Character.isWhitespace(contentWithoutComment(i))) {
+    while(i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
       i += 1
     }
     
@@ -71,7 +72,7 @@ object SourceHelper {
       
     var i = offset - 1
     
-    while(i > 0 && Character.isWhitespace(contentWithoutComment(i))) {
+    while(i > 0 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
       i -= 1
     }
     
