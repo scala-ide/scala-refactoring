@@ -80,12 +80,17 @@ trait Partitioner {
             scopes.top add new SymTreeFragment(t) {
               override val end = tree.pos.end
             }
+          } else if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
+            scopes.top add new SymTreeFragment(t) {
+              override val start = t.pos.start
+              override val end = qualifier.pos.start
+            }            
           } else if (qualifier.pos.isRange) {
             scopes.top add new SymTreeFragment(t) {
               override val start = t.pos.end - t.symbol.nameString.length
               override val end = t.pos.end
             }
-          } else /*if (!name.toString.matches("""Tuple\d+""")) */{
+          } else {
             addFragment(t)
           }
           super.apply 
@@ -470,9 +475,14 @@ trait Partitioner {
           handle(tree, Rhs)
         }
 
-      case select @ Select(qualifier, name)  =>
-        traverse(qualifier)
-        handle(tree, Itself)
+      case select @ Select(qualifier, name) =>
+        if(qualifier.pos.isRange && select.pos.isRange && qualifier.pos.start > select.pos.start) /*e.g. !true */ {
+          handle(tree, Itself)
+          traverse(qualifier)
+        } else {
+          traverse(qualifier)
+          handle(tree, Itself) 
+        }
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         

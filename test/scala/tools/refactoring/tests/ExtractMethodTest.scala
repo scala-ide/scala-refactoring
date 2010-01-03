@@ -280,7 +280,7 @@ class ExtractMethodTest extends TestHelper {
         /*(*/    false /*)*/
       }
     }
-    """)
+    """)  
     
   @Test
   def extractIfSingleLineElse = """

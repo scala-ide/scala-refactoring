@@ -241,4 +241,23 @@ class PartitionerTest extends TestHelper {
         }|❩|
       }|❩|
   |❩"""
+  
+  @Test
+  def ifCondition = 
+  """
+    class A {
+      def extractFrom {
+        val abcd = false
+        if(!abcd) true
+      }
+    }
+  """ partitionsInto
+  """→0(0)❨|
+    class |A| |→4(4)❨|{
+      |def| |extractFrom| |→6(2)❨|{
+        |val| |abcd| = |false|
+        if|→8(2)❨|(|!|abcd|)|❩| |→8(2)❨|true|❩|
+      }|❩|
+    }|❩|
+  |❩"""
 }
