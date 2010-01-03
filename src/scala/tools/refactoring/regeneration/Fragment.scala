@@ -141,6 +141,7 @@ case class FlagFragment(flag: Long, pos: Position) extends Fragment with Origina
     case ABSTRACT     => "abstract"
     case PARAM        => ""
     case Tokens.VAL   => "val"
+    case Tokens.VAR   => "var"
     case Tokens.TYPE  => "type"
     case Tokens.DEF   => "def"
     case _            => "<unknown>: " + flagsToString(flag)
