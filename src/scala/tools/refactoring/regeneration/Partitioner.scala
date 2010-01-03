@@ -185,8 +185,8 @@ trait Partitioner {
           scope(
               t.thenp, 
               indent = true,
-              ((_1, _2) => backwardsSkipLayoutTo('{')(_1, _2) orElse backwardsSkipLayoutTo('\n')(_1, _2)),
-              ((_1, _2) => skipLayoutTo('}')(_1, _2) orElse (skipLayoutTo('\n')(_1, _2) map (_ - 1)))) {
+              ((s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c)),
+              ((s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1)))) {
             super.apply
           }  
           
@@ -194,8 +194,8 @@ trait Partitioner {
           scope(
               t.elsep,
               indent = true,
-              ((_1, _2) => backwardsSkipLayoutTo('{')(_1, _2) orElse backwardsSkipLayoutTo('\n')(_1, _2)),
-              ((_1, _2) => skipLayoutTo('}')(_1, _2) orElse (skipLayoutTo('\n')(_1, _2) map (_ - 1)))) {
+              ((s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c)),
+              ((s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1)))) {
             super.apply
           }
           
@@ -570,8 +570,17 @@ trait Partitioner {
   
   def essentialFragments(root: Tree, fs: FragmentRepository) = new Visitor {
      val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
-       def getIndentation(start: Int, tree: Tree, scope: Scope) = {
+       def getIndentation(start: Int, tree: Tree, scope: Scope): Int = {
          val v1 = SourceHelper.indentationLength(start, tree.pos.source.content)
+         
+         val scopeIndentation = scope match {
+           case scope: TreeScope => SourceHelper.indentationLength(scope.start, scope.file.content)
+           case _ => -1
+         }
+         
+         if(scopeIndentation == v1)
+           return 0
+         
          val v2 = fs.scopeIndentation(tree).getOrElse(0)
          v1 - v2
        }
@@ -579,7 +588,6 @@ trait Partitioner {
   }.visit(root)
   
   def splitIntoFragments(root: Tree): TreeScope = {
-    
     val parts = new Visitor {
       val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
         def getIndentation(start: Int, tree: Tree, scope: Scope) = { 

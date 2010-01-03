@@ -65,7 +65,6 @@ trait Merger {
       trace("the resulting layout is %s", indentedLayout)
       
       new StringFragment(indentedLayout) :: Nil
-    
     }
     
     def printFragment(f: Fragment) = f match {

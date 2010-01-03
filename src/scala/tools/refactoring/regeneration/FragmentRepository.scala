@@ -18,22 +18,28 @@ class FragmentRepository(root: Scope) {
   }
   
   private def visit(part: Scope, find: Trees#Tree): Option[Scope] = {
-    part.children foreach { child =>
-      child match {
-        case child: WithTree if child.tree.pos == find.pos => return Some(part)
-        case _ =>
-      }
-
-      child match {
-        case scope: Scope => 
-          visit(scope, find) match {
-            case Some(res) => return Some(res)
-            case None =>
+    
+    var found: Option[Scope] = None
+    
+    def innerVisit(part: Scope) {
+    
+      part.children foreach { child =>
+      
+        if(child.isInstanceOf[WithTree]) {
+          if(child.asInstanceOf[WithTree].tree.pos.sameRange(find.pos) && found == None) {
+            found = Some(part)
           }
-        case _ =>
+        }
+          
+        if(child.isInstanceOf[Scope] && found == None) {
+          innerVisit(child.asInstanceOf[Scope])
+        }
       }
     }
-    None
+    
+    innerVisit(part)
+    
+    return found
   }
   
   def exists(part: Fragment) = visit(root, part) match {
@@ -43,7 +49,15 @@ class FragmentRepository(root: Scope) {
   
   def scopeIndentation(part: Fragment) = visit(root, part) map (_.indentation)
 
-  def scopeIndentation(tree: Trees#Tree) = visit(root, tree) map (_.indentation)
+  def scopeIndentation(tree: Trees#Tree) = {
+    val treeScope = visit(root, tree)
+    if(tree.isInstanceOf[Trees#Block]) {
+      val treeScope = visit(root, tree)
+      val i = treeScope.get.indentation
+      ()
+    }
+    treeScope map (_.indentation)
+  }
   
   def getNext(part: Fragment) = get(part, (xs => xs), (_, _, _))
 

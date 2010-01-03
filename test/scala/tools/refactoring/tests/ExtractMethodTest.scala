@@ -300,4 +300,41 @@ class ExtractMethodTest extends TestHelper {
       }
     }
     """)    
+    
+  @Test
+  def extractIfElseTry = """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true) /*(*/  true  /*)*/
+        else {
+          try {
+            println("hello world")
+            if(true) true
+            else false
+          } catch {
+            case _ => false
+          }
+        }
+      }
+    }
+    """ extractMethod("test",
+    """
+    class A {
+      def extractFrom(): Boolean = {
+        if(true == true) /*(*/  test
+        else {
+          try {
+            println("hello world")
+            if(true) true
+            else false
+          } catch {
+            case _ => false
+          }
+        }
+      }
+      def test(): Boolean = {
+        true  /*)*/
+      }
+    }
+    """)
 }
