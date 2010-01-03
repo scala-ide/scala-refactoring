@@ -206,7 +206,7 @@ trait Partitioner {
               adjustStart = {
                 (start, content) =>
                   val abortOn = (ts filter (_.pos.isRange)).map(_.pos.start).foldLeft(content.length)(_ min _)
-                  val startFrom = ((body ::: parents filter (_.pos.isRange)) -- ts) .foldLeft(start) ( _ max _.pos.end )
+                  val startFrom = ((body ::: parents filter (_.pos.isRange)) filterNot (ts contains)) .foldLeft(start) ( _ max _.pos.end )
                   forwardsTo('{', abortOn)(startFrom, content)
                 }, 
               adjustEnd = noChange) {
@@ -546,10 +546,11 @@ trait Partitioner {
       case Apply(fun, args) =>
         handle(tree → Itself)
         
-      case If(cond, thenp, elsep) =>
+      case t @ If(cond, thenp, elsep) =>
         handle(tree → Cond)
         handle(tree → Then)
-        handle(tree → Else)
+        if(t.elsep.pos.isRange)
+          handle(tree → Else)
 
       case _ =>
         super.traverse(tree)
