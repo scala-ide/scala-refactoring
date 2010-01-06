@@ -21,7 +21,7 @@ trait DeclarationIndexes {
     private object defTreeTraverser extends Traverser {
       override def traverse(t: Tree) = {
         t match {
-          case t: DefTree => 
+          case t: DefTree if t.symbol != NoSymbol => 
             defs += t.symbol → t
             children_.getOrElseUpdate(t.symbol.owner, new Defs) += t.symbol
           case t: RefTree => 
@@ -41,5 +41,11 @@ trait DeclarationIndexes {
     def children(s: Symbol): List[Symbol] = this.children_.getOrElse(s, new Defs) toList
    
     def processTree(t: Tree) = defTreeTraverser traverse t
+    
+    def clear {
+      defs.clear()
+      refs.clear()
+      children_.clear()
+    }
   }
 }

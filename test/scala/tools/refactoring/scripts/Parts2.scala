@@ -17,20 +17,24 @@ object Parts2 extends CompilerProvider {
   def main(args : Array[String]) : Unit = {
     
     val src = """
-class A {
-  def extractFrom {
-/*(*/println("hello")/*)*/
-  }
-}
+    class A {
+      def extractFrom {
+        if (true) true
+        else {
+          try {
+            println("huhu")
+            if (true) true
+            else false
+          } catch {
+            case _ => ()
+          }
+        }
+      }
+    }
+
 """
     
-    val file = compile(src)
-    
-    val refactoring = new ExtractMethod(global, file, src.indexOf("/*(*/"), src.indexOf("/*)*/"))
-   
-    val result = refactoring.perform("extracted")
-        
-    println(result)
+    val tree = treeFrom(src)
     
     exit(0)
   }

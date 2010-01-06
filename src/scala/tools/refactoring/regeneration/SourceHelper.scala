@@ -7,7 +7,7 @@ object SourceHelper {
   
   def indentationLength(f: Fragment): Option[Int] = f match {
     case f: OriginalSourceFragment => try {
-      if(f.isEndOfScope) // end of scope's 'start' points to 'end' and can therefore be on the newline
+      if(f.isEndOfScope /*&& f.start > 0 */) // end of scope's 'start' points to 'end' and can therefore be on the newline
 	      Some(indentationLength(f.start-1, f.file.content))
 	    else
 	      Some(indentationLength(f.start, f.file.content))

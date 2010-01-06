@@ -36,6 +36,7 @@ trait Partitioner {
     case object Cond extends TreeElement
     case object Then extends TreeElement
     case object Else extends TreeElement
+    case object Name extends TreeElement
     
     abstract class Contribution {
 
@@ -100,6 +101,13 @@ trait Partitioner {
              override val end = tree.pos.end
            })
           super.apply 
+          
+        case (t: ImplDef, Itself) =>
+          super.apply
+          
+        case (t: ImplDef, Name) =>
+          addFragment(t)
+          super.apply
                    
         case (t: Tree, Itself) =>
           addFragment(t)
@@ -138,8 +146,8 @@ trait Partitioner {
           }
           
           val indentation = getIndentation(start, tree, scopes.top)
-          
-          val newScope = TreeScope(Some(scopes.top), start, end, tree.pos.source, indentation, tree)
+                    
+          val newScope = TreeScope(Some(scopes.top), start, if(end + 1 == tree.pos.source.content.length) end + 1 else end, tree.pos.source, indentation, tree)
           
           if(preRequirements.size > 0) {
             preRequirements.foreach(newScope requireBefore _)
@@ -150,9 +158,9 @@ trait Partitioner {
             body
           } else {
             scopes.top add newScope
-	        scopes push newScope
-	        body
-	        scopes pop
+  	        scopes push newScope
+	          body
+	          scopes pop
           }
       }
       
@@ -161,6 +169,18 @@ trait Partitioner {
       import SourceHelper._
 
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
+      
+        case (t: ImplDef, Itself) =>
+          scope(
+              t, 
+              indent = false, 
+              (_, _) => {
+                val minimum = t.mods.positions.map(_._2.start).foldLeft(t.pos.start)(_ min _) 
+                Some(minimum)
+              },
+              noChange) {
+            super.apply
+          }
         
         case (t: DefDef, Rhs) if !t.rhs.isInstanceOf[Block] && t.rhs != EmptyTree =>
           scope(t.rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
@@ -190,8 +210,8 @@ trait Partitioner {
           scope(
               t.thenp, 
               indent = true,
-              ((s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c)),
-              ((s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1)))) {
+              (s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c),
+              (s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1))) {
             super.apply
           }  
           
@@ -199,8 +219,8 @@ trait Partitioner {
           scope(
               t.elsep,
               indent = true,
-              ((s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c)),
-              ((s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1)))) {
+              (s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c),
+              (s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1))) {
             super.apply
           }
           
@@ -422,6 +442,19 @@ trait Partitioner {
           
         case (t: If, Else) =>
           traverse(t.elsep)
+          
+        case (t: ModuleDef, Itself) =>
+          handle(t → Mods)
+          handle(t → Name)
+          traverseTrees(t.mods.annotations)
+          traverse(t.impl)  
+          
+        case (t: ClassDef, Itself) =>
+          handle(t → Mods)
+          handle(t → Name)
+          traverseTrees(t.mods.annotations)
+          traverseTrees(t.tparams)
+          traverse(t.impl)
             
         case x => 
           //println("don't know what to do with "+ x)
@@ -451,15 +484,13 @@ trait Partitioner {
         super.traverse(tree)
         
       case c @ ClassDef(mods, name, tparams, impl) =>
-        handle(tree, Mods)
         if (!c.symbol.isAnonymousClass)
           handle(tree, Itself)
-        super.traverse(tree)
+        else
+          super.traverse(tree)
         
       case m @ ModuleDef(mods, name, impl) =>
-        handle(tree, Mods)
         handle(tree, Itself)
-        super.traverse(tree)
         
       case v @ ValDef(mods, name, tpt, rhs) =>
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {

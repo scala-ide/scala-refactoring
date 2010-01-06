@@ -54,8 +54,8 @@ class LayoutHandlerTest extends TestHelper {
     assertEquals("  \nC", →("  \nC"  , None, true, 0))
   }
 
-  def req(r: String) = (new Fragment { requireAfter(new Requisite(r)); requireBefore(new Requisite(r)); val print = "" })
-  def req(r1: String, r2: String) = (new Fragment { requireAfter(Requisite(r1, r2)); requireBefore(Requisite(r1, r2)); val print = "" })
+  def req(r: String) = (new Fragment { requireAfter(new Requisite(r)); requireBefore(new Requisite(r)); val print = "": Seq[Char] })
+  def req(r1: String, r2: String) = (new Fragment { requireAfter(Requisite(r1, r2)); requireBefore(Requisite(r1, r2)); val print = "": Seq[Char] })
   
   @Test
   def simpleRequisites() = {
@@ -89,7 +89,7 @@ class LayoutHandlerTest extends TestHelper {
   //@Test
   def overlappingRequisites() = {
     
-    def req(r: String) = (new Fragment { requireAfter(new Requisite(r)); requireBefore(new Requisite(r)); val print = "" })
+    def req(r: String) = (new Fragment { requireAfter(new Requisite(r)); requireBefore(new Requisite(r)); val print = "": Seq[Char] })
     
     assertEquals("123", processRequisites(req("23"), "12", "", req("")))
     
@@ -115,7 +115,7 @@ class LayoutHandlerTest extends TestHelper {
     """ splitsInto 
     """
 ▒
-      class A ▒{
+      class ▒A ▒{
 ▒
         val a: ▒Int
 ▒
@@ -123,7 +123,7 @@ class LayoutHandlerTest extends TestHelper {
 ▒
         val c: ▒Int
 ▒
-      }▒
+      }▒▒▒
 ▒
     ▒"""
   }

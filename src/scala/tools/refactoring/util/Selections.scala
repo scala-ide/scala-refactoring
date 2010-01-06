@@ -46,13 +46,16 @@ trait Selections {
       case _ => None
     }
     
-    lazy val enclosingDefDef = root find { // only head?
-      // what happens with nested defs? should we use filter and take the last (== smallest) one?
+    lazy val enclosingDefDef = root filter {
       case t: DefDef if this isContainedIn t => true
       case _ => false
+    } match {
+      case Nil => None
+      case x => Some(x.last)
     }
     
     def contains(t: Tree) = t.pos.source == root.pos.source && pos.includes(t.pos)
+    
     def isContainedIn(t: Tree) = t.pos.source == root.pos.source && t.pos.includes(pos)
   }
 }

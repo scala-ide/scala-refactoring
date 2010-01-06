@@ -9,16 +9,15 @@ trait Merger {
   
   def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = context("merge fragments") {
     
-    def withLayout(current: Fragment, next: Fragment, scope: Scope): List[Fragment] = {
+    def withLayout(current: Fragment, next: Fragment, scope: Scope): (Fragment, Boolean) = {
     
       val currentExists = allFragments exists current
       val originalNext  = allFragments getNext current
       
-      val layout = if(currentExists && originalNext.isDefined && originalNext.get._3 == next) {
+      val (layout, somethingChanged) = if(currentExists && originalNext.isDefined && originalNext.get._3 == next) {
         val layout = originalNext.get._2 mkString ""
         trace("%s and %s are in the original order and enclose %s", current, next, layout)
-        layout
-        //processRequisites(current, layout, "", next)
+        (layout, false)
       } else {
         trace("%s and %s have been rearranged", current, next)
         /*
@@ -53,9 +52,11 @@ trait Merger {
         
         trace("the next fragment is %s", next)
         
-        using(processRequisites(current, layoutAfterCurrent, layoutBeforeNext, next)) {
-          trace("layout is %s", _)
-        }
+        val layout = processRequisites(current, layoutAfterCurrent, layoutBeforeNext, next)
+        
+        trace("layout is %s", layout)
+        
+        (layout, true)
       }
 	    
 	    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => SourceHelper.indentationLength(next) map (s → _))
@@ -64,7 +65,7 @@ trait Merger {
   
       trace("the resulting layout is %s", indentedLayout)
       
-      new StringFragment(indentedLayout) :: Nil
+      (new StringFragment(indentedLayout), somethingChanged || indentedLayout != layout)
     }
     
     def printFragment(f: Fragment) = f match {
@@ -75,14 +76,36 @@ trait Merger {
       case _ => StringFragment("<non-tree part>")
     }
 
-    def innerMerge(scope: Scope): List[Fragment] = context("inner merger loop") {
+    def innerMerge(scope: Scope): (List[Fragment], Boolean) = context("inner merger loop") {
       trace("current scope is %s", scope)
-      (scope.children zip scope.children.tail) flatMap {
-        case (current: Scope, next) => innerMerge(current) ::: withLayout(current, next, scope)
-        case (current, next) => printFragment(current) :: withLayout(current, next, scope)
+      val result = new scala.collection.mutable.ListBuffer[Fragment]
+      var anyChanges = false
+      
+      (scope.children zip scope.children.tail) foreach {
+        case (current: Scope, next) => 
+          val (resultingScope, changedScope) = innerMerge(current)
+          val (layout, changed) = withLayout(current, next, scope)
+          result ++= resultingScope
+          result += layout
+          anyChanges |= (changed || changedScope)
+        case (current, next) => 
+          val (layout, changed) = withLayout(current, next, scope)
+          result += printFragment(current)
+          result += layout
+          anyChanges |= changed
       }
+      (scope match {
+        case scope: TreeScope if !anyChanges =>
+          trace("no changes found, keep scope")
+          (new Fragment {
+            def print = scope.file.content.slice(scope.start, scope.end) mkString
+          }) :: Nil
+        case _ => 
+          trace("scope changed")
+          result toList
+      }, anyChanges)
     }
     
-    innerMerge(scope)
+    innerMerge(scope)._1
   }
 }

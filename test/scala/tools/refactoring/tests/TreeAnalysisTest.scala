@@ -17,7 +17,8 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   protected val index = new DeclarationIndex
   
   def withIndex(src: String)(body: (Tree, DeclarationIndex) => Unit ) {
-    val tree = treeFrom(src)
+    val tree = treeFrom(src, "TreeAnalysisTest")
+    index.clear
     index.processTree(tree)
     body(tree, index)
   }
@@ -40,7 +41,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   def findInboudLocalAndParameter() = {
     
     assertInboundLocalDependencies("value i, value a", """
-      class A {
+      class A9 {
         def addThree(i: Int) = {
           val a = 1
  /*(*/    val b = a + 1 + i  /*)*/
@@ -55,7 +56,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   def findParameterDependency() = {
     
     assertInboundLocalDependencies("value i", """
-      class A {
+      class A8 {
         def addThree(i: Int) = {
           val a = 1
  /*(*/    val b = for(x <- 0 to i) yield x  /*)*/
@@ -69,7 +70,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   def findNoDependency() = {
     
     assertInboundLocalDependencies("", """
-      class A {
+      class A7 {
         def addThree(i: Int) = {
           val a = 1
  /*(*/    val b = 2 * 21  /*)*/
@@ -80,27 +81,10 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   }
   
   @Test
-  def findOnClassLevel() = {
-    
-    assertInboundLocalDependencies("value a", """
-      class A {
-        val a = 1
- /*(*/  val b = a + 1 /*)*/
-
-        def addThree(i: Int) = {
-          val a = 1
-          val b = 2 * 21  
-          b
-        }
-      }
-    """)
-  }  
-  
-  @Test
   def findDependencyOnMethod() = {
     
     assertInboundLocalDependencies("value i, method inc", """
-      class A {
+      class A6 {
         def addThree(i: Int) = {
           def inc(j: Int) = j + 1
  /*(*/    val b = inc(inc(inc(i)))  /*)*/
@@ -114,7 +98,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   def findOutboundDeclarations() = {
     
     assertOutboundLocalDependencies("value b, value b, value b", """
-      class A {
+      class A5 {
         def addThree = {
  /*(*/    val b = 1  /*)*/
           b + b + b
@@ -127,7 +111,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   def multipleReturnValues() = {
     
     assertOutboundLocalDependencies("value a, value b, value c", """
-      class A {
+      class TreeAnalysisTest {
         def addThree = {
  /*(*/    val a = 'a'
           val b = 'b'
@@ -142,7 +126,7 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
   def dontReturnArgument() = {
     
     assertOutboundLocalDependencies("", """
-      class A {
+      class TreeAnalysisTest {
         def go = {
           var a = 1
  /*(*/    a = 2  /*)*/
@@ -151,6 +135,24 @@ class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnaly
       }
     """)
   }
-  
+    
+  // @Test  this test fails when run together with other tests that use the same compiler
+  def findOnClassLevel() = {
+    
+    assertInboundLocalDependencies("value a", """
+    class Outer {
+      class B2 {
+        val a = 1
+ /*(*/  val b = a + 1 /*)*/
+
+        def addThree(i: Int) = {
+          val a = 1
+          val b = 2 * 21  
+          b
+        }
+      }
+    }
+    """)
+  }
 }
 

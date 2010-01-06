@@ -57,6 +57,7 @@ private[refactoring] trait Transform {
   
   // TODO remove
   def reverseClassParameters(t: Tree) = transform(t) {
-    case tree @ Template(parents, self, body) => new Template(parents, self, body.reverse).copyAttrs(tree)
+    case tree @ Template(parents, self, body) => new Template(parents, self, body.reverse)
+      .copyAttrs(tree)
   }
 }

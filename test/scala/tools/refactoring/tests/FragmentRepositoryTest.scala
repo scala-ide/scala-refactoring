@@ -12,7 +12,7 @@ class FragmentRepositoryTest extends TestHelper {
   
   import global.Tree
       
-  class Layout(val print: String) extends Fragment {
+  class Layout(val print: Seq[Char]) extends Fragment {
     override val isLayout = true
   }
   

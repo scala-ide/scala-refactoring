@@ -16,9 +16,9 @@ class MergerTest extends TestHelper with TestTransform {
 
   @Test
   def testSortClassParameters() = {
+    "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*/, /*1a*/i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters)
     "class A(i: Int, s: String)" transformsTo ("class A(s: String, i: Int)", reverseClassParameters)
     "class A(i1: Int, i2: Int, i3: Int, i4: Int, i5: Int)" transformsTo ("class A(i5: Int, i4: Int, i3: Int, i2: Int, i1: Int)", reverseClassParameters)
-    "class A(/*1a*/i:/*1b*/Int/*1c*/, /*2a*/s: /*2b*/String/*2c*/) extends AnyRef" transformsTo ("class A(/*2a*/s: /*2b*/String/*2c*/, /*1a*/i:/*1b*/Int/*1c*/) extends AnyRef", reverseClassParameters)
   }
   
   @Test
@@ -147,7 +147,7 @@ class MergerTest extends TestHelper with TestTransform {
   @Test
   def testInsertVal() = {
             """
-object A {
+object A4 {
   /*test*/ def abc(i: Int) = {
     42
   }
@@ -158,7 +158,7 @@ object A {
 }
     """ transformsTo( 
     """
-object A {
+object A4 {
   def method: Int = {
     555
     sample: Int
@@ -178,7 +178,7 @@ object A {
   @Test
   def testCopyLastMethod() = {
             """
-object A {
+object A3 {
 
   /*test*/ def abc(i: Int) = {
     42
@@ -190,7 +190,7 @@ object A {
 }
     """ transformsTo( 
     """
-object A {
+object A3 {
   /*test2*/ def b = {
     println("hello")
     5
@@ -211,7 +211,7 @@ object A {
   @Test
   def testMethodFromExistingBody() = {
             """
-object A {
+object A2 {
   /*test2*/ def b = {
     println("hello, this is method b")
     5
@@ -219,7 +219,7 @@ object A {
 }
     """ transformsTo( 
     """
-object A {
+object A2 {
   def newMethod(arg: Int): Int = {
     println("hello, this is method b")
     5

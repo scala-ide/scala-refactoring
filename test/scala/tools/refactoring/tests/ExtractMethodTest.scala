@@ -36,6 +36,33 @@ class ExtractMethodTest extends TestHelper {
       }
     }
     """)
+    
+  @Test
+  def ignoreOtherClass = """
+    class A {
+      def extractFrom {
+/*(*/   println("hello")/*)*/
+        ()
+      }
+    }
+
+    class A(s: String)
+    class B(t: String) extends A(s)
+    """ extractMethod("prntln",
+    """
+    class A {
+      def extractFrom {
+        prntln
+        ()
+      }
+      def prntln(): Unit = {
+/*(*/   println("hello")/*)*/
+      }
+    }
+
+    class A(s: String)
+    class B(t: String) extends A(s)
+    """)
 
   @Test
   def simpleExtractOneParameter = """

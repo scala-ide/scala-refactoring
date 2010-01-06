@@ -19,23 +19,23 @@ abstract class Fragment extends WithRequisite {
   val isLayout = false
   val isEndOfScope = false
   val isBeginOfScope = false
-  def print: String
-  override def toString = print
+  def print: Seq[Char]
+  override def toString = print mkString
 }
 
-trait OriginalSourceFragment {
+trait OriginalSourceFragment extends Fragment {
   def start: Int
   def end: Int
   def file: SourceFile
+  override def print: Seq[Char] = new String(file.content.slice(start, end))
 }
 
 case class LayoutFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment {
   override val isLayout = true
-  def print = new String(file.content.slice(start, end))
   override def toString = if(start == end) "❒" else new String(file.content.slice(start, end))
 }
 
-case class StringFragment(string: String) extends Fragment {
+case class StringFragment(string: Seq[Char]) extends Fragment {
   val print = string
 }
 
@@ -50,7 +50,7 @@ abstract class Scope extends Fragment {
   }
   protected val trueChildren = new ListBuffer[Fragment]()
   def add(p: Fragment) = trueChildren += p //assert that they are in order?
-  def print = children mkString
+  override def print: Seq[Char] = children mkString
   override def toString = "→"+ indentation +"("+ relativeIndentation +")"+ (children mkString "|")
 }
 
@@ -71,7 +71,7 @@ case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFi
   class BeginOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: TreeScope) extends Fragment with OriginalSourceFragment {
     override def toString = "❨"
     override val isBeginOfScope = true 
-    val print = ""
+    override val print = "": Seq[Char]
     override def equals(that: Any) = that match {
       case that: TreeScope#BeginOfScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
       case _ => false
@@ -81,7 +81,7 @@ case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFi
   class EndOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: TreeScope) extends Fragment with OriginalSourceFragment {
     override val toString = "❩"
     override val isEndOfScope = true 
-    val print = ""
+    override val print = "": Seq[Char]
     override def equals(that: Any) = that match {
       case that: TreeScope#EndOfScope => that.start == this.start && that.end == this.end && that.file == this.file && that.parent == this.parent
       case _ => false
@@ -108,7 +108,6 @@ case class SymTreeFragment(tree: Trees#SymTree) extends Fragment with OriginalSo
   val start = tree.pos.point
   val end = tree.pos.point + tree.symbol.nameString.length
   val file = tree.pos.source.asInstanceOf[BatchSourceFile]
-  def print = new String(file.content.slice(start, end))
 }
 
 case class ArtificialTreeFragment(tree: Trees#Tree) extends Fragment with WithTree {
@@ -116,10 +115,9 @@ case class ArtificialTreeFragment(tree: Trees#Tree) extends Fragment with WithTr
 }
 
 case class TreeFragment(tree: Trees#Tree) extends Fragment with OriginalSourceFragment with WithTree {
-  val start = tree.pos.start
-  val end = tree.pos.end
-  val file = tree.pos.source
-  def print = new String(file.content.slice(start, end))
+  lazy val start = tree.pos.start
+  lazy val end = if(tree.pos.end + 1 == file.content.length) tree.pos.end + 1 else tree.pos.end
+  lazy val file = tree.pos.source
 }
 
 case class FlagFragment(flag: Long, pos: Position) extends Fragment with OriginalSourceFragment {
@@ -127,7 +125,7 @@ case class FlagFragment(flag: Long, pos: Position) extends Fragment with Origina
   lazy val end = start + print.length
   lazy val file = pos.source
   import Flags._
-  def print = flag match {
+  override lazy val print: Seq[Char] = flag match {
     case 0            => ""
     case TRAIT        => "trait"
     case METHOD       => "def"
