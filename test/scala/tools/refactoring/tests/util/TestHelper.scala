@@ -23,7 +23,8 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
   class TestString(src: String) {
     
     def partitionsInto(expected: String) = {
-      val f = splitIntoFragments(treeFrom(src))
+      val tree = treeFrom(src)
+      val f = splitIntoFragments(tree)
       assertEquals(expected, f.toString)
     }
     

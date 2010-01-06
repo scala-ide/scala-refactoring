@@ -72,23 +72,23 @@ trait Partitioner {
           else
             addFragment(i)
           super.apply
+          
+        case(Select(qualifier: New, _), Itself) =>
+          super.apply 
+          
+        case(Select(_, name), Itself) if name.toString == "apply" =>
+          super.apply 
             
         case(t @ Select(qualifier, name), Itself) =>
-          // An ugly hack. when can we actually print the name?
-          if (qualifier.isInstanceOf[New] || t.name.toString == "apply") {
-            ()
-          } else if(qualifier.isInstanceOf[Super]) {
-            scopes.top add new SymTreeFragment(t) {
-              override val end = tree.pos.end
-            }
-          } else if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
+         
+          if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
             scopes.top add new SymTreeFragment(t) {
               override val start = t.pos.start
               override val end = qualifier.pos.start
-            }            
+            }
           } else if (qualifier.pos.isRange) {
             scopes.top add new SymTreeFragment(t) {
-              override val start = t.pos.end - t.symbol.nameString.length
+              override val start = t.pos.point.max(qualifier.pos.end + 1)
               override val end = t.pos.end
             }
           } else {

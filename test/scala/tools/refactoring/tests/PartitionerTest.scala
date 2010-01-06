@@ -6,6 +6,9 @@ import org.junit.Test
 
 @Test
 class PartitionerTest extends TestHelper {
+  
+  @Test
+  def packageWithRoot = "import _root_.java.util.concurrent._" partitionsInto "→0(0)❨|import |_root_|.|java|.|util|.|concurrent|._|❩"
    
   @Test
   def testSingleObject = "object A" partitionsInto "→0(0)❨|object |A|❩"
@@ -98,7 +101,7 @@ class PartitionerTest extends TestHelper {
   def testTraitBody = "trait A; class Xyz extends A { object C }/*done*/" partitionsInto "→0(0)❨|→0(0)❨|trait| |A|❩|; |→0(0)❨|class |Xyz| extends |A| |→0(0)❨|{ |→0(0)❨|object |C|❩| }|❩|❩|/*done*/|❩" 
     
   @Test
-  def testNestedPackages = "package x.y.z" partitionsInto "→0(0)❨|package |x|.|y|.|z|❩"
+  def testNestedPackages = "package x.y.z //done" partitionsInto "→0(0)❨|package |x|.|y|.|z| //done|❩"
 
   @Test
   def testPackage = "class Abc //done" partitionsInto "→0(0)❨|→0(0)❨|class |Abc|❩| //done|❩"

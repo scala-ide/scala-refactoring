@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.util.SilentTracing
 import scala.tools.refactoring.ExtractMethod
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
@@ -9,7 +10,8 @@ class ExtractMethodTest extends TestHelper {
   
   class StringExtractMethod(source: String) {
     def extractMethod(name: String, expected: String) = {
-      val result = new ExtractMethod(global, compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) perform name
+      val refactoring = new ExtractMethod(global, compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) with SilentTracing 
+      val result = refactoring perform name
       assertEquals(expected, result)
     }
   }
@@ -47,7 +49,7 @@ class ExtractMethodTest extends TestHelper {
     }
 
     class A(s: String)
-    class B(t: String) extends A(s)
+    class B(s: String) extends A(s)
     """ extractMethod("prntln",
     """
     class A {
@@ -61,7 +63,7 @@ class ExtractMethodTest extends TestHelper {
     }
 
     class A(s: String)
-    class B(t: String) extends A(s)
+    class B(s: String) extends A(s)
     """)
 
   @Test
