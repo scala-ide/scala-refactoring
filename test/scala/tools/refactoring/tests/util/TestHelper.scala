@@ -8,7 +8,7 @@ import scala.tools.refactoring.util._
 import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
 
-trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with LayoutHandler with TreePrinter with Tracing with Selections {
+trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with LayoutHandler with TreePrinter with SilentTracing with Selections {
   
   def parts(src: String) = splitIntoFragments(treeFrom(src))
   
@@ -65,7 +65,7 @@ trait TestHelper extends Partitioner with Merger with CompilerProvider with Tran
       
       val merged = merge(partitionedModified, parts)
           
-      assertEquals(expected, merged map (_.print) mkString "")
+      assertEquals(expected, merged map (_.print mkString)  mkString)
     }
   }
   

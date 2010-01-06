@@ -7,10 +7,6 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 import scala.collection.mutable.ListBuffer
 
-/*
- * Terminology: Layout instead of Layout? 
- * */
-
 trait WithTree {
   def tree: Trees#Tree
 }
@@ -27,7 +23,7 @@ trait OriginalSourceFragment extends Fragment {
   def start: Int
   def end: Int
   def file: SourceFile
-  override def print: Seq[Char] = new String(file.content.slice(start, end))
+  override def print: Seq[Char] = file.content.slice(start, end)
 }
 
 case class LayoutFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment {
