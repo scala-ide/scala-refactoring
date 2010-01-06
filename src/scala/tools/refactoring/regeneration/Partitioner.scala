@@ -18,7 +18,8 @@ trait Partitioner {
 
     val handle: Contribution
     
-    private var scopes = new scala.collection.mutable.Stack[Scope]
+    //private var scopes = new scala.collection.mutable.Stack[Scope]
+    private var currentScope: Scope = _ 
       
     private val preRequirements = new ListBuffer[Requisite]
     
@@ -55,7 +56,7 @@ trait Partitioner {
         part
       }
       
-      protected def addFragment(part: Fragment) = scopes.top add part
+      protected def addFragment(part: Fragment) = currentScope add part
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         
@@ -82,12 +83,12 @@ trait Partitioner {
         case(t @ Select(qualifier, name), Itself) =>
          
           if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
-            scopes.top add new SymTreeFragment(t) {
+            currentScope add new SymTreeFragment(t) {
               override val start = t.pos.start
               override val end = qualifier.pos.start
             }
           } else if (qualifier.pos.isRange) {
-            scopes.top add new SymTreeFragment(t) {
+            currentScope add new SymTreeFragment(t) {
               override val start = t.pos.point.max(qualifier.pos.end + 1)
               override val end = t.pos.end
             }
@@ -124,16 +125,16 @@ trait Partitioner {
       private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
         case tree if tree.pos == UnknownPosition =>
           if(indent) {
-            val newScope = new SimpleScope(Some(scopes.top), indentationStep)
-            
-            scopes.top add newScope
-            scopes push newScope
+            val newScope = new SimpleScope(Some(currentScope), indentationStep)
+            val oldScope = currentScope
+            oldScope add newScope
+            currentScope = newScope
             // klammern zum scope?
-            scopes.top.children.head.requireAfter(new Requisite("{", "{\n"))
+            currentScope.children.head.requireAfter(new Requisite("{", "{\n"))
             body
-            scopes.top.children.last.requireBefore(new Requisite("\n", "\n"))
-            scopes.top.children.last.requireBefore(new Requisite("}", "}"))
-            scopes pop
+            currentScope.children.last.requireBefore(new Requisite("\n", "\n"))
+            currentScope.children.last.requireBefore(new Requisite("}", "}"))
+            currentScope = oldScope
           } else {
             body
           }
@@ -145,22 +146,23 @@ trait Partitioner {
             case _ => (tree.pos.start, tree.pos.end)
           }
           
-          val indentation = getIndentation(start, tree, scopes.top)
+          val indentation = getIndentation(start, tree, currentScope)
                     
-          val newScope = TreeScope(Some(scopes.top), start, if(end + 1 == tree.pos.source.content.length) end + 1 else end, tree.pos.source, indentation, tree)
+          val newScope = TreeScope(Some(currentScope), start, if(end + 1 == tree.pos.source.content.length) end + 1 else end, tree.pos.source, indentation, tree)
           
           if(preRequirements.size > 0) {
             preRequirements.foreach(newScope requireBefore _)
             preRequirements.clear
           }
           
-          if(scopes.top == newScope) {
+          if(currentScope == newScope) {
             body
           } else {
-            scopes.top add newScope
-  	        scopes push newScope
+            currentScope add newScope
+            val oldScope = currentScope
+  	        currentScope = newScope
 	          body
-	          scopes pop
+	          currentScope = oldScope
           }
       }
       
@@ -306,13 +308,13 @@ trait Partitioner {
         if(preRequirements.size > 0)
           requireBefore(check, write)
         else
-          scopes.top.lastChild match {
+          currentScope.lastChild match {
             case Some(part) => part.requireAfter(new Requisite(check, write))
             case None => //throw new Exception("No place to attach requisite"+ check +"!") //??
           }
       }
       
-      def requireAfterOrBefore(r: String) = scopes.top.lastChild match {
+      def requireAfterOrBefore(r: String) = currentScope.lastChild match {
         case Some(_) => requireAfter(r, r)
         case _ => requireBefore(r)
       }
@@ -375,7 +377,7 @@ trait Partitioner {
           
         case(_, Itself) =>
           
-          scopes.top.lastChild foreach (x => preRequirements foreach (x.requireBefore))
+          currentScope.lastChild foreach (x => preRequirements foreach (x.requireBefore))
         
           preRequirements.clear
           super.apply
@@ -599,13 +601,13 @@ trait Partitioner {
     
     def visit(tree: Tree) = {
       
-      val rootFragment = TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
+      val rootScope = TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
 
-      scopes push rootFragment
+      currentScope = rootScope
       
       traverse(tree)
 
-      rootFragment
+      rootScope
     }
   }
   
