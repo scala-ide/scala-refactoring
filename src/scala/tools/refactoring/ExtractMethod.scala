@@ -35,9 +35,7 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
         if(selection.trees.size > 1) {
           transform(d) {
             case b @ Block(stats, expr) => {
-              cleanNoPos {
-                mkBlock(replaceTrees(stats ::: expr :: Nil, selection.trees, call :: Nil))
-              } copyAttrs b
+              mkBlock(replaceTrees(stats ::: expr :: Nil, selection.trees, call :: Nil)) copyAttrs b
             }
           }
         } else {

@@ -14,9 +14,9 @@ trait Indexes {
     private type Refs = ListBuffer[RefTree]
     private type Defs = ListBuffer[DefTree]
   
-    private val defs = HashMap[Symbol, DefTree]()
-    private val refs = HashMap[Symbol, Refs]()
-    private val chld = HashMap[Symbol, Defs]()
+    private val defs = new HashMap[Symbol, DefTree]
+    private val refs = new HashMap[Symbol, Refs]
+    private val chld = new HashMap[Symbol, Defs]
 
     // Symbol must be from a RefTree
     def declaration(s: Symbol) = defs(s)

@@ -3,7 +3,6 @@ package scala.tools.refactoring.tests.util
 import scala.tools.refactoring.util.Selections
 import scala.tools.refactoring.transformation.{Transform, TreeFactory}
 import scala.tools.refactoring.analysis._
-import scala.tools.refactoring.util.UnknownPosition
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens
@@ -31,9 +30,8 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
 
             val block = Block( Literal(555) :: v :: Nil, EmptyTree)
                       
-            val d = cleanNoPos {
-              DefDef(Modifiers(Flags.METHOD), newTermName("method"), Nil, Nil, TypeTree(typ.tpe), block)
-            }
+            val d = DefDef(Modifiers(Flags.METHOD), newTermName("method"), Nil, Nil, TypeTree(typ.tpe), block)
+            
             
             new Template(parents, self, d :: body).copyAttrs(tree)
           
@@ -71,9 +69,8 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
             case tree: ValOrDefDef => tree.rhs
           }
 
-          val d = cleanNoPos {
-            DefDef(Modifiers(Flags.METHOD), "newMethod", Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe), rhs)
-          }
+          val d = DefDef(Modifiers(Flags.METHOD), "newMethod", Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe), rhs)
+          
           
           new Template(parents, self, d :: body).copyAttrs(tree)
         case x => x
@@ -89,12 +86,11 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
         
           val newDef = DefDef(Modifiers(Flags.METHOD), "innerMethod", Nil, Nil, TypeTree(rhs.expr.tpe), rhs) 
         
-          val newRhs = cleanNoPos {
-            Block(
+          val newRhs = Block(
                 newDef
                 :: Nil
                 , Apply(Select(This(""), "innerMethod"), Nil))
-          }
+          
           
           new DefDef(mods, name, tparams, vparamss, tpt, newRhs).copyAttrs(tree)
         
@@ -123,11 +119,10 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
           val returns = mkReturn(outboundLocalDependencies(selection, defdef.symbol))
           val newDef  = mkDefDef(NoMods, "innerMethod", parameters :: Nil, selected :: returns :: Nil)
           
-          val newRhs = cleanNoPos {
-            Block(
+          val newRhs = Block(
                 newDef :: rhs.stats.head :: call :: Nil
                 , rhs.expr)
-          }
+          
           
           new DefDef(mods, name, tparams, vparamss, tpt, newRhs).copyAttrs(tree)
         

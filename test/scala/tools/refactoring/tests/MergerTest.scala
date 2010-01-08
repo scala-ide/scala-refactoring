@@ -1,7 +1,6 @@
 package scala.tools.refactoring.tests
 
 import scala.tools.refactoring.tests.util.TestTransform
-import scala.tools.refactoring.util.UnknownPosition
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.ast.parser.Tokens
 

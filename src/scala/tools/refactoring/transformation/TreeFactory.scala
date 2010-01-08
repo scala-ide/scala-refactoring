@@ -1,10 +1,6 @@
 package scala.tools.refactoring.transformation
 
-import scala.tools.refactoring.util.UnknownPosition
-import scala.tools.refactoring.util.InvisiblePosition
-import scala.tools.nsc.util.NoPosition
-import scala.tools.nsc.util.RangePosition
-import scala.tools.nsc.ast.parser.Tokens
+import scala.tools.refactoring.util.Invisible
 import scala.tools.nsc.symtab.Flags
 
 trait TreeFactory {
@@ -13,25 +9,24 @@ trait TreeFactory {
   val global: scala.tools.nsc.Global
   import global._
   
-  def mkReturn(s: List[global.Symbol]) = cleanNoPos(s match {
+  def mkReturn(s: List[global.Symbol]) = s match {
     case Nil => EmptyTree
     case x :: Nil => Ident(x) setType x.tpe
-    case xs =>
-      val tpl = typer.typed(gen.mkTuple(xs map (s => Ident(s) setType s.tpe)))
-      tpl match {
-        case t: Apply => t.fun setPos InvisiblePosition //don't show the TupleX..
-      }
-      tpl
-  })
+    case xs => typer.typed(gen.mkTuple(xs map (s => Ident(s) setType s.tpe))) match {
+      case t: Apply => t.fun setPos Invisible; t //don't show the TupleX..
+      case t => t
+    }
+  }
   
-  def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = cleanNoPos {
+  def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {
     
      // currying not yet supported
-    val args = arguments.head map (s => cleanAll(Ident(s)))
+    val args = arguments.head map (s => Ident(s))
+    
+    val call = Apply(Select(This("") setPos Invisible, name), args)
     
     returns match {
-      case Nil => Apply(Select(This("") setPos InvisiblePosition, name), args)
-      
+      case Nil => call
       case returns => 
       
         // 'val (a, b) =' is represented by various trees, so we cheat and create the assignment in the name of the value: 
@@ -40,13 +35,13 @@ trait TreeFactory {
           case xs => "val ("+ (xs map (_.name) mkString ", ") +")"
         }
                 
-        ValDef(NoMods, valName, new TypeTree(), Apply(Select(This("") setPos InvisiblePosition, name), args)) 
+        ValDef(NoMods, valName, new TypeTree(), call)
     }
   }
   
-  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = cleanNoPos {
+  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = {
     
-    val formalParameters = parameters map ( _ map (s => cleanAll(ValDef(s, EmptyTree))))
+    val formalParameters = parameters map ( _ map (s => new ValDef(NoMods, s.nameString, TypeTree(s.tpe), EmptyTree)))
     
     DefDef(mods | Flags.METHOD, name, Nil /*type parameters*/, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
   }

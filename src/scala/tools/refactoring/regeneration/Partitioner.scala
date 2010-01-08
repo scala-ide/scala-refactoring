@@ -7,7 +7,6 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
-import scala.tools.refactoring.util.{UnknownPosition, InvisiblePosition}
 
 trait Partitioner {
   self: Tracing with LayoutPreferences =>
@@ -47,7 +46,7 @@ trait Partitioner {
       
       private def addFragment(tree: Tree): Fragment = {
         val part = tree match {
-          case tree if tree.pos == UnknownPosition => ArtificialTreeFragment(tree)
+          case tree if tree.pos == NoPosition => ArtificialTreeFragment(tree)
           case tree: SymTree => SymTreeFragment(tree)
           case _ => TreeFragment(tree)
         }
@@ -122,7 +121,7 @@ trait Partitioner {
       def getIndentation(start: Int, tree: Tree, scope: Scope): Int
       
       private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
-        case tree if tree.pos == UnknownPosition =>
+        case tree if tree.pos == NoPosition =>
           if(indent) {
             val newScope = new SimpleScope(Some(currentScope), indentationStep)
             val oldScope = currentScope
@@ -243,7 +242,7 @@ trait Partitioner {
         
           val numArgs = args filter {
             case t: SymTree if t.symbol.hasFlag(Flags.SYNTHETIC) => false
-            case t: Tree if t.pos == UnknownPosition => false
+            case t: Tree if t.pos == NoPosition => false
             case _ => true
           } size
           
@@ -276,13 +275,13 @@ trait Partitioner {
     trait ModifiersContribution extends FragmentContribution {
       
       def hasModifiers(tree: WithModifiers) = tree.pos match {
-        case UnknownPosition => tree.mods.flags != 0 && tree.mods.flags != Flags.PARAM
+        case NoPosition => tree.mods.flags != 0 && tree.mods.flags != Flags.PARAM
         case _ => tree.mods.positions.size > 0
       }
       
       def modifiers(tree: WithModifiers) = tree.pos match {
-        case UnknownPosition=> 
-          addFragment(new FlagFragment(tree.mods.flags, UnknownPosition))
+        case NoPosition=> 
+          addFragment(new FlagFragment(tree.mods.flags, NoPosition))
         case _ =>
           tree.mods.positions.foreach (x => addFragment(new FlagFragment(x._1, x._2)))
       }
@@ -329,7 +328,7 @@ trait Partitioner {
         
           val needsParenthesis = fun match {
             case TypeApply(Select(Select(qualifier, name), _), _) if name.toString matches """Tuple\d+""" => true
-            case Select(qualifier, _) if qualifier.pos == UnknownPosition => false
+            case Select(qualifier, _) if qualifier.pos == NoPosition => false
             case Select(qualifier, _) if !qualifier.pos.isRange => true
             case _ => false
           }
@@ -462,21 +461,19 @@ trait Partitioner {
       }
     }
     
-    def rangeOrUnknown(t: Tree) = t.pos.isRange || t.pos == UnknownPosition
+    def rangeOrNoPos(t: Tree) = t.pos.isRange || t.pos == NoPosition
     
-    def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrUnknown(t)  
+    def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrNoPos(t)  
         
-    override def traverse(tree: Tree): Unit = {
-    	      
-      if(tree.pos != UnknownPosition && !tree.pos.isRange)
-        return
-      
-      tree match {
+    override def traverse(tree: Tree): Unit = tree match {
+        
+      case t if !rangeOrNoPos(t) => 
+        return // tree is a compiler generated tree, we don't have to handle them
       
       case t: TypeTree => 
         if(t.original != null)
           traverse(t.original)
-        else if(t.pos == UnknownPosition)
+        else if(t.pos == NoPosition)
           handle(tree, Itself)
         super.traverse(tree)
       
@@ -499,7 +496,7 @@ trait Partitioner {
           handle(tree, Itself)
         }
         traverseTrees(mods.annotations)
-        if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == UnknownPosition) && tpt.tpe != EmptyTree.tpe) {
+        if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == NoPosition) && tpt.tpe != EmptyTree.tpe) {
           handle(tree, Tpt)
         }
         
@@ -518,7 +515,7 @@ trait Partitioner {
         
       case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
         
-        if((defdef.pos != UnknownPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == UnknownPosition) {
+        if((defdef.pos != NoPosition && defdef.pos.point >= defdef.pos.start) || defdef.pos == NoPosition) {
           handle(tree, Mods)
           
           handle(tree, Itself)
@@ -530,7 +527,7 @@ trait Partitioner {
             handle(tree, ParamList)
           }
           
-          if(tpt.pos.isRange || tpt.pos == UnknownPosition) {
+          if(tpt.pos.isRange || tpt.pos == NoPosition) {
             handle(tree, Tpt)  
           }
           
@@ -554,7 +551,7 @@ trait Partitioner {
         
         val(earlyBody, _) = restBody.filter(_.pos.isRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
                 
-        val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrUnknown)
+        val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrNoPos)
 
         handle(tree → ClassParams(classParams))
 
@@ -596,7 +593,7 @@ trait Partitioner {
 
       case _ =>
         super.traverse(tree)
-    }}
+    }
     
     def visit(tree: Tree) = {
       
