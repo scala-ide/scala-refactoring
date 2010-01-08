@@ -21,19 +21,14 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
      
     val newDef = mkDefDef(NoMods, newName, parameters :: Nil, selection.trees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
           
-    var newTree = transform(file) {
-      case tree @ Template(parents, self, body) if body exists (_ == selectedMethod) =>
-        new Template(parents, self, replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
-    }
-    
     val call = mkCallDefDef(NoMods, newName, parameters :: Nil, returns)
     
-    newTree = transform(newTree) {
+    var newTree = transform(file) {
       case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
         if(selection.trees.size > 1) {
           transform(d) {
-            case b @ Block(stats, expr) => {
-              mkBlock(replaceTrees(stats ::: expr :: Nil, selection.trees, call :: Nil))
+            case block: Block => {
+              mkBlock(replaceTrees(block, selection.trees, call :: Nil))
             }
           }
         } else {
@@ -41,6 +36,9 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
             case t: Tree if t == selection.trees.head => call
           }
         }
+      }
+      case tpl @ Template(_, _, body) if body exists (_ == selectedMethod) => {
+        tpl.copy(body = replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
       }
     }
     

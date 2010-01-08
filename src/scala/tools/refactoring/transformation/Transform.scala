@@ -10,16 +10,19 @@ private[refactoring] trait Transform {
   val global: scala.tools.nsc.Global
   import global._
    
-  def transform(root: Tree)(body: PartialFunction[Tree, Tree]): Tree = new Transformer {
-    override def transform(tree: Tree): Tree = {
-      val res = super.transform(tree)
-      if(body.isDefinedAt(res)) {
-        body(res) setPos res.pos
+  def transform(root: Tree)(trans: Tree =>? Tree): Tree = new Transformer {
+    override def transform(tree: Tree): Tree = super.transform {
+      if(trans.isDefinedAt(tree)) {
+        trans(tree) setPos tree.pos
       } else { 
-        res
+        tree
       }
     }
   }.transform(root)
+  
+  
+  def replaceTrees(b: Block, what: List[Tree], replacement: List[Tree]): List[Tree] = 
+    replaceTrees(b.stats ::: b.expr :: Nil, what, replacement)
   
   def replaceTrees[T](from: List[T], what: List[T], replacement: List[T]): List[T] = {
     if(!from.contains(what.head))
@@ -32,7 +35,6 @@ private[refactoring] trait Transform {
   
   // TODO remove
   def reverseClassParameters(t: Tree) = transform(t) {
-    case tree @ Template(parents, self, body) => new Template(parents, self, body.reverse)
-      .copyAttrs(tree)
+    case tpl: Template => tpl.copy(body = tpl.body.reverse)
   }
 }

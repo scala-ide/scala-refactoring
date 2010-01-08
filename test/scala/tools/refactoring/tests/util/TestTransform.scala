@@ -45,7 +45,7 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
         
         case tpl @ Template(parents, self, body) => 
           
-            new Template(parents, self, body.last :: body).copyAttrs(tree)
+            Template(parents, self, body.last :: body).copyAttrs(tree)
           
         case x => x
       }
@@ -121,9 +121,7 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
                 newDef :: rhs.stats.head :: call :: Nil
                 , rhs.expr)
           
-          
           new DefDef(mods, name, tparams, vparamss, tpt, newRhs).copyAttrs(tree)
-        
 
         case x => x
       }
