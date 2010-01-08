@@ -15,6 +15,10 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
   import CODE._
   import global._
   
+  def reverseClassParameters(t: Tree) = transform(t) {
+    case tpl: Template => tpl copy (body = tpl.body.reverse)
+  }
+  
   def insertNewMethod = new Transformer {
     override def transform(tree: Tree): Tree = {
       super.transform(tree) match {

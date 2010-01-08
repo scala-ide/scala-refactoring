@@ -20,7 +20,6 @@ private[refactoring] trait Transform {
     }
   }.transform(root)
   
-  
   def replaceTrees(b: Block, what: List[Tree], replacement: List[Tree]): List[Tree] = 
     replaceTrees(b.stats ::: b.expr :: Nil, what, replacement)
   
@@ -29,10 +28,5 @@ private[refactoring] trait Transform {
     case (xs, Nil) => xs
     case (x :: xs, y :: ys) if x == y => replacement ::: replaceTrees(xs, ys, Nil)
     case (x :: xs, _) => x :: replaceTrees(xs, what, replacement)
-  }
-  
-  // TODO remove
-  def reverseClassParameters(t: Tree) = transform(t) {
-    case tpl: Template => tpl copy (body = tpl.body.reverse)
   }
 }
