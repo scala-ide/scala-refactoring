@@ -29,8 +29,7 @@ class MergerTest extends TestHelper with TestTransform {
     """
       // comment 
       class A(s: String, i: Int)
-    """,
-      reverseClassParameters)
+    """, reverseClassParameters)
   }
   
   @Test
@@ -46,8 +45,7 @@ class MergerTest extends TestHelper with TestTransform {
         val c: Int = 5
         val b: String
       }
-    """, 
-      reverseClassParameters)
+    """, reverseClassParameters)
   }  
   
   @Test
@@ -65,8 +63,7 @@ class MergerTest extends TestHelper with TestTransform {
           i
         }
       }
-    """, 
-      reverseClassParameters)
+    """, reverseClassParameters)
   }
   
   @Test
@@ -82,9 +79,7 @@ class MergerTest extends TestHelper with TestTransform {
         val c: Int = 5
         val b: String
       }
-    """, 
-      reverseClassParameters)   
-      
+    """, reverseClassParameters)   
   }
   
   @Test
@@ -110,8 +105,7 @@ class MergerTest extends TestHelper with TestTransform {
         }
         val b: String
       }
-    """, 
-      reverseClassParameters)
+    """, reverseClassParameters)
   }
   
   @Test
@@ -139,8 +133,7 @@ class MergerTest extends TestHelper with TestTransform {
         val b: String //b-string
         
       }
-    """, 
-      reverseClassParameters)
+    """, reverseClassParameters)
   }
   
   @Test
@@ -170,8 +163,7 @@ object A4 {
     5
   }
 }
-    """, 
-      insertNewMethod.transform(_))
+    """, insertNewMethod)
   }    
   
   @Test
@@ -203,8 +195,7 @@ object A3 {
     5
   }
 }
-    """, 
-      copyLastMethod.transform(_))
+    """, copyLastMethod)
   }
   
   @Test
@@ -228,8 +219,7 @@ object A2 {
     5
   }
 }
-    """, 
-      newMethodFromExistingBody.transform(_))
+    """, newMethodFromExistingBody)
   }  
   
   @Test
@@ -258,9 +248,34 @@ object A2 {
           innerMethod
         }
       }
-    """, 
-      bodyInBody.transform(_))
+    """, bodyInBody)
   }  
-
+  
+  @Test
+  def createNewMethod() = {
+    """
+      class A {
+        def c: Unit = {
+          val a = 1
+          val b = 1
+          val c = 1
+          a + b + c
+        }
+      }
+    """ transformsTo( 
+    """
+      class A {
+        def c: Unit = {
+          def innerMethod(): Int = {
+            val b = 1
+            b
+          }
+          val a = 1
+          val b = innerMethod
+          a + b + c
+        }
+      }
+    """, newMethod)
+  }
 }
 
