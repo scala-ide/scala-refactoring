@@ -18,6 +18,34 @@ class ExtractMethodTest extends TestHelper {
   
   implicit def stringToStringExtractMethod(source: String) = new StringExtractMethod(source)
 
+  //@Test
+  def extractBlock = """
+    class A {
+      def extractFrom: Int = {
+/*(*/   val a = {
+          val b = 1
+          b * 5
+        }   /*)*/
+        a * a
+      }
+    }
+    """ extractMethod("prntln",
+    """
+    class A {
+      def extractFrom: Int = {
+        val a = prntln
+        a * a
+      }
+      def prntln(): Int = {
+/*(*/   val a = {
+          val b = 1
+          b * 5
+        }   /*)*/
+        a
+      }
+    }
+    """)
+    
   @Test
   def simpleExtract = """
     class A {
