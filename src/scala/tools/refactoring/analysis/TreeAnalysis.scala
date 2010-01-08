@@ -9,8 +9,6 @@ trait TreeAnalysis {
   
   val global: scala.tools.nsc.Global
   
-  protected val index: Index
-
   def inboundLocalDependencies(selection: TreeSelection, currentOwner: global.Symbol) = {
         
     val allLocals = index children currentOwner map (_.symbol)

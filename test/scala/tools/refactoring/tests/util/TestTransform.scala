@@ -12,7 +12,6 @@ import scala.tools.nsc.symtab.Flags
 trait TestTransform extends Transform with TreeDSL with Selections with TreeAnalysis with Indexes with TreeFactory {
   
   val global: scala.tools.nsc.Global
-  protected val index = new Index
   import CODE._
   import global._
   
@@ -106,7 +105,6 @@ trait TestTransform extends Transform with TreeDSL with Selections with TreeAnal
         
         case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange =>
 
-          val index = new Index
           index.processTree(tree)
           
           val selection = new TreeSelection(rhs.stats(1))

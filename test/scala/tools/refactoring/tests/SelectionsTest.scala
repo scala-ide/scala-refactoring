@@ -17,8 +17,6 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   
   def assertSelection(expectedTrees: String, expectedSymbols: String, src: String) = {
     
-    val index = new Index
-
     val tree = treeFrom(src)
     
     index.processTree(tree)

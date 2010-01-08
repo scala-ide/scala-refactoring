@@ -10,35 +10,27 @@ trait Selections {
   val global: Global
   import global._
   
-  private class FilterTree(start: Int, end: Int, includeChildren: Boolean) extends Traverser {
+  class TreeSelection(root: Tree, pos: RangePosition) {
+ 
+    def this(root: Tree, start: Int, end: Int) = this(root, new RangePosition(root.pos.source, start, start, end))
     
-    val hits = new ListBuffer[Tree]
-    
-    override def traverse(t: Tree) {
-      if (t.pos.isRange && t.pos.start >= start && t.pos.end <= end) {
-        hits += t
-        if(includeChildren) super.traverse(t)
-      } else 
-        super.traverse(t)
-    }
-  }
-  
-  class TreeSelection(root: Tree, start: Int, end: Int) {
-    
-    def this(root: Tree) = this(root, root.pos.start, root.pos.end)
-    
-    lazy val pos = new RangePosition(root.pos.source, start, start, end)
+    def this(root: Tree) = this(root, if(root.pos.isRange) root.pos.asInstanceOf[RangePosition] else throw new Exception("Position not a range."))
     
     lazy val trees: List[Tree] = {
-      val f = new FilterTree(start, end, false)
-      f.traverse(root)
-      f.hits.toList
-    }    
+      val hits = new ListBuffer[Tree]
+      new Traverser {
+        override def traverse(t: Tree) {
+          if (t.pos.isRange && pos.includes(t.pos)) {
+            hits += t
+          } else 
+            super.traverse(t)
+        }
+      }.traverse(root)
+      hits.toList
+    }
     
     lazy val treesWithSubtrees: List[Tree] = {
-      val f = new FilterTree(start, end, true)
-      trees foreach f.traverse
-      f.hits.toList
+      trees flatMap (_ filter (t => t.pos.isRange && pos.includes(t.pos)))
     }
  
     lazy val symbols = treesWithSubtrees flatMap {

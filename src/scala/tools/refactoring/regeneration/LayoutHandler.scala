@@ -1,9 +1,11 @@
 package scala.tools.refactoring.regeneration
 
+import scala.tools.refactoring.util.Tracing
+import scala.tools.refactoring.util.LayoutPreferences
 import scala.collection.mutable.ListBuffer
 
-trait LayoutHandler extends scala.tools.refactoring.util.LayoutPreferences {
-  self: scala.tools.refactoring.util.Tracing =>
+trait LayoutHandler {
+  self: Tracing with LayoutPreferences =>
   
   def processRequisites(current: Fragment, layoutAfterCurrent: String, layoutBeforeNext: String, next: Fragment) = context("requisites") {
   

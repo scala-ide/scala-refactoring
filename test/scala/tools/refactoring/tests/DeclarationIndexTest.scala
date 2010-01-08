@@ -13,15 +13,14 @@ import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
 
   import global._
-  protected val index = new Index
   
-  def withIndex(src: String)(body: (Tree, Index) => Unit ) {
+  def withIndex(src: String)(body: Tree => Unit ) {
     val tree = treeFrom(src)
     index.processTree(tree)
-    body(tree, index)
+    body(tree)
   }
   
-  def assertDeclarationOfSelection(expected: String, src: String) = withIndex(src) { (tree, index) =>
+  def assertDeclarationOfSelection(expected: String, src: String) = withIndex(src) { tree =>
   
     val declarations = findMarkedNodes(src, tree).trees.head match {
       case t: RefTree => 
@@ -32,7 +31,7 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
     assertEquals(expected, declarations.toString)
   }  
   
-  def assertReferencesOfSelection(expected: String, src: String) = withIndex(src) { (tree, index) =>
+  def assertReferencesOfSelection(expected: String, src: String) = withIndex(src) { tree =>
   
     val references = findMarkedNodes(src, tree).trees.head match {
       case t: DefTree => 

@@ -6,7 +6,7 @@ import scala.tools.refactoring.tests.util._
 import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.transformation._
 
-object FragmentsPrinter extends Partitioner with CompilerProvider with Transform with Merger with LayoutHandler with TreePrinter with SilentTracing {
+object FragmentsPrinter extends Regeneration with CompilerProvider with LayoutPreferences with SilentTracing {
   
   def visualize(tree: global.Tree) {
     

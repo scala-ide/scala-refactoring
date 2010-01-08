@@ -8,7 +8,7 @@ import scala.tools.refactoring.util._
 import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
 
-trait TestHelper extends Partitioner with Merger with CompilerProvider with Transform with LayoutHandler with TreePrinter with SilentTracing with Selections {
+trait TestHelper extends Regeneration with CompilerProvider with Transformation with LayoutPreferences with SilentTracing with Selections {
   
   def parts(src: String) = splitIntoFragments(treeFrom(src))
   

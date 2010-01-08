@@ -9,7 +9,7 @@ trait Indexes {
   val global: scala.tools.nsc.Global  
   import global._
   
-  class Index {
+  object index {
     
     private type Refs = ListBuffer[RefTree]
     private type Defs = ListBuffer[DefTree]

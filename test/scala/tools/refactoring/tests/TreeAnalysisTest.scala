@@ -14,22 +14,21 @@ import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 class TreeAnalysisTest extends TestHelper with Indexes with TreeAnalysis {
 
   import global._
-  protected val index = new Index
   
-  def withIndex(src: String)(body: (Tree, Index) => Unit ) {
+  def withIndex(src: String)(body: Tree => Unit ) {
     val tree = treeFrom(src, "TreeAnalysisTest")
     index.processTree(tree)
-    body(tree, index)
+    body(tree)
   }
   
-  def assertInboundLocalDependencies(expected: String, src: String) = withIndex(src) { (tree, index) =>
+  def assertInboundLocalDependencies(expected: String, src: String) = withIndex(src) { tree =>
 
     val selection = findMarkedNodes(src, tree)
     val in = inboundLocalDependencies(selection, selection.symbols.head.owner)
     assertEquals(expected, in mkString ", ")
   }
   
-  def assertOutboundLocalDependencies(expected: String, src: String) = withIndex(src) { (tree, index) =>
+  def assertOutboundLocalDependencies(expected: String, src: String) = withIndex(src) { tree =>
 
     val selection = findMarkedNodes(src, tree)
     val out = outboundLocalDependencies(selection, selection.symbols.head.owner)
