@@ -28,7 +28,7 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
         if(selection.trees.size > 1) {
           transform(d) {
             case block: Block => {
-              mkBlock(replaceTrees(block, selection.trees, call :: Nil))
+              mkBlock(replace(block, selection.trees, call :: Nil))
             }
           }
         } else {
@@ -38,7 +38,7 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
         }
       }
       case tpl @ Template(_, _, body) if body exists (_ == selectedMethod) => {
-        tpl.copy(body = replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
+        tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
       }
     }
     

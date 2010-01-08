@@ -12,10 +12,10 @@ class TransformTest extends TestHelper with Transform {
   def testReplaceTrees() = {
     val ts = List(1, 2, 3, 4, 5)
     
-    assertEquals(List(1, 6, 3, 4, 5), replaceTrees(ts, 2 :: Nil, 6 :: Nil))
-    assertEquals(List(6, 2, 3, 4, 5), replaceTrees(ts, 1 :: Nil, 6 :: Nil))
-    assertEquals(List(1, 2, 3, 4, 6, 7), replaceTrees(ts, 5 :: Nil, 6 :: 7 :: Nil))
-    assertEquals(List(1, 2, 3, 4, 5), replaceTrees(ts, 6 :: Nil, 1 :: Nil))
+    assertEquals(List(1, 6, 3, 4, 5), replace(ts, 2 :: Nil, 6 :: Nil))
+    assertEquals(List(6, 2, 3, 4, 5), replace(ts, 1 :: Nil, 6 :: Nil))
+    assertEquals(List(1, 2, 3, 4, 6, 7), replace(ts, 5 :: Nil, 6 :: 7 :: Nil))
+    assertEquals(List(1, 2, 3, 4, 5), replace(ts, 6 :: Nil, 1 :: Nil))
   }
 }
 

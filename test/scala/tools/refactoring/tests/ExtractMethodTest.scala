@@ -48,8 +48,8 @@ class ExtractMethodTest extends TestHelper {
       }
     }
 
-    class A(s: String)
-    class B(s: String) extends A(s)
+    class A2(s: String)
+    class B(s: String) extends A2(s)
     """ extractMethod("prntln",
     """
     class A {
@@ -62,8 +62,8 @@ class ExtractMethodTest extends TestHelper {
       }
     }
 
-    class A(s: String)
-    class B(s: String) extends A(s)
+    class A2(s: String)
+    class B(s: String) extends A2(s)
     """)
 
   @Test
