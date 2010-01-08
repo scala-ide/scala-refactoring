@@ -44,7 +44,7 @@
 			<formatter type="plain"/>
 			<classpath refid="build.classpath" />
 			<batchtest todir="${build.dir}">
-				<fileset dir="${build.dir}" includes="**/tests/*" excludes="**/*$*.class" />
+				<fileset dir="${build.dir}" includes="**/tests/**/*Test.class" />
 			</batchtest>
 		</junit>
 	</target>

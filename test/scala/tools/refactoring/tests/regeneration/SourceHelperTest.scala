@@ -1,6 +1,6 @@
-package scala.tools.refactoring.tests
+package scala.tools.refactoring.tests.regeneration
 
-import util.TestHelper
+import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 import junit.framework.TestCase
 import org.junit.Assert._

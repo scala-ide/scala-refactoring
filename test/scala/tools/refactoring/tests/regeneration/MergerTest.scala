@@ -1,4 +1,4 @@
-package scala.tools.refactoring.tests
+package scala.tools.refactoring.tests.regeneration
 
 import scala.tools.refactoring.tests.util.TestTransform
 import scala.tools.nsc.symtab.Flags

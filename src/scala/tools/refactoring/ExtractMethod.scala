@@ -13,8 +13,6 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
     
     val selection = new Selection(file, from, to)
     
-    val trees = selection.trees
-        
     val selectedMethod = selection.enclosingDefDef getOrElse(throw new Exception("no enclosing defdef found"))
 
     val parameters = inboundLocalDependencies(selection, selectedMethod.symbol)

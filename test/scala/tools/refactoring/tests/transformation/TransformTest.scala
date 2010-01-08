@@ -1,4 +1,4 @@
-package scala.tools.refactoring.tests
+package scala.tools.refactoring.tests.transform
 
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
