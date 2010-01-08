@@ -9,17 +9,16 @@ import scala.tools.refactoring.regeneration._
 
 private object CompilerInstance {
   
-  val settings = new Settings( msg => () )
+  val settings = new Settings
   
   val scalaObjectSource = Class.forName("scala.ScalaObject").getProtectionDomain.getCodeSource
-  
-  val origBootclasspath = settings.bootclasspath.value
     
   // is null in Eclipse/OSGI but luckily we don't need it there
   if(scalaObjectSource != null) {
     val compilerPath = Class.forName("scala.tools.nsc.Interpreter").getProtectionDomain.getCodeSource.getLocation
     val libPath = scalaObjectSource.getLocation          
     val pathList = List(compilerPath,libPath)
+	  val origBootclasspath = settings.bootclasspath.value
     settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
   }
   

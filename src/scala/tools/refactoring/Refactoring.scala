@@ -5,7 +5,7 @@ import scala.tools.refactoring.regeneration.FragmentRepository
 import scala.tools.refactoring.transformation.TreeFactory
 import scala.tools.refactoring.analysis.TreeAnalysis
 import scala.tools.nsc.io.AbstractFile
-import scala.tools.refactoring.analysis.DeclarationIndexes
+import scala.tools.refactoring.analysis.Indexes
 import scala.tools.refactoring.regeneration.TreePrinter
 import scala.tools.refactoring.regeneration.LayoutHandler
 import scala.tools.refactoring.transformation.Transform
@@ -14,9 +14,18 @@ import scala.tools.refactoring.regeneration.Partitioner
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.interactive.Global
 
-class Refactoring(val global: Global) extends Transform with Selections with Partitioner with Merger with LayoutHandler with TreePrinter with Tracing with DeclarationIndexes with TreeAnalysis with TreeFactory {
+class Refactoring(val global: Global) extends Transform 
+                                         with Selections 
+                                         with Partitioner 
+                                         with Merger 
+                                         with LayoutHandler 
+                                         with TreePrinter 
+                                         with Tracing 
+                                         with Indexes 
+                                         with TreeAnalysis 
+                                         with TreeFactory {
   
-  protected val index = new DeclarationIndex
+  protected val index = new Index
  
   class Selection(file: AbstractFile, from: Int, to: Int) extends TreeSelection(file, from, to)
   

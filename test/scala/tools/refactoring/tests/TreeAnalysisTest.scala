@@ -6,19 +6,18 @@ import junit.framework.TestCase
 import org.junit.Assert._
 import scala.tools.refactoring.util.Selections
 import scala.tools.refactoring.regeneration._
-import scala.tools.refactoring.analysis.{DeclarationIndexes, TreeAnalysis}
+import scala.tools.refactoring.analysis.{Indexes, TreeAnalysis}
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class TreeAnalysisTest extends TestHelper with DeclarationIndexes with TreeAnalysis {
+class TreeAnalysisTest extends TestHelper with Indexes with TreeAnalysis {
 
   import global._
-  protected val index = new DeclarationIndex
+  protected val index = new Index
   
-  def withIndex(src: String)(body: (Tree, DeclarationIndex) => Unit ) {
+  def withIndex(src: String)(body: (Tree, Index) => Unit ) {
     val tree = treeFrom(src, "TreeAnalysisTest")
-    index.clear
     index.processTree(tree)
     body(tree, index)
   }

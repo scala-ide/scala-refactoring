@@ -6,18 +6,18 @@ import junit.framework.TestCase
 import org.junit.Assert._
 import scala.tools.refactoring.util.Selections
 import scala.tools.refactoring.regeneration._
-import scala.tools.refactoring.analysis.DeclarationIndexes
+import scala.tools.refactoring.analysis.Indexes
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class SelectionsTest extends TestHelper with DeclarationIndexes with TreePath {
+class SelectionsTest extends TestHelper with Indexes with TreePath {
 
   import global._
   
   def assertSelection(expectedTrees: String, expectedSymbols: String, src: String) = {
     
-    val index = new DeclarationIndex
+    val index = new Index
 
     val tree = treeFrom(src)
     

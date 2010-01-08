@@ -5,17 +5,17 @@ import org.junit.{Test, Before}
 import junit.framework.TestCase
 import org.junit.Assert._
 import scala.tools.refactoring.util.Selections
-import scala.tools.refactoring.analysis.{DeclarationIndexes, TreeAnalysis}
+import scala.tools.refactoring.analysis.{Indexes, TreeAnalysis}
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class DeclarationIndexTest extends TestHelper with DeclarationIndexes with TreeAnalysis {
+class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
 
   import global._
-  protected val index = new DeclarationIndex
+  protected val index = new Index
   
-  def withIndex(src: String)(body: (Tree, DeclarationIndex) => Unit ) {
+  def withIndex(src: String)(body: (Tree, Index) => Unit ) {
     val tree = treeFrom(src)
     index.processTree(tree)
     body(tree, index)
@@ -25,7 +25,7 @@ class DeclarationIndexTest extends TestHelper with DeclarationIndexes with TreeA
   
     val declarations = findMarkedNodes(src, tree).trees.head match {
       case t: RefTree => 
-        assertTrue("Symbol "+ t.symbol.owner +" does not have a child "+ t.symbol, index.children(t.symbol.owner) exists (t.symbol ==))
+        assertTrue("Symbol "+ t.symbol.owner +" does not have a child "+ t.symbol, index.children(t.symbol.owner) exists (_.symbol == t.symbol))
         index.declaration(t.symbol)
       case t => throw new Exception("found: "+ t)
     }

@@ -18,7 +18,6 @@ trait Partitioner {
 
     val handle: Contribution
     
-    //private var scopes = new scala.collection.mutable.Stack[Scope]
     private var currentScope: Scope = _ 
       
     private val preRequirements = new ListBuffer[Requisite]
