@@ -23,7 +23,7 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
           
     var newTree = transform(file) {
       case tree @ Template(parents, self, body) if body exists (_ == selectedMethod) =>
-        new Template(parents, self, replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil)).copyAttrs(tree)
+        new Template(parents, self, replaceTrees(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
     }
     
     val call = mkCallDefDef(NoMods, newName, parameters :: Nil, returns)
@@ -33,12 +33,12 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
         if(selection.trees.size > 1) {
           transform(d) {
             case b @ Block(stats, expr) => {
-              mkBlock(replaceTrees(stats ::: expr :: Nil, selection.trees, call :: Nil)) copyAttrs b
+              mkBlock(replaceTrees(stats ::: expr :: Nil, selection.trees, call :: Nil))
             }
           }
         } else {
           transform(d) {
-            case t: Tree if t == selection.trees.head => call setPos t.pos // replaceTree
+            case t: Tree if t == selection.trees.head => call
           }
         }
       }
