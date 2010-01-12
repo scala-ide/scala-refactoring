@@ -140,7 +140,7 @@ object SourceHelper {
       case (' ', _1 ) => _1
       case (_1 , ' ') => _1
       case ('\n', '\n') => '\n'
-      case _ => throw new Exception("argh!")
+      case _ => assert(false)
     } mkString
   }
 }

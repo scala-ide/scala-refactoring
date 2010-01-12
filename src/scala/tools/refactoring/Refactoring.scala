@@ -22,7 +22,7 @@ class Refactoring(val global: Global) extends Analysis with Transformation with 
     val partitionedOriginal = splitIntoFragments(original)
     
     trace("Original: %s", partitionedOriginal)
-    
+        
     val fr = new FragmentRepository(partitionedOriginal)
 
     val partitionedModified = essentialFragments(changed, fr)

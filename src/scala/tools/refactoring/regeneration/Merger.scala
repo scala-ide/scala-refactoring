@@ -1,5 +1,6 @@
 package scala.tools.refactoring.regeneration
 
+import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.util.Tracing
 
 import java.util.regex._
@@ -25,24 +26,18 @@ trait Merger {
          * We have to split the layout between our current part and its next part in the original 
          * source
          * */
-        val (layoutAfterCurrent, _) = 
+        val (layoutAfterCurrent, _) =
           if(currentExists) {
             splitLayoutBetween(allFragments getNext current)
-          } else {
-            //("<current does not exist>", "<current does not exist>")
-            ("", "")
-          }
+          } else ("", "")
         
         /*
          * We also need the layout of our right neighbour:
          * */
-        val (_, layoutBeforeNext) = 
+        val (_, layoutBeforeNext) =
           if(allFragments exists next) {
             splitLayoutBetween(allFragments getPrevious next)
-          } else {
-            //("<next does not exist>", "<next does not exist>")
-            ("", "")
-          }
+          } else ("", "")
         
         /*
          * We now have 4 fragments of layout, we only need the left slice of our current fragment (that is, 
@@ -67,43 +62,39 @@ trait Merger {
       
       (new StringFragment(indentedLayout), somethingChanged || indentedLayout != layout)
     }
-    
-    def printFragment(f: Fragment) = f match {
-      case f if allFragments exists f => f
-      case f: FlagFragment => StringFragment(f.print) copyRequirements f
-      case f: WithTree => print(f)
-      case f: WithRequisite => StringFragment("") copyRequirements f
-      case _ => StringFragment("<non-tree part>")
-    }
 
     def innerMerge(scope: Scope): (List[Fragment], Boolean) = context("inner merger loop") {
-      trace("current scope is %s", scope)
-      val result = new scala.collection.mutable.ListBuffer[Fragment]
-      var anyChanges = false
+              
+      def printFragment(f: Fragment) = f match {
+        case f if allFragments exists f => f
+        case f: FlagFragment => StringFragment(f.print) copyRequirements f
+        case f: WithTree => print(f)
+        case f: WithRequisite => StringFragment("") copyRequirements f
+        case _ => StringFragment("<non-tree part>")
+      }
       
-      (scope.children zip scope.children.tail) foreach {
-        case (current: Scope, next) => 
+      trace("current scope is %s", scope)
+
+      val(result, changes) = (scope.children zip scope.children.tail).foldLeft((List[Fragment](), false)) {
+        case ((fs, changes), (current: Scope, next)) => 
           val (resultingScope, changedScope) = innerMerge(current)
           val (layout, changed) = withLayout(current, next, scope)
-          result ++= resultingScope
-          result += layout
-          anyChanges |= (changed || changedScope)
-        case (current, next) => 
+          (fs ::: resultingScope ::: layout :: Nil, changes || changed || changedScope)
+        case ((fs, changes), (current, next)) => 
           val (layout, changed) = withLayout(current, next, scope)
-          result += printFragment(current)
-          result += layout
-          anyChanges |= changed
+          (fs ::: printFragment(current) :: layout :: Nil, changes | changed)
       }
+
       (scope match {
-        case scope: TreeScope if !anyChanges =>
+        case scope: TreeScope if !changes =>
           trace("no changes found, keep scope")
-          (new Fragment {
-            def print = scope.file.content.slice(scope.start, scope.end) mkString
-          }) :: Nil
+          List(new Fragment {
+            def print = scope.file.content.slice(scope.start, scope.end)
+          })
         case _ => 
           trace("scope changed")
-          result toList
-      }, anyChanges)
+          result
+      }, changes)
     }
     
     innerMerge(scope)._1

@@ -18,30 +18,33 @@ trait LayoutHandler {
     } else {
       ""
     }
-      
-    def mapRequirements(rs: ListBuffer[Requisite]) = rs.map( getRequisite ) mkString ""
+    
+    def mapRequirements(rs: Seq[Requisite]) = rs map getRequisite mkString ""
 
     val NewlineSeparator = """(?ms)(.*?)(\n.*)""".r
+    val EndsWithNewline = """(?ms)(.*?)\n""".r
+    val StartWithNewline = """(?ms)\n.*""".r
     
     val(layoutBeforeNewline, layoutAfterNewline) = layoutAfterCurrent match {
       case NewlineSeparator(before, after) => (before, after)
       case s => (s, "")
     }
     
+    // layout that is required after a fragment is inserted before a potential newline
     val fixedFirst = layoutBeforeNewline + mapRequirements(current.requiredAfter) + layoutAfterNewline
     
-    val finalLayout = (if(fixedFirst.endsWith("\n") && layoutBeforeNext.startsWith("\n")) {
-      fixedFirst.substring(0, fixedFirst.length-1)
-    } else {
-      fixedFirst
+    // when the layout is split at a newline, the newline is part of both layouts. Thus we have to remove two consecutive newlines:
+    val finalLayout = ((fixedFirst, layoutBeforeNext) match {
+      case(EndsWithNewline(withoutNewline), StartWithNewline()) => withoutNewline
+      case _ => fixedFirst
     }) + layoutBeforeNext + mapRequirements(next.requiredBefore)
-     
+    
     trace("results in %s", finalLayout)
     
     finalLayout
   }
   
-  def fixIndentation(layout: String, existingIndentation: Option[Tuple2[Int, Int]], isEndOfScope: Boolean, currentScopeIndentation: Int): String = context("fix indentation") {
+  def fixIndentation(layout: String, existingIndentation: Option[(Int, Int)], isEndOfScope: Boolean, currentScopeIndentation: Int): String = context("fix indentation") {
 
     if(layout.contains('\n')) {
       
@@ -73,14 +76,14 @@ trait LayoutHandler {
             trace("at the end of the scope, take scope's parent indentation %d", currentScopeIndentation)
             indentString(currentScopeIndentation)
           } else {
-            trace("new scope's indentation is %d → indent to %d ", currentScopeIndentation, currentScopeIndentation + 2)
-            indentString(currentScopeIndentation + 2)
+            trace("new scope's indentation is %d → indent to %d ", currentScopeIndentation, currentScopeIndentation + indentationStep)
+            indentString(currentScopeIndentation + indentationStep)
           }
       }
     } else layout
   }
 
-  def splitLayoutBetween(parts: Option[Triple[Fragment,List[Fragment],Fragment]]) = parts match {
+  def splitLayoutBetween(parts: Option[(Fragment, List[Fragment] ,Fragment)]) = parts match {
     
     case Some((left, layoutFragments, right)) =>
     
@@ -109,6 +112,7 @@ trait LayoutHandler {
           case(_, Comma(l, r),        _) => (l, r, "Comma")
           case(_, s                 , _) => (s, "","NoMatch")
         }
+        
         trace("Rule %s splits layout into %s and %s", why, l, r)
         
         (mergeLayoutWithComment(l, comments), mergeLayoutWithComment(r reverse, comments reverse) reverse)
