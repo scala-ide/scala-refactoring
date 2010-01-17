@@ -30,7 +30,9 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
     
     def essentialFragmentsAre(expected: String) = {
       val tree = treeFrom(src)
-      val generatedCode = essentialFragments(tree, new FragmentRepository(splitIntoFragments(tree))).toString
+      val fragments = splitIntoFragments(tree)
+      val essentials = essentialFragments(tree, new FragmentRepository(fragments))
+      val generatedCode = essentials.toString
       assertEquals(expected, generatedCode)
     }
     

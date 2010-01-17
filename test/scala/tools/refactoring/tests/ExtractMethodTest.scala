@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.util.Tracing
 import scala.tools.refactoring.util.SilentTracing
 import scala.tools.refactoring.ExtractMethod
 import scala.tools.refactoring.tests.util.TestHelper
@@ -10,7 +11,7 @@ class ExtractMethodTest extends TestHelper {
   
   class StringExtractMethod(source: String) {
     def extractMethod(name: String, expected: String) = {
-      val refactoring = new ExtractMethod(global, compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) with SilentTracing 
+      val refactoring = new ExtractMethod(global, compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) with Tracing 
       val result = refactoring perform name
       assertEquals(expected, result)
     }
@@ -393,5 +394,88 @@ class ExtractMethodTest extends TestHelper {
         true  /*)*/
       }
     }
-    """)
+    """)    
+
+  @Test
+  def extractCheckForFalse = """
+trait Check {
+  def whatIsIt(check: Boolean) {
+    if (/*(*/check == false/*)*/ /*hi*/)
+      println("It's false")
+    else
+      println("It's true")
+  }
+}
+    """ extractMethod("isFalse",
+    """
+trait Check {
+  def whatIsIt(check: Boolean) {
+    if (isFalse(check))
+      println("It's false")
+    else
+      println("It's true")
+  }
+  def isFalse(check: Boolean): Boolean = {
+  /*(*/check == false/*)*/ /*hi*/
+  }
+}
+    """)    
+    
+  @Test
+  def extractWithMethod = """
+    class A {
+      def extractFrom(): Boolean = {
+        val invert: Boolean => Boolean = ! _
+        val a = false
+/*(*/   val b = invert(a)    /*)*/
+        b
+      }
+    }
+    """ extractMethod("certainlyTrue",
+    """
+    class A {
+      def extractFrom(): Boolean = {
+        val invert: Boolean => Boolean = ! _
+        val a = false
+        val b = certainlyTrue(invert, a)
+        b
+      }
+      def certainlyTrue(invert: (Boolean) => Boolean, a: Boolean): Boolean = {
+/*(*/   val b = invert(a)    /*)*/
+        b
+      }
+    }
+    """)    
+
+  @Test
+  def extractAllAtOnce = """
+object C {
+  def calculate {
+    val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+    val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
+    val values = 1 to 10 toList
+/*(*/    val     sum = sumList(values)   // the sum
+    val product = prodList(values) /*)*/ // the product
+
+    println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
+  }
+}
+  """ extractMethod("magic",
+  """
+object C {
+  def calculate {
+    val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+    val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
+    val values = 1 to 10 toList
+    val (sum, product) = magic(sumList, prodList, values)
+
+    println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
+  }
+  def magic(sumList: (Seq[Int]) => Int, prodList: (Seq[Int]) => Int, values: List[Int]): (Int, Int) = {
+/*(*/    val     sum = sumList(values)   // the sum
+    val product = prodList(values) /*)*/ // the product
+    (sum, product)
+  }
+}
+  """)
 }

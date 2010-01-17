@@ -148,7 +148,9 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
   
   @Test
   def findReferencesToClass() = {
-    assertReferencesOfSelection("""Z (48, 49), Z (104, 105)""", """
+    assertReferencesOfSelection("""Z (71, 72), Z (127, 128)""", """
+      package xyz
+    
  /*(*/  class Z   /*)*/
 
       class B extends Z

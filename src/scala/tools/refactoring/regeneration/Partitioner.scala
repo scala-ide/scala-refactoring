@@ -64,6 +64,8 @@ trait Partitioner {
         case (i: Ident, Itself) =>
           if(i.symbol.hasFlag(Flags.SYNTHETIC))
             ()
+          else if (i.pos.isRange && i.pos.start == i.pos.end)
+            ()
           else if (i.symbol.pos == NoPosition)
             addFragment(new SymTreeFragment(i) {
               override val end = start + i.name.length
@@ -118,21 +120,25 @@ trait Partitioner {
       
     trait ScopeContribution extends Contribution {
       
+      private def enterScope(s: Scope)(body: => Unit) = {
+        val oldScope = currentScope
+        oldScope add s
+        currentScope = s
+        body
+        currentScope = oldScope
+      }
+      
       def getIndentation(start: Int, tree: Tree, scope: Scope): Int
       
       private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
         case tree if tree.pos == NoPosition =>
           if(indent) {
-            val newScope = new SimpleScope(Some(currentScope), indentationStep)
-            val oldScope = currentScope
-            oldScope add newScope
-            currentScope = newScope
-            // klammern zum scope?
-            currentScope.children.head.requireAfter(new Requisite("{", "{\n"))
-            body
-            currentScope.children.last.requireBefore(new Requisite("\n", "\n"))
-            currentScope.children.last.requireBefore(new Requisite("}", "}"))
-            currentScope = oldScope
+            enterScope(new SimpleScope(Some(currentScope), indentationStep)) {
+              currentScope.children.head.requireAfter(new Requisite("{", "{\n"))
+              body
+              currentScope.children.last.requireBefore(new Requisite("\n", "\n"))
+              currentScope.children.last.requireBefore(new Requisite("}", "}"))
+            }
           } else {
             body
           }
@@ -156,11 +162,7 @@ trait Partitioner {
           if(currentScope == newScope) {
             body
           } else {
-            currentScope add newScope
-            val oldScope = currentScope
-  	        currentScope = newScope
-	          body
-	          currentScope = oldScope
+            enterScope(newScope)(body)
           }
       }
       
@@ -201,8 +203,8 @@ trait Partitioner {
           scope(
               t.cond, 
               indent = false,
-              backwardsSkipLayoutTo('('),
-              skipLayoutTo(')')) {
+              (s, c) => backwardsSkipLayoutTo('(')(s, c),
+              (s, c) => skipLayoutTo(')')(s, c)) {
             super.apply
           }
                     
@@ -240,27 +242,37 @@ trait Partitioner {
           
         case (t @ Apply(fun, args), ParamList) => 
         
-          val numArgs = args filter {
-            case t: SymTree if t.symbol.hasFlag(Flags.SYNTHETIC) => false
-            case t: Tree if t.pos == NoPosition => false
+        if(t.toString == "this.isFalse(check)")
+          println("!"+ t)
+          
+          val actualArguments = args filter {
+            case arg: SymTree if arg.symbol.hasFlag(Flags.SYNTHETIC) => false
+            case _ => true
+          }
+        
+          val numArgs = actualArguments filter {
+            case arg if arg.pos == NoPosition => false
             case _ => true
           } size
           
-          if(numArgs > 0) {
+          if(numArgs == 0 && ! actualArguments.isEmpty) {
+            enterScope(new SimpleScope(Some(currentScope), 0))(super.apply)
+          } else if(numArgs > 0) {
             val o = backwardsSkipLayoutTo('(')(args.head.pos.start - 1, t.pos.source.content)
-            val c = backwardsSkipLayoutTo(')')(t.pos.end, t.pos.source.content) map (1+)/*include the parenthesis*/           
+            val c = backwardsSkipLayoutTo(')')(t.pos.end, t.pos.source.content) map (1+)/*include the parenthesis*/
             
             (o, c) match {
               case (openingParenthesis @ Some(_), closingParenthesis @ Some(_)) =>
                 scope(
                     t,
                     indent = false,
-                    adjustStart = ((_, _) => openingParenthesis),
-                    adjustEnd = ((_, _) =>closingParenthesis)
+                    adjustStart = (_, _) => openingParenthesis,
+                    adjustEnd = (_, _) =>closingParenthesis
                     ) {
                   super.apply 
                 }
-              case _ => super.apply
+              case _ => 
+                super.apply
             }
           } else {
             super.apply

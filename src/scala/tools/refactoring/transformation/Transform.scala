@@ -11,12 +11,16 @@ private[refactoring] trait Transform {
   val global: scala.tools.nsc.Global
   import global._
    
-  def transform(root: Tree)(trans: Tree =>? Tree): Tree = {
+  def transform(root: Tree)(trans: PartialFunction[Tree, Tree]): Tree = {
     new Transformer {
       override def transform(tree: Tree): Tree = {
         super.transform {
           if(trans.isDefinedAt(tree)) {
-            trans(tree) setPos tree.pos
+            val result = trans(tree)
+            //if(result.getClass == tree.getClass)
+              result setPos tree.pos
+            //else
+            //  result
           } else {
             tree
           }
