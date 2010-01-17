@@ -3,25 +3,47 @@ package scala.tools.refactoring
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 
-class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, to: Int) extends Refactoring(global) {
+class ExtractMethod(override val global: Global) extends Refactoring(global) {
   
   import global._
   
-  def perform(newName: String): String = {
+  abstract class PreparationResult {
+    def selection: Selection
+    def file: AbstractFile
+    def selectedMethod: Tree
+  }
+  
+  abstract class RefactoringParameters {
+    def methodName: String
+  }
+  
+  def prepare(f: AbstractFile, from: Int, to: Int) = {
+    val s = new Selection(f, from, to)
+    s.enclosingDefDef match {
+      case Some(defdef) =>
+        Right(new PreparationResult {
+          val selection = s
+          val file = f
+          val selectedMethod = defdef
+        })
+      case None => Left(new PreparationError("no enclosing defdef found"))
+    }
+  }
+    
+  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, String] = {
+    
+    import prepared._
+    import params._
     
     indexFile(file)
-    
-    val selection = new Selection(file, from, to)
-    
-    val selectedMethod = selection.enclosingDefDef getOrElse(throw new Exception("no enclosing defdef found"))
 
     val parameters = inboundLocalDependencies(selection, selectedMethod.symbol)
     
     val returns = outboundLocalDependencies(selection, selectedMethod.symbol)
      
-    val newDef = mkDefDef(NoMods, newName, parameters :: Nil, selection.trees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
+    val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.trees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
           
-    val call = mkCallDefDef(NoMods, newName, parameters :: Nil, returns)
+    val call = mkCallDefDef(NoMods, methodName, parameters :: Nil, returns)
     
     var newTree = transform(file) {
       case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
@@ -42,6 +64,6 @@ class ExtractMethod(override val global: Global, file: AbstractFile, from: Int, 
       }
     }
     
-    refactor(file, newTree)
+    Right(refactor(file, newTree))
   }
 }

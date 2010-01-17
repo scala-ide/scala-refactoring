@@ -11,9 +11,21 @@ class ExtractMethodTest extends TestHelper {
   
   class StringExtractMethod(source: String) {
     def extractMethod(name: String, expected: String) = {
-      val refactoring = new ExtractMethod(global, compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) with Tracing 
-      val result = refactoring perform name
-      assertEquals(expected, result)
+      
+      val refactoring = new ExtractMethod(global) with SilentTracing
+      refactoring.prepare(compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) match {
+        case Right(prepare) =>
+          val result = refactoring.perform(prepare, new refactoring.RefactoringParameters {
+            val selection = prepare.selection
+            val file = prepare.file
+            val methodName = name
+          }) match {
+            case Right(result) => result
+            case Left(error) => error
+          }
+          assertEquals(expected, result)
+        case Left(error) => fail()
+      }
     }
   }
   
