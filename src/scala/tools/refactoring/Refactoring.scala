@@ -13,6 +13,8 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   class Selection(file: AbstractFile, from: Int, to: Int) extends TreeSelection(file, from, to)
     
+  type ChangeSet = String
+  
   type PreparationResult
   class PreparationError(val cause: String)
   class RefactoringError(val cause: String)
@@ -24,7 +26,7 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   def prepare(f: AbstractFile, from: Int, to: Int): Either[PreparationError, PreparationResult]
   
-  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, String]
+  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet]
   
   def refactor(original: global.Tree, changed: global.Tree) = context("main refactoring") {
           

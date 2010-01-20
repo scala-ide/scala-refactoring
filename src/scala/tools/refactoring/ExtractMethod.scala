@@ -30,7 +30,7 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
     }
   }
     
-  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, String] = {
+  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
     
     import prepared._
     import params._
