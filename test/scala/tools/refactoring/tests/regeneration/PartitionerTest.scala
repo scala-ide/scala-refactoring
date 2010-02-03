@@ -8,7 +8,7 @@ import org.junit.Test
 class PartitionerTest extends TestHelper {
   
   @Test
-  def packageWithRoot = "import _root_.java.util.concurrent._" partitionsInto "→0(0)❨|import |_root_|.|java|.|util|.|concurrent|._|❩"
+  def packageWithRoot = "import _root_.java.util.concurrent._" partitionsInto "→0(0)❨|import |_root_|.|java|.|util|.|concurrent|.|_|❩"
    
   @Test
   def testSingleObject = "object A" partitionsInto "→0(0)❨|object |A|❩"

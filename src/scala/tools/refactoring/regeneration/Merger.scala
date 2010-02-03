@@ -67,7 +67,8 @@ trait Merger {
               
       def printFragment(f: Fragment) = f match {
         case f if allFragments exists f => f
-        case f: FlagFragment => StringFragment(f.print) copyRequirements f
+        case f :FlagFragment => StringFragment(f.print) copyRequirements f
+        case f :ImportSelectorsFragment => StringFragment(f.print) copyRequirements f
         case f: WithTree => print(f)
         case f: WithRequisite => StringFragment("") copyRequirements f
         case _ => StringFragment("<non-tree part>")

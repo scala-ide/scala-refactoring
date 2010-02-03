@@ -109,10 +109,23 @@ trait Partitioner {
         case (t: ImplDef, Name) =>
           addFragment(t)
           super.apply
+          
+        case (t @ Import(expr, selectors), Itself) =>
+          super.apply
+          
+          if(selectors.size > 1) {
+            currentScope.lastChild map (_.requireAfter(new Requisite("{")))
+          }
+          
+          addFragment(ImportSelectorsFragment(selectors, t.pos.source))
+          
+          if(selectors.size > 1) {
+            currentScope.lastChild map (_.requireAfter(new Requisite("}")))
+          }
                    
         case (t: Tree, Itself) =>
           addFragment(t)
-          super.apply 
+          super.apply
           
         case _ => super.apply 
       }
@@ -241,10 +254,7 @@ trait Partitioner {
           }
           
         case (t @ Apply(fun, args), ParamList) => 
-        
-        if(t.toString == "this.isFalse(check)")
-          println("!"+ t)
-          
+                  
           val actualArguments = args filter {
             case arg: SymTree if arg.symbol.hasFlag(Flags.SYNTHETIC) => false
             case _ => true
@@ -455,6 +465,9 @@ trait Partitioner {
         case (t: If, Else) =>
           traverse(t.elsep)
           
+        case (t: Import, Itself) =>
+          traverse(t.expr)
+          
         case (t: ModuleDef, Itself) =>
           handle(t → Mods)
           handle(t → Name)
@@ -477,7 +490,7 @@ trait Partitioner {
     
     def notEmptyRangeOrUnknown(t: Tree) = t != EmptyTree && rangeOrNoPos(t)  
         
-    override def traverse(tree: Tree): Unit = tree match {
+    final override def traverse(tree: Tree): Unit = tree match {
         
       case t if !rangeOrNoPos(t) => 
         return // tree is a compiler generated tree, we don't have to handle them
@@ -591,7 +604,10 @@ trait Partitioner {
         handle(tree → Itself)
         super.traverse(tree)
         
-      case Match(selector: Tree, cases) =>
+      case Match(selector, cases) =>
+        handle(tree → Itself)
+        
+      case Import(expr, selectors) =>
         handle(tree → Itself)
         
       case Apply(fun, args) =>

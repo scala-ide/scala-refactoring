@@ -106,6 +106,19 @@ case class SymTreeFragment(tree: Trees#SymTree) extends Fragment with OriginalSo
   val file = tree.pos.source.asInstanceOf[BatchSourceFile]
 }
 
+case class ImportSelectorsFragment(selectors: List[Trees#ImportSelector], val file: SourceFile) extends Fragment with OriginalSourceFragment {
+  val start = selectors.head.namePos
+  private val last = selectors.last
+  val end = if(last.renamePos >= 0) last.renamePos + last.rename.length else last.namePos + last.name.length
+  override def print: Seq[Char] = {
+    selectors map { s =>
+      file.content.slice(
+          s.namePos,
+          if(s.renamePos >= 0) s.renamePos + s.rename.length else s.namePos + s.name.length) mkString
+    } mkString ", "
+  }
+}
+
 case class ArtificialTreeFragment(tree: Trees#Tree) extends Fragment with WithTree {
   def print = "?"+ tree.getClass.getSimpleName
 }

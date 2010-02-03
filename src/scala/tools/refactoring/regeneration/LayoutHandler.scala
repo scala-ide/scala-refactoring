@@ -22,7 +22,7 @@ trait LayoutHandler {
     def mapRequirements(rs: Seq[Requisite]) = rs map getRequisite mkString ""
 
     val NewlineSeparator = """(?ms)(.*?)(\n.*)""".r
-    val EndsWithNewline = """(?ms)(.*?)\n""".r
+    val EndsWithNewline  = """(?ms)(.*?)\n""".r
     val StartWithNewline = """(?ms)\n.*""".r
     
     val(layoutBeforeNewline, layoutAfterNewline) = layoutAfterCurrent match {
