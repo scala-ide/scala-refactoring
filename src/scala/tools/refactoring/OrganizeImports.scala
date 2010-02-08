@@ -22,18 +22,26 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
     
   def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
     
-    def sortImports(imports: List[Tree]) = imports.sortWith({
+    val sortImports: List[Tree] => List[Tree] = _.sortWith({
       case (t1: Import, t2: Import) => t1.expr.toString < t2.expr.toString
     }: (Tree, Tree) => Boolean)
     
-    def collapseImports(imports: List[Tree]) = {
-
-      imports.foldRight(List[Import]()) { 
-        case (imp: Import, Nil) => imp :: Nil
-        case (imp: Import, x :: xs) if imp.expr.toString == x.expr.toString => x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
-        case (imp: Import, xs) => imp :: xs
-      }
+    val collapseImports: List[Tree] => List[Tree] = _.foldRight(List[Import]()) { 
+      case (imp: Import, Nil) => imp :: Nil
+      case (imp: Import, x :: xs) if imp.expr.toString == x.expr.toString => x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
+      case (imp: Import, xs) => imp :: xs
+    }
+    
+    val simplifyWildcards: List[Tree] => List[Tree] = {
+      def importsAll(i: ImportSelector) = i.name == nme.WILDCARD
+      def renames(i: ImportSelector) = i.name != i.rename
       
+      _ map {
+        case imp @ Import(_, selectors) if selectors.exists(importsAll) && !selectors.exists(renames) => 
+          imp.copy(selectors = selectors.filter(importsAll)).setPos(imp.pos)
+        case imp => 
+          imp
+      }
     }
     
     var newTree = transform(prepared.file) {
@@ -43,7 +51,7 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
           case _: Import => true
           case _ => false
         } match {
-          case (imports, others) => collapseImports(sortImports(imports)) ::: others
+          case (imports, others) => (sortImports andThen collapseImports andThen simplifyWildcards apply imports) ::: others
         }
         
         p copy (stats = sorted)

@@ -27,9 +27,36 @@ class OrganizeImportsTest extends TestHelper {
   implicit def stringToStringExtractMethod(source: String) = new StringExtractMethod(source)
 
   @Test
-  def organize = """
-    import java.lang.String
+  def sort = """
     import scala.collection.mutable.ListBuffer
+    import java.lang.Object
+
+    object Main
+    """ organize(
+    """
+    import java.lang.Object
+    import scala.collection.mutable.ListBuffer
+
+    object Main
+    """)
+    
+  @Test
+  def collapse = """
+    import java.lang.String
+    import java.lang.Object
+
+    object Main
+    """ organize(
+    """
+    import java.lang.{Object, String}
+
+    object Main
+    """)    
+    
+  @Test
+  def sortAndCollapse = """
+    import scala.collection.mutable.ListBuffer
+    import java.lang.String
     import java.lang.Object
 
     object Main
@@ -37,6 +64,45 @@ class OrganizeImportsTest extends TestHelper {
     """
     import java.lang.{Object, String}
     import scala.collection.mutable.ListBuffer
+
+    object Main
+    """)    
+    
+  @Test
+  def collapseWithRename = """
+    import java.lang.{String => S}
+    import java.lang.{Object => O}
+
+    object Main
+    """ organize(
+    """
+    import java.lang.{Object => O, String => S}
+
+    object Main
+    """)     
+    
+  @Test
+  def importAll = """
+    import java.lang._
+    import java.lang.String
+
+    object Main
+    """ organize(
+    """
+    import java.lang._
+
+    object Main
+    """)    
+    
+  @Test
+  def importAllWithRename = """
+    import java.lang._
+    import java.lang.{String => S}
+
+    object Main
+    """ organize(
+    """
+    import java.lang.{String => S, _}
 
     object Main
     """)
