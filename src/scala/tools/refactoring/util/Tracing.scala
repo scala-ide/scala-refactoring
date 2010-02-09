@@ -38,7 +38,7 @@ trait Tracing {
     
     val as: Array[AnyRef] = args map {
       case s: String => "«"+ s.replaceAll("\n", "\\\\n") +"»"
-      case f: Fragment => "❮"+ f.toString +"❯"
+      case f: Fragments#Fragment => "❮"+ f.toString +"❯"
       case a: AnyRef => a
       
     } toArray

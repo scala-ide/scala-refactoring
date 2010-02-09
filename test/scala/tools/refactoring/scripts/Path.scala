@@ -14,7 +14,7 @@ import scala.tools.nsc.reporters.ConsoleReporter
 
 object Path extends CompilerProvider with TreePath {
   
-  import global._
+  //import global._
   
   def main(args : Array[String]) : Unit = {
     
@@ -37,9 +37,9 @@ object Path extends CompilerProvider with TreePath {
         
 //    val p = tree / ClassDef / 0 / DefDef / -1 / ValDef
     
-    val p = tree / DefDef / SubTree("rhs")
+    //val p = tree / DefDef / SubTree("rhs")
     
-    println(p)
+    //println(p)
 
     // why?
     exit(0)

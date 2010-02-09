@@ -3,7 +3,11 @@ package scala.tools.refactoring.regeneration
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.SourceFile
 
-object SourceHelper {
+trait SourceHelper {
+  
+  self: scala.tools.refactoring.regeneration.Fragments =>
+  
+  val global: scala.tools.nsc.Global
   
   def indentationLength(f: Fragment): Option[Int] = f match {
     case f: OriginalSourceFragment => try {
@@ -18,7 +22,7 @@ object SourceHelper {
     case _ => None
   }
 
-  def indentationLength(tree: Trees#Tree): Int = {
+  def indentationLength(tree: global.Tree): Int = {
     indentationLength(tree.pos.start, tree.pos.source.content)
   }
   

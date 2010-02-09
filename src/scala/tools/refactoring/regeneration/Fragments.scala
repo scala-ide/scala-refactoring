@@ -7,8 +7,36 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 import scala.collection.mutable.ListBuffer
 
+trait Fragments {
+  
+  val global: scala.tools.nsc.Global
+  
+  case class Requisite(check: String, write: String) {
+    def this(check: String) = this(check, check)
+    override def toString = check
+  }
+  
+  trait WithRequisite {
+    val requiredAfter = new ListBuffer[Requisite]
+    val requiredBefore = new ListBuffer[Requisite]
+    def requireAfter(r: Requisite): this.type = {
+      requiredAfter += r
+      this
+    }
+    def requireBefore(r: Requisite): this.type = {
+      requiredBefore += r
+      this
+    }
+    def hasRequirements = requiredAfter.size > 0 || requiredBefore.size > 0
+    def copyRequirements(from: WithRequisite): this.type = {
+      from.requiredAfter foreach (requireAfter _)
+      from.requiredBefore foreach (requireBefore _)
+      this
+    }
+  }
+
 trait WithTree {
-  def tree: Trees#Tree
+  def tree: global.Tree
 }
 
 abstract class Fragment extends WithRequisite {
@@ -62,7 +90,7 @@ case class SimpleScope(parent: Option[Scope], relativeIndentation: Int) extends 
   def children = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
 }
 
-case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFile, relativeIndentation: Int, tree: Trees#Tree) extends Scope with OriginalSourceFragment with WithTree {
+case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFile, relativeIndentation: Int, tree: global.Tree) extends Scope with OriginalSourceFragment with WithTree {
 
   class BeginOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: TreeScope) extends Fragment with OriginalSourceFragment {
     override def toString = "❨"
@@ -95,7 +123,7 @@ case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFi
   }
 }
 
-case class SymTreeFragment(tree: Trees#SymTree) extends Fragment with OriginalSourceFragment with WithTree {
+case class SymTreeFragment(tree: global.SymTree) extends Fragment with OriginalSourceFragment with WithTree {
   override def hashCode = toString.hashCode + start * 31 * (end + 17)
   override def equals(that: Any) = that match {
     case that: SymTreeFragment => that.start == this.start && that.end == this.end && that.file == this.file
@@ -106,7 +134,7 @@ case class SymTreeFragment(tree: Trees#SymTree) extends Fragment with OriginalSo
   val file = tree.pos.source.asInstanceOf[BatchSourceFile]
 }
 
-case class ImportSelectorsFragment(selectors: List[Trees#ImportSelector], val file: SourceFile) extends Fragment with OriginalSourceFragment {
+case class ImportSelectorsFragment(selectors: List[global.ImportSelector], val file: SourceFile) extends Fragment with OriginalSourceFragment {
   val start = selectors.head.namePos
   private val last = selectors.last
   val end = if(last.renamePos >= 0) last.renamePos + last.rename.length else last.namePos + last.name.length
@@ -119,11 +147,11 @@ case class ImportSelectorsFragment(selectors: List[Trees#ImportSelector], val fi
   }
 }
 
-case class ArtificialTreeFragment(tree: Trees#Tree) extends Fragment with WithTree {
+case class ArtificialTreeFragment(tree: global.Tree) extends Fragment with WithTree {
   def print = "?"+ tree.getClass.getSimpleName
 }
 
-case class TreeFragment(tree: Trees#Tree) extends Fragment with OriginalSourceFragment with WithTree {
+case class TreeFragment(tree: global.Tree) extends Fragment with OriginalSourceFragment with WithTree {
   lazy val start = tree.pos.start
   lazy val end = if(tree.pos.end + 1 == file.content.length) tree.pos.end + 1 else tree.pos.end
   lazy val file = tree.pos.source
@@ -153,4 +181,5 @@ case class FlagFragment(flag: Long, pos: Position) extends Fragment with Origina
     case Tokens.DEF   => "def"
     case _            => "<unknown>: " + flagsToString(flag)
   }
+}
 }

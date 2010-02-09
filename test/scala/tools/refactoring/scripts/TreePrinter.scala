@@ -1,6 +1,5 @@
 package scala.tools.refactoring.scripts
 
-import scala.tools.nsc.util.NoPosition
 import scala.tools.refactoring._
 import scala.tools.refactoring.util._
 import scala.tools.refactoring.tests.util._

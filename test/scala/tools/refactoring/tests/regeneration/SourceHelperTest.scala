@@ -10,8 +10,6 @@ import scala.tools.nsc.ast.Trees
 @Test
 class SourceHelperTest extends TestHelper {
   
-  import SourceHelper._
-  
   @Test
   def testForwards() = {
     assertEquals(Some(2), forwardsTo('{', 10)(0, " x{"))

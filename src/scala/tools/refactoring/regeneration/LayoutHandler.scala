@@ -5,14 +5,14 @@ import scala.tools.refactoring.util.LayoutPreferences
 import scala.collection.mutable.ListBuffer
 
 trait LayoutHandler {
-  self: Tracing with LayoutPreferences =>
+  self: Tracing with LayoutPreferences with SourceHelper with Fragments =>
   
   def processRequisites(current: Fragment, layoutAfterCurrent: String, layoutBeforeNext: String, next: Fragment) = context("requisites") {
   
     trace("layout     %s, %s", layoutAfterCurrent, layoutBeforeNext)
     
     // check for overlapping layouts and requirements! => testSortWithJustOne
-    def getRequisite(r: Requisite) = if(!(SourceHelper.stripComment(layoutAfterCurrent + layoutBeforeNext)).contains(r.check)) {
+    def getRequisite(r: Requisite) = if(!(stripComment(layoutAfterCurrent + layoutBeforeNext)).contains(r.check)) {
       trace("%s does not contain requisite %s → write %s", layoutAfterCurrent + layoutBeforeNext, r.check, r.write)
       r.write 
     } else {
@@ -100,7 +100,7 @@ trait LayoutHandler {
         val Comma = """(.*?),\s?(.*)""".r
         val NewLine = """(?ms)(.*?\n)(.*)""".r
         
-        val (layout, comments) = SourceHelper splitComment (layoutFragments mkString)
+        val (layout, comments) = splitComment (layoutFragments mkString)
 
         trace("splitting layout %s between %s and %s. Comments are %s", layout, left, right, comments)
         

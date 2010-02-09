@@ -9,7 +9,7 @@ import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
 
 trait Partitioner {
-  self: Tracing with LayoutPreferences =>
+  self: Tracing with LayoutPreferences with Fragments with FragmentRepository with SourceHelper =>
   val global: scala.tools.nsc.Global
   import global.{Scope => _, _}
      
@@ -181,8 +181,6 @@ trait Partitioner {
       
       private def noChange(offset: Int, content: Seq[Char]) = Some(offset) 
       
-      import SourceHelper._
-
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
       
         case (t: ImplDef, Itself) =>
@@ -638,10 +636,10 @@ trait Partitioner {
   def essentialFragments(root: Tree, fs: FragmentRepository) = new Visitor {
      val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
        def getIndentation(start: Int, tree: Tree, scope: Scope): Int = {
-         val v1 = SourceHelper.indentationLength(start, tree.pos.source.content)
+         val v1 = indentationLength(start, tree.pos.source.content)
          
          val scopeIndentation = scope match {
-           case scope: TreeScope => SourceHelper.indentationLength(scope.start, scope.file.content)
+           case scope: TreeScope => indentationLength(scope.start, scope.file.content)
            case _ => -1
          }
          
@@ -658,7 +656,7 @@ trait Partitioner {
     val parts = new Visitor {
       val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
         def getIndentation(start: Int, tree: Tree, scope: Scope) = { 
-          val v1 = SourceHelper.indentationLength(start, tree.pos.source.content)
+          val v1 = indentationLength(start, tree.pos.source.content)
           val v2 = scope.indentation
           v1 - v2
         }

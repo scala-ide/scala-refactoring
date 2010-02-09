@@ -6,7 +6,7 @@ import scala.tools.refactoring.util.Tracing
 import java.util.regex._
 
 trait Merger {
-  self: LayoutHandler with TreePrinter with Tracing =>
+  self: LayoutHandler with TreePrinter with Tracing with SourceHelper with Fragments with FragmentRepository =>
   
   def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = context("merge fragments") {
     
@@ -54,7 +54,7 @@ trait Merger {
         (layout, true)
       }
 	    
-	    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => SourceHelper.indentationLength(next) map (s → _))
+	    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => indentationLength(next) map (s → _))
 	    
 	    val indentedLayout = fixIndentation(layout, existingIndentation, next.isEndOfScope, scope.indentation)
   
