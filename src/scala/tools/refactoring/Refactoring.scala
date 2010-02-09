@@ -1,5 +1,6 @@
 package scala.tools.refactoring
 
+import scala.tools.refactoring.util.SilentTracing
 import scala.tools.refactoring.util.LayoutPreferences
 import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.regeneration.Regeneration
@@ -9,7 +10,7 @@ import scala.tools.refactoring.regeneration.FragmentRepository
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 
-abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with Tracing with LayoutPreferences {
+abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with /*Silent*/Tracing with LayoutPreferences {
   
   class Selection(file: AbstractFile, from: Int, to: Int) extends TreeSelection(file, from, to)
     

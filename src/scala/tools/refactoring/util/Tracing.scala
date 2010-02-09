@@ -2,6 +2,11 @@ package scala.tools.refactoring.util
 
 import scala.tools.refactoring.regeneration._
 
+object StopWatch {
+  private lazy val start = System.currentTimeMillis
+  def elapsed = System.currentTimeMillis - start
+}
+
 trait Tracing {
   
   var level = 0
@@ -36,14 +41,16 @@ trait Tracing {
   
   def trace(msg: String, args: Any*) {
     
-    val as: Array[AnyRef] = args map {
+    print(StopWatch.elapsed +"\t"+ msg)
+    
+    /*val as: Array[AnyRef] = args map {
       case s: String => "«"+ s.replaceAll("\n", "\\\\n") +"»"
       case f: Fragments#Fragment => "❮"+ f.toString +"❯"
       case a: AnyRef => a
       
     } toArray
     
-    print ((indent * level) + marker + msg.format(as: _*))
+    print ((indent * level) + marker + msg.format(as: _*))*/
   }
   
   def print(s: String) = println(s)
