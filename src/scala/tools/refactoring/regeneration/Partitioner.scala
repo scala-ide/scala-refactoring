@@ -255,18 +255,15 @@ trait Partitioner {
                   
           val actualArguments = args filter {
             case arg: SymTree if arg.symbol.hasFlag(Flags.SYNTHETIC) => false
-            case _ => true
+            case arg => arg.pos.isRange || arg.pos == NoPosition
           }
         
-          val numArgs = actualArguments filter {
-            case arg if arg.pos == NoPosition => false
-            case _ => true
-          } size
+          val numArgs = actualArguments filter (_.pos.isRange) size
           
           if(numArgs == 0 && ! actualArguments.isEmpty) {
             enterScope(new SimpleScope(Some(currentScope), 0))(super.apply)
           } else if(numArgs > 0) {
-            val o = backwardsSkipLayoutTo('(')(args.head.pos.start - 1, t.pos.source.content)
+            val o = backwardsSkipLayoutTo('(')(actualArguments.head.pos.start - 1, t.pos.source.content)
             val c = backwardsSkipLayoutTo(')')(t.pos.end, t.pos.source.content) map (1+)/*include the parenthesis*/
             
             (o, c) match {

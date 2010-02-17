@@ -1,5 +1,6 @@
 package scala.tools.refactoring.regeneration
 
+import scala.collection.mutable.HashMap
 trait FragmentRepository {
 
   self: Fragments =>
@@ -8,7 +9,7 @@ trait FragmentRepository {
   
   // cache, optimize, whatever!
   class FragmentRepository(root: Scope) {
-      
+
     private def visit(part: Scope, find: Fragment): Option[Scope] = {
       part.children foreach {
         case p if p == find => return Some(part)
@@ -46,26 +47,28 @@ trait FragmentRepository {
       return found
     }
     
-    def exists(part: Fragment) = visit(root, part) match {
-      case Some(found) => found.children.exists(_ == part)
-      case None => false
+    def exists(part: Fragment) = {
+      visit(root, part) match {
+        case Some(found) => found.children.exists(_ == part)
+        case None => false
+      }
     }
     
-    def scopeIndentation(part: Fragment) = visit(root, part) map (_.indentation)
+    def scopeIndentation(part: Fragment) = {
+      visit(root, part) map (_.indentation)
+    }
   
     def scopeIndentation(tree: global.Tree) = {
-      val treeScope = visit(root, tree)
-      if(tree.isInstanceOf[global.Block]) {
-        val treeScope = visit(root, tree)
-        val i = treeScope.get.indentation
-        ()
-      }
-      treeScope map (_.indentation)
+      visit(root, tree) map (_.indentation)
     }
     
-    def getNext(part: Fragment) = get(part, (xs => xs), (_, _, _))
+    def getNext(part: Fragment) = {
+      get(part, (xs => xs), (_, _, _))
+    }
   
-    def getPrevious(part: Fragment) = get(part, (_.reverse), (_1, _2, _3) => (_3, _2.reverse, _1))
+    def getPrevious(part: Fragment) = {
+      get(part, (_.reverse), (_1, _2, _3) => (_3, _2.reverse, _1))
+    }
   
     private def get(part: Fragment, findPart: List[Fragment] => List[Fragment], mkReturn: (Fragment, List[Fragment], Fragment) => Triple[Fragment, List[Fragment], Fragment]): Option[Triple[Fragment, List[Fragment], Fragment]] = {
       

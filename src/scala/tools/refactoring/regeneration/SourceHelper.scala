@@ -88,48 +88,66 @@ trait SourceHelper {
   
   def stripComment(s: Seq[Char]) = splitComment(s)._1
   
-  def splitComment(s: Seq[Char]): Pair[String, String] = {
-           
-    var nestingLevel = 0
-    var lineComment = false
-    var nextToComment = false
-    
-    val(comment: Seq[_], text: Seq[_]) = ((s.toList zip (s ++ " ").toList.tail) map {
+  private val memoizedComments = scala.collection.mutable.Map.empty[Seq[Char], (String, String)]
+  
+  def splitComment(s: Seq[Char]): (String, String) = s match {
+    case Nil => ("", "")
+    case a :: Nil => (a.toString, " ")
+    case s if memoizedComments contains s => memoizedComments(s)
+    case s =>
+      var nestingLevel = 0
+      var lineComment = false
+      var nextToComment = false
       
-      case (_1, _) if nextToComment =>
-        nextToComment = false
-        (_1, ' ')
+      val text = new StringBuilder
+      val comment = new StringBuilder
       
-      case ('/', '/') if !lineComment && nestingLevel == 0 => 
-        lineComment = true
-        nextToComment = true
-        ('/', ' ')
+      def add(c: Char, t: Char) = {
+        comment append c
+        text append t
+      }
       
-      case ('\n', _ ) =>
-        lineComment = false
-        ('\n', '\n')
+      (s ++ " ") reduceLeft({
+        case (_1, _2) if nextToComment =>
+          nextToComment = false
+          add(_1, ' ')
+          _2
         
-      case ('/', '*') if !lineComment =>
-        nestingLevel += 1
-        nextToComment = true
-        ('/', ' ')
+        case ('/', '/') if !lineComment && nestingLevel == 0 => 
+          lineComment = true
+          nextToComment = true
+          add('/', ' ')
+          '/'
         
-      case ('*', '/') if !lineComment && nestingLevel > 0 =>
-        nestingLevel -= 1
-        nextToComment = true
-        ('*', ' ')
-        
-      case (_1 , _  ) if lineComment || nestingLevel > 0 => 
-        (_1, ' ')
-        
-      case (_1 , _  ) =>
-        (' ', _1)
-        
-    }).foldRight(List[Char](), List[Char]()) {
-      (c, l) => (c._1 :: l._1, c._2 :: l._2)
-    }
-    
-    (text mkString, comment mkString)
+        case ('\n', _2) =>
+          lineComment = false
+          add('\n', '\n')
+          _2
+          
+        case ('/', '*') if !lineComment =>
+          nestingLevel += 1
+          nextToComment = true
+          add('/', ' ')
+          '*'
+          
+        case ('*', '/') if !lineComment && nestingLevel > 0 =>
+          nestingLevel -= 1
+          nextToComment = true
+          add('*', ' ')
+          '/'
+          
+        case (_1, _2) if lineComment || nestingLevel > 0 => 
+          add(_1, ' ')
+          _2
+          
+        case (_1, _2) =>
+          add(' ', _1)
+          _2
+      }: (Char, Char) => Char)
+      
+      memoizedComments += s → (text mkString, comment mkString)
+      
+      (text mkString, comment mkString)
   }
   
   def liftComment(s: String)(body: String => String) = {
