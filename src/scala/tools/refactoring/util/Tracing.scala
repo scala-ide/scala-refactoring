@@ -40,17 +40,15 @@ trait Tracing {
   }
   
   def trace(msg: String, args: Any*) {
-    
-    print(StopWatch.elapsed +"\t"+ msg)
-    
-    /*val as: Array[AnyRef] = args map {
+        
+    val as: Array[AnyRef] = args map {
       case s: String => "«"+ s.replaceAll("\n", "\\\\n") +"»"
       case f: Fragments#Fragment => "❮"+ f.toString +"❯"
       case a: AnyRef => a
       
     } toArray
     
-    print ((indent * level) + marker + msg.format(as: _*))*/
+    print (StopWatch.elapsed +"\t"+ (indent * level) + marker + msg.format(as: _*))
   }
   
   def print(s: String) = println(s)

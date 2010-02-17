@@ -105,6 +105,32 @@ class LayoutHandlerTest extends TestHelper {
   }
   
   @Test
+  def testImports() = {
+    """
+    package test
+    //test
+    import scala.collection.mutable.ListBuffer
+    import java.lang.String
+
+    object Main
+    """ splitsInto 
+    """
+▒
+    package test
+    //test
+▒
+    import scala.▒collection.▒mutable.▒ListBuffer
+▒
+    import java.▒lang.▒String
+▒
+
+    object ▒Main▒▒
+▒
+    ▒"""
+  }
+  
+  
+  @Test
   def testClassMembers() = {
     """
       class A {

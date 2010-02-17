@@ -83,7 +83,7 @@ trait LayoutHandler {
     } else layout
   }
 
-  def splitLayoutBetween(parts: Option[(Fragment, List[Fragment] ,Fragment)]) = parts match {
+  def splitLayoutBetween(parts: Option[(Fragment, List[Fragment], Fragment)]) = parts match {
     
     case Some((left, layoutFragments, right)) =>
     
@@ -99,18 +99,20 @@ trait LayoutHandler {
         val ClosingBrace = """(?ms)(.*?)(\).*)""".r
         val Comma = """(.*?),\s?(.*)""".r
         val NewLine = """(?ms)(.*?\n)(.*)""".r
+        val ImportStatement = """(?ms)(.*)\n(.*?import.*)""".r // imports don't include leading lines
         
         val (layout, comments) = splitComment (layoutFragments mkString)
 
         trace("splitting layout %s between %s and %s. Comments are %s", layout, left, right, comments)
         
         val(l, r, why) = (left, layout, right) match {
-          case(_, EmptyParens(l, r) , _) => (l, r, "EmptyParens")
-          case(_, OpeningBrace(l, r), _) => (l, r, "OpeningBrace")
-          case(_, ClosingBrace(l, r), _) => (l, r, "ClosingBrace")
-          case(_, NewLine(l, r)     , _) => (l, "\n"+r, "NewLine")
-          case(_, Comma(l, r),        _) => (l, r, "Comma")
-          case(_, s                 , _) => (s, "","NoMatch")
+          case(_, EmptyParens(l, r) , _)    => (l, r, "EmptyParens")
+          case(_, OpeningBrace(l, r), _)    => (l, r, "OpeningBrace")
+          case(_, ClosingBrace(l, r), _)    => (l, r, "ClosingBrace")
+          case(_, ImportStatement(l, r), _) => (l+"\n", "\n"+r, "ImportStatement")
+          case(_, NewLine(l, r)     , _)    => (l, "\n"+r, "NewLine")
+          case(_, Comma(l, r),        _)    => (l, r, "Comma")
+          case(_, s                 , _)    => (s, "","NoMatch")
         }
         
         trace("Rule %s splits layout into %s and %s", why, l, r)

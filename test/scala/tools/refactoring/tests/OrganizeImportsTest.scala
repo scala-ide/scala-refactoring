@@ -95,6 +95,24 @@ class OrganizeImportsTest extends TestHelper {
     """)    
     
   @Test
+  def importWithSpace = """
+    package test
+
+    import scala.collection.mutable.ListBuffer
+    import java.lang.String
+
+    object Main
+    """ organize(
+    """
+    package test
+
+    import java.lang.String
+    import scala.collection.mutable.ListBuffer
+
+    object Main
+    """)    
+    
+  @Test
   def importAllWithRename = """
     import java.lang._
     import java.lang.{String => S}
