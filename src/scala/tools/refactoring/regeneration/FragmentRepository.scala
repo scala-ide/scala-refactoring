@@ -9,57 +9,78 @@ trait FragmentRepository {
   
   // cache, optimize, whatever!
   class FragmentRepository(root: Scope) {
-
-    private def visit(part: Scope, find: Fragment): Option[Scope] = {
-      part.children foreach {
-        case p if p == find => return Some(part)
-        case p: Scope => visit(p, find) match {
-          case None => ()
-          case Some(found) => return Some(found)
-        }
-        case _ => ()
+    
+    private object ScopeFound extends Exception {
+      var result: Scope = _
+      def apply(s: Scope) {
+        result = s
+        throw this
       }
-      None
+    }
+
+    private def visit(find: Fragment) = {
+    
+      def innerVisit(s: Scope) {
+        s.children foreach {
+          case p if p == find => ScopeFound(s)
+          case p: Scope => innerVisit(p)
+          case _ => ()
+        }
+      }
+    
+      var result = None: Option[Scope]
+      
+      try {
+        innerVisit(root)
+      } catch {
+        case ScopeFound => result = Some(ScopeFound.result)
+      }
+      
+      result
     }
     
-    private def visit(part: Scope, find: global.Tree): Option[Scope] = {
-      
-      var found: Option[Scope] = None
-      
+    private def visit(find: global.Tree): Option[Scope] = {
+            
       def innerVisit(part: Scope) {
       
         part.children foreach { child =>
         
           if(child.isInstanceOf[WithTree]) {
-            if(child.asInstanceOf[WithTree].tree.pos.sameRange(find.pos) && found == None) {
-              found = Some(part)
+            if(child.asInstanceOf[WithTree].tree.pos.sameRange(find.pos)) {
+              ScopeFound(part)
             }
           }
             
-          if(child.isInstanceOf[Scope] && found == None) {
+          if(child.isInstanceOf[Scope]) {
             innerVisit(child.asInstanceOf[Scope])
           }
         }
       }
+            
+      var result = None: Option[Scope]
       
-      innerVisit(part)
+      try {
+        innerVisit(root)
+      } catch {
+        case ScopeFound => result = Some(ScopeFound.result)
+      }
       
-      return found
+      result
     }
     
     def exists(part: Fragment) = {
-      visit(root, part) match {
+      visit(part) match {
         case Some(found) => found.children.exists(_ == part)
         case None => false
       }
     }
     
     def scopeIndentation(part: Fragment) = {
-      visit(root, part) map (_.indentation)
+      visit(part) map (_.indentation)
     }
   
     def scopeIndentation(tree: global.Tree) = {
-      visit(root, tree) map (_.indentation)
+      visit(tree) map (_.indentation)
     }
     
     def getNext(part: Fragment) = {
@@ -72,7 +93,7 @@ trait FragmentRepository {
   
     private def get(part: Fragment, findPart: List[Fragment] => List[Fragment], mkReturn: (Fragment, List[Fragment], Fragment) => Triple[Fragment, List[Fragment], Fragment]): Option[Triple[Fragment, List[Fragment], Fragment]] = {
       
-      val neighbourhood = visit(root, part).getOrElse(return None).children
+      val neighbourhood = visit(part).getOrElse(return None).children
       
       val partInOriginal = findPart(neighbourhood).dropWhile(_ != part)
       
