@@ -1,4 +1,4 @@
-<project name="Scala Refactoring" default="build">
+<project name="Scala Refactoring" default="jar">
 
 	<property name="sources.dir" value="src" />
 	<property name="test.dir" value="test" />
