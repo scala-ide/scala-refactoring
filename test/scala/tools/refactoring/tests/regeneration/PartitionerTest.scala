@@ -78,9 +78,9 @@ class PartitionerTest extends TestHelper {
     }
   """ partitionsInto
   """→0(0)❨|
-    |→4(4)❨|class |W| extends |AnyRef| |→4(0)❨|{
+    |→4(4)❨|class |W| extends |AnyRef| {
       
-    }|❩|❩|
+    }|❩|
   |❩"""
 
   @Test
@@ -93,8 +93,8 @@ class PartitionerTest extends TestHelper {
     }
   """ partitionsInto
   """→0(0)❨|
-    |→4(4)❨|class |Xyz|(|private| val |abc|: |String|, var |int|: |Int|) |→4(0)❨|{
-    }|❩|❩|
+    |→4(4)❨|class |Xyz|(|private| val |abc|: |String|, var |int|: |Int|) {
+    }|❩|
   |❩"""
 
   @Test
@@ -110,7 +110,7 @@ class PartitionerTest extends TestHelper {
   def testClassParams = "class Xyz(i: Int/**/)/**/" partitionsInto "→0(0)❨|→0(0)❨|class |Xyz|(|i|: |Int|/**/)|❩|/**/|❩"
   
   @Test
-  def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "→0(0)❨|→0(0)❨|trait| |A|❩|; |→0(0)❨|class |Xyz| extends { |type| |T| } with |A| |→0(0)❨|{  }|❩|❩|/*done*/|❩"
+  def testEarlyDef = "trait A; class Xyz extends { type T } with A {  }/*done*/" partitionsInto "→0(0)❨|→0(0)❨|trait| |A|❩|; |→0(0)❨|class |Xyz| extends { |type| |T| } with |A| {  }|❩|/*done*/|❩"
 
   @Test
   def testEarlyDefFromSpec5_1_8 =
@@ -263,4 +263,16 @@ class PartitionerTest extends TestHelper {
       }|❩|
     }|❩|❩|
   |❩"""
+  
+  @Test
+  def multipleAssignment =
+      """
+    class A {
+      def assign {
+        val (a, b) = (1, 2)
+      }
+    }
+  """ partitionsInto
+  """"""
+  
 }

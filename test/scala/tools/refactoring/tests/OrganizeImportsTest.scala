@@ -92,6 +92,25 @@ class OrganizeImportsTest extends TestHelper {
     import java.lang._
 
     object Main
+    """)      
+    
+  @Test
+  def importOnTrait = """
+    import java.lang._
+    import java.lang.String
+
+    trait A
+
+    trait Main extends A {
+    }
+    """ organize(
+    """
+    import java.lang._
+
+    trait A
+
+    trait Main extends A {
+    }
     """)    
     
   @Test
