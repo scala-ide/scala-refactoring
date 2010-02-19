@@ -237,14 +237,14 @@ trait Partitioner {
             super.apply
           }
           
-        case (t @ Template(parents, _, body), ClassBody(ts)) if ts.size > 0 =>
+        case (t @ Template(parents, _, body), ClassBody(ts)) if !ts.isEmpty =>
           scope(
               t, 
               indent = true, 
               adjustStart = {
                 (start, content) =>
                   val abortOn = (ts filter (_.pos.isRange)).map(_.pos.start).foldLeft(content.length)(_ min _)
-                  val startFrom = ((body ::: parents filter (_.pos.isRange)) filterNot (ts contains)) .foldLeft(start) ( _ max _.pos.end )
+                  val startFrom = ((body ::: parents filter (_.pos.isRange)) filterNot (ts contains)).foldLeft(start) ( _ max _.pos.end )
                   forwardsTo('{', abortOn)(startFrom, content)
                 }, 
               adjustEnd = noChange) {
@@ -571,7 +571,7 @@ trait Partitioner {
         
         val(earlyBody, _) = restBody.filter(_.pos.isRange).partition( (t: Tree) => parents.exists(t.pos precedes _.pos))
                 
-        val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrNoPos)
+        val trueBody = (restBody filterNot (earlyBody contains)).filter(rangeOrNoPos).filter(_ != EmptyTree)
 
         handle(tree → ClassParams(classParams))
 
