@@ -48,7 +48,7 @@ trait Tracing {
       
     } toArray
     
-    print (StopWatch.elapsed +"\t"+ (indent * level) + marker + msg.format(as: _*))
+    print (StopWatch.elapsed +"\t"+ (indent * level) + marker + msg.replaceAll("%", "%%").format(as: _*))
   }
   
   def print(s: String) = println(s)
