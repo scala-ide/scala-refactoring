@@ -51,7 +51,7 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
       def innerMerge(scope: Scope): List[String] = scope.children flatMap {
         case current: Scope => innerMerge(current) ::: withLayout(current) ::  Nil
         case current if current.isLayout => "" :: Nil
-        case current => (current.print mkString) :: withLayout(current) :: Nil
+        case current => "«"+ (current.print mkString) +"»" :: withLayout(current) :: Nil
       }
       
       assertEquals(expected, innerMerge(root) mkString)

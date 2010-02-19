@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests.util
 
+import scala.tools.nsc.util.Position
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
@@ -22,7 +23,11 @@ private object CompilerInstance {
     settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
   }
   
-  val compiler = new Global(settings, new ConsoleReporter(settings))
+  val compiler = new Global(settings, new ConsoleReporter(settings) {
+    override def printMessage(posIn: Position, msg: String) {
+      throw new Exception(msg)
+    }
+  })
   
   new compiler.Run
 }

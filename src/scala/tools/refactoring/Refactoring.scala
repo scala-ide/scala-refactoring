@@ -38,7 +38,7 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
         
     trace("Modified: %s", partitionedModified)
     
-    using(merge(partitionedModified, fr) map (_.print mkString) mkString) { x: String =>
+    returns(merge(partitionedModified, fr) map (_.print mkString) mkString) { x: String =>
        trace("Result: "+ x)
     }
   }

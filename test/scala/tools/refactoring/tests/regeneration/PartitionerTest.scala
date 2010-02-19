@@ -116,7 +116,7 @@ class PartitionerTest extends TestHelper {
   def testEarlyDefFromSpec5_1_8 =
   """
     trait Greeting {
-      val name: String
+      val name: String = "Mirko"
       val msg = "How are you, " +name
     }
     class C extends {
@@ -127,7 +127,7 @@ class PartitionerTest extends TestHelper {
   """ partitionsInto 
   """→0(0)❨|
     |→4(4)❨|trait| |Greeting| |→4(0)❨|{
-      |val| |name|: |String|
+      |val| |name|: |String| = |"Mirko"|
       |val| |msg| = |"How are you, "| |+|name|
     }|❩|❩|
     |→4(4)❨|class |C| extends |→4(0)❨|{

@@ -11,7 +11,7 @@ class OrganizeImportsTest extends TestHelper {
   
   class StringExtractMethod(source: String) {
     def organize(expected: String) = {
-      val refactoring = new OrganizeImports(global) with Tracing
+      val refactoring = new OrganizeImports(global) with SilentTracing
       refactoring.prepare(compile(source), 0, 0) match {
         case Right(prepare) =>
           val result = refactoring.perform(prepare, new refactoring.RefactoringParameters) match {
@@ -115,7 +115,6 @@ class OrganizeImportsTest extends TestHelper {
     
   @Test
   def importWithSpace = """
-    package test
 
     import scala.collection.mutable.ListBuffer
     import java.lang.String
@@ -123,7 +122,6 @@ class OrganizeImportsTest extends TestHelper {
     object Main
     """ organize(
     """
-    package test
 
     import java.lang.String
     import scala.collection.mutable.ListBuffer

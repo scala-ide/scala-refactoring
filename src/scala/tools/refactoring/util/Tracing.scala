@@ -12,19 +12,22 @@ trait Tracing {
   var level = 0
   val marker = "│"
   val indent = "   "
-    
-  def using[T](arg: => T)(body: T => Unit): T = {
-    val r = arg
-    body(arg)
-    r
+  
+  // TODO move to some other utility trait/object 
+  def returns[T](arg: => T) = new {
+    def apply(body: => Unit): T = {
+      val r = arg
+      body
+      r
+    }
+    def apply(body: T => Unit): T = {
+      val r = arg
+      body(r)
+      r
+    }
   }
   
-  def returns[T](arg: => T)(body: => Unit): T = {
-    val r = arg
-    body
-    r
-  }
-  
+  // TODO could we print the whole sequence with http://www.websequencediagrams.com ?
   def context[T](name: String)(body: => T): T = {
  
     val spacer = "─" * (indent.length - 1) 
@@ -48,7 +51,11 @@ trait Tracing {
       
     } toArray
     
-    print (StopWatch.elapsed +"\t"+ (indent * level) + marker + msg.replaceAll("%", "%%").format(as: _*))
+    trace(msg.format(as: _*))
+  }
+  
+  def trace(msg: String) {
+    print (StopWatch.elapsed +"\t"+ (indent * level) + marker + msg)
   }
   
   def print(s: String) = println(s)

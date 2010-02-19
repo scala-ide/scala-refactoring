@@ -286,17 +286,15 @@ trait Partitioner {
         case _ => super.apply
       }
     }
-      
-    type WithModifiers = { def mods: Modifiers; def pos: Position }
     
     trait ModifiersContribution extends FragmentContribution {
-      
-      def hasModifiers(tree: WithModifiers) = tree.pos match {
+            
+      def hasModifiers(tree: MemberDef) = tree.pos match {
         case NoPosition => tree.mods.flags != 0 && tree.mods.flags != Flags.PARAM
         case _ => tree.mods.positions.size > 0
       }
       
-      def modifiers(tree: WithModifiers) = tree.pos match {
+      def modifiers(tree: MemberDef) = tree.pos match {
         case NoPosition=> 
           addFragment(new FlagFragment(tree.mods.flags, NoPosition))
         case _ =>
@@ -304,7 +302,7 @@ trait Partitioner {
       }
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
-        case (t: WithModifiers, Mods) =>
+        case (t: MemberDef, Mods) =>
           if(hasModifiers(t)) {
             modifiers(t)
             super.apply
@@ -369,7 +367,7 @@ trait Partitioner {
           requireAfter("=", " = ")
           super.apply
                     
-        case (t: WithModifiers, Mods) =>
+        case (t: MemberDef, Mods) =>
           requireAfter(" ", " ")
           super.apply
           

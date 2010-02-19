@@ -86,7 +86,7 @@ class LayoutHandlerTest extends TestHelper {
     assertEquals("aaa{\naaabbb\nbbb}", processRequisites(req("{"), "aaa\naaa", "bbb\nbbb", req("}")))
   }
   
-  //@Test
+  //@Test TODO
   def overlappingRequisites() = {
     
     def req(r: String) = (new Fragment { requireAfter(new Requisite(r)); requireBefore(new Requisite(r)); val print = "": Seq[Char] })
@@ -99,34 +99,36 @@ class LayoutHandlerTest extends TestHelper {
   
   @Test
   def testClassParameters() = {
-    "class A ( i: /*c*/Int, s: String)"     splitsInto "class ▒A (▒ i: /*c*/▒Int▒s: ▒String▒)▒"
-    "class A(i: Int, s: String, f: Float)"  splitsInto "class ▒A(▒i: ▒Int▒s: ▒String▒f: ▒Float▒)▒"
-    "class A(/*->*/i: Int/*<-*/)"           splitsInto "class ▒A(▒/*->*/i: ▒Int/*<-*/▒)▒"
+    "class A ( i: /*c*/Int, s: String)"     splitsInto "«»class ▒«A» (▒ «i»: /*c*/▒«Int»▒«s»: ▒«String»▒)«»▒"
+    "class A(i: Int, s: String, f: Float)"  splitsInto "«»class ▒«A»(▒«i»: ▒«Int»▒«s»: ▒«String»▒«f»: ▒«Float»▒)«»▒"
+    "class A(/*->*/i: Int/*<-*/)"           splitsInto "«»class ▒«A»(▒/*->*/«i»: ▒«Int»/*<-*/▒)«»▒"
   }
   
   @Test
   def testImports() = {
     """
-    package test
-    //test
-    import scala.collection.mutable.ListBuffer
-    import java.lang.String
-
-    object Main
+    package test {
+      //test
+      import _root_.scala.collection.mutable.ListBuffer
+      import java.lang.String
+  
+      object Main
+    }
     """ splitsInto 
-    """
+    """«»
 ▒
-    package test
-    //test
+    package «test» {
+      //test
 ▒
-    import scala.▒collection.▒mutable.▒ListBuffer
+      import «_root_».▒«scala».▒«collection».▒«mutable».▒«ListBuffer»
 ▒
-    import java.▒lang.▒String
+      import «java».▒«lang».▒«String»
 ▒
-
-    object ▒Main▒▒
+  
+      «»object ▒«Main»▒«»▒
 ▒
-    ▒"""
+    }
+    «»▒"""
   }
   
   
@@ -134,44 +136,38 @@ class LayoutHandlerTest extends TestHelper {
   def testClassMembers() = {
     """
       class A {
-        val a: Int
-        val b: Int
-        val c: Int
+        val a: Int = 5
       }
     """ splitsInto 
-    """
+    """«»
 ▒
-      class ▒A ▒{
+      «»class ▒«A» ▒«»{
 ▒
-        val ▒a: ▒Int
+        «val» ▒«a»: ▒«Int» = ▒«5»
 ▒
-        val ▒b: ▒Int
+      }«»▒▒«»▒
 ▒
-        val ▒c: ▒Int
-▒
-      }▒▒▒
-▒
-    ▒"""
+    «»▒"""
   }
   
   @Test
   def splitCommentWithComma(): Unit = {
-    "class A ( i: /*,*/ Int )" splitsInto "class ▒A (▒ i: /*,*/ ▒Int ▒)▒"
+    "class A ( i: /*,*/ Int )" splitsInto "«»class ▒«A» (▒ «i»: /*,*/ ▒«Int» ▒)«»▒"
   }  
   
   @Test
   def splitCommentWithClosingParenthesis(): Unit = {
-    "class A ( i: /*(*/ Int )" splitsInto "class ▒A (▒ i: /*(*/ ▒Int ▒)▒"
+    "class A ( i: /*(*/ Int )" splitsInto "«»class ▒«A» (▒ «i»: /*(*/ ▒«Int» ▒)«»▒"
   }  
   
   @Test
   def splitCommentWithOpeningParenthesis(): Unit = {
-    "class A ( i: /*)*/ Int )" splitsInto "class ▒A (▒ i: /*)*/ ▒Int ▒)▒"
+    "class A ( i: /*)*/ Int )" splitsInto "«»class ▒«A» (▒ «i»: /*)*/ ▒«Int» ▒)«»▒"
   } 
   
   @Test
   def dontSplitEmptyParenthesis(): Unit = {
-    "class A() extends AnyRef" splitsInto "class ▒A() ▒extends AnyRef▒▒"
+    "class A() extends AnyRef" splitsInto "«»class ▒«A»() ▒extends «AnyRef»▒«»▒"
   }
 }
 

@@ -14,7 +14,7 @@ trait TreePrinter {
   }
   
   private def printTree(tree: Trees#Tree) = context("printTree") { 
-    using(tree match {
+    returns(tree match {
       case DefDef(_, name, _, _, _, _) => StringFragment(name.toString)
       
       case ValDef(_, name, _, _) => StringFragment(name.toString)
