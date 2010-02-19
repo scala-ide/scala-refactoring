@@ -143,11 +143,11 @@ class LayoutHandlerTest extends TestHelper {
 ▒
       class ▒A ▒{
 ▒
-        val a: ▒Int
+        val ▒a: ▒Int
 ▒
-        val b: ▒Int
+        val ▒b: ▒Int
 ▒
-        val c: ▒Int
+        val ▒c: ▒Int
 ▒
       }▒▒▒
 ▒

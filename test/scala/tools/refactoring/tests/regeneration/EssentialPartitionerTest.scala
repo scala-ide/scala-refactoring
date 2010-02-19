@@ -25,7 +25,7 @@ class EssentialPartitionerTest extends TestHelper {
       5
     }
   }
-    """ essentialFragmentsAre "→0(0)❨|→2(2)❨|A3|→2(0)❨|a|Int|def|b|→4(2)❨|5|❩|❩|❩|❩"
+    """ essentialFragmentsAre "→0(0)❨|→2(2)❨|A3|→2(0)❨|val|a|Int|def|b|→4(2)❨|5|❩|❩|❩|❩"
   }  
   
   @Test
