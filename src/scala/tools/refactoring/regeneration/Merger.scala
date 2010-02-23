@@ -15,8 +15,10 @@ trait Merger {
       val currentExists = allFragments exists current
       val originalNext  = allFragments getNext current
       
-      val (layout, somethingChanged) = if(currentExists && originalNext.isDefined && originalNext.get._3 == next) {
-        val layout = originalNext.get._2 mkString ""
+      val (layout, somethingChanged) = if(currentExists && originalNext.isDefined && originalNext.get._2 == next) {
+        val layout = (current, next)  match {
+          case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
+        }
         trace("%s and %s are in the original order and enclose %s", current, next, layout)
         (layout, false)
       } else {

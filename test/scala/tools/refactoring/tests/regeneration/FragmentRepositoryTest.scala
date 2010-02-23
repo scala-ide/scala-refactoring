@@ -13,17 +13,35 @@ class FragmentRepositoryTest extends TestHelper {
   import global.Tree
       
   class Layout(val print: Seq[Char]) extends Fragment {
-    override val isLayout = true
   }
   
-  val scope = new SimpleScope(None, 2) 
+  val scope = new SimpleScope(None, 2)
   
-  val c1 = new StringFragment("aa"); scope.add(c1)
+  val c1 = new OriginalSourceFragment {
+    def start = throw new Exception("Not Implemented!")
+    def end = throw new Exception("Not Implemented!")
+    def file = throw new Exception("Not Implemented!")
+    override def print = "aa"
+  }; scope.add(c1)
+  
   val c2 = new Layout    (" {"); scope.add(c2)
-  val c3 = new StringFragment("bb"); scope.add(c3)
+  
+  val c3 = new OriginalSourceFragment {
+    def start = throw new Exception("Not Implemented!")
+    def end = throw new Exception("Not Implemented!")
+    def file = throw new Exception("Not Implemented!")
+    override def print = "bb"
+  }; scope.add(c3)
+  
   val c4 = new Layout    (" }"); scope.add(c4)
   val c5 = new Layout    (" ;"); scope.add(c5)
-  val c6 = new StringFragment("cc"); scope.add(c6)
+  
+  val c6 = new OriginalSourceFragment {
+    def start = throw new Exception("Not Implemented!")
+    def end = throw new Exception("Not Implemented!")
+    def file = throw new Exception("Not Implemented!")
+    override def print = "cc"
+  }; scope.add(c6)
   
   val root = new SimpleScope(None, 0)
   root.add(new Layout    ("("))
@@ -34,37 +52,17 @@ class FragmentRepositoryTest extends TestHelper {
 
   @Test
   def indentation() = {
-    assertEquals( Some(2), fs.scopeIndentation(c1))
-    assertEquals( Some(0), fs.scopeIndentation(root.children.head))
-    assertEquals( Some(0), fs.scopeIndentation(scope))
-    assertEquals( None,    fs.scopeIndentation(new StringFragment("xx")))
+    assertEquals(Some(2), fs.scopeIndentation(c1))
+    assertEquals(Some(0), fs.scopeIndentation(root.children.head))
+    assertEquals(Some(0), fs.scopeIndentation(scope))
+    assertEquals(None,    fs.scopeIndentation(new StringFragment("xx")))
   }
   
   @Test
   def invalidFragments() = {
-    assertEquals( None, fs.getNext(new StringFragment("xx")))
-    assertEquals( None, fs.getPrevious(new StringFragment("xx")))
+    assertEquals(None, fs.getNext(new StringFragment("xx")))
+    assertEquals(None, fs.getPrevious(new StringFragment("xx")))
   }  
-
-  @Test
-  def endOfScope() = {
-    assertEquals( Some(c6, Nil, scope.children.last), fs.getNext(c6))
-  }   
-  
-  @Test
-  def beginOfScope() = {
-    assertEquals( Some(scope.children.head, Nil, c1), fs.getPrevious(c1))
-  }  
-  
-  @Test
-  def previousInSimpleScope() = {
-    assertEquals( Some(c1, c2 :: Nil, c3), fs.getPrevious(c3))
-  }  
-  
-  @Test
-  def nextInSimpleScope() = {
-    assertEquals( Some(c3, c4 :: c5 :: Nil, c6), fs.getNext(c3))
-  }
   
   @Test
   def exists() = {
@@ -82,20 +80,21 @@ class FragmentRepositoryTest extends TestHelper {
     assertFalse(fs exists new Layout    (" ;"))
   }
   
-  //@Test
+  //@Test FIXME
   def testScopeIndentation() = {
     val tree = treeFrom("class A")
     val fs = new FragmentRepository(splitIntoFragments(tree))
 
     def collectAll(t: Tree): List[Tree] = {
       
-      def children(t: Tree): List[Tree] = global.treeBrowsers.TreeInfo.children(t) filter (_.pos.isRange)
+      def children(t: Tree): List[Tree] = global.treeBrowsers.TreeInfo.children(t) filter (t => t.pos.isRange && t != global.EmptyTree)
       
       t :: (children(t) flatMap ( child => collectAll(child)))
     }
     
     collectAll(tree) map ( t => (t, fs scopeIndentation t) ) foreach {
-      case (t, indentation) => assertTrue("Indentation for tree "+ t +" not found.", indentation.isDefined)
+      case (t, Some(_)) => ()
+      case (t, None) => fail("Indentation for tree "+ t +" not found.")
     }
   }
 }

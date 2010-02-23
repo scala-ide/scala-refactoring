@@ -83,9 +83,9 @@ trait LayoutHandler {
     } else layout
   }
 
-  def splitLayoutBetween(parts: Option[(Fragment, List[Fragment], Fragment)]) = parts match {
+  def splitLayoutBetween(parts: Option[(OriginalSourceFragment, OriginalSourceFragment)]) = parts match {
     
-    case Some((left, layoutFragments, right)) =>
+    case Some((left, right)) =>
     
       def mergeLayoutWithComment(l: Seq[Char], c: Seq[Char]) = l zip c map {
         case (' ', _1) => _1
@@ -101,7 +101,7 @@ trait LayoutHandler {
         val NewLine = """(?ms)(.*?\n)(.*)""".r
         val ImportStatement = """(?ms)(.*)\n(.*?import.*)""".r // imports don't include leading lines
         
-        val (layout, comments) = splitComment (layoutFragments mkString)
+        val (layout, comments) = splitComment(left.layout(right))
 
         trace("splitting layout %s between %s and %s. Comments are %s", layout, left, right, comments)
         

@@ -21,7 +21,7 @@ trait Partitioner {
       
     private val preRequirements = new ListBuffer[Requisite]
     
-    abstract class TreeElement
+    sealed abstract class TreeElement
     case object Mods extends TreeElement
     case object Itself extends TreeElement
     case object Tpt extends TreeElement
@@ -38,7 +38,6 @@ trait Partitioner {
     case object Name extends TreeElement
     
     abstract class Contribution {
-
       def apply(implicit p: Pair[Tree, TreeElement])
     }
     
@@ -97,7 +96,7 @@ trait Partitioner {
           }
           super.apply 
           
-         case (s : Super, Itself) =>
+         case (s: Super, Itself) =>
            addFragment(new SymTreeFragment(s) {
              override val end = tree.pos.end
            })
@@ -296,7 +295,9 @@ trait Partitioner {
       
       def modifiers(tree: MemberDef) = tree.pos match {
         case NoPosition=> 
-          addFragment(new FlagFragment(tree.mods.flags, NoPosition))
+          addFragment(new Fragment with Flag {
+            val flag = tree.mods.flags
+          })
         case _ =>
           tree.mods.positions.foreach (x => addFragment(new FlagFragment(x._1, x._2)))
       }
@@ -323,7 +324,7 @@ trait Partitioner {
         else
           currentScope.lastChild match {
             case Some(part) => part.requireAfter(new Requisite(check, write))
-            case None => //throw new Exception("No place to attach requisite"+ check +"!") //??
+            case None => //throw new Exception("No place to attach requisite «"+ check +"»!")
           }
       }
       
@@ -647,39 +648,13 @@ trait Partitioner {
      }
   }.visit(root)
   
-  def splitIntoFragments(root: Tree): TreeScope = {
-    val parts = new Visitor {
-      val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
-        def getIndentation(start: Int, tree: Tree, scope: Scope) = { 
-          val v1 = indentationLength(start, tree.pos.source.content)
-          val v2 = scope.indentation
-          v1 - v2
-        }
+  def splitIntoFragments(root: Tree): TreeScope = new Visitor {
+    val handle = new BasicContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
+      def getIndentation(start: Int, tree: Tree, scope: Scope) = { 
+        val v1 = indentationLength(start, tree.pos.source.content)
+        val v2 = scope.indentation
+        v1 - v2
       }
-    }.visit(root)
-    
-    def fillWs(part: Fragment): Fragment = part match {
-      case scope: TreeScope => 
-      
-        val part = scope.copy()
-        
-        def layout(start: Int, end: Int, file: SourceFile) {
-          if(start < end) {
-            part add LayoutFragment(start, end, file)
-          }
-        }
-
-        (scope.children zip scope.children.tail) foreach {
-          case (left: TreeScope#BeginOfScope, right: OriginalSourceFragment) => ()
-            layout(left.end, right.start, left.file)
-          case (left: OriginalSourceFragment, right: OriginalSourceFragment) =>
-            part add (fillWs(left))
-            layout(left.end, right.start, left.file)
-        }
-        part
-      case _ => part
     }
-    
-    fillWs(parts).asInstanceOf[TreeScope]
-  }
+  }.visit(root)
 }

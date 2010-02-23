@@ -42,7 +42,6 @@ trait Fragments {
   }
   
   abstract class Fragment extends WithRequisite {
-    val isLayout = false
     val isEndOfScope = false
     val isBeginOfScope = false
     def print: Seq[Char]
@@ -65,11 +64,11 @@ trait Fragments {
     def end: Int
     def file: SourceFile
     override def print: Seq[Char] = file.content.slice(start, end)
-  }
-  
-  case class LayoutFragment(val start: Int, val end: Int, file: SourceFile) extends Fragment with OriginalSourceFragment {
-    override val isLayout = true
-    override def toString = if(start == end) "❒" else new String(file.content.slice(start, end))
+    
+    def layout(other: OriginalSourceFragment) = {
+      assert(this.file == other.file)
+      file.content.slice(end, other.start) mkString
+    }
   }
   
   case class StringFragment(string: Seq[Char]) extends Fragment {
@@ -81,14 +80,24 @@ trait Fragments {
     def relativeIndentation: Int
     def children: List[Fragment]
     def lastChild: Option[Fragment] = if(trueChildren.isEmpty) None else Some(trueChildren.last)
-    def indentation: Int = parent match {
-      case Some(fragment) => fragment.indentation + relativeIndentation
-      case None => relativeIndentation
-    }
+    def indentation: Int = relativeIndentation + (parent map (_.indentation) getOrElse(0))
     protected val trueChildren = new ListBuffer[Fragment]()
     def add(p: Fragment) = trueChildren += p //assert that they are in order?
     override def print: Seq[Char] = children mkString
-    override def toString = "→"+ indentation +"("+ relativeIndentation +")"+ (children mkString "|")
+    override def toString = {
+      
+      def expandChildrenWithLayout(c: List[Fragment]) = {
+        (c zip c.tail flatMap {
+          case (_1: OriginalSourceFragment, _2: OriginalSourceFragment) => 
+            val l = _1.layout(_2)
+            _1 :: (if(l == "") Nil else l :: Nil)
+          case (_1, _) => 
+            _1 :: Nil
+        }) ::: c.last :: Nil
+      }
+      
+      "→"+ indentation +"("+ relativeIndentation +")"+ (expandChildrenWithLayout(children) mkString "|")
+    }
   }
   
   case class SimpleScope(parent: Option[Scope], relativeIndentation: Int) extends Scope {
@@ -129,9 +138,10 @@ trait Fragments {
     private val endOfScope = new EndOfScope(end, end, file, this)
     
     def children: List[Fragment] = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
-    // would it be enough to just check whether the trees are equal?
+    
+    override def hashCode = file.hashCode + start * 37 * (end + 13)
     override def equals(that: Any) = that match {
-      case that: TreeScope => that.start == this.start && that.end == this.end && that.file == this.file// && that.parent == this.parent
+      case that: TreeScope => that.start == this.start && that.end == this.end && that.file == this.file
       case _ => false
     }
   }
@@ -148,7 +158,7 @@ trait Fragments {
       case t: global.DefTree => t.name.length
       case t => t.pos.end 
     })
-    val file = tree.pos.source.asInstanceOf[BatchSourceFile]
+    val file = tree.pos.source
   }
   
   case class ImportSelectorsFragment(selectors: List[global.ImportSelector], val file: SourceFile) extends Fragment with OriginalSourceFragment {
@@ -174,10 +184,8 @@ trait Fragments {
     lazy val file = tree.pos.source
   }
   
-  case class FlagFragment(flag: Long, pos: Position) extends Fragment with OriginalSourceFragment {
-    lazy val start = pos.start
-    lazy val end = start + print.length
-    lazy val file = pos.source
+  trait Flag extends Fragment {
+    def flag: Long
     import Flags._
     override lazy val print: Seq[Char] = flag match {
       case 0            => ""
@@ -198,5 +206,11 @@ trait Fragments {
       case Tokens.DEF   => "def"
       case _            => "<unknown>: " + flagsToString(flag)
     }
+  }
+  
+  case class FlagFragment(flag: Long, pos: Position) extends Fragment with OriginalSourceFragment with Flag {
+    lazy val start = pos.start
+    lazy val end = start + print.length
+    lazy val file = pos.source
   }
 }

@@ -84,28 +84,26 @@ trait FragmentRepository {
     }
     
     def getNext(part: Fragment) = {
-      get(part, (xs => xs), (_, _, _))
+      get(part, (xs => xs), (_, _))
     }
   
     def getPrevious(part: Fragment) = {
-      get(part, (_.reverse), (_1, _2, _3) => (_3, _2.reverse, _1))
+      get(part, (_.reverse), (_1, _2) => (_2, _1))
     }
   
-    private def get(part: Fragment, findPart: List[Fragment] => List[Fragment], mkReturn: (Fragment, List[Fragment], Fragment) => Triple[Fragment, List[Fragment], Fragment]): Option[Triple[Fragment, List[Fragment], Fragment]] = {
+    private def get(
+        part: Fragment, 
+        findPart: List[Fragment] => List[Fragment], 
+        mkReturn: (OriginalSourceFragment, OriginalSourceFragment) => (OriginalSourceFragment, OriginalSourceFragment)):
+      Option[(OriginalSourceFragment, OriginalSourceFragment)] = {
       
       val neighbourhood = visit(part).getOrElse(return None).children
       
-      val partInOriginal = findPart(neighbourhood).dropWhile(_ != part)
-      
-      if(partInOriginal == Nil)
-        return None
-      
-      val (layoutBetween, rest) = partInOriginal.tail.span(_.isLayout)
-      
-      if(rest == Nil)
-        return None
-        
-      Some(mkReturn(partInOriginal.head, layoutBetween, rest.head))
+      findPart(neighbourhood).dropWhile(_ != part) match {
+        case partInOriginal :: next :: _ => 
+          Some(mkReturn(partInOriginal.asInstanceOf[OriginalSourceFragment], next.asInstanceOf[OriginalSourceFragment]))
+        case _ => None
+      }
     }
   }
 }
