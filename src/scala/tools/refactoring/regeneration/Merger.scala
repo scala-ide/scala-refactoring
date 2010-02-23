@@ -6,7 +6,7 @@ import scala.tools.refactoring.util.Tracing
 import java.util.regex._
 
 trait Merger {
-  self: LayoutHandler with TreePrinter with Tracing with SourceHelper with Fragments with FragmentRepository =>
+  self: LayoutHandler with Tracing with SourceHelper with Fragments with FragmentRepository =>
   
   def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = context("merge fragments") {
     
@@ -64,16 +64,7 @@ trait Merger {
     }
 
     def innerMerge(scope: Scope): (List[Fragment], Boolean) = context("inner merger loop") {
-              
-      def printFragment(f: Fragment) = f match {
-        case f if allFragments exists f => f
-        case f :FlagFragment => StringFragment(f.print) copyRequirements f
-        case f :ImportSelectorsFragment => StringFragment(f.print) copyRequirements f
-        case f: WithTree => print(f)
-        case f: WithRequisite => StringFragment("") copyRequirements f
-        case _ => StringFragment("<non-tree part>")
-      }
-      
+                    
       trace("current scope is %s", scope)
 
       val(result, changes) = (scope.children zip scope.children.tail).foldLeft((List[Fragment](), false)) {
@@ -83,7 +74,7 @@ trait Merger {
           (fs ::: resultingScope ::: layout :: Nil, changes || changed || changedScope)
         case ((fs, changes), (current, next)) => 
           val (layout, changed) = withLayout(current, next, scope)
-          (fs ::: printFragment(current) :: layout :: Nil, changes | changed)
+          (fs ::: current :: layout :: Nil, changes | changed)
       }
 
       (scope match {

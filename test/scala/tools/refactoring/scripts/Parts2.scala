@@ -25,7 +25,7 @@ object Parts2 extends CompilerProvider with Regeneration with LayoutPreferences 
     }
 """
     
-    val tree = treeFrom(src, "")
+    val tree = treeFrom(src)
     
     val f = splitIntoFragments(tree)
     

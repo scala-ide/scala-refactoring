@@ -68,7 +68,7 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
       
       val merged = merge(partitionedModified, parts)
           
-      assertEquals(expected, merged map (_.print mkString)  mkString)
+      assertEquals(expected, merged map (_.render(parts) mkString)  mkString)
     }
   }
   

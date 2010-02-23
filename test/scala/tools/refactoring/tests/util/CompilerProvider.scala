@@ -36,8 +36,8 @@ trait CompilerProvider {
 
   val global = CompilerInstance.compiler
     
-  def treeFrom(source: String, filePrefix: String = "") = {
-    global.typedTree(new BatchSourceFile(filePrefix +"test", source), true)
+  def treeFrom(source: String) = {
+    global.typedTree(new BatchSourceFile("test", source), true)
   }
   
   def compile(source: String): AbstractFile = {

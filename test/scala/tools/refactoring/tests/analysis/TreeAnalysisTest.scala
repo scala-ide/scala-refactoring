@@ -16,7 +16,7 @@ class TreeAnalysisTest extends TestHelper with Indexes with TreeAnalysis {
   import global._
   
   def withIndex(src: String)(body: Tree => Unit ) {
-    val tree = treeFrom(src, "TreeAnalysisTest")
+    val tree = treeFrom(src)
     index.processTree(tree)
     body(tree)
   }
