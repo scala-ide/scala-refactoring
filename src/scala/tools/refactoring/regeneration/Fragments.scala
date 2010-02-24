@@ -11,7 +11,7 @@ trait Fragments {
   
   self: TreePrinter with FragmentRepository =>
   
-  val global: scala.tools.nsc.Global
+  val global: scala.tools.nsc.interactive.Global
   
   case class Requisite(check: String, write: String) {
     def this(check: String) = this(check, check)

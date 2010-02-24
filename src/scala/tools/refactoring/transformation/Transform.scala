@@ -7,26 +7,39 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 
 private[refactoring] trait Transform {
+  outer =>
   
   val global: scala.tools.nsc.Global
   import global._
-   
-  def transform(root: Tree)(trans: PartialFunction[Tree, Tree]): Tree = {
+  
+  def transform(root: Tree, changed: Tree => Unit = (_ => ()))(trans: PartialFunction[Tree, Tree]): Tree = {
     new Transformer {
       override def transform(tree: Tree): Tree = {
-        super.transform {
+        val result = super.transform {
           if(trans.isDefinedAt(tree)) {
-            val result = trans(tree)
-            //if(result.getClass == tree.getClass)
-              result setPos tree.pos
-            //else
-            //  result
+            trans(tree) setPos tree.pos
           } else {
             tree
           }
         }
+        // emit the changed tree after all sub-transformations have been applied
+        if(trans.isDefinedAt(tree) && result != tree) changed(result)
+        result
       }
     }.transform(root)
+  }
+  
+  trait Transformation {
+    private var changes = Nil: List[Tree]
+    def transform(root: Tree) = outer.transform(root, (changes ::= _)) _
+    
+    /* there is always a single top-level tree that encloses all changed trees.
+     * This tree is also always a tree that already exists, if it were a new tree,
+     * then it would in turn have a parent.
+    */
+    def topChange = changes reduceLeft { (t1, t2) =>
+      if(t1.pos.properlyIncludes(t2.pos)) t1 else t2
+    }
   }
   
   implicit def blockToTreeList(b: Block) = b.stats ::: b.expr :: Nil

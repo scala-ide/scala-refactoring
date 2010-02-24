@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.util.Tracing
 import scala.tools.refactoring.util.SilentTracing
 import scala.tools.refactoring.ExtractMethod
@@ -11,8 +12,9 @@ class ExtractMethodTest extends TestHelper {
   
   class StringExtractMethod(source: String) {
     def extractMethod(name: String, expected: String) = {
+
+      val refactoring = new ExtractMethod(global) with SilentTracing with TestRefactoring
       
-      val refactoring = new ExtractMethod(global) with SilentTracing
       refactoring.prepare(compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) match {
         case Right(prepare) =>
           val result = refactoring.perform(prepare, new refactoring.RefactoringParameters {
@@ -20,11 +22,11 @@ class ExtractMethodTest extends TestHelper {
             val file = prepare.file
             val methodName = name
           }) match {
-            case Right(result) => result
-            case Left(error) => error
+            case Right(result) => refactoring.applyChangeSet(result, source)
+            case Left(error) => fail(error.cause)
           }
           assertEquals(expected, result)
-        case Left(error) => fail()
+        case Left(error) => fail(error.cause)
       }
     }
   }

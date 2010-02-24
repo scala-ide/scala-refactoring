@@ -7,7 +7,7 @@ trait SourceHelper {
   
   self: scala.tools.refactoring.regeneration.Fragments =>
   
-  val global: scala.tools.nsc.Global
+  val global: scala.tools.nsc.interactive.Global
   
   def indentationLength(f: Fragment): Option[Int] = f match {
     case f: OriginalSourceFragment => try {

@@ -10,8 +10,10 @@ import scala.tools.refactoring.util.{Selections, Tracing, LayoutPreferences, Sil
 abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with /*Silent*/Tracing with LayoutPreferences {
   
   class Selection(file: AbstractFile, from: Int, to: Int) extends TreeSelection(file, from, to)
-    
-  type ChangeSet = String
+  
+  case class Change(from: Int, to: Int, text: String)
+  
+  type ChangeSet = Change
   
   type PreparationResult
   class PreparationError(val cause: String)
@@ -26,7 +28,7 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet]
   
-  def refactor(original: global.Tree, changed: global.Tree) = context("main refactoring") {
+  def refactor(original: global.Tree, changed: global.Tree): ChangeSet = context("main refactoring") {
           
     val partitionedOriginal = splitIntoFragments(original)
     
@@ -38,8 +40,10 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
         
     trace("Modified: %s", partitionedModified)
     
-    returns(merge(partitionedModified, fr) map (_.render(fr) mkString) mkString) { x: String =>
-       trace("Result: "+ x)
-    }
+    val change = merge(partitionedModified, fr) map (_.render(fr) mkString) mkString
+    
+    trace("Result: "+ change)
+    
+    Change(partitionedModified.start, partitionedModified.end, change)
   }
 }

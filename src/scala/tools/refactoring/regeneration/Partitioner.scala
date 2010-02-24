@@ -7,10 +7,11 @@ import scala.tools.nsc.ast._
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
+import scala.tools.nsc.interactive.Global
 
 trait Partitioner {
   self: Tracing with LayoutPreferences with Fragments with FragmentRepository with SourceHelper =>
-  val global: scala.tools.nsc.Global
+  val global: Global
   import global.{Scope => _, _}
      
   private abstract class Visitor extends Traverser {
@@ -619,8 +620,15 @@ trait Partitioner {
     
     def visit(tree: Tree) = {
       
-      val rootScope = TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
-
+      def isTopLevelTree = {
+        global.unitOfFile(tree.pos.source.file).body.pos == tree.pos
+      }
+      
+      val rootScope = if(isTopLevelTree)
+        TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
+      else
+        TreeScope(None, tree.pos.start, tree.pos.end, tree.pos.source, indentationLength(tree.pos.start, tree.pos.source.content), tree)
+      
       currentScope = rootScope
       
       traverse(tree)
@@ -631,29 +639,31 @@ trait Partitioner {
   
   def essentialFragments(root: Tree, fs: FragmentRepository) = new Visitor {
      val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
+       
        def getIndentation(start: Int, tree: Tree, scope: Scope): Int = {
-         val v1 = indentationLength(start, tree.pos.source.content)
+         val self = indentationLength(start, tree.pos.source.content)
          
          val scopeIndentation = scope match {
            case scope: TreeScope => indentationLength(scope.start, scope.file.content)
            case _ => -1
          }
          
-         if(scopeIndentation == v1)
+         if(scopeIndentation == self)
            return 0
          
-         val v2 = fs.scopeIndentation(tree).getOrElse(0)
-         v1 - v2
+         val outer = fs.scopeIndentation(tree).getOrElse(0)
+         self - outer
        }
      }
   }.visit(root)
   
   def splitIntoFragments(root: Tree): TreeScope = new Visitor {
     val handle = new BasicContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
+      
       def getIndentation(start: Int, tree: Tree, scope: Scope) = { 
-        val v1 = indentationLength(start, tree.pos.source.content)
-        val v2 = scope.indentation
-        v1 - v2
+        val self = indentationLength(start, tree.pos.source.content)
+        val outer = scope.indentation
+        self - outer
       }
     }
   }.visit(root)

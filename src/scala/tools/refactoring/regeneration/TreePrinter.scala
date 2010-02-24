@@ -5,7 +5,7 @@ import scala.tools.nsc.ast.Trees
 trait TreePrinter {
   self: scala.tools.refactoring.util.Tracing with Fragments =>
   
-  val global: scala.tools.nsc.Global  
+  val global: scala.tools.nsc.interactive.Global  
   import global._
 
   def renderTree(part: WithTree) = printTree(part.tree)

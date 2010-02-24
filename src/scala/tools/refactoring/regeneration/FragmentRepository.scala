@@ -5,7 +5,7 @@ trait FragmentRepository {
 
   self: Fragments =>
   
-  val global: scala.tools.nsc.Global
+  val global: scala.tools.nsc.interactive.Global
   
   // cache, optimize, whatever!
   class FragmentRepository(root: Scope) {

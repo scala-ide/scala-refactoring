@@ -45,25 +45,27 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
           
     val call = mkCallDefDef(NoMods, methodName, parameters :: Nil, returns)
     
-    var newTree = transform(file) {
-      case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
-        if(selection.trees.size > 1) {
-          transform(d) {
-            case block: Block => {
-              mkBlock(replace(block, selection.trees, call :: Nil))
+    val changes = new Transformation {
+      transform(file) {
+        case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
+          if(selection.trees.size > 1) {
+            transform(d) {
+              case block: Block => {
+                mkBlock(replace(block, selection.trees, call :: Nil))
+              }
+            }
+          } else {
+            transform(d) {
+              case t: Tree if t == selection.trees.head => call
             }
           }
-        } else {
-          transform(d) {
-            case t: Tree if t == selection.trees.head => call
-          }
+        }
+        case tpl @ Template(_, _, body) if body exists (_ == selectedMethod) => {
+          tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
         }
       }
-      case tpl @ Template(_, _, body) if body exists (_ == selectedMethod) => {
-        tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
-      }
-    }
+    }.topChange
     
-    Right(refactor(file, newTree))
+    Right(refactor(file, changes))
   }
 }

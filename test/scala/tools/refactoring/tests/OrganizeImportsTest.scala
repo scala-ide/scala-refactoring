@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.util.Tracing
 import scala.tools.refactoring.util.SilentTracing
 import scala.tools.refactoring.OrganizeImports
@@ -11,15 +12,15 @@ class OrganizeImportsTest extends TestHelper {
   
   class StringExtractMethod(source: String) {
     def organize(expected: String) = {
-      val refactoring = new OrganizeImports(global) with SilentTracing
+      val refactoring = new OrganizeImports(global) with SilentTracing with TestRefactoring
       refactoring.prepare(compile(source), 0, 0) match {
         case Right(prepare) =>
           val result = refactoring.perform(prepare, new refactoring.RefactoringParameters) match {
-            case Right(result) => result
-            case Left(error) => error
+            case Right(result) => refactoring.applyChangeSet(result, source)
+            case Left(error) => fail(error.cause)
           }
           assertEquals(expected, result)
-        case Left(error) => fail()
+        case Left(error) => fail(error.cause)
       }
     }
   }
