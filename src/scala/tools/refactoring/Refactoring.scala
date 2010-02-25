@@ -28,7 +28,7 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet]
   
-  def refactor(original: global.Tree, changed: global.Tree): ChangeSet = context("main refactoring") {
+  def refactor(original: global.Tree, changed: global.Tree, allChanged: List[global.Tree]): ChangeSet = context("main refactoring") {
           
     val partitionedOriginal = splitIntoFragments(original)
     
@@ -40,10 +40,11 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
         
     trace("Modified: %s", partitionedModified)
     
-    val change = merge(partitionedModified, fr) map (_.render(fr) mkString) mkString
+    val change = merge(partitionedModified, fr, (allChanged.contains)) map (_.render(fr) mkString) mkString
     
     trace("Result: "+ change)
     
     Change(partitionedModified.start, partitionedModified.end, change)
   }
+  
 }

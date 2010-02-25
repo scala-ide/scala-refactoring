@@ -37,9 +37,11 @@ private[refactoring] trait Transform {
      * This tree is also always a tree that already exists, if it were a new tree,
      * then it would in turn have a parent.
     */
-    def topChange = changes reduceLeft { (t1, t2) =>
+    private def topChange = changes reduceLeft { (t1, t2) =>
       if(t1.pos.properlyIncludes(t2.pos)) t1 else t2
     }
+    
+    def changedTrees = (topChange, changes)
   }
   
   implicit def blockToTreeList(b: Block) = b.stats ::: b.expr :: Nil

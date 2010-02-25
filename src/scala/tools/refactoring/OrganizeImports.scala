@@ -44,20 +44,22 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
       }
     }
     
-    var newTree = transform(prepared.file) {
-      case p @ PackageDef(_, stats) => {
-        
-        val sorted = stats partition {
-          case _: Import => true
-          case _ => false
-        } match {
-          case (imports, others) => (sortImports andThen collapseImports andThen simplifyWildcards apply imports) ::: others
+    var changes = new Transformation {
+      transform(prepared.file) {
+        case p @ PackageDef(_, stats) => {
+          
+          val sorted = stats partition {
+            case _: Import => true
+            case _ => false
+          } match {
+            case (imports, others) => (sortImports andThen collapseImports andThen simplifyWildcards apply imports) ::: others
+          }
+          
+          p copy (stats = sorted)
         }
-        
-        p copy (stats = sorted)
       }
-    }
+    }.changedTrees
     
-    Right(refactor(prepared.file, newTree))
+    Right(refactor(prepared.file, changes._1, changes._2))
   }
 }

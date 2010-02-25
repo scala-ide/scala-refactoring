@@ -48,10 +48,10 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
         }
       }
       
-      def innerMerge(scope: Scope): List[String] = scope.children flatMap {
-        case current: Scope => innerMerge(current) ::: withLayout(current) ::  Nil
-        case current => "«"+ (current.print mkString) +"»" :: withLayout(current) :: Nil
-      }
+      def innerMerge(scope: Scope): String = scope.children map {
+        case current: Scope => innerMerge(current) + withLayout(current)
+        case current => "«"+ (current.print mkString) +"»" + withLayout(current)
+      } mkString
       
       assertEquals(expected, innerMerge(root) mkString)
     }
@@ -65,7 +65,7 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
       val parts = new FragmentRepository(partitionedOriginal)
       val partitionedModified = essentialFragments(newTree, parts)
       
-      val merged = merge(partitionedModified, parts)
+      val merged = merge(partitionedModified, parts, (_ => true))
           
       assertEquals(expected, merged map (_.render(parts) mkString)  mkString)
     }

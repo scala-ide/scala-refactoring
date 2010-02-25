@@ -8,7 +8,7 @@ import java.util.regex._
 trait Merger {
   self: LayoutHandler with Tracing with SourceHelper with Fragments with FragmentRepository =>
   
-  def merge(scope: Scope, allFragments: FragmentRepository): List[Fragment] = context("merge fragments") {
+  def merge(scope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean): List[Fragment] = context("merge fragments") {
     
     def withLayout(current: Fragment, next: Fragment, scope: Scope): (Fragment, Boolean) = {
     
@@ -66,10 +66,8 @@ trait Merger {
     }
 
     def innerMerge(scope: Scope): (List[Fragment], Boolean) = context("inner merger loop") {
-                    
-      trace("current scope is %s", scope)
-
-      val(result, changes) = (scope.children zip scope.children.tail).foldLeft((List[Fragment](), false)) {
+      
+      def processScope() = (scope.children zip scope.children.tail).foldLeft((List[Fragment](), false)) {
         case ((fs, changes), (current: Scope, next)) => 
           val (resultingScope, changedScope) = innerMerge(current)
           val (layout, changed) = withLayout(current, next, scope)
@@ -78,17 +76,33 @@ trait Merger {
           val (layout, changed) = withLayout(current, next, scope)
           (fs ::: current :: layout :: Nil, changes | changed)
       }
+      
+      def unchangedScope(scope: OriginalSourceFragment) = new Fragment {
+        def print = scope.file.content.slice(scope.start, scope.end)
+      } :: Nil
+      
+      def treeIsInChangeSet(s: Scope with WithTree) = hasTreeChanged(s.tree) || s.exists(_.isInstanceOf[ArtificialTreeFragment])
 
-      (scope match {
-        case scope: TreeScope if !changes =>
-          trace("no changes found, keep scope")
-          List(new Fragment {
-            def print = scope.file.content.slice(scope.start, scope.end)
-          })
-        case _ => 
-          trace("scope changed")
-          result
-      }, changes)
+      trace("current scope is %s", scope)
+      
+      scope match {
+        case scope: OriginalSourceFragment with WithTree if !treeIsInChangeSet(scope) => 
+          println("scope has not changed: "+ scope)
+          (unchangedScope(scope), false)
+        case scope => 
+          println("scope might have changed: "+ scope)
+          
+          val(result, changes) = processScope()
+
+          (scope match {
+            case scope: TreeScope if !changes =>
+              trace("no changes found, keep scope")
+              unchangedScope(scope)
+            case _ => 
+              trace("scope changed")
+              result
+          }, changes)
+      }
     }
     
     innerMerge(scope)._1

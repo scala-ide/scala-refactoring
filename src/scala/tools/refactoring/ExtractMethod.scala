@@ -42,7 +42,7 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
     val returns = outboundLocalDependencies(selection, selectedMethod.symbol)
      
     val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.trees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
-          
+    
     val call = mkCallDefDef(NoMods, methodName, parameters :: Nil, returns)
     
     val changes = new Transformation {
@@ -64,8 +64,8 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
           tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
         }
       }
-    }.topChange
+    }.changedTrees
     
-    Right(refactor(file, changes))
+    Right(refactor(file, changes._1, changes._2))
   }
 }

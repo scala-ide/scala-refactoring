@@ -6,6 +6,7 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 import scala.collection.mutable.ListBuffer
+import scala.collection.Traversable
 
 trait Fragments {
   
@@ -30,22 +31,18 @@ trait Fragments {
       this
     }
     def hasRequirements = requiredAfter.size > 0 || requiredBefore.size > 0
-    def copyRequirements(from: WithRequisite): this.type = {
-      from.requiredAfter foreach (requireAfter _)
-      from.requiredBefore foreach (requireBefore _)
-      this
-    }
   }
 
   trait WithTree {
     def tree: global.Tree
   }
   
-  abstract class Fragment extends WithRequisite {
+  abstract class Fragment extends WithRequisite with Traversable[Fragment] {
     val isEndOfScope = false
     val isBeginOfScope = false
     def print: Seq[Char]
     override def toString = print mkString
+    def foreach[U](f: Fragment => U): Unit = f(this)
     
     def render(fs: FragmentRepository): Seq[Char] = {
       this match {
@@ -76,14 +73,20 @@ trait Fragments {
   }
   
   abstract class Scope extends Fragment {
+    
+    override def foreach[U](f: Fragment => U) = {
+      f(this)
+      children foreach (_ foreach f)
+    }
+    
     val parent: Option[Scope]
     def relativeIndentation: Int
     def children: List[Fragment]
-    def lastChild: Option[Fragment] = if(trueChildren.isEmpty) None else Some(trueChildren.last)
+    def lastChild: Option[Fragment] = trueChildren.lastOption
     def indentation: Int = relativeIndentation + (parent map (_.indentation) getOrElse(0))
     protected val trueChildren = new ListBuffer[Fragment]()
     def add(p: Fragment) = trueChildren += p //assert that they are in order?
-    override def print: Seq[Char] = children mkString
+    override def print: Seq[Char] = children mkString //?
     override def toString = {
       
       def expandChildrenWithLayout(c: List[Fragment]) = {
@@ -163,15 +166,11 @@ trait Fragments {
   
   case class ImportSelectorsFragment(selectors: List[global.ImportSelector], val file: SourceFile) extends Fragment with OriginalSourceFragment {
     val start = selectors.head.namePos
-    private val last = selectors.last
-    val end = if(last.renamePos >= 0) last.renamePos + last.rename.length else last.namePos + last.name.length
+    val end = nameLength(selectors.last)
     override def print: Seq[Char] = {
-      selectors map { s =>
-        file.content.slice(
-            s.namePos,
-            if(s.renamePos >= 0) s.renamePos + s.rename.length else s.namePos + s.name.length) mkString
-      } mkString ", "
+      selectors map { s => file.content.slice(s.namePos, nameLength(s)) mkString } mkString ", "
     }
+    private def nameLength(s: global.ImportSelector) = if(s.renamePos >= 0) s.renamePos + s.rename.length else s.namePos + s.name.length
   }
   
   case class ArtificialTreeFragment(tree: global.Tree) extends Fragment with WithTree {

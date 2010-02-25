@@ -492,4 +492,65 @@ object C {
   }
 }
   """)
+  
+  @Test
+  def extractLarger = """
+object C {
+  def whatIsIt(check: Boolean) {
+    if (/*(*/check == false/*)*/ /*hi*/)
+      println("It's false")
+    else
+      println("It's true")
+  }
+
+  def unrelated1 {
+    println("unrelated1")
+  }
+
+  def unrelated2 {
+    println("unrelated2")
+  }
+
+  def unrelated3 {
+    println("unrelated3")
+  }
+}
+
+object c2 {
+  def blabla {
+    println("blabla")
+  }
+}
+  """ extractMethod("isFalse",
+  """
+object C {
+  def whatIsIt(check: Boolean) {
+    if (isFalse(check))
+      println("It's false")
+    else
+      println("It's true")
+  }
+  def isFalse(check: Boolean): Boolean = {
+  /*(*/check == false/*)*/ /*hi*/
+  }
+
+  def unrelated1 {
+    println("unrelated1")
+  }
+
+  def unrelated2 {
+    println("unrelated2")
+  }
+
+  def unrelated3 {
+    println("unrelated3")
+  }
+}
+
+object c2 {
+  def blabla {
+    println("blabla")
+  }
+}
+  """)
 }
