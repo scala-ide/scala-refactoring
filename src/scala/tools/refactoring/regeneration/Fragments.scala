@@ -10,7 +10,7 @@ import scala.collection.Traversable
 
 trait Fragments {
   
-  self: TreePrinter with FragmentRepository =>
+  self: TreePrinter with FragmentRepository with SourceHelper =>
   
   val global: scala.tools.nsc.interactive.Global
   
@@ -136,7 +136,7 @@ trait Fragments {
         case _ => false
       }
     }
-    
+        
     private val beginOfScope = new BeginOfScope(start, start, file, this)
     private val endOfScope = new EndOfScope(end, end, file, this)
     

@@ -2,6 +2,7 @@ package scala.tools.refactoring.regeneration
 
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.SourceFile
+import scala.tools.nsc.util.BatchSourceFile
 
 trait SourceHelper {
   
@@ -12,9 +13,9 @@ trait SourceHelper {
   def indentationLength(f: Fragment): Option[Int] = f match {
     case f: OriginalSourceFragment => try {
       if(f.isEndOfScope /*&& f.start > 0 */) // end of scope's 'start' points to 'end' and can therefore be on the newline
-	      Some(indentationLength(f.start-1, f.file.content))
+	      Some(indentationLength(f.start-1, f.file))
 	    else
-	      Some(indentationLength(f.start, f.file.content))
+	      Some(indentationLength(f.start, f.file))
     } catch {
       case _: UnsupportedOperationException => None
       case e => throw e
@@ -23,12 +24,12 @@ trait SourceHelper {
   }
 
   def indentationLength(tree: global.Tree): Int = {
-    indentationLength(tree.pos.start, tree.pos.source.content)
+    indentationLength(tree.pos.start, tree.pos.source)
   }
   
-  def indentationLength(start: Int, content: Seq[Char]) = {
-    var i = if(start == content.length || content(start) == '\n') start - 1 else start
-    val contentWithoutComment = stripComment(content)
+  def indentationLength(start: Int, source: SourceFile) = {
+    var i = if(start == source.length || source.content(start) == '\n') start - 1 else start
+    val contentWithoutComment = stripComment(source)
         
     while(i >= 0 && contentWithoutComment(i) != '\n')
       i -= 1
@@ -39,9 +40,9 @@ trait SourceHelper {
     indentation.length
   }
   
-  def forwardsTo(to: Char, max: Int)(offset: Int, content: Seq[Char]): Option[Int] = {
+  def forwardsTo(to: Char, max: Int)(offset: Int, source: SourceFile): Option[Int] = {
     var i = offset
-    val contentWithoutComment = stripComment(content)
+    val contentWithoutComment = stripComment(source)
     
     while(i < max && i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to) {
       i += 1
@@ -53,9 +54,9 @@ trait SourceHelper {
       None
   }
     
-  def skipLayoutTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
+  def skipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
     var i = offset
-    val contentWithoutComment = stripComment(content)
+    val contentWithoutComment = stripComment(source)
     
     while(i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
       i += 1
@@ -67,9 +68,9 @@ trait SourceHelper {
       None
   }
   
-  def backwardsSkipLayoutTo(to: Char)(offset: Int, content: Seq[Char]): Option[Int] = {
+  def backwardsSkipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
     
-    val contentWithoutComment = stripComment(content)
+    val contentWithoutComment = stripComment(source)
     
     if( offset >= 0 && offset < contentWithoutComment.length && contentWithoutComment(offset) == to) 
       return Some(offset)
@@ -86,14 +87,17 @@ trait SourceHelper {
       None
   }
   
-  def stripComment(s: Seq[Char]) = splitComment(s)._1
+  def stripComment(source: SourceFile) = splitComment(source)._1
+  def stripComment(source: String) = splitComment(source)._1
   
-  private val memoizedComments = scala.collection.mutable.Map.empty[Seq[Char], (String, String)]
+  private val memoizedComments = scala.collection.mutable.Map.empty[String, (String, String)]
+
+  def splitComment(source: String): (String, String) = splitComment(new BatchSourceFile(source, source))
   
-  def splitComment(s: Seq[Char]): (String, String) = s match {
+  def splitComment(source: SourceFile): (String, String) = (source.content: Seq[Char])/*?*/ match {
     case Nil => ("", "")
     case a :: Nil => (a.toString, " ")
-    case s if memoizedComments contains s => memoizedComments(s)
+    case _ if memoizedComments contains source.path => memoizedComments(source.path)
     case s =>
       var nestingLevel = 0
       var lineComment = false
@@ -145,12 +149,12 @@ trait SourceHelper {
           _2
       }: (Char, Char) => Char)
       
-      memoizedComments += s → (text mkString, comment mkString)
+      memoizedComments += source.path → (text mkString, comment mkString)
       
       (text mkString, comment mkString)
   }
   
-  def liftComment(s: String)(body: String => String) = {
+  def liftComment(s: SourceFile)(body: String => String) = {
    
     val(rest, comments) = splitComment(s)
 

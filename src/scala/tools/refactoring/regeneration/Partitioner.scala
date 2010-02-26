@@ -143,7 +143,7 @@ trait Partitioner {
       
       def getIndentation(start: Int, tree: Tree, scope: Scope): Int
       
-      private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, Seq[Char]) => Option[Int] = noChange, adjustEnd: (Int, Seq[Char]) => Option[Int] = noChange)(body: => Unit) = tree match {
+      private def scope(tree: Tree, indent: Boolean = false, adjustStart: (Int, SourceFile) => Option[Int] = noChange, adjustEnd: (Int, SourceFile) => Option[Int] = noChange)(body: => Unit) = tree match {
         case tree if tree.pos == NoPosition =>
           if(indent) {
             enterScope(new SimpleScope(Some(currentScope), indentationStep)) {
@@ -158,7 +158,7 @@ trait Partitioner {
             
         case _ =>
           // we only want to adjust the braces if both adjustments were successful. this prevents us from mistakes when there are no braces
-          val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source.content),  adjustEnd(tree.pos.end, tree.pos.source.content)) match {
+          val (start: Int, end: Int) = (adjustStart(tree.pos.start, tree.pos.source),  adjustEnd(tree.pos.end, tree.pos.source)) match {
             case (Some(start), Some(end)) => (start, end)
             case _ => (tree.pos.start, tree.pos.end)
           }
@@ -179,7 +179,7 @@ trait Partitioner {
           }
       }
       
-      private def noChange(offset: Int, content: Seq[Char]) = Some(offset) 
+      private def noChange(offset: Int, content: SourceFile) = Some(offset) 
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
       
@@ -263,8 +263,8 @@ trait Partitioner {
           if(numArgs == 0 && ! actualArguments.isEmpty) {
             enterScope(new SimpleScope(Some(currentScope), 0))(super.apply)
           } else if(numArgs > 0) {
-            val o = backwardsSkipLayoutTo('(')(actualArguments.head.pos.start - 1, t.pos.source.content)
-            val c = backwardsSkipLayoutTo(')')(t.pos.end, t.pos.source.content) map (1+)/*include the parenthesis*/
+            val o = backwardsSkipLayoutTo('(')(actualArguments.head.pos.start - 1, t.pos.source)
+            val c = backwardsSkipLayoutTo(')')(t.pos.end, t.pos.source) map (1+)/*include the parenthesis*/
             
             (o, c) match {
               case (openingParenthesis @ Some(_), closingParenthesis @ Some(_)) =>
@@ -627,7 +627,7 @@ trait Partitioner {
       val rootScope = if(isTopLevelTree)
         TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
       else
-        TreeScope(None, tree.pos.start, tree.pos.end, tree.pos.source, indentationLength(tree.pos.start, tree.pos.source.content), tree)
+        TreeScope(None, tree.pos.start, tree.pos.end, tree.pos.source, indentationLength(tree.pos.start, tree.pos.source), tree)
       
       currentScope = rootScope
       
@@ -641,10 +641,10 @@ trait Partitioner {
      val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
        
        def getIndentation(start: Int, tree: Tree, scope: Scope): Int = {
-         val self = indentationLength(start, tree.pos.source.content)
+         val self = indentationLength(start, tree.pos.source)
          
          val scopeIndentation = scope match {
-           case scope: TreeScope => indentationLength(scope.start, scope.file.content)
+           case scope: TreeScope => indentationLength(scope.start, scope.file)
            case _ => -1
          }
          
@@ -661,7 +661,7 @@ trait Partitioner {
     val handle = new BasicContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
       
       def getIndentation(start: Int, tree: Tree, scope: Scope) = { 
-        val self = indentationLength(start, tree.pos.source.content)
+        val self = indentationLength(start, tree.pos.source)
         val outer = scope.indentation
         self - outer
       }

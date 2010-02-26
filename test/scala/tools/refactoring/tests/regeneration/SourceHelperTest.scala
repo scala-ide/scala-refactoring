@@ -6,9 +6,12 @@ import junit.framework.TestCase
 import org.junit.Assert._
 import scala.tools.refactoring.regeneration._
 import scala.tools.nsc.ast.Trees
+import scala.tools.nsc.util.BatchSourceFile
 
 @Test
 class SourceHelperTest extends TestHelper {
+  
+  implicit def stringToSourceFile(s: String) = new BatchSourceFile(s, s)
   
   @Test
   def testForwards() = {
