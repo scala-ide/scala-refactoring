@@ -2,28 +2,28 @@ package scala.tools.refactoring.regeneration
 
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.util.Tracing
-
-import java.util.regex._
+import PartialFunction._
 
 trait Merger {
   self: LayoutHandler with Tracing with SourceHelper with Fragments with FragmentRepository =>
   
   def merge(rootScope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean): List[Fragment] = context("merge fragments") {
     
-    def withLayout(current: Fragment, next: Fragment, scope: Scope): (Fragment, Boolean) = {
-    
-      val currentExists = allFragments exists current
-      val originalNext  = allFragments getNext current
+    def getLayoutBetween(current: Fragment, next: Fragment, scope: Scope): (Fragment, Boolean) = {
       
-      val (layout, somethingChanged) = if(currentExists && originalNext.isDefined && originalNext.get._2 == next) {
+      val keepOldLayout = {
+        val currentExists = allFragments exists current
+        
+        (currentExists && cond(allFragments getNext current) { case Some((_, _2)) => _2 == next }) ||
+        (current.isBeginOfScope && scope == rootScope && rootScope != allFragments.root)   
+      }
+          
+      val (layout, somethingChanged) = if (keepOldLayout) {
         val layout = (current, next)  match {
           case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
         }
         trace("%s and %s are in the original order and enclose %s", current, next, layout)
         (layout, false)
-      } else if (current.isBeginOfScope && scope == rootScope && rootScope != allFragments.root) {
-        
-        (current.asInstanceOf[OriginalSourceFragment] layout next.asInstanceOf[OriginalSourceFragment], false)
       } else {
         trace("%s and %s have been rearranged", current, next)
         /*
@@ -32,12 +32,12 @@ trait Merger {
          * source
          * */
         val (layoutAfterCurrent, _) =
-          if(currentExists) {
+          if(allFragments exists current) {
             splitLayoutBetween(allFragments getNext current)
           } else ("", "")
         
         /*
-         * We also need the layout of our right neighbour:
+         * We also need the layout of our right neighbor:
          * */
         val (_, layoutBeforeNext) =
           if(allFragments exists next) {
@@ -73,10 +73,10 @@ trait Merger {
       def processScope() = (scope.children zip scope.children.tail).foldLeft((List[Fragment](), false)) {
         case ((fs, changes), (current: Scope, next)) => 
           val (resultingScope, changedScope) = innerMerge(current)
-          val (layout, changed) = withLayout(current, next, scope)
+          val (layout, changed) = getLayoutBetween(current, next, scope)
           (fs ::: resultingScope ::: layout :: Nil, changes || changed || changedScope)
         case ((fs, changes), (current, next)) => 
-          val (layout, changed) = withLayout(current, next, scope)
+          val (layout, changed) = getLayoutBetween(current, next, scope)
           (fs ::: current :: layout :: Nil, changes | changed)
       }
       
@@ -93,7 +93,16 @@ trait Merger {
           trace("scope has not changed")
           (unchangedScope(scope), false)
         case scope => 
-          trace("scope might have changed")
+          trace("scope might have changed, "+ (scope match {
+            case s: OriginalSourceFragment with WithTree if hasTreeChanged(s.tree) =>
+              "is in changeset"
+            case s: OriginalSourceFragment with WithTree if s.exists(_.isInstanceOf[ArtificialTreeFragment]) =>
+              "contains artificial trees"
+            case s: OriginalSourceFragment =>
+              "does not contain a tree"
+            case _ => 
+              "not an OriginalSourceFragment"
+          }))
           
           val(result, changes) = processScope()
 
@@ -101,7 +110,7 @@ trait Merger {
             case scope: TreeScope if !changes =>
               trace("no changes found, keep scope")
               unchangedScope(scope)
-            case _ => 
+            case _ =>
               trace("scope changed")
               result
           }, changes)
