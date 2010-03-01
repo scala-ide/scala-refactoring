@@ -493,7 +493,7 @@ trait Partitioner {
       case t: TypeTree => 
         if(t.original != null)
           traverse(t.original)
-        else if(t.pos == NoPosition)
+        else if(t.pos == NoPosition && t.tpe != null)
           handle(tree, Itself)
         super.traverse(tree)
       
