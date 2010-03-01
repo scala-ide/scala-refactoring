@@ -8,7 +8,7 @@ trait FragmentRepository {
   val global: scala.tools.nsc.interactive.Global
   
   // cache, optimize, whatever!
-  class FragmentRepository(root: Scope) {
+  class FragmentRepository(val root: Scope) {
         
     def exists(part: Fragment) = root.exists(_ == part)
     

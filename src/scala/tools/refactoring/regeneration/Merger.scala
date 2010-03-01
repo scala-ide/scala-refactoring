@@ -8,7 +8,7 @@ import java.util.regex._
 trait Merger {
   self: LayoutHandler with Tracing with SourceHelper with Fragments with FragmentRepository =>
   
-  def merge(scope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean): List[Fragment] = context("merge fragments") {
+  def merge(rootScope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean): List[Fragment] = context("merge fragments") {
     
     def withLayout(current: Fragment, next: Fragment, scope: Scope): (Fragment, Boolean) = {
     
@@ -21,6 +21,9 @@ trait Merger {
         }
         trace("%s and %s are in the original order and enclose %s", current, next, layout)
         (layout, false)
+      } else if (current.isBeginOfScope && scope == rootScope && rootScope != allFragments.root) {
+        
+        (current.asInstanceOf[OriginalSourceFragment] layout next.asInstanceOf[OriginalSourceFragment], false)
       } else {
         trace("%s and %s have been rearranged", current, next)
         /*
@@ -87,10 +90,10 @@ trait Merger {
       
       scope match {
         case scope: OriginalSourceFragment with WithTree if !treeIsInChangeSet(scope) => 
-          println("scope has not changed: "+ scope)
+          trace("scope has not changed")
           (unchangedScope(scope), false)
         case scope => 
-          println("scope might have changed: "+ scope)
+          trace("scope might have changed")
           
           val(result, changes) = processScope()
 
@@ -105,6 +108,6 @@ trait Merger {
       }
     }
     
-    innerMerge(scope)._1
+    innerMerge(rootScope)._1
   }
 }

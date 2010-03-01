@@ -638,24 +638,25 @@ trait Partitioner {
   }
   
   def essentialFragments(root: Tree, fs: FragmentRepository) = new Visitor {
-     val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
+    val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
        
-       def getIndentation(start: Int, tree: Tree, scope: Scope): Int = {
-         val self = indentationLength(start, tree.pos.source)
+      def getIndentation(start: Int, tree: Tree, scope: Scope): Int = {
+        val self = indentationLength(start, tree.pos.source)
          
-         val scopeIndentation = scope match {
-           case scope: TreeScope => indentationLength(scope.start, scope.file)
-           case _ => -1
-         }
+        val scopeIndentation = scope match {
+          case scope: TreeScope => indentationLength(scope.start, scope.file)
+          case _ => -1
+        }
          
-         if(scopeIndentation == self)
-           return 0
+        if(scopeIndentation == self)
+          return 0
          
-         val outer = fs.scopeIndentation(tree).getOrElse(0)
-         self - outer
-       }
-     }
+        val outer = fs.scopeIndentation(tree).getOrElse(0)
+        self - outer
+      }
+    }
   }.visit(root)
+  
   
   def splitIntoFragments(root: Tree): TreeScope = new Visitor {
     val handle = new BasicContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
