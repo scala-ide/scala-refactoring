@@ -40,8 +40,8 @@ trait FragmentRepository {
       val neighbourhood = visit(part).getOrElse(return None).children
       
       findPart(neighbourhood).dropWhile(_ != part) match {
-        case partInOriginal :: next :: _ => 
-          Some(mkReturn(partInOriginal.asInstanceOf[OriginalSourceFragment], next.asInstanceOf[OriginalSourceFragment]))
+        case (partInOriginal: OriginalSourceFragment) :: (next: OriginalSourceFragment) :: _ => 
+          Some(mkReturn(partInOriginal, next))
         case _ => None
       }
     }
