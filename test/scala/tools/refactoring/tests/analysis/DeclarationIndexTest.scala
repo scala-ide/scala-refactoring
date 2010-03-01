@@ -103,15 +103,15 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
       """)
   }
   
-  // @Test this test fails when run together with other tests that use the same compiler
+  @Test
   def findMethodFromOtherClass() = {
     assertDeclarationOfSelection("""<stable> <accessor> def x: Int = N.this.x""", """
-      class NfindMethodFromOtherClass {
+      class N {
         val x = 5
       }
       object M {
         def go  = {
-          val a = new NfindMethodFromOtherClass
+          val a = new N
           val y = /*(*/  a.x  /*)*/
           y
         }

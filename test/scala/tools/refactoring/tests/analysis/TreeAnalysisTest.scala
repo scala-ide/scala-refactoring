@@ -134,7 +134,7 @@ class TreeAnalysisTest extends TestHelper with Indexes with TreeAnalysis {
     """)
   }
     
-  // @Test  this test fails when run together with other tests that use the same compiler
+  @Test
   def findOnClassLevel() = {
     
     assertInboundLocalDependencies("value a", """
