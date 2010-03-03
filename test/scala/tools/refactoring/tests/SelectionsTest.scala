@@ -15,13 +15,24 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
 
   import global._
   
-  def assertSelection(expectedTrees: String, expectedSymbols: String, src: String) = {
-    
+  private def getIndexedSelection(src: String) = {
     val tree = treeFrom(src)
     
     index.processTree(tree)
     
-    val selection = findMarkedNodes(src, tree)
+    findMarkedNodes(src, tree)
+  }
+  
+  def selectedLocalVariable(expected: String, src: String) = {
+    
+    val selection = getIndexedSelection(src)
+    
+    assertEquals(expected, selection.selectedSymbolTree.get.symbol.name.toString)
+  }
+  
+  def assertSelection(expectedTrees: String, expectedSymbols: String, src: String) = {
+    
+    val selection = getIndexedSelection(src)
     
     assertEquals(expectedTrees, selection.treesWithSubtrees map (_.getClass.getSimpleName) mkString ", ")
     assertEquals(expectedSymbols, selection.symbols mkString ", ")
@@ -90,6 +101,42 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
         /*(*/ /*)*/
         def addThree(i: Int) = {
           i * 5
+        }
+      }
+    """)
+  }
+  
+  @Test
+  def findSelectedLocal() = {
+    selectedLocalVariable("copy", """
+      class A {
+        def times5(i: Int) = {
+          val /*(*/copy/*)*/ = i
+          copy * 5
+        }
+      }
+    """)
+  }
+  
+  @Test
+  def selectedTheFirstCompleteSymbol() = {
+    selectedLocalVariable("i", """
+      class A {
+        def times5(i: Int) = {
+          val /*(*/copy = i /*)*/
+          copy * 5
+        }
+      }
+    """)
+  }  
+  
+  @Test
+  def selectedTheFirstSymbol() = {
+    selectedLocalVariable("copy", """
+      class A {
+        def times5(i: Int) = {
+          /*(*/ val copy = i /*)*/
+          copy * 5
         }
       }
     """)

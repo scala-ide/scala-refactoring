@@ -1,31 +1,19 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.Refactoring
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.util.Tracing
 import scala.tools.refactoring.util.SilentTracing
 import scala.tools.refactoring.OrganizeImports
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
-import org.junit.Assert._
 
-class OrganizeImportsTest extends TestHelper {
-  
-  class StringExtractMethod(source: String) {
-    def organize(expected: String) = {
-      val refactoring = new OrganizeImports(global) with SilentTracing with TestRefactoring
-      refactoring.prepare(compile(source), 0, 0) match {
-        case Right(prepare) =>
-          val result = refactoring.perform(prepare, new refactoring.RefactoringParameters) match {
-            case Right(result) => refactoring.applyChangeSet(result, source)
-            case Left(error) => fail(error.cause)
-          }
-          assertEquals(expected, result)
-        case Left(error) => fail(error.cause)
-      }
-    }
+class OrganizeImportsTest extends TestHelper with TestRefactoring {
+
+  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src) {
+    val refactoring = new OrganizeImports(global) with /*Silent*/Tracing
+    def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)
   }
-  
-  implicit def stringToStringExtractMethod(source: String) = new StringExtractMethod(source)
 
   @Test
   def sort = """

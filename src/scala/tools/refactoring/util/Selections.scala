@@ -37,17 +37,25 @@ trait Selections {
       case t: SymTree => Some(t.symbol)
       case _ => None
     }
-    
-    lazy val enclosingDefDef = root filter {
-      case t: DefDef if this isContainedIn t => true
-      case _ => false
-    } match {
-      case Nil => None
-      case x => Some(x.last)
-    }
-    
+
     def contains(t: Tree) = t.pos.source == root.pos.source && pos.includes(t.pos)
     
-    def isContainedIn(t: Tree) = t.pos.source == root.pos.source && t.pos.includes(pos)
+    lazy val enclosingDefDef = findSelectedOfType[DefDef]
+    
+    import PartialFunction._
+   
+    lazy val selectedSymbolTree = (root filter (cond(_) { case t: SymTree => this contains t }) match {
+      case (x: SymTree) :: _ => Some(x)
+      case _ => None
+    }) orElse findSelectedOfType[SymTree]
+    
+    private def findSelectedOfType[T](implicit m: Manifest[T]) = root filter (cond(_) {
+      case t => m.erasure.isInstance(t) && this.isContainedIn(t)
+    }) reverse match {
+      case x :: _ => Some(x.asInstanceOf[T])
+      case _ => None
+    }
+    
+    private def isContainedIn(t: Tree) = t.pos.source == root.pos.source && t.pos.includes(pos)
   }
 }

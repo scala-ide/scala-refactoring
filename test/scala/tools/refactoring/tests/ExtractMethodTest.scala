@@ -6,32 +6,15 @@ import scala.tools.refactoring.util.SilentTracing
 import scala.tools.refactoring.ExtractMethod
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
-import org.junit.Assert._
 
-class ExtractMethodTest extends TestHelper {
-  
-  class StringExtractMethod(source: String) {
-    def extractMethod(name: String, expected: String) = {
-
-      val refactoring = new ExtractMethod(global) with SilentTracing with TestRefactoring
-      
-      refactoring.prepare(compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) match {
-        case Right(prepare) =>
-          val result = refactoring.perform(prepare, new refactoring.RefactoringParameters {
-            val selection = prepare.selection
-            val file = prepare.file
-            val methodName = name
-          }) match {
-            case Right(result) => refactoring.applyChangeSet(result, source)
-            case Left(error) => fail(error.cause)
-          }
-          assertEquals(expected, result)
-        case Left(error) => fail(error.cause)
-      }
-    }
+class ExtractMethodTest extends TestHelper with TestRefactoring {
+    
+  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src) {
+    val refactoring = new ExtractMethod(global) with /*Silent*/Tracing
+    def extractMethod(name: String, e: String) = doIt(e, new refactoring.RefactoringParameters {
+      val methodName = name
+    })
   }
-  
-  implicit def stringToStringExtractMethod(source: String) = new StringExtractMethod(source)
 
   //@Test
   def extractBlock = """

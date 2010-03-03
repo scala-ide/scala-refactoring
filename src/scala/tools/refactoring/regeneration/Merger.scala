@@ -12,10 +12,21 @@ trait Merger {
     def getLayoutBetween(current: Fragment, next: Fragment, scope: Scope): (Fragment, Boolean) = {
       
       val keepOldLayout = {
+        
         val currentExists = allFragments exists current
         
-        (currentExists && cond(allFragments getNext current) { case Some((_, _2)) => _2 == next }) ||
-        (current.isBeginOfScope && scope == rootScope && rootScope != allFragments.root)   
+        def orderHasNotChanged = currentExists && cond(allFragments getNext current) { case Some((_, _2)) => _2 == next }
+        
+        def isNotCompilationUnitRoot = scope == rootScope && rootScope != allFragments.root
+        
+        /* 
+         * if the root scope of the modification isn't the root of the compilation unit, then we have to ignore the changes
+         * between the begin of the scope and the first element, and the same for the end of the scope, because the scope
+         * nodes then cannot be found in the original source and this would lead to unnecessary re-generation of code.
+         * */
+        def isBeginOrEnd = (current.isBeginOfScope || (currentExists && next.isEndOfScope)) && isNotCompilationUnitRoot
+        
+        orderHasNotChanged || isBeginOrEnd
       }
           
       val (layout, somethingChanged) = if (keepOldLayout) {
@@ -70,7 +81,7 @@ trait Merger {
 
     def innerMerge(scope: Scope): (List[Fragment], Boolean) = context("inner merger loop") {
       
-      def processScope() = (scope.children zip scope.children.tail).foldLeft((List[Fragment](), false)) {
+      def processScope = (List[Fragment]() → false /: scope.children.zip(scope.children.tail)) {
         case ((fs, changes), (current: Scope, next)) => 
           val (resultingScope, changedScope) = innerMerge(current)
           val (layout, changed) = getLayoutBetween(current, next, scope)
@@ -79,6 +90,7 @@ trait Merger {
           val (layout, changed) = getLayoutBetween(current, next, scope)
           (fs ::: current :: layout :: Nil, changes | changed)
       }
+      
       
       def unchangedScope(scope: OriginalSourceFragment) = new Fragment {
         def print = scope.file.content.slice(scope.start, scope.end)
@@ -104,7 +116,7 @@ trait Merger {
               "not an OriginalSourceFragment"
           }))
           
-          val(result, changes) = processScope()
+          val(result, changes) = processScope
 
           (scope match {
             case scope: TreeScope if !changes =>

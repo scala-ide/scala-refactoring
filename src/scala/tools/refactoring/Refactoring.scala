@@ -13,7 +13,7 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   case class Change(from: Int, to: Int, text: String)
   
-  type ChangeSet = Change
+  type ChangeSet = List[Change]
   
   type PreparationResult
   class PreparationError(val cause: String)
@@ -28,23 +28,25 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet]
   
-  def refactor(original: global.Tree, changed: global.Tree, allChanged: List[global.Tree]): ChangeSet = context("main refactoring") {
+  def refactor(original: global.Tree, changed: List[global.Tree], allChanged: List[global.Tree]): ChangeSet = context("main refactoring") {
           
     val partitionedOriginal = splitIntoFragments(original)
     
     trace("Original: %s", partitionedOriginal)
         
     val fr = new FragmentRepository(partitionedOriginal)
-
-    val partitionedModified = essentialFragments(changed, fr)
-        
-    trace("Modified: %s", partitionedModified)
     
-    val change = merge(partitionedModified, fr, (allChanged.contains)) map (_.render(fr) mkString) mkString
-    
-    trace("Result: "+ change)
-    
-    Change(partitionedModified.start, partitionedModified.end, change)
+    changed map { tree =>
+      
+      val partitionedModified = essentialFragments(tree, fr)
+      
+      trace("Modified: %s", partitionedModified)
+      
+      val change = merge(partitionedModified, fr, (allChanged.contains)) map (_.render(fr) mkString) mkString
+      
+      trace("Result: "+ change)
+      
+      Change(partitionedModified.start, partitionedModified.end, change)
+    }
   }
-  
 }

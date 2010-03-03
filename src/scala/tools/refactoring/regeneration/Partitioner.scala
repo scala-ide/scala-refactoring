@@ -188,7 +188,7 @@ trait Partitioner {
               t, 
               indent = false, 
               (_, _) => {
-                val minimum = t.mods.positions.map(_._2.start).foldLeft(t.pos.start)(_ min _) 
+                val minimum = (t.pos.start /: t.mods.positions.map(_._2.start)) (_ min _)
                 Some(minimum)
               },
               noChange) {
@@ -243,8 +243,8 @@ trait Partitioner {
               indent = true, 
               adjustStart = {
                 (start, content) =>
-                  val abortOn = (ts filter (_.pos.isRange)).map(_.pos.start).foldLeft(content.length)(_ min _)
-                  val startFrom = ((body ::: parents filter (_.pos.isRange)) filterNot (ts contains)).foldLeft(start) ( _ max _.pos.end )
+                  val abortOn =  (content.length /: (ts filter (_.pos.isRange)).map(_.pos.start)) (_ min _)
+                  val startFrom = (start /: ((body ::: parents filter (_.pos.isRange)) filterNot (ts contains))) (_ max _.pos.end)
                   forwardsTo('{', abortOn)(startFrom, content)
                 }, 
               adjustEnd = noChange) {

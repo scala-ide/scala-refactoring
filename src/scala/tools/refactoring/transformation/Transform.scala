@@ -30,18 +30,31 @@ private[refactoring] trait Transform {
   }
   
   trait Transformation {
-    private var changes = Nil: List[Tree]
+
     def transform(root: Tree) = outer.transform(root, (changes ::= _)) _
     
-    /* there is always a single top-level tree that encloses all changed trees.
-     * This tree is also always a tree that already exists, if it were a new tree,
-     * then it would in turn have a parent.
-    */
-    private def topChange = changes reduceLeft { (t1, t2) =>
-      if(t1.pos.properlyIncludes(t2.pos)) t1 else t2
-    }
+    def changedTrees = (topChanges, changes)
+
+    private var changes = Nil: List[Tree]
     
-    def changedTrees = (topChange, changes)
+    private def topChanges = {
+      
+      def findSuperTrees(trees: List[Tree], superTrees: List[Tree]): List[Tree] = trees match {
+        case Nil => superTrees
+        case t :: ts =>
+        
+          def mergeOverlappingTrees(ts: List[Tree]): List[Tree] = ts match {
+            case Nil => t :: Nil
+            case x :: xs if x.pos properlyIncludes t.pos => x :: xs
+            case x :: xs if t.pos properlyIncludes x.pos => t :: xs
+            case x :: xs => x :: mergeOverlappingTrees(xs)
+          }
+        
+          findSuperTrees(ts, mergeOverlappingTrees(superTrees))
+      }
+      
+      findSuperTrees(changes, Nil)
+    }
   }
   
   implicit def blockToTreeList(b: Block) = b.stats ::: b.expr :: Nil

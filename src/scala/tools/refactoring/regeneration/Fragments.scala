@@ -13,6 +13,7 @@ trait Fragments {
   self: TreePrinter with FragmentRepository with SourceHelper =>
   
   val global: scala.tools.nsc.interactive.Global
+  import global._
   
   case class Requisite(check: String, write: String) {
     def this(check: String) = this(check, check)
@@ -34,7 +35,7 @@ trait Fragments {
   }
 
   trait WithTree {
-    def tree: global.Tree
+    def tree: Tree
   }
   
   abstract class Fragment extends WithRequisite with Traversable[Fragment] {
@@ -115,7 +116,7 @@ trait Fragments {
     def children = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
   }
   
-  case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFile, relativeIndentation: Int, tree: global.Tree) extends Scope with OriginalSourceFragment with WithTree {
+  case class TreeScope(parent: Option[Scope], start: Int, end: Int, file: SourceFile, relativeIndentation: Int, tree: Tree) extends Scope with OriginalSourceFragment with WithTree {
   
     class BeginOfScope(val start: Int, val end: Int, val file: SourceFile, val parent: TreeScope) extends Fragment with OriginalSourceFragment {
       override def toString = "❨"
@@ -149,35 +150,50 @@ trait Fragments {
     }
   }
   
-  case class SymTreeFragment(tree: global.SymTree) extends Fragment with OriginalSourceFragment with WithTree {
+  case class SymTreeFragment(tree: SymTree) extends Fragment with OriginalSourceFragment with WithTree {
+    
     override def hashCode = file.hashCode + start * 31 * (end + 17)
-    override def equals(that: Any) = that match {
-      case that: SymTreeFragment => that.start == this.start && that.end == this.end && that.file == this.file
+    
+    override def equals(that: Any) = /*PF*/that match {
+      case that: SymTreeFragment => 
+        that.start == this.start && 
+        that.end == this.end && 
+        that.file == this.file &&
+        sameName(that)
       case _ => false
     }
+    
+    private def sameName(that: SymTreeFragment) = (this.tree, that.tree) match {
+      case (_1: RefTree, _2: RefTree) => _1.name == _2.name
+      case (_1: DefTree, _2: DefTree) => _1.name == _2.name
+      case _ => true //we don't care about the name in that case
+    }
+    
     val start = tree.pos.point
+    
     val end = tree.pos.point + (tree match {
-      case t if t.symbol != global.NoSymbol => tree.symbol.nameString.length
-      case t: global.DefTree => t.name.length
+      case t if t.symbol != NoSymbol => tree.symbol.nameString.length
+      case t: DefTree => t.name.length
       case t => t.pos.end 
     })
+    
     val file = tree.pos.source
   }
   
-  case class ImportSelectorsFragment(selectors: List[global.ImportSelector], val file: SourceFile) extends Fragment with OriginalSourceFragment {
+  case class ImportSelectorsFragment(selectors: List[ImportSelector], val file: SourceFile) extends Fragment with OriginalSourceFragment {
     val start = selectors.head.namePos
     val end = nameLength(selectors.last)
     override def print: Seq[Char] = {
       selectors map { s => file.content.slice(s.namePos, nameLength(s)) mkString } mkString ", "
     }
-    private def nameLength(s: global.ImportSelector) = if(s.renamePos >= 0) s.renamePos + s.rename.length else s.namePos + s.name.length
+    private def nameLength(s: ImportSelector) = if(s.renamePos >= 0) s.renamePos + s.rename.length else s.namePos + s.name.length
   }
   
-  case class ArtificialTreeFragment(tree: global.Tree) extends Fragment with WithTree {
+  case class ArtificialTreeFragment(tree: Tree) extends Fragment with WithTree {
     def print = "?"+ tree.getClass.getSimpleName
   }
   
-  case class TreeFragment(tree: global.Tree) extends Fragment with OriginalSourceFragment with WithTree {
+  case class TreeFragment(tree: Tree) extends Fragment with OriginalSourceFragment with WithTree {
     lazy val start = tree.pos.start
     lazy val end = if(tree.pos.end + 1 == file.content.length) tree.pos.end + 1 else tree.pos.end
     lazy val file = tree.pos.source
@@ -207,7 +223,7 @@ trait Fragments {
     }
   }
   
-  case class FlagFragment(flag: Long, pos: Position) extends Fragment with OriginalSourceFragment with Flag {
+  case class FlagFragment(flag: Long, pos: global.Position) extends Fragment with OriginalSourceFragment with Flag {
     lazy val start = pos.start
     lazy val end = start + print.length
     lazy val file = pos.source
