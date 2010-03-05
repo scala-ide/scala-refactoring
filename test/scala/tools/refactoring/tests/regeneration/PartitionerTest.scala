@@ -264,15 +264,88 @@ class PartitionerTest extends TestHelper {
     }|❩|❩|
   |❩"""
   
-  //@Test TODO
+  @Test
+  def newInstance = 
+  """class A {
+    val a = new A
+  }
+  """ partitionsInto
+  """→0(0)❨|→0(0)❨|class |A| |→0(0)❨|{
+    |val| |a| = |new| |A|
+  }|❩|❩|
+  |❩"""
+  
+  //@Test
+  def superConstructor = 
+  """class A(s: String)
+     class B(s: String) extends A(s)
+  """ partitionsInto
+  """"""
+  
+  @Test
+  def matching = 
+  """class A {
+      def print {
+        1 match { case /*(*/ i /*)*/ => i }
+      }
+    }
+  """ partitionsInto
+  """→0(0)❨|→0(0)❨|class |A| |→0(0)❨|{
+      |def| |print| |→6(6)❨|{
+        |→8(2)❨|1| match { case /*(*/ |i| /*)*/ => |→8(0)❨|i|❩| }|❩|
+      }|❩|
+    }|❩|❩|
+  |❩"""
+  
+  @Test
+  def matchingWithType = 
+  """class A {
+      def print {
+        1 match { case /*(*/ i: Int /*)*/ => i }
+      }
+    }
+  """ partitionsInto
+  """→0(0)❨|→0(0)❨|class |A| |→0(0)❨|{
+      |def| |print| |→6(6)❨|{
+        |→8(2)❨|1| match { case /*(*/ |i|: |Int| /*)*/ => |→8(0)❨|i|❩| }|❩|
+      }|❩|
+    }|❩|❩|
+  |❩"""
+  
+  @Test
+  def matchingWithBinding = 
+  """class A {
+      def print = {
+        1 match { case /*(*/ a @ i /*)*/ => a }
+      }
+    }
+  """ partitionsInto
+  """→0(0)❨|→0(0)❨|class |A| |→0(0)❨|{
+      |def| |print| = |→6(6)❨|{
+        |→8(2)❨|1| match { case /*(*/ |a| @ |i| /*)*/ => |a| }|❩|
+      }|❩|
+    }|❩|❩|
+  |❩"""
+  
+  @Test
   def multipleAssignment =
       """
     class A {
+      def v() = (1,2,3,4)
       def assign {
+        val (_1, _2, _3, _4) = v()
         val (a, b) = (1, 2)
       }
     }
   """ partitionsInto
-  """"""
-  
+  """→0(0)❨|
+    |→4(4)❨|class |A| |→4(0)❨|{
+      |def| |v|() = |→6(2)❨|(|1|,|2|,|3|,|4|)|❩|
+      |def| |assign| |→6(2)❨|{
+        |val| (|_1|, |_2|, |_3|, |_4|) = |v|()
+        |val| (|a|, |b|) = |→8(2)❨|(|1|, |2|)|❩|
+      }|❩|
+    }|❩|❩|
+  |❩"""
+
 }

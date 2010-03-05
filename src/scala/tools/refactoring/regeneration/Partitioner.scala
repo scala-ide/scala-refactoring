@@ -9,19 +9,12 @@ import scala.tools.nsc.symtab.{Flags, Names, Symbols}
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.interactive.Global
 
-trait Partitioner {
-  self: Tracing with LayoutPreferences with Fragments with FragmentRepository with SourceHelper =>
+trait PartitionerContributions {
+  
   val global: Global
-  import global.{Scope => _, _}
-     
-  private abstract class Visitor extends Traverser {
-
-    val handle: Contribution
-    
-    private var currentScope: Scope = _ 
-      
-    private val preRequirements = new ListBuffer[Requisite]
-    
+  import global._
+  
+  object TreeRoles {
     sealed abstract class TreeElement
     case object Mods extends TreeElement
     case object Itself extends TreeElement
@@ -36,18 +29,42 @@ trait Partitioner {
     case object Cond extends TreeElement
     case object Then extends TreeElement
     case object Else extends TreeElement
-    case object Name extends TreeElement
+    case object Name extends TreeElement      
+  }
+  
+  import TreeRoles._
+  
+  abstract class Contribution {
+    def apply(implicit p: Pair[Tree, TreeElement])
+  }
+}
+
+trait Partitioner extends PartitionerContributions {
+  self: Tracing with LayoutPreferences with Fragments with FragmentRepository with SourceHelper =>
+  val global: Global
+  import global.{Scope => _, _}
+     
+  private abstract class Visitor extends Traverser {
+
+    import TreeRoles._
+  
+    val handle: Contribution
     
-    abstract class Contribution {
-      def apply(implicit p: Pair[Tree, TreeElement])
-    }
+    private var rootScope: TreeScope = _
     
+    private var currentScope: Scope = _ 
+      
+    private val preRequirements = new ListBuffer[Requisite]
+
     trait FragmentContribution extends Contribution {
       
       private def addFragment(tree: Tree): Fragment = {
         val part = tree match {
           case tree if tree.pos == NoPosition => ArtificialTreeFragment(tree)
           case tree: SymTree => SymTreeFragment(tree)
+          case tree: New => new TreeFragment(tree) {
+            override lazy val end = start + "new".length
+          }
           case _ => TreeFragment(tree)
         }
         addFragment(part)
@@ -110,6 +127,10 @@ trait Partitioner {
           addFragment(t)
           super.apply
           
+        case (t: Bind, Itself) =>
+          addFragment(t)
+          super.apply
+          
         case (t @ Import(expr, selectors), Itself) =>
           super.apply
           
@@ -122,7 +143,10 @@ trait Partitioner {
           if(selectors.size > 1) {
             currentScope.lastChild map (_.requireAfter(new Requisite("}")))
           }
-                   
+          
+        case (t: Match, Itself) =>
+          super.apply
+          
         case (t: Tree, Itself) =>
           addFragment(t)
           super.apply
@@ -299,8 +323,11 @@ trait Partitioner {
           addFragment(new Fragment with Flag {
             val flag = tree.mods.flags
           })
-        case _ =>
-          tree.mods.positions.foreach (x => addFragment(new FlagFragment(x._1, x._2)))
+        case _ => tree.mods.positions.foreach {
+          case (flag, pos) if rootScope.start <= pos.start && pos.end <= rootScope.end =>
+            addFragment(new FlagFragment(flag, pos))
+          case _ => ()
+        }
       }
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
@@ -402,9 +429,29 @@ trait Partitioner {
       }
     }
     
-    class BasicContribution extends Contribution {
+    abstract class BasicContribution extends Contribution {
       
-      private def handleList(ts: List[Tree], t: TreeElement): Unit = ts.filter(notEmptyRangeOrUnknown) match {
+      val global: Global
+      
+      private def handleMultipleAssignments(ts: List[Tree]): List[Tree] = ts match {
+        case (x @ ValDef(_, _, _, Match(Typed(expr, _), _))) :: xs if x.mods.hasFlag(Flags.LOCAL | Flags.PRIVATE | Flags.SYNTHETIC) =>
+          
+          val numberOfAssignments = expr.tpe.typeArgs.size
+          
+          val (assignments, rest) = xs.splitAt(numberOfAssignments)
+                  
+          /* Values have a "val" modifier which we need to remove, except on the first one,
+           * otherwise we get something like val (a, val b) = ...
+           */
+          def removeAllMods(ts: List[Tree]) = ts.head :: ts.tail.map {
+            case v: ValDef => v.copy(mods = NoMods) copyAttrs (v)
+          }
+          
+          removeAllMods(assignments) ::: expr :: handleMultipleAssignments(rest)
+        case ts => ts
+      }
+      
+      private def handleList(ts: List[Tree], t: TreeElement): Unit = handleMultipleAssignments(ts.filter(notEmptyRangeOrUnknown)) match {
         case Nil => 
           ()
         case x :: Nil => 
@@ -475,6 +522,10 @@ trait Partitioner {
           traverseTrees(t.mods.annotations)
           traverseTrees(t.tparams)
           traverse(t.impl)
+          
+        case (t: Match, Itself) =>
+          traverse(t.selector)
+          traverseTrees(t.cases)
             
         case x => 
           //println("don't know what to do with "+ x)
@@ -516,11 +567,12 @@ trait Partitioner {
           handle(tree, Itself)
         }
         traverseTrees(mods.annotations)
+        // XXX simplify these two checks
         if(tpt.tpe != null && (tpt.pos.isRange || tpt.pos == NoPosition) && tpt.tpe != EmptyTree.tpe) {
           handle(tree, Tpt)
         }
         
-        if(rhs != EmptyTree) {
+        if(rhs != EmptyTree && (rhs.pos.isRange || rhs.pos == NoPosition)) {
           handle(tree, Rhs)
         }
 
@@ -613,6 +665,16 @@ trait Partitioner {
         handle(tree → Then)
         if(t.elsep.pos.isRange)
           handle(tree → Else)
+          
+      case CaseDef(pat, guard, body) =>
+        traverse(pat)
+        if(guard != EmptyTree)
+          traverse(guard)
+        traverse(body)
+        
+      case t @ Bind(name, body) =>
+        handle(t → Itself)
+        traverse(body)
 
       case _ =>
         super.traverse(tree)
@@ -624,7 +686,7 @@ trait Partitioner {
         global.unitOfFile(tree.pos.source.file).body.pos == tree.pos
       }
       
-      val rootScope = if(isTopLevelTree)
+      rootScope = if(isTopLevelTree)
         TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
       else
         TreeScope(None, tree.pos.start, tree.pos.end, tree.pos.source, indentationLength(tree.pos.start, tree.pos.source), tree)
@@ -640,6 +702,8 @@ trait Partitioner {
   def essentialFragments(root: Tree, fs: FragmentRepository) = new Visitor {
     val handle = new BasicContribution with RequisitesContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
        
+      val global = self.global
+      
       def getIndentation(start: Int, tree: Tree, scope: Scope): Int = {
         val self = indentationLength(start, tree.pos.source)
          
@@ -660,6 +724,8 @@ trait Partitioner {
   
   def splitIntoFragments(root: Tree): TreeScope = new Visitor {
     val handle = new BasicContribution with ModifiersContribution with ScopeContribution with FragmentContribution {
+      
+      val global = self.global
       
       def getIndentation(start: Int, tree: Tree, scope: Scope) = { 
         val self = indentationLength(start, tree.pos.source)

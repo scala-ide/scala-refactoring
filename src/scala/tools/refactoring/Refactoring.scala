@@ -16,8 +16,11 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   type ChangeSet = List[Change]
   
   type PreparationResult
+  
   class PreparationError(val cause: String)
+  
   class RefactoringError(val cause: String)
+  
   type RefactoringParameters
   
   implicit def abstractFileToTree(file: AbstractFile): global.Tree = global.unitOfFile(file).body

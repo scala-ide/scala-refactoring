@@ -30,6 +30,8 @@ trait TreePrinter {
       
       case t: If => "if"
       
+      case t: Bind => t.name.toString
+      
       case _ => throw new Exception("don't know how to create "+ tree.getClass +" for AST "+ tree)
     }) { f: String =>
       trace("printing tree (%s) %s → %s", tree.getClass, tree, f)

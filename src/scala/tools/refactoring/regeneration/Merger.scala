@@ -33,7 +33,7 @@ trait Merger {
         val layout = (current, next)  match {
           case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
         }
-        trace("%s and %s are in the original order and enclose %s", current, next, layout)
+        trace("%s and %s are in the original order and enclose layout %s", current, next, layout)
         (layout, false)
       } else {
         trace("%s and %s have been rearranged", current, next)
