@@ -144,9 +144,11 @@ trait Fragments {
     def children: List[Fragment] = beginOfScope :: trueChildren.toList ::: endOfScope :: Nil
     
     override def hashCode = file.hashCode + start * 37 * (end + 13)
-    override def equals(that: Any) = that match {
-      case that: TreeScope => that.start == this.start && that.end == this.end && that.file == this.file
-      case _ => false
+    override def equals(that: Any) = PartialFunction.cond(that) {
+      case that: TreeScope => 
+        that.start == this.start && 
+        that.end == this.end && 
+        that.file == this.file
     }
   }
   
@@ -154,13 +156,12 @@ trait Fragments {
     
     override def hashCode = file.hashCode + start * 31 * (end + 17)
     
-    override def equals(that: Any) = /*PF*/that match {
+    override def equals(that: Any) = PartialFunction.cond(that) {
       case that: SymTreeFragment => 
         that.start == this.start && 
         that.end == this.end && 
         that.file == this.file &&
         sameName(that)
-      case _ => false
     }
     
     private def sameName(that: SymTreeFragment) = (this.tree, that.tree) match {

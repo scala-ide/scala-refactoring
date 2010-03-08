@@ -29,7 +29,7 @@ private[refactoring] trait Transform {
     }.transform(root)
   }
   
-  trait Transformation {
+  trait ChangeCollector {
 
     def transform(root: Tree) = outer.transform(root, (changes ::= _)) _
     

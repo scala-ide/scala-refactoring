@@ -348,4 +348,15 @@ class PartitionerTest extends TestHelper {
     }|❩|❩|
   |❩"""
 
+  @Test
+  def newStatement = """
+    object A {
+      val a = new String("A")
+    }
+""" partitionsInto """→0(0)❨|
+    |→4(4)❨|object |A| |→4(0)❨|{
+      |val| |a| = |new| |String|→6(2)❨|(|"A"|)|❩|
+    }
+|❩|❩|❩"""
+  
 }

@@ -88,4 +88,20 @@ class RenameLocalTest extends TestHelper with TestRefactoring {
       }
     }
     """)
+    
+  @Test
+  def renameNewVal = """
+    class A(i: Int) {
+      def print {
+        var  /*(*/  l = /*)*/  new A(5)
+      }
+    }
+    """ rename("ls",
+    """
+    class A(i: Int) {
+      def print {
+        var  /*(*/  ls = /*)*/  new A(5)
+      }
+    }
+    """)
 }

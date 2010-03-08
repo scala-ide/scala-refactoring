@@ -55,7 +55,7 @@ trait Tracing {
   }
   
   def trace(msg: String) {
-    print (StopWatch.elapsed +"\t"+ (indent * level) + marker + msg)
+    print ((indent * level) + marker + msg)
   }
   
   def print(s: String) = println(s)

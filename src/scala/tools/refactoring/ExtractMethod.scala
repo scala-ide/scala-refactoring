@@ -45,7 +45,7 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
     
     val call = mkCallDefDef(NoMods, methodName, parameters :: Nil, returns)
     
-    val changes = new Transformation {
+    val changes = new ChangeCollector {
       transform(file) {
         case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
           if(selection.trees.size > 1) {

@@ -96,6 +96,7 @@ trait LayoutHandler {
       context("split layout") {
         val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
         val OpeningBrace = """(.*?\()(.*)""".r
+        val Equals = """(.*?=\s?)(.*)""".r
         val ClosingBrace = """(?ms)(.*?)(\).*)""".r
         val Comma = """(.*?),\s?(.*)""".r
         val NewLine = """(?ms)(.*?\n)(.*)""".r
@@ -108,6 +109,7 @@ trait LayoutHandler {
         val(l, r, why) = (left, layout, right) match {
           case(_, EmptyParens(l, r) , _)    => (l, r, "EmptyParens")
           case(_, OpeningBrace(l, r), _)    => (l, r, "OpeningBrace")
+          case(_, Equals(l, r), _)          => (l, r, "Equals")
           case(_, ClosingBrace(l, r), _)    => (l, r, "ClosingBrace")
           case(_, ImportStatement(l, r), _) => (l+"\n", "\n"+r, "ImportStatement")
           case(_, NewLine(l, r)     , _)    => (l, "\n"+r, "NewLine")

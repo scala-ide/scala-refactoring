@@ -46,7 +46,7 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
     
     trace("Selected tree is %s", selectedLocal)
 
-    val changes = new Transformation {
+    val changes = new ChangeCollector {
       transform(file) {
         case s: SymTree if s.symbol == selectedLocal.symbol => rename(s, params.newName)
       }

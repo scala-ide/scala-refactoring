@@ -63,6 +63,7 @@ trait Partitioner extends PartitionerContributions {
           case tree if tree.pos == NoPosition => ArtificialTreeFragment(tree)
           case tree: SymTree => SymTreeFragment(tree)
           case tree: New => new TreeFragment(tree) {
+            override lazy val start = tree.pos.start min tree.pos.point
             override lazy val end = start + "new".length
           }
           case _ => TreeFragment(tree)

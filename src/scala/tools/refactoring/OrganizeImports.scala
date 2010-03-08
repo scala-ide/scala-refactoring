@@ -44,7 +44,7 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
       }
     }
     
-    var changes = new Transformation {
+    var changes = new ChangeCollector {
       transform(prepared.file) {
         case p @ PackageDef(_, stats) => {
           

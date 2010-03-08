@@ -15,7 +15,7 @@ trait Merger {
         
         val currentExists = allFragments exists current
         
-        def orderHasNotChanged = currentExists && cond(allFragments getNext current) { case Some((_, _2)) => _2 == next }
+        def orderHasNotChanged = currentExists && cond(allFragments getNext current) { case Some((_, originalNext)) => originalNext == next }
         
         def isNotCompilationUnitRoot = scope == rootScope && rootScope != allFragments.root
         
@@ -29,12 +29,12 @@ trait Merger {
         orderHasNotChanged || isBeginOrEnd
       }
           
-      val (layout, somethingChanged) = if (keepOldLayout) {
+      val layout = if (keepOldLayout) {
         val layout = (current, next)  match {
           case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
         }
         trace("%s and %s are in the original order and enclose layout %s", current, next, layout)
-        (layout, false)
+        layout
       } else {
         trace("%s and %s have been rearranged", current, next)
         /*
@@ -43,17 +43,18 @@ trait Merger {
          * source
          * */
         val (layoutAfterCurrent, _) =
-          if(allFragments exists current) {
+          if(allFragments exists current)
             splitLayoutBetween(allFragments getNext current)
-          } else ("", "")
+          else ("", "")
         
         /*
          * We also need the layout of our right neighbor:
          * */
         val (_, layoutBeforeNext) =
-          if(allFragments exists next) {
+          if(allFragments exists next)
             splitLayoutBetween(allFragments getPrevious next)
-          } else ("", "")
+          else 
+            ("", "")
         
         /*
          * We now have 4 fragments of layout, we only need the left slice of our current fragment (that is, 
@@ -67,7 +68,7 @@ trait Merger {
         
         trace("layout is %s", layout)
         
-        (layout, true)
+        layout
       }
 	    
 	    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => indentationLength(next) map (s → _))
@@ -76,21 +77,26 @@ trait Merger {
   
       trace("the resulting layout is %s", indentedLayout)
       
-      (new StringFragment(indentedLayout), somethingChanged || indentedLayout != layout)
+      (new StringFragment(indentedLayout), !keepOldLayout || indentedLayout != layout)
     }
 
     def innerMerge(scope: Scope): (List[Fragment], Boolean) = context("inner merger loop") {
       
-      def processScope = (List[Fragment]() → false /: scope.children.zip(scope.children.tail)) {
-        case ((fs, changes), (current: Scope, next)) => 
+      def processScope(ls: List[Fragment]) = (List[Fragment]() → false /: ls.zip(ls.tail)) {
+        
+        case ((fs, changes), (current: Scope, next)) =>
+        
           val (resultingScope, changedScope) = innerMerge(current)
           val (layout, changed) = getLayoutBetween(current, next, scope)
+          
           (fs ::: resultingScope ::: layout :: Nil, changes || changed || changedScope)
+          
         case ((fs, changes), (current, next)) => 
+          
           val (layout, changed) = getLayoutBetween(current, next, scope)
+          
           (fs ::: current :: layout :: Nil, changes | changed)
       }
-      
       
       def unchangedScope(scope: OriginalSourceFragment) = new Fragment {
         def print = scope.file.content.slice(scope.start, scope.end)
@@ -105,7 +111,7 @@ trait Merger {
           trace("scope has not changed")
           (unchangedScope(scope), false)
         case scope => 
-          trace("scope might have changed, "+ (scope match {
+          trace("scope might have changed, because it "+ (scope match {
             case s: OriginalSourceFragment with WithTree if hasTreeChanged(s.tree) =>
               "is in changeset"
             case s: OriginalSourceFragment with WithTree if s.exists(_.isInstanceOf[ArtificialTreeFragment]) =>
@@ -113,10 +119,10 @@ trait Merger {
             case s: OriginalSourceFragment =>
               "does not contain a tree"
             case _ => 
-              "not an OriginalSourceFragment"
+              "is not an OriginalSourceFragment"
           }))
           
-          val(result, changes) = processScope
+          val(result, changes) = processScope(scope.children)
 
           (scope match {
             case scope: TreeScope if !changes =>
