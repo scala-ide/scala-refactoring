@@ -99,9 +99,9 @@ class LayoutHandlerTest extends TestHelper {
   
   @Test
   def testClassParameters() = {
-    "class A ( i: /*c*/Int, s: String)"     splitsInto "«»class ▒«A» (▒ «i»: /*c*/▒«Int»▒«s»: ▒«String»▒)«»▒"
-    "class A(i: Int, s: String, f: Float)"  splitsInto "«»class ▒«A»(▒«i»: ▒«Int»▒«s»: ▒«String»▒«f»: ▒«Float»▒)«»▒"
-    "class A(/*->*/i: Int/*<-*/)"           splitsInto "«»class ▒«A»(▒/*->*/«i»: ▒«Int»/*<-*/▒)«»▒"
+    "class A ( i: /*c*/Int, s: String)"     splitsInto "«»class ▒«A» (▒ «i»▒: /*c*/«Int»▒«s»▒: «String»▒)«»▒"
+    "class A(i: Int, s: String, f: Float)"  splitsInto "«»class ▒«A»(▒«i»▒: «Int»▒«s»▒: «String»▒«f»▒: «Float»▒)«»▒"
+    "class A(/*->*/i: Int/*<-*/)"           splitsInto "«»class ▒«A»(▒/*->*/«i»▒: «Int»/*<-*/▒)«»▒"
   }
   
   @Test
@@ -143,7 +143,7 @@ class LayoutHandlerTest extends TestHelper {
 ▒
       «»class ▒«A» ▒«»{
 ▒
-        «val» ▒«a»: ▒«Int» = ▒«5»
+        «val» ▒«a»▒: «Int» = ▒«5»
 ▒
       }«»▒▒«»▒
 ▒
@@ -152,17 +152,17 @@ class LayoutHandlerTest extends TestHelper {
   
   @Test
   def splitCommentWithComma(): Unit = {
-    "class A ( i: /*,*/ Int )" splitsInto "«»class ▒«A» (▒ «i»: /*,*/ ▒«Int» ▒)«»▒"
+    "class A ( i: /*,*/ Int )" splitsInto "«»class ▒«A» (▒ «i»▒: /*,*/ «Int» ▒)«»▒"
   }  
   
   @Test
   def splitCommentWithClosingParenthesis(): Unit = {
-    "class A ( i: /*(*/ Int )" splitsInto "«»class ▒«A» (▒ «i»: /*(*/ ▒«Int» ▒)«»▒"
+    "class A ( i: /*(*/ Int )" splitsInto "«»class ▒«A» (▒ «i»▒: /*(*/ «Int» ▒)«»▒"
   }  
   
   @Test
   def splitCommentWithOpeningParenthesis(): Unit = {
-    "class A ( i: /*)*/ Int )" splitsInto "«»class ▒«A» (▒ «i»: /*)*/ ▒«Int» ▒)«»▒"
+    "class A ( i: /*)*/ Int )" splitsInto "«»class ▒«A» (▒ «i»▒: /*)*/ «Int» ▒)«»▒"
   } 
   
   @Test

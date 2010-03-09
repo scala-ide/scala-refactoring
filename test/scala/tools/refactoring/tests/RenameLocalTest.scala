@@ -53,6 +53,26 @@ class RenameLocalTest extends TestHelper with TestRefactoring {
         println(b)
       }
     }
+    """)    
+    
+  @Test
+  def renameWithTypeAscription = """
+    class A {
+      def rename(a: String) {
+        a match {
+          case b: String => /*(*/  b  /*)*/
+        }
+      }
+    }
+    """ rename("c",
+    """
+    class A {
+      def rename(a: String) {
+        a match {
+          case c: String => /*(*/  c  /*)*/
+        }
+      }
+    }
     """)
     
   @Test
@@ -101,6 +121,22 @@ class RenameLocalTest extends TestHelper with TestRefactoring {
     class A(i: Int) {
       def print {
         var  /*(*/  ls = /*)*/  new A(5)
+      }
+    }
+    """)
+    
+  @Test
+  def renameLazyArg = """
+    class A(i: Int) {
+      def print(a: => String) {
+        println(/*(*/  a  /*)*/)
+      }
+    }
+    """ rename("s",
+    """
+    class A(i: Int) {
+      def print(s: => String) {
+        println(/*(*/  s  /*)*/)
       }
     }
     """)

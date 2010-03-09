@@ -57,6 +57,6 @@ trait Selections {
     }
     
     private def isPosContainedIn(p1: Position, p2: Position) = 
-      p2.source == this.root.pos.source && p1.isRange && !p1.isTransparent && p2.isRange && !p2.isTransparent && p2.includes(p1)
+      p1.isRange && !p1.isTransparent && p2.isRange && !p2.isTransparent && p2.includes(p1) && p1.source == p2.source
   }
 }

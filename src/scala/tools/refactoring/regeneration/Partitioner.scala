@@ -676,6 +676,11 @@ trait Partitioner extends PartitionerContributions {
       case t @ Bind(name, body) =>
         handle(t → Itself)
         traverse(body)
+        
+      case t @ Typed(expr, tpt) =>
+        traverse(expr)
+        handle(t → Tpt)
+        traverse(tpt)
 
       case _ =>
         super.traverse(tree)
@@ -687,10 +692,12 @@ trait Partitioner extends PartitionerContributions {
         global.unitOfFile(tree.pos.source.file).body.pos == tree.pos
       }
       
-      rootScope = if(isTopLevelTree)
+      rootScope = if (isTopLevelTree)
         TreeScope(None, 0, tree.pos.source.length, tree.pos.source, 0, tree)
-      else
+      else if (tree.pos.isRange)
         TreeScope(None, tree.pos.start, tree.pos.end, tree.pos.source, indentationLength(tree.pos.start, tree.pos.source), tree)
+      else
+        throw new Exception("Tree does not have a RangePosition: "+ tree)
       
       currentScope = rootScope
       
