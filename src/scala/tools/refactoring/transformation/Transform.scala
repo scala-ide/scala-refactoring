@@ -17,7 +17,7 @@ private[refactoring] trait Transform {
       override def transform(tree: Tree): Tree = {
         val result = super.transform {
           if(trans.isDefinedAt(tree)) {
-            trans(tree) setPos tree.pos
+            trans(tree)
           } else {
             tree
           }

@@ -15,7 +15,7 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
   import global._
   
   def reverseClassParameters(t: Tree) = transform(t) {
-    case tpl: Template => tpl copy (body = tpl.body.reverse)
+    case tpl: Template => tpl copy (body = tpl.body.reverse) setPos tpl.pos
   }
   
   def insertNewMethod(t: Tree) = transform(t) {
@@ -31,12 +31,12 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
                 
       val d = DefDef(Modifiers(Flags.METHOD), newTermName("method"), Nil, Nil, TypeTree(typ.tpe), block)
       
-      new Template(parents, self, d :: body)
+      new Template(parents, self, d :: body) setPos tpl.pos
     }
   }
   
   def copyLastMethod(t: Tree) = transform(t) {
-    case tpl @ Template(parents, self, body) => Template(parents, self, body.last :: body)
+    case tpl @ Template(parents, self, body) => Template(parents, self, body.last :: body) setPos tpl.pos
   }
   
   def newMethodFromExistingBody(t: Tree) = transform(t) {
@@ -54,7 +54,7 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
 
       val d = DefDef(Modifiers(Flags.METHOD), "newMethod", Nil, (v :: Nil) :: Nil, TypeTree(typ.tpe), rhs)
       
-      new Template(parents, self, d :: body)
+      new Template(parents, self, d :: body) setPos tpl.pos
     }
   }
   
@@ -69,7 +69,7 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
             , Apply(Select(This(""), "innerMethod"), Nil))
       
       
-      new DefDef(mods, name, tparams, vparamss, tpt, newRhs)
+      new DefDef(mods, name, tparams, vparamss, tpt, newRhs)  setPos defdef.pos
     }
   }  
   
@@ -92,7 +92,7 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
             newDef :: rhs.stats.head :: call :: Nil
             , rhs.expr)
       
-      new DefDef(mods, name, tparams, vparamss, tpt, newRhs)
+      new DefDef(mods, name, tparams, vparamss, tpt, newRhs) setPos defdef.pos
     }
   }
 }

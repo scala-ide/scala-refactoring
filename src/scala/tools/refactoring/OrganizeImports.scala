@@ -55,7 +55,7 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
             case (imports, others) => (sortImports andThen collapseImports andThen simplifyWildcards apply imports) ::: others
           }
           
-          p copy (stats = sorted)
+          p copy (stats = sorted) setPos p.pos
         }
       }
     }.changedTrees

@@ -51,17 +51,17 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
           if(selection.trees.size > 1) {
             transform(d) {
               case block: Block => {
-                mkBlock(replace(block, selection.trees, call :: Nil))
+                mkBlock(replace(block, selection.trees, call :: Nil)) setPos block.pos
               }
             }
           } else {
             transform(d) {
-              case t: Tree if t == selection.trees.head => call
+              case t: Tree if t == selection.trees.head => call setPos t.pos
             }
           }
         }
         case tpl @ Template(_, _, body) if body exists (_ == selectedMethod) => {
-          tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil))
+          tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil)) setPos tpl.pos
         }
       }
     }.changedTrees

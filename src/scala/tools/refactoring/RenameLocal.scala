@@ -36,20 +36,11 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
     
     indexFile(file)
     
-    def rename(t: SymTree, name: String) = t match {
-      case i: Ident  => i.copy(name = name)
-      case v: ValDef => v.copy(name = name)
-      case d: DefDef => d.copy(name = name)
-      case b: Bind   => b.copy(name = name)
-      case s: Select => s.copy(name = name)
-      case t => throw new Exception("Found "+ t.getClass.getName)
-    }
-    
     trace("Selected tree is %s", selectedLocal)
 
     val changes = new ChangeCollector {
       transform(file) {
-        case s: SymTree if s.symbol == selectedLocal.symbol => rename(s, params.newName)
+        case s: SymTree if s.symbol == selectedLocal.symbol => mkRenamedSymTree(s, params.newName)
       }
     }.changedTrees
     
