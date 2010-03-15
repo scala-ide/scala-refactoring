@@ -140,4 +140,33 @@ class RenameLocalTest extends TestHelper with TestRefactoring {
       }
     }
     """)
+        
+  @Test
+  def forComprehension = """
+    class A {
+      def print {
+        for(  /*(*/  i  /*)*/  <- 1 to 10) yield i
+      }
+    }
+    """ rename("index",
+    """
+    class A {
+      def print {
+        for(  /*(*/  index  /*)*/  <- 1 to 10) yield index
+      }
+    }
+    """)
+            
+  @Test
+  def inConstructor = """
+    class A(i: Int) {
+      val /*(*/  y  /*)*/ = i * 2
+    }
+    """ rename("iTimesTwo",
+    """
+    class A(i: Int) {
+      val /*(*/  iTimesTwo  /*)*/ = i * 2
+    }
+    """)
+    
 }

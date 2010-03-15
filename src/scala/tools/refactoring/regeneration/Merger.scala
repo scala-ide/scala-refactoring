@@ -6,135 +6,127 @@ import PartialFunction._
 
 trait Merger {
   self: LayoutHandler with Tracing with SourceHelper with Fragments with FragmentRepository =>
-  
+    
   def merge(rootScope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean): List[Fragment] = context("merge fragments") {
     
-    def getLayoutBetween(current: Fragment, next: Fragment, scope: Scope): (Fragment, Boolean) = {
+    def getLayoutBetween(current: Fragment, next: Fragment, scope: Scope) = {
       
-      val keepOldLayout = {
-        
-        val currentExists = allFragments exists current
-        
-        def orderHasNotChanged = currentExists && cond(allFragments getNext current) { case Some((_, originalNext)) => originalNext == next }
-        
-        def isNotCompilationUnitRoot = scope == rootScope && rootScope != allFragments.root
-        
-        /* 
-         * if the root scope of the modification isn't the root of the compilation unit, then we have to ignore the changes
-         * between the begin of the scope and the first element, and the same for the end of the scope, because the scope
-         * nodes then cannot be found in the original source and this would lead to unnecessary re-generation of code.
-         * */
-        def isBeginOrEnd = (current.isBeginOfScope || (currentExists && next.isEndOfScope)) && isNotCompilationUnitRoot
-        
-        orderHasNotChanged || isBeginOrEnd
+      def extractOriginalLayout = (current, next) match {
+        case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
       }
-          
-      val layout = if (keepOldLayout) {
-        val layout = (current, next)  match {
-          case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
-        }
-        trace("%s and %s are in the original order and enclose layout %s", current, next, layout)
-        layout
+      
+      def getLayoutAfterCurrentFragment = if(allFragments exists current)
+        splitLayoutBetween(allFragments getNext current)._1
+      else ""
+        
+      def getLayoutBeforeOriginalNextFragment = if(allFragments exists next)
+        splitLayoutBetween(allFragments getPrevious next)._2
+      else ""
+      
+      val layoutWithRequisites = if (keepOldLayout(current, next, scope)) {
+        extractOriginalLayout \\ (trace("%s and %s are in the original order and enclose layout %s", current, next, _))
       } else {
-        trace("%s and %s have been rearranged", current, next)
-        /*
-         * The tree has been re-arranged, the next part in the original source isn't our current next. 
-         * We have to split the layout between our current part and its next part in the original 
-         * source
-         * */
-        val (layoutAfterCurrent, _) =
-          if(allFragments exists current)
-            splitLayoutBetween(allFragments getNext current)
-          else ("", "")
+        trace("current: %s and next: %s have been rearranged", current, next)
+
+        val layoutAfterCurrent = getLayoutAfterCurrentFragment
+
+        val layoutBeforeNext = getLayoutBeforeOriginalNextFragment
         
-        /*
-         * We also need the layout of our right neighbor:
-         * */
-        val (_, layoutBeforeNext) =
-          if(allFragments exists next)
-            splitLayoutBetween(allFragments getPrevious next)
-          else 
-            ("", "")
-        
-        /*
-         * We now have 4 fragments of layout, we only need the left slice of our current fragment (that is, 
-         * the layout that is adjacent to the current fragment) and the (right) slice of layout that is directly
-         * before the next fragment in the tree. Combined, we get all layout we need.
-         * */
-        
-        trace("the next fragment is %s", next)
-        
-        val layout = processRequisites(current, layoutAfterCurrent, layoutBeforeNext, next)
-        
-        trace("layout is %s", layout)
-        
-        layout
+        processRequisites(current, layoutAfterCurrent, layoutBeforeNext, next) \\ (trace("layout is %s", _))
       }
 	    
 	    val existingIndentation = allFragments.scopeIndentation(next) flatMap (s => indentationLength(next) map (s → _))
 	    
-	    val indentedLayout = fixIndentation(layout, existingIndentation, next.isEndOfScope, scope.indentation)
-  
-      trace("the resulting layout is %s", indentedLayout)
-      
-      (new StringFragment(indentedLayout), !keepOldLayout || indentedLayout != layout)
+	    fixIndentation(layoutWithRequisites, existingIndentation, next.isEndOfScope, scope.indentation) \\ (trace("the resulting layout is %s", _))
     }
-
-    def innerMerge(scope: Scope): (List[Fragment], Boolean) = context("inner merger loop") {
+    
+    def keepOldLayout(current: Fragment, next: Fragment, scope: Scope) = {
+    
+      val currentExists = allFragments exists current
       
-      def processScope(ls: List[Fragment]) = (List[Fragment]() → false /: ls.zip(ls.tail)) {
+      def orderHasNotChanged = currentExists && cond(allFragments getNext current) { case Some((_, originalNext)) => originalNext == next }
+      
+      def isNotCompilationUnitRoot = scope == rootScope && rootScope != allFragments.root
+      
+      /* 
+       * if the root scope of the modification isn't the root of the compilation unit, then we have to ignore the changes
+       * between the begin of the scope and the first element, and the same for the end of the scope, because the scope
+       * nodes then cannot be found in the original source and this would lead to unnecessary re-generation of code.
+       * */
+      def isBeginOrEnd = (current.isBeginOfScope || (currentExists && next.isEndOfScope)) && isNotCompilationUnitRoot
+      
+      orderHasNotChanged || isBeginOrEnd
+    }
+    
+    def layoutChanges(current: Fragment, next: Fragment, scope: Scope) = {
+      !keepOldLayout(current, next, scope) || allFragments.scopeIndentation(next).getOrElse(-1) != scope.indentation 
+    }
+    
+    def hasScopeChanges(scope: Scope): Boolean = scope.children.iterator.sliding(2) exists {
+      case (s: Scope) :: next :: _ if hasScopeChanges(s) => true
+      case current    :: next :: _                       => layoutChanges(current, next, scope)
+      case _ => false
+    }
+    
+    def justMiddleFragmentReplaced(x: Fragment, y: Fragment, z: Fragment) = allFragments.exists(x) && !allFragments.exists(y) && allFragments.exists(z)
         
-        case ((fs, changes), (current: Scope, next)) =>
+    def traverseScopeAndMergeChildrenWithLayout(scope: Scope) = {
+      def recurse(l: List[Fragment]): List[Fragment] = l match {
         
-          val (resultingScope, changedScope) = innerMerge(current)
-          val (layout, changed) = getLayoutBetween(current, next, scope)
-          
-          (fs ::: resultingScope ::: layout :: Nil, changes || changed || changedScope)
-          
-        case ((fs, changes), (current, next)) => 
-          
-          val (layout, changed) = getLayoutBetween(current, next, scope)
-          
-          (fs ::: current :: layout :: Nil, changes | changed)
+        case (x: Scope) :: y :: rest => innerMerge(x) ::: new StringFragment(getLayoutBetween(x, y, scope)) :: recurse(y :: rest)
+         
+        case (x: OriginalSourceFragment) :: (y: OriginalSourceFragment) :: (z: OriginalSourceFragment) :: rest if justMiddleFragmentReplaced(x, y, z) =>
+
+            def originalLayout(pair: Option[(OriginalSourceFragment, OriginalSourceFragment)], l: Fragment, r: Fragment) =
+              pair map Function.tupled(_ layout _) map (processRequisites(l, _, "", r)) map (new StringFragment(_)) get
+
+            def getTrailingOriginalLayout(f: Fragment) = originalLayout(allFragments getNext f, f, y)
+            
+            def getLeadingOriginalLayout(f: Fragment) = originalLayout(allFragments getPrevious f, y, f)
+            
+            def keepAllOriginalLayout = getTrailingOriginalLayout(x) :: y :: getLeadingOriginalLayout(z) :: Nil
+            
+            x :: keepAllOriginalLayout ::: recurse(z :: rest)
+            
+        case  x :: y :: rest => x :: new StringFragment(getLayoutBetween(x, y, scope)) :: recurse(y :: rest)
+            
+        case _ => Nil
       }
+      recurse(scope.children)
+    }
+              
+    def scopeHasArtificialTree(s: Scope) = s.exists(_.isInstanceOf[ArtificialTreeFragment])
       
-      def unchangedScope(scope: OriginalSourceFragment) = new Fragment {
-        def print = scope.file.content.slice(scope.start, scope.end)
-      } :: Nil
-      
-      def treeIsInChangeSet(s: Scope with WithTree) = hasTreeChanged(s.tree) || s.exists(_.isInstanceOf[ArtificialTreeFragment])
+    def scopeHasNoChanges(s: Scope with WithTree) = !(hasTreeChanged(s.tree) || scopeHasArtificialTree(s)) || !hasScopeChanges(s)
 
-      trace("current scope is %s", scope)
-      
+    def unchangedScope(scope: OriginalSourceFragment) = new Fragment {
+      def print = scope.file.content.slice(scope.start, scope.end)
+    } :: Nil
+
+    def innerMerge(scope: Scope): List[Fragment] = context("inner merge loop") {
+
       scope match {
-        case scope: OriginalSourceFragment with WithTree if !treeIsInChangeSet(scope) => 
-          trace("scope has not changed")
-          (unchangedScope(scope), false)
-        case scope => 
-          trace("scope might have changed, because it "+ (scope match {
+        
+        case scope: OriginalSourceFragment with WithTree if scopeHasNoChanges(scope) => 
+          trace("scope %s has not changed", scope)
+          unchangedScope(scope)
+          
+        case _ =>
+          trace("scope %s has changed, because it "+ (scope match {
             case s: OriginalSourceFragment with WithTree if hasTreeChanged(s.tree) =>
               "is in changeset"
-            case s: OriginalSourceFragment with WithTree if s.exists(_.isInstanceOf[ArtificialTreeFragment]) =>
+            case s: OriginalSourceFragment with WithTree if scopeHasArtificialTree(s) =>
               "contains artificial trees"
             case s: OriginalSourceFragment =>
               "does not contain a tree"
             case _ => 
               "is not an OriginalSourceFragment"
-          }))
+          }), scope)
           
-          val(result, changes) = processScope(scope.children)
-
-          (scope match {
-            case scope: TreeScope if !changes =>
-              trace("no changes found, keep scope")
-              unchangedScope(scope)
-            case _ =>
-              trace("scope changed")
-              result
-          }, changes)
+          traverseScopeAndMergeChildrenWithLayout(scope)
       }
     }
     
-    innerMerge(rootScope)._1
+    innerMerge(rootScope)
   }
 }

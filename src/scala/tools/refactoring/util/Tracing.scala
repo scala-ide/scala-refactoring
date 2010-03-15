@@ -12,18 +12,11 @@ trait Tracing {
   var level = 0
   val marker = "│"
   val indent = "   "
-  
-  // TODO move to some other utility trait/object 
-  def returns[T](arg: => T) = new {
-    def apply(body: => Unit): T = {
-      val r = arg
-      body
-      r
-    }
-    def apply(body: T => Unit): T = {
-      val r = arg
-      body(r)
-      r
+
+  implicit def anythingToTrace[T](t: T) = new {
+    def \\ (trace: T => Unit) = {
+      trace(t)
+      t
     }
   }
   
@@ -36,7 +29,7 @@ trait Tracing {
     level += 1
     trace("→ "+ name)
     
-    returns(body) {
+    body \\ { _ =>
       level -= 1
       print ((indent * level) + "╭"+ spacer +"┴────────" )
     }

@@ -41,6 +41,7 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
       case v: ValDef => v.copy(name = name)
       case d: DefDef => d.copy(name = name)
       case b: Bind   => b.copy(name = name)
+      case s: Select => s.copy(name = name)
       case t => throw new Exception("Found "+ t.getClass.getName)
     }
     

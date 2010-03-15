@@ -13,7 +13,7 @@ trait LayoutHandler {
     
     // check for overlapping layouts and requirements! => testSortWithJustOne
     def getRequisite(r: Requisite) = if(!(stripComment(layoutAfterCurrent + layoutBeforeNext)).contains(r.check)) {
-      trace("%s does not contain requisite %s → write %s", layoutAfterCurrent + layoutBeforeNext, r.check, r.write)
+      trace("Current: %s, next: %s. Layout %s does not contain requisite %s → write %s", current, next, layoutAfterCurrent + layoutBeforeNext, r.check, r.write)
       r.write 
     } else {
       ""

@@ -11,7 +11,7 @@ trait TreePrinter {
   def renderTree(part: WithTree) = printTree(part.tree)
   
   private def printTree(tree: Trees#Tree) = context("print tree") { 
-    returns(tree match {
+    (tree match {
       case DefDef(_, name, _, _, _, _) => name.toString
       
       case ValDef(_, name, _, _) => name.toString
@@ -33,8 +33,6 @@ trait TreePrinter {
       case t: Bind => t.name.toString
       
       case _ => throw new Exception("don't know how to create "+ tree.getClass +" for AST "+ tree)
-    }) { f: String =>
-      trace("printing tree (%s) %s → %s", tree.getClass, tree, f)
-    }
+    }) \\ (trace("printing tree (%s) %s → %s", tree.getClass, tree, _))
   }
 }
