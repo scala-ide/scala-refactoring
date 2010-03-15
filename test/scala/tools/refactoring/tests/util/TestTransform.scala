@@ -11,7 +11,7 @@ import scala.tools.nsc.symtab.Flags
 
 trait TestTransform extends Transform with Selections with TreeAnalysis with Indexes with TreeFactory {
   
-  val global: scala.tools.nsc.Global
+  val global: scala.tools.nsc.interactive.Global
   import global._
   
   def reverseClassParameters(t: Tree) = transform(t) {

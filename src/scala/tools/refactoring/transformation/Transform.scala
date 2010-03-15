@@ -1,15 +1,17 @@
 package scala.tools.refactoring.transformation
 
+import scala.tools.nsc.io.AbstractFile
 import scala.collection.mutable.HashSet
 import scala.tools.nsc.util.NoPosition
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
+import scala.tools.refactoring.common.Changes
 
-private[refactoring] trait Transform {
+private[refactoring] trait Transform extends Changes {
   outer =>
   
-  val global: scala.tools.nsc.Global
+  val global: scala.tools.nsc.interactive.Global
   import global._
   
   def transform(root: Tree, changed: Tree => Unit = (_ => ()))(trans: PartialFunction[Tree, Tree]): Tree = {
@@ -29,11 +31,13 @@ private[refactoring] trait Transform {
     }.transform(root)
   }
   
-  trait ChangeCollector {
-
+  trait ChangeCollector extends TreeChanges {
+    
     def transform(root: Tree) = outer.transform(root, (changes ::= _)) _
     
-    def changedTrees = (topChanges, changes)
+    def toplevelTrees = topChanges
+  
+    def allChangedTrees = changes
 
     private var changes = Nil: List[Tree]
     
@@ -58,6 +62,8 @@ private[refactoring] trait Transform {
   }
   
   implicit def blockToTreeList(b: Block) = b.stats ::: b.expr :: Nil
+  
+  implicit def abstractFileToTree(file: AbstractFile): global.Tree = global.unitOfFile(file).body
     
   def replace[T](from: List[T], what: List[T], replacement: List[T]): List[T] = (from, what) match {
     case (Nil, _) => Nil

@@ -64,8 +64,8 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
           tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil)) setPos tpl.pos
         }
       }
-    }.changedTrees
+    }
     
-    Right(refactor(file, changes._1, changes._2))
+    Right(refactor(file, changes))
   }
 }

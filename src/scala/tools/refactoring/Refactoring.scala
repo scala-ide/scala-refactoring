@@ -8,22 +8,14 @@ import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
 
 abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with /*Silent*/Tracing with LayoutPreferences {
-  
-  class Selection(file: AbstractFile, from: Int, to: Int) extends TreeSelection(file, from, to)
-  
-  case class Change(from: Int, to: Int, text: String)
-  
-  type ChangeSet = List[Change]
-  
+ 
   type PreparationResult
   
-  class PreparationError(val cause: String)
+  case class PreparationError(val cause: String)
   
-  class RefactoringError(val cause: String)
+  case class RefactoringError(val cause: String)
   
   type RefactoringParameters
-  
-  implicit def abstractFileToTree(file: AbstractFile): global.Tree = global.unitOfFile(file).body
  
   def indexFile(file: AbstractFile): Unit = index processTree file
   
@@ -31,25 +23,19 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet]
   
-  def refactor(original: global.Tree, changed: List[global.Tree], allChanged: List[global.Tree]): ChangeSet = context("main refactoring") {
+  def refactor(original: global.Tree, changed: TreeChanges): ChangeSet = context("main refactoring") {
           
-    val partitionedOriginal = splitIntoFragments(original)
-    
-    trace("Original: %s", partitionedOriginal)
+    val partitionedOriginal = splitIntoFragments(original) \\ (trace("Original: %s", _))
         
     val fr = new FragmentRepository(partitionedOriginal)
     
-    changed map { tree =>
+    changed.toplevelTrees map { tree =>
       
-      val partitionedModified = essentialFragments(tree, fr)
+      val partitionedModified = essentialFragments(tree, fr) \\ (trace("Modified: %s", _))
       
-      trace("Modified: %s", partitionedModified)
+      val change = merge(partitionedModified, fr, (changed.allChangedTrees.contains)) map (_.render(fr) mkString) mkString
       
-      val change = merge(partitionedModified, fr, (allChanged.contains)) map (_.render(fr) mkString) mkString
-      
-      trace("Result: "+ change)
-      
-      Change(partitionedModified.start, partitionedModified.end, change)
+      Change(partitionedModified.start, partitionedModified.end, change) \\ (c => trace("Result: "+ c))
     }
   }
 }

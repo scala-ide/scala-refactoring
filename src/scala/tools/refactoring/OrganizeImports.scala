@@ -58,8 +58,8 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
           p copy (stats = sorted) setPos p.pos
         }
       }
-    }.changedTrees
+    }
     
-    Right(refactor(prepared.file, changes._1, changes._2))
+    Right(refactor(prepared.file, changes))
   }
 }

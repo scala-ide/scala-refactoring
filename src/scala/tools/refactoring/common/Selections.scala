@@ -1,7 +1,8 @@
 package scala.tools.refactoring.common
 
+import scala.tools.nsc.io.AbstractFile
 import scala.collection.mutable.ListBuffer
-import scala.tools.nsc.Global
+import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.util.SourceFile
 import scala.tools.nsc.util.RangePosition
 
@@ -9,6 +10,8 @@ trait Selections {
   
   val global: Global
   import global._
+  
+  class Selection(file: AbstractFile, from: Int, to: Int) extends TreeSelection(global.unitOfFile(file).body, from, to)
   
   class TreeSelection(root: Tree, pos: RangePosition) {
  

@@ -6,7 +6,7 @@ import scala.tools.nsc.symtab.Flags
 trait TreeFactory {
   
   self: Transform =>
-  val global: scala.tools.nsc.Global
+  val global: scala.tools.nsc.interactive.Global
   import global._
       
   def mkRenamedSymTree(t: SymTree, name: String) = (t match {

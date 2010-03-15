@@ -26,7 +26,7 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
           val file = f
           val selectedLocal = t
         })
-      case None => Left(new PreparationError("no symbol selected found"))
+      case None => Left(PreparationError("no symbol selected found"))
     }
   }
     
@@ -42,8 +42,8 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
       transform(file) {
         case s: SymTree if s.symbol == selectedLocal.symbol => mkRenamedSymTree(s, params.newName)
       }
-    }.changedTrees
+    }
     
-    Right(refactor(file, changes._1, changes._2))
+    Right(refactor(file, changes))
   }
 }
