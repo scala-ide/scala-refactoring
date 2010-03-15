@@ -3,7 +3,7 @@ package scala.tools.refactoring.regeneration
 import scala.tools.nsc.ast.Trees
 
 trait TreePrinter {
-  self: scala.tools.refactoring.util.Tracing with Fragments =>
+  self: scala.tools.refactoring.common.Tracing with Fragments =>
   
   val global: scala.tools.nsc.interactive.Global  
   import global._

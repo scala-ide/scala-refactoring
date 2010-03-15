@@ -1,4 +1,4 @@
-package scala.tools.refactoring.util
+package scala.tools.refactoring.common
 
 import scala.tools.refactoring.regeneration._
 

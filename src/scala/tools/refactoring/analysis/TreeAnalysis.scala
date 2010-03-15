@@ -1,7 +1,7 @@
 package scala.tools.refactoring.analysis
 
 import scala.tools.nsc.ast.Trees
-import scala.tools.refactoring.util.Selections
+import scala.tools.refactoring.common.Selections
 
 trait TreeAnalysis {
   

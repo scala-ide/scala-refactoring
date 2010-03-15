@@ -5,7 +5,7 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.refactoring.analysis.Analysis
 import scala.tools.refactoring.regeneration.{FragmentRepository, Regeneration}
 import scala.tools.refactoring.transformation.Transformation
-import scala.tools.refactoring.util.{Selections, Tracing, LayoutPreferences, SilentTracing}
+import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
 
 abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with /*Silent*/Tracing with LayoutPreferences {
   

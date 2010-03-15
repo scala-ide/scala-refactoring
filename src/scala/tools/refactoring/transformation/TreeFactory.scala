@@ -1,6 +1,6 @@
 package scala.tools.refactoring.transformation
 
-import scala.tools.refactoring.util.Invisible
+import scala.tools.refactoring.common.Invisible
 import scala.tools.nsc.symtab.Flags
 
 trait TreeFactory {

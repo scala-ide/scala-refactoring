@@ -4,7 +4,7 @@ import scala.tools.refactoring.tests.util.{TestHelper, TreePath}
 import org.junit.{Test, Before}
 import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactoring.util.Selections
+import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.analysis.Indexes
 import scala.tools.nsc.ast.Trees

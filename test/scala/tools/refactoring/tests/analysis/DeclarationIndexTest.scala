@@ -4,7 +4,7 @@ import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.{Test, Before}
 import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactoring.util.Selections
+import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.analysis.{Indexes, TreeAnalysis}
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}

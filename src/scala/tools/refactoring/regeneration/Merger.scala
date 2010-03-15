@@ -1,7 +1,7 @@
 package scala.tools.refactoring.regeneration
 
 import scala.collection.mutable.ListBuffer
-import scala.tools.refactoring.util.Tracing
+import scala.tools.refactoring.common.Tracing
 import PartialFunction._
 
 trait Merger {

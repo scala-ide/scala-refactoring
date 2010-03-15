@@ -1,6 +1,6 @@
 package scala.tools.refactoring.tests.util
 
-import scala.tools.refactoring.util.Selections
+import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.transformation.{Transform, TreeFactory}
 import scala.tools.refactoring.analysis._
 import scala.tools.nsc.util.Position

@@ -1,6 +1,6 @@
 package scala.tools.refactoring.regeneration
 
-import scala.tools.refactoring.util._
+import scala.tools.refactoring.common._
 
 import scala.tools.nsc.util._
 import scala.tools.nsc.ast._

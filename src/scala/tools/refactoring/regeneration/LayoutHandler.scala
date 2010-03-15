@@ -1,7 +1,7 @@
 package scala.tools.refactoring.regeneration
 
-import scala.tools.refactoring.util.Tracing
-import scala.tools.refactoring.util.LayoutPreferences
+import scala.tools.refactoring.common.Tracing
+import scala.tools.refactoring.common.LayoutPreferences
 import scala.collection.mutable.ListBuffer
 
 trait LayoutHandler {
