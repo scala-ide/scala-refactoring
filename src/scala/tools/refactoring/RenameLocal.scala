@@ -8,8 +8,6 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
   import global._
   
   abstract class PreparationResult {
-    def selection: Selection
-    def file: AbstractFile
     def selectedLocal: SymTree
   }
   
@@ -17,33 +15,28 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
     def newName: String
   }
   
-  def prepare(f: AbstractFile, from: Int, to: Int) = {
-    val s = new Selection(f, from, to)
+  def prepare(s: Selection) = {
     s.selectedSymbolTree match {
       case Some(t) =>
         Right(new PreparationResult {
-          val selection = s
-          val file = f
           val selectedLocal = t
         })
       case None => Left(PreparationError("no symbol selected found"))
     }
   }
     
-  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
+        
+    indexFile(selection.file)
     
-    import prepared._
-    
-    indexFile(file)
-    
-    trace("Selected tree is %s", selectedLocal)
+    trace("Selected tree is %s", prepared.selectedLocal)
 
     val changes = new ChangeCollector {
-      transform(file) {
-        case s: SymTree if s.symbol == selectedLocal.symbol => mkRenamedSymTree(s, params.newName)
+      transform(selection.file) {
+        case s: SymTree if s.symbol == prepared.selectedLocal.symbol => mkRenamedSymTree(s, params.newName)
       }
     }
     
-    Right(refactor(file, changes))
+    Right(refactor(selection.file, changes))
   }
 }

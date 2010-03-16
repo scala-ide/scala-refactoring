@@ -80,7 +80,7 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
       
       val selection = new TreeSelection(rhs.stats(1))
       
-      val selected = selection.trees.head
+      val selected = selection.selectedTopLevelTrees.head
       val parameters = inboundLocalDependencies(selection, defdef.symbol)
       
       val call    = mkCallDefDef(NoMods, "innerMethod", parameters :: Nil, outboundLocalDependencies(selection, defdef.symbol))

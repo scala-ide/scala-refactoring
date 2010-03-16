@@ -12,9 +12,10 @@ trait TestRefactoring {
     val refactoring: Refactoring
     
     def doIt(expected: String, parameters: refactoring.RefactoringParameters) = {
-      refactoring.prepare(compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/")) match {
+      val selection = new refactoring.FileSelection(compile(source), source.indexOf("/*(*/"), source.indexOf("/*)*/"))
+      refactoring.prepare(selection) match {
         case Right(prepare) =>
-          val result = refactoring.perform(prepare, parameters) match {
+          val result = refactoring.perform(selection, prepare, parameters) match {
             case Right(result) => applyChangeSet(result, source)
             case Left(error) => fail(error.cause)
           }

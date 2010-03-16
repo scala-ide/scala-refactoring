@@ -22,7 +22,7 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
   
   def assertDeclarationOfSelection(expected: String, src: String) = withIndex(src) { tree =>
   
-    val declarations = findMarkedNodes(src, tree).trees.head match {
+    val declarations = findMarkedNodes(src, tree).selectedTopLevelTrees.head match {
       case t: RefTree => 
         assertTrue("Symbol "+ t.symbol.owner +" does not have a child "+ t.symbol, index.children(t.symbol.owner) exists (_.symbol == t.symbol))
         index.declaration(t.symbol)
@@ -33,7 +33,7 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
   
   def assertReferencesOfSelection(expected: String, src: String) = withIndex(src) { tree =>
   
-    val references = findMarkedNodes(src, tree).trees.head match {
+    val references = findMarkedNodes(src, tree).selectedTopLevelTrees.head match {
       case t: DefTree => 
         index.references(t.symbol) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
       case t => throw new Exception("found: "+ t)

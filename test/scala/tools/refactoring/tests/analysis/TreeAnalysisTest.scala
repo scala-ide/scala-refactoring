@@ -24,14 +24,14 @@ class TreeAnalysisTest extends TestHelper with Indexes with TreeAnalysis {
   def assertInboundLocalDependencies(expected: String, src: String) = withIndex(src) { tree =>
 
     val selection = findMarkedNodes(src, tree)
-    val in = inboundLocalDependencies(selection, selection.symbols.head.owner)
+    val in = inboundLocalDependencies(selection, selection.selectedSymbols.head.owner)
     assertEquals(expected, in mkString ", ")
   }
   
   def assertOutboundLocalDependencies(expected: String, src: String) = withIndex(src) { tree =>
 
     val selection = findMarkedNodes(src, tree)
-    val out = outboundLocalDependencies(selection, selection.symbols.head.owner)
+    val out = outboundLocalDependencies(selection, selection.selectedSymbols.head.owner)
     assertEquals(expected, out mkString ", ")
   }
   

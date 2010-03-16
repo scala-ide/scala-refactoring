@@ -34,8 +34,8 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
     
     val selection = getIndexedSelection(src)
     
-    assertEquals(expectedTrees, selection.treesWithSubtrees map (_.getClass.getSimpleName) mkString ", ")
-    assertEquals(expectedSymbols, selection.symbols mkString ", ")
+    assertEquals(expectedTrees, selection.allSelectedTrees map (_.getClass.getSimpleName) mkString ", ")
+    assertEquals(expectedSymbols, selection.selectedSymbols mkString ", ")
   }
   
   @Test

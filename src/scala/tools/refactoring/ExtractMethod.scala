@@ -8,8 +8,6 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
   import global._
   
   abstract class PreparationResult {
-    def selection: Selection
-    def file: AbstractFile
     def selectedMethod: Tree
   }
   
@@ -17,46 +15,43 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
     def methodName: String
   }
   
-  def prepare(f: AbstractFile, from: Int, to: Int) = {
-    val s = new Selection(f, from, to)
-    s.enclosingDefDef match {
+  def prepare(s: Selection) = {
+    s.findSelectedOfType[DefDef] match {
       case Some(defdef) =>
         Right(new PreparationResult {
-          val selection = s
-          val file = f
           val selectedMethod = defdef
         })
       case None => Left(new PreparationError("no enclosing defdef found"))
     }
   }
     
-  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
     
     import prepared._
     import params._
     
-    indexFile(file)
+    indexFile(selection.file)
 
     val parameters = inboundLocalDependencies(selection, selectedMethod.symbol)
     
     val returns = outboundLocalDependencies(selection, selectedMethod.symbol)
      
-    val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.trees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
+    val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
     
     val call = mkCallDefDef(NoMods, methodName, parameters :: Nil, returns)
     
     val changes = new ChangeCollector {
-      transform(file) {
+      transform(selection.file) {
         case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
-          if(selection.trees.size > 1) {
+          if(selection.selectedTopLevelTrees.size > 1) {
             transform(d) {
               case block: Block => {
-                mkBlock(replace(block, selection.trees, call :: Nil)) setPos block.pos
+                mkBlock(replace(block, selection.selectedTopLevelTrees, call :: Nil)) setPos block.pos
               }
             }
           } else {
             transform(d) {
-              case t: Tree if t == selection.trees.head => call setPos t.pos
+              case t: Tree if t == selection.selectedTopLevelTrees.head => call setPos t.pos
             }
           }
         }
@@ -66,6 +61,6 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
       }
     }
     
-    Right(refactor(file, changes))
+    Right(refactor(selection.file, changes))
   }
 }

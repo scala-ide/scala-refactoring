@@ -8,19 +8,13 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
   
   import global._
   
-  trait PreparationResult {
-    def file: AbstractFile
-  }
+  class PreparationResult
   
   class RefactoringParameters
   
-  def prepare(f: AbstractFile, from: Int, to: Int): Either[PreparationError, PreparationResult] = {
-    Right(new PreparationResult {
-      val file = f
-    })
-  }
+  def prepare(s: Selection): Either[PreparationError, PreparationResult] = Right(new PreparationResult)
     
-  def perform(prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
     
     val sortImports: List[Tree] => List[Tree] = _.sortWith({
       case (t1: Import, t2: Import) => t1.expr.toString < t2.expr.toString
@@ -45,7 +39,7 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
     }
     
     var changes = new ChangeCollector {
-      transform(prepared.file) {
+      transform(selection.file) {
         case p @ PackageDef(_, stats) => {
           
           val sorted = stats partition {
@@ -60,6 +54,6 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
       }
     }
     
-    Right(refactor(prepared.file, changes))
+    Right(refactor(selection.file, changes))
   }
 }
