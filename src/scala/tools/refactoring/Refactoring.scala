@@ -17,8 +17,6 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
   
   type RefactoringParameters
  
-  def indexFile(file: AbstractFile): Unit = index processTree file
-  
   def prepare(s: Selection): Either[PreparationError, PreparationResult]
   
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet]

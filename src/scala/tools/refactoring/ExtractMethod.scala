@@ -30,11 +30,13 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
     import prepared._
     import params._
     
-    indexFile(selection.file)
+    val index = new Index {
+      processTree(selection.file)
+    }
 
-    val parameters = inboundLocalDependencies(selection, selectedMethod.symbol)
+    val parameters = inboundLocalDependencies(selection, selectedMethod.symbol, index)
     
-    val returns = outboundLocalDependencies(selection, selectedMethod.symbol)
+    val returns = outboundLocalDependencies(selection, selectedMethod.symbol, index)
      
     val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
     

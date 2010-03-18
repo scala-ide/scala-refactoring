@@ -14,15 +14,16 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
 
   import global._
   
-  def withIndex(src: String)(body: Tree => Unit ) {
+  def withIndex(src: String)(body: (Index, Tree) => Unit ) {
     val tree = treeFrom(src)
-    index.processTree(tree)
-    body(tree)
+    body(new Index {
+      processTree(tree)
+    }, tree)
   }
   
-  def assertDeclarationOfSelection(expected: String, src: String) = withIndex(src) { tree =>
+  def assertDeclarationOfSelection(expected: String, src: String) = withIndex(src) { (index, tree) =>
   
-    val declarations = findMarkedNodes(src, tree).selectedTopLevelTrees.head match {
+    val declarations = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head match {
       case t: RefTree => 
         assertTrue("Symbol "+ t.symbol.owner +" does not have a child "+ t.symbol, index.children(t.symbol.owner) exists (_.symbol == t.symbol))
         index.declaration(t.symbol)
@@ -31,11 +32,11 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
     assertEquals(expected, declarations.toString)
   }  
   
-  def assertReferencesOfSelection(expected: String, src: String) = withIndex(src) { tree =>
+  def assertReferencesOfSelection(expected: String, src: String) = withIndex(src) { (index, tree) =>
   
-    val references = findMarkedNodes(src, tree).selectedTopLevelTrees.head match {
+    val references = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head match {
       case t: DefTree => 
-        index.references(t.symbol) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
+        index.references(t.symbol) filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
       case t => throw new Exception("found: "+ t)
     }
     assertEquals(expected, references mkString ", ")
@@ -148,7 +149,7 @@ class DeclarationIndexTest extends TestHelper with Indexes with TreeAnalysis {
   
   @Test
   def findReferencesToClass() = {
-    assertReferencesOfSelection("""Z (71, 72), Z (127, 128)""", """
+    assertReferencesOfSelection("""Z (71, 72), Z (91, 92), Z (115, 116), Z (119, 120), Z (127, 128)""", """
       package xyz
     
  /*(*/  class Z   /*)*/

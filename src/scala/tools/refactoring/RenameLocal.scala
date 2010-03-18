@@ -26,8 +26,10 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
   }
     
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
-        
-    indexFile(selection.file)
+    
+    val index = new Index {
+      processTree(selection.file)
+    }
     
     trace("Selected tree is %s", prepared.selectedLocal)
 

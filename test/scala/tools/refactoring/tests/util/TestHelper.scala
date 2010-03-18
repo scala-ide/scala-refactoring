@@ -17,7 +17,10 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
     val start = src.indexOf("/*(*/")
     val end   = src.indexOf("/*)*/")
     
-    new TreeSelection(tree, start, end)
+    if(start >= 0 && end >= 0)
+      Some(new TreeSelection(tree, start, end))
+    else 
+      None
   }
   
   class TestString(src: String) {

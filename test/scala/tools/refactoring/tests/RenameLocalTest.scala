@@ -168,5 +168,31 @@ class RenameLocalTest extends TestHelper with TestRefactoring {
       val /*(*/  iTimesTwo  /*)*/ = i * 2
     }
     """)
+            
+  @Test
+  def renameMethod = """
+    class A {
+      def get(a: Int) = "get"
+      def main = {
+        val a = /*(*/  get  /*)*/  (5)
+      }
+    }
+
+    class B(a: A) {
+      val x = a.get(10)
+    }
+    """ rename("x",
+    """
+    class A {
+      def x(a: Int) = "get"
+      def main = {
+        val a = /*(*/  x  /*)*/  (5)
+      }
+    }
+
+    class B(a: A) {
+      val x = a.x(10)
+    }
+    """)
     
 }

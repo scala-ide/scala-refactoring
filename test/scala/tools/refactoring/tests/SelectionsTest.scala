@@ -17,22 +17,19 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   
   private def getIndexedSelection(src: String) = {
     val tree = treeFrom(src)
-    
-    index.processTree(tree)
-    
     findMarkedNodes(src, tree)
   }
   
   def selectedLocalVariable(expected: String, src: String) = {
     
-    val selection = getIndexedSelection(src)
+    val selection = getIndexedSelection(src) get
     
     assertEquals(expected, selection.selectedSymbolTree.get.symbol.name.toString)
   }
   
   def assertSelection(expectedTrees: String, expectedSymbols: String, src: String) = {
     
-    val selection = getIndexedSelection(src)
+    val selection = getIndexedSelection(src) get
     
     assertEquals(expectedTrees, selection.allSelectedTrees map (_.getClass.getSimpleName) mkString ", ")
     assertEquals(expectedSymbols, selection.selectedSymbols mkString ", ")

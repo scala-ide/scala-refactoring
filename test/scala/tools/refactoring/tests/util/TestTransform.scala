@@ -76,16 +76,18 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
   def newMethod(t: Tree) = transform(t) {
     case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange => {
 
-      index.processTree(t)
+      val index = new Index {
+        processTree(t)
+      }
       
       val selection = new TreeSelection(rhs.stats(1))
       
       val selected = selection.selectedTopLevelTrees.head
-      val parameters = inboundLocalDependencies(selection, defdef.symbol)
+      val parameters = inboundLocalDependencies(selection, defdef.symbol, index)
       
-      val call    = mkCallDefDef(NoMods, "innerMethod", parameters :: Nil, outboundLocalDependencies(selection, defdef.symbol))
+      val call    = mkCallDefDef(NoMods, "innerMethod", parameters :: Nil, outboundLocalDependencies(selection, defdef.symbol, index))
       
-      val returns = mkReturn(outboundLocalDependencies(selection, defdef.symbol))
+      val returns = mkReturn(outboundLocalDependencies(selection, defdef.symbol, index))
       val newDef  = mkDefDef(NoMods, "innerMethod", parameters :: Nil, selected :: returns :: Nil)
       
       val newRhs = Block(

@@ -9,7 +9,7 @@ trait TreeAnalysis {
   
   val global: scala.tools.nsc.Global
   
-  def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol) = {
+  def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: Index) = {
         
     val allLocals = index children currentOwner map (_.symbol)
     
@@ -18,7 +18,7 @@ trait TreeAnalysis {
     selectedLocals filterNot (s => selection contains (index declaration s))
   }
   
-  def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol) = {
+  def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: Index) = {
     
     val allLocals = index children currentOwner map (_.symbol)
     
