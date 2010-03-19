@@ -4,14 +4,17 @@ import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.common.SilentTracing
 import scala.tools.refactoring.RenameLocal
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 import org.junit.Assert._
 
 class RenameLocalTest extends TestHelper with TestRefactoring {
   
-  def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro.sources.head, pro.fileName(pro.sources.head)) {
-    val refactoring = new RenameLocal(global) with /*Silent*/Tracing
+  def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new RenameLocal(global) with /*Silent*/Tracing with FullIndexes {
+      pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index.processTree _ )
+    }
     val changes = performRefactoring(new refactoring.RefactoringParameters {
       val newName = name
     })
@@ -245,7 +248,7 @@ class RenameLocalTest extends TestHelper with TestRefactoring {
     """)
   } applyRefactoring(renameTo("x"))
     
-  //@Test
+  @Test
   def renameMethodInMultipleFiles = new FileSet {
     
     add(

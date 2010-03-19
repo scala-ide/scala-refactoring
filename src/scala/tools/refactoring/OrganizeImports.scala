@@ -1,11 +1,12 @@
 package scala.tools.refactoring
 
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 
-class OrganizeImports (override val global: Global) extends Refactoring(global) {
+abstract class OrganizeImports (override val global: Global) extends Refactoring(global) {
   
   import global._
   
@@ -55,6 +56,6 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
       }
     }
     
-    Right(refactor(selection.file, changes))
+    Right(refactor(changes))
   }
 }

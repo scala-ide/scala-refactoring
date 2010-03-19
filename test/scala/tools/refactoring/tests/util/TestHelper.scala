@@ -31,7 +31,10 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
     
     lazy val trees = sources map (x => compile(fileName(x), x)) map (global.unitOfFile(_).body)
     
-    lazy val selection = sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) head
+    lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
+      // not all refactorings really need a selection:
+      new FileSelection(trees.head.pos.source.file, 0, 0)
+    }
     
     def apply(f: FileSet => List[String]) = assert(f(this))
     

@@ -3,6 +3,7 @@ package scala.tools.refactoring.tests
 import scala.tools.refactoring.Refactoring
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.common.SilentTracing
 import scala.tools.refactoring.OrganizeImports
 import scala.tools.refactoring.tests.util.TestHelper
@@ -10,9 +11,15 @@ import org.junit.Test
 
 class OrganizeImportsTest extends TestHelper with TestRefactoring {
 
-  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src, "test") {
-    val refactoring = new OrganizeImports(global) with /*Silent*/Tracing
-    def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)
+  implicit def stringToRefactoring(src: String) = {
+    val pro = new FileSet {
+      add(src, src)
+    }
+    
+    new TestRefactoringImpl(pro) {
+      val refactoring = new OrganizeImports(global) with /*Silent*/Tracing with FullIndexes
+      def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)
+    }
   }
 
   @Test
@@ -85,6 +92,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     
   @Test
   def importOnTrait = """
+    package importOnTrait
     import java.lang._
     import java.lang.String
 
@@ -94,6 +102,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     }
     """ organize(
     """
+    package importOnTrait
     import java.lang._
 
     trait A

@@ -9,7 +9,7 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.ast.TreeDSL
 import scala.tools.nsc.symtab.Flags
 
-trait TestTransform extends Transform with Selections with TreeAnalysis with Indexes with TreeFactory {
+trait TestTransform extends Transform with Selections with TreeAnalysis with FullIndexes with TreeFactory {
   
   val global: scala.tools.nsc.interactive.Global
   import global._
@@ -76,9 +76,7 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ind
   def newMethod(t: Tree) = transform(t) {
     case defdef @ DefDef(mods, name, tparams, vparamss, tpt, rhs: Block) if defdef.pos.isRange => {
 
-      val index = new Index {
-        processTree(t)
-      }
+      index.processTree(t)
       
       val selection = new TreeSelection(rhs.stats(1))
       

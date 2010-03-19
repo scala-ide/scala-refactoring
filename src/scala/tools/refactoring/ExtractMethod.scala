@@ -3,8 +3,9 @@ package scala.tools.refactoring
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
+import scala.tools.refactoring.analysis.FullIndexes
 
-class ExtractMethod(override val global: Global) extends Refactoring(global) {
+abstract class ExtractMethod(override val global: Global) extends Refactoring(global) {
   
   import global._
   
@@ -30,10 +31,6 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
     
     import prepared._
     import params._
-    
-    val index = new Index {
-      processTree(selection.file)
-    }
 
     val parameters = inboundLocalDependencies(selection, selectedMethod.symbol, index)
     
@@ -64,6 +61,6 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
       }
     }
     
-    Right(refactor(selection.file, changes))
+    Right(refactor(changes))
   }
 }

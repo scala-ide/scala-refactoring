@@ -6,12 +6,12 @@ import junit.framework.TestCase
 import org.junit.Assert._
 import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.regeneration._
-import scala.tools.refactoring.analysis.Indexes
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class SelectionsTest extends TestHelper with Indexes with TreePath {
+class SelectionsTest extends TestHelper with FullIndexes with TreePath {
 
   import global._
   
@@ -40,6 +40,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
     assertSelection(
         "ValDef, Apply, Select, Ident, Ident", 
         "value b, method +, value a, value i", """
+      package findValDefInMethod
       class A {
         def addThree(i: Int) = {
           val a = 1
@@ -54,6 +55,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   @Test
   def findIdentInMethod() = {
     assertSelection("Ident", "value i", """
+      package findIdentInMethod
       class A {
         def addThree(i: Int) = {
           val a = 1
@@ -68,6 +70,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   @Test
   def findInMethodArguments() = {
     assertSelection("ValDef, TypeTree", "value i", """
+      package findInMethodArguments
       class A {
         def addThree(/*(*/   i : Int   /*)*/) = {
           i
@@ -81,6 +84,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
     assertSelection(
         "DefDef, ValDef, TypeTree, Apply, Select, Ident, Literal", 
         "method addThree, value i, method *, value i", """
+      package findWholeMethod
       class A {
 /*(*/
         def addThree(i: Int) = {
@@ -94,6 +98,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   @Test
   def findNothing() = {
     assertSelection("", "", """
+      package findNothing
       class A {
         /*(*/ /*)*/
         def addThree(i: Int) = {
@@ -106,6 +111,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   @Test
   def findSelectedLocal() = {
     selectedLocalVariable("copy", """
+      package findSelectedLocal
       class A {
         def times5(i: Int) = {
           val /*(*/copy/*)*/ = i
@@ -118,6 +124,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   @Test
   def selectedTheFirstCompleteSymbol() = {
     selectedLocalVariable("i", """
+      package selectedTheFirstCompleteSymbol
       class A {
         def times5(i: Int) = {
           val /*(*/copy = i /*)*/
@@ -130,6 +137,7 @@ class SelectionsTest extends TestHelper with Indexes with TreePath {
   @Test
   def selectedTheFirstSymbol() = {
     selectedLocalVariable("copy", """
+      package selectedTheFirstSymbol
       class A {
         def times5(i: Int) = {
           /*(*/ val copy = i /*)*/

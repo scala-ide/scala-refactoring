@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.common.SilentTracing
@@ -9,15 +10,24 @@ import org.junit.Test
 
 class ExtractMethodTest extends TestHelper with TestRefactoring {
     
-  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src, "test") {
-    val refactoring = new ExtractMethod(global) with /*Silent*/Tracing
-    def extractMethod(name: String, e: String) = doIt(e, new refactoring.RefactoringParameters {
-      val methodName = name
-    })
+  implicit def stringToRefactoring(src: String) = {
+    val pro = new FileSet {
+      add(src, src)
+    }
+    
+    new TestRefactoringImpl(pro) {
+      val refactoring = new ExtractMethod(global) with /*Silent*/Tracing with FullIndexes {
+        pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index.processTree _ )
+      }
+      def extractMethod(name: String, e: String) = doIt(e, new refactoring.RefactoringParameters {
+        val methodName = name
+      })
+    }
   }
 
   @Test
   def extractBlock = """
+    package extractBlock
     class A {
       def extractFrom: Int = {
 /*(*/   val a = {
@@ -29,6 +39,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("prntln",
     """
+    package extractBlock
     class A {
       def extractFrom: Int = {
         val a = prntln
@@ -46,6 +57,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def simpleExtract = """
+    package simpleExtract
     class A {
       def extractFrom {
 /*(*/   println("hello")/*)*/
@@ -54,6 +66,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("prntln",
     """
+    package simpleExtract
     class A {
       def extractFrom {
         prntln
@@ -67,6 +80,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def ignoreOtherClass = """
+    package ignoreOtherClass
     class A {
       def extractFrom {
 /*(*/   println("hello")/*)*/
@@ -78,6 +92,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     class B(s: String) extends A2(s)
     """ extractMethod("prntln",
     """
+    package ignoreOtherClass
     class A {
       def extractFrom {
         prntln
@@ -94,6 +109,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
 
   @Test
   def simpleExtractOneParameter = """
+    package simpleExtractOneParameter
     class A {
       def extractFrom {
         val a = 1
@@ -103,6 +119,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("prntln",
     """
+    package simpleExtractOneParameter
     class A {
       def extractFrom {
         val a = 1
@@ -117,6 +134,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
 
   @Test
   def simpleExtractSeveralParameters = """
+    package simpleExtractSeveralParameters
     class A {
       def extractFrom(d: Int) {
         val a = 1
@@ -128,6 +146,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("prntln",
     """
+    package simpleExtractSeveralParameters
     class A {
       def extractFrom(d: Int) {
         val a = 1
@@ -144,6 +163,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def simpleExtractReturn = """
+    package simpleExtractReturn
     class A {
       def extractFrom() {
 /*(*/   val a = 1  /*)*/
@@ -152,6 +172,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("prntln",
     """
+    package simpleExtractReturn
     class A {
       def extractFrom() {
         val a = prntln
@@ -166,6 +187,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def simpleExtractMultipleReturns = """
+    package simpleExtractMultipleReturns
     class A {
       def extractFrom() {
 /*(*/   val a = 1
@@ -175,6 +197,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("prntln",
     """
+    package simpleExtractMultipleReturns
     class A {
       def extractFrom() {
         val (a, b) = prntln
@@ -190,6 +213,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def simpleExtractParametersAndReturns = """
+    package simpleExtractParametersAndReturns
     class A {
       def extractFrom() {
         val a = 1
@@ -202,6 +226,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("prntln",
     """
+    package simpleExtractParametersAndReturns
     class A {
       def extractFrom() {
         val a = 1
@@ -220,6 +245,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def extractBlockExpression = """
+    package extractBlockExpression
     class A {
       def extractFrom(): Int = {
         val a = 1
@@ -228,6 +254,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("inc",
     """
+    package extractBlockExpression
     class A {
       def extractFrom(): Int = {
         val a = 1
@@ -241,6 +268,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def replaceWholeMethod = """
+    package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
 /*(*/   val a = 1
@@ -249,6 +277,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("inc",
     """
+    package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
         inc
@@ -262,6 +291,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def extractIfCond = """
+    package extractIfCond
     class A {
       def extractFrom(): Boolean = {
         if/*aa*/( /*(*/ true == true /*)*/ )
@@ -272,6 +302,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("test",
     """
+    package extractIfCond
     class A {
       def extractFrom(): Boolean = {
         if/*aa*/(test)
@@ -287,6 +318,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         
   @Test
   def extractIfThen = """
+    package extractIfThen
     class A {
       def extractFrom(): Boolean = {
         if(true == true)
@@ -297,6 +329,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("test",
     """
+    package extractIfThen
     class A {
       def extractFrom(): Boolean = {
         if(true == true)
@@ -312,6 +345,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def extractIfElse = """
+    package extractIfElse
     class A {
       def extractFrom(): Boolean = {
         if(true == true)
@@ -323,6 +357,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("test",
     """
+    package extractIfElse
     class A {
       def extractFrom(): Boolean = {
         if(true == true)
@@ -339,6 +374,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def extractIfSingleLineElse = """
+    package extractIfSingleLineElse
     class A {
       def extractFrom(): Boolean = {
         if(true == true) true else /*(*/ false /*)*/
@@ -346,6 +382,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("test",
     """
+    package extractIfSingleLineElse
     class A {
       def extractFrom(): Boolean = {
         if(true == true) true else /*(*/ test
@@ -358,6 +395,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     
   @Test
   def extractIfElseTry = """
+    package extractIfElseTry
     class A {
       def extractFrom(): Boolean = {
         if(true == true) /*(*/  true  /*)*/
@@ -374,6 +412,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """ extractMethod("test",
     """
+    package extractIfElseTry
     class A {
       def extractFrom(): Boolean = {
         if(true == true) /*(*/  test
@@ -395,6 +434,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
 
   @Test
   def extractCheckForFalse = """
+    package extractCheckForFalse
 trait Check {
   def whatIsIt(check: Boolean) {
     if (/*(*/check == false/*)*/ /*hi*/)
@@ -405,6 +445,7 @@ trait Check {
 }
     """ extractMethod("isFalse",
     """
+    package extractCheckForFalse
 trait Check {
   def whatIsIt(check: Boolean) {
     if (isFalse(check))
@@ -420,6 +461,7 @@ trait Check {
     
   @Test
   def extractWithMethod = """
+    package extractWithMethod
     class A {
       def extractFrom(): Boolean = {
         val invert: Boolean => Boolean = ! _
@@ -430,6 +472,7 @@ trait Check {
     }
     """ extractMethod("certainlyTrue",
     """
+    package extractWithMethod
     class A {
       def extractFrom(): Boolean = {
         val invert: Boolean => Boolean = ! _
@@ -446,94 +489,98 @@ trait Check {
 
   @Test
   def extractAllAtOnce = """
-object C {
-  def calculate {
-    val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
-    val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
-    val values = 1 to 10 toList
-/*(*/    val     sum = sumList(values)   // the sum
-    val product = prodList(values) /*)*/ // the product
-
-    println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
-  }
-}
+    package extractAllAtOnce
+    object C {
+      def calculate {
+        val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+        val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
+        val values = 1 to 10 toList
+    /*(*/    val     sum = sumList(values)   // the sum
+        val product = prodList(values) /*)*/ // the product
+    
+        println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
+      }
+    }
   """ extractMethod("magic",
   """
-object C {
-  def calculate {
-    val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
-    val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
-    val values = 1 to 10 toList
-    val (sum, product) = magic(sumList, prodList, values)
-
-    println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
-  }
-  def magic(sumList: (Seq[Int]) => Int, prodList: (Seq[Int]) => Int, values: List[Int]): (Int, Int) = {
-/*(*/    val     sum = sumList(values)   // the sum
-    val product = prodList(values) /*)*/ // the product
-    (sum, product)
-  }
-}
+    package extractAllAtOnce
+    object C {
+      def calculate {
+        val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+        val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
+        val values = 1 to 10 toList
+        val (sum, product) = magic(sumList, prodList, values)
+    
+        println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
+      }
+      def magic(sumList: (Seq[Int]) => Int, prodList: (Seq[Int]) => Int, values: List[Int]): (Int, Int) = {
+    /*(*/    val     sum = sumList(values)   // the sum
+        val product = prodList(values) /*)*/ // the product
+        (sum, product)
+      }
+    }
   """)
   
   @Test
   def extractLarger = """
-object C {
-  def whatIsIt(check: Boolean) {
-    if (/*(*/check == false/*)*/ /*hi*/)
-      println("It's false")
-    else
-      println("It's true")
-  }
-
-  def unrelated1 {
-    println("unrelated1")
-  }
-
-  def unrelated2 {
-    println("unrelated2")
-  }
-
-  def unrelated3 {
-    println("unrelated3")
-  }
-}
-
-object c2 {
-  def blabla {
-    println("blabla")
-  }
-}
+    package extractLarger
+    object C {
+      def whatIsIt(check: Boolean) {
+        if (/*(*/check == false/*)*/ /*hi*/)
+          println("It's false")
+        else
+          println("It's true")
+      }
+    
+      def unrelated1 {
+        println("unrelated1")
+      }
+    
+      def unrelated2 {
+        println("unrelated2")
+      }
+    
+      def unrelated3 {
+        println("unrelated3")
+      }
+    }
+    
+    object c2 {
+      def blabla {
+        println("blabla")
+      }
+    }
   """ extractMethod("isFalse",
   """
-object C {
-  def whatIsIt(check: Boolean) {
-    if (isFalse(check))
-      println("It's false")
-    else
-      println("It's true")
-  }
-  def isFalse(check: Boolean): Boolean = {
-  /*(*/check == false/*)*/ /*hi*/
-  }
-
-  def unrelated1 {
-    println("unrelated1")
-  }
-
-  def unrelated2 {
-    println("unrelated2")
-  }
-
-  def unrelated3 {
-    println("unrelated3")
-  }
-}
-
-object c2 {
-  def blabla {
-    println("blabla")
-  }
-}
+    package extractLarger
+    object C {
+      def whatIsIt(check: Boolean) {
+        if (isFalse(check))
+          println("It's false")
+        else
+          println("It's true")
+      }
+      def isFalse(check: Boolean): Boolean = {
+      /*(*/check == false/*)*/ /*hi*/
+      }
+    
+      def unrelated1 {
+        println("unrelated1")
+      }
+    
+      def unrelated2 {
+        println("unrelated2")
+      }
+    
+      def unrelated3 {
+        println("unrelated3")
+      }
+    }
+    
+    object c2 {
+      def blabla {
+        println("blabla")
+      }
+    }
   """)
 }

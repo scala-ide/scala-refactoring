@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests.analysis
 
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashMap
 import scala.tools.refactoring.tests.util.TestHelper
@@ -12,7 +13,7 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
+class MultipleFilesIndexTest extends TestHelper with FullIndexes with TreeAnalysis {
 
   import global._
 
@@ -20,10 +21,8 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
               
     val sym = pro.selection.selectedSymbols head
     
-    val idx = new Index {
-      pro.trees foreach processTree
-    }
-    
+    pro.trees foreach index.processTree
+
     def aggregateFileNamesWithTrees[T <: Tree](ts: List[T])(conversion: T => String) = {
       new HashMap[String, ListBuffer[T]] {
         ts foreach {ref => 
@@ -32,7 +31,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
       }.toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
     }
     
-    aggregateFileNamesWithTrees(idx occurences sym) { symTree => 
+    aggregateFileNamesWithTrees(index occurences sym) { symTree => 
       symTree.symbol.nameString +" on line "+ symTree.pos.line   
     }
   }

@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests.analysis
 
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.{Test, Before}
 import junit.framework.TestCase
@@ -11,15 +12,14 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class TreeAnalysisTest extends TestHelper with Indexes with TreeAnalysis {
+class TreeAnalysisTest extends TestHelper with FullIndexes with TreeAnalysis {
 
   import global._
   
   def withIndex(src: String)(body: (Index, Tree) => Unit ) {
     val tree = treeFrom(src)
-    body(new Index {
-      processTree(tree)
-    }, tree)
+    index.processTree(tree)
+    body(index, tree)
   }
   
   def assertInboundLocalDependencies(expected: String, src: String) = withIndex(src) { (index, tree) =>
