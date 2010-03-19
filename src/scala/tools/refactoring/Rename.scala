@@ -5,7 +5,7 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 
-abstract class RenameLocal(override val global: Global) extends Refactoring(global) {
+abstract class Rename(override val global: Global) extends Refactoring(global) {
   
   import global._
   
