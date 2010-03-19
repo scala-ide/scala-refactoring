@@ -282,5 +282,37 @@ class RenameLocalTest extends TestHelper with TestRefactoring {
     """)   
   } applyRefactoring(renameTo("x"))
     
-  
+  @Test
+  def renameClass = new FileSet {
+    
+    add(
+    """
+    package renameClass
+    /*(*/  class A  /*)*/
+
+    class B extends A
+    """,
+    """
+    package renameClass
+    /*(*/  class X  /*)*/
+
+    class B extends X
+    """)
+    
+    add(
+    """
+    package renameClass
+    object C extends A {
+      val a = new A
+      def doWithA(a: A) = new A
+    }
+    """,
+    """
+    package renameClass
+    object C extends X {
+      val a = new X
+      def doWithA(a: X) = new X
+    }
+    """)   
+  } applyRefactoring(renameTo("X"))
 }

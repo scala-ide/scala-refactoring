@@ -48,7 +48,8 @@ trait Tracing {
   }
   
   def trace(msg: String) {
-    print ((indent * level) + marker + msg)
+    val border = (indent * level) + marker
+    print(border + msg.replaceAll("\n", "\n"+ border))
   }
   
   def print(s: String) = println(s)

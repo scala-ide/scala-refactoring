@@ -31,7 +31,7 @@ abstract class RenameLocal(override val global: Global) extends Refactoring(glob
 
     trace("Selected tree is %s", prepared.selectedLocal)
     
-    index.occurences(prepared.selectedLocal.symbol) foreach (trace("Symbol is referenced at %s", _))
+    index.occurences(prepared.selectedLocal.symbol) foreach (s => trace("Symbol is referenced at %s (line %s)", s, s.pos.line))
 
     val changes = new ChangeCollector {
       index occurences (prepared.selectedLocal.symbol) foreach {

@@ -32,6 +32,8 @@ trait TreePrinter {
       
       case t: Bind => t.name.toString
       
+      case c: ClassDef => c.name.toString
+      
       case _ => throw new Exception("don't know how to create "+ tree.getClass +" for AST "+ tree)
     }) \\ (trace("printing tree (%s) %s → %s", tree.getClass, tree, _))
   }

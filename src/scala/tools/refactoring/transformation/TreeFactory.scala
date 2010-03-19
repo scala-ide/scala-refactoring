@@ -10,11 +10,13 @@ trait TreeFactory {
   import global._
       
   def mkRenamedSymTree(t: SymTree, name: String) = (t match {
-    case i: Ident  => i.copy(name = name)
-    case v: ValDef => v.copy(name = name)
-    case d: DefDef => d.copy(name = name)
-    case b: Bind   => b.copy(name = name)
-    case s: Select => s.copy(name = name)
+    case i: Ident    => i.copy(name = name)
+    case v: ValDef   => v.copy(name = name)
+    case d: DefDef   => d.copy(name = name)
+    case b: Bind     => b.copy(name = name)
+    case s: Select   => s.copy(name = name)
+    case c: ClassDef => c.copy(name = name)
+    case s: Super    => s.copy(qual = name)
     case t => throw new Exception("Found "+ t.getClass.getName)
   }) setPos t.pos
   

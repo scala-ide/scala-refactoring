@@ -27,7 +27,7 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
           
     val fragments = new HashMap[AbstractFile, FragmentRepository]
   
-    changed.toplevelTrees map { tree =>
+    changed.toplevelTrees filter (_.pos.isRange) map { tree =>
     
       val file = tree.pos.source.file
     
