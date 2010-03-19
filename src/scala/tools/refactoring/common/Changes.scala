@@ -1,13 +1,11 @@
 package scala.tools.refactoring.common
 
+import scala.tools.nsc.io.AbstractFile
 trait Changes {
   
   val global: scala.tools.nsc.Global
   
-  case class Change(from: Int, to: Int, text: String)
-  
-  type ChangeSet = List[Change]
-  
+  // XXX rename to TreeModifications?
   trait TreeChanges {
     
     /*

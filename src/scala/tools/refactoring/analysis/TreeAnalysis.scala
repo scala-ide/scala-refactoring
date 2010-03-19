@@ -24,6 +24,6 @@ trait TreeAnalysis {
     
     val declarationsInTheSelection = allLocals filter (s => selection contains (index declaration s))
     
-    declarationsInTheSelection flatMap (index references) filterNot (selection contains) map (_.symbol)
+    declarationsInTheSelection flatMap (index references) filterNot (selection contains) map (_.symbol) distinct
   }
 }

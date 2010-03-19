@@ -10,7 +10,7 @@ import org.junit.Test
 
 class OrganizeImportsTest extends TestHelper with TestRefactoring {
 
-  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src) {
+  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src, "test") {
     val refactoring = new OrganizeImports(global) with /*Silent*/Tracing
     def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)
   }

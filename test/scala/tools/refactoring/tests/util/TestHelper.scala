@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests.util
 
+import scala.tools.nsc.util.BatchSourceFile
 import org.junit.Assert._
 
 import scala.tools.refactoring._
@@ -10,6 +11,58 @@ import scala.collection.mutable.ListBuffer
 
 trait TestHelper extends Regeneration with CompilerProvider with Transformation with LayoutPreferences with SilentTracing with Selections {
   
+  /*
+   * A project to test multiple compilation units. Add all 
+   * sources using "add" before using any of the lazy vals.
+   * */
+  abstract class FileSet(val name: String) {
+    
+    def this() = this("test")
+      
+    private val srcs = ListBuffer[(String, String)]()
+    
+    protected def add(src: String, expected: String) = srcs += src → expected
+    
+    def fileName(src: String) = name +"_"+ sources.indexOf(src).toString
+    
+    lazy val sources = srcs.unzip._1 toList
+    
+    lazy val expected = srcs.unzip._2 toList
+    
+    lazy val trees = sources map (x => compile(fileName(x), x)) map (global.unitOfFile(_).body)
+    
+    lazy val selection = sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) head
+    
+    def apply(f: FileSet => List[String]) = assert(f(this))
+    
+    def applyRefactoring(createChanges: FileSet => List[Change]) {
+      
+      val changes = createChanges(this)
+      
+      val res = sources zip (sources map fileName) map {
+        case (src, name) => 
+          val changeSet = changes filter (_.file.name == name)
+          applyChangeSet(changeSet, src)
+      }
+      
+      assert(res)
+    }
+    
+    private def assert(res: List[String]) = {
+      assertEquals(srcs.length, res.length)
+      expected zip res foreach (p => assertEquals(p._1, p._2))
+    }
+  }
+  
+  def applyChangeSet(ch: List[Change], source: String) = {
+  
+    val descending: (Change, Change) => Boolean = _.to > _.to
+    
+    (source /: ch.sortWith(descending)) { (src, ch) =>
+      src.substring(0, ch.from) + ch.text + src.substring(ch.to)
+    }
+  }
+    
   def parts(src: String) = splitIntoFragments(treeFrom(src))
   
   def findMarkedNodes(src: String, tree: global.Tree) = {

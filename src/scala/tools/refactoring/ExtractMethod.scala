@@ -2,6 +2,7 @@ package scala.tools.refactoring
 
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
+import scala.tools.refactoring.common.Change
 
 class ExtractMethod(override val global: Global) extends Refactoring(global) {
   
@@ -25,7 +26,7 @@ class ExtractMethod(override val global: Global) extends Refactoring(global) {
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     import prepared._
     import params._

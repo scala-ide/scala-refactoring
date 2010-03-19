@@ -54,6 +54,3 @@ trait Tracing {
   def print(s: String) = println(s)
 }
 
-trait SilentTracing extends Tracing {
-  override def print(s: String) = ()
-}

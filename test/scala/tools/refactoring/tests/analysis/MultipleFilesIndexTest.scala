@@ -15,50 +15,30 @@ import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
 
   import global._
-  
-  class Project(name: String) {
-    
-    val srcs = ListBuffer[(String, String)]()
-    
-    def add(src: String, expected: String) {
-      srcs += src → expected
-    }
-    
-    def sources = srcs.unzip._1
-    
-    def expected = srcs.unzip._2
-    
-    def apply(f: (String, List[String]) => List[String]) {
-      val res = f(name, sources toList)
-      assertEquals(srcs.length, res.length)
-      expected zip res foreach (p => assertEquals(p._1, p._2))
-    }
-  }
 
-  def findReferences(name: String, srcs: List[String]): List[String] = {
-    
-    def compile(name: String, src: String) =
-      global.typedTree(new BatchSourceFile(name, src), true)
-    
-    val trees = srcs.zipWithIndex map (x => compile(name +"_"+ x._2.toString, x._1))
-      
-    val selection = srcs zip trees flatMap (x => findMarkedNodes(x._1, x._2)) head
-    
-    val sym = selection.selectedSymbols head
+  def findReferences(pro: FileSet): List[String] = {
+              
+    val sym = pro.selection.selectedSymbols head
     
     val idx = new Index {
-      trees foreach processTree
+      pro.trees foreach processTree
     }
     
-    new HashMap[String, ListBuffer[SymTree]] {
-      idx occurences sym foreach {ref => 
-        getOrElseUpdate(ref.pos.source.file.name, new ListBuffer[SymTree]) += ref
-      }
-    }.toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map (s => s.symbol.nameString +" on line "+ s.pos.line) sortWith(_ < _) mkString ", ")
+    def aggregateFileNamesWithTrees[T <: Tree](ts: List[T])(conversion: T => String) = {
+      new HashMap[String, ListBuffer[T]] {
+        ts foreach {ref => 
+          getOrElseUpdate(ref.pos.source.file.name, new ListBuffer[T]) += ref
+        }
+      }.toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
+    }
+    
+    aggregateFileNamesWithTrees(idx occurences sym) { symTree => 
+      symTree.symbol.nameString +" on line "+ symTree.pos.line   
+    }
   }
   
   @Test
-  def findReferencesToClass = new Project("p1") {
+  def findReferencesToClass = new FileSet("p1") {
 
     add(
     """
@@ -93,7 +73,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
   } apply(findReferences)
   
   @Test
-  def findReferencesToMethod = new Project("p2") {
+  def findReferencesToMethod = new FileSet("p2") {
 
     add(
     """
@@ -137,7 +117,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
   } apply(findReferences)
   
   @Test
-  def findReferencesToTraitMethod = new Project("p3") {
+  def findReferencesToTraitMethod = new FileSet("p3") {
 
     add(
     """
@@ -166,7 +146,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
   } apply(findReferences)
   
   @Test
-  def findReferencesFromCallSite = new Project("p4") {
+  def findReferencesFromCallSite = new FileSet("p4") {
 
     add(
     """
@@ -189,7 +169,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
   } apply(findReferences)
   
   @Test
-  def findValues = new Project("p5") {
+  def findValues = new FileSet("p5") {
 
     add(
     """
@@ -214,7 +194,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
   } apply(findReferences)  
 
   @Test
-  def findSuperCall = new Project("p6") {
+  def findSuperCall = new FileSet("p6") {
 
     add(
     """
@@ -227,7 +207,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
   } apply(findReferences)
   
   @Test
-  def findCaseClassValues = new Project("p7") {
+  def findCaseClassValues = new FileSet("p7") {
 
     add(
     """
@@ -241,7 +221,7 @@ class MultipleFilesIndexTest extends TestHelper with Indexes with TreeAnalysis {
   } apply(findReferences)
   
   @Test
-  def passMethodAsFunction = new Project("p8") {
+  def passMethodAsFunction = new FileSet("p8") {
 
     add(
     """

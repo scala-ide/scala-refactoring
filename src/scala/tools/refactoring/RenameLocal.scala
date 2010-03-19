@@ -2,6 +2,7 @@ package scala.tools.refactoring
 
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
+import scala.tools.refactoring.common.Change
 
 class RenameLocal(override val global: Global) extends Refactoring(global) {
   
@@ -25,7 +26,7 @@ class RenameLocal(override val global: Global) extends Refactoring(global) {
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     val index = new Index {
       processTree(selection.file)

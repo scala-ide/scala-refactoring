@@ -96,7 +96,7 @@ class TreeAnalysisTest extends TestHelper with Indexes with TreeAnalysis {
   @Test
   def findOutboundDeclarations() = {
     
-    assertOutboundLocalDependencies("value b, value b, value b", """
+    assertOutboundLocalDependencies("value b", """
       class A5 {
         def addThree = {
  /*(*/    val b = 1  /*)*/

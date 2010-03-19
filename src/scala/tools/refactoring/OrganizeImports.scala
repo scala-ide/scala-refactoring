@@ -3,6 +3,7 @@ package scala.tools.refactoring
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
+import scala.tools.refactoring.common.Change
 
 class OrganizeImports (override val global: Global) extends Refactoring(global) {
   
@@ -14,7 +15,7 @@ class OrganizeImports (override val global: Global) extends Refactoring(global) 
   
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = Right(new PreparationResult)
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     val sortImports: List[Tree] => List[Tree] = _.sortWith({
       case (t1: Import, t2: Import) => t1.expr.toString < t2.expr.toString

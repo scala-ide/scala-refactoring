@@ -6,6 +6,7 @@ import scala.tools.refactoring.analysis.Analysis
 import scala.tools.refactoring.regeneration.{FragmentRepository, Regeneration}
 import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
+import scala.tools.refactoring.common.Change
 
 abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with /*Silent*/Tracing with LayoutPreferences {
  
@@ -19,9 +20,9 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
  
   def prepare(s: Selection): Either[PreparationError, PreparationResult]
   
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, ChangeSet]
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]]
   
-  def refactor(original: global.Tree, changed: TreeChanges): ChangeSet = context("main refactoring") {
+  def refactor(original: global.Tree, changed: TreeChanges): List[Change] = context("main refactoring") {
           
     val partitionedOriginal = splitIntoFragments(original) \\ (trace("Original: %s", _))
         
@@ -33,7 +34,7 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
       
       val change = merge(partitionedModified, fr, (changed.allChangedTrees.contains)) map (_.render(fr) mkString) mkString
       
-      Change(partitionedModified.start, partitionedModified.end, change) \\ (c => trace("Result: "+ c))
+      Change(original.pos.source.file, partitionedModified.start, partitionedModified.end, change) \\ (c => trace("Result: "+ c))
     }
   }
 }

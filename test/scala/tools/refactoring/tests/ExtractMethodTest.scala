@@ -9,14 +9,14 @@ import org.junit.Test
 
 class ExtractMethodTest extends TestHelper with TestRefactoring {
     
-  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src) {
+  implicit def stringToRefactoring(src: String) = new TestRefactoringImpl(src, "test") {
     val refactoring = new ExtractMethod(global) with /*Silent*/Tracing
     def extractMethod(name: String, e: String) = doIt(e, new refactoring.RefactoringParameters {
       val methodName = name
     })
   }
 
-  //@Test
+  @Test
   def extractBlock = """
     class A {
       def extractFrom: Int = {
