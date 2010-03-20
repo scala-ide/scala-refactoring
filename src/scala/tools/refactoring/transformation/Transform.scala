@@ -31,7 +31,7 @@ private[refactoring] trait Transform extends Changes {
     }.transform(root)
   }
   
-  trait ChangeCollector extends TreeChanges {
+  trait ModificationCollector extends TreeModifications {
     
     def transform(root: Tree) = outer.transform(root, (changes ::= _)) _
     

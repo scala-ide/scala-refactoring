@@ -9,21 +9,9 @@ import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
 import scala.tools.refactoring.common.Change
 
-abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with /*Silent*/Tracing with LayoutPreferences {
- 
-  type PreparationResult
-  
-  case class PreparationError(val cause: String)
-  
-  case class RefactoringError(val cause: String)
-  
-  type RefactoringParameters
- 
-  def prepare(s: Selection): Either[PreparationError, PreparationResult]
-  
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]]
-  
-  def refactor(changed: TreeChanges): List[Change] = context("main refactoring") {
+abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with SilentTracing with LayoutPreferences {
+
+  def refactor(changed: TreeModifications): List[Change] = context("main refactoring") {
           
     val fragments = new HashMap[AbstractFile, FragmentRepository]
   
@@ -36,8 +24,11 @@ abstract class Refactoring(val global: Global) extends Analysis with Transformat
       
       val partitionedModified = essentialFragments(tree, fr) \\ (trace("Modified: %s", _))
       
-      val change = merge(partitionedModified, fr, (changed.allChangedTrees.contains)) map (_.render(fr) mkString) mkString
+      val change = merge(partitionedModified, fr, { tree =>
+        changed.allChangedTrees.contains(tree) || changed.allChangedTrees.exists( t => tree.pos.includes(t.pos))
+        }) map (_.render(fr) mkString) mkString // :-/
       
+      // we could try to shrink the changes here:
       Change(file, partitionedModified.start, partitionedModified.end, change) \\ (c => trace("Result: "+ c))
     }
   }

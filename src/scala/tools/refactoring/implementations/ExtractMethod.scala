@@ -1,11 +1,12 @@
-package scala.tools.refactoring
+package scala.tools.refactoring.implementations
 
+import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.analysis.FullIndexes
 
-abstract class ExtractMethod(override val global: Global) extends Refactoring(global) {
+abstract class ExtractMethod(override val global: Global) extends MultiStageRefactoring(global) {
   
   import global._
   
@@ -27,7 +28,7 @@ abstract class ExtractMethod(override val global: Global) extends Refactoring(gl
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications] = {
     
     import prepared._
     import params._
@@ -40,7 +41,7 @@ abstract class ExtractMethod(override val global: Global) extends Refactoring(gl
     
     val call = mkCallDefDef(NoMods, methodName, parameters :: Nil, returns)
     
-    val changes = new ChangeCollector {
+    val changes = new ModificationCollector {
       transform(selection.file) {
         case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
           if(selection.selectedTopLevelTrees.size > 1) {
@@ -61,6 +62,6 @@ abstract class ExtractMethod(override val global: Global) extends Refactoring(gl
       }
     }
     
-    Right(refactor(changes))
+    Right(changes)
   }
 }

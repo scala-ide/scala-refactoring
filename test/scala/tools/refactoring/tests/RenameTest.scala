@@ -1,9 +1,9 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.implementations.Rename
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.common.SilentTracing
-import scala.tools.refactoring.Rename
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
@@ -13,12 +13,35 @@ class RenameTest extends TestHelper with TestRefactoring {
   
   def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new Rename(global) with /*Silent*/Tracing with FullIndexes {
-      pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index.processTree _ )
+      pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters {
       val newName = name
     })
   }.changes
+  
+  @Test
+  def renameRecursive = new FileSet {
+    add(
+    """
+      package renameRecursive
+      class A {
+        def length[T](l: List[T]): Int = l match {
+          case Nil => 0
+          case x :: xs => 1 +  /*(*/  length(xs)  /*)*/
+        }
+      }
+    """,
+    """
+      package renameRecursive
+      class A {
+        def recursiveLength[T](l: List[T]): Int = l match {
+          case Nil => 0
+          case x :: xs => 1 +  /*(*/  recursiveLength(xs)  /*)*/
+        }
+      }
+    """)
+  } applyRefactoring(renameTo("recursiveLength")) 
   
   @Test
   def renameLocalValue = new FileSet {

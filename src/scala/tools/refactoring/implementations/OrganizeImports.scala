@@ -1,12 +1,13 @@
-package scala.tools.refactoring
+package scala.tools.refactoring.implementations
 
+import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 
-abstract class OrganizeImports (override val global: Global) extends Refactoring(global) {
+abstract class OrganizeImports (override val global: Global) extends MultiStageRefactoring(global) {
   
   import global._
   
@@ -16,7 +17,7 @@ abstract class OrganizeImports (override val global: Global) extends Refactoring
   
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = Right(new PreparationResult)
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications] = {
     
     val sortImports: List[Tree] => List[Tree] = _.sortWith({
       case (t1: Import, t2: Import) => t1.expr.toString < t2.expr.toString
@@ -40,7 +41,7 @@ abstract class OrganizeImports (override val global: Global) extends Refactoring
       }
     }
     
-    var changes = new ChangeCollector {
+    var changes = new ModificationCollector {
       transform(selection.file) {
         case p @ PackageDef(_, stats) => {
           
@@ -56,6 +57,6 @@ abstract class OrganizeImports (override val global: Global) extends Refactoring
       }
     }
     
-    Right(refactor(changes))
+    Right(changes)
   }
 }

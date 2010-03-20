@@ -1,11 +1,11 @@
 package scala.tools.refactoring.tests
 
+import scala.tools.refactoring.implementations.OrganizeImports
 import scala.tools.refactoring.Refactoring
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.common.SilentTracing
-import scala.tools.refactoring.OrganizeImports
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 

@@ -5,8 +5,7 @@ trait Changes {
   
   val global: scala.tools.nsc.Global
   
-  // XXX rename to TreeModifications?
-  trait TreeChanges {
+  trait TreeModifications {
     
     /*
      * Provides a list of non-overlapping trees that contain changed trees.

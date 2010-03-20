@@ -58,16 +58,6 @@ trait Merger {
       orderHasNotChanged || isBeginOrEnd
     }
     
-    def layoutChanges(current: Fragment, next: Fragment, scope: Scope) = {
-      !keepOldLayout(current, next, scope) || allFragments.scopeIndentation(next).getOrElse(-1) != scope.indentation 
-    }
-    
-    def hasScopeChanges(scope: Scope): Boolean = scope.children.iterator.sliding(2) exists {
-      case (s: Scope) :: next :: _ if hasScopeChanges(s) => true
-      case current    :: next :: _                       => layoutChanges(current, next, scope)
-      case _ => false
-    }
-    
     def justMiddleFragmentReplaced(x: Fragment, y: Fragment, z: Fragment) = allFragments.exists(x) && !allFragments.exists(y) && allFragments.exists(z)
         
     def traverseScopeAndMergeChildrenWithLayout(scope: Scope) = {
@@ -93,6 +83,16 @@ trait Merger {
         case _ => Nil
       }
       recurse(scope.children)
+    }
+    
+    def layoutChanges(current: Fragment, next: Fragment, scope: Scope) = {
+      !keepOldLayout(current, next, scope) || allFragments.scopeIndentation(next).getOrElse(-1) != scope.indentation 
+    }
+    
+    def hasScopeChanges(scope: Scope): Boolean = scope.children.iterator.sliding(2) exists {
+      case (s: Scope) :: next :: _ if hasScopeChanges(s) => true
+      case current    :: next :: _                       => layoutChanges(current, next, scope)
+      case _ => false
     }
               
     def scopeHasArtificialTree(s: Scope) = s.exists(_.isInstanceOf[ArtificialTreeFragment])

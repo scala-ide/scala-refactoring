@@ -24,11 +24,7 @@ class MultipleFilesIndexTest extends TestHelper with FullIndexes with TreeAnalys
     pro.trees foreach index.processTree
 
     def aggregateFileNamesWithTrees[T <: Tree](ts: List[T])(conversion: T => String) = {
-      new HashMap[String, ListBuffer[T]] {
-        ts foreach {ref => 
-          getOrElseUpdate(ref.pos.source.file.name, new ListBuffer[T]) += ref
-        }
-      }.toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
+      ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
     }
     
     aggregateFileNamesWithTrees(index occurences sym) { symTree => 

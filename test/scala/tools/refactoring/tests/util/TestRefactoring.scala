@@ -1,7 +1,7 @@
 package scala.tools.refactoring.tests.util
 
 import scala.tools.refactoring.analysis.FullIndexes
-import scala.tools.refactoring.Refactoring
+import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.refactoring.common.Change
 import org.junit.Assert._
 
@@ -11,7 +11,7 @@ trait TestRefactoring {
    
   abstract class TestRefactoringImpl(project: FileSet) {
       
-    val refactoring: Refactoring with FullIndexes
+    val refactoring: MultiStageRefactoring with FullIndexes
     
     @Deprecated
     def doIt(expected: String, parameters: refactoring.RefactoringParameters) = {
@@ -26,7 +26,7 @@ trait TestRefactoring {
       refactoring.prepare(selection) match {
         case Right(prepare) =>
           refactoring.perform(selection, prepare, parameters) match {
-            case Right(result) => result
+            case Right(modifications) => refactoring.refactor(modifications)
             case Left(error) => fail(error.cause); throw new Exception("Unreachable, :-/ Java type system")
           }
         case Left(error) => fail(error.cause); throw new Exception("Unreachable, :-/ Java type system")

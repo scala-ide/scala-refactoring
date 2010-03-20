@@ -1,11 +1,12 @@
-package scala.tools.refactoring
+package scala.tools.refactoring.implementations
 
+import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 
-abstract class Rename(override val global: Global) extends Refactoring(global) {
+abstract class Rename(override val global: Global) extends MultiStageRefactoring(global) {
   
   import global._
   
@@ -27,13 +28,13 @@ abstract class Rename(override val global: Global) extends Refactoring(global) {
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications] = {
 
     trace("Selected tree is %s", prepared.selectedLocal)
     
     index.occurences(prepared.selectedLocal.symbol) foreach (s => trace("Symbol is referenced at %s (line %s)", s, s.pos.line))
 
-    val changes = new ChangeCollector {
+    val changes = new ModificationCollector {
       index occurences (prepared.selectedLocal.symbol) foreach {
         transform(_) {
           case s: SymTree if s.symbol == prepared.selectedLocal.symbol => mkRenamedSymTree(s, params.newName)
@@ -41,6 +42,6 @@ abstract class Rename(override val global: Global) extends Refactoring(global) {
       }
     }
     
-    Right(refactor(changes))
+    Right(changes)
   }
 }
