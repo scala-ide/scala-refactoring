@@ -7,7 +7,7 @@ import PartialFunction._
 trait Merger {
   self: LayoutHandler with Tracing with SourceHelper with Fragments with FragmentRepository =>
     
-  def merge(rootScope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean): List[Fragment] = context("merge fragments") {
+  def merge(rootScope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean) = context("merge fragments") {
     
     def getLayoutBetween(current: Fragment, next: Fragment, scope: Scope) = {
       
@@ -127,6 +127,6 @@ trait Merger {
       }
     }
     
-    innerMerge(rootScope)
+    innerMerge(rootScope) map (_.render(allFragments) mkString)
   }
 }
