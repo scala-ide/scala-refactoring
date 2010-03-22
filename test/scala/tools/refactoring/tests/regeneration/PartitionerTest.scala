@@ -353,10 +353,35 @@ class PartitionerTest extends TestHelper {
     object A {
       val a = new String("A")
     }
-""" partitionsInto """→0(0)❨|
+    """ partitionsInto """→0(0)❨|
     |→4(4)❨|object |A| |→4(0)❨|{
       |val| |a| = |new| |String|→6(2)❨|(|"A"|)|❩|
+    }|❩|❩|
+    |❩"""
+
+  @Test
+  def importQual = """
+    object A {
+      val p = scala.math.Pi
     }
-|❩|❩|❩"""
+    """ partitionsInto """→0(0)❨|
+    |→4(4)❨|object |A| |→4(0)❨|{
+      |val| |p| = |scala|.|math|.|Pi|
+    }|❩|❩|
+    |❩"""
+
+  @Test
+  def multiplication = """
+    object A {
+      val r = 3
+      val p = r/**/* r
+    }
+    """ partitionsInto """→0(0)❨|
+    |→4(4)❨|object |A| |→4(0)❨|{
+      |val| |r| = |3|
+      |val| |p| = |r|/**/|*| |r|
+    }|❩|❩|
+    |❩"""
   
+
 }

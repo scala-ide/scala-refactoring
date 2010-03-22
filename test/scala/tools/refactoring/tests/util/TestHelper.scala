@@ -70,11 +70,14 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
   
   def findMarkedNodes(src: String, tree: global.Tree) = {
     
-    val start = src.indexOf("/*(*/")
-    val end   = src.indexOf("/*)*/")
+    val startPattern = "/*(*/"
+    val endPattern = "/*)*/"
+    
+    val start = src.indexOf(startPattern)
+    val end   = src.indexOf(endPattern)
     
     if(start >= 0 && end >= 0)
-      Some(new TreeSelection(tree, start, end))
+      Some(new TreeSelection(tree, start + startPattern.length, end))
     else 
       None
   }

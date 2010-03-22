@@ -105,6 +105,11 @@ trait Partitioner extends PartitionerContributions {
               override val start = t.pos.start
               override val end = qualifier.pos.start
             }
+          } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
+            currentScope add new SymTreeFragment(t) {
+              override val start = t.pos.end - t.symbol.nameString.length
+              override val end = t.pos.end
+            }
           } else if (qualifier.pos.isRange) {
             currentScope add new SymTreeFragment(t) {
               override val start = t.pos.point.max(qualifier.pos.end + 1)
@@ -263,6 +268,7 @@ trait Partitioner extends PartitionerContributions {
           }
           
         case (t @ Template(parents, _, body), ClassBody(ts)) if !ts.isEmpty =>
+        
           scope(
               t, 
               indent = true, 
@@ -540,7 +546,10 @@ trait Partitioner extends PartitionerContributions {
     final override def traverse(tree: Tree): Unit = tree match {
         
       case t if !rangeOrNoPos(t) => 
-        return // tree is a compiler generated tree, we don't have to handle them
+        if(t.exists(_.pos.isRange))
+          super.traverse(tree)
+        else 
+          return // tree is a compiler generated tree, we don't have to handle them
       
       case t: TypeTree => 
         if(t.original != null)

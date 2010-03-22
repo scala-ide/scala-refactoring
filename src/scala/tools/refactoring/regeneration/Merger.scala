@@ -7,11 +7,19 @@ import PartialFunction._
 trait Merger {
   self: LayoutHandler with Tracing with SourceHelper with Fragments with FragmentRepository =>
     
-  def merge(rootScope: Scope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean) = context("merge fragments") {
+  def merge(rootScope: TreeScope, allFragments: FragmentRepository, hasTreeChanged: global.Tree => Boolean) = context("merge fragments") {
     
     def getLayoutBetween(current: Fragment, next: Fragment, scope: Scope) = {
       
       def extractOriginalLayout = (current, next) match {
+        case (c: OriginalSourceFragment, n: OriginalSourceFragment) if n.isEndOfScope && n.start > rootScope.end => 
+          /* because we replace just parts of the original source file,
+           * it can happen that we take too much of the layout, duplicating
+           * existing layout when applying the patch.
+           * */
+          val l = c layout n
+          val overflow = n.start - rootScope.end
+          l.substring(0, l.length - overflow)
         case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
       }
       
@@ -44,7 +52,9 @@ trait Merger {
     
       val currentExists = allFragments exists current
       
-      def orderHasNotChanged = currentExists && cond(allFragments getNext current) { case Some((_, originalNext)) => originalNext == next }
+      val nextIsOriginal = cond(allFragments getNext current) { case Some((_, originalNext)) => originalNext == next }
+      
+      def orderHasNotChanged = currentExists && nextIsOriginal
       
       def isNotCompilationUnitRoot = scope == rootScope && rootScope != allFragments.root
       
@@ -67,6 +77,8 @@ trait Merger {
          
         case (x: OriginalSourceFragment) :: (y: OriginalSourceFragment) :: (z: OriginalSourceFragment) :: rest if justMiddleFragmentReplaced(x, y, z) =>
 
+            trace("the middle fragment %s between %s and %s has been changed", y, x, z)
+        
             def originalLayout(pair: Option[(OriginalSourceFragment, OriginalSourceFragment)], l: Fragment, r: Fragment) =
               pair map Function.tupled(_ layout _) map (processRequisites(l, _, "", r)) map (new StringFragment(_)) get
 

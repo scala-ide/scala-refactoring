@@ -20,13 +20,17 @@ trait TreeFactory {
     case t => throw new Exception("Found "+ t.getClass.getName)
   }) setPos t.pos
   
-  def mkReturn(s: List[global.Symbol]) = s match {
+  def mkReturn(s: List[Symbol]) = s match {
     case Nil => EmptyTree
     case x :: Nil => Ident(x) setType x.tpe
     case xs => typer.typed(gen.mkTuple(xs map (s => Ident(s) setType s.tpe))) match {
       case t: Apply => t.fun setPos Invisible; t //don't show the TupleX..
       case t => t
     }
+  }
+  
+  def mkValDef(name: String, rhs: Tree) = {
+    ValDef(NoMods, "val "+ name, new TypeTree(), rhs)
   }
   
   def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {

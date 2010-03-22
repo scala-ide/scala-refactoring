@@ -40,6 +40,7 @@ trait Selections {
     }
     
     def contains(t: Tree) = isPosContainedIn(t.pos, pos)
+    def isContainedIn(t: Tree) = isPosContainedIn(pos, t.pos)
     
     lazy val selectedSymbolTree = (root filter (cond(_) { case t: SymTree => contains(t) }) match {
       case (x: SymTree) :: _ => Some(x)

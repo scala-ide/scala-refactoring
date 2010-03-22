@@ -116,6 +116,19 @@ class SourceHelperTest extends TestHelper {
   }
   
   @Test
+  def multiplication() = {
+    assertEquals("""
+    object A {
+      val r = 3
+      val p = r    * r
+    }""", stripComment("""
+    object A {
+      val r = 3
+      val p = r/**/* r
+    }"""))
+  }
+  
+  @Test
   def stripCommentInClass() = {
     assertEquals("""
     class A {
