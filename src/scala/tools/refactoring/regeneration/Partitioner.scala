@@ -80,8 +80,11 @@ trait Partitioner extends PartitionerContributions {
           super.apply
 
         case (i: Ident, Itself) =>
+          
           if(i.symbol.hasFlag(Flags.SYNTHETIC))
             ()
+          else if (i.pos == NoPosition)
+            addFragment(i)
           else if (i.pos.isRange && i.pos.start == i.pos.end)
             ()
           else if (i.symbol.pos == NoPosition)
@@ -255,16 +258,37 @@ trait Partitioner extends PartitionerContributions {
               indent = true,
               (s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c),
               (s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1))) {
+            
+            if(t.elsep.isInstanceOf[Block]) {
+              currentScope.children.head.requireAfter(new Requisite("{", " {"))
+            }
+            
             super.apply
+                        
+            if(t.elsep.isInstanceOf[Block]) {
+              currentScope.children.last.requireBefore(new Requisite("}", "\n}"))
+            }
           }  
           
+          // uh oh duplication!
+          
         case (t: If, Else) if indentationLength(t.elsep) > indentationLength(t) =>
+
           scope(
               t.elsep,
               indent = true,
               (s, c) => backwardsSkipLayoutTo('{')(s, c) orElse backwardsSkipLayoutTo('\n')(s, c),
               (s, c) => skipLayoutTo('}')(s, c) orElse (skipLayoutTo('\n')(s, c) map (_ - 1))) {
+            
+            if(t.elsep.isInstanceOf[Block]) {
+              currentScope.children.head.requireAfter(new Requisite("{", " {"))
+            }
+            
             super.apply
+                        
+            if(t.elsep.isInstanceOf[Block]) {
+              currentScope.children.last.requireBefore(new Requisite("}", "\n}"))
+            }
           }
           
         case (t @ Template(parents, _, body), ClassBody(ts)) if !ts.isEmpty =>
@@ -285,7 +309,6 @@ trait Partitioner extends PartitionerContributions {
         case (t @ Apply(fun, args), ParamList) => 
                   
           val actualArguments = args filter {
-            case arg: SymTree if arg.symbol.hasFlag(Flags.SYNTHETIC) => false
             case arg => arg.pos.isRange || arg.pos == NoPosition
           }
         
@@ -303,7 +326,7 @@ trait Partitioner extends PartitionerContributions {
                     t,
                     indent = false,
                     adjustStart = (_, _) => openingParenthesis,
-                    adjustEnd = (_, _) =>closingParenthesis
+                    adjustEnd = (_, _) => closingParenthesis
                     ) {
                   super.apply 
                 }
@@ -731,9 +754,20 @@ trait Partitioner extends PartitionerContributions {
          
         if(scopeIndentation == self)
           return 0
-         
-        val outer = fs.scopeIndentation(tree).getOrElse(0)
-        self - outer
+          
+        val originalScopeIndentation = fs.scopeIndentation(tree).getOrElse(0)
+
+        val a = fs.findScope(tree) map {
+          case scope: Scope with WithTree if scope.tree == tree => 
+            self - originalScopeIndentation
+          case _ =>
+            if (self > scopeIndentation && scopeIndentation > originalScopeIndentation)
+              0
+            else
+              self - originalScopeIndentation
+        }
+        
+        a.get
       }
     }
   }.visit(root)

@@ -15,11 +15,22 @@ trait FragmentRepository {
     def scopeIndentation(part: Fragment) = {
       visit(part) map (_.indentation)
     }
-  
+    
+    def findScope(tree: global.Tree) = {
+      find {
+        case c: WithTree if c.tree.pos.sameRange(tree.pos) => 
+          true
+        case _ => 
+          false
+      }
+    }
+    
     def scopeIndentation(tree: global.Tree) = {
-      find(_.children.exists {
-        case c: WithTree => c.tree.pos.sameRange(tree.pos)
-        case _ => false
+      find(scope => scope.children.exists {
+        case c: WithTree if c.tree.pos.sameRange(tree.pos) => 
+          true
+        case _ => 
+          false
       }) map (_.indentation)
     }
     

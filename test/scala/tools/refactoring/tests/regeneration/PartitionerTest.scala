@@ -183,7 +183,7 @@ class PartitionerTest extends TestHelper {
       |def| |main|(|args|: |Array|[|String|]) |→6(2)❨|{
         |args|.|foreach|→8(2)❨|(|println|)|❩|
         |args|.|foreach|→8(2)❨|(|println| _)|❩|
-        |args|.|foreach|(|s| => |println|→8(2)❨|(|s|))|❩|
+        |args|.|foreach|→8(2)❨|(|s| => |println|→8(0)❨|(|s|))|❩|❩|
       }|❩|
     }|❩|❩|
   |❩"""

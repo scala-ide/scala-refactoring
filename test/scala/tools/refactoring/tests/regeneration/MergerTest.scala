@@ -131,7 +131,7 @@ class MergerTest extends TestHelper with TestTransform {
           d
         } //end of c
         val b: String //b-string
-        
+      
       }
     """, reverseClassParameters)
   }

@@ -68,7 +68,7 @@ trait Merger {
       orderHasNotChanged || isBeginOrEnd
     }
     
-    def justMiddleFragmentReplaced(x: Fragment, y: Fragment, z: Fragment) = allFragments.exists(x) && !allFragments.exists(y) && allFragments.exists(z)
+    def justMiddleFragmentReplaced(x: Fragment, y: Fragment, z: Fragment) = !y.isInstanceOf[Scope] && allFragments.exists(x) && !allFragments.exists(y) && allFragments.exists(z)
         
     def traverseScopeAndMergeChildrenWithLayout(scope: Scope) = {
       def recurse(l: List[Fragment]): List[Fragment] = l match {

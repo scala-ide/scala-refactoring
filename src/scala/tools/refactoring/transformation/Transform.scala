@@ -8,38 +8,54 @@ import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 import scala.tools.refactoring.common.Changes
 
-private[refactoring] trait Transform extends Changes {
+trait Transform extends Changes {
   outer =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
-  
-  def transform(root: Tree, changed: Tree => Unit = (_ => ()))(trans: PartialFunction[Tree, Tree]): Tree = {
+
+  def transform(root: Tree)(trans: PartialFunction[Tree, Tree]): Tree = {
     new Transformer {
       override def transform(tree: Tree): Tree = {
-        val result = super.transform {
-          if(trans.isDefinedAt(tree)) {
-            trans(tree)
-          } else {
-            tree
-          }
+        
+        val res = super.transform(tree)
+        
+        if(trans.isDefinedAt(res)) {
+          trans(res)
+        } else {
+          res
         }
-        // emit the changed tree after all sub-transformations have been applied
-        if(trans.isDefinedAt(tree) && result != tree) changed(result)
-        result
       }
     }.transform(root)
   }
   
   trait ModificationCollector extends TreeModifications {
     
-    def transform(root: Tree) = outer.transform(root, (changes ::= _)) _
+    def transform(root: Tree)(trans: PartialFunction[Tree, Tree]): Tree = {
+      
+      def recordWhenChanged(orig: Tree, changed: Tree) = if(orig != changed) changes += changed
+      
+      new Transformer {
+        override def transform(tree: Tree): Tree = {
+          
+          val res = super.transform(tree)
+          
+          if(trans.isDefinedAt(res)) {
+            val result = trans(res)
+            recordWhenChanged(tree, result)
+            result
+          } else {
+            res
+          }
+        }
+      }.transform(root)
+    }
     
     def toplevelTrees = topChanges
   
-    def allChangedTrees = changes
+    def allChangedTrees = changes toList
 
-    private var changes = Nil: List[Tree]
+    private var changes = new collection.mutable.HashSet[Tree]
     
     private def topChanges = {
       
@@ -57,7 +73,7 @@ private[refactoring] trait Transform extends Changes {
           findSuperTrees(ts, mergeOverlappingTrees(superTrees))
       }
       
-      findSuperTrees(changes, Nil)
+      findSuperTrees(changes toList, Nil)
     }
   }
   

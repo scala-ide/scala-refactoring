@@ -37,21 +37,57 @@ abstract class ExtractLocal(override val global: Global) extends MultiStageRefac
       def replaces(t2: Tree) = t1 setPos t2.pos
     }
     
+    def isInnerMost[T <: Tree](t: T)(implicit m: Manifest[T]) = ! t.children.exists(_.exists(m.erasure.isInstance(_)))
+    
     trace("Selected: %s", selectedExpression)
     
     val newVal = mkValDef(name, selectedExpression)
     val valRef = Ident(name)
     
+    def findBlockInsertionPosition(root: Tree, near: Tree) = {
+      
+      def isCandidateForInsertion(t: Tree) = t.pos.includes(near.pos) && PartialFunction.cond(t) {
+        case If(_, thenp, _    ) if thenp.pos.includes(near.pos) => true
+        case If(_, _    , elsep) if elsep.pos.includes(near.pos) => true
+        case b: Block => true
+      }
+      
+      val insertionPoint = root.find {
+        case t: Tree if isCandidateForInsertion(t) =>
+          // find the smallest possible candidate
+          !t.children.exists( _ exists isCandidateForInsertion)
+        case _ => false
+      }
+      
+      def refineInsertionPoint(t: Tree) = t match {
+        case If(_, thenp, _    ) if thenp.pos.includes(near.pos) => thenp
+        case If(_, _    , elsep) if elsep.pos.includes(near.pos) => elsep
+        case t => t
+      }
+      
+      insertionPoint map { parent => 
+        (parent, refineInsertionPoint(parent))
+      }
+    }
+    
+    val (parent, child) = findBlockInsertionPosition(selection.file, selectedExpression) getOrElse {
+      return Left(RefactoringError("No insertion point found."))
+    }
+    
     val changes = new ModificationCollector {
+      
       transform(selection.file) {
-        case block: Block if block.pos.includes(selectedExpression.pos) =>
         
-          val stats = block map (transform(_) {
-            case t: TermTree if t == selectedExpression =>
-              valRef replaces selectedExpression
-          })
+        case t if t == parent => transform(parent) {
         
-          mkBlock(newVal :: stats) replaces block
+          case t if t == child =>
+          
+            val replacedExpression = transform(t) {
+              case t: TermTree if t == selectedExpression => valRef replaces selectedExpression
+            }
+          
+            mkBlock(newVal :: replacedExpression :: Nil) replaces t
+        }
       }
     }
     

@@ -43,21 +43,25 @@ abstract class ExtractMethod(override val global: Global) extends MultiStageRefa
     
     val changes = new ModificationCollector {
       transform(selection.file) {
-        case d: DefDef if d == selectedMethod /*ensure that we don't replace from the new method :) */ => {
-          if(selection.selectedTopLevelTrees.size > 1) {
-            transform(d) {
-              case block: Block => {
-                mkBlock(replace(block, selection.selectedTopLevelTrees, call :: Nil)) setPos block.pos
-              }
-            }
-          } else {
-            transform(d) {
-              case t: Tree if t == selection.selectedTopLevelTrees.head => call setPos t.pos
-            }
-          }
-        }
         case tpl @ Template(_, _, body) if body exists (_ == selectedMethod) => {
-          tpl.copy(body = replace(body, selectedMethod :: Nil, selectedMethod :: newDef :: Nil)) setPos tpl.pos
+          
+          val refactoredMethod = transform(selectedMethod) {
+            case d: DefDef if d == selectedMethod => {
+              if(selection.selectedTopLevelTrees.size > 1) {
+                transform(d) {
+                  case block: Block => {
+                    mkBlock(replace(block, selection.selectedTopLevelTrees, call :: Nil)) setPos block.pos
+                  }
+                }
+              } else {
+                transform(d) {
+                  case t: Tree if t == selection.selectedTopLevelTrees.head => call setPos t.pos
+                }
+              }
+            } 
+          }
+          
+          tpl.copy(body = replace(body, selectedMethod :: Nil, refactoredMethod :: newDef :: Nil)) setPos tpl.pos
         }
       }
     }

@@ -53,8 +53,11 @@ trait LayoutHandler {
       }
       
       existingIndentation match {
+        case Some((originalScopeIndentation, originalIndentation)) if isEndOfScope && currentScopeIndentation > 0 =>
+          indentString(currentScopeIndentation) 
+        
         case Some((originalScopeIndentation, originalIndentation)) =>
-          trace("this is a reused fragment")
+          trace("this is a reused fragment; at end of scope? %b", isEndOfScope)
 
             trace("original indentation was %d, original scope indentation was %d", originalIndentation, originalScopeIndentation)
             

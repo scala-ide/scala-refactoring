@@ -80,4 +80,43 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """)
   } applyRefactoring(extract("gr"))
+  
+  @Test
+  def extractNestedScopes = new FileSet {
+    add(
+    """
+      package extractLocal
+      object Demo {
+        def printSum(l: List[Int]) {
+
+          println("Printing the sum..")
+          
+          if(l.isEmpty) {
+            println("is empty :-(")
+          } else
+            println("sum is: "+  /*(*/l.reduceLeft(_ + _)/*)*/  )
+
+          println(".. done")
+        }
+      }
+    """,
+    """
+      package extractLocal
+      object Demo {
+        def printSum(l: List[Int]) {
+
+          println("Printing the sum..")
+          
+          if(l.isEmpty) {
+            println("is empty :-(")
+          } else {
+            val sum = l.reduceLeft(_ + _)/*)*/  
+            println("sum is: "+  /*(*/sum/*)*/  )
+          }
+
+          println(".. done")
+        }
+      }
+    """)
+  } applyRefactoring(extract("sum"))
 }
