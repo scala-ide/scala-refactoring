@@ -2,6 +2,7 @@ package scala.tools.refactoring.scripts
 
 import scala.tools.refactoring._
 import scala.tools.refactoring.common._
+import scala.tools.refactoring.util._
 import scala.tools.refactoring.tests.util._
 import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.transformation._

@@ -7,7 +7,7 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 
-abstract class OrganizeImports (override val global: Global) extends MultiStageRefactoring(global) {
+abstract class OrganizeImports extends MultiStageRefactoring {
   
   import global._
   

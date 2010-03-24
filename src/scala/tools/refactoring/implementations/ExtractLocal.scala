@@ -6,7 +6,7 @@ import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.analysis.FullIndexes
 
-abstract class ExtractLocal(override val global: Global) extends MultiStageRefactoring(global) {
+abstract class ExtractLocal extends MultiStageRefactoring {
   
   import global._
   

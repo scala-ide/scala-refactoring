@@ -10,9 +10,11 @@ import org.junit.Test
 import org.junit.Assert._
 
 class ExtractLocalTest extends TestHelper with TestRefactoring {
+  outer =>
   
   def extract(valName: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractLocal(global) with Tracing with FullIndexes {
+    val refactoring = new ExtractLocal with Tracing {
+      val global = outer.global
       pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
       
     }

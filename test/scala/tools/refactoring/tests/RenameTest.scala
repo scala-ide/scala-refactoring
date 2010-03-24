@@ -10,9 +10,11 @@ import org.junit.Test
 import org.junit.Assert._
 
 class RenameTest extends TestHelper with TestRefactoring {
+  outer =>
   
   def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new Rename(global) with /*Silent*/Tracing with FullIndexes {
+    val refactoring = new Rename with /*Silent*/Tracing {
+      val global = outer.global
       pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters {

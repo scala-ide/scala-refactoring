@@ -10,9 +10,11 @@ import org.junit.Test
 import org.junit.Assert._
 
 class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
+  outer =>
   
   def explicitGettersSetters(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExplicitGettersSetters(global) with Tracing with FullIndexes {
+    val refactoring = new ExplicitGettersSetters with Tracing {
+      val global = outer.global
       pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
       
     }

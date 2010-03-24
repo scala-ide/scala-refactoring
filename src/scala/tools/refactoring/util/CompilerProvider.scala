@@ -1,4 +1,4 @@
-package scala.tools.refactoring.tests.util
+package scala.tools.refactoring.util
 
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.io.AbstractFile
@@ -6,7 +6,6 @@ import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.ConsoleReporter
 import scala.tools.nsc.util.BatchSourceFile
-import scala.tools.refactoring.regeneration._
 
 private object CompilerInstance {
   

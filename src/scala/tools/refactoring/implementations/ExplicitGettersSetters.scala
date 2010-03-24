@@ -9,7 +9,7 @@ import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.symtab.Types
 
-abstract class ExplicitGettersSetters(override val global: Global) extends MultiStageRefactoring(global) {
+abstract class ExplicitGettersSetters extends MultiStageRefactoring {
   
   import global._
   

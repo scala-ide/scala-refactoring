@@ -54,7 +54,9 @@
 	</target>
 
 	<target name="jar" depends="build">
-		<jar destfile="scala-refactoring.jar" basedir="${build.dir}">
+		<jar destfile="scala-refactoring.jar" basedir="${build.dir}"
+			excludes="TEST-scala.tools.refactoring.tests*
+			scala/tools/refactoring/tests/">
 		</jar>
 	</target>
 </project>

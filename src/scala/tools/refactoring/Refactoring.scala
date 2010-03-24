@@ -4,13 +4,16 @@ import scala.tools.nsc.util.SourceFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.refactoring.analysis.Analysis
+import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.regeneration.{FragmentRepository, Regeneration}
 import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
 import scala.tools.refactoring.common.Change
 
-abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with Tracing with LayoutPreferences {
+abstract class Refactoring extends Analysis with Transformation with Regeneration with Selections with Tracing with LayoutPreferences with FullIndexes {
 
+  val global: Global
+  
   private val originalFragments: AbstractFile => FragmentRepository = {
     val fragments = new collection.mutable.HashMap[AbstractFile, FragmentRepository]
     file => fragments.getOrElseUpdate(file, 

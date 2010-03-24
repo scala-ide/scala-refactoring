@@ -10,6 +10,7 @@ import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 
 class OrganizeImportsTest extends TestHelper with TestRefactoring {
+  outer =>
 
   implicit def stringToRefactoring(src: String) = {
     val pro = new FileSet {
@@ -17,7 +18,9 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new OrganizeImports(global) with /*Silent*/Tracing with FullIndexes
+      val refactoring = new OrganizeImports with /*Silent*/Tracing {
+	      val global = outer.global
+      }
       def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)
     }
   }

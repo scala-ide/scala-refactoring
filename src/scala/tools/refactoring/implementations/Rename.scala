@@ -6,7 +6,7 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 
-abstract class Rename(override val global: Global) extends MultiStageRefactoring(global) {
+abstract class Rename extends MultiStageRefactoring {
   
   import global._
   

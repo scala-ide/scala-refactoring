@@ -9,6 +9,7 @@ import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 
 class ExtractMethodTest extends TestHelper with TestRefactoring {
+  outer =>
     
   implicit def stringToRefactoring(src: String) = {
     val pro = new FileSet {
@@ -16,7 +17,8 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractMethod(global) with /*Silent*/Tracing with FullIndexes {
+      val refactoring = new ExtractMethod with /*Silent*/Tracing {
+        val global = outer.global
         pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index.processTree _ )
       }
       def extractMethod(name: String, e: String) = doIt(e, new refactoring.RefactoringParameters {

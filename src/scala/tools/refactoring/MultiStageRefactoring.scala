@@ -2,7 +2,7 @@ package scala.tools.refactoring
 
 import scala.tools.nsc.interactive.Global
 
-abstract class MultiStageRefactoring(global: Global) extends Refactoring(global) {
+abstract class MultiStageRefactoring extends Refactoring {
  
   type PreparationResult
   

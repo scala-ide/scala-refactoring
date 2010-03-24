@@ -8,6 +8,7 @@ import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.common._
 import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
+import scala.tools.refactoring.util.CompilerProvider
 
 trait TestHelper extends Regeneration with CompilerProvider with Transformation with LayoutPreferences with SilentTracing with Selections {
   

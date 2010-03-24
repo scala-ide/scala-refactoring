@@ -11,6 +11,7 @@ import scala.tools.nsc.util.Position
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.reporters.ConsoleReporter
+import scala.tools.refactoring.util.CompilerProvider
 
 object Path extends CompilerProvider with TreePath {
   
