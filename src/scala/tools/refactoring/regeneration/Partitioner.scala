@@ -76,7 +76,7 @@ trait Partitioner extends PartitionerContributions {
       
       abstract override def apply(implicit p: Pair[Tree, TreeElement]) = p match {
         
-        case (t: Apply, Itself) => 
+        case (_: Apply | _:Assign | _: ImplDef | _: Match | Select(_: New, _), Itself) => 
           super.apply
 
         case (i: Ident, Itself) =>
@@ -94,9 +94,6 @@ trait Partitioner extends PartitionerContributions {
           else
             addFragment(i)
           super.apply
-          
-        case(Select(qualifier: New, _), Itself) =>
-          super.apply 
           
         case(Select(_, name), Itself) if name.toString == "apply" =>
           super.apply 
@@ -127,16 +124,9 @@ trait Partitioner extends PartitionerContributions {
            addFragment(new SymTreeFragment(s) {
              override val end = tree.pos.end
            })
-          super.apply 
-          
-        case (t: ImplDef, Itself) =>
           super.apply
           
         case (t: ImplDef, Name) =>
-          addFragment(t)
-          super.apply
-          
-        case (t: Bind, Itself) =>
           addFragment(t)
           super.apply
           
@@ -152,9 +142,6 @@ trait Partitioner extends PartitionerContributions {
           if(selectors.size > 1) {
             currentScope.lastChild map (_.requireAfter(new Requisite("}")))
           }
-          
-        case (t: Match, Itself) =>
-          super.apply
           
         case (t: Tree, Itself) =>
           addFragment(t)
@@ -229,7 +216,7 @@ trait Partitioner extends PartitionerContributions {
           }
         
         case (t: DefDef, Rhs) if !t.rhs.isInstanceOf[Block] && t.rhs != EmptyTree =>
-          scope(t.rhs, indent = true, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
+          scope(t.rhs, indent = false/*hmm*/, backwardsSkipLayoutTo('{'), skipLayoutTo('}')) {
             super.apply
           }
           
@@ -414,7 +401,7 @@ trait Partitioner extends PartitionerContributions {
           } else
             super.apply
         
-        case (_, Tpt) =>
+        case (t, Tpt) =>
           requireBefore(":", ": ")
           super.apply
                   
@@ -422,7 +409,7 @@ trait Partitioner extends PartitionerContributions {
           requireAfter("=", " = ")
           super.apply 
           
-        case (_, Rhs) =>
+        case (_, Rhs) | (_: Assign, Itself) =>
           requireAfter("=", " = ")
           super.apply
                     
@@ -446,6 +433,10 @@ trait Partitioner extends PartitionerContributions {
           requireAfter("(")
           super.apply
           requireAfter(")")
+          
+        case (t: This, Itself) =>
+          super.apply
+          requireAfter(".")
           
         case(_, Itself) =>
           
@@ -628,11 +619,11 @@ trait Partitioner extends PartitionerContributions {
           traverseTrees(mods.annotations)
           traverseTrees(tparams)
           
-          if(!vparamss.isEmpty) {
+          if(!vparamss.isEmpty && !vparamss.head.isEmpty) {
             handle(tree, ParamList)
           }
           
-          if(tpt.pos.isRange || tpt.pos == NoPosition) {
+          if((tpt.pos.isRange || tpt.pos == NoPosition) && tpt != EmptyTree) {
             handle(tree, Tpt)  
           }
           
@@ -709,10 +700,16 @@ trait Partitioner extends PartitionerContributions {
         handle(t → Itself)
         traverse(body)
         
+      case t @ Assign(destination, source) =>
+        traverse(destination)
+        handle(t → Itself)
+        traverse(source)
+        
       case t @ Typed(expr, tpt) =>
         traverse(expr)
         handle(t → Tpt)
         traverse(tpt)
+        
 
       case _ =>
         super.traverse(tree)

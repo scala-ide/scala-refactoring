@@ -9,7 +9,7 @@ import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
 import scala.tools.refactoring.common.Change
 
-abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with SilentTracing with LayoutPreferences {
+abstract class Refactoring(val global: Global) extends Analysis with Transformation with Regeneration with Selections with Tracing with LayoutPreferences {
 
   private val originalFragments: AbstractFile => FragmentRepository = {
     val fragments = new collection.mutable.HashMap[AbstractFile, FragmentRepository]

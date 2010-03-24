@@ -45,7 +45,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = prntln
         a * a
       }
-      def prntln(): Int = {
+      def prntln: Int = {
 /*(*/   val a = {
           val b = 1
           b * 5
@@ -72,7 +72,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln
         ()
       }
-      def prntln(): Unit = {
+      def prntln: Unit = {
 /*(*/   println("hello")/*)*/
       }
     }
@@ -98,7 +98,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln
         ()
       }
-      def prntln(): Unit = {
+      def prntln: Unit = {
 /*(*/   println("hello")/*)*/
       }
     }
@@ -178,7 +178,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = prntln
         a
       }
-      def prntln(): Int = {
+      def prntln: Int = {
 /*(*/   val a = 1  /*)*/
         a
       }
@@ -203,7 +203,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val (a, b) = prntln
         a + b
       }
-      def prntln(): (Int, Int) = {
+      def prntln: (Int, Int) = {
 /*(*/   val a = 1
         val b = 1  /*)*/
         (a, b)
@@ -282,7 +282,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       def extractFrom(): Int = {
         inc
       }
-      def inc(): Int = {
+      def inc: Int = {
 /*(*/   val a = 1
         a + 1    /*)*/
       }
@@ -310,7 +310,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         else
           false 
       }
-      def test(): Boolean = {
+      def test: Boolean = {
       /*(*/ true == true /*)*/ 
       }
     }
@@ -337,7 +337,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         else
           false 
       }
-      def test(): Boolean = {
+      def test: Boolean = {
         /*(*/    true /*)*/
       }
     }
@@ -366,7 +366,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
           test
         }
       }
-      def test(): Boolean = {
+      def test: Boolean = {
         /*(*/    false /*)*/
       }
     }
@@ -387,7 +387,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       def extractFrom(): Boolean = {
         if(true == true) true else /*(*/ test
       }
-      def test(): Boolean = {
+      def test: Boolean = {
         false /*)*/
       }
     }
@@ -426,7 +426,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
           }
         }
       }
-      def test(): Boolean = {
+      def test: Boolean = {
         true  /*)*/
       }
     }

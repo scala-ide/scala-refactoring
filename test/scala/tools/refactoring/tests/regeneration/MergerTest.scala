@@ -266,7 +266,7 @@ object A2 {
     """
       class A {
         def c: Unit = {
-          def innerMethod(): Int = {
+          def innerMethod: Int = {
             val b = 1
             b
           }

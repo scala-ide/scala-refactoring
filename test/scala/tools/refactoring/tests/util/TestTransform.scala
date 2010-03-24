@@ -3,6 +3,7 @@ package scala.tools.refactoring.tests.util
 import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.transformation.{Transform, TreeFactory}
 import scala.tools.refactoring.analysis._
+import scala.tools.refactoring.common.Invisible
 import scala.tools.nsc.util.Position
 import scala.tools.nsc.util.RangePosition
 import scala.tools.nsc.ast.parser.Tokens
@@ -66,7 +67,7 @@ trait TestTransform extends Transform with Selections with TreeAnalysis with Ful
       val newRhs = Block(
             newDef
             :: Nil
-            , Apply(Select(This(""), "innerMethod"), Nil))
+            , Apply(Select(This("") setPos Invisible, "innerMethod"), Nil))
       
       
       new DefDef(mods, name, tparams, vparamss, tpt, newRhs)  setPos defdef.pos
