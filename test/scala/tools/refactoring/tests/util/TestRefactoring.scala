@@ -16,7 +16,7 @@ trait TestRefactoring {
     @Deprecated
     def doIt(expected: String, parameters: refactoring.RefactoringParameters) = {
       val result = performRefactoring(parameters)
-      assertEquals(expected, applyChangeSet(result, project.sources.head))
+      assertEquals(expected, Change.applyChanges(result, project.sources.head))
     }
     
     def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = {

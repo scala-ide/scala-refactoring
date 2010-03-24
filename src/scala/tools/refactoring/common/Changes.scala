@@ -1,6 +1,7 @@
 package scala.tools.refactoring.common
 
 import scala.tools.nsc.io.AbstractFile
+// XXX rename
 trait Changes {
   
   val global: scala.tools.nsc.Global

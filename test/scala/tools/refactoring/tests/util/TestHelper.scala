@@ -46,7 +46,7 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
       val res = sources zip (sources map fileName) map {
         case (src, name) => 
           val changeSet = changes filter (_.file.name == name)
-          applyChangeSet(changeSet, src)
+          Change.applyChanges(changeSet, src)
       }
       
       assert(res)
@@ -55,15 +55,6 @@ trait TestHelper extends Regeneration with CompilerProvider with Transformation 
     private def assert(res: List[String]) = {
       assertEquals(srcs.length, res.length)
       expected zip res foreach (p => assertEquals(p._1, p._2))
-    }
-  }
-  
-  def applyChangeSet(ch: List[Change], source: String) = {
-  
-    val descending: (Change, Change) => Boolean = _.to > _.to
-    
-    (source /: ch.sortWith(descending)) { (src, ch) =>
-      src.substring(0, ch.from) + ch.text + src.substring(ch.to)
     }
   }
     
