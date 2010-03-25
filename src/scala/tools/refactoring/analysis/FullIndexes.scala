@@ -51,10 +51,10 @@ trait FullIndexes extends Indexes {
       def superClassParameters(s: Symbol): List[Symbol] = s match {
         case _ if s != NoSymbol && s.owner.isClass && s.isGetterOrSetter =>
           
-          List(declaration(s.owner)) partialMap {
-            case ClassDef(_, _, _, Template(_, _, body)) => body partialMap {
-              case d @ DefDef(_, _, _, _, _, Block(stats, _)) if d.symbol.isConstructor => stats partialMap {
-                case Apply(_, args) => args partialMap {
+          List(declaration(s.owner)) collect {
+            case ClassDef(_, _, _, Template(_, _, body)) => body collect {
+              case d @ DefDef(_, _, _, _, _, Block(stats, _)) if d.symbol.isConstructor => stats collect {
+                case Apply(_, args) => args collect {
                   case symTree: SymTree if symTree.symbol.nameString == s.nameString => symTree.symbol
                 }
               } flatten
