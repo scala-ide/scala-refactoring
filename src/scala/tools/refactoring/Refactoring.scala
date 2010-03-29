@@ -10,7 +10,7 @@ import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
 import scala.tools.refactoring.common.Change
 
-abstract class Refactoring extends Analysis with Transformation with Regeneration with Selections with SilentTracing with LayoutPreferences with FullIndexes {
+abstract class Refactoring extends Analysis with Transformation with Regeneration with Selections with Tracing with LayoutPreferences with FullIndexes {
 
   val global: Global
   

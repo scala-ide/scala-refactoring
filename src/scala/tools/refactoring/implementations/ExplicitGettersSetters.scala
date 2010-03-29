@@ -44,7 +44,7 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
     
     val privateName = "_"+ publicName
     
-    val privateField = selectedValue copy (name = privateName)
+    val privateField = selectedValue copy (mods = Modifiers(Flags.PARAM), name = privateName)
     
     val getter = DefDef(
         Modifiers(Flags.METHOD), 

@@ -641,7 +641,7 @@ trait Partitioner extends PartitionerContributions {
       case t @ Template(parents, _, body) =>
         
         val (classParams, restBody) = body.partition {
-          case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
+          case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) || mods.hasFlag(Flags.PARAM) 
           case _ => false
         }
         

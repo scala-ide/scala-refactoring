@@ -32,7 +32,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
     """,
     """
       package oneFromMany
-      class Demo(val a: String,  /*(*/var _i: Int/*)*/  ) {
+      class Demo(val a: String,  /*(*/_i: Int/*)*/  ) {
         def i = {
           _i
         }
@@ -55,7 +55,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
     """,
     """
       package oneFromMany
-      class Demo(val a: String,  /*(*/val _i: Int/*)*/  ) {
+      class Demo(val a: String,  /*(*/_i: Int/*)*/  ) {
         def i = {
           _i
         }

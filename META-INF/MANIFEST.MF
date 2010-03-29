@@ -12,5 +12,6 @@ Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.common,
  scala.tools.refactoring.util,
  scala.tools.refactoring.transformation
-Require-Bundle: scala.tools.nsc
+Require-Bundle: scala.tools.nsc,
+ scala.library
 

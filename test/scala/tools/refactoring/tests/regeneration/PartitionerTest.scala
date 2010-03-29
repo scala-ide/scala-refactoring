@@ -93,7 +93,7 @@ class PartitionerTest extends TestHelper {
     }
   """ partitionsInto
   """→0(0)❨|
-    |→4(4)❨|class |Xyz|(|private| val |abc|: |String|, var |int|: |Int|) {
+    |→4(4)❨|class |Xyz|(|private| |val| |abc|: |String|, |var| |int|: |Int|) {
     }|❩|
   |❩"""
 
