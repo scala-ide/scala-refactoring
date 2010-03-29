@@ -1,3 +1,8 @@
+/*
+ * Copyright 2005-2010 LAMP/EPFL
+ */
+// $Id$
+
 package scala.tools.refactoring.tests.transformation
 
 import scala.tools.refactoring.tests.util.TestHelper

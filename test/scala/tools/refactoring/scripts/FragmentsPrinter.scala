@@ -1,3 +1,8 @@
+/*
+ * Copyright 2005-2010 LAMP/EPFL
+ */
+// $Id$
+
 package scala.tools.refactoring.scripts
 
 import scala.tools.refactoring._
