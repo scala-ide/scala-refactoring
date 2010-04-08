@@ -37,12 +37,16 @@ abstract class Rename extends MultiStageRefactoring {
 
     trace("Selected tree is %s", prepared.selectedLocal)
     
-    index.occurences(prepared.selectedLocal.symbol) foreach (s => trace("Symbol is referenced at %s (line %s)", s, s.pos.line))
+    val occurences = index.occurences(prepared.selectedLocal.symbol) 
+    
+    occurences foreach (s => trace("Symbol is referenced at %s (%s:%s)", s, s.pos.source.file.name, s.pos.line))
 
     val changes = new ModificationCollector {
-      index occurences (prepared.selectedLocal.symbol) foreach {
-        transform(_) {
-          case s: SymTree if s.symbol == prepared.selectedLocal.symbol => mkRenamedSymTree(s, params.newName)
+      occurences foreach {
+        transform2(_) {
+          case s: SymTree => occurences contains s
+        } {
+          case s: SymTree => mkRenamedSymTree(s, params.newName)
         }
       }
     }

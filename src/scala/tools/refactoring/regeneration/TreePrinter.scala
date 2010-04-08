@@ -28,18 +28,22 @@ trait TreePrinter {
         case tpe: ConstantType => tpe.underlying.toString
         case _ => tree.tpe.toString
       }
-              
+      
       case Select(qualifier, name) => name.toString
       
       case Ident(name) => name.toString
-      
-      case t: If => "if"
       
       case t: Bind => t.name.toString
       
       case c: ClassDef => c.name.toString
       
+      case m: ModuleDef => m.name.toString
+      
+      case t: TypeDef => t.name.toString
+      
       case t: This => "this"
+              
+      case t: If => "if"
       
       case _ => throw new Exception("don't know how to create "+ tree.getClass +" for AST "+ tree)
     }) \\ (trace("printing tree (%s) %s → %s", tree.getClass, tree, _))

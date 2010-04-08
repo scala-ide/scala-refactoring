@@ -20,14 +20,14 @@ trait TreeAnalysis {
     
     val selectedLocals = allLocals filter (selection.selectedSymbols contains)
           
-    selectedLocals filterNot (s => selection contains (index declaration s))
+    selectedLocals filterNot (s => index.declaration(s) map selection.contains getOrElse false)
   }
   
   def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: Index) = {
     
     val allLocals = index children currentOwner map (_.symbol)
     
-    val declarationsInTheSelection = allLocals filter (s => selection contains (index declaration s))
+    val declarationsInTheSelection = allLocals filter (s => index.declaration(s) map selection.contains getOrElse false)
     
     declarationsInTheSelection flatMap (index references) filterNot (selection contains) map (_.symbol) distinct
   }

@@ -21,6 +21,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     val refactoring = new Rename with /*Silent*/Tracing {
       val global = outer.global
       pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
+      println(index.debugString)
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters {
       val newName = name
@@ -91,7 +92,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameParameter
     class A {
-      def rename(  b: String) {
+      def rename(  b/*(*//*)*/  : String) {
         println(b)
       }
     }
@@ -334,6 +335,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     package renameClass
     object C extends A {
       val a = new A
+      val as = new collection.mutable.ListBuffer[A]
       def doWithA(a: A) = new A
     }
     """,
@@ -341,8 +343,31 @@ class RenameTest extends TestHelper with TestRefactoring {
     package renameClass
     object C extends X {
       val a = new X
+      val as = new collection.mutable.ListBuffer[X]
       def doWithA(a: X) = new X
     }
     """)   
   } applyRefactoring(renameTo("X"))
+    
+  @Test
+  def renameTypeParameter = new FileSet {
+    
+    add(
+    """
+    package ex
+
+    trait Monad[ /*(*/M/*)*/[_]] {
+      def flatMap[A, B](a: M[A], f: A => M[B]): M[B]
+      def unital[A](a: A): M[A]
+    }
+    """,
+    """
+    package ex
+
+    trait Monad[ /*(*/Md/*)*/[_]] {
+      def flatMap[A, B](a: Md[A], f: A => Md[B]): Md[B]
+      def unital[A](a: A): Md[A]
+    }
+    """)
+  } applyRefactoring(renameTo("Md"))
 }

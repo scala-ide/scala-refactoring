@@ -32,7 +32,7 @@ class DeclarationIndexTest extends TestHelper with FullIndexes with TreeAnalysis
     val declarations = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head match {
       case t: RefTree => 
         assertTrue("Symbol "+ t.symbol.owner +" does not have a child "+ t.symbol, index.children(t.symbol.owner) exists (_.symbol == t.symbol))
-        index.declaration(t.symbol)
+        index.declaration(t.symbol).get
       case t => throw new Exception("found: "+ t)
     }
     assertEquals(expected, declarations.toString)
@@ -42,7 +42,7 @@ class DeclarationIndexTest extends TestHelper with FullIndexes with TreeAnalysis
   
     val references = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head match {
       case t: DefTree => 
-        index.references(t.symbol) filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
+        index.references(t.symbol).toList filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
       case t => throw new Exception("found: "+ t)
     }
     assertEquals(expected, references mkString ", ")

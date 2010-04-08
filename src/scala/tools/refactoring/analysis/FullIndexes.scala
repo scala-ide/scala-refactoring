@@ -23,7 +23,7 @@ trait FullIndexes extends Indexes {
     private val refs = new HashMap[Symbol, Refs]
     private val chld = new HashMap[Symbol, Defs]
 
-    private def dbgSymbol(sym: Symbol) = "Symbol "+ sym.nameString +" ["+ sym.id +"] ("+ sym.pos +")"
+    private def dbgSymbol(sym: Symbol) = "Symbol "+ sym.nameString +" ["+ sym.id +"] ("+ sym.pos +") {"+ sym.info +"}"
     private def dbgTree(t: Tree) = t.getClass.getSimpleName +" "+ t.toString.replaceAll("\n", " ") +" ("+ t.pos +")" 
     
     def debugString() = { 
@@ -41,13 +41,13 @@ trait FullIndexes extends Indexes {
       ds +"\n\n====\n\n"+ rs
     }
 
-    def declaration(s: Symbol): DefTree = defs(s)
+    def declaration(s: Symbol): Option[DefTree] = defs.get(s)
     
-    def references (s: Symbol) = occurences(s) filterNot(_ == declaration(s))
+    def references (s: Symbol) = occurences(s) filterNot(Some(_) == declaration(s))
     
     def occurences(s: Symbol): List[SymTree] = {
       s :: dependentSymbols(s) flatMap { s =>
-        declaration(s) :: refs.getOrElse(s, new Refs).toList ::: findInHierarchy(s)
+        declaration(s).toList ::: refs.getOrElse(s, new Refs).toList ::: findInHierarchy(s)
       } filter (_.pos.isRange) distinct 
     }
     
@@ -57,7 +57,7 @@ trait FullIndexes extends Indexes {
         case _ if s != NoSymbol && s.owner.isClass && s.isGetterOrSetter =>
           
           List(declaration(s.owner)) collect {
-            case ClassDef(_, _, _, Template(_, _, body)) => body collect {
+            case Some(ClassDef(_, _, _, Template(_, _, body))) => body collect {
               case d @ DefDef(_, _, _, _, _, Block(stats, _)) if d.symbol.isConstructor => stats collect {
                 case Apply(_, args) => args collect {
                   case symTree: SymTree if symTree.symbol.nameString == s.nameString => symTree.symbol
@@ -78,15 +78,31 @@ trait FullIndexes extends Indexes {
           Nil
       }
       
-      superClassParameters(s) ::: resolveGetterImplRelations(s) filter (_ != NoSymbol)
+      def samePosition(ss: Iterable[Symbol], s: Symbol): List[Symbol] = {
+        ss collect {
+          case sym if sym.pos.sameRange(s.pos) && sym.pos.source.file.name == s.pos.source.file.name && !sym.pos.isTransparent =>
+            sym
+        } toList
+      }
+      
+      superClassParameters(s) ::: resolveGetterImplRelations(s) ::: samePosition(defs.keys, s) ::: samePosition(refs.keys, s) filter (_ != NoSymbol)
     }
 
     private def findInHierarchy(s: Symbol) = s match {
       case s: TermSymbol if s.owner.isClass =>
       
         def allSubClasses(clazz: Symbol) = defs.filter(_._1.ancestors.contains(clazz))
-      
-        val overrides = allSubClasses(s.owner) map (s overriddenSymbol _._1) filter (_ != NoSymbol) toList
+              
+        val overrides = allSubClasses(s.owner) map {
+          case (sym, _) => 
+          try {
+            s overriddenSymbol sym
+          } catch {
+            case e: Error =>
+              // ?
+              throw e
+          }
+        } filter (_ != NoSymbol) toList
         
         overrides flatMap occurences distinct
       case _ => Nil

@@ -55,8 +55,12 @@ abstract class Refactoring extends Analysis with Transformation with Regeneratio
   }
   
   def refactor(changed: TreeModifications): List[Change] = context("main refactoring") {
+    
+    val toplevelTrees = changed.toplevelTrees
+    
+    trace("%d toplevel trees have changes", toplevelTrees.size)
    
-    changed.toplevelTrees filter (_.pos.isRange) map { tree =>
+    toplevelTrees map { tree =>
 
       val (changedText, from, to) = createChangeText(tree, changed)
       

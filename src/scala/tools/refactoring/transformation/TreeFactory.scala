@@ -22,6 +22,9 @@ trait TreeFactory {
     case s: Select   => s.copy(name = name)
     case c: ClassDef => c.copy(name = name)
     case s: Super    => s.copy(qual = name)
+    case t: This     => t.copy(qual = name)
+    case m: ModuleDef=> m.copy(name = name)
+    case t: TypeDef  => t.copy(name = name)
     case t => throw new Exception("Found "+ t.getClass.getName)
   }) setPos t.pos
   

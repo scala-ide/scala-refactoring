@@ -36,10 +36,25 @@ trait Transform extends Changes {
   
   trait ModificationCollector extends TreeModifications {
     
+    def substitute(t1: Tree, t2: Tree) = recordWhenChanged(t1, t2)
+
+    private def recordWhenChanged(orig: Tree, changed: Tree) = if(orig != changed && changed.pos.isRange) changes += changed
+    
+    def transform2(root: Tree)(check: PartialFunction[Tree, Boolean])(trans: PartialFunction[Tree, Tree]): Tree = {
+      new Transformer {
+        override def transform(tree: Tree): Tree = {
+          if(check.isDefinedAt(tree) && check(tree)) {
+            val result = trans(super.transform(tree))
+            recordWhenChanged(tree, result)
+            result
+          } else {
+            super.transform(tree)
+          }
+        }
+      }.transform(root)
+    }
+    
     def transform(root: Tree)(trans: PartialFunction[Tree, Tree]): Tree = {
-      
-      def recordWhenChanged(orig: Tree, changed: Tree) = if(orig != changed) changes += changed
-      
       new Transformer {
         override def transform(tree: Tree): Tree = {
           
@@ -56,13 +71,15 @@ trait Transform extends Changes {
       }.transform(root)
     }
     
-    def toplevelTrees = topChanges
+    def toplevelTrees = topChanges distinct
   
     def allChangedTrees = changes toList
 
-    private var changes = new collection.mutable.HashSet[Tree]
+    private var changes = new collection.mutable.ListBuffer[Tree]
     
     private def topChanges = {
+      
+      def properlyIncludes(t1: Tree, t2: Tree) = t1.pos.source == t2.pos.source && t1.pos.properlyIncludes(t2.pos)
       
       def findSuperTrees(trees: List[Tree], superTrees: List[Tree]): List[Tree] = trees match {
         case Nil => superTrees
@@ -70,8 +87,8 @@ trait Transform extends Changes {
         
           def mergeOverlappingTrees(ts: List[Tree]): List[Tree] = ts match {
             case Nil => t :: Nil
-            case x :: xs if x.pos properlyIncludes t.pos => x :: xs
-            case x :: xs if t.pos properlyIncludes x.pos => t :: xs
+            case x :: xs if properlyIncludes(x, t) => x :: xs
+            case x :: xs if properlyIncludes(t, x) => t :: xs
             case x :: xs => x :: mergeOverlappingTrees(xs)
           }
         

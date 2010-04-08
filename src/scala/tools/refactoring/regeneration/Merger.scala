@@ -73,7 +73,7 @@ trait Merger {
       orderHasNotChanged || isBeginOrEnd
     }
     
-    def justMiddleFragmentReplaced(x: Fragment, y: Fragment, z: Fragment) = !y.isInstanceOf[Scope] && allFragments.exists(x) && !allFragments.exists(y) && allFragments.exists(z)
+    def justMiddleFragmentReplaced(x: Fragment, y: Fragment, z: Fragment) = !y.isInstanceOf[Scope] && (allFragments.exists(x) || x.isBeginOfScope) && !allFragments.exists(y) && allFragments.exists(z)
         
     def traverseScopeAndMergeChildrenWithLayout(scope: Scope) = {
       def recurse(l: List[Fragment]): List[Fragment] = l match {
@@ -85,7 +85,7 @@ trait Merger {
             trace("the middle fragment %s between %s and %s has been changed", y, x, z)
         
             def originalLayout(pair: Option[(OriginalSourceFragment, OriginalSourceFragment)], l: Fragment, r: Fragment) =
-              pair map Function.tupled(_ layout _) map (processRequisites(l, _, "", r)) map (new StringFragment(_)) get
+              pair map Function.tupled(_ layout _) map (processRequisites(l, _, "", r)) map (new StringFragment(_)) getOrElse(new StringFragment(""))
 
             def getTrailingOriginalLayout(f: Fragment) = originalLayout(allFragments getNext f, f, y)
             

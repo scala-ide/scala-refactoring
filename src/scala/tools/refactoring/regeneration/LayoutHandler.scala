@@ -119,6 +119,7 @@ trait LayoutHandler {
     val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
     val OpeningBrace = """(.*?\()(.*)""".r
     val Colon = """(.*?)(:.*)""".r
+    val Arrow = """(.*?=>\s?)(.*)""".r
     val Equals = """(.*?=\s?)(.*)""".r
     val ClosingBrace = """(?ms)(.*?)(\).*)""".r
     val Comma = """(.*?),\s?(.*)""".r
@@ -129,12 +130,13 @@ trait LayoutHandler {
       case Colon(l, r)           => Some(l, r, "Colon")
       case EmptyParens(l, r)     => Some(l, r, "EmptyParens")
       case OpeningBrace(l, r)    => Some(l, r, "OpeningBrace")
+      case Arrow(l, r)           => Some(l, r, "Arrow")
       case Equals(l, r)          => Some(l, r, "Equals")
       case ClosingBrace(l, r)    => Some(l, r, "ClosingBrace")
       case ImportStatement(l, r) => Some(l+"\n", "\n"+r, "ImportStatement")
-      case NewLine(l, r)         => Some(l, "\n"+r, "NewLine")
       case _                     => None
     }) orElse (layout match { // Work around https://lampsvn.epfl.ch/trac/scala/ticket/1133
+      case NewLine(l, r)         => Some(l, "\n"+r, "NewLine")
       case Comma(l, r)           => Some(l, r, "Comma")
       case s                     => Some(s, "", "NoMatch")
     }) get
