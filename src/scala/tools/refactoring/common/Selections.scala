@@ -64,7 +64,13 @@ trait Selections {
     }
     
     private def isPosContainedIn(p1: Position, p2: Position) = 
-      p1.isRange && !p1.isTransparent && p2.isRange && !p2.isTransparent && p2.includes(p1) && p1.source == p2.source
+      p1.isRange && 
+      !p1.isTransparent && 
+      p2.isRange && 
+      !p2.isTransparent && 
+      p2.includes(p1) && 
+      p1.source == p2.source &&
+      p1.start < p1.end // some ranges don't have a visible representation
   }
   
   class FileSelection(val file: AbstractFile, from: Int, to: Int) extends Selection {

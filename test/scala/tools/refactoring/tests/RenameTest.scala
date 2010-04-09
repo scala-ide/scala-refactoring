@@ -84,7 +84,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameParameter
     class A {
-      def rename(  a/*(*//*)*/  : String) {
+      def rename(  /*(*/a/*)*/  : String) {
         println(a)
       }
     }
@@ -92,7 +92,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameParameter
     class A {
-      def rename(  b/*(*//*)*/  : String) {
+      def rename(  /*(*/b/*)*/  : String) {
         println(b)
       }
     }
@@ -370,4 +370,26 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """)
   } applyRefactoring(renameTo("Md"))
+    
+  @Test
+  def renameSuperClass = new FileSet {
+    
+    add(
+    """
+    package ex
+
+    sealed abstract class /*(*/Term/*)*/
+    
+    case object TmTrue extends Term
+    case class  TmIf(t1: Term, t2: Term, t3: Term) extends Term
+    """,
+    """
+    package ex
+
+    sealed abstract class /*(*/Expr/*)*/
+    
+    case object TmTrue extends Expr
+    case class  TmIf(t1: Expr, t2: Expr, t3: Expr) extends Expr
+    """)
+  } applyRefactoring(renameTo("Expr"))
 }

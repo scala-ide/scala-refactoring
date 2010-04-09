@@ -24,7 +24,7 @@ trait Merger {
            * */
           val l = c layout n
           val overflow = n.start - rootScope.end
-          l.substring(0, l.length - overflow)
+          l.substring(0, (l.length - overflow) max 0)
         case (c: OriginalSourceFragment, n: OriginalSourceFragment) => c layout n
       }
       
