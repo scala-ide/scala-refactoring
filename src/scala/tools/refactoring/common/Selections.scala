@@ -53,7 +53,7 @@ trait Selections {
     }) orElse findSelectedOfType[SymTree]
     
     def findSelectedOfType[T](implicit m: Manifest[T]) = root filter (cond(_) {
-      case t => m.erasure.isInstance(t) && isPosContainedIn(pos, t.pos)
+      case t => m.erasure.isInstance(t) && isContainedIn(t)
     }) reverse match {
       case x :: _ => Some(x.asInstanceOf[T])
       case _ => None
@@ -75,14 +75,14 @@ trait Selections {
   
   class FileSelection(val file: AbstractFile, from: Int, to: Int) extends Selection {
     
-    lazy val pos = new RangePosition(root.pos.source, from, from, to)
+    lazy val pos = new RangePosition(root.pos.source, from, from, if (from == to) to + 1 else to)
     
     lazy val root = global.unitOfFile(file).body
   }
   
   class TreeSelection(val root: Tree, val pos: RangePosition) extends Selection {
  
-    def this(root: Tree, start: Int, end: Int) = this(root, new RangePosition(root.pos.source, start, start, end))
+    def this(root: Tree, start: Int, end: Int) = this(root, new RangePosition(root.pos.source, start, start, if (start == end) end + 1 else end))
     
     def this(root: Tree) = this(root, if(root.pos.isRange) root.pos.asInstanceOf[RangePosition] else throw new Exception("Position not a range."))
     
