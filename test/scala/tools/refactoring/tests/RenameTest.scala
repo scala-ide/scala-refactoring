@@ -392,4 +392,67 @@ class RenameTest extends TestHelper with TestRefactoring {
     case class  TmIf(t1: Expr, t2: Expr, t3: Expr) extends Expr
     """)
   } applyRefactoring(renameTo("Expr"))
+    
+  @Test
+  def renameType = new FileSet {
+    
+    add(
+    """
+
+    class Person(name: String)
+
+    object Rename1 {
+      class /*(*/Person/*)*/(name: String)
+      
+      def main(args: Array[String]) {
+        
+        val people: List[Person] = List(new Person("Mirko"), new Person("Christina"))
+        
+      }
+    }""",
+    """
+
+    class Person(name: String)
+
+    object Rename1 {
+      class /*(*/P/*)*/(name: String)
+      
+      def main(args: Array[String]) {
+        
+        val people: List[P] = List(new P("Mirko"), new P("Christina"))
+        
+      }
+    }""")
+  } applyRefactoring(renameTo("P"))
+    
+  @Test
+  def renameCaseClass = new FileSet {
+    
+    add(
+    """
+    case class /*(*/Person/*)*/(name: String)
+
+    object Rename1 {
+      val p = Person("Mirko")
+    }""",
+    """
+    case class /*(*/P/*)*/(name: String)
+
+    object Rename1 {
+      val p = P("Mirko")
+    }""")
+  } applyRefactoring(renameTo("P"))
+    
+  //@Test FIXME renameByNameParameters
+  def renameByNameParameters = new FileSet {
+    
+    add(
+    """
+    object ByNameParap {
+      def withParam(param1: Int,/*(*/name/*)*/: String) = println(name)
+      withParam(name = "Mirko", param1 = 5)
+      withParam(5, "Mirko")
+    }""",
+    """""")
+  } applyRefactoring(renameTo("n"))
 }

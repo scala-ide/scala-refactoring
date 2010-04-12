@@ -124,7 +124,8 @@ trait LayoutHandler {
     val ClosingBrace = """(?ms)(.*?)(\).*)""".r
     val Comma = """(.*?),\s?(.*)""".r
     val NewLine = """(?ms)(.*?\n)(.*)""".r
-    val ImportStatement = """(?ms)(.*)\n(.*?import.*)""".r // imports don't include leading lines
+    val ImportStatementNewline = """(?ms)(.*)\n(.*?import.*)""".r // imports don't include leading lines, handle in partitioner instead?
+    val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
     
     (layout match {
       case Colon(l, r)           => Some(l, r, "Colon")
@@ -133,9 +134,10 @@ trait LayoutHandler {
       case Arrow(l, r)           => Some(l, r, "Arrow")
       case Equals(l, r)          => Some(l, r, "Equals")
       case ClosingBrace(l, r)    => Some(l, r, "ClosingBrace")
-      case ImportStatement(l, r) => Some(l+"\n", "\n"+r, "ImportStatement")
+      case ImportStatementNewline(l, r) => Some(l+"\n", "\n"+r, "ImportStatement Newline")
       case _                     => None
     }) orElse (layout match { // Work around https://lampsvn.epfl.ch/trac/scala/ticket/1133
+      case ImportStatement(l, r) => Some(l, r, "ImportStatement")
       case NewLine(l, r)         => Some(l, "\n"+r, "NewLine")
       case Comma(l, r)           => Some(l, r, "Comma")
       case s                     => Some(s, "", "NoMatch")
