@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Scala Refactoring
+Bundle-SymbolicName: scala.tools.refactoring
+Bundle-Version: 0.0.0.qualifier
+Require-Bundle: scala.tools.nsc,
+ scala.library,
+ org.junit4;bundle-version="4.5.0"
+Export-Package: scala.tools.refactoring,
+ scala.tools.refactoring.analysis,
+ scala.tools.refactoring.common,
+ scala.tools.refactoring.implementations,
+ scala.tools.refactoring.regeneration,
+ scala.tools.refactoring.transformation,
+ scala.tools.refactoring.util
+Bundle-ClassPath: .
