@@ -19,17 +19,19 @@ abstract class Refactoring extends Analysis with Transformation with Regeneratio
 
   val global: Global
   
-  private val originalFragments: AbstractFile => FragmentRepository = {
-    val fragments = new collection.mutable.HashMap[AbstractFile, FragmentRepository]
-    file => fragments.getOrElseUpdate(file, 
-              new FragmentRepository(splitIntoFragments(global.unitOfFile(file).body) \\ (trace("Original: %s", _))))
+  private val originalFragments: SourceFile => FragmentRepository = {
+    val fragments = new collection.mutable.HashMap[SourceFile, FragmentRepository]
+    file =>
+      fragments.getOrElseUpdate(
+          file, 
+          new FragmentRepository(splitIntoFragments(global.unitOf(file).body) \\ (trace("Original: %s", _))))
   }
   
   private def hasTreeChanged(changed: List[global.Tree])(tree: global.Tree) = changed.contains(tree) || changed.exists( t => tree.pos.includes(t.pos))
   
   private def createChangeText(tree: global.Tree, changed: TreeModifications) = {
       
-    val fr = originalFragments(tree.pos.source.file)
+    val fr = originalFragments(tree.pos.source)
       
     val modifiedFragments = essentialFragments(tree, fr) \\ (trace("Modified: %s", _))
       
