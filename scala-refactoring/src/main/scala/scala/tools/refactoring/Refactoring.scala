@@ -21,10 +21,20 @@ abstract class Refactoring extends Analysis with Transformation with Regeneratio
   
   private val originalFragments: SourceFile => FragmentRepository = {
     val fragments = new collection.mutable.HashMap[SourceFile, FragmentRepository]
-    file =>
+    file => {
+      def body = global.unitOf(file).body
+      def notLoaded = body == global.EmptyTree 
+      
+      if(notLoaded) {
+        global.reloadSources(file :: Nil)
+        if(notLoaded)
+          throw RefactoringError("Compilation Unit for "+ file.file.name +" not ready.")
+      }
+      
       fragments.getOrElseUpdate(
-          file, 
-          new FragmentRepository(splitIntoFragments(global.unitOf(file).body) \\ (trace("Original: %s", _))))
+        file, 
+        new FragmentRepository(splitIntoFragments(body) \\ (trace("Original: %s", _))))
+    }
   }
   
   private def hasTreeChanged(changed: List[global.Tree])(tree: global.Tree) = changed.contains(tree) || changed.exists( t => tree.pos.includes(t.pos))

@@ -17,9 +17,9 @@ trait Indexes {
         
     def declaration(s: Symbol): Option[DefTree]
     
-    def references (s: Symbol): List[SymTree]
+    def references (s: Symbol): List[Tree]
     
-    def occurences(s: Symbol): List[SymTree]
+    def occurences(s: Symbol): List[Tree]
     
     def children(s: Symbol): List[DefTree]
   }

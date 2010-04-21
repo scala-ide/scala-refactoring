@@ -148,6 +148,9 @@ trait Partitioner extends PartitionerContributions {
             currentScope.lastChild map (_.requireAfter(new Requisite("}")))
           }
           
+        case (`emptyValDef`, Itself) =>  
+          super.apply
+
         case (t: Tree, Itself) =>
           addFragment(t)
           super.apply
@@ -573,7 +576,7 @@ trait Partitioner extends PartitionerContributions {
       case t: TypeTree => 
         if(t.original != null)
           traverse(t.original)
-        else if(t.pos == NoPosition && t.tpe != null)
+        else if((t.pos == NoPosition || t.pos.isRange) && t.tpe != null && t.tpe != NoType)
           handle(tree, Itself)
         super.traverse(tree)
       
@@ -590,7 +593,7 @@ trait Partitioner extends PartitionerContributions {
       case m @ ModuleDef(mods, name, impl) =>
         handle(tree, Itself)
         
-      case v @ ValDef(mods, name, tpt, rhs) =>
+      case v @ ValDef(mods, name, tpt, rhs) if v != emptyValDef =>
         if(!v.symbol.hasFlag(Flags.SYNTHETIC)) {
           handle(tree, Mods)
           handle(tree, Itself)
@@ -659,6 +662,8 @@ trait Partitioner extends PartitionerContributions {
         earlyBody foreach traverse
         
         parents foreach traverse
+        
+        traverse(t.self)
                 
         handle(tree → ClassBody(trueBody))
 

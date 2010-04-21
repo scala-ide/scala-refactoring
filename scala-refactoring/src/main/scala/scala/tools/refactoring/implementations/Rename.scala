@@ -44,9 +44,25 @@ abstract class Rename extends MultiStageRefactoring {
     val changes = new ModificationCollector {
       occurences foreach {
         transform2(_) {
-          case s: SymTree => occurences contains s
+          case t: Tree => occurences contains t
         } {
           case s: SymTree => mkRenamedSymTree(s, params.newName)
+          case t: TypeTree => 
+          
+            val newType = t.tpe map {
+              case r @ RefinedType(_ :: parents, _) =>
+                r.copy(parents = parents map {
+                  case TypeRef(_, sym, _) if sym == prepared.selectedLocal.symbol =>
+                    NamedType(params.newName, null)
+                  case t => t 
+                })
+              case t => t
+            }
+          
+            new TypeTree {
+              tpe = newType
+              pos = t.pos
+            }
         }
       }
     }

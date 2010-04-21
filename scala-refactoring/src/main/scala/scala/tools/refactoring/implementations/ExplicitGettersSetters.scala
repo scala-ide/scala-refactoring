@@ -34,7 +34,7 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications] = {
+  override def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications] = {
     
     import prepared._
     import params._

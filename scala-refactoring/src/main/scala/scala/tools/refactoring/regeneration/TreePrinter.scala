@@ -15,7 +15,7 @@ trait TreePrinter {
 
   def renderTree(part: WithTree) = printTree(part.tree)
   
-  private def printTree(tree: Trees#Tree) = context("print tree") { 
+  private def printTree(tree: Trees#Tree): String = context("print tree") { 
     (tree match {
       case DefDef(_, name, _, _, _, _) => name.toString
       
@@ -26,7 +26,12 @@ trait TreePrinter {
       case tree: TypeTree if tree.tpe != null => tree.tpe match {
         case tpe if tpe == EmptyTree.tpe => ""
         case tpe: ConstantType => tpe.underlying.toString
-        case _ => tree.tpe.toString
+        case r @ RefinedType(parents, _) =>
+          parents map {
+            case NamedType(name, _) => name.toString
+          } mkString
+        case _ => 
+          tree.tpe.toString
       }
       
       case Select(qualifier, name) => name.toString

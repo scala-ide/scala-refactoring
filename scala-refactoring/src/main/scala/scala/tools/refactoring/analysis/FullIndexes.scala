@@ -16,7 +16,7 @@ trait FullIndexes extends Indexes {
 
   val index = new Index {
 
-    private type Refs = ListBuffer[RefTree]
+    private type Refs = ListBuffer[Tree]
     private type Defs = ListBuffer[DefTree]
 
     private val defs = new HashMap[Symbol, DefTree]
@@ -45,7 +45,7 @@ trait FullIndexes extends Indexes {
 
     def references(s: Symbol) = occurences(s) filterNot (Some(_) == declaration(s))
 
-    def occurences(s: Symbol): List[SymTree] = {
+    def occurences(s: Symbol) = {
       s :: dependentSymbols(s) flatMap { s =>
         declaration(s).toList ::: refs.getOrElse(s, new Refs).toList ::: findInHierarchy(s)
       } filter (_.pos.isRange) distinct
@@ -96,13 +96,20 @@ trait FullIndexes extends Indexes {
 
     private def findInHierarchy(s: Symbol) = s match {
       case s: TermSymbol if s.owner.isClass =>
-
-        def allSubClasses(clazz: Symbol) = defs.filter(_._1.ancestors.contains(clazz))
-
+      
+        def allSubClasses(clazz: Symbol) = defs.filter {
+          case (defn, _) if defn.isClass => 
+            // it seems like I can't compare these symbols with ==?
+            defn.ancestors.exists(t => t.pos.sameRange(clazz.pos) && t.pos.source == clazz.pos.source)
+          case _ => false
+        }
+        
+        val alls = allSubClasses(s.owner)
+                
         val overrides = allSubClasses(s.owner) map {
-          case (sym, _) =>
+          case (otherClass, _) =>
             try {
-              s overriddenSymbol sym
+              s overriddenSymbol otherClass
             } catch {
               case e: Error =>
                 // ?
@@ -123,7 +130,7 @@ trait FullIndexes extends Indexes {
         chld.getOrElseUpdate(t.symbol.owner, new Defs) += t
       }
 
-      def addReference(s: Symbol, t: RefTree): Unit = refs.getOrElseUpdate(s, new Refs) += t
+      def addReference(s: Symbol, t: Tree): Unit = refs.getOrElseUpdate(s, new Refs) += t
 
       t foreach {
         // The standard traverser does not traverse a TypeTree's original:
@@ -143,6 +150,18 @@ trait FullIndexes extends Indexes {
           addDefinition(t)
         case t: RefTree =>
           addReference(t.symbol, t)
+        case t: TypeTree =>
+          
+          def handleType(typ: Type): Unit = typ match {
+            case RefinedType(parents, _) =>
+              parents foreach handleType
+            case TypeRef(_, sym, _) =>
+              addReference(sym, t)
+            case _ => ()
+          }
+          
+          handleType(t.tpe)
+          
         case _ => ()
       }
     }
