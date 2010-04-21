@@ -15,9 +15,7 @@ abstract class Rename extends MultiStageRefactoring {
   
   import global._
   
-  abstract class PreparationResult {
-    def selectedLocal: SymTree
-  }
+  case class PreparationResult(selectedLocal: SymTree, hasLocalScope: Boolean)
   
   abstract class RefactoringParameters {
     def newName: String
@@ -26,9 +24,7 @@ abstract class Rename extends MultiStageRefactoring {
   def prepare(s: Selection) = {
     s.selectedSymbolTree match {
       case Some(t) =>
-        Right(new PreparationResult {
-          val selectedLocal = t
-        })
+        Right(PreparationResult(t, s.findSelectedOfType[DefDef] map (_ != t) getOrElse false))
       case None => Left(PreparationError("no symbol selected found"))
     }
   }

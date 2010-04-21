@@ -22,7 +22,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractMethod with /*Silent*/Tracing {
+      val refactoring = new ExtractMethod with SilentTracing {
         val global = outer.global
         pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index.processTree _ )
       }

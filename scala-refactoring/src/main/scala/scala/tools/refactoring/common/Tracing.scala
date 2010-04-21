@@ -57,6 +57,6 @@ trait Tracing {
     print(border + msg.replaceAll("\n", "\n"+ border))
   }
   
-  def print(s: String) = println(s)
+  def print(s: String): Unit
 }
 

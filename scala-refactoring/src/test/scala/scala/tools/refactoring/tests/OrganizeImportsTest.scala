@@ -23,7 +23,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new OrganizeImports with /*Silent*/Tracing {
+      val refactoring = new OrganizeImports with SilentTracing {
 	      val global = outer.global
       }
       def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)

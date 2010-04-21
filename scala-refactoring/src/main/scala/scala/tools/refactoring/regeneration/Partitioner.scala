@@ -576,7 +576,7 @@ trait Partitioner extends PartitionerContributions {
       case t: TypeTree => 
         if(t.original != null)
           traverse(t.original)
-        else if((t.pos == NoPosition || t.pos.isRange) && t.tpe != null && t.tpe != NoType)
+        else if((t.pos == NoPosition || t.pos.isRange) && t.tpe != null && t.tpe != NoType && !t.pos.isTransparent)
           handle(tree, Itself)
         super.traverse(tree)
       

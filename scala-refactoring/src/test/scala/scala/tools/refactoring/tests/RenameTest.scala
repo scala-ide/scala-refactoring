@@ -8,7 +8,7 @@ package scala.tools.refactoring.tests
 import scala.tools.refactoring.implementations.Rename
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
-import scala.tools.refactoring.common.SilentTracing
+import scala.tools.refactoring.common.ConsoleTracing
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
@@ -18,7 +18,7 @@ class RenameTest extends TestHelper with TestRefactoring {
   outer =>
   
   def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new Rename with /*Silent*/Tracing {
+    val refactoring = new Rename with ConsoleTracing {
       val global = outer.global
       pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
       println(index.debugString)
