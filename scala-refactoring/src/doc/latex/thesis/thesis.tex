@@ -1,0 +1,104 @@
+\documentclass[10pt,a4paper,oneside]{scrreprt}
+\usepackage{mystyle}
+
+\begin{document}
+
+\begin{titlepage}
+ 
+\begin{center}
+ 
+\textsc{\Large University of Applied Sciences Rapperswil}
+ 
+\textsc{Master's Thesis}
+
+\rule{0.83\textwidth}{0.4pt}
+
+\vspace{0.2cm}
+
+\normalsize{\textit{Spring Semester 2010}}
+
+\vspace*{\fill}
+ 
+\Huge{\textit{Refactoring for Scala}}
+
+\vspace*{\fill}
+\vspace{\baselineskip}
+
+\normalsize{\textit{scala.ifs.hsr.ch}}
+
+\rule{0.83\textwidth}{0.4pt}
+\vskip0.35cm
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Author}\\
+Mirko \textsc{Stocker}
+\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Supervisor} \\
+Prof. Peter \textsc{Sommerlad}
+\end{flushright}
+\end{minipage}
+ 
+\end{center}
+ 
+\end{titlepage}
+
+\include{0_front}
+
+\newpage
+
+\setcounter{tocdepth}{2}
+
+\tableofcontents
+
+\newpage
+
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+
+\chapter{Scala Internals}
+only AST and symbols, but with more detail, refer to the term project for the compiler organization and introduction.
+
+
+\chapter{Library Internals}
+\section{Analysis}
+\section{Transformation}
+\section{Code Generation}
+
+
+\chapter{Refactoring Implementations}
+
+describe each refactoring, with examples, problems, corner cases and the actual implementation
+
+\section{Rename}
+\section{Organize Imports}
+\section{Extract Method}
+\section{Extract Local}
+
+
+\chapter{Integration}
+
+for developers: how can the refactorings be integrated into a new tool?
+for readers: how does the current integration look like
+
+\chapter{Testing}
+
+
+\chapter{Outlook}
+
+\section{Acknowledgments}
+
+
+I would like to thank ..
+\appendix
+
+\include{9_appendix}
+
+\clearpage
+\bib
+
+\end{document}

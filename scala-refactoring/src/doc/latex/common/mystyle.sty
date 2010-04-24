@@ -1,0 +1,104 @@
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+%\input{graphviz}
+\usepackage{nomencl}
+\usepackage{varioref}
+\usepackage[colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black, plainpages=false]{hyperref}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[scaled]{beramono}
+\usepackage{mathpazo}
+%\usepackage{fourier}
+%\usepackage{bookman}
+\usepackage{textcomp}
+\usepackage{marvosym}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{balance}
+\usepackage{microtype}
+\usepackage{framed}
+\usepackage[hyphenbreaks]{breakurl}
+\usepackage{needspace}
+\usepackage{amssymb}
+\usepackage{color,soul}
+\usepackage{colortbl}
+\usepackage{everypage}
+\usepackage{tabularx}
+\usepackage{multicol}
+%\usepackage{draftwatermark}
+%\SetWatermarkLightness{0.95} 
+%\SetWatermarkScale{2}
+\usepackage{floatpag}
+\usepackage{booktabs}
+\usepackage[nottoc]{tocbibind}
+
+\makeatletter
+\def\url@mistostyle{%
+  \@ifundefined{selectfont}{\def\UrlFont{\sf}}{\def\UrlFont{\sffamily}}}
+\makeatother
+\urlstyle{misto}
+
+\linespread{1.05}
+\setkomafont{sectioning}{\rmfamily \bfseries}
+\usepackage{fixltx2e} % Current patches for LaTeX
+
+\setlength{\columnsep}{.3in}
+
+\usepackage{listings}
+
+\definecolor{MyBlue}{rgb}{.67843137254901960784, .84705882352941176470, .90196078431372549019}
+
+\newcommand{\bluebox}  [1] {\sethlcolor{MyBlue}\hl{#1}}
+\newcommand{\redbox}   [1] {\colorbox{MyRed}{#1}}
+\newcommand{\greenbox} [1] {\colorbox{MyGreen}{#1}}
+
+\newcommand*\bluecell{\cellcolor{MyBlue}}
+
+\setlength{\extrarowheight}{2mm}
+
+\lstdefinelanguage{scala}{
+  alsoletter={@~`},
+  keywords={[1]abstract,case,catch,class,def,do,else,extends,false,final,finally,for,if,implicit,import,match,mixin,new,null,object,override,package,private,protected,requires,return,sealed,super,this,trait,true,try,type,val,var,while,with,yield}, 
+  keywordstyle={[1]\bfseries}, %\color{blue} 
+  morekeywords={[2]=,=>,<-,<\%,<:,>:,\#,@},
+  %keywordstyle={[2]\color{dark-green}},   
+  sensitive=true,%
+  morecomment=[l]//,%
+  morecomment=[n]{/*}{*/},%
+  morestring=[b]",%
+  morestring=[b]',%
+  morestring=[b]""",%
+  keywordstyle=\bfseries, %\color{blue} 
+  identifierstyle=, % nothing happens
+  commentstyle=\textit, %\color{light-gray} 
+  stringstyle=\textit, % 
+  columns=flexible
+}[keywords,comments,strings]%
+
+% Default settings for code listings
+\lstset{escapechar=\%,frame=tb,language=scala,aboveskip=3mm,belowskip=3mm,showstringspaces=false,columns=fullflexible,basicstyle={\small\sffamily}}
+
+
+\makenomenclature
+
+\include{nomenclature}
+
+\newcommand{\inputlisting}[3]{
+  \begin{figure}
+  \lstinputlisting{listings/#1}
+  \caption{#2}
+  \label{code:#3}
+  \end{figure}
+}
+
+\newcommand{\src}[1]{\sffamily #1\rmfamily}
+\newcommand{\figref}[1]{Figure~\vref{#1}} 
+\newcommand{\secref}[1]{Section~\vref{#1}} 
+
+\newcommand{\sub}[1]{$_{\textrm{\footnotesize{#1}}}$}
+\newcommand{\subtt}[1]{$_{\texttt{\footnotesize{#1}}}$}
+
+\newcommand{\bib}{
+ \balance
+ \bibliographystyle{alpha}
+ \bibliography{bibliography}
+}
