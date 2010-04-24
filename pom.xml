@@ -31,6 +31,14 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+	<artifactId>latex-maven-plugin</artifactId>
+	<version>1.0</version>
+	<configuration>
+	  <docsRoot>src/doc/latex</docsRoot>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.sonatype.tycho</groupId>
         <artifactId>tycho-maven-plugin</artifactId>
         <version>0.8.0</version>
@@ -78,6 +86,16 @@
       <name>Scala Tools Maven2 Repository</name>
       <url>http://scala-tools.org/repo-snapshots</url>
       <snapshots/>
+    </repository>
+    <repository>
+      <id>codehaus</id>
+      <name>Maven Codehaus repository</name>
+      <url>http://repository.codehaus.org/</url>
+    </repository>
+    <repository>
+      <id>codehaus-snapshots</id>
+      <name>Maven Codehaus snapshot repository</name>
+      <url>http://snapshots.repository.codehaus.org/</url>
     </repository>
   </repositories>
   <properties>
