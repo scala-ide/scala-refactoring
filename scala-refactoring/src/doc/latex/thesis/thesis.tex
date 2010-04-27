@@ -3,48 +3,6 @@
 
 \begin{document}
 
-\begin{titlepage}
- 
-\begin{center}
- 
-\textsc{\Large University of Applied Sciences Rapperswil}
- 
-\textsc{Master's Thesis}
-
-\rule{0.83\textwidth}{0.4pt}
-
-\vspace{0.2cm}
-
-\normalsize{\textit{Spring Semester 2010}}
-
-\vspace*{\fill}
- 
-\Huge{\textit{Refactoring for Scala}}
-
-\vspace*{\fill}
-\vspace{\baselineskip}
-
-\normalsize{\textit{scala.ifs.hsr.ch}}
-
-\rule{0.83\textwidth}{0.4pt}
-\vskip0.35cm
-\begin{minipage}{0.4\textwidth}
-\begin{flushleft} \large
-\emph{Author}\\
-Mirko \textsc{Stocker}
-\end{flushleft}
-\end{minipage}
-\begin{minipage}{0.4\textwidth}
-\begin{flushright} \large
-\emph{Supervisor} \\
-Prof. Peter \textsc{Sommerlad}
-\end{flushright}
-\end{minipage}
- 
-\end{center}
- 
-\end{titlepage}
-
 \include{0_front}
 
 \newpage
@@ -58,13 +16,11 @@ Prof. Peter \textsc{Sommerlad}
 \pagenumbering{arabic}
 
 \chapter{Introduction}
-
-
-\chapter{Scala Internals}
-only AST and symbols, but with more detail, refer to the term project for the compiler organization and introduction.
-
+\section{Problem Outline, Motivation}
+\section{Thesis Topics}
 
 \chapter{Library Internals}
+\section{Overview}
 \section{Analysis}
 \section{Transformation}
 \section{Code Generation}
@@ -72,7 +28,7 @@ only AST and symbols, but with more detail, refer to the term project for the co
 
 \chapter{Refactoring Implementations}
 
-describe each refactoring, with examples, problems, corner cases and the actual implementation
+describe each refactoring, with examples, problems, corner cases and the actual implementation. show the library internals in action.
 
 \section{Rename}
 \section{Organize Imports}
@@ -82,19 +38,41 @@ describe each refactoring, with examples, problems, corner cases and the actual 
 
 \chapter{Integration}
 
-for developers: how can the refactorings be integrated into a new tool?
-for readers: how does the current integration look like
+how can the refactorings be integrated into a new tool?
+how does the current integration look like
 
 \chapter{Testing}
 
+don't describe the unit tests but show how the refactoring tests work
 
 \chapter{Outlook}
 
 \section{Acknowledgments}
 
+I would like to thank ..
+
+\section{Future Work}
 
 I would like to thank ..
+
+
 \appendix
+
+\chapter{User Guide}
+
+User guide, also in HTML on the Wiki.
+
+\chapter{Developer How-To}
+
+A short introduction by example, for more depth, refer to the main documentation.
+
+\chapter{Scala Internals}
+
+only AST and symbols, but with more detail, refer to the term project for the compiler organization and introduction.
+
+first the general cases and then more complex and surprising examples
+
+also build stand-alone and publish on the project page.
 
 \include{9_appendix}
 
