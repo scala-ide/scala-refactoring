@@ -85,7 +85,7 @@ archive=true
 column=0
 encoding=UTF-8
 highlight=LaTeX
-line=80
+line=61
 mode=LaTeX
 open=true
 order=0
@@ -100,4 +100,4 @@ CursorLine=0
 
 [view-settings,view=0,item:thesis.tex]
 CursorColumn=0
-CursorLine=80
+CursorLine=61

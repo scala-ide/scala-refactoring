@@ -14,12 +14,15 @@ import scala.tools.nsc.ast.Trees
 
 // FIXME operations tests
 @Test
-class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with Formatting {
+class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with Formatting with AstTransformations {
+  
+  implicit def stringToPrettyPrint(original: String) = new {
+    def cleanTree(s: String) = (removeAuxiliaryTrees andThen emptyAllPositions)(treeFrom(s)).get
+    def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)).get)
+  }
   
   @Test
-  def test1() = {
-    
-    val tree = treeFrom("""
+  def testMethodSignatures() = """
     package xy
     
     class A {
@@ -28,12 +31,29 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
       def c() = 5
       def d() = {
         val a = 5
-        a + 0
+        a
       }
+      def e(i: Int) = i
+      def f(i: Int)(j: Int) = i+j
+      def g(i: Int, j: Int) = i+j
+      def h(i: Int, j: Int): (Int, Int) = (i, j)
+      def id[A](a: A) = a
     }
-    """)
-    println(generate(tree).get)
-    
-  }
+    """ prettyPrintsTo """package xy
+class A {
+def a: Int
+def b: Int = 5
+def c = 5
+def d = {
+val a = 5
+a
+}
+def e(i: Int) = i
+def f(i: Int)(j: Int) = i.+(j)
+def g(i: Int, j: Int) = i.+(j)
+def h(i: Int, j: Int): (Int, Int) = (i, j)
+def id[A](a: A) = a
+}
+"""
 }
 
