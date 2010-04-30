@@ -8,18 +8,50 @@ package scala.tools.refactoring.tests.sourcegen
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 import junit.framework.TestCase
+import org.junit.Assert
 import org.junit.Assert._
 import scala.tools.refactoring.sourcegen._
+import scala.tools.refactoring.common._
 import scala.tools.nsc.ast.Trees
+import scala.tools.nsc.io.AbstractFile
 
-// FIXME operations tests
 @Test
-class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with Formatting with AstTransformations {
+class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with Formatting with AstTransformations with ConsoleTracing {
+  
+  import global._
+  import treetransformations._
+  
+  def treeForFile(file: AbstractFile) = {
+    global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
+  }
   
   implicit def stringToPrettyPrint(original: String) = new {
     def cleanTree(s: String) = (removeAuxiliaryTrees andThen emptyAllPositions)(treeFrom(s)).get
     def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)).get)
   }
+  
+  @Test
+  def testx() = {
+    
+    val tree = treeFrom("""
+      /*a*/package /*b*/xyz/*c*/
+      // now a class
+      class A
+      {
+        val a: Int = 5 //a
+        val b = "huhu" //b
+      }
+    """)
+
+    val emptyBody = treetransformations.transform[Tree, Tree] {
+      case t: Template => t.copy(body = t.body.reverse) setPos t.pos
+    }
+    
+    println("«"+ generate(removeAuxiliaryTrees/* andThen topdown(some(emptyBody))*/ apply tree get).get +"»")
+    
+    Assert.fail()
+  }
+  
   
   @Test
   def testMethodSignatures() = """

@@ -79,10 +79,14 @@ trait PrettyPrinter {
   //      traverse(annot)
   //      traverse(arg)
         
+      case Template(parents, self, Nil) =>
+        parents.print() //+
+        //self.print()
+        
       case Template(parents, self, body) =>
-        parents print ()
-        self print ()
-        body print (before = " {\n", separator = "\n", after = "\n}\n")
+        parents.print() +
+        //self.print() +
+        body.print(before = " {\n", separator = "\n", after = "\n}\n")
 
       case Block(stats, expr) =>
         val all = stats ::: expr :: Nil

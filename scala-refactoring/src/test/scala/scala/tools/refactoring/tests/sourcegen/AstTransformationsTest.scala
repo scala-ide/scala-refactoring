@@ -10,13 +10,19 @@ import org.junit.Test
 import junit.framework.TestCase
 import org.junit.Assert._
 import scala.tools.refactoring.sourcegen._
+import scala.tools.refactoring.common._
 import scala.tools.nsc.ast.Trees
+import scala.tools.nsc.io.AbstractFile
 
 @Test
-class AstTransformationsTest extends TestHelper with AstTransformations {
+class AstTransformationsTest extends TestHelper with AstTransformations with PimpedTrees {
   
   import treetransformations._
   import global._
+  
+  def treeForFile(file: AbstractFile) = {
+    global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
+  }
   
   def assertAllRangesOrNoPosition(t: Tree) =  assertFalse(t.exists(t => !(t.pos.isRange || t.pos == global.NoPosition)))
   
