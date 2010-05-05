@@ -42,13 +42,13 @@ ReadWrite=true
 
 [item:../common/mystyle.sty]
 archive=true
-column=0
+column=19
 encoding=UTF-8
 highlight=LaTeX
-line=0
+line=21
 mode=LaTeX
-open=false
-order=-1
+open=true
+order=1
 
 [item:0_front.tex]
 archive=true
@@ -70,6 +70,16 @@ mode=
 open=false
 order=-1
 
+[item:mystyle.sty]
+archive=true
+column=0
+encoding=
+highlight=
+line=0
+mode=
+open=false
+order=-1
+
 [item:thesis.kilepr]
 archive=true
 column=892623471
@@ -82,22 +92,22 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=0
+column=104
 encoding=UTF-8
 highlight=LaTeX
-line=20
+line=127
 mode=LaTeX
 open=true
 order=0
 
 [view-settings,view=0,item:../common/mystyle.sty]
-CursorColumn=0
-CursorLine=0
+CursorColumn=19
+CursorLine=21
 
 [view-settings,view=0,item:0_front.tex]
 CursorColumn=0
 CursorLine=41
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=0
-CursorLine=20
+CursorColumn=104
+CursorLine=127

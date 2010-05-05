@@ -16,19 +16,221 @@
 \pagenumbering{arabic}
 
 \chapter{Introduction}
-\section{Problem Outline, Motivation}
-\section{Thesis Topics}
+\section{Problem Outline}
+\section{Thesis Goals}
 
-\chapter{Library Internals}
+\chapter{Refactoring Library}
+
+describes the three main modules of the refactoring library.
+
 \section{Overview}
 \section{Analysis}
+
+explain the symbol index to resolve symbols to trees
+
 \section{Transformation}
+
+At the heart of every refactoring lies a \textit{transformation} that takes the current program in its abstract syntax tree form and transforms it into its refactored form. Such a transformation can be as simple as changing names -- think of the Rename refactoring -- or restructure large parts of the AST as in an Extract or Move refactoring. 
+
+Often, a larger refactoring comprises many smaller transformations. A simple example is the Extract Method refactoring, which can be assembled from three basic transformations:
+
+\begin{description}
+ \item[Create Method] to introduce a new (empty) method.
+ \item[Copy Statements] to copy the selected statements into the newly created method.
+ \item[Replace Statements] to replace the original statements that have been copied to the new method with a call to it.
+\end{description}
+
+The \textit{replace} transformation itself is again a combination of two even more fundamental transformations: \textit{insert} and \textit{delete}. Once we have our Extract Method transformation, it can then again be combined with other transformations -- for example into an Extract Class refactoring. It should be clear from this that the key to a reusable refactoring library lies in the composability of its transformations. 
+
+Conceptually, chaining simple transformations to build more powerful ones follows the Unix pipes philosophy. The design of this implementation was inspired by the Stratego program transformation tool-set (referenz) and the Kiama language processing library (referenz). Functional programming also uses the term \textit{combinator} to denote functions that can be combined and yield new functions of the same kind. An example of this are parser combinators (referenz), which are also contained in the Scala standard library.
+
+In contrast to unix pipes that operate on their input line by line, performing transformations on trees adds an additional dimension. When transforming trees, we are also concerned with questions on how we want to traverse the tree -- i.e. top-down or bottom-up -- and to which children a transformation should be applied. The presented implementation handles all these concerns in a uniform way.
+
+In the remainder of this section, we will develop the basics of our transformation combinators and show examples of their usage.
+
+\subsection{Transformations}
+
+A refactoring transformation is essentially a function that transforms a tree into an other tree. But because most transformations do not apply to all kinds of possible trees, we model a transformation as a function of type $Tree\Rightarrow Option[Tree]$, making use of Scala's \src{Option} monad to indicate inability to transform. In the actual implementation, the transformations are implemented generically as a \src{Transformation[A,~B]} that extend \src{A~$\Rightarrow$~Option[B]}:
+
+\begin{lstlisting}
+abstract class Transformation[A, B] extends (A %$\Rightarrow$% Option[B]) {
+  self %$\Rightarrow$%
+  def apply(in: A): Option[B]
+  ...
+}
+\end{lstlisting}
+
+The explicit self type annotation\footnote{In this case, think of the self type annotation as an alias for \src{this} that can be used in the body of the class.} will be used later in the implementation of the combinators. Note that all transformations are implemented generically, but to make the explanations more clear, we will assume that they are used to transform trees.
+
+Transformations can be created from partial functions using the \src{transform} convenience function. As an example, we create a transformation that reverses the order of a class, trait, or object's member definitions and apply it to a given template instance.
+
+\begin{lstlisting}
+def transform[A, B](f: PartialFunction[A, B]) = new Transformation[A, B] {
+  def apply(t: A): Option[B] = f lift t
+}
+
+val reverseTemplateMembers = transform[Tree, Tree] {
+  case t: Template %$\Rightarrow$% t copy (body = t.body.reverse)
+}
+
+val result: Option[Tree] = reverseTemplateMembers(template)
+\end{lstlisting}
+
+Now that we have a way to create single transformations, we need to be able to combine them. To do this in various ways, we introduce several combinators. We use a notational shortcut to denote transformations: $A \overset{t}{_\rightarrow} [B]$ is a \src{Transformation [A, B]}.
+
+There also exist two basic transformations, one that always succeeds, returning its input unchanged, and one that always fails, independent of its input. Depending on the context, the alias \src{id} for \src{succeed} might be a better fit and is provided as well.
+
+\begin{lstlisting}
+def succeed[A] = new Transformation[A, A] {
+  def apply(a: A): Option[A] = Some(a)
+}
+
+def id[X] = success[X]
+
+def fail[A] = new Transformation[A, A] {
+  def apply(a: A): Option[A] = None
+}
+\end{lstlisting}
+
+\subsection{Combinators}
+
+There are several existing combinators already implemented in the library. On the right of each paragraph, the symbolic or alphanumeric name and type of the transformation is shown.
+
+\paragraph{Sequence} \hfill \lstinline{*>: } $(A \overset{t}{\rightarrow} [B]) \Rightarrow (B \overset{t}{\rightarrow} [C]) \Rightarrow (A \overset{t}{\rightarrow} [C])$
+
+\vspace{7pt} Combines two transformations so that the second one is only applied when the first one succeeded. The result of the first transformation is passed into the second one. This is implemented as the \src{andThen} method -- or alternatively with the \src{*>} operator -- on \src{Transformation}, which takes the second transformation as a by-name parameter:
+
+\begin{lstlisting}
+  def andThen[C](t: %$\Rightarrow$% Transformation[B, C]) = new Transformation[A, C] {
+    def apply(a: A): Option[C] = {
+      self(a) flatMap t
+    }
+  }
+  def *>[C](t: %$\Rightarrow$% Transformation[B, C]) = andThen(t)
+\end{lstlisting}
+
+
+\paragraph{Choice} \hfill \lstinline{|>: } $(A \overset{t}{\rightarrow} [B]) \Rightarrow (A \overset{t}{\rightarrow} [B]) \Rightarrow (A \overset{t}{\rightarrow} [B])$
+
+\vspace{7pt} Combines two transformations so that the second one is only applied in case the first one fails. The implementation is directly based on the underlying \src{Option} type in the \src{orElse} method on \src{Transformation} and also has an operator alias:
+
+\begin{lstlisting}
+  def orElse(t: %$\Rightarrow$% Transformation[A, B]) = new Transformation[A, B] {
+    def apply(a: A): Option[B] = {
+      self(a) orElse t(a)
+    }
+  }
+  def |>(t: %$\Rightarrow$% Transformation[A, B]) = orElse(t)
+\end{lstlisting}
+
+With these two combinators, we are already able to represent conditional transformations. For example, given a transformation \src{isClass} that acts as a predicate, and two transformations \src{a} and \src{b} that represent the two possible branches the transformation can take, we can combine them into a new transformation \src{isClass *> a |> b} that executes the \src{a} transformation if the \src{isClass} transformation succeeds or \src{b} if either \src{isClass} or \src{a} fails.
+
+Note that due to Scala's precedence rules, the \src{|>} combinator has a lower precedence than \src{*>}.
+
+\paragraph{Predicate} \hfill \lstinline{predicate: } $(A \overset{?}{\rightarrow} Boolean) \Rightarrow (A \overset{t}{\rightarrow} [A])$
+
+\vspace{7pt} As we have seen, transformations can be used as predicates, but usually we want to construct a predicate from a function that returns a boolean value. This can be done with the \src{predicate} function which create a transformation from a partial function.
+
+\begin{lstlisting}
+def predicate[A](f: %$\Rightarrow$% PartialFunction[A, Boolean]) = new Transformation[A, A] {
+  def apply(a: A): Option[A] = if (f.isDefinedAt(a) && f(a)) Some(a) else None
+}
+\end{lstlisting}
+
+\paragraph{Not} \hfill \lstinline{not: } $(A \overset{t}{\rightarrow} [A]) \Rightarrow (A \overset{t}{\rightarrow} [A])$
+
+\vspace{7pt} A combinator that inverts a transformation. Given a transformation that succeeds, then \src{not} will fail. Should the given transformation fail, then \src{not} returns the original input unchanged. This behavior is useful for transformations that act as predicates; \src{not} can be implemented using the \src{fail} and \src{id} transformations as follows.
+
+\begin{lstlisting}
+def not[A](t: %$\Rightarrow$% Transformation[A, A]) = t *> fail |> succeed
+\end{lstlisting}
+
+Now that we have several means to specify and combine our transformations, we also need a way to apply them to a whole AST, instead of just single tree nodes. For this, there exist several traversal strategies.
+
+\subsection{Traversal}
+
+Applying a transformation to a single tree element is not difficult, but once we want to traverse the whole AST, we need a way to apply a transformation to all children of a tree node and to construct a new tree from the result of the transformation operation. Note that traversal strategies are also just transformations that can again be combined.
+
+\paragraph{All} \hfill  $\forall: (A \overset{t}{\rightarrow} [B]) \Rightarrow (A \overset{t}{\rightarrow} [B])$
+
+\vspace{7pt} Takes a transformation and creates a new one that applies the given transformation to all children, returning a single tree. Because there is no generic way to get all children and construct a new tree, we constrain the type parameter \src{A} to be convertible to $(A \Rightarrow B) \Rightarrow B$. This means that the user of the generic transformation has to pass us its children and create a new tree. When a child cannot be transformed, \src{all} immediately aborts and returns \src{None}.
+
+\begin{lstlisting}
+def all[A <%\%% (A %$\Rightarrow$% B) %$\Rightarrow$% B, B](t: %$\Rightarrow$% Transformation[A, B]) = new Transformation[A, B] {
+  def apply(a: A): Option[B] = {
+    Some(a(child %$\Rightarrow$% t(child) getOrElse (return None)))
+  }
+}
+def %$\forall$% [A <%\%% (A %$\Rightarrow$% B) %$\Rightarrow$% B, B](t: %$\Rightarrow$% Transformation[A, B]) = all(t)
+\end{lstlisting}
+
+(\src{X <\% Y} is called a \textit{view bound} and demands that there exists an implicit conversion from type \src{X} to \src{Y}. This is less constrictive than \src{X <: Y}, where \src{X} has to be a subtype of \src{Y}. In our case, we can then treat \src{a} as if it were of type \src{(A $\Rightarrow$ B) $\Rightarrow$ B}. This allows us to apply the transformation to the children of \src{a}.)
+
+\paragraph{Some} \hfill $\exists: (A \overset{t}{\rightarrow} [A]) \Rightarrow (A \overset{t}{\rightarrow} [A])$
+
+\vspace{7pt} The \src{all} traversal only succeeds when the transformation can be applied to all children. If children that cannot be transformed should simply be kept and passed to the new tree unchanged, we can use the \src{some} transformation or its $\exists$ alias.
+
+\begin{lstlisting}
+def some[A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\forall$%(t |> id[A])
+def %$\exists \hspace{11pt}$% [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = some(t)
+\end{lstlisting}
+
+Using the \src{id} transformation, we retain the original tree should the transformation not be applicable. A consequence of this is that the transformation needs to be done between the same types.
+
+\paragraph{Once} \hfill \lstinline{once: } $(A \overset{t}{\rightarrow} [A]) \Rightarrow (A \overset{t}{\rightarrow} [A])$
+
+\vspace{7pt} Applies a transformation and stops on the first successful application... not yet implemented.
+\\\\
+The next step after being able to apply a transformation to a tree or all of its children is to expand this to the AST as a whole. We can distinguish between two fundamental ways of transforming a tree: either in a top-down or bottom-up fashion.
+
+\paragraph{Top Down} \hfill $\downarrow: (A \overset{t}{\rightarrow} [A]) \Rightarrow (A \overset{t}{\rightarrow} [A])$
+
+\vspace{7pt} Top-down application of a transformation applies it to the parent first and then descends into its children. The consequence is that once a child gets transformed, its children are still in their original, untransformed state.
+
+\begin{lstlisting}
+  def %$\downarrow$ \hspace{19pt} %      [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = t *> %$\forall$%(%$\downarrow$%(t))
+  def topdown[A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\downarrow$%(t)
+\end{lstlisting}
+
+\paragraph{Bottom Up} \hfill $\uparrow: (A \overset{t}{\rightarrow} [A]) \Rightarrow (A \overset{t}{\rightarrow} [A])$
+
+\vspace{7pt} Bottom-up application first descends into the children of a tree and processes the parent after the children. Thus once a tree gets transformed, its children have already been transformed.
+
+\begin{lstlisting}
+  def %$\uparrow$ \hspace{27pt} %      [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\forall$%(%$\uparrow$%(t)) *> t
+  def bottomup [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\uparrow$%(t)
+\end{lstlisting}
+
+Combining all these transformations with combinators and traversal strategies allows us to describe transformations in a very concise way, as we can see in the following examples.
+
+\subsection{Examples}
+
+As a first example, let us write a transformation that replaces all trees in the AST which do not have a range position with the \src{EmptyTree}.
+
+\begin{lstlisting}
+val hasRangePosition = predicate[Tree] {
+  case t: Tree =>  t.pos.isRange
+}
+
+val emptyTree = transform[Tree, Tree] {
+  case _ => EmptyTree
+}
+
+val keepTree = id[Tree]
+
+val removeNonRangePositionTrees = %$\downarrow$%(hasRangePosition *> keepTree |> emptyTree)
+\end{lstlisting}
+
+.. hier noch mehr ..
+
+
 \section{Code Generation}
+explain the pretty printer and layout preserving source generator.
 
 
 \chapter{Refactoring Implementations}
 
-describe each refactoring, with examples, problems, corner cases and the actual implementation. show the library internals in action.
+describe each refactoring, with examples, problems, corner cases and the actual implementation. shows the library internals from the previous chapter in action.
 
 \section{Rename}
 \section{Organize Imports}
@@ -43,7 +245,7 @@ how does the current integration look like
 
 \chapter{Testing}
 
-don't describe the unit tests but show how the refactoring tests work
+don't describe the unit tests but show how the refactoring tests work and how one could write new test cases.
 
 \chapter{Outlook}
 
@@ -53,14 +255,13 @@ I would like to thank ..
 
 \section{Future Work}
 
-I would like to thank ..
-
+what is left to do, how can the work be extended
 
 \appendix
 
 \chapter{User Guide}
 
-User guide, also in HTML on the Wiki.
+User guide, also in HTML on the Wiki. Describes the usage of the implemented refactoring along with their shortcomings.
 
 \chapter{Developer How-To}
 
