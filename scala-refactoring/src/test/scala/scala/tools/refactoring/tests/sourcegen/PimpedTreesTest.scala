@@ -28,6 +28,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees with AstTransformation
 
     class Test {
       val test = 42
+      val test2 = 42
     }
 
     """)
@@ -57,7 +58,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees with AstTransformation
     
     val root = i.originalParent flatMap (_.originalParent flatMap (_.originalParent flatMap (_.originalParent))) get
     
-    assertEquals(tree, root)
+    assertTrue(root.isInstanceOf[PackageDef])
   }
   
   @Test
@@ -71,23 +72,13 @@ class PimpedTreesTest extends TestHelper with PimpedTrees with AstTransformation
     
     val v = tree.find(_.isInstanceOf[ValDef]).get
     
-    assertEquals(
-        """java.lang.Object with ScalaObject {
-  def this(): treetest.Test = {
-    Test.super.this();
-    ()
-  };
+    assertEquals("""<empty> with <empty> {
   private[this] val test: Int = 42;
-  <stable> <accessor> def test: Int = Test.this.test
+  private[this] val test2: Int = 42
 }""", v.originalParent.get.toString)
     
-    assertEquals(
-        """def this(): treetest.Test = {
-  Test.super.this();
-  ()
-}""", v.originalLeftSibling.get.toString)
-
-    assertEquals("<stable> <accessor> def test: Int = Test.this.test", v.originalRightSibling.get.toString)
+    assertEquals(None, v.originalLeftSibling)
+    assertEquals("private[this] val test2: Int = 42", v.originalRightSibling.get.toString)
   }
 
 }

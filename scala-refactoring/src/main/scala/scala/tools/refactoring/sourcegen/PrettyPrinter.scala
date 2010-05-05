@@ -5,9 +5,9 @@ trait PrettyPrinter {
   val global: scala.tools.nsc.interactive.Global
   import global._
   
-  val transformations: Transformations[Tree]
+  import Transformations._
   
-  def prettyPrintTree(traverse: transformations.Transformation[Tree, String], t: Tree): String = { 
+  def prettyPrintTree(traverse: Transformation[Tree, String], t: Tree): String = { 
     
     implicit def treeToPP(t: Tree) = new {
       def print (
@@ -71,10 +71,21 @@ trait PrettyPrinter {
   //    case LabelDef(name, params, rhs) =>
   //      params map traverse
   //      traverse(rhs)
-  //      
-  //    case Import(expr, selectors) =>
-  //      traverse(expr)
-  //      
+        
+      case Import(expr, selectors) =>
+        
+        def renames(s: ImportSelector) = s.rename != null && s.name != s.rename
+        val needsBraces = selectors.size > 1 || selectors.exists(renames)
+        
+        val ss = (selectors map { s =>
+          if(renames(s))
+            s.name.toString + " => " + s.rename.toString  
+          else
+            s.name.toString
+        } mkString ", ")
+        
+        "import " + expr.print() + "." + (if(needsBraces) "{" + ss + "}" else ss)
+        
   //    case Annotated(annot, arg) =>
   //      traverse(annot)
   //      traverse(arg)

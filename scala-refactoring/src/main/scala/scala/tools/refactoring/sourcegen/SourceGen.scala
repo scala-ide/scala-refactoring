@@ -10,105 +10,132 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
   val global: scala.tools.nsc.interactive.Global
   import global._
  
-  val transformations = new Transformations[Tree]
-  import transformations._
-  
-  def originalLayout()(implicit t: Tree): List[(Layout, Layout)] = {
+  import Transformations._
+    
+  /**
+   * For the given Tree, return a pair of Layout elements that contain
+   * the leading and trailing original layout elements.
+   * 
+   * If the tree has no children, then a pair of empty layouts will be
+   * returned.
+   * */
+  def originalEnclosingLayout(t: Tree): (Layout, Layout) = {
     
     val originalTree = findOriginalTree(t).get //exception is ok for now
     
-    val children = (originalTree match {
-      
-      // don't forget the mods!
-      
-      case t @ PackageDef(pid, stats) => 
-        pid :: stats
-      
-      case t @ ClassDef(mods, name, tparams, impl) =>
-        NameTree(name, t.namePosition) :: tparams ::: impl :: Nil
-        
-      case t @ Template(parents, self, body) =>
-        parents ::: self :: body
-        
-      case t @ ValDef(mods, name, tpt, rhs) =>
-       NameTree(name, t.namePosition) :: tpt :: rhs :: Nil
-       
-      case t => Nil
-    }) filterNot (_.pos == NoPosition)
-
-    val a = splitLayoutBetweenParentAndFirstChild(parent = originalTree, child = children.head)
-    val c = splitLayoutBetweenLastChildAndParent(child = children.last, parent = originalTree)
-    
-    a :: c :: Nil
-
+    children(originalTree) match {
+      case Nil =>
+        NoLayout → NoLayout // XXX? between siblings instead?
+      case c => 
+        splitLayoutBetweenParentAndFirstChild(parent = originalTree, child = c.head)._1 →
+        splitLayoutBetweenLastChildAndParent(child = c.last, parent = originalTree)._2
+    }
   }
-  
+
   def printWithExistingLayout(f: Transformation[Tree, String], left: String, t: Tree, right: String) = {
     
-    implicit val currentTree = t
     implicit val currentFile = t.pos.source
     
-    val originalTree = findOriginalTree(t).get //exception is ok for now
+    def handle(t: Tree) = f(t) getOrElse ""
     
-    trace("leading:  %s", left)
-    trace("trailing: %s", right)
+    def handleMany(ts: List[Tree], separator: String = ""): String = ts match {
+      case Nil       => ""
+      case x :: Nil  => handle(x)
+      case x :: rest => handle(x) + separator + handleMany(rest, separator)
+    }
+    
+    def handleModifiers(mods: List[ModifierTree], orig: List[ModifierTree]) = {
+      if(mods zip orig exists (x => x._1.pos != x._2.pos)) {
+        "mods != modsOrig"
+      } else if (mods.isEmpty) { 
+         ""
+      } else {
+        layout(mods.head.pos.start, mods.last.pos.end).toString
+      }
+    }
+    
+    val originalTree = findOriginalTree(t).getOrElse{
+      val failed = t
+      throw new Exception("original tree not found for: "+ t)
+    }
+
+    val (l, r) = originalEnclosingLayout(t)
+    
+    trace("begin:  %s", l.toString)
+    trace("end:    %s", r.toString)
     
     val center = (t, originalTree) match {
+            
+      case (t @ PackageDef(pid, stats), orig: PackageDef) =>
+        handle(pid) + handleMany(stats)
       
-      // we can solve it generic for all trees that have only subtrees but no names, etc.
+      case (t @ ClassDef(mods, name, tparams, impl), orig @ ClassDef(ModifiersTree(modsOrig), _, _, _)) =>
+        name.toString + handle(impl)
       
-      case (t @ PackageDef(pid, stats), _) =>
-        val o = originalLayout()
-        o.head._1 + f(pid).get + (stats map f map (_.get) mkString) + o.last._2
-      
-      case (t @ ClassDef(mods, name, tparams, impl), _) =>
-        val o = originalLayout()
-        o.head._1 + name.toString + f(impl).get + o.last._2
+      case (t @ TemplateTree(params, earlyBody, parents, self, body), _) =>
+
         
-      case (t @ Template(parents, self, Nil), _) =>  
-        val o = originalLayout() 
-        o.head._1.toString + o.last._2.toString
+        handleMany(params, separator = ", ") + handleMany(earlyBody) + handleMany(parents) + handle(self) + handleMany(body)
         
-      case (t @ Template(parents, self, body), orig: Template) =>
-        val o = originalLayout() 
-        
-        val b = (body map f map (_.get))
-        
-        o.head._1 + b.mkString + o.last._2
-        
-      case (t @ ValDef(ModifiersTree(mods), newName, EmptyTree, rhs), orig @ ValDef(ModifiersTree(modsOrig), _, _, rhsOrig)) =>
-        
+      case (t @ DefDef(ModifiersTree(mods), newName, tparams, vparamss, tpt, rhs), orig @ DefDef(ModifiersTree(modsOrig), name, tparamsOrig, vparamssOrig, tptOrig, rhsOrig)) =>
+                
         val nameOrig = NameTree(orig.name, orig.namePosition)
+        val modsPrinted = handleModifiers(mods, modsOrig)
+        val betweenModsAndName = splitLayoutBetweenSiblings(modsOrig.last, nameOrig)._1
+        val nextAfterName = (tparamsOrig ::: vparamssOrig.flatten ::: tptOrig :: rhsOrig :: Nil) filterNot (_ == EmptyTree)
         
-        val a = splitLayoutBetweenSiblings(mods.last, nameOrig)._1
-        val b = splitLayoutBetweenSiblings(nameOrig, rhsOrig)._1
+        val afterName = nextAfterName.headOption map {
+          splitLayoutBetweenSiblings(nameOrig, _)._1
+        } getOrElse(splitLayoutBetweenLastChildAndParent(nameOrig, t)._1)
+      
+        modsPrinted + betweenModsAndName + newName.toString.trim + afterName + 
+         handleMany(tparams) + vparamss.map(vparams => handleMany(vparams, ", ")).mkString("") + handle(tpt) + handle(rhs)
         
-        if(mods zip modsOrig exists (x => x._1.pos != x._2.pos)) {
-          // handle changed modifiers
-          "mods != modsOrig"
-        } else { 
-          layout(mods.head.pos.start, mods.last.pos.end).toString + a + newName.toString.trim + b + f(rhs).getOrElse("")
-        }
-             
       case (t @ ValDef(ModifiersTree(mods), newName, tpt, rhs), orig @ ValDef(ModifiersTree(modsOrig), _, tptOrig, rhsOrig)) =>
         
         val nameOrig = NameTree(orig.name, orig.namePosition)
+        val modsPrinted = handleModifiers(mods, modsOrig)
+        val betweenModsAndName = if(mods.isEmpty) "" else splitLayoutBetweenSiblings(modsOrig.last, nameOrig)._1
+        val afterName = splitLayoutBetweenSiblings(nameOrig, if(tpt == EmptyTree) rhsOrig else tptOrig )._1
         
-        val a = splitLayoutBetweenSiblings(mods.last, nameOrig)._1
-        val b = splitLayoutBetweenSiblings(nameOrig, tptOrig)
+        modsPrinted + betweenModsAndName + newName.toString.trim + afterName + handle(tpt) + handle(rhs)
+
+      case (t: Block, _) => 
+        handleMany(t.body)
         
-        if(mods zip modsOrig exists (x => x._1.pos != x._2.pos)) {
-          // handle changed modifiers
-          "mods != modsOrig"
-        } else { 
-          layout(mods.head.pos.start, mods.last.pos.end).toString + a + newName.toString.trim + b._2 + f(tpt).getOrElse("") + f(rhs).getOrElse("")
-        }
-          
-      case (t : TypeTree, _) => t.toString
+      case (t: TypeTree, _) => 
+        t.toString
         
-      case (t : Ident, _) => t.name
+      case (t: TypeDef, _) => 
+        t.name
+        
+      case (t: Ident, _) => 
+        if(t.name.toString == "<empty>")
+          ""
+        else t.name
+        
+      case (t @ Select(qualifier, selector), orig @ Select(qualifierOrig, _)) =>
+        val nameOrig = NameTree(orig.name, orig.namePosition)
+        handle(qualifier) + splitLayoutBetweenSiblings(qualifierOrig, nameOrig)._2 + t.symbol.nameString
       
-      case (t : Literal, _) => t.toString
+      case (t: Literal, _) =>
+        t.toString
+        
+      case (t @ Apply(fun, args), _) =>
+        handle(fun) + handleMany(args, separator = ", ")
+        
+      case (t @ Import(expr, _), _) =>
+        val ts = t.Selectors()
+        handle(expr) + handleMany(ts, separator = ", ")
+        
+      case (t @ ImportSelectorTree(name, rename, _), _) =>
+        handle(name) + handle(rename)
+        
+      case (t: NameTree, _) =>
+        t.name.toString
+        
+      case (t @ SuperConstructorCall(clazz, args), _) =>
+        handle(clazz) + handleMany(args, separator = ", ")
         
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)
@@ -116,23 +143,26 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       
     }
     
-    trace("result: %s", left + center + right )
+    trace("result:                %s", l.toString + center + r.toString)
+    trace("result with enclosing: %s", left + l + center + r + right)
     
-    left + center + right 
+    left + l + center + r + right 
   }
   
   def reuseExistingSource(traverse: Transformation[Tree, String], t: Tree): String = context("Reuse "+ t.getClass.getSimpleName) { 
     
-
     val (leftLayout, rightLayout) = (findOriginalTree(t) map { t =>
-
+    
       val (leftLayout, rightLayout) = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
-        case (_,          None,    _          ) => layoutForCuRoot(t)
-        case (None,       Some(p), None       ) => layoutForSingleChild(t, p)
-        case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)
-        case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)
-        case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right)
+        case (_,          None,    _          ) => layoutForCuRoot(t)                     \\ (_ => trace("compilation unit root"))
+        case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child"))
+        case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child"))
+        case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child"))
+        case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right) \\ (_ => trace("enclosed child"))
       }
+      
+      trace("leading:  %s", leftLayout.toString)
+      trace("trailing: %s", rightLayout.toString)
       
       (leftLayout, rightLayout)
       
@@ -143,7 +173,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
   
   def generate(tree: Tree) = {
         
-    val isModified = filter {
+    val isModified = predicate[Tree] {
       case EmptyTree => false
       case t: Tree => t.pos == NoPosition || t.pos.isRange
     }
@@ -154,7 +184,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       case _ =>
         reuseExistingSource(self, t)
     }
-    
-    recursively(isModified)(generateSourceCode)(tree) 
+
+    isModified combineRecursively generateSourceCode apply tree
   }
 }
