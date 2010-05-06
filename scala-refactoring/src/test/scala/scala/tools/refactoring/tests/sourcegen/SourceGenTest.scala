@@ -35,7 +35,6 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
     def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)).get)
   }
   
-  
   val reverseBody = Transformations.transform[Tree, Tree] {
     case t: Template => t.copy(body = t.body.reverse) setPos t.pos
   }
@@ -45,12 +44,45 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
   }
   
   @Test
+  def testObjectTemplates() = {
+    
+  }
+  
+  @Test
+  def testSelfTypes() = {
+
+    val tree = treeFrom("""
+    trait ATrait {
+      self =>
+    }
+    trait BTrait {
+      self: ATrait =>
+    }
+    trait CTrait {
+      self: BTrait with ATrait =>
+    }
+    """)
+    
+    assertEquals("""
+    trait ATrait {
+      self =>
+    }
+    trait BTrait {
+      self: ATrait =>
+    }
+    trait CTrait {
+      self: BTrait with ATrait =>
+    } 
+    """, generate(removeAuxiliaryTrees apply tree get).get)
+  }
+  
+  @Test
   def testClassTemplates() = {
     
     val tree = treeFrom("""
     trait ATrait
-    class ASuperClass(x: Int)
-    class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i) with ATrait {
+    class ASuperClass(x: Int, d: String)
+    class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
       self_type_annotation =>
       def someMethod() {
       }
@@ -59,8 +91,8 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
     
     assertEquals("""
     trait ATrait
-    class ASuperClass(x: Int)
-    class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i) with ATrait {
+    class ASuperClass(x: Int, d: String)
+    class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
       self_type_annotation =>
       def someMethod() {
       }

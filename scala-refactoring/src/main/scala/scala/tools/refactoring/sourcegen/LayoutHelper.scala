@@ -49,7 +49,7 @@ trait LayoutHelper {
   def layout(start: Int, end: Int)(implicit s: SourceFile) = LayoutFromFile(s, start, end)
   def between(l: Tree, r: Tree)(implicit s: SourceFile) = layout(l.pos.end, r.pos.start)(s)
 
-  def layoutForCuRoot(t: Tree): (Layout, Layout) = 
+  def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = 
     LayoutFromFile(t.pos.source, 0, t.pos.start) → 
     LayoutFromFile(t.pos.source, t.pos.end, t.pos.source.length)
     
@@ -113,6 +113,9 @@ trait LayoutHelper {
          
       case (p: Literal, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: SelfTypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
       
       case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
@@ -161,6 +164,9 @@ trait LayoutHelper {
          NoLayout → layout(c.pos.end, p.pos.end)
          
        case (c, p: Literal) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: SelfTypeTree) =>
          NoLayout → layout(c.pos.end, p.pos.end)
        
        case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)

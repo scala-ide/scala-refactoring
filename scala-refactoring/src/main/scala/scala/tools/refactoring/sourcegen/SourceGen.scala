@@ -55,7 +55,6 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     }
     
     val originalTree = findOriginalTree(t).getOrElse{
-      val failed = t
       throw new Exception("original tree not found for: "+ t)
     }
 
@@ -70,11 +69,9 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         handle(pid) + handleMany(stats)
       
       case (t @ ClassDef(mods, name, tparams, impl), orig @ ClassDef(ModifiersTree(modsOrig), _, _, _)) =>
-        name.toString + handle(impl)
+        handle(NameTree(name, t.namePosition)) + handle(impl)
       
       case (t @ TemplateTree(params, earlyBody, parents, self, body), _) =>
-
-        
         handleMany(params, separator = ", ") + handleMany(earlyBody) + handleMany(parents) + handle(self) + handleMany(body)
         
       case (t @ DefDef(ModifiersTree(mods), newName, tparams, vparamss, tpt, rhs), orig @ DefDef(ModifiersTree(modsOrig), name, tparamsOrig, vparamssOrig, tptOrig, rhsOrig)) =>
@@ -137,6 +134,9 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       case (t @ SuperConstructorCall(clazz, args), _) =>
         handle(clazz) + handleMany(args, separator = ", ")
         
+      case (t @ SelfTypeTree(name, types), _) =>
+        handle(name) + handleMany(types)
+        
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)
         "ø"
@@ -154,7 +154,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     val (leftLayout, rightLayout) = (findOriginalTree(t) map { t =>
     
       val (leftLayout, rightLayout) = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
-        case (_,          None,    _          ) => layoutForCuRoot(t)                     \\ (_ => trace("compilation unit root"))
+        case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
         case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child"))
         case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child"))
         case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child"))

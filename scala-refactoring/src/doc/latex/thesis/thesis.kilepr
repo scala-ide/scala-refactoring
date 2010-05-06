@@ -92,10 +92,10 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=104
+column=32
 encoding=UTF-8
 highlight=LaTeX
-line=127
+line=168
 mode=LaTeX
 open=true
 order=0
@@ -109,5 +109,5 @@ CursorColumn=0
 CursorLine=41
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=104
-CursorLine=127
+CursorColumn=32
+CursorLine=168

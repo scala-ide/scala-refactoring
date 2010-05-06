@@ -88,15 +88,27 @@ trait PimpedTrees {
   }
   
   /**
-   * Represent an import as a tree, including both names as trees.
+   * Represent an import selector as a tree, including both names as trees.
    * */
   case class ImportSelectorTree(name: NameTree, rename: Tree, override val pos: Position) extends Tree {
     setPos(pos)
   }
   
+  /**
+   * The call to the super constructor in a class:
+   * class A(i: Int) extends B(i)
+   *                         ^^^^ 
+   * */
   case class SuperConstructorCall(clazz: Tree, args: List[Tree]) extends Tree {
     setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
   }
+  
+  /**
+   * Representation of self type annotations:
+   *   self: A with B =>
+   *   ^^^^^^^^^^^^^^
+   * */
+  case class SelfTypeTree(name: NameTree, types: List[Tree]) extends Tree
   
   object TemplateTree {
     def unapply(t: Tree) = t match {
@@ -115,14 +127,38 @@ trait PimpedTrees {
         
         val superCalls = tpl.parents filterNot empty map { superClass =>
         
-         val superArgs = earlyBody collect {
-           case DefDef(_, _, _, _, _, Block(Apply(_, args) :: _, _)) if args.exists(superClass.pos precedes _.pos) => args
-         } flatten
+          val superArgs = earlyBody collect {
+            case DefDef(_, _, _, _, _, Block(Apply(_, args) :: _, _)) if args.exists(superClass.pos precedes _.pos) => args
+          } flatten
         
           SuperConstructorCall(superClass, superArgs)
-        } 
+        }
+        
+        val self = if(empty(tpl.self)) EmptyTree else {
+          
+          val source = tpl.self.pos.source.content.slice(tpl.self.pos.point, tpl.self.pos.end) mkString // XXX remove comments
+          
+          def extractExactPositionsOfAllTypes(typ: Type): List[NameTree] = typ match {
+            case RefinedType(_ :: parents, _) =>
+              parents flatMap extractExactPositionsOfAllTypes
+            case TypeRef(_, sym, _) =>
+              val thisName = sym.name.toString
+              val start = tpl.self.pos.point + source.indexOf(thisName)
+              val end = start + thisName.length
+              NameTree(sym.name, tpl.self.pos withStart start withEnd end) :: Nil
+            case _ => Nil
+          }
+          
+          val selfTypes = extractExactPositionsOfAllTypes(tpl.self.tpt.tpe)
+          val namePos = {
+            val p = tpl.self.pos
+            p withEnd (if(p.start == p.point) p.end else p.point)
+          }
+          
+          SelfTypeTree(NameTree(tpl.self.name, namePos), selfTypes) setPos tpl.self.pos
+        }
 
-        Some((classParams, Nil: List[Tree] /*early body*/, superCalls, if(empty(tpl.self)) EmptyTree else tpl.self, body))
+        Some((classParams, Nil: List[Tree] /*early body*/, superCalls, self, body))
       
       case _ => 
         None
@@ -262,6 +298,9 @@ trait PimpedTrees {
       
     case SuperConstructorCall(clazz, args) =>
       clazz :: args
+      
+    case SelfTypeTree(name, types) =>
+      name :: types
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
