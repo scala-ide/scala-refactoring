@@ -78,8 +78,17 @@ trait LayoutHelper {
       case (p: PackageDef, c) =>
         layout(p.pos.start, c.pos.start) splitAt c.pos.start
         
-      case (p: ClassDef, c) =>
-        layout(p.pos.start, p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
+      case (p @ ClassDef(ModifiersTree(Nil), _, _, _), c) =>
+        layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
+        
+      case (p @ ClassDef(ModifiersTree(mods), _, _, _), c) =>
+        layout(p.pos.start, mods.head.pos.start) → NoLayout
+        
+      case (p @ ModuleDef(ModifiersTree(Nil), _, _), c) =>
+        layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
+        
+      case (p @ ModuleDef(ModifiersTree(mods), _, _), c) =>
+        layout(p.pos.start, mods.head.pos.start) → NoLayout
         
       case (p: Template, c) =>
         layout(p.pos.start, c.pos.start) splitAfter ('{', '(')
@@ -133,7 +142,7 @@ trait LayoutHelper {
        case (c, p: PackageDef) =>
          layout(c.pos.end, p.pos.end) splitAfter '\n'
          
-       case (c, p: ClassDef) =>
+       case (c, p @ (_: ClassDef | _: ModuleDef)) =>
          layout(c.pos.end, p.pos.end) splitAfter '}'
          
        case (c, p: Template) =>
@@ -174,12 +183,9 @@ trait LayoutHelper {
    }
  
   def  splitLayoutBetweenSiblings(left: Tree, right: Tree): (Layout, Layout) = {
-    
-    implicit val currentFile = left.pos.source
-    
-    
+        
     def split(layout: String) = {
-  
+      val Class = """(.*?)(class.*)""".r
       val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
       val OpeningBrace = """(.*?\()(.*)""".r
       val Colon = """(.*?:\s+)(.*)""".r
@@ -193,15 +199,16 @@ trait LayoutHelper {
       val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
       
       (layout match {
+        case Class(l, r)           => Some(l, r, "Class")
         case Colon(l, r)           => Some(l, r, "Colon")
         case EmptyParens(l, r)     => Some(l, r, "EmptyParens")
         case OpeningBrace(l, r)    => Some(l, r, "OpeningBrace")
         case Arrow(l, r)           => Some(l, r, "Arrow")
         case Equals(l, r)          => Some(l, r, "Equals")
         case ClosingBrace(l, r)    => Some(l, r, "ClosingBrace")
-        case ImportStatementNewline(l, r) => Some(l, r, "ImportStatement Newline")
         case _                     => None
       }) orElse (layout match { // Work around https://lampsvn.epfl.ch/trac/scala/ticket/1133
+        case ImportStatementNewline(l, r) => Some(l, r, "ImportStatement Newline")
         case ImportStatement(l, r) => Some(l, r, "ImportStatement")
         case NewLine(l, r)         => Some(l, r, "NewLine")
         case Comma(l, r)           => Some(l, r, "Comma")
@@ -212,11 +219,10 @@ trait LayoutHelper {
     
     (left, right) match {
       case (_, EmptyTree) | (EmptyTree, _) => NoLayout → NoLayout
-      case (l, r) => 
-        val (ll, lr, rule) = split(between(l, r).toString)
+      case (l, r) =>
+        val (ll, lr, rule) = split(between(l, r)(left.pos.source).toString)
         trace("Rule %s splits (%s, %s) layout into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, ll, lr)
         LayoutFromString(ll) → LayoutFromString(lr)
     }
-    
   }
 }

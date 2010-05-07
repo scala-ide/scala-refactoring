@@ -1,6 +1,11 @@
-package scala.tools.refactoring.sourcegen
+package scala.tools.refactoring
+package sourcegen
+
+import tools.nsc.symtab.{Flags, Names, Symbols}
 
 trait PrettyPrinter {
+  
+  self: common.PimpedTrees =>
 
   val global: scala.tools.nsc.interactive.Global
   import global._
@@ -35,32 +40,43 @@ trait PrettyPrinter {
       case EmptyTree =>
         ""
           
+      case PackageDef(pid, stats) if pid.name.toString == "<empty>" =>
+        stats.print(separator = "\n")
+        
       case PackageDef(pid, stats) =>
         pid.print(before = "package ", after = "\n") + stats.print(separator = "\n")
         
-      case ClassDef(mods, name, tparams, impl) =>
+      case ClassDef(m @ ModifiersTree(mods), name, tparams, impl) =>
         //mods.annotations map traverse
-        //tparams map traverse
+        val mods_ = mods map (m => m.nameString + " ") mkString ""
         
-        "class "+ name + impl.print()
+        mods_ + (if(m.isTrait)
+          "" // "trait" is a modifier
+        else
+          "class ") + name + tparams.print(before = "[", separator = ", ", after = "]") + impl.print()
         
-  //    case ModuleDef(mods, name, impl) =>
-  //      mods.annotations map traverse
-  //      traverse(impl)
+      case ModuleDef(ModifiersTree(mods), name, impl) =>
+//        mods.annotations map traverse
+        val mods_ = mods map (m => m.nameString + " ") mkString ""
+        mods_ + "object " + name + impl.print()
         
-      case t @ ValDef(mods, name, tpt, rhs) if mods.isArgument =>
+      case t @ ValDef(m @ ModifiersTree(mods), name, tpt, rhs)  =>
         //mods.annotations map traverse
-        name.toString + tpt.print(before = ": ") + rhs.print(before = " = ")
+        val mods_ = mods map (m => m.nameString + " ") mkString ""
+        mods_ + name.toString.trim + tpt.print(before = ": ") + rhs.print(before = " = ")
+
         
-      case t @ ValDef(mods, name, tpt, rhs) =>
+      case t @ DefDef(ModifiersTree(mods), name, tparams, vparamss, tpt, _) =>
         //mods.annotations map traverse
-        "val " + name.toString + tpt.print(before = ": ") + rhs.print(before = " = ")
-        
-      case DefDef(mods, name, tparams, vparamss, tpt, rhs) =>
-        //mods.annotations map traverse
+        val mods_ = mods map (m => m.nameString + " ") mkString ""
         val tparams_ = tparams print (before = "[", after = "]", separator = ", ")
         val params = vparamss map (_ print (before = "(", after = ")", separator = ", ")) mkString ""
-        "def "+ name + tparams_ + params + tpt.print(before = ": ") + rhs.print(before = " = ")
+        val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
+          " {\n}\n"
+        } else {
+          t.rhs.print(before = " = ")
+        }
+        mods_ + name + tparams_ + params + tpt.print(before = ": ") + rhs
         
       case TypeDef(mods, name, tparams, rhs) =>
         //mods.annotations map traverse
@@ -90,21 +106,40 @@ trait PrettyPrinter {
   //      traverse(annot)
   //      traverse(arg)
         
-      case Template(parents, self, Nil) =>
-        parents.print() //+
-        //self.print()
+      case tpl: Template =>
         
-      case Template(parents, self, body) =>
-        parents.print() +
-        //self.print() +
-        body.print(before = " {\n", separator = "\n", after = "\n}\n")
-
-      case Block(stats, expr) =>
-        val all = stats ::: expr :: Nil
-        if(all.size > 1) {
-          all print ( before = "{\n", separator = "\n", after = "\n}")
+        val classParams = tpl.constructorParameters 
+        
+        val (superArgs, body) = ((tpl.body -- classParams) partition {
+          case t @ DefDef(_, _, _, _, _, Block(Apply(_, args) :: _, _)) => t.symbol.isConstructor
+          case _ => false
+        }) match {
+          case (args, body) => (args flatMap {
+            case DefDef(_, _, _, _, _, Block(Apply(_, args) :: _, _)) => args
+            case _ => EmptyTree :: Nil
+          }, body)
+        }
+        
+        val parents = tpl.parents match {
+          case Nil => ""
+          case superclass :: traits => 
+            superclass.print(before = " extends ") + 
+              superArgs.print(before = "(", separator = ", ", after = ")") +
+                traits.print(before = " with ", separator = " with ")
+        }
+        
+        val self = if(tpl.self != emptyValDef) {
+          tpl.self.print(before = " {\n", after = " =>\n") + body.print(separator = "\n") + "}"
         } else {
-          all.head.print()
+          body.print(before = " {\n", separator = "\n", after = "\n}\n")
+        }
+        
+        classParams.print(before = "(", separator = ", ", after = ")") + parents + self
+
+      case t: Block =>
+        t.body match {
+          case t :: Nil => t.print()
+          case t => t print ( before = "{\n", separator = "\n", after = "\n}")
         }
         
   //    case CaseDef(pat, guard, body) =>
@@ -177,9 +212,9 @@ trait PrettyPrinter {
   //      
   //    case Super(_, _) =>
   //      ;
-  //      
-  //    case This(_) =>
-  //      ;
+        
+      case t: This =>
+        "this"
         
       case t @ Select(qualifier, selector) =>
         qualifier.print(after = ".") + t.symbol.nameString
@@ -194,9 +229,12 @@ trait PrettyPrinter {
         tree.tpe match {
           case tpe if tpe == EmptyTree.tpe => ""
           case tpe: ConstantType => tpe.underlying.toString
-          case r @ RefinedType(parents, _) =>
+          case r @ RefinedType(_ :: parents, _) =>
             parents map {
-              case NamedType(name, _) => name.toString
+              case NamedType(name, _)      => name.toString
+              case TypeRef(pre, sym, args) => sym.nameString
+              case RefinedType(parents, _) => parents mkString " with "
+              case t => throw new Exception("Unhandled type "+ t.getClass.getSimpleName)
             } mkString
           case _ => 
             tree.tpe.toString
@@ -226,6 +264,9 @@ trait PrettyPrinter {
   //    case SelectFromArray(qualifier, selector, erasure) =>
   //      traverse(qualifier)
       
+      case t: ModifierTree =>
+        t.nameString
+        
       case t: Tree => 
         "«?"+ t.getClass.getSimpleName +"?»"
     } 

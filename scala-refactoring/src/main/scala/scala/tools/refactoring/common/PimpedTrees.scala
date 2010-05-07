@@ -5,6 +5,7 @@ import tools.nsc.io.AbstractFile
 import tools.nsc.util.RangePosition
 import tools.nsc.symtab.{Flags, Names, Symbols}
 import reflect.ClassManifest.fromClass
+import scala.tools.nsc.ast.parser.Tokens
 
 /**
  * A bunch of implicit conversions for ASTs and other helper
@@ -32,9 +33,12 @@ trait PimpedTrees {
    * */
   object ModifiersTree {
     def unapply(m: global.Modifiers) = {
-      Some(m.positions.toList map {m => 
-        ModifierTree(m._1, m._2 withEnd (m._2.end + 1))
-      } sortBy (_.pos.start))
+      Some(m.positions.toList map {
+        case (flag, NoPosition) => 
+          ModifierTree(flag)
+        case (flag, pos) =>
+          ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
+      })
     }
   }
   
@@ -42,7 +46,7 @@ trait PimpedTrees {
     // work around for https://lampsvn.epfl.ch/trac/scala/ticket/3392
     def Selectors(ss: List[ImportSelector] = t.selectors) = ss map { imp: ImportSelector =>
     
-      val name = NameTree(imp.name, new RangePosition(t.pos.source, imp.namePos,   imp.namePos,   imp.namePos   + imp.name.length))
+      val name = NameTree(imp.name) setPos new RangePosition(t.pos.source, imp.namePos,   imp.namePos,   imp.namePos   + imp.name.length)
       
       if(imp.renamePos < 0 || imp.name == imp.rename) {
         ImportSelectorTree(
@@ -50,7 +54,7 @@ trait PimpedTrees {
           EmptyTree,
           name.pos)
       } else {
-        val rename = NameTree(imp.rename, new RangePosition(t.pos.source, imp.renamePos, imp.renamePos, imp.renamePos + imp.rename.length)) 
+        val rename = NameTree(imp.rename) setPos new RangePosition(t.pos.source, imp.renamePos, imp.renamePos, imp.renamePos + imp.rename.length) 
         ImportSelectorTree(
           name, 
           rename,
@@ -68,7 +72,7 @@ trait PimpedTrees {
   implicit def nameTreeExtractor(t: Tree) = new {
     object Name {
       def unapply(name: Name) = {
-        Some(NameTree(name, pimpPositions(t).namePosition))
+        Some(NameTree(name) setPos pimpPositions(t).namePosition)
       }
     }
   }
@@ -76,15 +80,37 @@ trait PimpedTrees {
   /**
    * Represent a name as a tree, including its position.
    * */
-  case class NameTree(name: Name, override val pos: Position) extends Tree {
-    setPos(pos)
+  case class NameTree(name: Name) extends Tree {
+    def nameString = name.toString.trim
   }
   
   /**
    * Represent a modifier as a tree, including its position.
    * */
-  case class ModifierTree(flag: Long, override val pos: Position) extends Tree {
-    setPos(pos)
+  case class ModifierTree(flag: Long) extends Tree {
+    
+    import Flags._
+    
+    def nameString = flag match {
+      case 0            => ""
+      case TRAIT        => "trait"
+      case METHOD       => "def"
+      case FINAL        => "final"
+      case IMPLICIT     => "implicit"
+      case PRIVATE      => "private"
+      case PROTECTED    => "protected"
+      case SEALED       => "sealed"
+      case OVERRIDE     => "override"
+      case CASE         => "case"
+      case ABSTRACT     => "abstract"
+      case PARAM        => ""
+      case LAZY         => "lazy"
+      case Tokens.VAL   => "val"
+      case Tokens.VAR   => "var"
+      case Tokens.TYPE  => "type"
+      case Tokens.DEF   => "def"
+      case _            => "<unknown>: " + flagsToString(flag)
+    }
   }
   
   /**
@@ -100,7 +126,7 @@ trait PimpedTrees {
    *                         ^^^^ 
    * */
   case class SuperConstructorCall(clazz: Tree, args: List[Tree]) extends Tree {
-    setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
+    if(clazz.pos != NoPosition) setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
   }
   
   /**
@@ -110,16 +136,22 @@ trait PimpedTrees {
    * */
   case class SelfTypeTree(name: NameTree, types: List[Tree]) extends Tree
   
+  implicit def additionalTemplateMethods(t: Template) = new {
+    def constructorParameters = t.body.filter {
+      case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) || mods.hasFlag(Flags.PARAM) 
+      case _ => false
+    }
+  }
+  
   object TemplateTree {
     def unapply(t: Tree) = t match {
       case tpl: Template => 
       
         def empty(t: Tree) = t == EmptyTree || t == emptyValDef
+        
+        val classParams = tpl.constructorParameters
             
-        val (classParams, restBody) = tpl.body.partition {
-          case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) || mods.hasFlag(Flags.PARAM) 
-          case _ => false
-        }
+        val restBody = tpl.body -- classParams
         
         val(earlyBody, _) = restBody.filter(_.pos.isRange).partition((t: Tree) => tpl.parents.exists(t.pos precedes _.pos))
                 
@@ -145,7 +177,7 @@ trait PimpedTrees {
               val thisName = sym.name.toString
               val start = tpl.self.pos.point + source.indexOf(thisName)
               val end = start + thisName.length
-              NameTree(sym.name, tpl.self.pos withStart start withEnd end) :: Nil
+              List(NameTree(sym.name) setPos (tpl.self.pos withStart start withEnd end))
             case _ => Nil
           }
           
@@ -155,7 +187,7 @@ trait PimpedTrees {
             p withEnd (if(p.start == p.point) p.end else p.point)
           }
           
-          SelfTypeTree(NameTree(tpl.self.name, namePos), selfTypes) setPos tpl.self.pos
+          SelfTypeTree(NameTree(tpl.self.name) setPos namePos, selfTypes) setPos tpl.self.pos
         }
 
         Some((classParams, Nil: List[Tree] /*early body*/, superCalls, self, body))
@@ -175,6 +207,7 @@ trait PimpedTrees {
     def samePos(o: Tree)    : Boolean = samePos(o.pos)
     def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
     def namePosition: Position = t match {
+      case t: ModuleDef   => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
       case t: ClassDef    => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
       case t: ValOrDefDef => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
       case t @ Select(qualifier, selector) => 
@@ -185,6 +218,8 @@ trait PimpedTrees {
           t.pos withStart (t.pos.end - t.symbol.nameString.length)
         } else if (qualifier.pos.isRange) {
           t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
+        } else if (qualifier.pos == NoPosition) {
+          t.pos
         } else {
           throw new Exception("Unreachable")
         }
@@ -268,24 +303,27 @@ trait PimpedTrees {
       pid :: stats
     
     case t @ ClassDef(ModifiersTree(mods), name, tparams, impl) =>
-      mods ::: NameTree(name, t.namePosition) :: tparams ::: impl :: Nil
+      mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: impl :: Nil
+      
+    case t @ ModuleDef(ModifiersTree(mods), name, impl) =>
+      mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
       
     case t @ TemplateTree(params, earlyBody, parents, self, body) =>
       params ::: earlyBody ::: parents ::: self :: body
 
     case t @ ValDef(ModifiersTree(mods), name, tpt, rhs) =>
-      mods ::: NameTree(name, t.namePosition) :: tpt :: rhs :: Nil
+      mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
      
     case t @ DefDef(ModifiersTree(mods), name, tparams, vparamss, tpt, rhs) =>
-      mods ::: NameTree(name, t.namePosition) :: tparams ::: vparamss.flatten ::: tpt :: rhs :: Nil
+      mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: vparamss.flatten ::: tpt :: rhs :: Nil
      
-    case _: TypeTree | _: TypeDef | _: Literal | _: Ident | _: ModifierTree | _: NameTree => Nil
+    case _: TypeTree | _: TypeDef | _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This => Nil
     
     case t @ Apply(fun, args) =>
       fun :: args
       
     case t @ Select(qualifier, selector) =>
-      qualifier :: NameTree(selector, t.namePosition) :: Nil
+      qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
       
     case t: Block =>
       t.body

@@ -41,16 +41,9 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     def handleMany(ts: List[Tree], separator: String = ""): String = ts match {
       case Nil       => ""
       case x :: Nil  => handle(x)
-      case x :: rest => handle(x) + separator + handleMany(rest, separator)
-    }
-    
-    def handleModifiers(mods: List[ModifierTree], orig: List[ModifierTree]) = {
-      if(mods zip orig exists (x => x._1.pos != x._2.pos)) {
-        "mods != modsOrig"
-      } else if (mods.isEmpty) { 
-         ""
-      } else {
-        layout(mods.head.pos.start, mods.last.pos.end).toString
+      case x :: rest => (handle(x), handleMany(rest, separator)) match {
+        case (l, r) if l.endsWith(separator) || r.startsWith(separator) => l + r
+        case (l, r) => l + separator + r
       }
     }
     
@@ -65,37 +58,24 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     
     val center = (t, originalTree) match {
             
-      case (t @ PackageDef(pid, stats), orig: PackageDef) =>
+      case (t @ PackageDef(pid, stats), _) =>
         handle(pid) + handleMany(stats)
       
-      case (t @ ClassDef(mods, name, tparams, impl), orig @ ClassDef(ModifiersTree(modsOrig), _, _, _)) =>
-        handle(NameTree(name, t.namePosition)) + handle(impl)
+      case (t @ ClassDef(ModifiersTree(mods), name, tparams, impl), orig) =>
+        handleMany(mods) + handle(NameTree(name) setPos orig.namePosition) + handleMany(tparams) + handle(impl)
+        
+      case (t @ ModuleDef(ModifiersTree(mods), name, impl), orig) =>
+        handleMany(mods) + handle(NameTree(name) setPos orig.namePosition) + handle(impl)
       
       case (t @ TemplateTree(params, earlyBody, parents, self, body), _) =>
         handleMany(params, separator = ", ") + handleMany(earlyBody) + handleMany(parents) + handle(self) + handleMany(body)
         
-      case (t @ DefDef(ModifiersTree(mods), newName, tparams, vparamss, tpt, rhs), orig @ DefDef(ModifiersTree(modsOrig), name, tparamsOrig, vparamssOrig, tptOrig, rhsOrig)) =>
-                
-        val nameOrig = NameTree(orig.name, orig.namePosition)
-        val modsPrinted = handleModifiers(mods, modsOrig)
-        val betweenModsAndName = splitLayoutBetweenSiblings(modsOrig.last, nameOrig)._1
-        val nextAfterName = (tparamsOrig ::: vparamssOrig.flatten ::: tptOrig :: rhsOrig :: Nil) filterNot (_ == EmptyTree)
+      case (t @ DefDef(ModifiersTree(mods), newName, tparams, vparamss, tpt, rhs), orig) =>
+        handleMany(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = " ") +
+          handleMany(tparams) + vparamss.map(vparams => handleMany(vparams, ", ")).mkString("") + handle(tpt) + handle(rhs)
         
-        val afterName = nextAfterName.headOption map {
-          splitLayoutBetweenSiblings(nameOrig, _)._1
-        } getOrElse(splitLayoutBetweenLastChildAndParent(nameOrig, t)._1)
-      
-        modsPrinted + betweenModsAndName + newName.toString.trim + afterName + 
-         handleMany(tparams) + vparamss.map(vparams => handleMany(vparams, ", ")).mkString("") + handle(tpt) + handle(rhs)
-        
-      case (t @ ValDef(ModifiersTree(mods), newName, tpt, rhs), orig @ ValDef(ModifiersTree(modsOrig), _, tptOrig, rhsOrig)) =>
-        
-        val nameOrig = NameTree(orig.name, orig.namePosition)
-        val modsPrinted = handleModifiers(mods, modsOrig)
-        val betweenModsAndName = if(mods.isEmpty) "" else splitLayoutBetweenSiblings(modsOrig.last, nameOrig)._1
-        val afterName = splitLayoutBetweenSiblings(nameOrig, if(tpt == EmptyTree) rhsOrig else tptOrig )._1
-        
-        modsPrinted + betweenModsAndName + newName.toString.trim + afterName + handle(tpt) + handle(rhs)
+      case (t @ ValDef(ModifiersTree(mods), newName, tpt, rhs), orig) =>
+        handleMany(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = " ") + handle(tpt) + handle(rhs)
 
       case (t: Block, _) => 
         handleMany(t.body)
@@ -112,7 +92,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         else t.name
         
       case (t @ Select(qualifier, selector), orig @ Select(qualifierOrig, _)) =>
-        val nameOrig = NameTree(orig.name, orig.namePosition)
+        val nameOrig = NameTree(orig.name) setPos orig.namePosition
         handle(qualifier) + splitLayoutBetweenSiblings(qualifierOrig, nameOrig)._2 + t.symbol.nameString
       
       case (t: Literal, _) =>
@@ -129,13 +109,19 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         handle(name) + handle(rename)
         
       case (t: NameTree, _) =>
-        t.name.toString
+        t.nameString
         
       case (t @ SuperConstructorCall(clazz, args), _) =>
         handle(clazz) + handleMany(args, separator = ", ")
         
       case (t @ SelfTypeTree(name, types), _) =>
         handle(name) + handleMany(types)
+        
+      case (t: ModifierTree, _) =>
+        t.nameString
+        
+      case (t: This, _) =>
+        "this"
         
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)
