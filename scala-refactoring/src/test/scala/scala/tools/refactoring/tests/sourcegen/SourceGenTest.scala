@@ -56,6 +56,40 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
   }
   
   @Test
+  def testFor() = {
+    
+    val tree = treeFrom("""
+    object Rename1 {
+      case class Person(name: String)
+      def printName(ppp: Person) = println(ppp.name)
+      def main(args: Array[String]) {
+        val people: List[Person] = List(Person("Mirko"), Person("Christina"))
+        people foreach printName
+      }
+    }""")
+    
+    assertEquals("""
+    object Rename1 {
+      case class Person(name: String)
+      def printName(ppp: Person) = println(ppp.name)
+      def main(args: Array[String]) {
+        val people: List[Person] = List(Person("Mirko"), Person("Christina"))
+        people foreach printName
+      }
+    }""", generate(removeAuxiliaryTrees apply tree get).get)
+    
+    tree prettyPrintsTo """object Rename1 {
+case class Person(name: String)
+def printName(ppp: Person) = println(ppp.name)
+def main(args: Array[String]) = {
+val people: List[Person] = List(Person("Mirko"), Person("Christina"))
+people.foreach((ppp: Rename1.Person) => printName(ppp))
+}
+}
+"""
+  }
+  
+  @Test
   def testObjectTemplate() = {
     
     val tree = treeFrom("""

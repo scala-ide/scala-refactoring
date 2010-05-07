@@ -163,11 +163,10 @@ trait PrettyPrinter {
   //    case ArrayValue(elemtpt, trees) =>
   //      traverse(elemtpt)
   //      trees map traverse
-  //      
-  //    case Function(vparams, body) =>
-  //      vparams map traverse
-  //      traverse(body)
-  //      
+        
+      case Function(vparams, body) =>
+        vparams.print(before = "(", separator = ", ", after = ") => ") + body.print()
+        
   //    case Assign(lhs, rhs) =>
   //      traverse(lhs)
   //      traverse(rhs)
@@ -198,10 +197,9 @@ trait PrettyPrinter {
   //    case Typed(expr, tpt) =>
   //      traverse(expr)
   //      traverse(tpt)
-  //      
-  //    case TypeApply(fun, args) =>
-  //      traverse(fun)
-  //      args map traverse
+        
+      case TypeApply(fun, args) =>
+        fun.print() + args.print()
         
       case Apply(fun, args) =>
         fun.print() + args.print(before = "(", after = ")", separator = ", ")
@@ -216,6 +214,9 @@ trait PrettyPrinter {
       case t: This =>
         "this"
         
+      case t @ Select(qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
+        t.symbol.nameString
+        
       case t @ Select(qualifier, selector) =>
         qualifier.print(after = ".") + t.symbol.nameString
         
@@ -225,7 +226,8 @@ trait PrettyPrinter {
       case lit: Literal =>
         lit.toString
         
-      case tree: TypeTree => 
+      case tree: TypeTree =>
+        
         tree.tpe match {
           case tpe if tpe == EmptyTree.tpe => ""
           case tpe: ConstantType => tpe.underlying.toString
@@ -236,6 +238,11 @@ trait PrettyPrinter {
               case RefinedType(parents, _) => parents mkString " with "
               case t => throw new Exception("Unhandled type "+ t.getClass.getSimpleName)
             } mkString
+          case tpe: TypeRef if tree.original != null && tpe.sym.nameString.matches("Tuple\\d+") => 
+            val n = tpe.sym.nameString
+            tpe.toString
+          case _ if tree.original != null => 
+            tree.original.print()
           case _ => 
             tree.tpe.toString
         }
@@ -248,11 +255,10 @@ trait PrettyPrinter {
   //      
   //    case CompoundTypeTree(templ) =>
   //      traverse(templ)
-  //      
-  //    case AppliedTypeTree(tpt, args) =>
-  //      traverse(tpt)
-  //      args map traverse
-  //      
+        
+      case AppliedTypeTree(tpt, args) =>
+        tpt.print() + args.print(before = "[", separator = ", ", after = "]")
+        
   //    case TypeBoundsTree(lo, hi) =>
   //      traverse(lo)
   //      traverse(hi)

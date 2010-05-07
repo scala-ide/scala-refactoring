@@ -81,19 +81,29 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         handleMany(t.body)
         
       case (t: TypeTree, _) => 
-        t.toString
+        handle(t.original)
+        
+      case (t: AppliedTypeTree, _) => 
+        handle(t.tpt) + handleMany(t.args)
+        
+      case (t: TypeApply, _) => 
+        handle(t.fun) + handleMany(t.args)
         
       case (t: TypeDef, _) => 
         t.name
         
       case (t: Ident, _) => 
-        if(t.name.toString == "<empty>")
+        if(t.name.toString == "<empty>" || t.symbol.isSynthetic)
           ""
         else t.name
         
-      case (t @ Select(qualifier, selector), orig @ Select(qualifierOrig, _)) =>
-        val nameOrig = NameTree(orig.name) setPos orig.namePosition
-        handle(qualifier) + splitLayoutBetweenSiblings(qualifierOrig, nameOrig)._2 + t.symbol.nameString
+      // XXX List(..) has an invisible immutable.this qualifier
+      case (t @ Select(qualifier: This, selector), _) if qualifier.qual.toString == "immutable" && qualifier.pos == NoPosition => 
+        t.symbol.nameString
+        
+      case (t @ Select(qualifier, selector), orig) =>
+        val nameOrig = NameTree(t.symbol.nameString) setPos orig.namePosition
+        handle(qualifier) + handle(nameOrig)
       
       case (t: Literal, _) =>
         t.toString
@@ -109,7 +119,10 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         handle(name) + handle(rename)
         
       case (t: NameTree, _) =>
-        t.nameString
+        if(t.pos.isTransparent) 
+          ""
+        else
+          t.nameString
         
       case (t @ SuperConstructorCall(clazz, args), _) =>
         handle(clazz) + handleMany(args, separator = ", ")
@@ -119,6 +132,9 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         
       case (t: ModifierTree, _) =>
         t.nameString
+        
+      case (t @ Function(vparams, body), _) =>
+        handleMany(vparams) + handle(body)
         
       case (t: This, _) =>
         "this"

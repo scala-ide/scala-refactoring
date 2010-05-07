@@ -209,7 +209,12 @@ trait PimpedTrees {
     def namePosition: Position = t match {
       case t: ModuleDef   => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
       case t: ClassDef    => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
-      case t: ValOrDefDef => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
+      case t: ValOrDefDef => 
+        val p = t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
+        if(t.mods.isSynthetic && t.pos.isTransparent) 
+          p.makeTransparent
+        else
+          p
       case t @ Select(qualifier, selector) => 
       
         if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
@@ -233,7 +238,7 @@ trait PimpedTrees {
    * in the same order they appear in the source code.
    * */
   implicit def blockToBlockWithOrderedChildren(t: Block) = new {
-    def body: List[Tree] = if(t.expr.pos.isRange && (t.expr.pos precedes t.stats.head.pos))
+    def body: List[Tree] = if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
       t.expr :: t.stats
     else
       t.stats ::: t.expr :: Nil
@@ -317,7 +322,13 @@ trait PimpedTrees {
     case t @ DefDef(ModifiersTree(mods), name, tparams, vparamss, tpt, rhs) =>
       mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: vparamss.flatten ::: tpt :: rhs :: Nil
      
-    case _: TypeTree | _: TypeDef | _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This => Nil
+    case t: TypeTree =>
+      if(t.original != null) t.original :: Nil else Nil
+      
+    case AppliedTypeTree(tpt, args) =>
+      tpt :: args
+    
+    case _: TypeDef | _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This => Nil
     
     case t @ Apply(fun, args) =>
       fun :: args
@@ -339,6 +350,12 @@ trait PimpedTrees {
       
     case SelfTypeTree(name, types) =>
       name :: types
+      
+    case TypeApply(fun, args) =>
+      fun :: args
+      
+    case Function(vparams, body) =>
+      vparams ::: body :: Nil
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      

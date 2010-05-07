@@ -125,6 +125,18 @@ trait LayoutHelper {
          
       case (p: SelfTypeTree, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: TypeApply, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Function, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: TypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: AppliedTypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
       
       case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
@@ -176,6 +188,18 @@ trait LayoutHelper {
          NoLayout → layout(c.pos.end, p.pos.end)
          
        case (c, p: SelfTypeTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: TypeApply) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Function) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: TypeTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: AppliedTypeTree) =>
          NoLayout → layout(c.pos.end, p.pos.end)
        
        case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)
