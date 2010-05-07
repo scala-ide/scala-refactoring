@@ -207,14 +207,31 @@ trait PimpedTrees {
     def samePos(o: Tree)    : Boolean = samePos(o.pos)
     def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
     def namePosition: Position = t match {
-      case t: ModuleDef   => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
-      case t: ClassDef    => t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
-      case t: ValOrDefDef => 
-        val p = t.pos withStart (t.pos.point) withEnd (t.pos.point + t.name.toString.trim.length)
+      case t: ModuleDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+      case t: ClassDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+      case t: ValOrDefDef =>
+        
+        val name = t.name.toString.trim
+        
+        /* In general, the position of the name starts from t.pos.point and is as long as the trimmed name.
+         * But if we have a val in a function: 
+         *   ((parameter: Int) => ..)
+         *     ^^^^^^^^^^^^^^
+         * then the position of the name starts from t.pos.start. To fix this, we extract the source code and
+         * check where the parameter actually starts.
+         * */
+        lazy val src = t.pos.source.content.slice(t.pos.start, t.pos.point).mkString("")
+        
+        val pos = if(t.pos.point - t.pos.start == name.length && src == name) 
+          t.pos withEnd t.pos.point
+        else 
+          t.pos withStart t.pos.point withEnd (t.pos.point + name.length)
+        
         if(t.mods.isSynthetic && t.pos.isTransparent) 
-          p.makeTransparent
+          pos.makeTransparent
         else
-          p
+          pos
+          
       case t @ Select(qualifier, selector) => 
       
         if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
@@ -230,6 +247,18 @@ trait PimpedTrees {
         }
         
       case _ => throw new Exception("uhoh")
+    }
+  }
+  
+  implicit def nameForIdentTrees(t: Ident) = new {
+    def nameString = {
+      if(t.name.toString == "<empty>")
+        ""
+      else if (t.symbol.isSynthetic && t.name.toString.contains("$"))
+        "_"
+      else if (t.symbol.isSynthetic)
+        ""
+      else t.name.toString
     }
   }
   
@@ -339,6 +368,12 @@ trait PimpedTrees {
     case t: Block =>
       t.body
       
+    case Return(expr) =>
+      expr :: Nil
+      
+    case New(tpt) =>
+      tpt :: Nil
+      
     case t @ Import(expr, _) =>
       expr :: t.Selectors()
       
@@ -356,6 +391,9 @@ trait PimpedTrees {
       
     case Function(vparams, body) =>
       vparams ::: body :: Nil
+      
+    case If(cond, thenp, elsep) =>
+      cond :: thenp :: elsep :: Nil
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      

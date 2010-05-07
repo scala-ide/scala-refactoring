@@ -36,7 +36,17 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     
     implicit val currentFile = t.pos.source
     
-    def handle(t: Tree) = f(t) getOrElse ""
+    def handle(t: Tree, before: String = "", after: String = "") = {
+      var printed = f(t) getOrElse ""
+      
+      if(!printed.startsWith(before))
+        printed = before + printed
+        
+      if(!printed.endsWith(after))
+        printed = printed + after
+      
+      printed
+    }
     
     def handleMany(ts: List[Tree], separator: String = ""): String = ts match {
       case Nil       => ""
@@ -62,7 +72,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         handle(pid) + handleMany(stats)
       
       case (t @ ClassDef(ModifiersTree(mods), name, tparams, impl), orig) =>
-        handleMany(mods) + handle(NameTree(name) setPos orig.namePosition) + handleMany(tparams) + handle(impl)
+        handleMany(mods) + (if(t.symbol.isAnonymousClass) "" else handle(NameTree(name) setPos orig.namePosition)) + handleMany(tparams) + handle(impl)
         
       case (t @ ModuleDef(ModifiersTree(mods), name, impl), orig) =>
         handleMany(mods) + handle(NameTree(name) setPos orig.namePosition) + handle(impl)
@@ -93,9 +103,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         t.name
         
       case (t: Ident, _) => 
-        if(t.name.toString == "<empty>" || t.symbol.isSynthetic)
-          ""
-        else t.name
+        t.nameString
         
       // XXX List(..) has an invisible immutable.this qualifier
       case (t @ Select(qualifier: This, selector), _) if qualifier.qual.toString == "immutable" && qualifier.pos == NoPosition => 
@@ -136,8 +144,20 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       case (t @ Function(vparams, body), _) =>
         handleMany(vparams) + handle(body)
         
+      case (t @ If(cond, thenp, elsep), _) =>
+        handle(cond) + handle(thenp) + handle(elsep)
+        
       case (t: This, _) =>
         "this"
+        
+      case (Return(expr), _) =>
+        handle(expr)
+        
+      case (t @ New(tpt), _) =>
+        if(t.pos.start > t.pos.point)
+          handle(tpt)
+        else
+          "new" + handle(tpt)
         
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)
@@ -176,6 +196,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
   def generate(tree: Tree) = {
         
     val isModified = predicate[Tree] {
+      case `emptyValDef` => false
       case EmptyTree => false
       case t: Tree => t.pos == NoPosition || t.pos.isRange
     }

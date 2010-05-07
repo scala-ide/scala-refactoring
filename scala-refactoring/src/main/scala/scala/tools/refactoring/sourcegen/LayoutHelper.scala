@@ -93,11 +93,14 @@ trait LayoutHelper {
       case (p: Template, c) =>
         layout(p.pos.start, c.pos.start) splitAfter ('{', '(')
         
+      case (p: If, c) =>
+        layout(p.pos.start, c.pos.start) splitAfter '('
+        
       case (p: ValOrDefDef, c: ModifierTree) =>
         NoLayout → NoLayout
         
       case (p: ValOrDefDef, c) =>
-        layout(p.pos.start, p.pos.point) → NoLayout
+        layout(p.pos.start, p.namePosition.start) → NoLayout
         
       case (p: Apply, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
@@ -137,6 +140,12 @@ trait LayoutHelper {
          
       case (p: AppliedTypeTree, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Return, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: New, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
       
       case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
@@ -159,6 +168,9 @@ trait LayoutHelper {
          
        case (c, p: Template) =>
          layout(c.pos.end, p.pos.end) splitBefore (')', '\n')
+         
+       case (c, p: If) =>
+         layout(c.pos.end, p.pos.end) splitBefore (')')
          
        case (c, p: ValOrDefDef) =>
          layout(c.pos.end, p.pos.end) splitAfter '}' // in case there are { } around a single statement.
@@ -200,6 +212,12 @@ trait LayoutHelper {
          NoLayout → layout(c.pos.end, p.pos.end)
          
        case (c, p: AppliedTypeTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Return) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: New) =>
          NoLayout → layout(c.pos.end, p.pos.end)
        
        case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)

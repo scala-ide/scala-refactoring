@@ -5,14 +5,14 @@ import tools.nsc.symtab.{Flags, Names, Symbols}
 
 trait PrettyPrinter {
   
-  self: common.PimpedTrees =>
+  self: common.PimpedTrees with common.Tracing =>
 
   val global: scala.tools.nsc.interactive.Global
   import global._
   
   import Transformations._
   
-  def prettyPrintTree(traverse: Transformation[Tree, String], t: Tree): String = { 
+  def prettyPrintTree(traverse: Transformation[Tree, String], t: Tree): String = context("pretty print tree"+ t.getClass.getSimpleName) { 
     
     implicit def treeToPP(t: Tree) = new {
       def print (
@@ -101,10 +101,9 @@ trait PrettyPrinter {
         } mkString ", ")
         
         "import " + expr.print() + "." + (if(needsBraces) "{" + ss + "}" else ss)
-        
+  
+  //    eliminated by type checker
   //    case Annotated(annot, arg) =>
-  //      traverse(annot)
-  //      traverse(arg)
         
       case tpl: Template =>
         
@@ -170,19 +169,17 @@ trait PrettyPrinter {
   //    case Assign(lhs, rhs) =>
   //      traverse(lhs)
   //      traverse(rhs)
-  //      
-  //    case If(cond, thenp, elsep) =>
-  //      traverse(cond)
-  //      traverse(thenp)
-  //      traverse(elsep)
-  //      
+        
+      case If(cond, thenp, elsep) =>
+        cond.print(before = "if (", after = ")") + thenp.print(before = "\n") + elsep.print(before = "\nelse ")
+        
   //    case Match(selector, cases) =>
   //      traverse(selector)
   //      cases map traverse
-  //      
-  //    case Return(expr) =>
-  //      traverse(expr)
-  //      
+        
+      case Return(expr) =>
+        "return " + expr.print()
+        
   //    case Try(block, catches, finalizer) =>
   //      traverse(block)
   //      catches map traverse
@@ -190,10 +187,10 @@ trait PrettyPrinter {
   //      
   //    case Throw(expr) =>
   //      traverse(expr)
-  //      
-  //    case New(tpt) =>
-  //      traverse(tpt)
-  //      
+        
+      case New(tpt) =>
+        "new " + tpt.print()
+        
   //    case Typed(expr, tpt) =>
   //      traverse(expr)
   //      traverse(tpt)
@@ -220,8 +217,10 @@ trait PrettyPrinter {
       case t @ Select(qualifier, selector) =>
         qualifier.print(after = ".") + t.symbol.nameString
         
-      case Ident(name) =>
-        name.toString
+      case t: Ident =>
+        if (t.symbol.isSynthetic && t.name.toString.contains("$"))
+          "_"
+        else t.name.toString
         
       case lit: Literal =>
         lit.toString
@@ -241,10 +240,12 @@ trait PrettyPrinter {
           case tpe: TypeRef if tree.original != null && tpe.sym.nameString.matches("Tuple\\d+") => 
             val n = tpe.sym.nameString
             tpe.toString
+          case tpe: TypeRef =>
+            tpe.toString
           case _ if tree.original != null => 
             tree.original.print()
-          case _ => 
-            tree.tpe.toString
+          case tpe => 
+            tpe.toString
         }
         
   //    case SingletonTypeTree(ref) =>

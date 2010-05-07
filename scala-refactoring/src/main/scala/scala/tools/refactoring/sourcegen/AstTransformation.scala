@@ -39,7 +39,12 @@ trait AstTransformations {
     // hide the implicit "apply" call
     case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => qualifier
     
-      
+    case t: Select if t.name.toString == "<init>" => t.qualifier
+    
+//    case t: New if t.pos.start > t.pos.point => 
+//      val p = t.pos withStart t.pos.point withPoint t.pos.start
+//      t setPos p
+//      
     case t: Tree if (t.pos == NoPosition || t.pos.isRange) => t
     
     case t: ValDef => emptyValDef

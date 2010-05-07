@@ -45,6 +45,11 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
     case t: DefDef => t.copy(name = t.name.toString + t.name.toString) setPos t.pos
   }
   
+  val negateAllBools = Transformations.transform[Tree, Tree] {
+    case l @ Literal(Constant(true )) => Literal(Constant(false)) setPos l.pos
+    case l @ Literal(Constant(false)) => Literal(Constant(true )) setPos l.pos
+  }
+  
   val changeSomeModifiers = Transformations.transform[Tree, Tree] {
     case t: ClassDef =>
       t.copy(mods = NoMods) setPos t.pos
@@ -56,7 +61,163 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
   }
   
   @Test
-  def testFor() = {
+  def testNew() = {
+    
+    val tree = treeFrom("""
+    object Functions {
+      val a = new String("hello")
+      def createNew = new {
+        println("hello from an anonymous class")
+      }
+    }
+    """)
+        
+    assertEquals("""
+    object Functions {
+      val a = new String("hello")
+      def createNew = new {
+        println("hello from an anonymous class")
+      }
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get)     
+    
+    // terrible, but don't know how to do better :/
+    tree prettyPrintsTo """object Functions {
+val a = new String("hello")
+def createNew = {
+class $anon {
+println("hello from an anonymous class")
+}
+
+new 
+}
+}
+"""
+  }
+  
+  @Test
+  def testReturn() = {
+    val tree = treeFrom("""
+    object Functions {
+      def test {
+        return 5
+      }
+    }
+    """)
+        
+    assertEquals("""
+    object Functions {
+      def test {
+        return 5
+      }
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get)     
+    
+    tree prettyPrintsTo """object Functions {
+def test = return {
+5
+}
+}
+"""
+  }
+  
+  @Test
+  def testIfs() = {
+    val tree = treeFrom("""
+    object Functions {
+
+      val x = if(true) false else true
+
+      val y = if(true == false)
+          true
+        else if (true == true)
+          false
+        else
+          true
+
+      val z = if(true == false) {
+          true
+        } else if (true == true) {
+          false
+        } else {
+          println("hello!")
+          true
+        }
+    }""")
+    
+    assertEquals("""
+    object Functions {
+
+      val x = if(false) true else false
+
+      val y = if(false == true)
+          false
+        else if (false == false)
+          true
+        else
+          false
+
+      val z = if(false == true) {
+          false
+        } else if (false == false) {
+          true
+        } else {
+          println("hello!")
+          false
+        }
+    }""", generate(removeAuxiliaryTrees &> ↓(any(negateAllBools)) apply tree get).get)     
+    
+    tree prettyPrintsTo """object Functions {
+val x = if (true)
+false
+else true
+val y = if (true.==(false))
+true
+else if (true.==(true))
+false
+else true
+val z = if (true.==(false))
+true
+else if (true.==(true))
+false
+else {
+println("hello!")
+true
+}
+}
+"""
+  }
+    
+  @Test
+  def testFunctions() = {
+    
+    val tree = treeFrom("""
+    object Functions {
+      List(1, 2) map ((i: Int) => i + 1)
+      val sum: Seq[Int] => Int = _ reduceLeft (_+_)
+      List(1, 2) map (_ + 1)
+      List(1, 2) map (i => i + 1)
+    }""")
+      
+    assertEquals("""
+    object Functions {
+      List(1, 2) map ((i: Int) => i + 1)
+      val sum: Seq[Int] => Int = _ reduceLeft (_+_)
+      List(1, 2) map (_ + 1)
+      List(1, 2) map (i => i + 1)
+    }""", generate(removeAuxiliaryTrees apply tree get).get)     
+      
+    tree prettyPrintsTo """object Functions {
+List(1, 2).map((i: Int) => i.+(1))
+val sum: (Seq[Int]) => Int = _.reduceLeft(_.+(_))
+List(1, 2).map(_.+(1))
+List(1, 2).map((i) => i.+(1))
+}
+"""
+  }
+  
+  @Test
+  def testTypes() = {
     
     val tree = treeFrom("""
     object Rename1 {
@@ -80,9 +241,9 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
     
     tree prettyPrintsTo """object Rename1 {
 case class Person(name: String)
-def printName(ppp: Person) = println(ppp.name)
+def printName(ppp: Rename1.Person) = println(ppp.name)
 def main(args: Array[String]) = {
-val people: List[Person] = List(Person("Mirko"), Person("Christina"))
+val people: List[Rename1.Person] = List(Person("Mirko"), Person("Christina"))
 people.foreach((ppp: Rename1.Person) => printName(ppp))
 }
 }
