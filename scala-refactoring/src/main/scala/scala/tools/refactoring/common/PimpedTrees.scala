@@ -138,7 +138,7 @@ trait PimpedTrees {
   
   implicit def additionalTemplateMethods(t: Template) = new {
     def constructorParameters = t.body.filter {
-      case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) || mods.hasFlag(Flags.PARAM) 
+      case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
       case _ => false
     }
   }
@@ -153,14 +153,16 @@ trait PimpedTrees {
             
         val restBody = tpl.body -- classParams
         
+        // PRESUPER flag or treeInfo.isEarlyDef
         val(earlyBody, _) = restBody.filter(_.pos.isRange).partition((t: Tree) => tpl.parents.exists(t.pos precedes _.pos))
-                
+        
         val body = (restBody filterNot (earlyBody contains)).filter(t => t.pos.isRange || t.pos == NoPosition).filterNot(empty)
         
         val superCalls = tpl.parents filterNot empty map { superClass =>
         
           val superArgs = earlyBody collect {
-            case DefDef(_, _, _, _, _, Block(Apply(_, args) :: _, _)) if args.exists(superClass.pos precedes _.pos) => args
+            // does not work with early defs
+            case d @ DefDef(_, _, _, _, _, Block(Apply(Select(Super(_, _), _), args) :: _, _)) if d.symbol.isConstructor && args.exists(superClass.pos precedes _.pos) => args
           } flatten
         
           SuperConstructorCall(superClass, superArgs)

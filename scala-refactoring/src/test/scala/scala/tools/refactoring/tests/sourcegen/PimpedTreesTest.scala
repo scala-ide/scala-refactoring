@@ -47,7 +47,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees with AstTransformation
     
     val c = tree.find(_.isInstanceOf[Template]).get
     
-    assertFalse(c.originalLeftSibling.isDefined)
+    assertTrue(c.originalLeftSibling.isDefined)
     assertFalse(c.originalRightSibling.isDefined)
   }
     

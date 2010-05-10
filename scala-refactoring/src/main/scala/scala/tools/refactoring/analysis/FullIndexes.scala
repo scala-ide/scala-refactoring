@@ -103,8 +103,6 @@ trait FullIndexes extends Indexes {
             defn.ancestors.exists(t => t.pos.sameRange(clazz.pos) && t.pos.source == clazz.pos.source)
           case _ => false
         }
-        
-        val alls = allSubClasses(s.owner)
                 
         val overrides = allSubClasses(s.owner) map {
           case (otherClass, _) =>

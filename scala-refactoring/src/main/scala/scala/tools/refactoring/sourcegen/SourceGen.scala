@@ -36,17 +36,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     
     implicit val currentFile = t.pos.source
     
-    def handle(t: Tree, before: String = "", after: String = "") = {
-      var printed = f(t) getOrElse ""
-      
-      if(!printed.startsWith(before))
-        printed = before + printed
-        
-      if(!printed.endsWith(after))
-        printed = printed + after
-      
-      printed
-    }
+    def handle(t: Tree, before: String = "", after: String = "") = f(t) getOrElse ""
     
     def handleMany(ts: List[Tree], separator: String = ""): String = ts match {
       case Nil       => ""

@@ -103,7 +103,6 @@ class Person(val name: String)
     
     visualize(tree)
   
-    // why?
-    exit(0)
+    global.askShutdown()
   }
 }
