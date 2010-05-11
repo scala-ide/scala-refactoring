@@ -164,9 +164,6 @@ class A extends Object with ScalaObject {
 
 Several methods defined on \src{Symbol} can be used to cross-reference between the getters, setters and their underlying value. The \src{accessed} method on a getter or setter symbol returns the underlying value's symbol. To get the corresponding setter or getter from a value, the methods \src{getter} and \src{setter} can be used.
 
-Multiple assignment is also
-
-
 \paragraph{DefDef} \member{ValOrDefDef <: MemberDef <: DefTree <: SymTree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tparams}: List[TypeDef], \textit{vparamss}: List[List[ValDef]], \textit{tpt}: Tree, \textit{rhs}: Tree}
 
 \noindent The \src{DefDef} trees represent method definitions. Methods can have modifiers that further describe the implementation or constrain its visibility. Every method also has a name, but note that symbolic names are stored in their ASCII form, to get the original name, the symbol's \src{nameString} method can be used.
@@ -227,8 +224,6 @@ val a: java.lang.Object = {
 \end{lstlisting}
 \end{multicols}
 
-
-
 \paragraph{CaseDef} \member{Tree}{\textit{pat}: Tree, \textit{guard}: Tree, \textit{body}: Tree}
 
 \paragraph{Alternative} \member{TermTree}{\textit{trees}: List[Tree]}
@@ -243,25 +238,85 @@ val a: java.lang.Object = {
 
 \paragraph{Function} \member{TermTree $\wedge$ SymTree}{vparams: List[ValDef], body: Tree}
 
+\noindent The \src{Function} tree contains a single list of parameters and a body for the implementation. The following listing shows various usages of the \src{Function} tree and how their desugared function trees look like.
+
+\needspace{11\baselineskip}
+\begin{multicols}{2}
+\begin{lstlisting}
+list foreach println
+
+
+list foreach (println _)
+
+
+list foreach (i => println(i))
+list foreach ((i: Int) => println(i))
+list foreach {
+  case i => println(i)
+}
+\end{lstlisting}
+\begin{lstlisting}
+list foreach ({
+  ((x: Any) => println(x))
+})
+list foreach ({
+  ((x: Any) => println(x))
+})
+list foreach (((i: Int) => println(i)))
+list foreach (((i: Int) => println(i)))
+list foreach (((x0$1: Int) => x0$1 match {
+  case (i @ _) => println(i)
+}))
+\end{lstlisting}
+\end{multicols}
+
+In the first two examples, the functions are encapsulated in an additional \src{Block} (hence the curly braces). When the function parameter is not given a name explicitly, the compiler generates one and marks it with the \src{SYNTHETIC} flag. In the last of the examples, we can see that the pattern matching on the parameter is made explicit in the AST.
+
 \paragraph{Assign} \member{TermTree}{\textit{lhs}: Tree, \textit{rhs}: Tree}
 
 \paragraph{If} \member{TermTree}{\textit{cond}: Tree, \textit{thenp}: Tree, \textit{elsep}: Tree}
 
-\noindent An \src{If} expression consists of three parts: the condition, the then part and the else part.
+\noindent An \src{If} expression consists of three parts: the condition, the then part and the else part. If the else part is omitted, the literal \src{()} of type \src{Unit} is generated and the type of the conditional is set to an upper bound of \src{Unit} and the type of the then expression, usually \src{Any}.
 
-result type?
+\src{else if} terms are implemented using nested if conditionals. We can see this in the following listing.
 
-\src{else if} terms are implemented using nested if conditionals.
+\needspace{7\baselineskip}
+\begin{multicols}{2}
+\begin{lstlisting}
+if (a)
+  b
+else if (c)
+  d
+else
+  e
+
+\end{lstlisting}
+\begin{lstlisting}
+if (a)
+  b
+else
+  if (c)
+    d
+  else
+    e
+\end{lstlisting}
+\end{multicols}
+
+Note that the \src{if} used in pattern matching guards is not an \src{If} tree but a member of a \src{CaseDef} tree.
 
 \paragraph{Match} \member{TermTree}{\textit{selector}: Tree, \textit{cases}: List[CaseDef]}
 
 \paragraph{Return} \member{TermTree $\wedge$ SymTree}{\textit{expr}: Tree}
+
+\noindent The \src{Return} tree contains an expression that consitutes the return value. For \src{return} statements without an expression, the compiler generates a \src{()} literal.
 
 \paragraph{Try} \member{TermTree}{\textit{block}: Tree, \textit{catches}: List[CaseDef], \textit{finalizer}: Tree}
 
 \paragraph{Throw} \member{TermTree}{\textit{expr}: Tree}
 
 \paragraph{New} \member{TermTree}{\textit{tpt}: Tree}
+
+\noindent The \src{New} tree represents \src{new} statements, the \src{tpt} member is the type that is being instantiated.
 
 \paragraph{Typed} \member{TermTree}{\textit{expr}: Tree, \textit{tpt}: Tree}
 
@@ -277,9 +332,32 @@ result type?
 
 \paragraph{Select} \member{RefTree}{\textit{qualifier}: Tree, \textit{name}: Name}
 
+\noindent The \src{Select} tree occurs on places that select a name from a qualifier, e.g. in method calls. Note that the typer fully qualifies references as illustrated in the following listing.
+
+\begin{multicols}{2}
+\begin{lstlisting}
+class A {
+  val a = %\ldots%
+  val b = a
+}
+\end{lstlisting}
+\begin{lstlisting}  
+class A {
+  val a = %\ldots%
+  val b = A.this.a
+}
+\end{lstlisting}
+\end{multicols}
+
+As usual, these generated trees then have an \src{OffsetPosition}.
+
 \paragraph{Ident} \member{RefTree}{\textit{name}: Name}
 
+\noindent Holds a \src{Name}, which can be generated (check with \src{symbol.isSynthetic}) by the compiler. Note that the name is in its ASCII form, the printed name can be found via the tree's symbol.
+
 \paragraph{Literal} \member{TermTree}{value: Constant}
+
+\noindent All literals are represented by \src{Literal} trees. All possible kinds of constants can be seen in the \src{Constant} trait.
 
 \paragraph{SingletonTypeTree} \member{TypTree}{\textit{ref}: Tree}
 
@@ -293,7 +371,11 @@ result type?
 
 \paragraph{ExistentialTypeTree} \member{\textit{tpt}: Tree, \textit{whereClauses}: List[Tree]}
 
+\section{Others}
 
+For comprehensions
+
+multiple assignment
 
 
 only AST and symbols, but with more detail, refer to the term project for the compiler organization and introduction.
