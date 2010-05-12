@@ -117,6 +117,8 @@ We see that a self type annotation automatically intersects the current trait ty
 
 It is also allowed to use \src{this} for the self type's name. This introduces no alias and the name of the \src{ValDef} is just \src{\_}.
 
+Describe early defs..
+
 \paragraph{ValDef} \member{ValOrDefDef <: MemberDef <: DefTree <: SymTree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tpt}: Tree, \textit{rhs}: Tree}
 
 \noindent Value definitions are all definitions of \src{vals}, \src{vars} (identified by the \src{MUTABLE} flag) and parameters (identified by the \src{PARAM} flag).
@@ -359,6 +361,15 @@ As usual, these generated trees then have an \src{OffsetPosition}.
 
 \noindent All literals are represented by \src{Literal} trees. All possible kinds of constants can be seen in the \src{Constant} trait.
 
+\paragraph{TypeTree} \member{AbsTypeTree <: TypTree}{\textit{original}: Tree}
+
+\noindent From the Scala compiler's documentation: 
+
+\begin{quote}
+A synthetic term holding an arbitrary type. Not to be confused with with TypTree, the trait for trees that are only used for type trees. TypeTrees are inserted in several places, but most notably in \src{RefCheck}, where the arbitrary type trees are all replaced by TypeTrees.\end{quote}
+
+The original type tree is still accessible via the \src{TypeTree}'s \src{original} member. Note that the standard tree \src{Traverser} and \src{Transformer} visitors do not handle this original type.
+
 \paragraph{SingletonTypeTree} \member{TypTree}{\textit{ref}: Tree}
 
 \paragraph{SelectFromTypeTree} \member{TypTree $\wedge$ RefTree}{\textit{qualifier}: Tree, \textit{name}: Name}
@@ -368,6 +379,22 @@ As usual, these generated trees then have an \src{OffsetPosition}.
 \paragraph{AppliedTypeTree} \member{TypTree}{\textit{tpt}: Tree, \textit{args}: List[Tree]}
 
 \paragraph{TypeBoundsTree} \member{TypTree}{\textit{lo}: Tree, \textit{hi}: Tree}
+
+\noindent Whenever a type is constrained to lower or upper bounds, \src{TypeBoundsTree} represents these bounds. If one of the bounds is omitted, the compiler inserts \src{Nothing} respectively \src{Any} for the missing lower or upper bound. This is illustrated in the following example.
+
+\begin{multicols}{2}
+\begin{lstlisting}
+type B >: Nothing <: AnyRef
+type C >: String
+type D <: AnyRef
+\end{lstlisting}
+\begin{lstlisting}  
+type B >: Nothing <: AnyRef
+type C >: String <: Any
+type D >: Nothing <: AnyRef
+\end{lstlisting}
+\end{multicols}
+
 
 \paragraph{ExistentialTypeTree} \member{\textit{tpt}: Tree, \textit{whereClauses}: List[Tree]}
 

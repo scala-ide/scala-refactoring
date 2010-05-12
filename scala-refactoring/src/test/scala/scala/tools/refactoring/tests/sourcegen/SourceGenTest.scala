@@ -122,6 +122,37 @@ def test = return {
   }
   
   @Test
+  def testPackages() = {
+    val tree = treeFrom("""
+    package a
+    package b.c
+    package d {
+      package e.f {
+      }
+    }
+    object A
+    """)
+        
+    assertEquals("""
+    package a
+    package b.c
+    package d {
+      package e.f {
+      }
+    }
+    object A
+    """, generate(removeAuxiliaryTrees apply tree get).get)     
+    
+    // XXX this is wrong
+    tree prettyPrintsTo """package a
+package b.c
+package d
+package e.f
+
+object A"""
+  }
+  
+  @Test
   def testIfs() = {
     val tree = treeFrom("""
     object Functions {
@@ -212,6 +243,37 @@ List(1, 2).map((i: Int) => i.+(1))
 val sum: (Seq[Int]) => Int = _.reduceLeft(_.+(_))
 List(1, 2).map(_.+(1))
 List(1, 2).map((i) => i.+(1))
+}
+"""
+  }
+  
+  @Test
+  def testTypeDefs() = {
+    
+    val tree = treeFrom("""
+    trait Types {
+      type A = Int
+      type B >: Nothing <: AnyRef
+      def id[C](c: C) = c
+      protected type C >: Nothing
+      type D <: AnyRef
+    }""")
+    
+    assertEquals("""
+    trait Types {
+      type A = Int
+      type B >: Nothing <: AnyRef
+      def id[C](c: C) = c
+      protected type C >: Nothing
+      type D <: AnyRef
+    }""", generate(removeAuxiliaryTrees apply tree get).get)
+    
+    tree prettyPrintsTo """trait Types {
+type A = Int
+type B >: Nothing <: AnyRef
+def id[C](c: C) = c
+protected type C >: Nothing 
+type D <: AnyRef
 }
 """
   }
@@ -402,6 +464,44 @@ def someMethod {
 }"""
   }
   
+  @Test
+  def testEarlyDef() = {
+    val tree = treeFrom("""
+    trait Greeting {
+      val name: String
+      val msg = "How are you, "+name
+    }
+    class C(i: Int) extends {
+      val name = "Bob"
+    } with Greeting {
+      println(msg)
+    }
+""")
+
+    assertEquals("""
+    trait Greeting {
+      val name: String
+      val msg = "How are you, "+name
+    }
+    class C(i: Int) extends {
+      val name = "Bob"
+    } with Greeting {
+      println(msg)
+    }
+""", generate(removeAuxiliaryTrees apply tree get).get)
+    
+    tree prettyPrintsTo """trait Greeting {
+val name: String
+val msg = "How are you, ".+(name)
+}
+
+class C(i: Int) extends {
+val name = "Bob"
+} with Greeting {
+println(msg)
+}
+"""
+  }
   
   @Test
   def testImports() = {
@@ -479,6 +579,10 @@ import scala.collection.mutable._"""
         val a: Int = 5 //a
         val b = "huhu" //b
       }
+      trait B
+      {
+        val a: Int
+      }
     }
     """)
 
@@ -490,8 +594,23 @@ import scala.collection.mutable._"""
         val b = "huhu" //b
         val a: Int = 5 //a
       }
+      trait B
+      {
+        val a: Int
+      }
     }
     """, generate(removeAuxiliaryTrees &> ↓(⊆(reverseBody)) apply tree get).get)
+    
+    tree prettyPrintsTo """package xyz
+trait A {
+val a: Int = 5
+val b = "huhu"
+}
+
+trait B {
+val a: Int
+}
+"""
   }
   
   @Test

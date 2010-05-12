@@ -5,7 +5,7 @@ import tools.nsc.symtab.{Flags, Names, Symbols}
 
 trait PrettyPrinter {
   
-  self: common.PimpedTrees with common.Tracing =>
+  self: common.PimpedTrees with common.Tracing with common.CustomTrees =>
 
   val global: scala.tools.nsc.interactive.Global
   import global._
@@ -46,7 +46,7 @@ trait PrettyPrinter {
       case PackageDef(pid, stats) =>
         pid.print(before = "package ", after = "\n") + stats.print(separator = "\n")
         
-      case ClassDef(m @ ModifiersTree(mods), name, tparams, impl) =>
+      case ClassDef(m @ ModifierTree(mods), name, tparams, impl) =>
         //mods.annotations map traverse
         val mods_ = mods map (m => m.nameString + " ") mkString ""
         
@@ -55,20 +55,29 @@ trait PrettyPrinter {
         else
           "class ") + name + tparams.print(before = "[", separator = ", ", after = "]") + impl.print()
         
-      case ModuleDef(ModifiersTree(mods), name, impl) =>
+      case ModuleDef(ModifierTree(mods), name, impl) =>
 //        mods.annotations map traverse
         val mods_ = mods map (m => m.nameString + " ") mkString ""
         mods_ + "object " + name + impl.print()
         
-      case t @ ValDef(m @ ModifiersTree(mods), name, tpt, rhs)  =>
+      case t @ ValDef(m @ ModifierTree(mods), name, tpt, rhs)  =>
         //mods.annotations map traverse
-        val mods_ = mods map (m => m.nameString + " ") mkString ""
-        mods_ + name.toString.trim + tpt.print(before = ": ") + rhs.print(before = " = ")
-
+        var mods_ = mods map (m => m.nameString + " ") mkString ""
         
-      case t @ DefDef(ModifiersTree(mods), name, tparams, vparamss, tpt, _) =>
+        if(t.needsKeyword && !mods_.contains("val")) {
+          mods_ = mods_ + "val "
+        }
+                
+        mods_ + name.toString.trim + tpt.print(before = ": ") + rhs.print(before = " = ")
+        
+      case t @ DefDef(ModifierTree(mods), name, tparams, vparamss, tpt, _) =>
         //mods.annotations map traverse
-        val mods_ = mods map (m => m.nameString + " ") mkString ""
+        var mods_ = mods map (m => m.nameString + " ") mkString ""
+        
+        if(t.mods.hasFlag(Flags.STABLE) && !mods_.contains("val")) {
+          mods_ = mods_ + "val "
+        }
+        
         val tparams_ = tparams print (before = "[", after = "]", separator = ", ")
         val params = vparamss map (_ print (before = "(", after = ")", separator = ", ")) mkString ""
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
@@ -78,11 +87,15 @@ trait PrettyPrinter {
         }
         mods_ + name + tparams_ + params + tpt.print(before = ": ") + rhs
         
-      case TypeDef(mods, name, tparams, rhs) =>
+      case TypeDef(ModifierTree(mods), name, tparams, rhs) =>
         //mods.annotations map traverse
-        //tparams map traverse
-        //traverse(rhs)
-        name.toString
+        val mods_ = mods map (m => m.nameString + " ") mkString ""
+        val tparams_ = tparams.print(before = "[", after = "]", separator = ", ")
+        val rhs_ = rhs match {
+          case rhs: TypeTree if rhs.original.isInstanceOf[TypeBoundsTree] => rhs.print(before = " ")
+          case _ => rhs.print(before = " = ")
+        }
+        mods_ + name + tparams_ + rhs_
         
   //    case LabelDef(name, params, rhs) =>
   //      params map traverse
@@ -105,38 +118,31 @@ trait PrettyPrinter {
   //    eliminated by type checker
   //    case Annotated(annot, arg) =>
         
-      case tpl: Template =>
+      case TemplateExtractor(params, earlyBody, parents, self, body) =>
         
-        val classParams = tpl.constructorParameters 
-        
-        val (superArgs, body) = ((tpl.body -- classParams) partition {
-          case t @ DefDef(_, _, _, _, _, Block(Apply(_, args) :: _, _)) => t.symbol.isConstructor
-          case _ => false
-        }) match {
-          case (args, body) => (args flatMap {
-            case DefDef(_, _, _, _, _, Block(Apply(_, args) :: _, _)) => args
-            case _ => EmptyTree :: Nil
-          }, body)
+        val sup = if(earlyBody.isEmpty) {
+          parents match {
+            case Nil => ""
+            case superclass :: traits => 
+              superclass.print(before = " extends ") + 
+              traits.print(before = " with ", separator = " with ")
+          }
+        } else {
+          earlyBody.print(before = " extends {\n", after = "\n}", separator = "\n") +
+          parents.print(before = " with ", separator = " with ")
         }
-        
-        val parents = tpl.parents match {
-          case Nil => ""
-          case superclass :: traits => 
-            superclass.print(before = " extends ") + 
-              superArgs.print(before = "(", separator = ", ", after = ")") +
-                traits.print(before = " with ", separator = " with ")
-        }
-        
-        val self = if(tpl.self != emptyValDef) {
-          tpl.self.print(before = " {\n", after = " =>\n") + body.print(separator = "\n") + "}"
+                
+        val self_ = if(self != EmptyTree) {
+          self.print(before = " {\n", after = " =>\n") + body.print(separator = "\n") + "}"
         } else {
           body.print(before = " {\n", separator = "\n", after = "\n}\n")
         }
-        
-        classParams.print(before = "(", separator = ", ", after = ")") + parents + self
+                
+        params.print(before = "(", separator = ", ", after = ")") + sup + self_
 
-      case t: Block =>
-        t.body match {
+        
+      case BlockExtractor(stats) =>
+        stats match {
           case t :: Nil => t.print()
           case t => t print ( before = "{\n", separator = "\n", after = "\n}")
         }
@@ -260,10 +266,9 @@ trait PrettyPrinter {
       case AppliedTypeTree(tpt, args) =>
         tpt.print() + args.print(before = "[", separator = ", ", after = "]")
         
-  //    case TypeBoundsTree(lo, hi) =>
-  //      traverse(lo)
-  //      traverse(hi)
-  //      
+      case TypeBoundsTree(lo, hi) =>
+        lo.print(before = ">: ", after = " ") + hi.print(before = "<: ")
+        
   //    case ExistentialTypeTree(tpt, whereClauses) =>
   //      traverse(tpt)
   //      whereClauses map traverse
@@ -273,6 +278,9 @@ trait PrettyPrinter {
       
       case t: ModifierTree =>
         t.nameString
+        
+      case SuperConstructorCall(clazz: Tree, args: List[Tree]) =>
+        clazz.print() + args.print(before = "(", separator = ", ", after = ")")
         
       case t: Tree => 
         "«?"+ t.getClass.getSimpleName +"?»"

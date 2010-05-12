@@ -24,7 +24,7 @@ private object CompilerInstance {
     val libPath = scalaObjectSource.getLocation          
     val pathList = List(compilerPath,libPath)
 	  val origBootclasspath = settings.bootclasspath.value
-    settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.separator)
+    settings.bootclasspath.value = (origBootclasspath :: pathList).mkString(java.io.File.pathSeparator)
   }
   
   val compiler = new Global(settings, new ConsoleReporter(settings) {

@@ -6,7 +6,7 @@ import tools.nsc.util.SourceFile
 
 trait LayoutHelper {
   
-  self: Formatting with common.Tracing with common.PimpedTrees =>
+  self: Formatting with common.Tracing with common.PimpedTrees with common.CustomTrees =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
@@ -78,16 +78,22 @@ trait LayoutHelper {
       case (p: PackageDef, c) =>
         layout(p.pos.start, c.pos.start) splitAt c.pos.start
         
-      case (p @ ClassDef(ModifiersTree(Nil), _, _, _), c) =>
+      case (p @ ClassDef(ModifierTree(Nil), _, _, _), c) =>
         layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
         
-      case (p @ ClassDef(ModifiersTree(mods), _, _, _), c) =>
+      case (p @ ClassDef(ModifierTree(mods), _, _, _), c) =>
         layout(p.pos.start, mods.head.pos.start) → NoLayout
         
-      case (p @ ModuleDef(ModifiersTree(Nil), _, _), c) =>
+      case (p @ ModuleDef(ModifierTree(Nil), _, _), c) =>
         layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
         
-      case (p @ ModuleDef(ModifiersTree(mods), _, _), c) =>
+      case (p @ ModuleDef(ModifierTree(mods), _, _), c) =>
+        layout(p.pos.start, mods.head.pos.start) → NoLayout
+        
+      case (p @ TypeDef(ModifierTree(Nil), _, _, _), c) =>
+        layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
+        
+      case (p @ TypeDef(ModifierTree(mods), _, _, _), c) =>
         layout(p.pos.start, mods.head.pos.start) → NoLayout
         
       case (p: Template, c) =>
@@ -139,6 +145,9 @@ trait LayoutHelper {
          layout(p.pos.start, c.pos.start) → NoLayout
          
       case (p: AppliedTypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: TypeBoundsTree, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
          
       case (p: Return, c) =>
@@ -214,10 +223,16 @@ trait LayoutHelper {
        case (c, p: AppliedTypeTree) =>
          NoLayout → layout(c.pos.end, p.pos.end)
          
+       case (c, p: TypeBoundsTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
        case (c, p: Return) =>
          NoLayout → layout(c.pos.end, p.pos.end)
          
        case (c, p: New) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: TypeDef) =>
          NoLayout → layout(c.pos.end, p.pos.end)
        
        case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)

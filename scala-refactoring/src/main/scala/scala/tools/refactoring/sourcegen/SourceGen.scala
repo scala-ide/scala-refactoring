@@ -1,7 +1,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-import common.{Change, PimpedTrees, Tracing}
+import common.{Change, PimpedTrees, Tracing, CustomTrees}
 
 trait SourceGen extends PrettyPrinter with PimpedTrees {
   
@@ -25,7 +25,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     
     children(originalTree) match {
       case Nil =>
-        NoLayout → NoLayout // XXX? between siblings instead?
+        NoLayout → NoLayout
       case c => 
         splitLayoutBetweenParentAndFirstChild(parent = originalTree, child = c.head)._1 →
         splitLayoutBetweenLastChildAndParent(child = c.last, parent = originalTree)._2
@@ -61,24 +61,24 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       case (t @ PackageDef(pid, stats), _) =>
         handle(pid) + handleMany(stats)
       
-      case (t @ ClassDef(ModifiersTree(mods), name, tparams, impl), orig) =>
+      case (t @ ClassDef(ModifierTree(mods), name, tparams, impl), orig) =>
         handleMany(mods) + (if(t.symbol.isAnonymousClass) "" else handle(NameTree(name) setPos orig.namePosition)) + handleMany(tparams) + handle(impl)
         
-      case (t @ ModuleDef(ModifiersTree(mods), name, impl), orig) =>
+      case (t @ ModuleDef(ModifierTree(mods), name, impl), orig) =>
         handleMany(mods) + handle(NameTree(name) setPos orig.namePosition) + handle(impl)
       
-      case (t @ TemplateTree(params, earlyBody, parents, self, body), _) =>
+      case (t @ TemplateExtractor(params, earlyBody, parents, self, body), _) =>
         handleMany(params, separator = ", ") + handleMany(earlyBody) + handleMany(parents) + handle(self) + handleMany(body)
         
-      case (t @ DefDef(ModifiersTree(mods), newName, tparams, vparamss, tpt, rhs), orig) =>
+      case (t @ DefDef(ModifierTree(mods), newName, tparams, vparamss, tpt, rhs), orig) =>
         handleMany(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = " ") +
           handleMany(tparams) + vparamss.map(vparams => handleMany(vparams, ", ")).mkString("") + handle(tpt) + handle(rhs)
         
-      case (t @ ValDef(ModifiersTree(mods), newName, tpt, rhs), orig) =>
+      case (t @ ValDef(ModifierTree(mods), newName, tpt, rhs), orig) =>
         handleMany(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = " ") + handle(tpt) + handle(rhs)
 
-      case (t: Block, _) => 
-        handleMany(t.body)
+      case (BlockExtractor(stats), _) => 
+        handleMany(stats)
         
       case (t: TypeTree, _) => 
         handle(t.original)
@@ -89,8 +89,8 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       case (t: TypeApply, _) => 
         handle(t.fun) + handleMany(t.args)
         
-      case (t: TypeDef, _) => 
-        t.name
+      case (t @ TypeDef(ModifierTree(mods), name, tparams, rhs), orig) => 
+        handleMany(mods ::: (NameTree(name) setPos orig.namePosition) :: Nil, separator = " ") + handleMany(tparams) + handle(rhs)
         
       case (t: Ident, _) => 
         t.nameString
@@ -113,7 +113,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         val ts = t.Selectors()
         handle(expr) + handleMany(ts, separator = ", ")
         
-      case (t @ ImportSelectorTree(name, rename, _), _) =>
+      case (t @ ImportSelectorTree(name, rename), _) =>
         handle(name) + handle(rename)
         
       case (t: NameTree, _) =>
@@ -142,6 +142,9 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
         
       case (Return(expr), _) =>
         handle(expr)
+        
+      case (TypeBoundsTree(lo, hi), _) =>
+        handle(lo) + handle(hi)
         
       case (t @ New(tpt), _) =>
         if(t.pos.start > t.pos.point)
@@ -195,6 +198,9 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       case NoPosition => 
         prettyPrintTree(self, t)
       case _ =>
+        
+        
+        
         reuseExistingSource(self, t)
     }
 
