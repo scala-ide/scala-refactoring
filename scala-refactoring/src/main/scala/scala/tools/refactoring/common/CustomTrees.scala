@@ -147,19 +147,17 @@ trait CustomTrees {
   object TemplateExtractor {
     def unapply(t: Tree) = t match {
       case tpl: Template => 
-      
-        def empty(t: Tree) = t == EmptyTree || t == emptyValDef
-        
+              
         val classParams = tpl.constructorParameters
-            
-        val body = (tpl.body -- classParams -- tpl.primaryConstructor) filterNot(empty)
+        
+        val body = (tpl.body filterNot (tpl.primaryConstructor ::: classParams contains)) filterNot (_.isEmpty)
         
         val parents = (tpl.superConstructorParameters match {
           case Nil => tpl.parents
           case params => SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
-        }) filterNot empty
+        }) filterNot (_.isEmpty)
         
-        val self = if(empty(tpl.self)) EmptyTree else {
+        val self = if(tpl.self.isEmpty) EmptyTree else {
           
           if(tpl.pos.isRange) {
             val source = tpl.self.pos.source.content.slice(tpl.self.pos.point, tpl.self.pos.end) mkString // XXX remove comments

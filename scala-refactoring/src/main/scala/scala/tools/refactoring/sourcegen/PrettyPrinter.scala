@@ -279,7 +279,7 @@ trait PrettyPrinter {
       case t: ModifierTree =>
         t.nameString
         
-      case SuperConstructorCall(clazz: Tree, args: List[Tree]) =>
+      case SuperConstructorCall(clazz, args) =>
         clazz.print() + args.print(before = "(", separator = ", ", after = ")")
         
       case t: Tree => 

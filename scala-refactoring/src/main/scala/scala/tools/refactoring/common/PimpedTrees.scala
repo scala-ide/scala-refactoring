@@ -26,13 +26,14 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
   /**
    * Returns the compilation unit root for that position.
    * */  
-  def cuRoot(p: global.Position): Option[Tree] = treeForFile(p.source.file)
+  def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file)
 
   /**
    * Given a Position, returns the tree in that compilation
    * unit that inhabits that position.
    * */
   def findOriginalTreeFromPosition(p: Position): Option[List[Tree]] = {
+    
     def find(t: Tree): List[Tree] = {
       (if(t samePos p)
         t :: Nil
@@ -95,6 +96,9 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     case t @ Apply(fun, args) =>
       fun :: args
       
+    case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.start == t.pos.point =>
+      (NameTree(selector) setPos t.namePosition) :: Nil
+      
     case t @ Select(qualifier, selector) =>
       qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
       
@@ -133,6 +137,6 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
-  }) filterNot (_ == EmptyTree) filterNot (_.pos == NoPosition)
+  }) filterNot (_.isEmpty)
   
 }

@@ -19,25 +19,23 @@ trait LayoutHelper {
 
     override def toString() = source.content.slice(start, end) mkString
       
-    def splitAfter(cs: Char*): (Layout, Layout) = cs.toList match {
-      case Nil => 
-        this → NoLayout
-      case x :: xs if toString.indexOf(x) >= 0 =>
-        val i = start + toString.indexOf(x) + 1
-        copy(end = i) → copy(start = i)
-      case _ :: xs => splitAfter(xs:_*)
+    def splitAfter(cs: Char*): (Layout, Layout) = split(cs) match {
+      case None => this → NoLayout
+      case Some(i) => copy(end = i+1) → copy(start = i+1)
     }
     
-    def splitBefore(cs: Char*): (Layout, Layout) = cs.toList match {
-      case Nil => 
-        NoLayout → this
-      case x :: xs if toString.indexOf(x) >= 0 =>
-        val i = start + toString.indexOf(x)
-        copy(end = i) →  copy(start = i)
-      case _ :: xs => splitBefore(xs:_*)
+    def splitBefore(cs: Char*): (Layout, Layout) = split(cs) match {
+      case None => NoLayout → this
+      case Some(i) => copy(end = i) →  copy(start = i)
     }
-        
-    def splitAt(i: Int) = LayoutFromFile(source, start, i) → LayoutFromFile(source, i, end)
+    
+    private def split(cs: Seq[Char]): Option[Int] = cs.toList match {
+      case Nil => 
+        None
+      case x :: xs if toString.indexOf(x) >= 0 =>
+        Some(start + toString.indexOf(x))
+      case _ :: xs => split(xs)
+    }
   }
   
   case class LayoutFromString(override val toString: String) extends Layout
@@ -76,7 +74,7 @@ trait LayoutHelper {
     (parent, child) match {
       
       case (p: PackageDef, c) =>
-        layout(p.pos.start, c.pos.start) splitAt c.pos.start
+        layout(p.pos.start, c.pos.start) → NoLayout
         
       case (p @ ClassDef(ModifierTree(Nil), _, _, _), c) =>
         layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)

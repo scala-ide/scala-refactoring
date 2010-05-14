@@ -14,3 +14,4 @@ Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.transformation,
  scala.tools.refactoring.util
 Bundle-ClassPath: .
+Bundle-RequiredExecutionEnvironment: J2SE-1.5

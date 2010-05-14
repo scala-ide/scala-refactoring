@@ -78,10 +78,10 @@ order=3
 
 [item:91_scala_ast.tex]
 archive=true
-column=20
+column=1
 encoding=ISO-8859-1
 highlight=LaTeX
-line=343
+line=102
 mode=LaTeX
 open=true
 order=4
@@ -135,8 +135,8 @@ CursorColumn=0
 CursorLine=41
 
 [view-settings,view=0,item:91_scala_ast.tex]
-CursorColumn=20
-CursorLine=343
+CursorColumn=1
+CursorLine=102
 
 [view-settings,view=0,item:9_appendix.tex]
 CursorColumn=0
