@@ -66,6 +66,10 @@
         </executions>
 	<configuration>
           <scalaVersion>2.8.0-SNAPSHOT</scalaVersion>
+	  <jvmArgs>
+            <jvmArg>-Xms256m</jvmArg>
+            <jvmArg>-Xmx768m</jvmArg>
+          </jvmArgs>
         </configuration>
       </plugin>
     </plugins>
