@@ -57,6 +57,96 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
    * */
   def findOriginalTree(t: Tree): Option[Tree] = findOriginalTreeFromPosition(t.pos) flatMap (_ filter (_ sameTree t ) lastOption)
   
+  
+  implicit def additionalTemplateMethods(t: Template) = new {
+    def constructorParameters = t.body.filter {
+      case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
+      case _ => false
+    }
+    
+    def primaryConstructor = t.body.filter {
+      case t: DefDef => t.symbol.isPrimaryConstructor
+      case _ => false
+    }
+    
+    def earlyDefs = t.body.collect {
+      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats filter treeInfo.isEarlyDef
+      case t @ DefDef(_, _, _, _, _, rhs)        if t.symbol.isConstructor && treeInfo.isEarlyDef(rhs) => rhs :: Nil
+    } flatten
+    
+    def superConstructorParameters = t.body.collect {
+      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats collect {
+        case Apply(Super(_, _), args) => args
+      } flatten
+    } flatten
+  }  
+  
+      
+  /**
+   * Name objects are not trees, this extractor creates NameTree instances from Trees.
+   * */
+  implicit def nameTreeToNameTreeExtractor(t: global.Tree) = new {
+    object Name {
+      def unapply(name: global.Name) = {
+        Some(NameTree(name) setPos t.namePosition)
+      }
+    }
+  }
+  
+  /**
+   * Provides a finer-grained extractor for Template that distinguishes
+   * between class constructor parameters, early definitions, parents, 
+   * self type annotation and the real body.
+   * */
+  object TemplateExtractor {
+    def unapply(t: Tree) = t match {
+      case tpl: Template => 
+              
+        val classParams = tpl.constructorParameters
+        
+        val body = (tpl.body filterNot (tpl.primaryConstructor ::: classParams contains)) filterNot (_.isEmpty)
+        
+        val parents = (tpl.superConstructorParameters match {
+          case Nil => tpl.parents
+          case params => SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
+        }) filterNot (_.isEmpty)
+        
+        val self = if(tpl.self.isEmpty) EmptyTree else {
+          
+          if(tpl.pos.isRange) {
+            val source = tpl.self.pos.source.content.slice(tpl.self.pos.point, tpl.self.pos.end) mkString // XXX remove comments
+            
+            def extractExactPositionsOfAllTypes(typ: Type): List[NameTree] = typ match {
+              case RefinedType(_ :: parents, _) =>
+                parents flatMap extractExactPositionsOfAllTypes
+              case TypeRef(_, sym, _) =>
+                val thisName = sym.name.toString
+                val start = tpl.self.pos.point + source.indexOf(thisName)
+                val end = start + thisName.length
+                List(NameTree(sym.name) setPos (tpl.self.pos withStart start withEnd end))
+              case _ => Nil
+            }
+            
+            val selfTypes = extractExactPositionsOfAllTypes(tpl.self.tpt.tpe)
+            val namePos = {
+              val p = tpl.self.pos
+              p withEnd (if(p.start == p.point) p.end else p.point)
+            }
+            
+            SelfTypeTree(NameTree(tpl.self.name) setPos namePos, selfTypes) setPos tpl.self.pos
+          } else {
+            tpl.self
+          }
+        }
+
+        Some((classParams, tpl.earlyDefs, parents, self, body))
+      
+      case _ => 
+        None
+    }
+  }
+  
+  
   /**
    * Returns all children that have a representation in the source code.
    * This includes Name and Modifier trees and excludes everything that

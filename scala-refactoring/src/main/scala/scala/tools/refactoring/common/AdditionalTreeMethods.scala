@@ -5,8 +5,7 @@ import reflect.ClassManifest.fromClass
 
 trait AdditionalTreeMethods {
   
-  this: CustomTrees =>
-
+  val global: scala.tools.nsc.interactive.Global
   import global._
   
   def cuRoot(p: global.Position): Option[Tree]
@@ -20,30 +19,7 @@ trait AdditionalTreeMethods {
       !t.mods.hasFlag(Flags.SYNTHETIC) && 
       !t.symbol.isSynthetic
   }
-  
-  implicit def additionalTemplateMethods(t: Template) = new {
-    def constructorParameters = t.body.filter {
-      case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
-      case _ => false
-    }
-    
-    def primaryConstructor = t.body.filter {
-      case t: DefDef => t.symbol.isPrimaryConstructor
-      case _ => false
-    }
-    
-    def earlyDefs = t.body.collect {
-      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats filter treeInfo.isEarlyDef
-      case t @ DefDef(_, _, _, _, _, rhs)        if t.symbol.isConstructor && treeInfo.isEarlyDef(rhs) => rhs :: Nil
-    } flatten
-    
-    def superConstructorParameters = t.body.collect {
-      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats collect {
-        case Apply(Super(_, _), args) => args
-      } flatten
-    } flatten
-  }  
-  
+ 
   
   /**
    * Add some methods to Tree that make it easier to compare
