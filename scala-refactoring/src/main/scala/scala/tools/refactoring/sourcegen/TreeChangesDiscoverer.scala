@@ -32,14 +32,10 @@ trait TreeChangesDiscoverer {
     }
     
     def hasChangedChildren(t: Tree): Boolean = findOriginalTree(t) map children match {
-      case None => Predef.error("should never happen")
+      case None =>
+        Predef.error("should never happen")
       case Some(origChld) =>
-        val chld = children(t)
-        if(chld.size != origChld.size) return true
-        (chld zip origChld) exists {
-          case (c, oc) => 
-            !c.sameTree(oc)
-        }
+        !(children(t) corresponds origChld)(_ sameTree _)
     }
     
     def searchChildrenForChanges(parent: Tree): List[Tree] = {

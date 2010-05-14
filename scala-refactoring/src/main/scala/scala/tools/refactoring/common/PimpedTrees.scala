@@ -64,7 +64,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
    * */
   def children(t: Tree): List[Tree] = (t match {
     
-    case t @ PackageDef(pid, stats) => 
+    case PackageDef(pid, stats) => 
       pid :: stats
     
     case t @ ClassDef(ModifierTree(mods), name, tparams, impl) =>
@@ -73,7 +73,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     case t @ ModuleDef(ModifierTree(mods), name, impl) =>
       mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
       
-    case t @ TemplateExtractor(params, earlyBody, parents, self, body) =>
+    case TemplateExtractor(params, earlyBody, parents, self, body) =>
       params ::: earlyBody ::: parents ::: self :: body
 
     case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
@@ -93,7 +93,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     
     case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This => Nil
     
-    case t @ Apply(fun, args) =>
+    case Apply(fun, args) =>
       fun :: args
       
     case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.start == t.pos.point =>
