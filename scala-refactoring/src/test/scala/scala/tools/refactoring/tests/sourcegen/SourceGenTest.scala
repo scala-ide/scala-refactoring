@@ -29,12 +29,12 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
   
   implicit def stringToPrettyPrint(original: String) = new {
     def cleanTree(s: String) = (removeAuxiliaryTrees &> emptyAllPositions)(treeFrom(s)).get
-    def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)).get)
+    def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)))
   }
   
   implicit def treeToPrettyPrint(original: Tree) = new {
     def cleanTree(t: Tree) = (removeAuxiliaryTrees &> emptyAllPositions)(t).get
-    def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)).get)
+    def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)))
   }
   
   val reverseBody = Transformations.transform[Tree, Tree] {
@@ -79,18 +79,18 @@ class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with For
         println("hello from an anonymous class")
       }
     }
-    """, generate(removeAuxiliaryTrees apply tree get).get)     
+    """, generate(removeAuxiliaryTrees apply tree get))     
     
     // terrible, but don't know how to do better :/
     tree prettyPrintsTo """object Functions {
-val a = new String("hello")
-def createNew = {
-class $anon {
-println("hello from an anonymous class")
-}
-
-new 
-}
+  val a = new String("hello")
+  def createNew = {
+    class $anon {
+      println("hello from an anonymous class")
+    }
+    
+    new 
+  }
 }
 """
   }
@@ -111,12 +111,12 @@ new
         return 5
       }
     }
-    """, generate(removeAuxiliaryTrees apply tree get).get)     
+    """, generate(removeAuxiliaryTrees apply tree get))     
     
     tree prettyPrintsTo """object Functions {
-def test = return {
-5
-}
+  def test = return {
+    5
+  }
 }
 """
   }
@@ -141,7 +141,7 @@ def test = return {
       }
     }
     object A
-    """, generate(removeAuxiliaryTrees apply tree get).get)     
+    """, generate(removeAuxiliaryTrees apply tree get))     
     
     // XXX this is wrong
     tree prettyPrintsTo """package a
@@ -196,25 +196,15 @@ object A"""
           println("hello!")
           false
         }
-    }""", generate(removeAuxiliaryTrees &> ↓(any(negateAllBools)) apply tree get).get)     
+    }""", generate(removeAuxiliaryTrees &> ↓(any(negateAllBools)) apply tree get))     
     
     tree prettyPrintsTo """object Functions {
-val x = if (true)
-false
-else true
-val y = if (true.==(false))
-true
-else if (true.==(true))
-false
-else true
-val z = if (true.==(false))
-true
-else if (true.==(true))
-false
-else {
-println("hello!")
-true
-}
+  val x = if (true) false else true
+  val y = if (true.==(false)) true else if (true.==(true)) false else true
+  val z = if (true.==(false)) true else if (true.==(true)) false else {
+    println("hello!")
+    true
+  }
 }
 """
   }
@@ -236,13 +226,13 @@ true
       val sum: Seq[Int] => Int = _ reduceLeft (_+_)
       List(1, 2) map (_ + 1)
       List(1, 2) map (i => i + 1)
-    }""", generate(removeAuxiliaryTrees apply tree get).get)     
+    }""", generate(removeAuxiliaryTrees apply tree get))     
       
     tree prettyPrintsTo """object Functions {
-List(1, 2).map((i: Int) => i.+(1))
-val sum: (Seq[Int]) => Int = _.reduceLeft(_.+(_))
-List(1, 2).map(_.+(1))
-List(1, 2).map((i) => i.+(1))
+  List(1, 2).map((i: Int) => i.+(1))
+  val sum: (Seq[Int]) => Int = _.reduceLeft(_.+(_))
+  List(1, 2).map(_.+(1))
+  List(1, 2).map((i) => i.+(1))
 }
 """
   }
@@ -266,14 +256,14 @@ List(1, 2).map((i) => i.+(1))
       def id[C](c: C) = c
       protected type C >: Nothing
       type D <: AnyRef
-    }""", generate(removeAuxiliaryTrees apply tree get).get)
+    }""", generate(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """trait Types {
-type A = Int
-type B >: Nothing <: AnyRef
-def id[C](c: C) = c
-protected type C >: Nothing 
-type D <: AnyRef
+  type A = Int
+  type B >: Nothing <: AnyRef
+  def id[C](c: C) = c
+  protected type C >: Nothing 
+  type D <: AnyRef
 }
 """
   }
@@ -299,15 +289,15 @@ type D <: AnyRef
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
         people foreach printName
       }
-    }""", generate(removeAuxiliaryTrees apply tree get).get)
+    }""", generate(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """object Rename1 {
-case class Person(name: String)
-def printName(ppp: Rename1.Person) = println(ppp.name)
-def main(args: Array[String]) = {
-val people: List[Rename1.Person] = List(Person("Mirko"), Person("Christina"))
-people.foreach((ppp: Rename1.Person) => printName(ppp))
-}
+  case class Person(name: String)
+  def printName(ppp: Rename1.Person) = println(ppp.name)
+  def main(args: Array[String]) = {
+    val people: List[Rename1.Person] = List(Person("Mirko"), Person("Christina"))
+    people.foreach((ppp: Rename1.Person) => printName(ppp))
+  }
 }
 """
   }
@@ -325,10 +315,10 @@ people.foreach((ppp: Rename1.Person) => printName(ppp))
     object Obj extends java.lang.Object {
       val self = this
     }
-    """, generate(removeAuxiliaryTrees apply tree get).get)
+    """, generate(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """object Obj extends java.lang.Object {
-val self = this
+  val self = this
 }
 """
   }
@@ -350,12 +340,12 @@ val self = this
       val i = 5
       protected def a() = i
     }
-    """, generate((removeAuxiliaryTrees &> ↓(changeSomeModifiers)) apply tree get).get)
+    """, generate((removeAuxiliaryTrees &> ↓(changeSomeModifiers)) apply tree get))
     
     tree prettyPrintsTo """class A {
-private def test = 5
-lazy val i = 5
-final protected def a = i
+  private def test = 5
+  lazy val i = 5
+  final protected def a = i
 }
 """
   }
@@ -379,7 +369,7 @@ final protected def a = i
     class B
     class C
     class D
-    """, generate(modTree).get)
+    """, generate(modTree))
     
     tree prettyPrintsTo """package xy
 abstract class A
@@ -419,16 +409,16 @@ class D"""
     trait CTrait {
       self: BTrait with ATrait =>
     }
-    """, generate(removeAuxiliaryTrees apply tree get).get)
+    """, generate(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """trait ATrait {
-self =>
+  self =>
 }
 trait BTrait {
-self: ATrait =>
+  self: ATrait =>
 }
 trait CTrait {
-self: BTrait with ATrait =>
+  self: BTrait with ATrait =>
 }"""
   }
   
@@ -453,14 +443,14 @@ self: BTrait with ATrait =>
       def someMethod() {
       }
     }
-    """, generate(removeAuxiliaryTrees apply tree get).get)
+    """, generate(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """trait ATrait
 class ASuperClass(x: Int, val d: String)
 class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
-self_type_annotation =>
-def someMethod {
-}
+  self_type_annotation =>
+  def someMethod {
+  }
 }"""
   }
   
@@ -488,17 +478,17 @@ def someMethod {
     } with Greeting {
       println(msg)
     }
-""", generate(removeAuxiliaryTrees apply tree get).get)
+""", generate(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """trait Greeting {
-val name: String
-val msg = "How are you, ".+(name)
+  val name: String
+  val msg = "How are you, ".+(name)
 }
 
 class C(i: Int) extends {
-val name = "Bob"
+  val name = "Bob"
 } with Greeting {
-println(msg)
+  println(msg)
 }
 """
   }
@@ -517,7 +507,7 @@ println(msg)
     import java.lang.Object
     import java.lang.{String => S, Object => _, _}
     import scala.collection.mutable._
-    """, generate(removeAuxiliaryTrees apply tree get).get)
+    """, generate(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """import java.lang.{String => S}
 import java.lang.Object
@@ -566,7 +556,7 @@ import scala.collection.mutable._"""
         def aa() = 5
         def abcdabcd[T](a: String, b: Int): Int
       }
-    """, generate(removeAuxiliaryTrees &> ↓(⊆(doubleAllDefNames)) &> ↓(⊆(reverseBody)) apply tree get).get) 
+    """, generate(removeAuxiliaryTrees &> ↓(⊆(doubleAllDefNames)) &> ↓(⊆(reverseBody)) apply tree get)) 
   }
   
   @Test
@@ -599,16 +589,16 @@ import scala.collection.mutable._"""
         val a: Int
       }
     }
-    """, generate(removeAuxiliaryTrees &> ↓(⊆(reverseBody)) apply tree get).get)
+    """, generate(removeAuxiliaryTrees &> ↓(⊆(reverseBody)) apply tree get))
     
     tree prettyPrintsTo """package xyz
 trait A {
-val a: Int = 5
-val b = "huhu"
+  val a: Int = 5
+  val b = "huhu"
 }
 
 trait B {
-val a: Int
+  val a: Int
 }
 """
   }
@@ -633,18 +623,18 @@ val a: Int
     }
     """ prettyPrintsTo """package xy
 class A {
-def a: Int
-def b: Int = 5
-def c = 5
-def d = {
-val a = 5
-a
-}
-def e(i: Int) = i
-def f(i: Int)(j: Int) = i.+(j)
-def g(i: Int, j: Int) = i.+(j)
-def h(i: Int, j: Int): (Int, Int) = (i, j)
-def id[A](a: A) = a
+  def a: Int
+  def b: Int = 5
+  def c = 5
+  def d = {
+    val a = 5
+    a
+  }
+  def e(i: Int) = i
+  def f(i: Int)(j: Int) = i.+(j)
+  def g(i: Int, j: Int) = i.+(j)
+  def h(i: Int, j: Int): (Int, Int) = (i, j)
+  def id[A](a: A) = a
 }
 """
 }

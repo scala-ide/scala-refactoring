@@ -32,11 +32,11 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     }
   }
 
-  def printWithExistingLayout(f: Transformation[Tree, String], left: String, t: Tree, right: String) = {
+  def printWithExistingLayout(f: (Tree, Indentation) => Option[String], left: String, t: Tree, right: String, ind: Indentation) = {
     
     implicit val currentFile = t.pos.source
     
-    def handle(t: Tree, before: String = "", after: String = "") = f(t) getOrElse ""
+    def handle(t: Tree, before: String = "", after: String = "") = f(t, ind) getOrElse ""
     
     def handleMany(ts: List[Tree], separator: String = ""): String = ts match {
       case Nil       => ""
@@ -164,7 +164,7 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
     left + l + center + r + right 
   }
   
-  def reuseExistingSource(traverse: Transformation[Tree, String], t: Tree): String = context("Reuse "+ t.getClass.getSimpleName) { 
+  def reuseExistingSource(traverse: (Tree, Indentation) => Option[String], t: Tree, ind: Indentation): String = context("Reuse "+ t.getClass.getSimpleName) { 
     
     val (leftLayout, rightLayout) = (findOriginalTree(t) map { t =>
     
@@ -183,27 +183,25 @@ trait SourceGen extends PrettyPrinter with PimpedTrees {
       
     } ) getOrElse ("", "")
         
-    printWithExistingLayout(traverse, leftLayout.toString, t, rightLayout.toString)
+    printWithExistingLayout(traverse, leftLayout.toString, t, rightLayout.toString, ind)
   }
   
-  def generate(tree: Tree) = {
-        
-    val isModified = predicate[Tree] {
-      case `emptyValDef` => false
-      case EmptyTree => false
-      case t: Tree => t.pos == NoPosition || t.pos.isRange
-    }
+  def generate(tree: Tree): String = {
     
-    def generateSourceCode(self: Transformation[Tree, String], t: Tree): String = t.pos match {
-      case NoPosition => 
-        prettyPrintTree(self, t)
-      case _ =>
-        
-        
-        
-        reuseExistingSource(self, t)
+    val indentation = new Indentation(defaultIncrement = "  ")
+    
+    def generateSourceCode(t: Tree, ind: Indentation): Option[String] = {
+      
+      if(t == null || t.isEmpty)
+        None
+      else if(t.pos == NoPosition)
+        Some(prettyPrintTree(generateSourceCode, t, ind))
+      else if (t.pos.isRange)
+        Some(reuseExistingSource(generateSourceCode, t, ind))
+      else 
+        None
     }
 
-    isModified combineRecursively generateSourceCode apply tree
+    generateSourceCode(tree, indentation) getOrElse ""
   }
 }

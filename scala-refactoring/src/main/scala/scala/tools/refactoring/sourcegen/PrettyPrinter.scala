@@ -5,35 +5,40 @@ import tools.nsc.symtab.{Flags, Names, Symbols}
 
 trait PrettyPrinter {
   
-  self: common.PimpedTrees with common.Tracing with common.CustomTrees =>
+  self: common.PimpedTrees with common.Tracing =>
 
   val global: scala.tools.nsc.interactive.Global
   import global._
   
   import Transformations._
   
-  def prettyPrintTree(traverse: Transformation[Tree, String], t: Tree): String = context("pretty print tree"+ t.getClass.getSimpleName) { 
+  private class PrintFunctionsForTree(ts: List[Tree], traverse: (Tree, Indentation) => Option[String], ind: Indentation) {
     
-    implicit def treeToPP(t: Tree) = new {
-      def print (
-          before: String = "",
-          f: String => String = (x => x),
-          after: String = "") = traverse(t) match {
-        case Some(t) => before + f(t) + after
-        case None => ""
-      }
+    def print(before: String = "", after: String = "", separator: String = "") = (ts map (traverse(_, ind))) flatten match {
+      case Nil => ""
+      case xs => before + (xs mkString separator) + after
     }
     
-    implicit def treeListToPP(ts: List[Tree]) = new {
-      def print (
-          before: String = "", 
-          f: String => String = (x => x), 
-          after: String = "", 
-          separator: String = "") = (ts map traverse) flatten match {
-        case Nil => ""
-        case xs => before + (xs map f mkString separator) + after
+    def printIndented(before: () => String = () => "", after: () => String = () => "", separator: () => String = () => "") = {
+      
+      ind.default {
+        (ts map (traverse(_, ind))) flatten match {
+          case Nil => ""
+          case xs => before() + (xs mkString separator())
+        }
+      } match {
+        case "" => ""
+        case s => s + after()
       }
-    }
+    }  
+  }
+  
+  def prettyPrintTree(traverse: (Tree, Indentation) => Option[String], t: Tree, ind: Indentation): String = context("pretty print tree"+ t.getClass.getSimpleName) { 
+       
+    implicit def additionalMethodsForTreePrinting(t: Tree) = new PrintFunctionsForTree(t :: Nil, traverse, ind)
+    implicit def additionalMethodsForTreeListPrinting(ts: List[Tree]) = new PrintFunctionsForTree(ts, traverse, ind)
+    
+    def newline = "\n" + ind.text
     
     t match {
     
@@ -41,10 +46,10 @@ trait PrettyPrinter {
         ""
           
       case PackageDef(pid, stats) if pid.name.toString == "<empty>" =>
-        stats.print(separator = "\n")
+        stats.print(separator = newline)
         
       case PackageDef(pid, stats) =>
-        pid.print(before = "package ", after = "\n") + stats.print(separator = "\n")
+        pid.print(before = "package ", after = newline) + stats.print(separator = newline)
         
       case ClassDef(m @ ModifierTree(mods), name, tparams, impl) =>
         //mods.annotations map traverse
@@ -81,7 +86,7 @@ trait PrettyPrinter {
         val tparams_ = tparams print (before = "[", after = "]", separator = ", ")
         val params = vparamss map (_ print (before = "(", after = ")", separator = ", ")) mkString ""
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
-          " {\n}\n"
+          " {"+ newline +"}"
         } else {
           t.rhs.print(before = " = ")
         }
@@ -114,9 +119,6 @@ trait PrettyPrinter {
         } mkString ", ")
         
         "import " + expr.print() + "." + (if(needsBraces) "{" + ss + "}" else ss)
-  
-  //    eliminated by type checker
-  //    case Annotated(annot, arg) =>
         
       case TemplateExtractor(params, earlyBody, parents, self, body) =>
         
@@ -128,14 +130,14 @@ trait PrettyPrinter {
               traits.print(before = " with ", separator = " with ")
           }
         } else {
-          earlyBody.print(before = " extends {\n", after = "\n}", separator = "\n") +
+          earlyBody.printIndented(before = (() => " extends {"+ newline), after = (() => newline +"}"), separator = newline _) +
           parents.print(before = " with ", separator = " with ")
         }
                 
         val self_ = if(self != EmptyTree) {
-          self.print(before = " {\n", after = " =>\n") + body.print(separator = "\n") + "}"
+          self.printIndented(before = (() => " {"+ newline), after = () => " =>") + body.printIndented(before = newline _, separator = newline _) + newline +"}"
         } else {
-          body.print(before = " {\n", separator = "\n", after = "\n}\n")
+          body.printIndented(before = (() => " {"+ newline), separator = newline _, after = (() => newline +"}"+ newline))
         }
                 
         params.print(before = "(", separator = ", ", after = ")") + sup + self_
@@ -144,7 +146,7 @@ trait PrettyPrinter {
       case BlockExtractor(stats) =>
         stats match {
           case t :: Nil => t.print()
-          case t => t print ( before = "{\n", separator = "\n", after = "\n}")
+          case t => t printIndented ( before = (() => "{"+ newline), separator = newline _, after = (() => newline +"}"))
         }
         
   //    case CaseDef(pat, guard, body) =>
@@ -177,7 +179,7 @@ trait PrettyPrinter {
   //      traverse(rhs)
         
       case If(cond, thenp, elsep) =>
-        cond.print(before = "if (", after = ")") + thenp.print(before = "\n") + elsep.print(before = "\nelse ")
+        cond.print(before = "if (", after = ")") + thenp.print(before = " ") + elsep.print(before = " else ")
         
   //    case Match(selector, cases) =>
   //      traverse(selector)
