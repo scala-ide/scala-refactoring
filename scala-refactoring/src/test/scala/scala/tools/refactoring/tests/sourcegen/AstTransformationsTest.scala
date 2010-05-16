@@ -15,7 +15,7 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.io.AbstractFile
 
 @Test
-class AstTransformationsTest extends TestHelper with AstTransformations with PimpedTrees with CustomTrees {
+class AstTransformationsTest extends TestHelper with AstTransformations with PimpedTrees {
   
   import global._
   

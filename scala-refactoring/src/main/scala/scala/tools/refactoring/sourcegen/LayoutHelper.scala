@@ -6,7 +6,7 @@ import tools.nsc.util.SourceFile
 
 trait LayoutHelper {
   
-  self: Formatting with common.Tracing with common.PimpedTrees with common.CustomTrees =>
+  self: Formatting with common.Tracing with common.PimpedTrees =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._

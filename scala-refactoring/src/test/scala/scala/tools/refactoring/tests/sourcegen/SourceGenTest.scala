@@ -18,7 +18,7 @@ import tools.nsc.symtab.Flags
 import scala.tools.nsc.ast.parser.Tokens
 
 @Test
-class SourceGenTest extends TestHelper with SourceGen with LayoutHelper with Formatting with AstTransformations with ConsoleTracing {
+class SourceGenTest extends TestHelper with SourceGen with AstTransformations with ConsoleTracing {
   
   import global._
   import Transformations._

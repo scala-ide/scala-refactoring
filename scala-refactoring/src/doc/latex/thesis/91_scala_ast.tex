@@ -1,8 +1,10 @@
 \chapter{Scala AST}
 
-This chapter describes the individual tree classes that are used in the Scala compiler. It starts with the root class \src{Tree}, some of the more interesting traits and abstract classes and then describes all concrete trees. Scala constructs -- syntactic sugar -- that are not represented as trees like parallel assignment and for-comprehensions are described in the last section.
+This chapter describes the abstract syntax tree classes that are used in the Scala compiler. The implementations can be found in the \src{scala.reflect.generic.Trees} trait, ...
 
-On the right of the tree class' name are its ancestor classes and traits. All concrete trees are case classes, their parameters are listed below the class name.
+We start with the root class \src{Tree}, some of the more interesting traits and abstract classes and then describe all the concrete trees. Scala constructs -- syntactic sugar -- that are not represented as trees like parallel assignment and for-comprehensions are described in the last section.
+
+Some remarks on the presentation: on the right of the tree class' name are its ancestor classes and traits. All concrete trees are case classes, so their parameters are listed below the class name.
 
 \newcommand{\member} [2] {\hfill \begin{footnotesize}\src{#1} \newline \vspace{5pt} \src{#2}\end{footnotesize}\vspace{5pt}}
 
@@ -75,7 +77,7 @@ Modifiers are a set of \src{abstract, final, sealed, private, protected, trait, 
 
 \paragraph{Template} \member{SymTree <: Tree}{\textit{parents}: List[Tree], \textit{self}: ValDef, \textit{body}: List[Tree]}
 
-\noindent The implementation of either a \src{ModuleDef} or \src{ClassDef}; also contains early definitions, super types, the self type annotation, and the statements in the class body. In the case of a \src{ClassDef}, it also contains the class's constructor parameters.
+\noindent The implementation of either a \src{ModuleDef} or \src{ClassDef}; also contains early definitions, super types, the self type annotation, and the statements in the class body. In the case of a \src{ClassDef}, it also contains the class' constructor parameters.
 
 The following example illustrates into what constructor parameters and super constructor calls are desugared:
 
@@ -193,7 +195,7 @@ In contrast to a \src{ValDef}, a method can be parametrized with types and may h
 
 Abstract methods have the \src{DEFERRED} flag and an \src{EmptyTree} right hand side child.
 
-Finding methods in sub- or super classes requires the use of their \src{symbols}. Super classes can be found via the \src{ancestors} method on the class' symbol. Going into the other direction of the inheritance hierarchy is more expensive. To find all subclasses of a class $C$ one has to collect all other classes in the universe and test each's ancestors for the presence of $C$. Once the class hierarchy is assembled, the definition symbol's \src{overriddenSymbol} method can be used on each class in the hierarchy to gather all overrides.
+Finding methods in sub- or super classes requires the use of their \src{symbols}. Super classes can be found via the \src{ancestors} method on the class' symbol. In contrast, moving down the inheritance hierarchy is more expensive. To find all subclasses of a class $C$ one has to collect all other classes in the universe and test each's ancestors for the presence of $C$. Once the class hierarchy is assembled, the definition symbol's \src{overriddenSymbol} method can be used on each class in the hierarchy to gather all overrides.
 
 \paragraph{TypeDef} \member{MemberDef <: DefTree <: SymTree <: Tree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tparams}: List[TypeDef], \textit{rhs}: Tree}
 
@@ -221,7 +223,7 @@ Import trees can also be comma separated, in this case, only the first import in
 
 \paragraph{Block} \member{TermTree <: Tree}{\textit{stats}: List[Tree], \textit{expr}: Tree}
 
-\noindent A \src{Block} encloses a list of statements in \src{\{ \ldots \}} and returns the value of its \src{expr} child. \src{Block} trees are only generated when neede, e.g. the right hand side of a \src{DefDef} with a single expression is not a \src{Block} but the expression itself, even when the expression is enclosed in \src{\{ \ldots \}}.
+\noindent A \src{Block} encloses a list of statements in \src{\{ \ldots \}} and returns the value of its \src{expr} child. \src{Block} trees are only generated when needed -- for example, the right hand side of a \src{DefDef} with a single expression is not a \src{Block} but the expression itself, even when the expression is enclosed in \src{\{ \ldots \}}.
 
 The \src{expr} is usually the last line of a block, with regards to their positions, but this is not always the case. For example, when creating an anonymous class, the class is introduced with a compiler generated name and then instantiated:
 
