@@ -12,8 +12,6 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
   
   def generate(tree: Tree): String = {
     
-    val indentation = new Indentation(defaultIncrement = defaultIndentationStep)
-    
     def generateSourceCode(t: Tree, ind: Indentation): Option[String] = {
       
       if(t == null || t.isEmpty)
@@ -26,6 +24,11 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
         None
     }
 
-    generateSourceCode(tree, indentation) getOrElse ""
+    val in = new Indentation(defaultIncrement = defaultIndentationStep)
+    val initialIndentation = if(tree.pos != NoPosition) indentation(tree) else ""
+    
+    in.setTo(initialIndentation) {
+      generateSourceCode(tree, in) getOrElse ""
+    }
   }
 }

@@ -35,6 +35,8 @@ trait PrettyPrinter {
   
   def prettyPrintTree(traverse: (Tree, Indentation) => Option[String], t: Tree, ind: Indentation): String = context("pretty print tree"+ t.getClass.getSimpleName) { 
        
+    trace("base indentation is %s", ind.text)
+    
     implicit def additionalMethodsForTreePrinting(t: Tree) = new PrintFunctionsForTree(t :: Nil, traverse, ind)
     implicit def additionalMethodsForTreeListPrinting(ts: List[Tree]) = new PrintFunctionsForTree(ts, traverse, ind)
     

@@ -50,6 +50,11 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
     case l @ Literal(Constant(false)) => Literal(Constant(true )) setPos l.pos
   }
   
+  val wrapDefRhsInBlock = Transformations.transform[Tree, Tree] {
+    case t @ DefDef(_, _, _, _, _, _: Block) => t
+    case t @ DefDef(_, _, _, _, _, rhs) => t copy (rhs = new Block(rhs :: Nil, rhs)) setPos t.pos
+  }
+  
   val changeSomeModifiers = Transformations.transform[Tree, Tree] {
     case t: ClassDef =>
       t.copy(mods = NoMods) setPos t.pos
@@ -58,6 +63,55 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
     case t: ValDef   =>
       t.copy(mods = NoMods withPosition (Tokens.VAL,   NoPosition)) setPos t.pos
     case t => t 
+  }
+  
+  @Test
+  def testSimpleIndentation() = {
+
+    val tree = treeFrom("""
+    object Functions {
+        def something = 42
+    }
+    """)
+        
+    assertEquals("""
+    object Functions {
+        def something = {
+          42
+          42
+        }
+    }
+    """, generate(removeAuxiliaryTrees &> ↓(any(wrapDefRhsInBlock)) apply tree get))
+  }
+  
+  @Test
+  def testIndentationOfNestedBlocks() = {
+    
+    val nestDefs = Transformations.transform[Tree, Tree] {
+      case t @ DefDef(_, _, _, _, _, rhs @ Block(stats, expr)) => t copy (rhs = new Block(t :: stats, expr) setPos rhs.pos) setPos t.pos
+    }
+
+    val tree = treeFrom("""
+    object Functions {
+      def something = {
+        println("huhu") 
+        42
+      }
+    }
+    """)
+    
+    assertEquals("""
+    object Functions {
+      def something = {
+        def something = {
+          println("huhu") 
+          42
+        }
+        println("huhu") 
+        42
+      }
+    }
+    """, generate(removeAuxiliaryTrees &> ↑(any(nestDefs)) apply tree get))
   }
   
   @Test

@@ -9,30 +9,19 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.SourceFile
 import scala.tools.nsc.util.BatchSourceFile
 
-trait SourceHelper {
-  
-  self: scala.tools.refactoring.regeneration.Fragments =>
+trait SourceCodeHelpers {
   
   val global: scala.tools.nsc.interactive.Global
   
-  def indentationLength(f: Fragment): Option[Int] = f match {
-    case f: OriginalSourceFragment => try {
-      if(f.isEndOfScope /*&& f.start > 0 */) // end of scope's 'start' points to 'end' and can therefore be on the newline
-	      Some(indentationLength(f.start-1, f.file))
-	    else
-	      Some(indentationLength(f.start, f.file))
-    } catch {
-      case _: UnsupportedOperationException => None
-      case e => throw e
-    }
-    case _ => None
-  }
-
   def indentationLength(tree: global.Tree): Int = {
     indentationLength(tree.pos.start, tree.pos.source)
   }
   
-  def indentationLength(start: Int, source: SourceFile) = {
+  def indentation(tree: global.Tree): String = {
+    indentation(tree.pos.start, tree.pos.source)
+  }
+  
+  def indentation(start: Int, source: SourceFile): String = {
     var i = if(start == source.length || source.content(start) == '\n') start - 1 else start
     val contentWithoutComment = stripComment(source)
         
@@ -40,9 +29,12 @@ trait SourceHelper {
       i -= 1
     i += 1
         
-    val indentation = """\s*""".r.findFirstIn(contentWithoutComment.slice(i, start) mkString).getOrElse("")
+    """\s*""".r.findFirstIn(contentWithoutComment.slice(i, start) mkString).getOrElse("")
+  }
+  
+  def indentationLength(start: Int, source: SourceFile) = {
 
-    indentation.length
+    indentation(start, source).length
   }
   
   def forwardsTo(to: Char, max: Int)(offset: Int, source: SourceFile): Option[Int] = {
@@ -174,4 +166,25 @@ trait SourceHelper {
       case _ => assert(false)
     } mkString
   }
+}
+
+trait SourceHelper extends SourceCodeHelpers {
+    
+  self: scala.tools.refactoring.regeneration.Fragments =>
+  
+  val global: scala.tools.nsc.interactive.Global
+  
+  def indentationLength(f: Fragment): Option[Int] = f match {
+    case f: OriginalSourceFragment => try {
+      if(f.isEndOfScope /*&& f.start > 0 */) // end of scope's 'start' points to 'end' and can therefore be on the newline
+	      Some(indentationLength(f.start-1, f.file))
+	    else
+	      Some(indentationLength(f.start, f.file))
+    } catch {
+      case _: UnsupportedOperationException => None
+      case e => throw e
+    }
+    case _ => None
+  }
+
 }

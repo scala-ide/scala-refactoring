@@ -4,7 +4,7 @@ img_extIsRegExp=false
 img_extensions=.eps .jpg .jpeg .png .pdf .ps .fig .gif
 kileprversion=2
 kileversion=2.0.85
-lastDocument=91_scala_ast.tex
+lastDocument=thesis.tex
 masterDocument=thesis.tex
 name=Thesis
 pkg_extIsRegExp=false
@@ -78,10 +78,10 @@ order=3
 
 [item:91_scala_ast.tex]
 archive=true
-column=64
+column=177
 encoding=ISO-8859-1
 highlight=LaTeX
-line=390
+line=2
 mode=LaTeX
 open=true
 order=4
@@ -121,7 +121,7 @@ archive=true
 column=0
 encoding=UTF-8
 highlight=LaTeX
-line=22
+line=41
 mode=LaTeX
 open=true
 order=0
@@ -135,8 +135,8 @@ CursorColumn=0
 CursorLine=20
 
 [view-settings,view=0,item:91_scala_ast.tex]
-CursorColumn=64
-CursorLine=390
+CursorColumn=177
+CursorLine=2
 
 [view-settings,view=0,item:9_appendix.tex]
 CursorColumn=0
@@ -144,4 +144,4 @@ CursorLine=3
 
 [view-settings,view=0,item:thesis.tex]
 CursorColumn=0
-CursorLine=22
+CursorLine=41

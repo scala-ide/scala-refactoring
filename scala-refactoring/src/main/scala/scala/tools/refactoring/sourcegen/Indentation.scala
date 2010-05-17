@@ -25,4 +25,12 @@ class Indentation(defaultIncrement: String) {
     current = old
     res
   }
+  
+  def setTo[T](i: String)(f: => T): T = {
+    val old = current
+    current = i
+    val res = f
+    current = old
+    res
+  }
 }

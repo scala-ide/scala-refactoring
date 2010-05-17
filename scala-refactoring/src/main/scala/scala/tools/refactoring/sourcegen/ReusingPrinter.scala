@@ -1,7 +1,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-trait ReusingPrinter {
+trait ReusingPrinter extends regeneration.SourceCodeHelpers {
 
   self: LayoutHelper with common.Tracing with common.PimpedTrees =>
   
@@ -10,51 +10,73 @@ trait ReusingPrinter {
   
   def reuseExistingSource(traverse: (Tree, Indentation) => Option[String], t: Tree, ind: Indentation): String = context("Reuse "+ t.getClass.getSimpleName) { 
     
-    val (parentLeadingLayout, parentTrailingLayout) = findOriginalTree(t) map { t =>
+    trace("Base indentation is %s", ind.text)
     
-      val (l, r) = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
-        case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
-        case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child"))
-        case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child"))
-        case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child"))
-        case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right) \\ (_ => trace("enclosed child"))
-      }
-      
-      (l.toString, r.toString)
-      
-    } getOrElse ("", "")
+    val (leading, trailing) = getSurroundingLayout(t)
     
-    val (originalLeadingLayout, originalTrailingLayout) = originalEnclosingLayout(t)
-      
-    trace("parent leading:    %s", parentLeadingLayout)
-    trace("original leading:  %s", originalLeadingLayout.toString)
-    trace("original trailing: %s", originalTrailingLayout.toString)
-    trace("parent trailing:   %s", parentTrailingLayout)
-        
-    val center = printWithExistingLayout(traverse, t, ind)
+    val thisIndentation = indentation(t)
     
-    trace("result:                %s", originalLeadingLayout.toString + center + originalTrailingLayout.toString)
-    trace("result with enclosing: %s", parentLeadingLayout + originalLeadingLayout + center + originalTrailingLayout + parentTrailingLayout)
+    val center = ind.setTo(thisIndentation) {
+      printWithExistingLayout(traverse, t, ind)
+    } match {
+      case c if (leading + trailing) contains "\n" => fixIndentation(c, t, thisIndentation, ind.text) 
+      case c => c
+    }
     
-    parentLeadingLayout + originalLeadingLayout + center + originalTrailingLayout + parentTrailingLayout 
+    leading + center + trailing \\ (trace("result: %s", _))
   }
-     
-  /**
-   * For the given Tree, return a pair of Layout elements that contain
-   * the leading and trailing layout of the original tree.
-   * */
-  private def originalEnclosingLayout(t: Tree): (Layout, Layout) = {
+  
+  private def fixIndentation(code: String, t: Tree, currentIndentation: String, parentIndentation: String) = {
     
-    val originalTree = findOriginalTree(t).get //exception is ok for now
+    val originalParentIndentation = findOriginalTree(t) flatMap (_.originalParent) map indentation getOrElse parentIndentation // on the top level
+
+    lazy val indentationDifference = if(originalParentIndentation.length < parentIndentation.length) {
+        parentIndentation substring originalParentIndentation.length
+      } else {
+        originalParentIndentation substring parentIndentation.length
+      }
     
-    children(originalTree) match {
+    if(originalParentIndentation == parentIndentation) {
+      code
+    } else {
+              
+      trace("indentation currently is  %s", currentIndentation)
+      trace("orig parent indentatio is %s", originalParentIndentation)
+      trace("new parent indentatio is  %s", parentIndentation)
+      
+      indentationDifference + code.replace(currentIndentation, currentIndentation + indentationDifference)
+    }
+  }
+  
+  private def getSurroundingLayout(t: Tree) = findOriginalTree(t) map { t =>
+  
+    def layoutFromParent() = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
+      case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
+      case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child"))
+      case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child"))
+      case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child"))
+      case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right) \\ (_ => trace("enclosed child"))
+    }
+    
+    def layoutFromChildren() = children(t) match {
       case Nil =>
         NoLayout → NoLayout
       case c => 
-        splitLayoutBetweenParentAndFirstChild(parent = originalTree, child = c.head)._1 →
-        splitLayoutBetweenLastChildAndParent(child = c.last, parent = originalTree)._2
+        splitLayoutBetweenParentAndFirstChild(parent = t, child = c.head)._1 →
+        splitLayoutBetweenLastChildAndParent (parent = t, child = c.last)._2
     }
-  }
+    
+    val (leadingLayoutFromParent, trailingLayoutFromParent) = layoutFromParent()
+    val (leadingLayoutFromChild, trailingLayoutFromChild) = layoutFromChildren()
+    
+    trace("parent leading:  %s", leadingLayoutFromParent.toString)
+    trace("child leading:   %s", leadingLayoutFromChild.toString)
+    trace("child trailing:  %s", trailingLayoutFromChild.toString)
+    trace("parent trailing: %s", trailingLayoutFromParent.toString)
+    
+    (leadingLayoutFromParent.toString + leadingLayoutFromChild.toString, trailingLayoutFromChild.toString + trailingLayoutFromParent.toString)
+    
+  } getOrElse ("", "")
 
   private def printWithExistingLayout(f: (Tree, Indentation) => Option[String], t: Tree, ind: Indentation) = {
     
@@ -174,7 +196,6 @@ trait ReusingPrinter {
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)
         "ø"
-      
     }
   }
 }
