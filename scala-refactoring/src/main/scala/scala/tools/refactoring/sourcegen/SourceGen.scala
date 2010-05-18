@@ -10,7 +10,7 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
   val global: scala.tools.nsc.interactive.Global
   import global._
   
-  def createChanges(ts: List[Tree]) = {
+  def createChanges(ts: List[Tree]) = context("Create changes") {
     
     val changesByFile = ts groupBy (_.pos.source)
         
@@ -28,6 +28,7 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
       case (source, tree, changes) =>
         generate(tree) map {
           case PrintingResult(leading, center, trailing) =>
+            trace("Change: %s", center.asText)
             common.Change(source.file, tree.pos.start, tree.pos.end, center.asText)
         }
     }
@@ -48,7 +49,7 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
     }
 
     val in = new Indentation(defaultIncrement = defaultIndentationStep)
-    val initialIndentation = if(tree.pos != NoPosition) indentation(tree) else ""
+    val initialIndentation = tree.originalParent map (indentation(_)) getOrElse ""
     
     in.setTo(initialIndentation) {
       generateSourceCode(tree, in)

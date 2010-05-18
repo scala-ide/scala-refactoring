@@ -15,68 +15,15 @@ import scala.tools.refactoring.transformation.Transformation
 import scala.tools.refactoring.common.{Selections, Tracing, LayoutPreferences, SilentTracing}
 import scala.tools.refactoring.common.Change
 
-abstract class Refactoring extends Analysis with Transformation with Regeneration with Selections with SilentTracing with LayoutPreferences with FullIndexes {
+abstract class Refactoring extends Analysis with Transformation with Regeneration with Selections with SilentTracing with LayoutPreferences with FullIndexes with sourcegen.SourceGen with sourcegen.AstTransformations with common.PimpedTrees {
 
   val global: Global
   
-  private val originalFragments: SourceFile => FragmentRepository = {
-    val fragments = new collection.mutable.HashMap[SourceFile, FragmentRepository]
-    file => {
-      def body = global.unitOf(file).body
-      def notLoaded = body == global.EmptyTree 
-      
-      if(notLoaded) {
-        global.reloadSources(file :: Nil)
-        if(notLoaded)
-          throw RefactoringError("Compilation Unit for "+ file.file.name +" not ready.")
-      }
-      
-      fragments.getOrElseUpdate(
-        file, 
-        new FragmentRepository(splitIntoFragments(body) \\ (trace("Original: %s", _))))
-    }
+  def treeForFile(file: AbstractFile) = {
+    global.unitOfFile get file map (_.body)
   }
   
-  private def hasTreeChanged(changed: List[global.Tree])(tree: global.Tree) = changed.contains(tree) || changed.exists( t => tree.pos.includes(t.pos))
-  
-  private def createChangeText(tree: global.Tree, changed: TreeModifications) = {
-      
-    val fr = originalFragments(tree.pos.source)
-      
-    val modifiedFragments = essentialFragments(tree, fr) \\ (trace("Modified: %s", _))
-      
-    val change = merge(modifiedFragments, fr, hasTreeChanged(changed.allChangedTrees)) mkString
-    
-    minimizeChange(tree.pos.source, change, modifiedFragments.start, modifiedFragments.end)
-  }
-  
-  private def minimizeChange(source: SourceFile, text: String, from: Int, to: Int) = {
-    
-    def commonLength[T](l1: Seq[T], l2: Seq[T], length: Int = 0): (Int, Seq[T], Seq[T]) = (l1, l2) match {
-      case (x :: xs, y :: ys) if x == y => commonLength(xs, ys, length + 1)
-      case (x, y) => (length, x, y)
-    }
-    
-    val originalText = source.content.subSequence(from, to).toString
-    
-    val (sameBegin, _, distinctStart) = commonLength(originalText, text)
-    
-    val (sameEnd,   _, shortenedText) = commonLength(originalText.reverse, distinctStart.reverse)
-        
-    (shortenedText.reverse.toString, from + sameBegin, to - sameEnd)
-  }
-  
-  def refactor(changed: TreeModifications): List[Change] = context("main refactoring") {
-    
-    val toplevelTrees = changed.toplevelTrees
-    
-    trace("%d toplevel trees have changes", toplevelTrees.size)
-   
-    toplevelTrees map { tree =>
-
-      val (changedText, from, to) = createChangeText(tree, changed)
-      
-      Change(tree.pos.source.file, from, to, changedText) \\ (c => trace("Result: "+ c))
-    }
+  def refactor(changed: List[global.Tree]): List[Change] = context("main") {
+    createChanges(changed) toList
   }
 }

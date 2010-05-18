@@ -22,7 +22,7 @@ abstract class OrganizeImports extends MultiStageRefactoring {
   
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = Right(new PreparationResult)
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
     
     var changes = new ModificationCollector {
       
@@ -63,6 +63,6 @@ abstract class OrganizeImports extends MultiStageRefactoring {
       }
     }
     
-    Right(changes)
+    Right(Nil)
   }
 }

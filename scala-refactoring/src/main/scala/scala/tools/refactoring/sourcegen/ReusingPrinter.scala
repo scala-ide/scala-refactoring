@@ -12,18 +12,19 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
     
     trace("Base indentation is %s", ind.text)
     
-    val (leading, trailing) = surroundingLayout(t)
+    val (leadingParent, leadingChild, trailingChild, trailingParent) = surroundingLayout(t)
+    val allLayout = leadingParent.asText + leadingChild.asText + trailingChild.asText + trailingParent
     
     val thisIndentation = indentation(t)
     
     val center = ind.setTo(thisIndentation) {
       printWithExistingLayout(traverse, t, ind)
     } match {
-      case c if (leading.asText + trailing.asText) contains "\n" => LayoutFromString(fixIndentation(c.asText, t, thisIndentation, ind.text)) 
+      case c if allLayout contains "\n" => LayoutFromString(fixIndentation(c.asText, t, thisIndentation, ind.text)) 
       case c => c
     }
     
-    PrintingResult(leading, center, trailing) \\ (trace("result: %s", _))
+    PrintingResult(leadingParent, leadingChild ++ center ++ trailingChild, trailingParent) \\ (r => trace("result: %s", r.toString))
   }
   
   private def fixIndentation(code: String, t: Tree, currentIndentation: String, parentIndentation: String) = {
@@ -117,6 +118,10 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
       // XXX List(..) has an invisible immutable.this qualifier
       case (t @ Select(qualifier: This, selector), _) if qualifier.qual.toString == "immutable" && qualifier.pos == NoPosition => 
         LayoutFromString(t.symbol.nameString)
+        
+      // skip <init> from constructor calls
+      case (t @ Select(qualifier: New, selector), orig) if t.symbol.isConstructor =>
+        handle(qualifier)
         
       case (t @ Select(qualifier, selector), orig) =>
         val nameOrig = (if(t.symbol == NoSymbol) NameTree(selector) else NameTree(t.symbol.nameString)) setPos orig.namePosition

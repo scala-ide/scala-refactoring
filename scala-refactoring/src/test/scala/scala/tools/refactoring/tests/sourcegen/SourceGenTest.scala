@@ -467,7 +467,7 @@ object A"""
     
     assertEquals("""
     class A {
-      /*a*/protected def test() = 5
+      /*a*/protected def /*c*/test() = 5
       val i = 5
       protected def a() = i
     }

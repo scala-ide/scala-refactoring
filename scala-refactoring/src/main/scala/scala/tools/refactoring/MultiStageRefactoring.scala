@@ -19,6 +19,6 @@ abstract class MultiStageRefactoring extends Refactoring {
  
   def prepare(s: Selection): Either[PreparationError, PreparationResult]
   
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications]
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[global.Tree]]
 
 }

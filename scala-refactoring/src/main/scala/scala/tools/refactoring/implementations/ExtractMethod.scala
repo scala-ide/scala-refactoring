@@ -33,7 +33,7 @@ abstract class ExtractMethod extends MultiStageRefactoring {
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, TreeModifications] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
     
     import prepared._
     import params._
@@ -71,6 +71,6 @@ abstract class ExtractMethod extends MultiStageRefactoring {
       }
     }
     
-    Right(changes)
+    Right(Nil)
   }
 }

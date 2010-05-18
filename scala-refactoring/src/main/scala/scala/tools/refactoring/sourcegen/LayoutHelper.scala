@@ -11,7 +11,7 @@ trait LayoutHelper {
   val global: scala.tools.nsc.interactive.Global
   import global._
       
-  def surroundingLayout(t: Tree): (Layout, Layout) = findOriginalTree(t) map { t =>
+  def surroundingLayout(t: Tree) = findOriginalTree(t) map { t =>
   
     def layoutFromParent() = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
       case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
@@ -37,9 +37,9 @@ trait LayoutHelper {
     trace("child trailing:  %s", trailingLayoutFromChild.toString)
     trace("parent trailing: %s", trailingLayoutFromParent.toString)
     
-    (leadingLayoutFromParent ++ leadingLayoutFromChild, trailingLayoutFromChild ++ trailingLayoutFromParent)
+    (leadingLayoutFromParent, leadingLayoutFromChild, trailingLayoutFromChild, trailingLayoutFromParent)
     
-  } getOrElse NoLayout → NoLayout
+  } getOrElse (NoLayout, NoLayout, NoLayout, NoLayout)
   
   def layout(start: Int, end: Int)(implicit s: SourceFile) = LayoutFromFile(s, start, end)
   def between(l: Tree, r: Tree)(implicit s: SourceFile) = layout(l.pos.end, r.pos.start)(s)
@@ -261,6 +261,7 @@ trait LayoutHelper {
   def  splitLayoutBetweenSiblings(left: Tree, right: Tree): (Layout, Layout) = {
         
     def split(layout: String) = {
+      val StartComment = """(.*?)(/\*.*)""".r
       val Class = """(.*?)(class.*)""".r
       val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
       val OpeningBrace = """(.*?\()(.*)""".r
@@ -275,15 +276,16 @@ trait LayoutHelper {
       val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
       
       (layout match {
+        case StartComment(l, r)    => Some(l, r, "StartComment")
         case Class(l, r)           => Some(l, r, "Class")
         case Colon(l, r)           => Some(l, r, "Colon")
         case EmptyParens(l, r)     => Some(l, r, "EmptyParens")
         case OpeningBrace(l, r)    => Some(l, r, "OpeningBrace")
         case Arrow(l, r)           => Some(l, r, "Arrow")
-        case Equals(l, r)          => Some(l, r, "Equals")
-        case ClosingBrace(l, r)    => Some(l, r, "ClosingBrace")
         case _                     => None
       }) orElse (layout match { // Work around https://lampsvn.epfl.ch/trac/scala/ticket/1133
+        case ClosingBrace(l, r)    => Some(l, r, "ClosingBrace")
+        case Equals(l, r)          => Some(l, r, "Equals")
         case ImportStatementNewline(l, r) => Some(l, r, "ImportStatement Newline")
         case ImportStatement(l, r) => Some(l, r, "ImportStatement")
         case NewLine(l, r)         => Some(l, r, "NewLine")
