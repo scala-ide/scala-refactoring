@@ -27,6 +27,10 @@ trait TreeChangesDiscoverer {
         t.nameString != o.nameString
       case (t: Literal, o: Literal) =>
         t.value != o.value
+      case (t: Ident, o: Ident) =>
+        t.nameString != o.nameString
+      case (t: TypeTree, o: TypeTree) =>
+        t != o
       case _ => 
         false
     }
@@ -66,5 +70,26 @@ trait TreeChangesDiscoverer {
       trace("Tree %s has no changes, searching in children.", t.getClass.getSimpleName)
       children(t) flatMap (c => findAllChangedTrees(c))
     }
+  }
+  
+  def findTopLevelTrees(ts: List[Tree]) = {
+       
+    def properlyIncludes(t1: Tree, t2: Tree) = t1.pos.source == t2.pos.source && t1.pos.properlyIncludes(t2.pos)
+    
+    def findSuperTrees(trees: List[Tree], superTrees: List[Tree]): List[Tree] = trees match {
+      case Nil => superTrees
+      case t :: ts =>
+      
+        def mergeOverlappingTrees(ts: List[Tree]): List[Tree] = ts match {
+          case Nil => t :: Nil
+          case x :: xs if properlyIncludes(x, t) => x :: xs
+          case x :: xs if properlyIncludes(t, x) => t :: xs
+          case x :: xs => x :: mergeOverlappingTrees(xs)
+        }
+      
+        findSuperTrees(ts, mergeOverlappingTrees(superTrees))
+    }
+    
+    findSuperTrees(ts, Nil)
   }
 }

@@ -18,6 +18,7 @@ trait CustomTrees {
    * Represent a Name as a tree, including its position.
    * */
   case class NameTree(name: global.Name) extends global.Tree {
+    if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
     def nameString = name.toString.trim
   }
   
@@ -113,7 +114,7 @@ trait CustomTrees {
    *   self: A with B =>
    *   ^^^^^^^^^^^^^^
    * */
-  case class SelfTypeTree(name: NameTree, types: List[global.Tree]) extends global.Tree
+  case class SelfTypeTree(name: NameTree, types: List[global.Tree], orig: Tree) extends global.Tree
     
   /**
    * Unify the children of a Block tree and sort them 

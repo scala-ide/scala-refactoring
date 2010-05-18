@@ -10,39 +10,36 @@ trait LayoutHelper {
   
   val global: scala.tools.nsc.interactive.Global
   import global._
-  
-  trait Layout {
-    override def toString() = "ø"
-  }
-    
-  case class LayoutFromFile(source: SourceFile, start: Int, end: Int) extends Layout {
-
-    override def toString() = source.content.slice(start, end) mkString
       
-    def splitAfter(cs: Char*): (Layout, Layout) = split(cs) match {
-      case None => this → NoLayout
-      case Some(i) => copy(end = i+1) → copy(start = i+1)
+  def surroundingLayout(t: Tree): (Layout, Layout) = findOriginalTree(t) map { t =>
+  
+    def layoutFromParent() = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
+      case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
+      case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child"))
+      case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child"))
+      case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child"))
+      case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right) \\ (_ => trace("enclosed child"))
     }
     
-    def splitBefore(cs: Char*): (Layout, Layout) = split(cs) match {
-      case None => NoLayout → this
-      case Some(i) => copy(end = i) →  copy(start = i)
+    def layoutFromChildren() = children(t) match {
+      case Nil =>
+        NoLayout → NoLayout
+      case c => 
+        splitLayoutBetweenParentAndFirstChild(parent = t, child = c.head)._1 →
+        splitLayoutBetweenLastChildAndParent (parent = t, child = c.last)._2
     }
     
-    private def split(cs: Seq[Char]): Option[Int] = cs.toList match {
-      case Nil => 
-        None
-      case x :: xs if toString.indexOf(x) >= 0 =>
-        Some(start + toString.indexOf(x))
-      case _ :: xs => split(xs)
-    }
-  }
-  
-  case class LayoutFromString(override val toString: String) extends Layout
-  
-  case object NoLayout extends Layout {
-    override def toString() = ""
-  }
+    val (leadingLayoutFromParent, trailingLayoutFromParent) = layoutFromParent()
+    val (leadingLayoutFromChild, trailingLayoutFromChild) = layoutFromChildren()
+    
+    trace("parent leading:  %s", leadingLayoutFromParent.toString)
+    trace("child leading:   %s", leadingLayoutFromChild.toString)
+    trace("child trailing:  %s", trailingLayoutFromChild.toString)
+    trace("parent trailing: %s", trailingLayoutFromParent.toString)
+    
+    (leadingLayoutFromParent ++ leadingLayoutFromChild, trailingLayoutFromChild ++ trailingLayoutFromParent)
+    
+  } getOrElse NoLayout → NoLayout
   
   def layout(start: Int, end: Int)(implicit s: SourceFile) = LayoutFromFile(s, start, end)
   def between(l: Tree, r: Tree)(implicit s: SourceFile) = layout(l.pos.end, r.pos.start)(s)
@@ -153,6 +150,18 @@ trait LayoutHelper {
          
       case (p: New, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Match, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: CaseDef, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Bind, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Typed, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
       
       case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
@@ -232,6 +241,18 @@ trait LayoutHelper {
          
        case (c, p: TypeDef) =>
          NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Match) =>
+         layout(c.pos.end, p.pos.end) splitBefore ('\n')
+         
+       case (c, p: CaseDef) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Bind) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Typed) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
        
        case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)
      }
@@ -248,7 +269,7 @@ trait LayoutHelper {
       val Dot = """(.*)(\..*)""".r
       val Equals = """(.*?=\s?)(.*)""".r
       val ClosingBrace = """(?ms)(.*?)(\).*)""".r
-      val Comma = """(.*?),\s?(.*)""".r
+      val Comma = """(.*?),(.*)""".r
       val NewLine = """(?ms)(.*?)(\n.*)""".r
       val ImportStatementNewline = """(?ms)(.*)(\n.*?import.*)""".r // imports don't include leading lines, handle in partitioner instead?
       val ImportStatement = """(?ms)(.*)(.*?import.*)""".r

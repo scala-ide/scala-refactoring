@@ -68,8 +68,11 @@ trait AdditionalTreeMethods {
         } else if (qualifier.pos == NoPosition) {
           t.pos
         } else {
-          throw new Exception("Unreachable")
+          t.pos withEnd (t.pos.start + t.name.toString.trim.length)
         }
+        
+      case t @ Bind(name, body) =>
+        t.pos withEnd (t.pos.start + t.name.toString.trim.length)
         
       case _ => throw new Exception("uhoh")
     }

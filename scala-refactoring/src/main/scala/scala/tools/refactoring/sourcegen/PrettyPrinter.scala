@@ -12,7 +12,7 @@ trait PrettyPrinter {
   
   import Transformations._
   
-  private class PrintFunctionsForTree(ts: List[Tree], traverse: (Tree, Indentation) => Option[String], ind: Indentation) {
+  private class PrintFunctionsForTree(ts: List[Tree], traverse: (Tree, Indentation) => Option[PrintingResult], ind: Indentation) {
     
     def print(before: String = "", after: String = "", separator: String = "") = (ts map (traverse(_, ind))) flatten match {
       case Nil => ""
@@ -33,7 +33,7 @@ trait PrettyPrinter {
     }  
   }
   
-  def prettyPrintTree(traverse: (Tree, Indentation) => Option[String], t: Tree, ind: Indentation): String = context("pretty print tree"+ t.getClass.getSimpleName) { 
+  def prettyPrintTree(traverse: (Tree, Indentation) => Option[PrintingResult], t: Tree, ind: Indentation): PrintingResult = context("pretty print tree"+ t.getClass.getSimpleName) { 
        
     trace("base indentation is %s", ind.text)
     
@@ -42,7 +42,7 @@ trait PrettyPrinter {
     
     def newline = "\n" + ind.text
     
-    t match {
+    val code = t match {
     
       case EmptyTree =>
         ""
@@ -151,20 +151,24 @@ trait PrettyPrinter {
           case t => t printIndented ( before = (() => "{"+ newline), separator = newline _, after = (() => newline +"}"))
         }
         
-  //    case CaseDef(pat, guard, body) =>
-  //      traverse(pat)
-  //      traverse(guard)
-  //      traverse(body)
-  //      
+      case CaseDef(pat, guard, body) =>
+        "case " + pat.print() + guard.print(before = " if ") + body.print(before = " => ")
+        
   //    case Alternative(trees) =>
   //      trees map traverse
   //      
   //    case Star(elem) =>
   //      traverse(elem)
-  //      
-  //    case Bind(name, body) =>
-  //      traverse(body)
-  //      
+        
+      case Bind(name, body: Typed) =>
+        name + body.print(before = ": ")
+        
+      case Bind(name, body: Bind) =>
+        name + body.print(before = " @ (", after = ")")
+        
+      case Bind(name, body) =>
+        name + body.print(before = " @ ")
+        
   //    case UnApply(fun, args) =>
   //      traverse(fun)
   //      args map traverse
@@ -183,9 +187,9 @@ trait PrettyPrinter {
       case If(cond, thenp, elsep) =>
         cond.print(before = "if (", after = ")") + thenp.print(before = " ") + elsep.print(before = " else ")
         
-  //    case Match(selector, cases) =>
-  //      traverse(selector)
-  //      cases map traverse
+      case Match(selector, cases) =>
+        selector.print(after = " match ") + cases.printIndented(before = (() => "{"+ newline), separator = newline _, after = (() => newline +"}"))
+        
         
       case Return(expr) =>
         "return " + expr.print()
@@ -201,12 +205,15 @@ trait PrettyPrinter {
       case New(tpt) =>
         "new " + tpt.print()
         
-  //    case Typed(expr, tpt) =>
-  //      traverse(expr)
-  //      traverse(tpt)
+      case Typed(expr, tpt) =>
+        expr.print() + tpt.print()
+        
         
       case TypeApply(fun, args) =>
         fun.print() + args.print()
+        
+      case Apply(fun, args @ (Function(_, _: Match) :: _)) =>
+        fun.print() + args.print(before = " ")
         
       case Apply(fun, args) =>
         fun.print() + args.print(before = "(", after = ")", separator = ", ")
@@ -289,6 +296,7 @@ trait PrettyPrinter {
       case t: Tree => 
         "«?"+ t.getClass.getSimpleName +"?»"
     } 
+    
+    PrintingResult(NoLayout, LayoutFromString(code), NoLayout)
   }
-  
 }

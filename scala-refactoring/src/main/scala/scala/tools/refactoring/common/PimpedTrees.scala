@@ -55,7 +55,11 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
    * If multiple trees are candidates, then take the last one, 
    * because it is likely more specific.
    * */
-  def findOriginalTree(t: Tree): Option[Tree] = findOriginalTreeFromPosition(t.pos) flatMap (_ filter (_ sameTree t ) lastOption)
+  def findOriginalTree(t: Tree): Option[Tree] = {
+    val candidates = findOriginalTreeFromPosition(t.pos)
+    
+    candidates flatMap (_ filter (_ sameTree t ) lastOption)
+  }
   
   
   implicit def additionalTemplateMethods(t: Template) = new {
@@ -133,7 +137,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
               p withEnd (if(p.start == p.point) p.end else p.point)
             }
             
-            SelfTypeTree(NameTree(tpl.self.name) setPos namePos, selfTypes) setPos tpl.self.pos
+            SelfTypeTree(NameTree(tpl.self.name) setPos namePos, selfTypes, tpl.self.tpt) setPos tpl.self.pos
           } else {
             tpl.self
           }
@@ -180,6 +184,9 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       
     case TypeDef(ModifierTree(mods), name, tparams, rhs) =>
       mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: rhs :: Nil
+      
+    case Bind(name, body) =>
+      (NameTree(name) setPos t.namePosition) :: body :: Nil
     
     case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This => Nil
     
@@ -201,6 +208,12 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     case New(tpt) =>
       tpt :: Nil
       
+    case Match(selector, cases) =>
+      selector :: cases
+      
+    case CaseDef(pat, guard, body) =>
+      pat :: guard :: body :: Nil
+      
     case t @ Import(expr, _) =>
       expr :: t.Selectors()
       
@@ -210,8 +223,8 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     case SuperConstructorCall(clazz, args) =>
       clazz :: args
       
-    case SelfTypeTree(name, types) =>
-      name :: types
+    case SelfTypeTree(name, types, orig) =>
+      name :: types ::: orig :: Nil
       
     case TypeApply(fun, args) =>
       fun :: args
@@ -224,9 +237,12 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       
     case TypeBoundsTree(lo, hi) =>
       lo :: hi :: Nil
+      
+    case Typed(expr, tpt) =>
+      expr :: tpt :: Nil
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
-  }) filterNot (_.isEmpty)
+  }) filterNot (_.isEmpty) filter (t => t.pos.isRange || t.pos == NoPosition)
   
 }

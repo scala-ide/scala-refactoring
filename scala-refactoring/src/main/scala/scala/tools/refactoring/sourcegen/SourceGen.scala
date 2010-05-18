@@ -3,16 +3,39 @@ package sourcegen
 
 import common.{PimpedTrees, Tracing}
 
-trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting {
+trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting  with TreeChangesDiscoverer {
   
   this: Tracing =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
   
-  def generate(tree: Tree): String = {
+  def createChanges(ts: List[Tree]) = {
     
-    def generateSourceCode(t: Tree, ind: Indentation): Option[String] = {
+    val changesByFile = ts groupBy (_.pos.source)
+        
+    val topLevelTreesByFile = changesByFile map {
+      case (source, ts) => (source, findTopLevelTrees(ts))
+    }
+    
+    val changesPerFile = topLevelTreesByFile flatMap {
+      case (source, ts) => ts flatMap findAllChangedTrees map {
+        case (topLevel, changes) => (source, topLevel, changes)
+      }
+    }
+    
+    changesPerFile flatMap {
+      case (source, tree, changes) =>
+        generate(tree) map {
+          case PrintingResult(leading, center, trailing) =>
+            common.Change(source.file, tree.pos.start, tree.pos.end, center.asText)
+        }
+    }
+  }
+  
+  def generate(tree: Tree): Option[PrintingResult] = {
+    
+    def generateSourceCode(t: Tree, ind: Indentation): Option[PrintingResult] = {
       
       if(t == null || t.isEmpty)
         None
@@ -28,7 +51,7 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
     val initialIndentation = if(tree.pos != NoPosition) indentation(tree) else ""
     
     in.setTo(initialIndentation) {
-      generateSourceCode(tree, in) getOrElse ""
+      generateSourceCode(tree, in)
     }
   }
 }

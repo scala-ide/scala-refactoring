@@ -3,12 +3,14 @@ package sourcegen
 
 trait AstTransformations {
   
-  self: common.PimpedTrees =>
+  this: common.PimpedTrees =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
   
-  val t = Transformations.transform[Tree, Tree] _
+  import Transformations._
+  
+  val transform = Transformations.transform[Tree, Tree] _
     
   implicit def treesToTraversalFunction(tree: Tree): (Tree => Tree) => Tree = f => {
     
@@ -27,9 +29,8 @@ trait AstTransformations {
     (new TransformOnce).once(tree)
   }
   
-  import Transformations._
   
-  val removeUnneededTrees = transform[Tree, Tree] {
+  val removeUnneededTrees = transform {
     
     /* An empty RHS that is implemented as '.. { }' creates a Literal 
      * tree with a range length of 1, remove that tree.
@@ -52,11 +53,11 @@ trait AstTransformations {
     case _ => EmptyTree
   }
   
-  val noPosition = t {
+  val noPosition = transform {
     case t: Tree => t.pos = NoPosition; t
   }
   
-  val emptyTree = t {
+  val emptyTree = transform {
     case t: ValDef => emptyValDef
     case _ => EmptyTree
   }
