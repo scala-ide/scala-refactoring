@@ -97,6 +97,8 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     }
   }
   
+  private def keepTree(t: Tree) = !t.isEmpty && (t.pos.isRange || t.pos == NoPosition)
+  
   /**
    * Provides a finer-grained extractor for Template that distinguishes
    * between class constructor parameters, early definitions, parents, 
@@ -108,7 +110,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
               
         val classParams = tpl.constructorParameters
         
-        val body = (tpl.body filterNot (tpl.primaryConstructor ::: classParams contains)) filterNot (_.isEmpty)
+        val body = (tpl.body filterNot (tpl.primaryConstructor ::: classParams contains)) filter keepTree
         
         val parents = (tpl.superConstructorParameters match {
           case Nil => tpl.parents
@@ -240,9 +242,12 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       
     case Typed(expr, tpt) =>
       expr :: tpt :: Nil
+      
+    case Assign(lhs, rhs) =>
+      lhs :: rhs :: Nil
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
-  }) filterNot (_.isEmpty) filter (t => t.pos.isRange || t.pos == NoPosition)
+  }) filter keepTree
   
 }

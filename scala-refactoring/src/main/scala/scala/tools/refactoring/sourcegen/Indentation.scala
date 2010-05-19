@@ -8,7 +8,7 @@ package sourcegen
  * defaultIncrement specifies how much the indentation should
  * be incremented for newly generated code (pretty printer).
  * */
-class Indentation(defaultIncrement: String) {
+class Indentation(val defaultIncrement: String) {
   
   private var current: String = ""
     

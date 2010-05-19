@@ -259,22 +259,23 @@ trait LayoutHelper {
    }
  
   def  splitLayoutBetweenSiblings(left: Tree, right: Tree): (Layout, Layout) = {
-        
-    def split(layout: String) = {
-      val StartComment = """(.*?)(/\*.*)""".r
-      val Class = """(.*?)(class.*)""".r
-      val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
-      val OpeningBrace = """(.*?\()(.*)""".r
-      val Colon = """(.*?:\s+)(.*)""".r
-      val Arrow = """(.*?=>\s?)(.*)""".r
-      val Dot = """(.*)(\..*)""".r
-      val Equals = """(.*?=\s?)(.*)""".r
-      val ClosingBrace = """(?ms)(.*?)(\).*)""".r
-      val Comma = """(.*?),(.*)""".r
-      val NewLine = """(?ms)(.*?)(\n.*)""".r
-      val ImportStatementNewline = """(?ms)(.*)(\n.*?import.*)""".r
-      val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
-      
+
+    val StartComment = """(.*?)(/\*.*)""".r
+    val Class = """(.*?)(class.*)""".r
+    val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
+    val OpeningBrace = """(.*?\()(.*)""".r
+    val Colon = """(.*?:\s+)(.*)""".r
+    val Arrow = """(.*?=>\s?)(.*)""".r
+    val Dot = """(.*)(\..*)""".r
+    val Equals = """(.*?=\s?)(.*)""".r
+    val ClosingBrace = """(?ms)(.*?)(\).*)""".r
+    val Comma = """(.*?),(.*)""".r
+    val NewLine = """(?ms)(.*?)(\n.*)""".r
+    val ImportStatementNewline = """(?ms)(.*)(\n.*?import.*)""".r
+    val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
+    
+    def split(layout: String): (String, String, String) = {
+
       (layout match {
         case StartComment(l, r)    => Some(l, r, "StartComment")
         case Class(l, r)           => Some(l, r, "Class")
@@ -303,7 +304,15 @@ trait LayoutHelper {
       case (l, r: ImportSelectorTree) =>
         // All the layout, like '.' and '{' belongs to the selector.
         layout(l.pos.end, r.pos.start)(l.pos.source) → NoLayout
-          
+        
+      case (l: ValOrDefDef, r: ValOrDefDef) => 
+        val (ll, lr, _) = (between(l, r)(left.pos.source).toString) match {
+          case Comma(l, r)           => (l, r, "Comma")
+          case NewLine(l, r)         => (l, r, "NewLine")
+          case _ => split(between(l, r)(left.pos.source).toString)
+        }
+        Layout(ll) → Layout(lr)
+        
       case (l, r) =>
         val (ll, lr, rule) = split(between(l, r)(left.pos.source).toString)
         trace("Rule %s splits (%s, %s) layout into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, ll, lr)

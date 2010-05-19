@@ -3,7 +3,8 @@
  */
 // $Id$
 
-package scala.tools.refactoring.implementations
+package scala.tools.refactoring
+package implementations
 
 import scala.tools.nsc.util.RangePosition
 import scala.tools.refactoring.MultiStageRefactoring
@@ -13,10 +14,12 @@ import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.symtab.Types
+import sourcegen.Transformations
 
 abstract class ExplicitGettersSetters extends MultiStageRefactoring {
   
   import global._
+  import Transformations._
   
   abstract class PreparationResult {
     def selectedValue: ValDef
@@ -48,11 +51,11 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
     val publicName = selectedValue.name.toString.trim
     
     val privateName = "_"+ publicName
-    
-    val privateField = selectedValue copy (mods = Modifiers(Flags.PARAM), name = privateName)
+    //var flag
+    val privateField = selectedValue copy (mods = Modifiers(Flags.PARAMACCESSOR) | Flags.PRIVATE, name = privateName)
     
     val getter = DefDef(
-        Modifiers(Flags.METHOD), 
+        NoMods withPosition (Flags.METHOD, NoPosition), 
         publicName, 
         Nil, 
         List(Nil), 
@@ -61,35 +64,37 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
             Ident(privateName) :: Nil, EmptyTree))
     
     val setter = DefDef(
-        Modifiers(Flags.METHOD), 
-        publicName +"_=", 
+        NoMods withPosition (Flags.METHOD, NoPosition), 
+        publicName +"_=",
         Nil,
-        List(List(ValDef(NoMods, publicName, TypeTree(selectedValue.tpt.tpe), EmptyTree))), 
-        EmptyTree, 
+        List(List(ValDef(Modifiers(Flags.PARAM), publicName, TypeTree(selectedValue.tpt.tpe), EmptyTree))), 
+        EmptyTree,
         Block(
             Assign(
                 Ident(privateName),
-                ValDef(NoMods, publicName, TypeTree(NoType), EmptyTree)) :: Nil, EmptyTree))
+                Ident(publicName)) :: Nil, EmptyTree))
     
-    val changes = new ModificationCollector {
-      transform(selection.file) {
+    val r = Transformations.transform[Tree, Tree] {
         
-        case tpl: Template if tpl == template =>
+      case tpl: Template if tpl == template =>
+      
+        val classParameters = tpl.body.map {
+          case t: ValDef if t == selectedValue => privateField setPos t.pos
+          case t => t 
+        }
         
-          val classParameters = tpl.body.map {
-            case t: ValDef if t == selectedValue => privateField setPos t.pos
-            case t => t 
-          }
-          
-          val accessors = if(createSetter) 
-            getter :: setter :: Nil
-          else
-            getter :: Nil
-          
-          tpl.copy(body = accessors ::: classParameters) setPos tpl.pos
-      }
+        val body = if(createSetter) 
+          getter :: setter :: classParameters
+        else
+          getter :: classParameters
+        
+        tpl.copy(body = body) setPos tpl.pos
     }
+    
+    val changes = ↓(any(r)) apply abstractFileToTree(selection.file)
+    
+    println(changes.get)
 
-    Right(Nil)
+    Right(changes toList)
   }
 }

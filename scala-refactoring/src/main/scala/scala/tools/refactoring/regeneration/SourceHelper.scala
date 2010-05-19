@@ -3,89 +3,17 @@
  */
 // $Id$
 
-package scala.tools.refactoring.regeneration
+package scala.tools.refactoring
+package regeneration
 
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.SourceFile
 import scala.tools.nsc.util.BatchSourceFile
 
-trait SourceCodeHelpers {
-  
-  val global: scala.tools.nsc.interactive.Global
-  
-  def indentationLength(tree: global.Tree): Int = {
-    indentationLength(tree.pos.start, tree.pos.source)
-  }
-  
-  def indentation(tree: global.Tree): String = {
-    indentation(tree.pos.start, tree.pos.source)
-  }
-  
-  def indentation(start: Int, source: SourceFile): String = {
-    var i = if(start == source.length || source.content(start) == '\n') start - 1 else start
-    val contentWithoutComment = stripComment(source)
-        
-    while(i >= 0 && contentWithoutComment(i) != '\n')
-      i -= 1
-    i += 1
-        
-    """\s*""".r.findFirstIn(contentWithoutComment.slice(i, start) mkString).getOrElse("")
-  }
-  
-  def indentationLength(start: Int, source: SourceFile) = {
+trait CommentHelpers {
 
-    indentation(start, source).length
-  }
-  
-  def forwardsTo(to: Char, max: Int)(offset: Int, source: SourceFile): Option[Int] = {
-    var i = offset
-    val contentWithoutComment = stripComment(source)
-    
-    while(i < max && i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to) {
-      i += 1
-    }
-    
-    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
-      Some(i)
-    else
-      None
-  }
-    
-  def skipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
-    var i = offset
-    val contentWithoutComment = stripComment(source)
-    
-    while(i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
-      i += 1
-    }
-    
-    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
-      Some(i + 1) //the end points to the character _after_ the found character
-    else
-      None
-  }
-  
-  def backwardsSkipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
-    
-    val contentWithoutComment = stripComment(source)
-    
-    if( offset >= 0 && offset < contentWithoutComment.length && contentWithoutComment(offset) == to) 
-      return Some(offset)
-      
-    var i = offset - 1
-    
-    while(i > 0 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
-      i -= 1
-    }
-    
-    if(i >= 0 && contentWithoutComment(i) == to)
-      Some(i)
-    else
-      None
-  }
-  
-  def stripComment(source: SourceFile) = splitComment(source)._1
-  def stripComment(source: String) = splitComment(source)._1
+  def stripComment(source: SourceFile): String = splitComment(source)._1
+  def stripComment(source: String): String = splitComment(source)._1
   
   private val memoizedComments = scala.collection.mutable.Map.empty[String, (String, String)]
 
@@ -165,6 +93,83 @@ trait SourceCodeHelpers {
       case ('\n', '\n') => '\n'
       case _ => assert(false)
     } mkString
+  }  
+}
+
+
+trait SourceCodeHelpers extends CommentHelpers {
+  
+  val global: scala.tools.nsc.interactive.Global
+  
+  def indentationLength(tree: global.Tree): Int = {
+    indentationLength(tree.pos.start, tree.pos.source)
+  }
+  
+  def indentation(tree: global.Tree): String = {
+    indentation(tree.pos.start, tree.pos.source)
+  }
+  
+  def indentation(start: Int, source: SourceFile): String = {
+    var i = if(start == source.length || source.content(start) == '\n') start - 1 else start
+    val contentWithoutComment = stripComment(source)
+        
+    while(i >= 0 && contentWithoutComment(i) != '\n')
+      i -= 1
+    i += 1
+        
+    """\s*""".r.findFirstIn(contentWithoutComment.slice(i, start) mkString).getOrElse("")
+  }
+  
+  def indentationLength(start: Int, source: SourceFile) = {
+
+    indentation(start, source).length
+  }
+  
+  def forwardsTo(to: Char, max: Int)(offset: Int, source: SourceFile): Option[Int] = {
+    var i = offset
+    val contentWithoutComment = stripComment(source)
+    
+    while(i < max && i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to) {
+      i += 1
+    }
+    
+    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
+      Some(i)
+    else
+      None
+  }
+    
+  def skipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
+    var i = offset
+    val contentWithoutComment = stripComment(source)
+    
+    while(i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
+      i += 1
+    }
+    
+    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
+      Some(i + 1) //the end points to the character _after_ the found character
+    else
+      None
+  }
+  
+  def backwardsSkipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
+    
+    val contentWithoutComment = stripComment(source)
+    
+    if( offset >= 0 && offset < contentWithoutComment.length && contentWithoutComment(offset) == to) 
+      return Some(offset)
+      
+    var i = offset - 1
+    
+    while(i > 0 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
+      i -= 1
+    }
+    
+    if(i >= 0 && contentWithoutComment(i) == to)
+      Some(i)
+    else
+      None
   }
 }
 

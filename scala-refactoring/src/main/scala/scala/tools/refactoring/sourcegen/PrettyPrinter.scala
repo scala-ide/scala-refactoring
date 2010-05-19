@@ -92,7 +92,7 @@ trait PrettyPrinter {
         } else {
           t.rhs.print(before = " = ")
         }
-        mods_ + name + tparams_ + params + tpt.print(before = ": ") + rhs
+        mods_ + t.nameString + tparams_ + params + tpt.print(before = ": ") + rhs
         
       case TypeDef(ModifierTree(mods), name, tparams, rhs) =>
         //mods.annotations map traverse
@@ -180,9 +180,8 @@ trait PrettyPrinter {
       case Function(vparams, body) =>
         vparams.print(before = "(", separator = ", ", after = ") => ") + body.print()
         
-  //    case Assign(lhs, rhs) =>
-  //      traverse(lhs)
-  //      traverse(rhs)
+      case Assign(lhs, rhs) =>
+        lhs.print() + " = " + rhs.print()
         
       case If(cond, thenp, elsep) =>
         cond.print(before = "if (", after = ")") + thenp.print(before = " ") + elsep.print(before = " else ")
@@ -208,12 +207,17 @@ trait PrettyPrinter {
       case Typed(expr, tpt) =>
         expr.print() + tpt.print()
         
-        
       case TypeApply(fun, args) =>
         fun.print() + args.print()
         
       case Apply(fun, args @ (Function(_, _: Match) :: _)) =>
         fun.print() + args.print(before = " ")
+        
+      case Apply(fun: Select, arg :: Nil) if fun.name.toString endsWith "_$eq" =>
+        fun.print() + " = "+ arg.print()
+        
+      case Apply(fun: Select, args) if fun.name.toString endsWith "_$eq" =>
+        fun.print() + " = "+ args.print(before = "(", after = ")", separator = ", ")
         
       case Apply(fun, args) =>
         fun.print() + args.print(before = "(", after = ")", separator = ", ")
@@ -232,7 +236,7 @@ trait PrettyPrinter {
         t.symbol.nameString
         
       case t @ Select(qualifier, selector) =>
-        qualifier.print(after = ".") + t.symbol.nameString
+        qualifier.print(after = ".") + t.nameString
         
       case t: Ident =>
         if (t.symbol.isSynthetic && t.name.toString.contains("$"))

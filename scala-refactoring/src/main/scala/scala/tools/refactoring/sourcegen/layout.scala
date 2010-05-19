@@ -7,22 +7,29 @@ import tools.nsc.util.SourceFile
 trait Requisite {
   def isRequired(l: Layout, r: Layout): Boolean
   def validate(l: Layout, r: Layout): Layout
+  def ++(o: Requisite): Requisite
 }
 
 object NoRequisite extends Requisite {
   def isRequired(l: Layout, r: Layout) = false
   def validate(l: Layout, r: Layout) = l ++ r
+  def ++(o: Requisite) = o
 }
 
-case class SeparatedBy(s: String) extends Requisite {
-  def isRequired(l: Layout, r: Layout) = !((l.asText + r.asText) contains s)
+case class SeparatedBy(str: String) extends Requisite {
+  def isRequired(l: Layout, r: Layout) = !((l.asText + r.asText) contains str)
   
   def validate(l: Layout, r: Layout): Layout = {
     if(isRequired(l, r))
-      l ++ Layout(s) ++ r
+      l ++ Layout(str) ++ r
     else {
       l ++ r
     }
+  }
+  
+  def ++(o: Requisite): Requisite = o match {
+    case NoRequisite => this
+    case SeparatedBy(s) => SeparatedBy(str + s)
   }
 }
 
@@ -41,7 +48,7 @@ trait Fragment {
     def asText = self.asText
   }
   
-  def asText: String = leading.asText + center.asText + trailing.asText
+  def asText: String = pre.validate(NoLayout, leading).asText + center.asText + post.validate(trailing, NoLayout).asText
   
   /**
    * Combines two fragments, makes sure that 
@@ -88,7 +95,7 @@ trait Fragment {
       val trailing = self.trailing
       
       override val pre  = self.pre
-      override val post = o
+      override val post = self.post ++ o
     }
   }
 }
@@ -116,10 +123,15 @@ object Fragment {
   }
 }
 
-trait Layout {
+trait Layout extends regeneration.CommentHelpers {
   self =>
   
+  def contains(s: String) = stripComment(asText).contains(s)
+  
+  def matches(r: String) = stripComment(asText).matches(r)
+  
   def asText: String
+  
   override def toString() = asText
   
   def ++ (o: Layout) = o match {
@@ -162,9 +174,12 @@ object Layout {
     private def split(cs: Seq[Char]): Option[Int] = cs.toList match {
       case Nil => 
         None
-      case x :: xs if toString.indexOf(x) >= 0 =>
-        Some(start + toString.indexOf(x))
-      case _ :: xs => split(xs)
+      case x :: xs =>
+        val i = stripComment(asText).indexOf(x) 
+        if(i >= 0 ) {
+          Some(start + i)
+        } else
+          split(xs)
     }
   }
   

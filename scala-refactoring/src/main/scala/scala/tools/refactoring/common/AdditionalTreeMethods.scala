@@ -12,11 +12,11 @@ trait AdditionalTreeMethods {
   def children(t: Tree): List[Tree]
   
   implicit def additionalValMethods(t: ValDef) = new {
-    def needsKeyword = 
-      !t.mods.hasFlag(Flags.PARAM) && 
-      !t.mods.hasFlag(Flags.PARAMACCESSOR) && 
-      !t.mods.hasFlag(Flags.CASEACCESSOR) && 
-      !t.mods.hasFlag(Flags.SYNTHETIC) && 
+    def needsKeyword =
+      !t.mods.hasFlag(Flags.PARAM) &&
+      !t.mods.hasFlag(Flags.PARAMACCESSOR) &&
+      !t.mods.hasFlag(Flags.CASEACCESSOR) &&
+      !t.mods.hasFlag(Flags.SYNTHETIC) &&
       !t.symbol.isSynthetic
   }
  
@@ -34,9 +34,10 @@ trait AdditionalTreeMethods {
       case t: ModuleDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
       case t: ClassDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
       case t: TypeDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+      case t if t.pos == NoPosition => NoPosition
       case t: ValOrDefDef =>
         
-        val name = t.name.toString.trim
+        val name = if(t.symbol != NoSymbol) t.symbol.nameString else t.name.toString.trim
         
         /* In general, the position of the name starts from t.pos.point and is as long as the trimmed name.
          * But if we have a val in a function: 
@@ -77,16 +78,31 @@ trait AdditionalTreeMethods {
       case _ => throw new Exception("uhoh")
     }
   }
+
   
-  implicit def additionalTreeMethodsForIdentName(t: Ident) = new {
-    def nameString = {
-      if(t.name.toString == "<empty>")
+  implicit def additionalTreeMethodsForName(t: Tree) = new {
+    
+    private def extractName(name: Name) = 
+      if(name.toString == "<empty>")
         ""
-      else if (t.symbol.isSynthetic && t.name.toString.contains("$"))
+      else if (t.symbol.isSynthetic && name.toString.contains("$"))
         "_"
       else if (t.symbol.isSynthetic)
         ""
-      else t.name.toString
+      else if (t.symbol != NoSymbol) {
+        t.symbol.nameString
+      } else 
+        name.toString.trim
+    
+    def nameString = t match {
+      case t: Select if t.name.toString endsWith "_$eq"=>
+        val n = extractName(t.name)
+        n.substring(0, n.length - "_=".length)
+      case t: Select if t.symbol != NoSymbol =>
+        t.symbol.nameString
+      case t: DefTree => extractName(t.name)
+      case t: RefTree => extractName(t.name)
+      case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
     }
   }
   

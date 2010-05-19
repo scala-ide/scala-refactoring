@@ -145,6 +145,31 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
   }
   
   @Test
+  def testAssign() = {
+    val tree = treeFrom("""
+      package oneFromMany
+      class Demo(val a: String,  /*(*/private var _i: Int/*)*/  ) {
+        def i_=(i: Int) = {
+          _i = i
+        }
+      }""")
+      
+    assertEquals("""
+      package oneFromMany
+      class Demo(val a: String,  /*(*/private var _i: Int/*)*/  ) {
+        def i_=(i: Int) = {
+          _i = i
+        }
+      }""", generate(removeAuxiliaryTrees apply tree get).get.asText)
+    
+    tree prettyPrintsTo """package oneFromMany
+class Demo(val a: String, private var _i: Int) {
+  def i_=(i: Int) = _i = i
+}
+"""
+  }
+  
+  @Test
   def testMatches() = {
     val tree = treeFrom("""
     object Functions {
