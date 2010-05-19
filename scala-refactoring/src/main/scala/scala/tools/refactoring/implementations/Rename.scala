@@ -45,7 +45,7 @@ abstract class Rename extends MultiStageRefactoring {
       case t: Tree => occurences contains t 
     }
     
-    val renameTree = sourcegen.Transformations.transform[Tree, Tree] {
+    val renameTree = Transformations.transform[Tree, Tree] {
       case s: SymTree => mkRenamedSymTree(s, newName)
       case t: TypeTree => 
       

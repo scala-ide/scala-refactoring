@@ -3,18 +3,20 @@
  */
 // $Id$
 
-package scala.tools.refactoring.implementations
+package scala.tools.refactoring
+package implementations
 
-import scala.tools.refactoring.MultiStageRefactoring
-import scala.tools.refactoring.analysis.FullIndexes
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
-import scala.tools.refactoring.common.Change
+import analysis.FullIndexes
+import common.Change
+import sourcegen.Transformations
 
 abstract class OrganizeImports extends MultiStageRefactoring {
   
   import global._
+  import Transformations._
   
   class PreparationResult
   
@@ -24,10 +26,8 @@ abstract class OrganizeImports extends MultiStageRefactoring {
     
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
     
-    var changes = new ModificationCollector {
-      
-      transform(selection.file) {
-        case p @ PackageDef(_, stats) =>
+    val organizeImports = Transformations.transform[Tree, Tree] {
+       case p @ PackageDef(_, stats) =>
         
           p copy (stats = stats partition {
               case _: Import => true
@@ -60,9 +60,10 @@ abstract class OrganizeImports extends MultiStageRefactoring {
                 ((sortImports andThen collapseImports andThen simplifyWildcards) apply imports) ::: others
             }
           ) setPos p.pos
-      }
     }
     
-    Right(Nil)
+    val changes = organizeImports apply abstractFileToTree(selection.file)
+
+    Right(changes toList)
   }
 }

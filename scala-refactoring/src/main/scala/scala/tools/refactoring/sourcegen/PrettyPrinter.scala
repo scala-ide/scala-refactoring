@@ -12,7 +12,7 @@ trait PrettyPrinter {
   
   import Transformations._
   
-  private class PrintFunctionsForTree(ts: List[Tree], traverse: (Tree, Indentation) => Option[PrintingResult], ind: Indentation) {
+  private class PrintFunctionsForTree(ts: List[Tree], traverse: (Tree, Indentation) => Option[Fragment], ind: Indentation) {
     
     def print(before: String = "", after: String = "", separator: String = "") = (ts map (traverse(_, ind))) flatten match {
       case Nil => ""
@@ -33,7 +33,7 @@ trait PrettyPrinter {
     }  
   }
   
-  def prettyPrintTree(traverse: (Tree, Indentation) => Option[PrintingResult], t: Tree, ind: Indentation): PrintingResult = context("pretty print tree"+ t.getClass.getSimpleName) { 
+  def prettyPrintTree(traverse: (Tree, Indentation) => Option[Fragment], t: Tree, ind: Indentation): Fragment = context("pretty print tree"+ t.getClass.getSimpleName) { 
        
     trace("base indentation is %s", ind.text)
     
@@ -297,6 +297,6 @@ trait PrettyPrinter {
         "«?"+ t.getClass.getSimpleName +"?»"
     } 
     
-    PrintingResult(NoLayout, LayoutFromString(code), NoLayout)
+    Fragment(code)
   }
 }

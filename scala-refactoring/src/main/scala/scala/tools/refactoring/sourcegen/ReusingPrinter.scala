@@ -8,7 +8,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
   val global: scala.tools.nsc.interactive.Global
   import global._
   
-  def reuseExistingSource(traverse: (Tree, Indentation) => Option[PrintingResult], t: Tree, ind: Indentation): PrintingResult = context("Reuse "+ t.getClass.getSimpleName) { 
+  def reuseExistingSource(traverse: (Tree, Indentation) => Option[Fragment], t: Tree, ind: Indentation): Fragment = context("Reuse "+ t.getClass.getSimpleName) { 
     
     trace("Base indentation is %s", ind.text)
     
@@ -17,14 +17,14 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
     
     val thisIndentation = indentation(t)
     
-    val center = ind.setTo(thisIndentation) {
+    val center: Fragment = ind.setTo(thisIndentation) {
       printWithExistingLayout(traverse, t, ind)
     } match {
-      case c if allLayout contains "\n" => LayoutFromString(fixIndentation(c.asText, t, thisIndentation, ind.text)) 
+      case c if allLayout contains "\n" => Fragment(fixIndentation(c.asText, t, thisIndentation, ind.text)) 
       case c => c
     }
     
-    PrintingResult(leadingParent, leadingChild ++ center ++ trailingChild, trailingParent) \\ (r => trace("result: %s", r.toString))
+    Fragment(leadingParent, leadingChild ++ center ++ trailingChild toLayout, trailingParent) \\ (r => trace("result: %s", r.toString))
   }
   
   private def fixIndentation(code: String, t: Tree, currentIndentation: String, parentIndentation: String) = {
@@ -49,37 +49,38 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
     }
   }
 
-  private def printWithExistingLayout(f: (Tree, Indentation) => Option[PrintingResult], t: Tree, ind: Indentation): Layout = {
+  private def printWithExistingLayout(f: (Tree, Indentation) => Option[Fragment], t: Tree, ind: Indentation): Fragment = {
     
     implicit val currentFile = t.pos.source
     
-    def handle(t: Tree, before: String = "", after: String = ""): Layout = f(t, ind) getOrElse NoLayout
+    def handle(t: Tree, before: String = "", after: String = ""): Fragment = f(t, ind) getOrElse EmptyFragment
     
-    def handleMany(ts: List[Tree], separator: String = ""): Layout = ts match {
-      case Nil       => NoLayout
+    def handleMany(ts: List[Tree], separator: String = ""): Fragment = ts match {
+      case Nil       => EmptyFragment
       case x :: Nil  => handle(x)
       case x :: rest => (handle(x), handleMany(rest, separator)) match {
-        case (l, r) if l.asText.endsWith(separator) || r.asText.startsWith(separator) => l ++ r
-        case (l, r) => l ++ LayoutFromString(separator) ++ r
+        case (l, r) if l.asText == "" => r 
+        case (l, r) if l.asText.endsWith(separator) || r.asText.startsWith(separator) =>
+          l ++ r
+        case (l, r) =>
+          Fragment(
+              l.leading, 
+              l.center ++ l.trailing  ++ Layout(separator.replace("\n", "\n"+ ind.text)) ++ r.leading ++ r.center,
+              r.trailing )
       }
     }
     
     val originalTree = findOriginalTree(t) getOrElse {
-      
-      val r = prettyPrintTree(f, t, ind)
-      
-      trace("original tree not found for %s, pretty prints to %s", t, r)
-      
       throw new Exception("original tree not found for: "+ t)
     }
     
    (t, originalTree) match {
             
       case (t @ PackageDef(pid, stats), _) =>
-        handle(pid) ++ handleMany(stats)
+        handleMany(pid :: stats, separator = "\n")
       
       case (t @ ClassDef(ModifierTree(mods), name, tparams, impl), orig) =>
-        handleMany(mods) ++ (if(t.symbol.isAnonymousClass) NoLayout else handle(NameTree(name) setPos orig.namePosition)) ++ handleMany(tparams) ++ handle(impl)
+        handleMany(mods) ++ (if(t.symbol.isAnonymousClass) EmptyFragment else handle(NameTree(name) setPos orig.namePosition)) ++ handleMany(tparams) ++ handle(impl)
         
       case (t @ ModuleDef(ModifierTree(mods), name, impl), orig) =>
         handleMany(mods) ++ handle(NameTree(name) setPos orig.namePosition) ++ handle(impl)
@@ -89,7 +90,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         
       case (t @ DefDef(ModifierTree(mods), newName, tparams, vparamss, tpt, rhs), orig) =>
         handleMany(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = " ") ++
-          handleMany(tparams) ++ vparamss.map(vparams => handleMany(vparams, ",")).foldLeft(NoLayout: Layout)(_ ++ _) ++ handle(tpt) ++ handle(rhs)
+          handleMany(tparams) ++ vparamss.map(vparams => handleMany(vparams, ",")).foldLeft(EmptyFragment: Fragment)(_ ++ _) ++ handle(tpt) ++ handle(rhs)
         
       case (t @ ValDef(ModifierTree(mods), newName, tpt, rhs), orig) =>
         handleMany(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = " ") ++ handle(tpt) ++ handle(rhs)
@@ -98,7 +99,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         handleMany(stats)
         
       case (t: TypeTree, _) if t.original == null && !t.pos.isTransparent => 
-        LayoutFromString(t.toString)
+        Fragment(t.toString)
         
       case (t: TypeTree, _) => 
         handle(t.original)
@@ -113,11 +114,11 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         handleMany(mods ::: (NameTree(name) setPos orig.namePosition) :: Nil, separator = " ") ++ handleMany(tparams) ++ handle(rhs)
         
       case (t: Ident, _) => 
-        LayoutFromString(t.nameString)
+        Fragment(t.nameString)
         
       // XXX List(..) has an invisible immutable.this qualifier
       case (t @ Select(qualifier: This, selector), _) if qualifier.qual.toString == "immutable" && qualifier.pos == NoPosition => 
-        LayoutFromString(t.symbol.nameString)
+        Fragment(t.symbol.nameString)
         
       // skip <init> from constructor calls
       case (t @ Select(qualifier: New, selector), orig) if t.symbol.isConstructor =>
@@ -128,7 +129,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         handle(qualifier) ++ handle(nameOrig)
       
       case (t: Literal, _) =>
-        LayoutFromString(t.toString)
+        Fragment(t.toString)
         
       case (t @ Apply(fun, args @ ((_: Bind) :: ( _: Bind) :: _)), _) =>
         handle(fun) ++ handleMany(args)
@@ -138,16 +139,20 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         
       case (t @ Import(expr, _), _) =>
         val ts = t.Selectors()
-        handle(expr) ++ handleMany(ts, separator = ",")
+        if(ts.size > 1) {
+          handle(expr) ++ SeparatedBy("{") ++ handleMany(ts, separator = ", ") ++ SeparatedBy("}")
+        } else {
+          handle(expr) ++ handleMany(ts, separator = ", ")
+        }
         
       case (t @ ImportSelectorTree(name, rename), _) =>
         handle(name) ++ handle(rename)
         
       case (t: NameTree, _) =>
         if(t.pos.isTransparent) 
-          NoLayout
+          EmptyFragment
         else
-          LayoutFromString(t.nameString)
+          Fragment(t.nameString)
         
       case (t @ SuperConstructorCall(clazz, args), _) =>
         handle(clazz) ++ handleMany(args, separator = ",")
@@ -156,7 +161,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         handle(name) ++ handleMany(types)
         
       case (t: ModifierTree, _) =>
-        LayoutFromString(t.nameString)
+        Fragment(t.nameString)
         
       case (t @ Function(vparams, body), _) =>
         handleMany(vparams) ++ handle(body)
@@ -165,7 +170,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         handle(cond) ++ handle(thenp) ++ handle(elsep)
         
       case (t: This, _) =>
-        LayoutFromString("this")
+        Fragment("this")
         
       case (Return(expr), _) =>
         handle(expr)
@@ -177,7 +182,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         if(t.pos.start > t.pos.point)
           handle(tpt)
         else
-          LayoutFromString("new") ++ handle(tpt)
+          Fragment("new") ++ handle(tpt)
           
       case (Match(selector, cases), _) =>
         handle(selector) ++ handleMany(cases)
@@ -194,7 +199,7 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)
-        LayoutFromString("ø")
+        Fragment("ø")
     }
   }
 }

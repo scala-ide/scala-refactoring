@@ -10,7 +10,7 @@ import scala.tools.refactoring.Refactoring
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.analysis.FullIndexes
-import scala.tools.refactoring.common.SilentTracing
+import scala.tools.refactoring.common._
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 
@@ -23,7 +23,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new OrganizeImports with SilentTracing {
+      val refactoring = new OrganizeImports with ConsoleTracing {
 	      val global = outer.global
       }
       def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)

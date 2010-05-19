@@ -26,17 +26,16 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
     
     changesPerFile flatMap {
       case (source, tree, changes) =>
-        generate(tree) map {
-          case PrintingResult(leading, center, trailing) =>
-            trace("Change: %s", center.asText)
-            common.Change(source.file, tree.pos.start, tree.pos.end, center.asText)
+        generate(tree) map { f =>
+            trace("Change: %s", f.center.asText)
+            common.Change(source.file, tree.pos.start, tree.pos.end, f.center.asText)
         }
     }
   }
   
-  def generate(tree: Tree): Option[PrintingResult] = {
+  def generate(tree: Tree): Option[Fragment] = {
     
-    def generateSourceCode(t: Tree, ind: Indentation): Option[PrintingResult] = {
+    def generateSourceCode(t: Tree, ind: Indentation): Option[Fragment] = {
       
       if(t == null || t.isEmpty)
         None

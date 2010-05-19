@@ -41,12 +41,12 @@ trait LayoutHelper {
     
   } getOrElse (NoLayout, NoLayout, NoLayout, NoLayout)
   
-  def layout(start: Int, end: Int)(implicit s: SourceFile) = LayoutFromFile(s, start, end)
+  def layout(start: Int, end: Int)(implicit s: SourceFile) = Layout(s, start, end)
   def between(l: Tree, r: Tree)(implicit s: SourceFile) = layout(l.pos.end, r.pos.start)(s)
 
   def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = 
-    LayoutFromFile(t.pos.source, 0, t.pos.start) → 
-    LayoutFromFile(t.pos.source, t.pos.end, t.pos.source.length)
+    Layout(t.pos.source, 0, t.pos.start) → 
+    Layout(t.pos.source, t.pos.end, t.pos.source.length)
     
   def layoutForSingleChild(t: Tree, p: Tree): (Layout, Layout) = 
     splitLayoutBetweenParentAndFirstChild(child = t, parent = p)._2 →     
@@ -272,7 +272,7 @@ trait LayoutHelper {
       val ClosingBrace = """(?ms)(.*?)(\).*)""".r
       val Comma = """(.*?),(.*)""".r
       val NewLine = """(?ms)(.*?)(\n.*)""".r
-      val ImportStatementNewline = """(?ms)(.*)(\n.*?import.*)""".r // imports don't include leading lines, handle in partitioner instead?
+      val ImportStatementNewline = """(?ms)(.*)(\n.*?import.*)""".r
       val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
       
       (layout match {
@@ -297,10 +297,17 @@ trait LayoutHelper {
     
     (left, right) match {
       case (_, EmptyTree) | (EmptyTree, _) => NoLayout → NoLayout
+      case (l: Import, r: Import) =>
+        NoLayout → NoLayout
+        
+      case (l, r: ImportSelectorTree) =>
+        // All the layout, like '.' and '{' belongs to the selector.
+        layout(l.pos.end, r.pos.start)(l.pos.source) → NoLayout
+          
       case (l, r) =>
         val (ll, lr, rule) = split(between(l, r)(left.pos.source).toString)
         trace("Rule %s splits (%s, %s) layout into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, ll, lr)
-        LayoutFromString(ll) → LayoutFromString(lr)
+        Layout(ll) → Layout(lr)
     }
   }
 }
