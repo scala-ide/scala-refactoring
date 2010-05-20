@@ -248,13 +248,62 @@ val a: java.lang.Object = {
 
 \paragraph{CaseDef} \member{Tree}{\textit{pat}: Tree, \textit{guard}: Tree, \textit{body}: Tree}
 
+\noindent The body of a \src{Match} tree contains a number of \src{CaseDefs} trees. The guard can be an empty tree if it is not present. Note that even though the \src{if} keyword is used, the tree is not an \src{If} tree.
+
+Patterns can be of different form, the catch-all \src{\_} is simly an \src{Ident} tree, whereas extractors are represented through the \src{UnApply} trees. Patterns that use an \src{@} binding or are restricted by type with \src{:} are \src{Bind} trees. The body can again be an arbitrary tree.
+
 \paragraph{Alternative} \member{TermTree <: Tree}{\textit{trees}: List[Tree]}
+
+\noindent \src{Alternative} trees are used in case definitions to match on alternative clauses, they are separated by \src{|}.
 
 \paragraph{Star} \member{TermTree <: Tree}{\textit{elem}: Tree}
 
 \paragraph{Bind} \member{DefTree <: SymTree <: Tree}{\textit{name}: Name, \textit{body}: Tree}
 
+\noindent The \src{Bind} tree binds a name to an expression and is used in the patterns of \src{CaseDef}. We can see from some examples that several seemingly different syntax variations are all represented in a uniform way in the AST:
+
+\begin{multicols}{2}
+\begin{lstlisting}
+list match {
+  case i => %\ldots%
+  case i: Int => %\ldots%
+  case a @ i: Int => %\ldots%
+}
+\end{lstlisting}
+\begin{lstlisting}
+list match {
+  case (i @ _) => %\ldots%
+  case (i @ (_: Int)) => %\ldots%
+  case (a @ (i @ (_: Int))) => %\ldots% 
+}
+\end{lstlisting}
+\end{multicols}
+
 \paragraph{UnApply} \member{TermTree <: Tree}{\textit{fun}: Tree, \textit{args}: List[Tree]}
+
+\noindent When an extractor object is used in the pattern of a case definition, an \src{UnApply} tree is used. The arguments of \src{UnApply} can then be more  patterns.
+
+\begin{multicols}{2}
+\begin{lstlisting}
+case Ex(i) => i
+
+case a @ Ex(i) => i
+
+case a @ Ex(i: Int) => i
+
+\end{lstlisting}
+\begin{lstlisting}
+case Ex.unapply(<unapply-selector>) 
+  <unapply> ((i @ _)) => i
+case (a @ Ex.unapply(<unapply-selector>) 
+  <unapply> ((i @ _))) => i
+case (a @ Ex.unapply(<unapply-selector>) 
+  <unapply> ((i @ (_: Int)))) => i
+\end{lstlisting}
+\end{multicols}
+
+
+
 
 \paragraph{ArrayValue} \member{TermTree <: Tree}{\textit{elemtpt}: Tree, \textit{elems}: List[Tree]}
 
@@ -325,6 +374,21 @@ else
 Note that the \src{if} used in pattern matching guards is not an \src{If} tree but a member of a \src{CaseDef} tree.
 
 \paragraph{Match} \member{TermTree <: Tree}{\textit{selector}: Tree, \textit{cases}: List[CaseDef]}
+
+\noindent A match tree is used to represent a pattern match, with the \src{selector} being the tree that is matched against. When a pattern matching expression is used as the body of a function, the selector is a synthetic value:
+
+\begin{multicols}{2}
+\begin{lstlisting}
+list foreach {
+  case i => println(i)
+}
+\end{lstlisting}
+\begin{lstlisting}
+list foreach (((x0$1: Int) => x0$1 match {
+  case (i @ _) => println(i)
+}))
+\end{lstlisting}
+\end{multicols}
 
 \paragraph{Return} \member{TermTree <: Tree $\wedge$ SymTree <: Tree}{\textit{expr}: Tree}
 

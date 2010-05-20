@@ -21,6 +21,10 @@ trait AstTransformations {
           val typeTree = super.transform(t).asInstanceOf[TypeTree]
           typeTree setOriginal f(t.original)
         
+        case t: UnApply =>
+          // super does not transform t.fun
+          treeCopy.UnApply(tree, transform(t.fun), transformTrees(t.args))
+          
         case t => super.transform(t)
       }
       override def transform(t: Tree) = f(t)

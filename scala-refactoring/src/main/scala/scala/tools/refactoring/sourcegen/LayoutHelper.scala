@@ -162,6 +162,12 @@ trait LayoutHelper {
          
       case (p: Typed, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Alternative, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: UnApply, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
       
       case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
@@ -253,7 +259,13 @@ trait LayoutHelper {
          
        case (c, p: Typed) =>
          NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Alternative) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
        
+       case (c, p: UnApply) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
        case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)
      }
    }

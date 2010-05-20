@@ -196,6 +196,11 @@ class Demo(val a: String, private var _i: Int) {
       List(1,2) match {
         case x :: xs => x
       }
+
+      List(1,2) map {
+        case 0 | 1 => true
+        case _ => false 
+      }
     }
     """)
         
@@ -224,10 +229,15 @@ class Demo(val a: String, private var _i: Int) {
       List(1,2) match {
         case x :: xs => x
       }
+
+      List(1,2) map {
+        case 0 | 1 => true
+        case _ => false 
+      }
     }
     """, generate(removeAuxiliaryTrees apply tree get).get.asText)     
     // FIXME problem with ::
-    /*tree prettyPrintsTo */"""object Functions {
+    tree prettyPrintsTo """object Functions {
   List(1, 2) match {
     case i => i
   }
@@ -244,11 +254,14 @@ class Demo(val a: String, private var _i: Int) {
     case _ => 42
   }
   List(1, 2) match {
-    case x :: xs => x
+    case (x, xs) => x
+  }
+  List(1, 2).map {
+    case 0 | 1 => true
+    case _ => false
   }
 }
 """
-   ()
   }
   
   @Test
@@ -272,6 +285,48 @@ class Demo(val a: String, private var _i: Int) {
     tree prettyPrintsTo """object Functions {
   def test = return {
     5
+  }
+}
+"""
+  }
+  
+  @Test
+  def testUnapply() = {
+    val tree = treeFrom("""
+    object Extractor {
+      def unapply(i: Int) = Some(i)
+    }
+    object User {
+      5 match { case Extractor(i) => i }
+      5 match { case a @ Extractor(i) => i }
+      5 match { case a @ Extractor(i: Int) => i }
+    }
+    """)
+        
+    assertEquals("""
+    object Extractor {
+      def unapply(i: Int) = Some(i)
+    }
+    object User {
+      5 match { case Extractor(i) => i }
+      5 match { case a @ Extractor(i) => i }
+      5 match { case a @ Extractor(i: Int) => i }
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get.asText)     
+    
+    tree prettyPrintsTo """object Extractor {
+  def unapply(i: Int) = Some(i)
+}
+
+object User {
+  5 match {
+    case Extractor(i) => i
+  }
+  5 match {
+    case a @ Extractor(i) => i
+  }
+  5 match {
+    case a @ Extractor(i: Int) => i
   }
 }
 """

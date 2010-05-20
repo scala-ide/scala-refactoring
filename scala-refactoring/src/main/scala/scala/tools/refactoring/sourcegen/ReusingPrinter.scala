@@ -160,6 +160,9 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
       case (t @ Select(qualifier: New, selector), orig) if t.symbol.isConstructor =>
         l ++ handle(qualifier)  ++ r
         
+      case (t @ Select(qualifier, selector), _) if t.pos.sameRange(qualifier.pos) && selector.toString == "unapply" =>
+        l ++ handle(qualifier) ++ r
+        
       case (t @ Select(qualifier, selector), orig) =>
         val nameOrig = NameTree(t.nameString) setPos orig.namePosition
         l ++ handle(qualifier) ++ handle(nameOrig)  ++ r
@@ -232,6 +235,12 @@ trait ReusingPrinter extends regeneration.SourceCodeHelpers {
         
       case (Typed(expr, tpt), _) =>
         l ++ handle(expr) ++ handle(tpt) ++ r
+        
+      case (Alternative(trees), _) =>
+        l ++ handleMany(trees, separator = "|") ++ r
+        
+      case (UnApply(fun, args), _) =>
+        l ++ handle(fun) ++ handleMany(args) ++ r
         
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)

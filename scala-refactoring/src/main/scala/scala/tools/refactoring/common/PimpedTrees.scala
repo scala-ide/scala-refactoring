@@ -245,6 +245,12 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       
     case Assign(lhs, rhs) =>
       lhs :: rhs :: Nil
+      
+    case Alternative(trees) =>
+      trees
+      
+    case UnApply(fun, args) =>
+      fun :: args
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      

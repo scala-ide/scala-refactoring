@@ -154,9 +154,9 @@ trait PrettyPrinter {
       case CaseDef(pat, guard, body) =>
         "case " + pat.print() + guard.print(before = " if ") + body.print(before = " => ")
         
-  //    case Alternative(trees) =>
-  //      trees map traverse
-  //      
+      case Alternative(trees) =>
+        trees.print(separator = " | ")
+        
   //    case Star(elem) =>
   //      traverse(elem)
         
@@ -169,10 +169,9 @@ trait PrettyPrinter {
       case Bind(name, body) =>
         name + body.print(before = " @ ")
         
-  //    case UnApply(fun, args) =>
-  //      traverse(fun)
-  //      args map traverse
-  //      
+      case UnApply(fun, args) =>
+        fun.print() + args.print(before = "(", separator = ", ", after = ")")
+        
   //    case ArrayValue(elemtpt, trees) =>
   //      traverse(elemtpt)
   //      trees map traverse
@@ -188,7 +187,6 @@ trait PrettyPrinter {
         
       case Match(selector, cases) =>
         selector.print(after = " match ") + cases.printIndented(before = (() => "{"+ newline), separator = newline _, after = (() => newline +"}"))
-        
         
       case Return(expr) =>
         "return " + expr.print()
@@ -234,6 +232,9 @@ trait PrettyPrinter {
         
       case t @ Select(qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
         t.symbol.nameString
+        
+      case t @ Select(qualifier, selector) if selector.toString == "unapply" =>
+        qualifier.print()
         
       case t @ Select(qualifier, selector) =>
         qualifier.print(after = ".") + t.nameString
