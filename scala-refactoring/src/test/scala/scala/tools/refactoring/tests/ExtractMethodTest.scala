@@ -8,7 +8,7 @@ package scala.tools.refactoring.tests
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
-import scala.tools.refactoring.common.SilentTracing
+import scala.tools.refactoring.common.ConsoleTracing
 import scala.tools.refactoring.implementations.ExtractMethod
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
@@ -22,7 +22,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractMethod with SilentTracing {
+      val refactoring = new ExtractMethod with ConsoleTracing {
         val global = outer.global
         pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index.processTree _ )
       }
@@ -71,15 +71,15 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         ()
       }
     }
-    """ extractMethod("prntln",
+    """ extractMethod("myOwnPrint",
     """
     package simpleExtract
     class A {
       def extractFrom {
-        prntln
+        myOwnPrint
         ()
       }
-      def prntln: Unit = {
+      def myOwnPrint: Unit = {
 /*(*/   println("hello")/*)*/
       }
     }
@@ -265,10 +265,10 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     class A {
       def extractFrom(): Int = {
         val a = 1
-        inc(a)
+        inc(a)    /*)*/
       }
       def inc(a: Int): Int = {
-/*(*/   a + 1    /*)*/
+/*(*/   a + 1
       }
     }
     """)
@@ -287,11 +287,11 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
-        inc
+        inc    /*)*/
       }
       def inc: Int = {
 /*(*/   val a = 1
-        a + 1    /*)*/
+        a + 1
       }
     }
     """)
@@ -318,7 +318,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
           false 
       }
       def test: Boolean = {
-      /*(*/ true == true /*)*/ 
+         /*(*/ true == true /*)*/ 
       }
     }
     """)
@@ -339,13 +339,12 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     package extractIfThen
     class A {
       def extractFrom(): Boolean = {
-        if(true == true)
-          test
+        if(true == true)  test /*)*/
         else
           false 
       }
       def test: Boolean = {
-        /*(*/    true /*)*/
+ /*(*/    true
       }
     }
     """)  
@@ -370,11 +369,11 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         if(true == true)
           true
         else {
-          test
+ /*(*/      test /*)*/
         }
       }
       def test: Boolean = {
-        /*(*/    false /*)*/
+        false
       }
     }
     """)  
@@ -392,10 +391,10 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     package extractIfSingleLineElse
     class A {
       def extractFrom(): Boolean = {
-        if(true == true) true else /*(*/ test
+        if(true == true) true else /*(*/   test /*)*/
       }
       def test: Boolean = {
-        false /*)*/
+        false
       }
     }
     """)    
@@ -422,7 +421,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     package extractIfElseTry
     class A {
       def extractFrom(): Boolean = {
-        if(true == true) /*(*/  test
+        if(true == true)  test  /*)*/
         else {
           try {
             println("hello world")
@@ -434,7 +433,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
       def test: Boolean = {
-        true  /*)*/
+         /*(*/  true
       }
     }
     """)    
@@ -461,7 +460,7 @@ trait Check {
       println("It's true")
   }
   def isFalse(check: Boolean): Boolean = {
-  /*(*/check == false/*)*/ /*hi*/
+    /*(*/check == false/*)*/ /*hi*/
   }
 }
     """)    
@@ -567,9 +566,6 @@ trait Check {
         else
           println("It's true")
       }
-      def isFalse(check: Boolean): Boolean = {
-      /*(*/check == false/*)*/ /*hi*/
-      }
     
       def unrelated1 {
         println("unrelated1")
@@ -581,6 +577,9 @@ trait Check {
     
       def unrelated3 {
         println("unrelated3")
+      }
+      def isFalse(check: Boolean): Boolean = {
+        /*(*/check == false/*)*/ /*hi*/
       }
     }
     

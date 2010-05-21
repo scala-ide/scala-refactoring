@@ -8,7 +8,7 @@ package scala.tools.refactoring.tests
 import scala.tools.refactoring.implementations.ExtractLocal
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
-import scala.tools.refactoring.common.SilentTracing
+import scala.tools.refactoring.common.ConsoleTracing
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
@@ -18,7 +18,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   outer =>
   
   def extract(valName: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractLocal with SilentTracing {
+    val refactoring = new ExtractLocal with ConsoleTracing {
       val global = outer.global
       pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
       
@@ -67,8 +67,8 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       package extractLocal
       object Demo {
         def printVolume(r: Double, h: Double) {
-
-          val v = /*(*/scala.math.Pi * r * r/*)*/ * h
+          
+          val v = /*(*/3.14 * r * r/*)*/ * h
 
           println("volume is: "+ v)
         }
@@ -78,9 +78,9 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       package extractLocal
       object Demo {
         def printVolume(r: Double, h: Double) {
-          val gr = /*(*/scala.math.Pi * r * r/*)*/ 
-
-          val v = /*(*/gr/*)*/ * h
+          val gr = 3.14 * r * r/*)*/ 
+          
+          val v = /*(*/gr* h
 
           println("volume is: "+ v)
         }
@@ -117,7 +117,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
           if(l.isEmpty) {
             println("is empty :-(")
           } else {
-            val sum = l.reduceLeft(_ + _)/*)*/  
+            val sum = l.reduceLeft(_ + _)
             println("sum is: "+  /*(*/sum/*)*/  )
           }
 

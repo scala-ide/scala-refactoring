@@ -137,11 +137,9 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
     class $anon {
       println("hello from an anonymous class")
     }
-    
     new 
   }
-}
-"""
+}"""
   }
   
   @Test
@@ -165,8 +163,21 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
     tree prettyPrintsTo """package oneFromMany
 class Demo(val a: String, private var _i: Int) {
   def i_=(i: Int) = _i = i
-}
-"""
+}"""
+  }
+  
+  @Test
+  def testClassConstructorParams() = {
+    val tree = treeFrom("""
+      class Demo1(a: String, b: Int)
+      class Demo2(a: String, b: Int)""")
+      
+    assertEquals("""
+      class Demo1(a: String, b: Int)
+      class Demo2(a: String, b: Int)""", generate(removeAuxiliaryTrees apply tree get).get.asText)
+    
+    tree prettyPrintsTo """class Demo1(a: String, b: Int)
+class Demo2(a: String, b: Int)"""
   }
   
   @Test
@@ -260,8 +271,7 @@ class Demo(val a: String, private var _i: Int) {
     case 0 | 1 => true
     case _ => false
   }
-}
-"""
+}"""
   }
   
   @Test
@@ -286,8 +296,127 @@ class Demo(val a: String, private var _i: Int) {
   def test = return {
     5
   }
+}"""
+  }
+  
+  @Test
+  def testVarArgs() = {
+    val tree = treeFrom("""
+    object Functions {
+      def test(args: String*) = args.toList
+    }
+    """)
+        
+    assertEquals("""
+    object Functions {
+      def test(args: String*) = args.toList
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get.asText)     
+    
+    tree prettyPrintsTo """object Functions {
+  def test(args: String*) = args.toList
+}"""
+  }
+  
+  @Test
+  def testStar() = {
+    val tree = treeFrom("""
+    object Functions {
+      "abcde".toList match {
+        case Seq(car, _*) => car 
+      }
+    }
+    """)
+        
+    assertEquals("""
+    object Functions {
+      "abcde".toList match {
+        case Seq(car, _*) => car 
+      }
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get.asText)     
+    
+    tree prettyPrintsTo """object Functions {
+  ("abcde").toList match {
+    case Seq(car, _*) => car
+  }
+}"""
+  }
+  
+  @Test
+  def testSuper() = {
+    val tree = treeFrom("""
+    trait Root { 
+      def x = "Root"
+    }
+    class A extends Root { 
+      def superA = super.x
+    }
+    class B extends A with Root {
+      class Inner {
+        val myX = B.super.x
+      }
+      def fromA = super[A].x
+      def fromRoot = super[Root].x
+    }
+    """)
+        
+    assertEquals("""
+    trait Root { 
+      def x = "Root"
+    }
+    class A extends Root { 
+      def superA = super.x
+    }
+    class B extends A with Root {
+      class Inner {
+        val myX = B.super.x
+      }
+      def fromA = super[A].x
+      def fromRoot = super[Root].x
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get.asText)     
+    
+    tree prettyPrintsTo """trait Root {
+  def x = "Root"
 }
-"""
+class A extends Root {
+  def superA = super.x
+}
+class B extends A with Root {
+  class Inner {
+    val myX = B.super.x
+  }
+  def fromA = super[A].x
+  def fromRoot = super[Root].x
+}"""
+  }
+  @Test
+  def testThis() = {
+    val tree = treeFrom("""
+    class Root {
+      class Inner {
+        val outer = Root.this
+      }
+      val self = this
+    }
+    """)
+        
+    assertEquals("""
+    class Root {
+      class Inner {
+        val outer = Root.this
+      }
+      val self = this
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get.asText)     
+    
+    tree prettyPrintsTo """class Root {
+  class Inner {
+    val outer = Root.this
+  }
+  val self = this
+}"""
   }
   
   @Test
@@ -317,7 +446,6 @@ class Demo(val a: String, private var _i: Int) {
     tree prettyPrintsTo """object Extractor {
   def unapply(i: Int) = Some(i)
 }
-
 object User {
   5 match {
     case Extractor(i) => i
@@ -328,8 +456,7 @@ object User {
   5 match {
     case a @ Extractor(i: Int) => i
   }
-}
-"""
+}"""
   }
   
   @Test
@@ -352,15 +479,38 @@ object User {
       }
     }
     object A
-    """, generate(removeAuxiliaryTrees apply tree get).get.asText)     
+    """, generate(removeAuxiliaryTrees apply tree get).get.asText)
     
     // XXX this is wrong
     tree prettyPrintsTo """package a
 package b.c
 package d
 package e.f
-
 object A"""
+  }
+  
+  @Test
+  def testIf() = {
+    
+    val tree = treeFrom("""
+    object Functions {
+      val y = if(true)
+          true
+        else if (true)
+          false
+        else
+          true
+    }""")
+    
+    assertEquals("""
+    object Functions {
+      val y = if(false)
+          false
+        else if (false)
+          true
+        else
+          false
+    }""", generate(removeAuxiliaryTrees &> ↓(any(negateAllBools)) apply tree get).get.asText)     
   }
   
   @Test
@@ -416,8 +566,7 @@ object A"""
     println("hello!")
     true
   }
-}
-"""
+}"""
   }
     
   @Test
@@ -444,8 +593,7 @@ object A"""
   val sum: (Seq[Int]) => Int = _.reduceLeft(_.+(_))
   List(1, 2).map(_.+(1))
   List(1, 2).map((i) => i.+(1))
-}
-"""
+}"""
   }
   
   @Test
@@ -475,8 +623,7 @@ object A"""
   def id[C](c: C) = c
   protected type C >: Nothing 
   type D <: AnyRef
-}
-"""
+}"""
   }
   
   @Test
@@ -498,7 +645,7 @@ object A"""
       def printName(ppp: Person) = println(ppp.name)
       def main(args: Array[String]) {
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
-        people foreach printName
+        people foreach (printName)
       }
     }""", generate(removeAuxiliaryTrees apply tree get).get.asText)
     
@@ -507,10 +654,11 @@ object A"""
   def printName(ppp: Rename1.Person) = println(ppp.name)
   def main(args: Array[String]) = {
     val people: List[Rename1.Person] = List(Person("Mirko"), Person("Christina"))
-    people.foreach((ppp: Rename1.Person) => printName(ppp))
+    people.foreach({
+      (ppp: Rename1.Person) => printName(ppp)
+    })
   }
-}
-"""
+}"""
   }
   
   @Test
@@ -530,8 +678,7 @@ object A"""
     
     tree prettyPrintsTo """object Obj extends java.lang.Object {
   val self = this
-}
-"""
+}"""
   }
   
   @Test
@@ -547,7 +694,7 @@ object A"""
     
     assertEquals("""
     class A {
-      /*a*/protected def /*c*/test() = 5
+      /*a*/protected def test() = 5
       val i = 5
       protected def a() = i
     }
@@ -557,8 +704,7 @@ object A"""
   private def test = 5
   lazy val i = 5
   final protected def a = i
-}
-"""
+}"""
   }
   
   @Test
@@ -666,6 +812,92 @@ class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, 
   }
   
   @Test
+  def testTry() = {
+    
+    val tree = treeFrom("""
+    import java.io._
+    object A {
+      var file: PrintStream = null
+      try { 
+        val out = new FileOutputStream("myfile.txt")
+        file = new PrintStream(out)
+      } catch {
+        case ioe: IOException => println("ioe")
+        case e: Exception => println("e")
+      } finally {
+        println("finally!")
+      }
+      try {
+        file = new PrintStream(new FileOutputStream("myfile.txt"))
+      } catch {
+        case e: Exception => println("e")
+      }
+      try {
+        file = new PrintStream(new FileOutputStream("myfile.txt"))
+      } finally {
+        println("finally!")
+        println("finally!")
+        println("finally!")
+      }
+    }
+    """)
+    
+    assertEquals("""
+    import java.io._
+    object A {
+      var file: PrintStream = null
+      try { 
+        val out = new FileOutputStream("myfile.txt")
+        file = new PrintStream(out)
+      } catch {
+        case ioe: IOException => println("ioe")
+        case e: Exception => println("e")
+      } finally {
+        println("finally!")
+      }
+      try {
+        file = new PrintStream(new FileOutputStream("myfile.txt"))
+      } catch {
+        case e: Exception => println("e")
+      }
+      try {
+        file = new PrintStream(new FileOutputStream("myfile.txt"))
+      } finally {
+        println("finally!")
+        println("finally!")
+        println("finally!")
+      }
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).get.asText)
+    
+    tree prettyPrintsTo """import java.io._
+object A {
+  var val file: java.io.PrintStream = null
+  try {
+    val out = new FileOutputStream("myfile.txt")
+    file = new PrintStream(out)
+  } catch {
+    case ioe: java.io.IOException => println("ioe")
+    case e: Exception => println("e")
+  } finally {
+    println("finally!")
+  }
+  try {
+    file = new PrintStream(new FileOutputStream("myfile.txt"))
+  } catch {
+    case e: Exception => println("e")
+  }
+  try {
+    file = new PrintStream(new FileOutputStream("myfile.txt"))
+  } finally {
+    println("finally!")
+    println("finally!")
+    println("finally!")
+  }
+}"""
+  }
+  
+  @Test
   def testEarlyDef() = {
     val tree = treeFrom("""
     trait Greeting {
@@ -695,13 +927,11 @@ class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, 
   val name: String
   val msg = "How are you, ".+(name)
 }
-
 class C(i: Int) extends {
   val name = "Bob"
 } with Greeting {
   println(msg)
-}
-"""
+}"""
   }
   
   @Test
@@ -807,11 +1037,9 @@ trait A {
   val a: Int = 5
   val b = "huhu"
 }
-
 trait B {
   val a: Int
-}
-"""
+}"""
   }
   
   @Test
@@ -846,7 +1074,6 @@ class A {
   def g(i: Int, j: Int) = i.+(j)
   def h(i: Int, j: Int): (Int, Int) = (i, j)
   def id[A](a: A) = a
-}
-"""
+}"""
 }
 

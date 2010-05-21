@@ -10,7 +10,6 @@ import org.junit.{Test, Before}
 import junit.framework.TestCase
 import org.junit.Assert._
 import scala.tools.refactoring.common.Selections
-import scala.tools.refactoring.regeneration._
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}

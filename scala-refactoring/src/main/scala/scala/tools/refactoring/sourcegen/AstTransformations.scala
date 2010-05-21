@@ -30,7 +30,8 @@ trait AstTransformations {
       override def transform(t: Tree) = f(t)
     }
     
-    (new TransformOnce).once(tree)
+    val result = (new TransformOnce).once(tree)
+    result
   }
   
   

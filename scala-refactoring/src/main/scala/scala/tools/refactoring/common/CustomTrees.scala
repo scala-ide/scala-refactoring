@@ -14,6 +14,8 @@ trait CustomTrees {
   val global: scala.tools.nsc.interactive.Global
   import global._
   
+  def keepTree(t: Tree) = !t.isEmpty && (t.pos.isRange || t.pos == NoPosition)
+  
   /**
    * Represent a Name as a tree, including its position.
    * */
@@ -121,9 +123,9 @@ trait CustomTrees {
    * in the same order they appear in the source code.
    * */
   object BlockExtractor {
-    def unapply(t: Block) = Some(if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
+    def unapply(t: Block) = Some((if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
       t.expr :: t.stats
     else
-      t.stats ::: t.expr :: Nil) 
+      t.stats ::: t.expr :: Nil) filter keepTree) 
   }
 }

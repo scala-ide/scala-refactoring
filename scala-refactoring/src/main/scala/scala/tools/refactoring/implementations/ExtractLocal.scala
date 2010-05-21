@@ -3,17 +3,20 @@
  */
 // $Id$
 
-package scala.tools.refactoring.implementations
+package scala.tools.refactoring
+package implementations
 
 import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.analysis.FullIndexes
+import sourcegen.Transformations
 
 abstract class ExtractLocal extends MultiStageRefactoring {
   
   import global._
+  import Transformations._
   
   abstract class PreparationResult {
     def selectedExpression: Tree
@@ -41,9 +44,7 @@ abstract class ExtractLocal extends MultiStageRefactoring {
     implicit def replacesTree(t1: Tree) = new {
       def replaces(t2: Tree) = t1 setPos t2.pos
     }
-    
-    def isInnerMost[T <: Tree](t: T)(implicit m: Manifest[T]) = ! t.children.exists(_.exists(m.erasure.isInstance(_)))
-    
+        
     trace("Selected: %s", selectedExpression)
     
     val newVal = mkValDef(name, selectedExpression)
@@ -70,32 +71,30 @@ abstract class ExtractLocal extends MultiStageRefactoring {
         case t => t
       }
       
-      insertionPoint map { parent => 
-        (parent, refineInsertionPoint(parent))
-      }
+      insertionPoint map refineInsertionPoint
     }
     
-    val (parent, child) = findBlockInsertionPosition(selection.file, selectedExpression) getOrElse {
+    val insertionPoint = findBlockInsertionPosition(selection.file, selectedExpression) getOrElse {
       return Left(RefactoringError("No insertion point found."))
     }
     
-    val changes = new ModificationCollector {
-      
-      transform(selection.file) {
-        
-        case t if t == parent => transform(parent) {
-        
-          case t if t == child =>
-          
-            val replacedExpression = transform(t) {
-              case t: TermTree if t == selectedExpression => valRef replaces selectedExpression
-            }
-          
-            mkBlock(newVal :: replacedExpression :: Nil) replaces t
-        }
-      }
+    val replaceExpression = Transformations.transform[Tree, Tree] {
+      case t if t == selectedExpression  => valRef
     }
     
-    Right(Nil)
+    val findChild = predicate[Tree] {
+       case t => t == insertionPoint
+    }
+    
+    val insertNewVal = Transformations.transform[Tree, Tree] {
+      case t @ BlockExtractor(stats) => mkBlock(newVal :: stats) replaces t
+      case t => mkBlock(newVal :: t :: Nil)
+    }
+    
+    val extractLocal = ↓(any(findChild &> ↓(any(replaceExpression)) &> insertNewVal))
+    
+    val r = extractLocal apply abstractFileToTree(selection.file) toList
+    
+    Right(r)
   }
 }

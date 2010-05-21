@@ -258,6 +258,16 @@ Patterns can be of different form, the catch-all \src{\_} is simly an \src{Ident
 
 \paragraph{Star} \member{TermTree <: Tree}{\textit{elem}: Tree}
 
+\noindent Patterns can choose to match the whole remainder of an extracted sequence using the \src{\_*} pattern, as in the following example:
+
+\begin{lstlisting}
+"abcde".toList match {
+  case Seq(car, cadr, _*) => car 
+}
+\end{lstlisting}
+
+The wildcard-star is represented by the \src{Star} tree.
+
 \paragraph{Bind} \member{DefTree <: SymTree <: Tree}{\textit{name}: Name, \textit{body}: Tree}
 
 \noindent The \src{Bind} tree binds a name to an expression and is used in the patterns of \src{CaseDef}. We can see from some examples that several seemingly different syntax variations are all represented in a uniform way in the AST:
@@ -301,9 +311,6 @@ case (a @ Ex.unapply(<unapply-selector>)
   <unapply> ((i @ (_: Int)))) => i
 \end{lstlisting}
 \end{multicols}
-
-
-
 
 \paragraph{ArrayValue} \member{TermTree <: Tree}{\textit{elemtpt}: Tree, \textit{elems}: List[Tree]}
 
@@ -404,6 +411,8 @@ list foreach (((x0$1: Int) => x0$1 match {
 
 \paragraph{Typed} \member{TermTree <: Tree}{\textit{expr}: Tree, \textit{tpt}: Tree}
 
+case i: Int
+
 \paragraph{TypeApply} \member{GenericApply <: TermTree <: Tree}{\textit{fun}: Tree, \textit{args}: List[Tree]}
 
 \paragraph{Apply} \member{GenericApply <: TermTree <: Tree}{\textit{fun}: Tree, \textit{args}: List[Tree]}
@@ -412,7 +421,31 @@ list foreach (((x0$1: Int) => x0$1 match {
 
 \paragraph{Super} \member{TermTree <: Tree $\wedge$ SymTree <: Tree}{\textit{qual}: Name, \textit{mix}: Name}
 
+\noindent The \src{Super} tree represents a \src{super} call, with optional qualifier and super class specifier:
+
+\begin{lstlisting}
+trait A {
+  def x = 42
+}
+trait B extends A {
+  override def x = 43
+}
+class C extends A with B {
+  println(super[A].x)
+}
+\end{lstlisting}
+
 \paragraph{This} \member{TermTree <: Tree $\wedge$ SymTree <: Tree}{\textit{qual}: Name}
+
+\noindent The \src{This} tree represents the \src{this} reference, with an optional qualifier:
+
+\begin{lstlisting}
+class Outer {
+  class Inner {
+    val outer = Outer.this
+  }
+}
+\end{lstlisting}
 
 \paragraph{Select} \member{RefTree <: Symtree <: Tree}{\textit{qualifier}: Tree, \textit{name}: Name}
 

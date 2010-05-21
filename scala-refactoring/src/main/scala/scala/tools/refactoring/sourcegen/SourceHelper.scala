@@ -4,7 +4,7 @@
 // $Id$
 
 package scala.tools.refactoring
-package regeneration
+package sourcegen
 
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.SourceFile
@@ -96,14 +96,9 @@ trait CommentHelpers {
   }  
 }
 
-
 trait SourceCodeHelpers extends CommentHelpers {
   
   val global: scala.tools.nsc.interactive.Global
-  
-  def indentationLength(tree: global.Tree): Int = {
-    indentationLength(tree.pos.start, tree.pos.source)
-  }
   
   def indentation(tree: global.Tree): String = {
     indentation(tree.pos.start, tree.pos.source)
@@ -119,77 +114,4 @@ trait SourceCodeHelpers extends CommentHelpers {
         
     """\s*""".r.findFirstIn(contentWithoutComment.slice(i, start) mkString).getOrElse("")
   }
-  
-  def indentationLength(start: Int, source: SourceFile) = {
-
-    indentation(start, source).length
-  }
-  
-  def forwardsTo(to: Char, max: Int)(offset: Int, source: SourceFile): Option[Int] = {
-    var i = offset
-    val contentWithoutComment = stripComment(source)
-    
-    while(i < max && i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to) {
-      i += 1
-    }
-    
-    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
-      Some(i)
-    else
-      None
-  }
-    
-  def skipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
-    var i = offset
-    val contentWithoutComment = stripComment(source)
-    
-    while(i < contentWithoutComment.length - 1 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
-      i += 1
-    }
-    
-    if(i < contentWithoutComment.length && contentWithoutComment(i) == to)
-      Some(i + 1) //the end points to the character _after_ the found character
-    else
-      None
-  }
-  
-  def backwardsSkipLayoutTo(to: Char)(offset: Int, source: SourceFile): Option[Int] = {
-    
-    val contentWithoutComment = stripComment(source)
-    
-    if( offset >= 0 && offset < contentWithoutComment.length && contentWithoutComment(offset) == to) 
-      return Some(offset)
-      
-    var i = offset - 1
-    
-    while(i > 0 && contentWithoutComment(i) != to && Character.isWhitespace(contentWithoutComment(i))) {
-      i -= 1
-    }
-    
-    if(i >= 0 && contentWithoutComment(i) == to)
-      Some(i)
-    else
-      None
-  }
-}
-
-trait SourceHelper extends SourceCodeHelpers {
-    
-  self: scala.tools.refactoring.regeneration.Fragments =>
-  
-  val global: scala.tools.nsc.interactive.Global
-  
-  def indentationLength(f: Fragment): Option[Int] = f match {
-    case f: OriginalSourceFragment => try {
-      if(f.isEndOfScope /*&& f.start > 0 */) // end of scope's 'start' points to 'end' and can therefore be on the newline
-	      Some(indentationLength(f.start-1, f.file))
-	    else
-	      Some(indentationLength(f.start, f.file))
-    } catch {
-      case _: UnsupportedOperationException => None
-      case e => throw e
-    }
-    case _ => None
-  }
-
 }

@@ -48,7 +48,7 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
     }
 
     val in = new Indentation(defaultIncrement = defaultIndentationStep)
-    val initialIndentation = tree.originalParent map (indentation(_)) getOrElse ""
+    val initialIndentation = if(tree.hasExistingCode) indentation(tree) else ""
     
     in.setTo(initialIndentation) {
       generateSourceCode(tree, in)

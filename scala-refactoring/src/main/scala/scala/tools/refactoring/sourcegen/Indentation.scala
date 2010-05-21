@@ -21,6 +21,7 @@ class Indentation(val defaultIncrement: String) {
   def default[T](f: => T): T = {
     val old = current
     current += defaultIncrement
+    //println("indentation is set to"+ current)
     val res = f
     current = old
     res
@@ -29,6 +30,7 @@ class Indentation(val defaultIncrement: String) {
   def setTo[T](i: String)(f: => T): T = {
     val old = current
     current = i
+    //println("indentation is set to"+ current)
     val res = f
     current = old
     res

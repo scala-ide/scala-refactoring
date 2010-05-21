@@ -87,7 +87,7 @@ class LayoutTest {
     val x = Layout("x")
     val y = Layout("y")
     
-    assertEquals("a,xy", a ++ r ++ x ++ y asText)
+    assertEquals("a,x", a ++ r ++ x asText)
     assertEquals("a,b", a ++ r ++ b asText)
   }
   
@@ -116,6 +116,20 @@ class LayoutTest {
     val b = Fragment(Layout(","), Layout("y"), Layout("z"))
     
     assertEquals("abc,yzabc", a ++ r ++ b ++ a asText)
+  }
+  
+  @Test
+  def overlap() {
+    assertEquals(0, Layout("abcde") overlap Layout("fghij"))
+    assertEquals(0, Layout("abcde") overlap Layout("d"))
+    assertEquals(0, Layout("abcde") overlap Layout(""))
+    assertEquals(0, Layout("abcde") overlap Layout("x"))
+    
+    assertEquals(5, Layout("abcde") overlap Layout("abcde"))
+    assertEquals(4, Layout("abcde") overlap Layout("bcde"))
+    assertEquals(2, Layout("abcde") overlap Layout("defgh"))
+    assertEquals(1, Layout("abcde") overlap Layout("e"))
+    assertEquals(3, Layout("abcdeee") overlap Layout("eeee"))
   }
 }
 

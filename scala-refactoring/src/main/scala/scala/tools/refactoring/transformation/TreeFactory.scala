@@ -38,7 +38,7 @@ trait TreeFactory {
   }
   
   def mkValDef(name: String, rhs: Tree) = {
-    ValDef(NoMods, "val "+ name, new TypeTree(), rhs)
+    ValDef(NoMods, name, new TypeTree(), rhs)
   }
   
   def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {
@@ -54,8 +54,8 @@ trait TreeFactory {
       
         // 'val (a, b) =' is represented by various trees, so we cheat and create the assignment in the name of the value: 
         val valName = returns match {
-          case x :: Nil => "val "+ x.name
-          case xs => "val ("+ (xs map (_.name) mkString ", ") +")"
+          case x :: Nil => x.name.toString
+          case xs => "("+ (xs map (_.name) mkString ", ") +")"
         }
                 
         ValDef(NoMods, valName, new TypeTree(), call)
@@ -64,9 +64,9 @@ trait TreeFactory {
   
   def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = {
     
-    val formalParameters = parameters map ( _ map (s => new ValDef(NoMods, s.nameString, TypeTree(s.tpe), EmptyTree)))
+    val formalParameters = parameters map ( _ map (s => new ValDef(Modifiers(Flags.PARAM), s.nameString, TypeTree(s.tpe), EmptyTree)))
     
-    DefDef(mods | Flags.METHOD, name, Nil /*type parameters*/, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
+    DefDef(mods withPosition (Flags.METHOD, NoPosition), name, Nil /*type parameters*/, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
   }
   
   def mkBlock(trees: List[Tree]) = trees match {

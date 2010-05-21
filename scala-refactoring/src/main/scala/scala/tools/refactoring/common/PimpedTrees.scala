@@ -97,8 +97,6 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     }
   }
   
-  private def keepTree(t: Tree) = !t.isEmpty && (t.pos.isRange || t.pos == NoPosition)
-  
   /**
    * Provides a finer-grained extractor for Template that distinguishes
    * between class constructor parameters, early definitions, parents, 
@@ -190,10 +188,13 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     case Bind(name, body) =>
       (NameTree(name) setPos t.namePosition) :: body :: Nil
     
-    case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This => Nil
+    case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This | _: Super => Nil
     
     case Apply(fun, args) =>
       fun :: args
+       
+    case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_")=>
+      (NameTree(t.nameString) setPos t.namePosition) :: qualifier :: Nil
       
     case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.start == t.pos.point =>
       (NameTree(selector) setPos t.namePosition) :: Nil
@@ -251,6 +252,12 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       
     case UnApply(fun, args) =>
       fun :: args
+      
+    case Star(elem) =>
+      elem :: Nil
+      
+    case Try(block, catches, finalizer) =>
+      block :: catches ::: finalizer  :: Nil
     
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      

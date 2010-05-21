@@ -20,6 +20,33 @@ trait AdditionalTreeMethods {
       !t.symbol.isSynthetic
   }
  
+  implicit def additionalTreeMethodsForName(t: Tree) = new {
+    
+    private def extractName(name: Name) = 
+      if(name.toString == "<empty>")
+        ""
+      else if (t.symbol.isSynthetic && name.toString.contains("$"))
+        "_"
+      else if (t.symbol.isSynthetic)
+        ""
+      else if (t.symbol != NoSymbol) {
+        t.symbol.nameString
+      } else 
+        name.toString.trim
+    
+    def nameString: String = t match {
+      case t: Select if t.name.toString endsWith "_$eq"=>
+        val n = extractName(t.name)
+        n.substring(0, n.length - "_=".length)
+      case t: Select if t.name.toString startsWith "unary_"=>
+        t.symbol.nameString.substring("unary_".length)
+      case t: Select if t.symbol != NoSymbol =>
+        t.symbol.nameString
+      case t: DefTree => extractName(t.name)
+      case t: RefTree => extractName(t.name)
+      case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
+    }
+  }
   
   /**
    * Add some methods to Tree that make it easier to compare
@@ -27,6 +54,7 @@ trait AdditionalTreeMethods {
    * name, which is tricky for Selects.
    * */
   implicit def additionalTreeMethodsForPositions(t: Tree) = new {
+    def hasExistingCode = t != null && t.pos.isRange
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source
     def samePos(o: Tree)    : Boolean = samePos(o.pos)
     def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
@@ -61,7 +89,7 @@ trait AdditionalTreeMethods {
       case t @ Select(qualifier, selector) => 
       
         if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
-          t.pos withEnd qualifier.pos.start
+          t.pos withEnd (t.pos.start + t.nameString.length)
         } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
           t.pos withStart (t.pos.end - t.symbol.nameString.length)
         } else if (qualifier.pos.isRange) {
@@ -76,33 +104,6 @@ trait AdditionalTreeMethods {
         t.pos withEnd (t.pos.start + t.name.toString.trim.length)
         
       case _ => throw new Exception("uhoh")
-    }
-  }
-
-  
-  implicit def additionalTreeMethodsForName(t: Tree) = new {
-    
-    private def extractName(name: Name) = 
-      if(name.toString == "<empty>")
-        ""
-      else if (t.symbol.isSynthetic && name.toString.contains("$"))
-        "_"
-      else if (t.symbol.isSynthetic)
-        ""
-      else if (t.symbol != NoSymbol) {
-        t.symbol.nameString
-      } else 
-        name.toString.trim
-    
-    def nameString = t match {
-      case t: Select if t.name.toString endsWith "_$eq"=>
-        val n = extractName(t.name)
-        n.substring(0, n.length - "_=".length)
-      case t: Select if t.symbol != NoSymbol =>
-        t.symbol.nameString
-      case t: DefTree => extractName(t.name)
-      case t: RefTree => extractName(t.name)
-      case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
     }
   }
   
@@ -131,5 +132,12 @@ trait AdditionalTreeMethods {
     
     private def findSibling(parent: Option[Tree], compareIndex: Int, returnIndex: Int) = parent flatMap 
       (children(_) filter (_.pos.isRange) sliding 2 find (_ lift compareIndex map (_ samePos t) getOrElse false) flatMap (_ lift returnIndex))
+  }
+  
+  implicit def additionalTreeListMethods(ts: List[Tree]) = new {
+    def allOnSameLine: Boolean = {
+      val poss = ts map (_.pos)
+      poss.forall(_.isRange) && (poss.map(_.line).distinct.length <= 1)
+    }
   }
 }

@@ -5,32 +5,89 @@ import tools.nsc.util.RangePosition
 import tools.nsc.util.SourceFile
 
 trait Requisite {
+  self =>
+  
   def isRequired(l: Layout, r: Layout): Boolean
-  def validate(l: Layout, r: Layout): Layout
-  def ++(o: Requisite): Requisite
-}
-
-object NoRequisite extends Requisite {
-  def isRequired(l: Layout, r: Layout) = false
-  def validate(l: Layout, r: Layout) = l ++ r
-  def ++(o: Requisite) = o
-}
-
-case class SeparatedBy(str: String) extends Requisite {
-  def isRequired(l: Layout, r: Layout) = !((l.asText + r.asText) contains str)
   
   def validate(l: Layout, r: Layout): Layout = {
-    if(isRequired(l, r))
-      l ++ Layout(str) ++ r
-    else {
+    if(isRequired(l, r)) {
+      l ++ getLayout ++ r
+    } else {
       l ++ r
     }
   }
   
-  def ++(o: Requisite): Requisite = o match {
-    case NoRequisite => this
-    case SeparatedBy(s) => SeparatedBy(str + s)
+  protected def getLayout: Layout
+  
+  def ++(other: Requisite): Requisite = (self, other) match {
+    case (_1, NoRequisite) => _1
+    case (NoRequisite, _2) => _2
+    case _ => new Requisite {
+      def isRequired(l: Layout, r: Layout) = self.isRequired(l, r) || other.isRequired(l, r)
+      def getLayout = self.getLayout ++ other.getLayout//Predef.error("Should never be called because we override validate")
+      override def validate(l: Layout, r: Layout) = {
+        val _1 = if(self.isRequired(l, r)) self.getLayout else NoLayout
+        val _2 = if(other.isRequired(l, r)) other.getLayout else NoLayout
+        l ++ _1 ++ _2 ++ r
+      }
+    }
   }
+}
+
+object Requisite {
+    
+  def allowSurroundingWhitespace(regex: String) = new Requisite {
+    def isRequired(l: Layout, r: Layout) = {
+      !l.matches(".*"+ regex +"\\s*$") && !r.matches("^\\s*"+ regex + ".*")
+    }
+    def getLayout = Layout(regex.replace("\\", ""))
+  }
+  
+  def anywhere(s: String) = new Requisite {
+    def isRequired(l: Layout, r: Layout) = {
+      !(l.contains(s) || r.contains(s))
+    }
+    def getLayout = Layout(s)
+  }
+  
+  val Blank = new Requisite {
+    def isRequired(l: Layout, r: Layout) = {
+      val _1 = l.matches(".*\\s+$")
+      val _2 = r.matches("^\\s+.*")
+      
+      !(_1 || _2)
+    }
+    val getLayout = Layout(" ")
+  }
+  
+  def newline(indentation: String) = new Requisite {
+    def isRequired(l: Layout, r: Layout) = {
+      val _1 = l.matches("(?ms).*\n\\s*$")
+      val _2 = r.matches("(?ms)^\\s*\n.*")
+      !(_1 || _2)
+    }
+    def getLayout = Layout("\n"+ indentation)
+  }
+}
+
+object NoRequisite extends Requisite {
+  def isRequired(l: Layout, r: Layout) = false
+  val getLayout = NoLayout
+}
+
+// this is really ugly XXX
+case class SeparatedBy(str: String) extends Requisite {
+  lazy val sep = Layout(str)
+  def isRequired(l: Layout, r: Layout) = {
+    val startOverlap = l overlap sep
+    val restOfSep = str.substring(startOverlap)
+    if(restOfSep != "" && restOfSep.replace(" ", "") == "")
+      !r.asText.startsWith(restOfSep)
+    else
+      !r.asText.replace(" ", "").startsWith(restOfSep.replace(" ", ""))
+  }
+  
+  def getLayout = sep
 }
 
 trait Fragment {
@@ -61,7 +118,7 @@ trait Fragment {
     case EmptyFragment => this
     case _ => new Fragment {
       val leading  = self.leading
-      val center   = self.center ++ o.pre.validate(self.post.validate(self.trailing, o.leading), NoLayout) ++ o.center
+      val center   = self.center ++  (self.post ++ o.pre).validate(self.trailing, o.leading)  /*self.post.validate(o.pre.validate(self.trailing, o.leading), NoLayout)*/ ++ o.center
       val trailing = o.trailing
       
       override val pre  = self.pre
@@ -84,18 +141,18 @@ trait Fragment {
       val trailing = self.post.validate(self.trailing, o)
       
       override val pre  = self.pre
-      override val post = if (self.post.isRequired(this.trailing, NoLayout)) self.post else NoRequisite
+      override val post = /*if (self.post.isRequired(this.trailing, NoLayout)) self.post else*/ NoRequisite
     }
   }
   
-  def ++ (o: Requisite): Fragment = {
+  def ++ (after: Requisite, before: Requisite = NoRequisite): Fragment = {
     new Fragment {
       val leading  = self.leading
       val center   = self.center
       val trailing = self.trailing
       
-      override val pre  = self.pre
-      override val post = self.post ++ o
+      override val pre  = before ++ self.pre
+      override val post = self.post ++ after
     }
   }
 }
@@ -123,12 +180,25 @@ object Fragment {
   }
 }
 
-trait Layout extends regeneration.CommentHelpers {
+trait Layout extends CommentHelpers {
   self =>
   
   def contains(s: String) = stripComment(asText).contains(s)
   
   def matches(r: String) = stripComment(asText).matches(r)
+  
+  def overlap(other: Layout): Int = {
+    def findLongestPrefix(s1: String, s2: String): Int = {
+      if(s2.length == 0)
+        0
+      else if(s1.endsWith(s2))
+        s2.length
+      else 
+        findLongestPrefix(s1, s2.substring(0, s2.length - 1))
+      
+    }
+    findLongestPrefix(self.asText, other.asText)
+  }
   
   def asText: String
   
@@ -148,6 +218,11 @@ trait Layout extends regeneration.CommentHelpers {
     
     override val pre  = if (o.pre.isRequired(this.leading, NoLayout)) o.pre else NoRequisite
     override val post = o.post    
+  }
+  
+  def ++ (r: Requisite): Fragment = new EmptyFragment {
+    override val trailing = self
+    override val post = r
   }
 }
 

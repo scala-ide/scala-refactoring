@@ -3,9 +3,8 @@
  */
 // $Id$
 
-package scala.tools.refactoring.common
-
-import scala.tools.refactoring.regeneration._
+package scala.tools.refactoring
+package common
 
 object StopWatch {
   private lazy val start = System.currentTimeMillis
@@ -44,7 +43,6 @@ trait Tracing {
         
     val as: Array[AnyRef] = args map {
       case s: String => "«"+ s.replaceAll("\n", "\\\\n") +"»"
-      case f: Fragments#Fragment => "❮"+ f.toString +"❯"
       case a: AnyRef => a
       
     } toArray
@@ -57,6 +55,6 @@ trait Tracing {
     print(border + msg.replaceAll("\n", "\n"+ border))
   }
   
-  def print(s: String): Unit
+  private[common] def print(s: String): Unit
 }
 
