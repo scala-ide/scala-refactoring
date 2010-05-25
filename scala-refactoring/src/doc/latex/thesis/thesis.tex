@@ -239,7 +239,66 @@ val removeNonRangePositionTrees = %$\downarrow$%(hasRangePosition *> keepTree |>
 
 
 \section{Code Generation}
-explain the pretty printer and layout preserving source generator.
+
+Once our abstract syntax tree has been transformed into its refactored form, we need to convert it back into its textual source code representation. This process comprises two main steps: modification detection and the actual source generation.
+
+The first step is necessary because we -- in contrast to many other implementations -- do not keep track of modifications to the AST while they are happening but reconstruct this information afterwards. This allows us to keep the transformation simpler but makes the code generation more complicated. This tradeoff is worthwile because we intend the library and thus the transformations to be reused and implemented by third parties.
+
+The AST after the refactoring may contain several kinds of modifications. Trees can be moved around, deleted and new trees can be introduced. From the transformations we know that trees that are moved around keep their original position information, and newly created trees get a \src{NoPosition} attribute. This first allows us to detect changes and can later be used during source generation to preserve the layout of already existing trees. 
+
+\subsection{Modification Detection}
+
+The primary goal of modification detection is to reduce the amount of trees that need to be regenerated. In principle, we just traverse the AST and compare each tree to its original tree (with the retained position information). New trees with a \src{NoPosition} are always considered changed. ...algorithmus erklären.
+
+
+Once we have identifier all top level tree changes, we start generating source code for them. 
+
+\subsection{Code Generation}
+
+The AST does by its very nature not contain all the information that is necessary to fully reconstruct its textual representation. If we were only interested in a semantically equivalent program, we could just pretty print the AST to get back the source code. No user of a refactoring tool would accept this, so we need another way. The source code is still available to us, and with the position information on the trees, we have a means to look up the corresponding source code for a tree. On the other hand, if the source code is not available -- for the simple reason that parts of the AST can be newly generated during a transformation -- we can still use a pretty printer.
+
+If we can go back to the source code, we still need to decide how non-essential things like whitespace and comments are associated to their surrounding trees. If we take a look at the following listing, we can see several occurences of whitespace and other layout characters like comments. 
+
+\begin{lstlisting}
+package p //TODO rename
+
+// Now a class
+class MyClass(a: Int /* the int */) {
+}
+\end{lstlisting}
+
+Because no rules of the programming language dictate on how these layout elements can be associated with other parts of the program, we have to apply heuristics to divide the layout and associate it with trees. The following listing shows how this can look on the code from above.
+
+\begin{lstlisting}
+package p //TODO rename
+
+// Now a class
+class MyClass(a: Int /* the int */) {
+}
+\end{lstlisting}
+
+Once we have identified the layout that belongs to a tree, we can use it during the source generation. So for example, if we parameter gets deleted, the comment will be removed along with it. Whether we can reuse existing code or have to invoke the pretty printed needs to be decided for each tree in the AST. 
+
+This gives us the following simplified pseudo code for the source generation algorithm.
+
+\begin{lstlisting}
+generateSource(tree) = 
+  if tree.sourceCanBeReused
+    existingLeadingLayout + print(tree) + (tree.children foreach generateSource) + existingTrailingLayout
+  else
+    print(tree) + tree.children foreach generateSource
+\end{lstlisting}
+
+The implementation differs from the pseudo code in several ways. For example, the pretty printer needs to generate keywords, parenthesis and other tokens that are needed to get a correct program. Another thing that needs special treatment is the indentation, which is passed along and the code is indented where necessary.
+
+
+
+
+
+ The basic algorithm looks as follows.
+
+
+
 
 
 \chapter{Refactoring Implementations}
@@ -272,6 +331,8 @@ I would like to thank ..
 what is left to do, how can the work be extended
 
 \appendix
+
+Scala terminology appendix
 
 \chapter{User Guide}
 

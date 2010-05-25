@@ -1,7 +1,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-trait AbstractPrinter extends SourceCodeHelpers  {
+trait AbstractPrinter extends SourceCodeHelpers {
   
   this: common.Tracing with common.PimpedTrees =>
   
