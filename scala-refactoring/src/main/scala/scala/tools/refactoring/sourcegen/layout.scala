@@ -24,7 +24,7 @@ trait Requisite {
     case (NoRequisite, _2) => _2
     case _ => new Requisite {
       def isRequired(l: Layout, r: Layout) = self.isRequired(l, r) || other.isRequired(l, r)
-      def getLayout = self.getLayout ++ other.getLayout//Predef.error("Should never be called because we override validate")
+      def getLayout = self.getLayout ++ other.getLayout
       override def validate(l: Layout, r: Layout) = {
         val _1 = if(self.isRequired(l, r)) self.getLayout else NoLayout
         val _2 = if(other.isRequired(l, r)) other.getLayout else NoLayout
@@ -73,21 +73,6 @@ object Requisite {
 object NoRequisite extends Requisite {
   def isRequired(l: Layout, r: Layout) = false
   val getLayout = NoLayout
-}
-
-// this is really ugly XXX
-case class SeparatedBy(str: String) extends Requisite {
-  lazy val sep = Layout(str)
-  def isRequired(l: Layout, r: Layout) = {
-    val startOverlap = l overlap sep
-    val restOfSep = str.substring(startOverlap)
-    if(restOfSep != "" && restOfSep.replace(" ", "") == "")
-      !r.asText.startsWith(restOfSep)
-    else
-      !r.asText.replace(" ", "").startsWith(restOfSep.replace(" ", ""))
-  }
-  
-  def getLayout = sep
 }
 
 trait Fragment {
@@ -186,20 +171,7 @@ trait Layout extends CommentHelpers {
   def contains(s: String) = stripComment(asText).contains(s)
   
   def matches(r: String) = stripComment(asText).matches(r)
-  
-  def overlap(other: Layout): Int = {
-    def findLongestPrefix(s1: String, s2: String): Int = {
-      if(s2.length == 0)
-        0
-      else if(s1.endsWith(s2))
-        s2.length
-      else 
-        findLongestPrefix(s1, s2.substring(0, s2.length - 1))
-      
-    }
-    findLongestPrefix(self.asText, other.asText)
-  }
-  
+
   def asText: String
   
   override def toString() = asText

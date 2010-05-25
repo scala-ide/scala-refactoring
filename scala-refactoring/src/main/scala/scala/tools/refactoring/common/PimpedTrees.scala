@@ -196,7 +196,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_")=>
       (NameTree(t.nameString) setPos t.namePosition) :: qualifier :: Nil
       
-    case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.start == t.pos.point =>
+    case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.isRange && t.pos.start == t.pos.point =>
       (NameTree(selector) setPos t.namePosition) :: Nil
       
     case t @ Select(qualifier, selector) =>

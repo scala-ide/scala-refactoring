@@ -14,7 +14,7 @@ import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.util.CompilerProvider
 
-trait TestHelper extends CompilerProvider with Transformation with LayoutPreferences with SilentTracing with Selections {
+trait TestHelper extends CompilerProvider with Transformation with SilentTracing with Selections {
   
   /*
    * A project to test multiple compilation units. Add all 

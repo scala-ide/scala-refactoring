@@ -93,10 +93,10 @@ trait ReusingPrinter extends AbstractPrinter {
           else
             r
           
-          val x = preBody ++ trailingLayout ++ SeparatedBy(" {"+newline) ++ printManyIndented(body, separator = Requisite.newline(ind.text)) ++ SeparatedBy(newline+"}")
+          val x = preBody ++ trailingLayout ++ Requisite.allowSurroundingWhitespace(" \\{"+newline) ++ printManyIndented(body, separator = Requisite.newline(ind.text)) ++ Requisite.allowSurroundingWhitespace(newline +"\\}")
           x
         } else {
-          preBody ++ SeparatedBy(newline) ++ printManyIndented(body, separator = Requisite.newline(ind.text)) ++ r
+          preBody ++ Requisite.newline(ind.text) ++ printManyIndented(body, separator = Requisite.newline(ind.text)) ++ r
         }
         
       case (t @ DefDef(ModifierTree(mods), newName, tparams, vparamss, tpt, rhs), orig) =>
@@ -113,7 +113,7 @@ trait ReusingPrinter extends AbstractPrinter {
       case (BlockExtractor(stats), _) => 
         val rest = printManyIndented(stats, separator = Requisite.newline(ind.text)) ++ r 
         if(l contains "{")
-          l ++ SeparatedBy(newline) ++ rest
+          l ++ Requisite.newline(ind.text) ++ rest
         else 
           l ++ rest
         

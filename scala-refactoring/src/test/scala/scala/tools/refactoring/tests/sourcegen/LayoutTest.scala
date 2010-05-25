@@ -81,7 +81,7 @@ class LayoutTest {
   
   @Test
   def preserveRequisites() {
-    val r = SeparatedBy(",")
+    val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment("a") 
     val b = Fragment("b") 
     val x = Layout("x")
@@ -93,7 +93,7 @@ class LayoutTest {
   
   @Test
   def requisitesAreBetween() {
-    val r = SeparatedBy(",")
+    val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment(Layout("a"), Layout("b"), Layout("c"))
     val b = Fragment(Layout("x"), Layout("y"), Layout("z"))
     
@@ -102,7 +102,7 @@ class LayoutTest {
   
   @Test
   def requisitesAreOnlyUsesWhenNeeded1() {
-    val r = SeparatedBy(",")
+    val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment(Layout("a"), Layout("b"), Layout(","))
     val b = Fragment(Layout("x"), Layout("y"), Layout("z"))
     
@@ -111,25 +111,11 @@ class LayoutTest {
   
   @Test
   def requisitesAreOnlyUsesWhenNeeded2() {
-    val r = SeparatedBy(",")
+    val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment(Layout("a"), Layout("b"), Layout("c"))
     val b = Fragment(Layout(","), Layout("y"), Layout("z"))
     
     assertEquals("abc,yzabc", a ++ r ++ b ++ a asText)
-  }
-  
-  @Test
-  def overlap() {
-    assertEquals(0, Layout("abcde") overlap Layout("fghij"))
-    assertEquals(0, Layout("abcde") overlap Layout("d"))
-    assertEquals(0, Layout("abcde") overlap Layout(""))
-    assertEquals(0, Layout("abcde") overlap Layout("x"))
-    
-    assertEquals(5, Layout("abcde") overlap Layout("abcde"))
-    assertEquals(4, Layout("abcde") overlap Layout("bcde"))
-    assertEquals(2, Layout("abcde") overlap Layout("defgh"))
-    assertEquals(1, Layout("abcde") overlap Layout("e"))
-    assertEquals(3, Layout("abcdeee") overlap Layout("eeee"))
   }
 }
 

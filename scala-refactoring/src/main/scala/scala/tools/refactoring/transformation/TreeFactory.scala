@@ -5,14 +5,15 @@
 
 package scala.tools.refactoring.transformation
 
-import scala.tools.refactoring.common.Invisible
 import scala.tools.nsc.symtab.Flags
 
 trait TreeFactory {
-  
   self: Transform =>
+  
   val global: scala.tools.nsc.interactive.Global
   import global._
+  
+  object Invisible extends Position
       
   def mkRenamedSymTree(t: SymTree, name: String) = (t match {
     case i: Ident    => i.copy(name = name)
