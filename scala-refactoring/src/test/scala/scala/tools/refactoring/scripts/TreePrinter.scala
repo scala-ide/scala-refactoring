@@ -20,12 +20,15 @@ object TreePrinter extends CompilerProvider with SilentTracing {
     
     def escape(s: String) = s.replace("\n", "\\n").replace(" ", "·").replace(">", "&gt;").replace("<", "&lt;")
     
-    def formatNode(t: Tree, color: String = "bisque") = {
+    def formatNode(t: Tree, color: String = "bisque"): String = {
 
       id(t) +"[label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"2\"><TR><TD BGCOLOR=\""+ color +"\">"+ escape(t.getClass.getSimpleName) +"</TD></TR></TABLE>>];"
     }
   
     def innerMerge(t: Tree): Unit = {
+      
+      if(!t.pos.isRange)
+        return
       
       val current = id(t)
       
@@ -97,9 +100,11 @@ edge [fontname="Verdana", fontsize=10, labelfontname="Palatino", labelfontsize=1
   }
   
   def main(args: Array[String]) : Unit = {
-    val tree = treeFrom("""
-class Person(val name: String)
-""")
+    val tree = treeFrom("""package p //TODO rename
+
+// Now a class
+class MyClass(a: Int /* the int */) {
+}""")
     
     visualize(tree)
   

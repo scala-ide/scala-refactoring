@@ -11,23 +11,24 @@ trait PrettyPrinter extends AbstractPrinter {
   
   import Transformations._
 
-  def prettyPrintTree(traverse: (Tree, Indentation) => Option[Fragment], t: Tree, ind: Indentation): Fragment = context("pretty print tree"+ t.getClass.getSimpleName) { 
+  def print(t: Tree, ind: Indentation): Fragment = context("pretty print tree"+ t.getClass.getSimpleName) { 
        
-    trace("current indentation set to %s", ind.text)
+    trace("current indentation set to %s", ind.current)
     
     def prnt(tree: Tree, indent: Boolean = false, before: Requisite = NoRequisite, after: Requisite = NoRequisite): Fragment = {
 
-      printSingleTree(t, tree, ind, traverse, indent, before, after)
+      printSingleTree(t, tree, if(indent) ind.incrementDefault else ind, indent, before, after)
     }
     
     def prntMany(ts: List[Tree], separator: Requisite = NoRequisite, indent: Boolean = false, before: Requisite = NoRequisite, after: Requisite = NoRequisite): Fragment = {      
 
-      printManyTrees(t, ts, ind, traverse, indent, separator, before, after)
+      printManyTrees(t, ts, if(indent) ind.incrementDefault else ind, indent, separator, before, after)
     }
   
     implicit def stringToRequisite(regex: String) = Requisite.allowSurroundingWhitespace(regex)
     
-    def newline = Requisite.newline(ind.text)
+    def newline = Requisite.newline(ind.current)
+    def indentedNewline = Requisite.newline(ind.incrementDefault.current)
     
     val code: Fragment = t match {
     
@@ -80,7 +81,7 @@ trait PrettyPrinter extends AbstractPrinter {
         val tparams_ = prntMany(tparams, before = "\\[", after = "\\]", separator = ", ")
         val params = vparamss map (p => prntMany(p, before = "\\(", after = "\\)", separator = ", ")) mkString ""
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
-          Fragment(" {\n"+ ind.text +"}")
+          Fragment(" {\n"+ ind.current +"}")
         } else {
           prnt(t.rhs, before = " = ")
         }
@@ -118,7 +119,6 @@ trait PrettyPrinter extends AbstractPrinter {
       case TemplateExtractor(params, earlyBody, parents, self, body) =>
                 
         val R = Requisite.allowSurroundingWhitespace _
-        val nl = newline
         
         val sup = if(earlyBody.isEmpty) {
           parents match {
@@ -127,34 +127,28 @@ trait PrettyPrinter extends AbstractPrinter {
               prnt(superclass, before = " extends ") ++ prntMany(traits, before = " with ", separator = " with ")
           }
         } else {
-          ind.default {
-            prntMany(earlyBody, indent = true, before = R(" extends \\{") ++ newline, after = nl ++ "\\}", separator = newline) ++
-            prntMany(parents, before = " with ", separator = " with ")
-          }
+          prntMany(earlyBody, indent = true, before = R(" extends \\{") ++ 
+              indentedNewline, after = newline ++ "\\}", separator = indentedNewline) ++
+              prntMany(parents, before = " with ", separator = " with ")
         }
         
-        val self_ = ind.default {
-          (self, body) match {
-            case (EmptyTree, body) => 
-              prntMany(body, indent = true, before = R(" \\{") ++ newline, separator = newline, after = nl ++ "\\}")
-            case (self, Nil) => 
-              prnt(self, indent = true, before = R(" \\{") ++ newline, after = R(" =>") ++ nl ++ "\\}")
-            case (self, body) => 
-              prnt(self, indent = true, before = R(" \\{") ++ newline, after = " =>") ++ 
-              prntMany(body, indent = true, before = newline, separator = newline, after = nl ++ "\\}")
-          }
+        val self_ = (self, body) match {
+          case (EmptyTree, body) => 
+            prntMany(body, indent = true, before = R(" \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+          case (self, Nil) => 
+            prnt(self, indent = true, before = R(" \\{") ++ indentedNewline, after = R(" =>") ++ newline ++ "\\}")
+          case (self, body) => 
+            prnt(self, indent = true, before = R(" \\{") ++ indentedNewline, after = " =>") ++ 
+            prntMany(body, indent = true, before = indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
         }
+        
                 
         val x = prntMany(params, before = "\\(", separator = ", ", after = "\\)")
         x ++ sup ++ self_
 
       case BlockExtractor(stats) =>
         // pretty printing always creates braces around the block statements, even if there is only one
-        val nl = newline
-        println("printing block with parent indentation: «"+ ind.text +"»")
-        ind.default {
-          prntMany(stats, indent = true, before = Requisite.allowSurroundingWhitespace("\\{") ++ newline, separator = newline, after = nl ++ ( "\\}"))
-        }
+        prntMany(stats, indent = true, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ ( "\\}"))
         
       case CaseDef(pat, guard, body) =>
         Layout("case ") ++ prnt(pat) ++ prnt(guard, before = " if ") ++ prnt(body, before = " => ")
@@ -164,7 +158,6 @@ trait PrettyPrinter extends AbstractPrinter {
         
       case Star(elem) =>
         prnt(elem) ++ Layout("*")
-        
         
       case Bind(name, body: Typed) =>
         Fragment(name.toString) ++ prnt(body, before = ": ")
@@ -189,37 +182,31 @@ trait PrettyPrinter extends AbstractPrinter {
         prnt(lhs) ++ " = " ++ prnt(rhs)
         
       case If(cond, thenp, elsep) =>
-        prnt(cond, before = "if \\(", after = "\\)") ++ prnt(thenp, indent = true, before = " ") ++ prnt(elsep, indent = true, before = " else ")
+        prnt(cond, before = "if \\(", after = "\\)") ++ 
+        prnt(thenp, indent = true, before = " ") ++ 
+        printSingleTree(t, elsep, ind, indent = true, before = " else ", after = NoRequisite)
         
       case Match(selector, cases) =>
-        val nl = newline
-        ind.default {
-          prnt(selector, after = " match ") ++ prntMany(cases, indent = true, before = Requisite.allowSurroundingWhitespace("\\{") ++ newline, separator = newline, after = nl ++ "\\}")
-        }
+        prnt(selector, after = " match ") ++ prntMany(cases, indent = true, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+      
       case Return(expr) =>
         Layout("return ") ++ prnt(expr)
         
       case Try(block, catches, finalizer) =>        
-        val nl = newline
         
         val _block = if(block.isInstanceOf[Block]) {
           prnt(block, before = Requisite.allowSurroundingWhitespace("try "))
         } else {
-          ind.default {
-            prnt(block, indent = true, before = Requisite.allowSurroundingWhitespace("try \\{") ++ newline, after = nl ++ "\\}")
-          }
+          prnt(block, indent = true, before = Requisite.allowSurroundingWhitespace("try \\{") ++ indentedNewline, after = newline ++ "\\}")
         }
         
-        val _catches = ind.default {
-          prntMany(catches, indent = true, before = Requisite.allowSurroundingWhitespace(" catch \\{") ++ newline, separator = newline, after = nl ++ "\\}")
-        }
+        val _catches = prntMany(catches, indent = true, before = Requisite.allowSurroundingWhitespace(" catch \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
         
         val _finalizer = finalizer match {
           case EmptyTree => EmptyFragment
           case block: Block => prnt(block, before = Requisite.allowSurroundingWhitespace(" finally "))
-          case _ => ind.default {
-            prnt(finalizer, indent = true, before = Requisite.allowSurroundingWhitespace(" finally \\{") ++ newline, after = nl ++ "\\}")
-          }
+          case _ => 
+            prnt(finalizer, indent = true, before = Requisite.allowSurroundingWhitespace(" finally \\{") ++ indentedNewline, after = newline ++ "\\}")
         }
         
         _block ++ _catches ++ _finalizer

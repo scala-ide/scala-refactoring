@@ -24,34 +24,28 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
       }
     }
     
-    changesPerFile flatMap {
+    changesPerFile map {
       case (source, tree, changes) =>
-        generate(tree) map { f =>
-            trace("Change: %s", f.center.asText)
-            common.Change(source.file, tree.pos.start, tree.pos.end, f.center.asText)
-        }
+        val f = generate(tree) 
+        trace("Change: %s", f.center.asText)
+        common.Change(source.file, tree.pos.start, tree.pos.end, f.center.asText)
     }
   }
   
-  def generate(tree: Tree): Option[Fragment] = {
-    
-    def generateSourceCode(t: Tree, ind: Indentation): Option[Fragment] = {
-      
-      if(t == null || t.isEmpty)
-        None
-      else if(t.pos == NoPosition)
-        Some(prettyPrintTree(generateSourceCode, t, ind))
-      else if (t.pos.isRange)
-        Some(reuseExistingSource(generateSourceCode, t, ind))
-      else 
-        None
-    }
+  override def print(t: Tree, ind: Indentation): Fragment = {
+    if(t.hasExistingCode)
+      super[ReusingPrinter].print(t, ind)
+    else if(t.hasNoCode)
+      super[PrettyPrinter].print(t, ind)
+    else
+      EmptyFragment
+  }
+  
+  def generate(tree: Tree): Fragment = {
 
-    val in = new Indentation(defaultIncrement = defaultIndentationStep)
     val initialIndentation = if(tree.hasExistingCode) indentation(tree) else ""
+    val in = new Indentation(defaultIndentationStep, initialIndentation)
     
-    in.setTo(initialIndentation) {
-      generateSourceCode(tree, in)
-    }
+    print(tree, in)
   }
 }

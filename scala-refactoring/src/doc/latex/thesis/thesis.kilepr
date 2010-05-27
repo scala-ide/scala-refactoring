@@ -58,10 +58,10 @@ ReadWrite=true
 
 [item:../common/mystyle.sty]
 archive=true
-column=21
+column=20
 encoding=UTF-8
 highlight=LaTeX
-line=26
+line=9
 mode=LaTeX
 open=true
 order=1
@@ -96,6 +96,16 @@ mode=LaTeX
 open=true
 order=2
 
+[item:ast_with_layout.pdf]
+archive=true
+column=26212
+encoding=
+highlight=
+line=0
+mode=
+open=false
+order=-1
+
 [item:mystyle.sty]
 archive=true
 column=0
@@ -118,17 +128,17 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=0
+column=360
 encoding=UTF-8
 highlight=LaTeX
-line=282
+line=270
 mode=LaTeX
 open=true
 order=0
 
 [view-settings,view=0,item:../common/mystyle.sty]
-CursorColumn=21
-CursorLine=26
+CursorColumn=20
+CursorLine=9
 
 [view-settings,view=0,item:0_front.tex]
 CursorColumn=0
@@ -143,5 +153,5 @@ CursorColumn=0
 CursorLine=3
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=0
-CursorLine=282
+CursorColumn=360
+CursorLine=270

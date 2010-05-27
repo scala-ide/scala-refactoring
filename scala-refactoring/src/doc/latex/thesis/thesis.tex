@@ -240,11 +240,11 @@ val removeNonRangePositionTrees = %$\downarrow$%(hasRangePosition *> keepTree |>
 
 \section{Code Generation}
 
-Once our abstract syntax tree has been transformed into its refactored form, we need to convert it back into its textual source code representation. This process comprises two main steps: modification detection and the actual source generation.
+Once our abstract syntax tree has been refactored, we need to convert it back into its textual source code representation. This process comprises two main steps: the detection of modifications to minimize the amount of code that is regenerated and the actual source generation.
 
-The first step is necessary because we -- in contrast to many other implementations -- do not keep track of modifications to the AST while they are happening but reconstruct this information afterwards. This allows us to keep the transformation simpler but makes the code generation more complicated. This tradeoff is worthwile because we intend the library and thus the transformations to be reused and implemented by third parties.
+The first step is necessary because we -- in contrast to many other implementations -- do not keep track of modifications to the AST while they are happening but reconstruct this information afterwards. This allows us to keep the transformation simpler but makes the code generation more complicated. This tradeoff is worthwile because we intend the library to be reused and the transformations to be implemented by third parties.
 
-The AST after the refactoring may contain several kinds of modifications. Trees can be moved around, deleted and new trees can be introduced. From the transformations we know that trees that are moved around keep their original position information, and newly created trees get a \src{NoPosition} attribute. This first allows us to detect changes and can later be used during source generation to preserve the layout of already existing trees. 
+The AST after the refactoring may contain several kinds of modifications. Trees can be moved around, deleted and new trees can be introduced. From the transformations we know that trees that are moved around keep their original position information, and newly created trees get a \src{NoPosition} attribute. This allows us to detect changes and can later be used during source generation to preserve the layout of already existing trees. 
 
 \subsection{Modification Detection}
 
@@ -255,31 +255,51 @@ Once we have identifier all top level tree changes, we start generating source c
 
 \subsection{Code Generation}
 
-The AST does by its very nature not contain all the information that is necessary to fully reconstruct its textual representation. If we were only interested in a semantically equivalent program, we could just pretty print the AST to get back the source code. No user of a refactoring tool would accept this, so we need another way. The source code is still available to us, and with the position information on the trees, we have a means to look up the corresponding source code for a tree. On the other hand, if the source code is not available -- for the simple reason that parts of the AST can be newly generated during a transformation -- we can still use a pretty printer.
-
-If we can go back to the source code, we still need to decide how non-essential things like whitespace and comments are associated to their surrounding trees. If we take a look at the following listing, we can see several occurences of whitespace and other layout characters like comments. 
+The AST does by its very nature not contain all the information that is necessary to fully reconstruct its original textual representation. Also, syntactic sugar of the programming language is usually not represented in the AST but generalized. An example for this are Scala's \src{for} comprehensions. They are equivalent with function calls to \src{map, filter, flatMap,} and \src{foreach}. This means that the two statements in the following listing have the same representation in the AST.
 
 \begin{lstlisting}
-package p //TODO rename
+val v1 = List(1,2,3) map (i => i * 2)
+val v2 = for(i <- List(1,2,3)) yield i * 2
+\end{lstlisting}
 
-// Now a class
+Other things that are not mentioned explicitly in the AST are parenthesis, commas and many other tokens. In the context of source generation, we will call them layout elements, or just \textit{layout}. 
+
+If we were only interested in a semantically equivalent program, we could simply pretty print the AST to get back the source code. No user of a refactoring tool would accept this, so we need another technique. The source code is always available to the refactoring tool, and with the position information on the trees, we have a means to look up the original source code for a tree.
+
+Other refactoring tools (TODO ref) have used various approaches to solve this problem. For many cases -- for example rename -- it is acceptable to pretty print the code as long as only very small regions of the program change. This approach can be problematic -- for example with the Extract Method refactoring, where arbitrary large parts of the program are moved around. A tool can solve this situation by cut-and-pasting the body of the extracted method. This approach is not feasible for us because we need a generic way to handle all kinds of unforseeable changes to the source code.
+
+\subsubsection{Preserving Layout}
+
+Our approach is based on using two different kinds of source printers: one that pretty prints code  and another one that reuses the existing code where it is possible. The pretty printer simply prints the code with a default layout and is used for trees that were introduced in the transformations. The reusing printer takes the existing layout and makes sure all needed layout elements are present. How this is done will be explained in more detail later.
+
+The source generation algorithm then alternates between these two printers during the code generation process.
+
+Now we just need to know how we can reuse the existing layout. What we need is a way to decide how all these layout elements can be associated to their enclosing trees. If we take a look at the following listing, we can see several occurences of whitespace and other layout, like the three comments and the braces.
+
+\begin{lstlisting}
+package p //TODO
+// myclass
 class MyClass(a: Int /* the int */) {
 }
 \end{lstlisting}
 
-Because no rules of the programming language dictate on how these layout elements can be associated with other parts of the program, we have to apply heuristics to divide the layout and associate it with trees. The following listing shows how this can look on the code from above.
+Because no rules of the programming language dictate how the layout can be associated with the other parts of the program, we have to guess how to divide the layout and associate it with the surrounding trees. Often this can be done by taking the types of the adjacent trees into consideration and then divide the layout according to some rules and regular expressions. For example, one rule says that the layout between two enclosing value definitions are split by comma, or by newline if there is no comma present. So when the values are part of an argument list, they will get comma-separated, and if they are definitions, the layout will be split at the end of the line, so that the first value will get all layout that follows on its line. Comments can be handled with the same rules as well: a comment on a preceding and otherwise empty line is associated with the following tree.
 
-\begin{lstlisting}
-package p //TODO rename
+Let us take a look at a concrete example. \figref{figure:ast_with_layout} shows the AST of the listing and how the layout elements have been associated with the left and right sides of a tree. Note that the \src{class} and \src{package} keywords are also considered layout, this is because they are not represented in the AST with their own tree and position information.
 
-// Now a class
-class MyClass(a: Int /* the int */) {
-}
-\end{lstlisting}
+\begin{figure}
+ \centering
+ \includegraphics[width=0.8\linewidth]{ast_with_layout.pdf}
+ \caption{bla}
+ \label{figure:ast_with_layout}
+\end{figure}
 
-Once we have identified the layout that belongs to a tree, we can use it during the source generation. So for example, if we parameter gets deleted, the comment will be removed along with it. Whether we can reuse existing code or have to invoke the pretty printed needs to be decided for each tree in the AST. 
+Once we have identified the layout that belongs to a tree, we can use it during the source generation. It is easy to see that when we would delete the parameter in the above AST, then the comment would be removed along with it.
 
-This gives us the following simplified pseudo code for the source generation algorithm.
+Another issue that concerns both the pretty and the reusing printer is the indentation. When a new statement in a block of other statements is inserted, we want it to have the same indentation as its siblings. For this, the printers also keep track of the currently desired indentation
+
+
+Whether we can reuse existing code or have to invoke the pretty printed needs to be decided for each tree in the AST. This gives us the following simplified pseudo code for the source generation algorithm.
 
 \begin{lstlisting}
 generateSource(tree) = 

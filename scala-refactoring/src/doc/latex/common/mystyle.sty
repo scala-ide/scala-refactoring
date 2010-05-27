@@ -12,7 +12,7 @@
 %\usepackage{bookman}
 \usepackage{textcomp}
 \usepackage{marvosym}
-\usepackage[dvipsnames]{xcolor}
+\usepackage[usenames, dvipsnames]{xcolor}
 \usepackage{balance}
 \usepackage{microtype}
 \usepackage{framed}
@@ -46,11 +46,14 @@
 
 \usepackage{listings}
 
+\definecolor{MyGreen}{rgb}{0.8671875, 0.9375, 0.62890625}
+\definecolor{MyRed}{rgb}{0.98046875, 0.76171875, 0.67578125}
 \definecolor{MyBlue}{rgb}{.67843137254901960784, .84705882352941176470, .90196078431372549019}
 
 \newcommand{\bluebox}  [1] {\sethlcolor{MyBlue}\hl{#1}}
 \newcommand{\redbox}   [1] {\colorbox{MyRed}{#1}}
-\newcommand{\greenbox} [1] {\colorbox{MyGreen}{#1}}
+\newcommand{\greenbox} [1] {\colorbox{Green}{#1}}
+\newcommand{\lgreenbox} [1] {\colorbox{LimeGreen}{#1}}
 
 \newcommand*\bluecell{\cellcolor{MyBlue}}
 

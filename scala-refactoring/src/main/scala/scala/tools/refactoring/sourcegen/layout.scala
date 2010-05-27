@@ -20,8 +20,8 @@ trait Requisite {
   protected def getLayout: Layout
   
   def ++(other: Requisite): Requisite = (self, other) match {
-    case (_1, NoRequisite) => _1
-    case (NoRequisite, _2) => _2
+    case (r, NoRequisite) => r
+    case (NoRequisite, r) => r
     case _ => new Requisite {
       def isRequired(l: Layout, r: Layout) = self.isRequired(l, r) || other.isRequired(l, r)
       def getLayout = self.getLayout ++ other.getLayout

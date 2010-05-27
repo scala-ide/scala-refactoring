@@ -8,31 +8,9 @@ package sourcegen
  * defaultIncrement specifies how much the indentation should
  * be incremented for newly generated code (pretty printer).
  * */
-class Indentation(val defaultIncrement: String) {
+class Indentation(val defaultIncrement: String, val current: String) {
+
+  def incrementDefault = new Indentation(defaultIncrement, current + defaultIncrement)
   
-  private var current: String = ""
-    
-  def text = current
-  
-  /**
-   * Increments the indentation and executes the thunk;
-   * resets the indentation afterwards.
-   * */
-  def default[T](f: => T): T = {
-    val old = current
-    current += defaultIncrement
-    //println("indentation is set to"+ current)
-    val res = f
-    current = old
-    res
-  }
-  
-  def setTo[T](i: String)(f: => T): T = {
-    val old = current
-    current = i
-    //println("indentation is set to"+ current)
-    val res = f
-    current = old
-    res
-  }
+  def setTo(i: String) = new Indentation(defaultIncrement, i)
 }

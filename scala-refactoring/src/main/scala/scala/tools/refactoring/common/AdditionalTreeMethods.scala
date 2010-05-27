@@ -54,7 +54,8 @@ trait AdditionalTreeMethods {
    * name, which is tricky for Selects.
    * */
   implicit def additionalTreeMethodsForPositions(t: Tree) = new {
-    def hasExistingCode = t != null && t.pos.isRange
+    def hasExistingCode = t != null && !t.isEmpty && t.pos.isRange
+    def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source
     def samePos(o: Tree)    : Boolean = samePos(o.pos)
     def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))

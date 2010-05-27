@@ -8,24 +8,22 @@ trait AbstractPrinter extends SourceCodeHelpers {
   val global: scala.tools.nsc.interactive.Global
   import global._
   
+  def print(t: Tree, ind: Indentation): Fragment
+  
   def printSingleTree(
       parent: Tree,
       tree: Tree, 
-      ind: Indentation, 
-      continue: (Tree, Indentation) => Option[Fragment],
+      ind: Indentation,
       indent: Boolean,
       before: Requisite,
       after: Requisite): Fragment = {
 
     if(indent && tree.hasExistingCode && parent.isInstanceOf[If] && tree.pos.isRange) {
-      ind.setTo(indentation(tree)) {
-        continue(tree, ind) match {
-          case Some(f) => 
-            val x = f
-            f ++ (after, before)
-          case None => 
-            EmptyFragment
-        }
+      print(tree, ind.setTo(indentation(tree))) match {
+        case EmptyFragment => EmptyFragment
+        case f => 
+          val x = f
+          f ++ (after, before)
       }
     } else if(indent) {
       
@@ -33,13 +31,9 @@ trait AbstractPrinter extends SourceCodeHelpers {
                 
         val child: Fragment = getChildrenIndentation(parent, tree) match {
           case Some(childIndent) => 
-            ind.setTo(childIndent) {
-              continue(tree, ind) getOrElse EmptyFragment
-            }
+            print(tree, ind.setTo(childIndent))
           case None =>
-            ind.default {
-              continue(tree, ind) getOrElse EmptyFragment
-            }
+            print(tree, ind.incrementDefault)
         }
         
         val leading = if(tree.hasExistingCode) NoLayout else Layout(ind.defaultIncrement)
@@ -47,7 +41,7 @@ trait AbstractPrinter extends SourceCodeHelpers {
         child → leading
         
       } else {
-        (continue(tree, ind) getOrElse EmptyFragment) → NoLayout
+        print(tree, ind) → NoLayout
       }
       
       child match {
@@ -56,14 +50,9 @@ trait AbstractPrinter extends SourceCodeHelpers {
       }
        
     } else {
-      ind.setTo(getChildrenIndentation(parent, tree) getOrElse ind.text) {
-        continue(tree, ind) match {
-          case Some(f) => 
-            val x = f
-            f ++ (after, before)
-          case None => 
-            EmptyFragment
-        }
+      print(tree, ind.setTo(getChildrenIndentation(parent, tree) getOrElse ind.current)) match {
+        case EmptyFragment => EmptyFragment
+        case f => f ++ (after, before)
       }
     }
   }
@@ -72,14 +61,13 @@ trait AbstractPrinter extends SourceCodeHelpers {
       parent: Tree,
       trees: List[Tree], 
       ind: Indentation, 
-      continue: (Tree, Indentation) => Option[Fragment], 
-      indent: Boolean = false,
+      indent: Boolean,
       separator: Requisite,
       before: Requisite,
       after: Requisite): Fragment = {
     (trees match {
       case Nil => EmptyFragment
-      case t :: rest => (printSingleTree(parent, t, ind, continue, indent, NoRequisite, NoRequisite), printManyTrees(parent, rest, ind, continue, indent, separator, NoRequisite, NoRequisite)) match {
+      case t :: rest => (printSingleTree(parent, t, ind, indent, NoRequisite, NoRequisite), printManyTrees(parent, rest, ind, indent, separator, NoRequisite, NoRequisite)) match {
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
@@ -88,10 +76,7 @@ trait AbstractPrinter extends SourceCodeHelpers {
       }
     }) match {
       case EmptyFragment => EmptyFragment
-      case f => 
-      val x = f
-      val y = x ++ (after, before)
-      y
+      case f => f ++ (after, before)
     }
   }
   
