@@ -3,6 +3,9 @@
  */
 // $Id$
 
-package scala.tools.refactoring.transformation
+package scala.tools.refactoring
+package transformation
 
-trait Transformation extends Transform with TreeFactory
+trait Transformation extends Transform with TreeFactory with TreeTransformations {
+  this: common.PimpedTrees =>
+}

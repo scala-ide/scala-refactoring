@@ -10,7 +10,6 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import common.Change
 import analysis.FullIndexes
-import sourcegen.Transformations
 
 object IntepreterFix {
   import scala.tools.nsc._
@@ -49,7 +48,6 @@ import IntepreterFix._
 abstract class ExtractMethod extends MultiStageRefactoring {
   
   import global._
-  import Transformations._
   
   abstract class PreparationResult {
     def selectedMethod: Tree
@@ -80,35 +78,51 @@ abstract class ExtractMethod extends MultiStageRefactoring {
      
     val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
     
-    val call = mkCallDefDef(NoMods, methodName, parameters :: Nil, returns)
+    val call = mkCallDefDef(methodName, parameters :: Nil, returns)
     
-    val findTemplate = predicate[Tree] {
+    val extractSingleStatement = selection.selectedTopLevelTrees.size == 1
+    
+    val findTemplate = filter {
       case Template(_, _, body) => 
-        body exists (_ == selectedMethod) //sameTree?
+        body exists (_ == selectedMethod)
     }
     
-    val findMethod = predicate[Tree] {
+    val findMethod = filter {
       case d: DefDef => d == selectedMethod
     }
     
-    val replaceBlockOfStatements = Transformations.transform[Tree, Tree] {
-      case block: Block => {
-        mkBlock(replace(block, selection.selectedTopLevelTrees, call :: Nil)) setPos block.pos
+    val replaceBlockOfStatements = topdown {
+      matchingChildren {
+        transform {
+          case block @ BlockExtractor(stats) => {
+            mkBlock(stats.replaceSequence(selection.selectedTopLevelTrees, call :: Nil)) setPos block.pos
+          }
+        }
       }
     }
+  
+    val replaceExpression = if(extractSingleStatement)
+      replaceTree(selection.selectedTopLevelTrees.head, call)
+    else
+      fail[Tree]
     
-    val replaceExpression = Transformations.transform[Tree, Tree] {
-      case t: Tree if selection.selectedTopLevelTrees.size == 1 && t == selection.selectedTopLevelTrees.head => 
-        call //setPos t.pos
-    }
-    
-    val insertMethodCall = Transformations.transform[Tree, Tree] {
+    val insertMethodCall = transform {
       case tpl @ Template(_, _, body) => 
         tpl.copy(body = body ::: newDef :: Nil) setPos tpl.pos
     }
     
-    val extractMethod = ↓(any(findTemplate &> ↓(any(findMethod &> ↓(any(replaceBlockOfStatements)) |> ↓(any(replaceExpression))))  &> insertMethodCall ))
-        
+    val extractMethod = topdown {
+      matchingChildren {
+        findTemplate &> 
+        topdown {
+          matchingChildren {
+            findMethod &> replaceBlockOfStatements |> replaceExpression
+          }
+        } &> 
+        insertMethodCall
+      }
+    }
+    
     Right(extractMethod apply abstractFileToTree(selection.file) toList)
   }
 }

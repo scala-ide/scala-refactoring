@@ -58,7 +58,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
   def findOriginalTree(t: Tree): Option[Tree] = {
     val candidates = findOriginalTreeFromPosition(t.pos)
     
-    candidates flatMap (_ filter (_ sameTree t ) lastOption)
+    candidates flatMap (_ filter (_ sameTree t) lastOption)
   }
   
   
@@ -108,7 +108,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
               
         val classParams = tpl.constructorParameters
         
-        val body = (tpl.body filterNot (tpl.primaryConstructor ::: classParams contains)) filter keepTree
+        val body = removeCompilerTreesForMultipleAssignment((tpl.body filterNot (tpl.primaryConstructor ::: classParams contains)) filter keepTree)
         
         val parents = (tpl.superConstructorParameters match {
           case Nil => tpl.parents
@@ -121,23 +121,33 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
             val source = tpl.self.pos.source.content.slice(tpl.self.pos.point, tpl.self.pos.end) mkString // XXX remove comments
             
             def extractExactPositionsOfAllTypes(typ: Type): List[NameTree] = typ match {
-              case RefinedType(_ :: parents, _) =>
+              case RefinedType(parents, _) =>
                 parents flatMap extractExactPositionsOfAllTypes
               case TypeRef(_, sym, _) =>
                 val thisName = sym.name.toString
-                val start = tpl.self.pos.point + source.indexOf(thisName)
-                val end = start + thisName.length
-                List(NameTree(sym.name) setPos (tpl.self.pos withStart start withEnd end))
+                val nameIndex = source.indexOf(thisName)
+                if(nameIndex < 0) 
+                  Nil
+                else {
+                  val start = tpl.self.pos.point + nameIndex
+                  val end = start + thisName.length
+                  List(NameTree(sym.name) setPos (tpl.self.pos withStart start withEnd end))
+                }
               case _ => Nil
             }
             
             val selfTypes = extractExactPositionsOfAllTypes(tpl.self.tpt.tpe)
-            val namePos = {
-              val p = tpl.self.pos
-              p withEnd (if(p.start == p.point) p.end else p.point)
+            
+            val selfNameTree = if(tpl.self.name.toString == "_") {
+              NameTree("this") setPos (tpl.self.pos withEnd (tpl.self.pos.start + "this".length))
+            } else {
+              NameTree(tpl.self.name) setPos {
+                val p = tpl.self.pos
+                p withEnd (if(p.start == p.point) p.end else p.point)
+              }
             }
             
-            SelfTypeTree(NameTree(tpl.self.name) setPos namePos, selfTypes, tpl.self.tpt) setPos tpl.self.pos
+            SelfTypeTree(selfNameTree, selfTypes, tpl.self.tpt) setPos tpl.self.pos
           } else {
             tpl.self
           }
@@ -168,7 +178,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
       
     case TemplateExtractor(params, earlyBody, parents, self, body) =>
-      params ::: earlyBody ::: parents ::: self :: body
+      params ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
 
     case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
       mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
@@ -259,8 +269,57 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
     case Try(block, catches, finalizer) =>
       block :: catches ::: finalizer  :: Nil
     
+    case Throw(expr) =>
+      expr :: Nil
+      
+    case Annotated(annot, arg) =>
+      annot :: arg :: Nil
+      
+    case CompoundTypeTree(templ) =>
+      templ :: Nil
+      
+    // while loop  
+    case LabelDef(name, params, If(cond, then, _)) =>
+      (NameTree(name) setPos t.namePosition) :: params ::: cond :: then :: Nil
+      
+    // do .. while loop  
+    case LabelDef(name, params, Block(stats, If(cond, _, _))) =>
+      stats ::: (NameTree(name) setPos t.namePosition) :: cond :: Nil
+   
+    case ExistentialTypeTree(tpt, whereClauses) =>
+      tpt :: whereClauses
+      
+    case t @ SelectFromTypeTree(qualifier, _) =>
+      qualifier :: (NameTree(t.nameString) setPos t.namePosition) :: Nil
+      
+    case SingletonTypeTree(ref) =>
+      ref :: Nil
+      
+    case AssignOrNamedArg(lhs, rhs) =>
+      lhs :: rhs :: Nil
+      
+    case MultipleAssignment(values, rhs) =>
+      values ::: rhs :: Nil
+      
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
   }) filter keepTree
   
+  def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
+    body match {
+      case (v @ ValDef(_, _, _, Match(rhs: Typed, c @ CaseDef(_: Apply, EmptyTree, body) :: Nil))) :: xs 
+          if v.symbol.isSynthetic && c.forall(_.pos.isTransparent) =>
+      
+        val numberOfAssignments = body.tpe match {case tpe: TypeRef => tpe.args.size case _ => 0}
+        
+        val (values, rest) = xs splitAt numberOfAssignments
+        
+        val valDefs = values collect {case v: ValDef => v copy (mods = NoMods) setPos v.pos}
+                
+        MultipleAssignment(valDefs, rhs).setPos(v.pos) :: removeCompilerTreesForMultipleAssignment(rest)
+        
+      case x :: xs => x :: removeCompilerTreesForMultipleAssignment(xs)
+      case x => x
+    }
+  }
 }

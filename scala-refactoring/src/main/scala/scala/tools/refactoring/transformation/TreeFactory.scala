@@ -15,7 +15,7 @@ trait TreeFactory {
   
   object Invisible extends Position
       
-  def mkRenamedSymTree(t: SymTree, name: String) = (t match {
+  def mkRenamedSymTree(t: SymTree, name: String): SymTree = (t match {
     case i: Ident    => i.copy(name = name)
     case v: ValDef   => v.copy(name = name)
     case d: DefDef   => d.copy(name = name)
@@ -29,7 +29,7 @@ trait TreeFactory {
     case t => throw new Exception("Found "+ t.getClass.getName)
   }) setPos t.pos
   
-  def mkReturn(s: List[Symbol]) = s match {
+  def mkReturn(s: List[Symbol]): Tree = s match {
     case Nil => EmptyTree
     case x :: Nil => Ident(x) setType x.tpe
     case xs => typer.typed(gen.mkTuple(xs map (s => Ident(s) setType s.tpe))) match {
@@ -38,11 +38,11 @@ trait TreeFactory {
     }
   }
   
-  def mkValDef(name: String, rhs: Tree) = {
+  def mkValDef(name: String, rhs: Tree): ValDef = {
     ValDef(NoMods, name, new TypeTree(), rhs)
   }
   
-  def mkCallDefDef(mods: Modifiers = NoMods, name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {
+  def mkCallDefDef(name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {
     
      // currying not yet supported
     val args = arguments.head map (s => Ident(s))
@@ -63,14 +63,14 @@ trait TreeFactory {
     }
   }
   
-  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil) = {
+  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil): DefDef = {
     
     val formalParameters = parameters map ( _ map (s => new ValDef(Modifiers(Flags.PARAM), s.nameString, TypeTree(s.tpe), EmptyTree)))
     
     DefDef(mods withPosition (Flags.METHOD, NoPosition), name, Nil /*type parameters*/, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
   }
   
-  def mkBlock(trees: List[Tree]) = trees match {
+  def mkBlock(trees: List[Tree]): Block = trees match {
     case Nil => throw new Exception("can't make block from 0 trees")
     case x :: Nil => Block(x :: Nil, EmptyTree)
     case xs => Block(xs.init, xs.last)

@@ -1,19 +1,19 @@
 package scala.tools.refactoring
-package sourcegen
+package transformation
 
-trait AstTransformations {
+trait TreeTransformations extends AbstractTransformations {
   
   this: common.PimpedTrees =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
-  
-  import Transformations._
-  
-  val transform = Transformations.transform[Tree, Tree] _
-    
+        
   implicit def treesToTraversalFunction(tree: Tree): (Tree => Tree) => Tree = f => {
     
+    /**
+     * Hooks into the Scala compiler's Transformer but applies only 
+     * one transformation and then returns that result.
+     * */
     class TransformOnce extends Transformer {
       def once(t: Tree) = t match {
         
@@ -30,10 +30,12 @@ trait AstTransformations {
       override def transform(t: Tree) = f(t)
     }
     
-    val result = (new TransformOnce).once(tree)
-    result
+    (new TransformOnce).once(tree)
   }
   
+  def transform(f: PartialFunction[Tree, Tree]) = transformation(f)
+  
+  def filter(f: PartialFunction[Tree, Boolean]) = predicate(f)
   
   val removeUnneededTrees = transform {
     

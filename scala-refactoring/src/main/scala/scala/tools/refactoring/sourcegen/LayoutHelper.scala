@@ -174,6 +174,33 @@ trait LayoutHelper extends CommentHelpers {
          
       case (p: Try, c) =>
          layout(p.pos.start, c.pos.start) splitBefore ('{')
+         
+      case (p: Assign, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Throw, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: Annotated, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: LabelDef, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: ExistentialTypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: SelectFromTypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: SingletonTypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: CompoundTypeTree, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
+         
+      case (p: MultipleAssignment, c) =>
+         layout(p.pos.start, c.pos.start) → NoLayout
       
       case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
@@ -278,6 +305,33 @@ trait LayoutHelper extends CommentHelpers {
          NoLayout → layout(c.pos.end, p.pos.end)
          
        case (c, p: Try) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Assign) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Throw) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: Annotated) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: LabelDef) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: ExistentialTypeTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: SelectFromTypeTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: SingletonTypeTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: CompoundTypeTree) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+         
+       case (c, p: MultipleAssignment) =>
          NoLayout → layout(c.pos.end, p.pos.end)
          
        case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)

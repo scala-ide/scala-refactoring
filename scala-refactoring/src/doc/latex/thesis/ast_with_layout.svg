@@ -18,7 +18,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.47 r22583"
-   sodipodi:docname="ast_with_layout.pdf">
+   sodipodi:docname="ast_with_layout.svg">
   <metadata
      id="metadata182">
     <rdf:RDF>
@@ -27,7 +27,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -63,13 +63,13 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1440"
-     inkscape:window-height="839"
+     inkscape:window-width="1920"
+     inkscape:window-height="1139"
      id="namedview178"
      showgrid="false"
      inkscape:zoom="1.1351955"
-     inkscape:cx="289.90928"
-     inkscape:cy="191.97169"
+     inkscape:cx="380.28074"
+     inkscape:cy="208.98994"
      inkscape:window-x="-4"
      inkscape:window-y="38"
      inkscape:window-maximized="1"
@@ -177,7 +177,7 @@
      id="text25"
      style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-anchor:start;font-family:Verdana;-inkscape-font-specification:Verdana;stroke-linejoin:miter">Ident</text>
   <polygon
-     style="fill:#e1ffc7;fill-opacity:1;stroke:none;stroke-width:1.84028982999999990;stroke-linejoin:miter"
+     style="fill:#afcaf5;fill-opacity:1;stroke:none;stroke-width:1.84028982999999990;stroke-linejoin:miter"
      id="polygon3133"
      points="177,-244 177,-265 226,-265 226,-244 177,-244 "
      transform="matrix(0.29527559,0,0,1,-27.763779,359.9)" />
@@ -224,22 +224,17 @@
          style="font-size:14px;text-anchor:start;font-family:'Courier,monospace';stroke-linejoin:miter;stroke:none">// myclass\nclass</text>
     </g>
   </g>
-  <g
-     id="g4044"
-     transform="translate(-89.3,-24.5)"
-     style="stroke-linejoin:miter;stroke:none">
-    <polygon
-       transform="matrix(0.71027993,0,0,1,162.8954,491.6)"
-       style="fill:#e1ffc7;fill-opacity:1;stroke:none;stroke-width:1.18654763999999990;stroke-linejoin:miter"
-       id="polygon4040"
-       points="195,-324 195,-324 195,-345 285,-345 285,-324 " />
-    <text
-       style="font-size:14px;text-anchor:start;font-family:'Courier,monospace';stroke-linejoin:miter;stroke:none"
-       id="text4042"
-       font-size="14.00"
-       y="160.36697"
-       x="304.9006">MyClass</text>
-  </g>
+  <polygon
+     points="195,-345 285,-345 285,-324 195,-324 195,-324 "
+     id="polygon4040"
+     style="fill:#afcaf5;fill-opacity:1;stroke:none"
+     transform="matrix(0.71027993,0,0,1,73.5954,467.1)" />
+  <text
+     x="215.6006"
+     y="135.86697"
+     font-size="14.00"
+     id="text4042"
+     style="font-size:14px;text-anchor:start;stroke:none;font-family:'Courier,monospace'">MyClass</text>
   <polygon
      transform="matrix(0.18565176,0,0,1,235.09789,503.9)"
      style="fill:#e1ffc7;fill-opacity:1;stroke:none;stroke-width:2.32086777999999994;stroke-linejoin:miter"
@@ -279,16 +274,16 @@
      id="text4066"
      style="font-size:14px;text-anchor:start;font-family:'Courier,monospace';stroke-linejoin:miter">/* the int */</text>
   <polygon
-     transform="matrix(0.43909689,0,0,1,298.77985,499.1)"
-     points="226,-265 226,-244 177,-244 177,-244 177,-265 "
+     transform="matrix(0.28400893,0,0,1,326.23042,499.1)"
+     points="226,-244 177,-244 177,-244 177,-265 226,-265 "
      id="polygon4088"
-     style="fill:#e1ffc7;fill-opacity:1;stroke:none;stroke-width:1.50910627999999991;stroke-linejoin:miter" />
+     style="fill:#afcaf5;fill-opacity:1;stroke:none" />
   <text
      x="380.00003"
      y="247.8669"
      font-size="14.00"
      id="text4090"
-     style="font-size:14px;text-anchor:start;font-family:'Courier,monospace';stroke-linejoin:miter">a:</text>
+     style="font-size:14px;text-anchor:start;font-family:'Courier,monospace';stroke-linejoin:miter">a</text>
   <polygon
      transform="matrix(0.29527559,0,0,1,361.03622,532.7)"
      points="177,-265 226,-265 226,-244 177,-244 177,-244 "
@@ -326,4 +321,20 @@
      style="fill:none;stroke:#000000;stroke-width:0.80000000999999998px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
      d="m 387.47335,227.86328 0,5.48147"
      id="path4592" />
+  <polygon
+     style="fill:#e1ffc7;fill-opacity:1;stroke:none;stroke-width:1.84028982999999990;stroke-linejoin:miter"
+     id="polygon3652"
+     points="177,-265 226,-265 226,-244 177,-244 177,-244 "
+     transform="matrix(0.29527559,0,0,1,361.03622,532.7)" />
+  <polygon
+     style="fill:#e1ffc7;fill-opacity:1;stroke:none"
+     id="polygon3656"
+     points="226,-265 226,-244 177,-244 177,-244 177,-265 "
+     transform="matrix(0.21790586,0,0,1,351.2485,499.1)" />
+  <text
+     style="font-size:14px;text-anchor:start;stroke-linejoin:miter;font-family:'Courier,monospace'"
+     id="text3658"
+     font-size="14.00"
+     y="247.86688"
+     x="391.20007">:</text>
 </svg>

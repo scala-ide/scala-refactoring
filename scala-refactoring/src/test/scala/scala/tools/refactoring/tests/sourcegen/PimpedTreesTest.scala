@@ -15,9 +15,9 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.io.AbstractFile
 
 @Test
-class PimpedTreesTest extends TestHelper with PimpedTrees with AstTransformations {
+class PimpedTreesTest extends TestHelper with PimpedTrees {
   
-  def treeForFile(file: AbstractFile) = {
+  override def treeForFile(file: AbstractFile) = {
     global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
   }
   

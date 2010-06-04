@@ -18,12 +18,11 @@ import tools.nsc.symtab.Flags
 import scala.tools.nsc.ast.parser.Tokens
 
 @Test
-class SourceGenTest extends TestHelper with SourceGen with AstTransformations with ConsoleTracing {
+class SourceGenTest extends TestHelper with SourceGen with ConsoleTracing {
   
   import global._
-  import Transformations._
   
-  def treeForFile(file: AbstractFile) = {
+  override def treeForFile(file: AbstractFile) = {
     unitOfFile get file map (_.body) flatMap removeAuxiliaryTrees
   }
   
@@ -32,25 +31,25 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
     def prettyPrintsTo(expected: String) = assertEquals(expected, generate(cleanTree(original)).asText)
   }
   
-  val reverseBody = Transformations.transform[Tree, Tree] {
+  val reverseBody = transform {
     case t: Template => t.copy(body = t.body.reverse) setPos t.pos
   }
   
-  val doubleAllDefNames = Transformations.transform[Tree, Tree] {
+  val doubleAllDefNames = transform {
     case t: DefDef => t.copy(name = t.name.toString + t.name.toString) setPos t.pos
   }
   
-  val negateAllBools = Transformations.transform[Tree, Tree] {
+  val negateAllBools = transform {
     case l @ Literal(Constant(true )) => Literal(Constant(false)) setPos l.pos
     case l @ Literal(Constant(false)) => Literal(Constant(true )) setPos l.pos
   }
   
-  val wrapDefRhsInBlock = Transformations.transform[Tree, Tree] {
+  val wrapDefRhsInBlock = transform {
     case t @ DefDef(_, _, _, _, _, _: Block) => t
     case t @ DefDef(_, _, _, _, _, rhs) => t copy (rhs = new Block(rhs :: Nil, rhs)) setPos t.pos
   }
   
-  val changeSomeModifiers = Transformations.transform[Tree, Tree] {
+  val changeSomeModifiers = transform {
     case t: ClassDef =>
       t.copy(mods = NoMods) setPos t.pos
     case t: DefDef   =>
@@ -76,13 +75,13 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
           42
         }
     }
-    """, generate(removeAuxiliaryTrees &> ↓(any(wrapDefRhsInBlock)) apply tree get).asText)
+    """, generate(removeAuxiliaryTrees &> ↓(matchingChildren(wrapDefRhsInBlock)) apply tree get).asText)
   }
   
   @Test
   def testIndentationOfNestedBlocks() = {
     
-    val nestDefs = Transformations.transform[Tree, Tree] {
+    val nestDefs = transform {
       case t @ DefDef(_, _, _, _, _, rhs @ Block(stats, expr)) => t copy (rhs = new Block(t :: stats, expr) setPos rhs.pos) setPos t.pos
     }
 
@@ -106,7 +105,7 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
         42
       }
     }
-    """, generate(removeAuxiliaryTrees &> ↑(any(nestDefs)) apply tree get).asText)
+    """, generate(removeAuxiliaryTrees &> ↑(matchingChildren(nestDefs)) apply tree get).asText)
   }
   
   @Test
@@ -143,7 +142,413 @@ class SourceGenTest extends TestHelper with SourceGen with AstTransformations wi
   }
   
   @Test
+  def testThrow() = {
+    
+    val tree = treeFrom("""
+    class Throw1 {
+      throw new Exception("hu!")
+    }
+
+    class Throw2 {
+      var msg = "   "
+      val e = new Exception(msg) 
+      throw e
+    }
+    """)
+        
+    assertEquals("""
+    class Throw1 {
+      throw new Exception("hu!")
+    }
+
+    class Throw2 {
+      var msg = "   "
+      val e = new Exception(msg) 
+      throw e
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """class Throw1 {
+  throw new Exception("hu!")
+}
+class Throw2 {
+  var msg = "   "
+  val e = new Exception(msg)
+  throw e
+}"""
+  }
+  
+  @Test
+  def testAnnotation() = {
+    
+    val tree = treeFrom("""
+    import scala.reflect.BeanProperty
+    class ATest {
+      @BeanProperty
+      var status = ""
+    }
+
+    """)
+        
+    assertEquals("""
+    import scala.reflect.BeanProperty
+    class ATest {
+      @BeanProperty
+      var status = ""
+    }
+
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    // XXX annotation is missing
+    tree prettyPrintsTo """import scala.reflect.BeanProperty
+class ATest {
+  var status = ""
+}"""
+  }
+  
+  @Test
+  def allNeededParenthesesArePrinted() = {
+    
+    val tree = treeFrom("""
+    class Test {
+      val x = true && !(true && false)
+    }
+    """)
+        
+    assertEquals("""
+    class Test {
+      val x = true && !(true && false)
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """class Test {
+  val x = true.&&(true.&&(false).!)
+}"""
+  }
+  
+  @Test
+  def multipleAssignmentWithAnnotatedTree() = {
+    
+    val tree = treeFrom("""
+    class Test {
+      val (a, b) = 1 → 2
+      val (c, d, e, f) = (1, 2, 3, 4)
+      val (g, h, i) = inMethod()
+
+      def inMethod() = {
+        println("in method")
+        val (a, b, c) = (1, 2, 3)
+        println("in method")
+        (a, b, c)
+      }
+    }
+    """)
+        
+    assertEquals("""
+    class Test {
+      val (a, b) = 1 → 2
+      val (c, d, e, f) = (1, 2, 3, 4)
+      val (g, h, i) = inMethod()
+
+      def inMethod() = {
+        println("in method")
+        val (a, b, c) = (1, 2, 3)
+        println("in method")
+        (a, b, c)
+      }
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    //XXX tree prettyPrintsTo """"""
+  }
+  
+  @Test
+  def testExistential() = {
+    
+    val tree = treeFrom("""
+    class A(l: List[_])
+
+    class B(l: List[T] forSome { type T })
+    """)
+        
+    assertEquals("""
+    class A(l: List[_])
+
+    class B(l: List[T] forSome { type T })
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """class A(l: List[_])
+class B(l: List[T] forSome {type T})"""
+  }
+  
+  @Test
+  def testCompoundTypeTree() = {
+    
+    val tree = treeFrom("""
+    trait A
+    trait B
+    abstract class C(val a: A with B) {
+      def method(x: A with B with C {val x: Int}): A with B
+    }
+    """)
+        
+    assertEquals("""
+    trait A
+    trait B
+    abstract class C(val a: A with B) {
+      def method(x: A with B with C {val x: Int}): A with B
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """trait A
+trait B
+abstract class C(val a: A with B) {
+  def method(x: A with B with C {
+    val x: Int
+  }): A with B
+}"""
+  }
+  
+  @Test
+  def testSingletonTypeTree() = {
+    
+    val tree = treeFrom("""
+    trait A {
+      def doSomething(): this.type
+    }
+    """)
+        
+    assertEquals("""
+    trait A {
+      def doSomething(): this.type
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """trait A {
+  def doSomething: this.type
+}"""
+  }
+  
+  @Test
+  def testSelectFromTypeTree() = {
+    
+    val tree = treeFrom("""
+    trait A {
+      type T
+    }
+
+    class B(t: A#T)
+    """)
+        
+    assertEquals("""
+    trait A {
+      type T
+    }
+
+    class B(t: A#T)
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """trait A {
+  type T
+}
+class B(t: A#T)"""
+  }
+  
+  @Test
+  def testSelfTypesWithThis() = {
+    
+    val tree = treeFrom("""
+    package common {
+      trait Tracing
+      trait PimpedTrees
+    }
+
+    trait AbstractPrinter {
+      this: common.Tracing with common.PimpedTrees =>
+    }
+    """)
+        
+    assertEquals("""
+    package common {
+      trait Tracing
+      trait PimpedTrees
+    }
+
+    trait AbstractPrinter {
+      this: common.Tracing with common.PimpedTrees =>
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    // XXX wrong!
+    tree prettyPrintsTo """package common
+trait Tracing
+trait PimpedTrees
+trait AbstractPrinter {
+  this: common.Tracing with common.PimpedTrees =>
+}"""
+  }
+  
+  @Test
+  def testWhileLoop() = {
+    
+    val tree = treeFrom("""
+    trait WhileLoop {
+      while/*a*/(true != false) println("The world is still ok!")
+      
+      while(true != false) {
+        println("The world is still ok!")
+      }
+
+      while(true) {
+        println("The world is still ok!")
+        println("The world is still ok!")
+      }
+
+      while(true) {
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+      }
+    }
+    """)
+        
+    assertEquals("""
+    trait WhileLoop {
+      while/*a*/(true != false) println("The world is still ok!")
+      
+      while(true != false) {
+        println("The world is still ok!")
+      }
+
+      while(true) {
+        println("The world is still ok!")
+        println("The world is still ok!")
+      }
+
+      while(true) {
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+        println("The world is still ok!")
+      }
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """trait WhileLoop {
+  while(true.!=(false)){
+    println("The world is still ok!")
+  }
+  while(true.!=(false)){
+    println("The world is still ok!")
+  }
+  while(true){
+    println("The world is still ok!")
+    println("The world is still ok!")
+  }
+  while(true){
+    println("The world is still ok!")
+    println("The world is still ok!")
+    println("The world is still ok!")
+    println("The world is still ok!")
+    println("The world is still ok!")
+    println("The world is still ok!")
+  }
+}"""
+  }
+  
+  @Test
+  def testDoWhileLoop() = {
+    
+    val tree = treeFrom("""
+    trait WhileLoop {
+      do println("The world is still ok!") while (true)
+      
+      do {
+        println("The world is still ok!")
+      } while(true != false)
+
+      do {
+        println("The world is still ok!")
+        println("The world is still ok!")
+      } while(true)
+    }
+    """)
+        
+    assertEquals("""
+    trait WhileLoop {
+      do println("The world is still ok!") while (true)
+      
+      do {
+        println("The world is still ok!")
+      } while(true != false)
+
+      do {
+        println("The world is still ok!")
+        println("The world is still ok!")
+      } while(true)
+    }
+    """, generate(removeAuxiliaryTrees apply tree get).asText)     
+    
+    tree prettyPrintsTo """trait WhileLoop {
+  do println("The world is still ok!") while(true)
+  do println("The world is still ok!") while(true.!=(false))
+  do {
+    println("The world is still ok!")
+    println("The world is still ok!")
+  } while(true)
+}"""
+  }
+  
+  @Test
+  def testPlusEquals() = {
+    val tree = treeFrom("""
+      trait Demo {
+        var assignee = 1
+        assignee += -42
+      }""")
+      
+    assertEquals("""
+      trait Demo {
+        var assignee = 1
+        assignee += -42
+      }""", generate(tree).asText)
+    
+    //TODO fixme tree prettyPrintsTo """"""
+  }
+  
+  @Test
   def testAssign() = {
+    val tree = treeFrom("""
+      trait Demo {
+        def method {
+          var i = 0
+          i = 1
+        }
+      }""")
+      
+    assertEquals("""
+      trait Demo {
+        def method {
+          var i = 0
+          i = 1
+        }
+      }""", generate(tree).asText)
+    
+    tree prettyPrintsTo """trait Demo {
+  def method = {
+    var i = 0
+    i = 1
+  }
+}"""
+  }
+  
+  @Test
+  def testSetters() = {
     val tree = treeFrom("""
       package oneFromMany
       class Demo(val a: String,  /*(*/private var _i: Int/*)*/  ) {
@@ -510,7 +915,7 @@ object A"""
           true
         else
           false
-    }""", generate(removeAuxiliaryTrees &> ↓(any(negateAllBools)) apply tree get).asText)     
+    }""", generate(removeAuxiliaryTrees &> ↓(matchingChildren(negateAllBools)) apply tree get).asText)     
   }
   
   @Test
@@ -557,7 +962,7 @@ object A"""
           println("hello!")
           false
         }
-    }""", generate(removeAuxiliaryTrees &> ↓(any(negateAllBools)) apply tree get).asText)     
+    }""", generate(removeAuxiliaryTrees &> ↓(matchingChildren(negateAllBools)) apply tree get).asText)     
     
     tree prettyPrintsTo """object Functions {
   val x = if (true) false else true
@@ -645,7 +1050,7 @@ object A"""
       def printName(ppp: Person) = println(ppp.name)
       def main(args: Array[String]) {
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
-        people foreach (printName)
+        people foreach printName
       }
     }""", generate(removeAuxiliaryTrees apply tree get).asText)
     
@@ -872,7 +1277,7 @@ class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, 
     
     tree prettyPrintsTo """import java.io._
 object A {
-  var val file: java.io.PrintStream = null
+  var file: java.io.PrintStream = null
   try {
     val out = new FileOutputStream("myfile.txt")
     file = new PrintStream(out)
@@ -997,7 +1402,7 @@ import scala.collection.mutable._"""
         def aa() = 5
         def abcdabcd[T](a: String, b: Int): Int
       }
-    """, generate(removeAuxiliaryTrees &> ↓(⊆(doubleAllDefNames)) &> ↓(⊆(reverseBody)) apply tree get).asText) 
+    """, generate(removeAuxiliaryTrees &> ↓(matchingChildren(doubleAllDefNames)) &> ↓(matchingChildren(reverseBody)) apply tree get).asText) 
   }
   
   @Test
@@ -1030,7 +1435,7 @@ import scala.collection.mutable._"""
         val a: Int
       }
     }
-    """, generate(removeAuxiliaryTrees &> ↓(⊆(reverseBody)) apply tree get).asText)
+    """, generate(removeAuxiliaryTrees &> ↓(matchingChildren(reverseBody)) apply tree get).asText)
     
     tree prettyPrintsTo """package xyz
 trait A {

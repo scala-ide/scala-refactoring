@@ -11,12 +11,10 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import analysis.FullIndexes
 import common.Change
-import sourcegen.Transformations
 
 abstract class OrganizeImports extends MultiStageRefactoring {
   
   import global._
-  import Transformations._
   
   class PreparationResult
   
@@ -26,7 +24,7 @@ abstract class OrganizeImports extends MultiStageRefactoring {
     
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
     
-    val organizeImports = Transformations.transform[Tree, Tree] {
+    val organizeImports = transform {
        case p @ PackageDef(_, stats) =>
         
           p copy (stats = stats partition {

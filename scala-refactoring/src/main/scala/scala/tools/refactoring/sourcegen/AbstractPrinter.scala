@@ -3,14 +3,14 @@ package sourcegen
 
 trait AbstractPrinter extends SourceCodeHelpers {
   
-  this: common.Tracing with common.PimpedTrees =>
+  this: common.Tracing with common.PimpedTrees with Indentations =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
   
   def print(t: Tree, ind: Indentation): Fragment
   
-  def printSingleTree(
+  private[sourcegen] def printSingleTree(
       parent: Tree,
       tree: Tree, 
       ind: Indentation,
@@ -57,7 +57,7 @@ trait AbstractPrinter extends SourceCodeHelpers {
     }
   }
   
-  def printManyTrees(
+  private[sourcegen] def printManyTrees(
       parent: Tree,
       trees: List[Tree], 
       ind: Indentation, 
@@ -71,7 +71,7 @@ trait AbstractPrinter extends SourceCodeHelpers {
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
-          val mid: Layout = (l.post.validate(l.center ++ l.trailing, NoLayout) ++ separator ++ r.pre.validate(NoLayout, r.leading ++ r.center)).toLayout
+          val mid: Layout = (l.post(l.center ++ l.trailing, NoLayout) ++ separator ++ r.pre(NoLayout, r.leading ++ r.center)).toLayout
           Fragment(l.leading, mid, r.trailing) ++ (r.post, l.pre)
       }
     }) match {
@@ -83,14 +83,14 @@ trait AbstractPrinter extends SourceCodeHelpers {
   private def getChildrenIndentation(p: Tree, t: Tree): Option[String] = {
     if (p.hasExistingCode && !(p.isInstanceOf[If] && t.isInstanceOf[Block])/*prevent that we indent too much*/) {
     
-     val childrenOnNewLine = children(p) filter (_.pos.isRange) filter (_.pos.line != p.pos.line)
-     
-     if(childrenOnNewLine exists (_ samePos t)) {
-       Some(indentation(t))
-     } else     
-       childrenOnNewLine.headOption map indentation 
+      val childrenOnNewLine = children(p) filter (_.pos.isRange) filter (_.pos.line != p.pos.line)
+      
+      if(childrenOnNewLine exists (_ samePos t)) {
+        Some(indentation(t))
+      } else {
+        childrenOnNewLine.headOption map indentation
+      }
        
-    } else 
-      None
+    } else None
   }
 }

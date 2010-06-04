@@ -14,12 +14,10 @@ import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.symtab.Types
-import sourcegen.Transformations
 
 abstract class ExplicitGettersSetters extends MultiStageRefactoring {
   
   import global._
-  import Transformations._
   
   abstract class PreparationResult {
     def selectedValue: ValDef
@@ -74,7 +72,7 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
                 Ident(privateName),
                 Ident(publicName)) :: Nil, EmptyTree))
     
-    val r = Transformations.transform[Tree, Tree] {
+    val r = transform {
         
       case tpl: Template if tpl == template =>
       
@@ -91,7 +89,7 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
         tpl.copy(body = body) setPos tpl.pos
     }
     
-    val changes = ↓(any(r)) apply abstractFileToTree(selection.file)
+    val changes = ↓(matchingChildren(r)) apply abstractFileToTree(selection.file)
     
     println(changes.get)
 

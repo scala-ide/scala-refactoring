@@ -474,4 +474,25 @@ class RenameTest extends TestHelper with TestRefactoring {
 
     }""")
   } applyRefactoring(renameTo("Trait"))
+    
+  @Test
+  def renameSelfType2 = new FileSet {
+    add(
+    """
+    trait /*(*/T1/*)*/
+    trait T2
+
+    trait T3 {
+      self: T1 with T2 =>
+
+    }""",
+    """
+    trait /*(*/Trait/*)*/
+    trait T2
+
+    trait T3 {
+      self: Trait with T2 =>
+
+    }""")
+  } applyRefactoring(renameTo("Trait"))
 }

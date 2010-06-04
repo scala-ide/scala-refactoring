@@ -11,11 +11,9 @@ case class Change(file: AbstractFile, from: Int, to: Int, text: String)
 
 object Change {
   def applyChanges(ch: List[Change], source: String) = {
-  
-    val descending: (Change, Change) => Boolean = _.to > _.to
     
-    (source /: ch.sortWith(descending)) { (src, ch) =>
-      src.substring(0, ch.from) + ch.text + src.substring(ch.to)
+    (source /: ch.sortBy(-_.to)) { (src, change) =>
+      src.substring(0, change.from) + change.text + src.substring(change.to)
     }
   }
 }

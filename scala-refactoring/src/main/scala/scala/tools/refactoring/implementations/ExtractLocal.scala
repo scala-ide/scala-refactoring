@@ -11,12 +11,10 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.analysis.FullIndexes
-import sourcegen.Transformations
 
 abstract class ExtractLocal extends MultiStageRefactoring {
   
   import global._
-  import Transformations._
   
   abstract class PreparationResult {
     def selectedExpression: Tree
@@ -78,20 +76,18 @@ abstract class ExtractLocal extends MultiStageRefactoring {
       return Left(RefactoringError("No insertion point found."))
     }
     
-    val replaceExpression = Transformations.transform[Tree, Tree] {
-      case t if t == selectedExpression  => valRef
-    }
+    val replaceExpression = replaceTree(selectedExpression, valRef)
     
-    val findChild = predicate[Tree] {
+    val findChild = filter {
        case t => t == insertionPoint
     }
     
-    val insertNewVal = Transformations.transform[Tree, Tree] {
+    val insertNewVal = transform {
       case t @ BlockExtractor(stats) => mkBlock(newVal :: stats) replaces t
       case t => mkBlock(newVal :: t :: Nil)
     }
     
-    val extractLocal = ↓(any(findChild &> ↓(any(replaceExpression)) &> insertNewVal))
+    val extractLocal = ↓(matchingChildren(findChild &> replaceExpression &> insertNewVal))
     
     val r = extractLocal apply abstractFileToTree(selection.file) toList
     

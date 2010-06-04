@@ -42,6 +42,8 @@ trait AdditionalTreeMethods {
         t.symbol.nameString.substring("unary_".length)
       case t: Select if t.symbol != NoSymbol =>
         t.symbol.nameString
+      case t: LabelDef if t.name.toString startsWith "while" => "while"
+      case t: LabelDef if t.name.toString startsWith "doWhile" => "while"
       case t: DefTree => extractName(t.name)
       case t: RefTree => extractName(t.name)
       case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
@@ -56,10 +58,10 @@ trait AdditionalTreeMethods {
   implicit def additionalTreeMethodsForPositions(t: Tree) = new {
     def hasExistingCode = t != null && !t.isEmpty && t.pos.isRange
     def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
-    def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source
+    def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
     def samePos(o: Tree)    : Boolean = samePos(o.pos)
     def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
-    def namePosition(): Position = t match {
+    def namePosition(): Position = (t match {
       case t: ModuleDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
       case t: ClassDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
       case t: TypeDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
@@ -80,13 +82,16 @@ trait AdditionalTreeMethods {
         val pos = if(t.pos.point - t.pos.start == name.length && src == name) 
           t.pos withEnd t.pos.point
         else 
-          t.pos withStart t.pos.point withEnd (t.pos.point + name.length)
+          new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
         
         if(t.mods.isSynthetic && t.pos.isTransparent) 
           pos.makeTransparent
         else
           pos
           
+      case t @ Select(qualifier: New, selector) if selector.toString == "<init>" =>
+        t.pos withEnd t.pos.start
+        
       case t @ Select(qualifier, selector) => 
       
         if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
@@ -103,8 +108,28 @@ trait AdditionalTreeMethods {
         
       case t @ Bind(name, body) =>
         t.pos withEnd (t.pos.start + t.name.toString.trim.length)
+      
+      case t @ LabelDef(name, _, _) if name.toString startsWith "while" =>
+        t.pos withEnd (t.pos.start + "while".length)
+        
+      case t @ LabelDef(name, _, Block(stats, cond)) if name.toString startsWith "doWhile" =>
+        val src = stats.last.pos.source.content.slice(stats.last.pos.end, cond.pos.start) mkString
+        val whileStart = stats.last.pos.end + src.indexOf("while")
+        t.pos withStart whileStart withEnd (whileStart + "while".length)
+        
+      case t: SelectFromTypeTree =>
+        t.pos withStart t.pos.point
         
       case _ => throw new Exception("uhoh")
+    }) match {
+      case NoPosition => NoPosition
+      case p =>
+        // set all points to the start, keeping wrong points
+        // around leads to the calculation of wrong lines
+        if(p.isTransparent)
+          p withPoint p.start makeTransparent
+        else
+          p withPoint p.start
     }
   }
   

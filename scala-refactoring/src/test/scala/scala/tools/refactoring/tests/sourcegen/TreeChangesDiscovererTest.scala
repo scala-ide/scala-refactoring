@@ -15,28 +15,27 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.io.AbstractFile
 
 @Test
-class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with AstTransformations with ConsoleTracing {
+class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with ConsoleTracing {
   
-  def treeForFile(file: AbstractFile) = {
+  override def treeForFile(file: AbstractFile) = {
     global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
   }
   
   import global._
-  import Transformations._
   
-  val reverseBody = Transformations.transform[Tree, Tree] {
+  val reverseBody = transform {
     case t: Template => t.copy(body = t.body.reverse) setPos t.pos
   }
   
-  val doubleAllDefNames = Transformations.transform[Tree, Tree] {
+  val doubleAllDefNames = transform {
     case t: DefDef => t.copy(name = t.name.toString + t.name.toString) setPos t.pos
   }
   
-  val incrementIntegers = Transformations.transform[Tree, Tree] {
+  val incrementIntegers = transform {
     case t @ Literal(c) if c.tag == IntTag => Literal(Constant(c.intValue + 1)) setPos t.pos
   }
   
-  val wrapDefRhsInBlock = Transformations.transform[Tree, Tree] {
+  val wrapDefRhsInBlock = transform {
     case t @ DefDef(_, _, _, _, _, _: Block) => t
     case t @ DefDef(_, _, _, _, _, rhs) => t copy (rhs = new Block(Nil, rhs)) setPos t.pos
   }
@@ -54,7 +53,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findChangedName1() {
-    assertEquals("DefDef(4): DefDef(4), NameTree(4)", transformAndFind(↓(⊆(doubleAllDefNames)), 
+    assertEquals("DefDef(4): DefDef(4), NameTree(4)", transformAndFind(↓(matchingChildren(doubleAllDefNames)), 
     """package findtest1
 
      class Test {
@@ -66,7 +65,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findChangedName2() {
-    assertEquals("DefDef(5): NameTree(6), Block(5), DefDef(6), DefDef(5), NameTree(5)", transformAndFind(↓(⊆(doubleAllDefNames)), 
+    assertEquals("DefDef(5): NameTree(6), Block(5), DefDef(6), DefDef(5), NameTree(5)", transformAndFind(↓(matchingChildren(doubleAllDefNames)), 
     """package findtest2
 
      object A {
@@ -81,7 +80,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findChangedName3() {
-    assertEquals("DefDef(4): DefDef(4), NameTree(4) | DefDef(5): DefDef(5), NameTree(5) | DefDef(6): DefDef(6), NameTree(6)", transformAndFind(↓(⊆(doubleAllDefNames)), 
+    assertEquals("DefDef(4): DefDef(4), NameTree(4) | DefDef(5): DefDef(5), NameTree(5) | DefDef(6): DefDef(6), NameTree(6)", transformAndFind(↓(matchingChildren(doubleAllDefNames)), 
     """package findtest1
 
      class Test {
@@ -94,7 +93,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findReversedBody() {
-    assertEquals("Template(3): Template(3)", transformAndFind(↓(⊆(reverseBody)), 
+    assertEquals("Template(3): Template(3)", transformAndFind(↓(matchingChildren(reverseBody)), 
     """package findtest3
 
      class Test {
@@ -106,7 +105,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findReversedBodyAndIncrement() {
-    assertEquals("Template(3): DefDef(4), Literal(5), Template(3), ValDef(5), Literal(4)", transformAndFind(↓(⊆(reverseBody |> incrementIntegers)), 
+    assertEquals("Template(3): DefDef(4), Literal(5), Template(3), ValDef(5), Literal(4)", transformAndFind(↓(matchingChildren(reverseBody |> incrementIntegers)), 
     """package findtest3
 
      class Test {
@@ -118,7 +117,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findIncrementedInts() {
-    assertEquals("Literal(3): Literal(3) | Literal(4): Literal(4) | Literal(4): Literal(4) | Literal(4): Literal(4)", transformAndFind(↓(⊆(incrementIntegers)), 
+    assertEquals("Literal(3): Literal(3) | Literal(4): Literal(4) | Literal(4): Literal(4) | Literal(4): Literal(4)", transformAndFind(↓(matchingChildren(incrementIntegers)), 
     """
      class Test {
        def test = 42
@@ -129,7 +128,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findAddedBlock() {
-    assertEquals("DefDef(3): DefDef(3), Block", transformAndFind(↓(⊆(wrapDefRhsInBlock)), 
+    assertEquals("DefDef(3): DefDef(3), Block", transformAndFind(↓(matchingChildren(wrapDefRhsInBlock)), 
     """
      class Test {
        def test = 42
@@ -140,7 +139,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   @Test
   def findNestedChanges() {
     assertEquals("DefDef(3): Function(5), Apply(5), Block(3), DefDef(3), Template(4), Literal(5), ApplyToImplicitArgs(5), NameTree(3), ModuleDef(4)", 
-      transformAndFind(↓(⊆(doubleAllDefNames |> incrementIntegers)), 
+      transformAndFind(↓(matchingChildren(doubleAllDefNames |> incrementIntegers)), 
     """
      class Test {
        def method(a: List[Int]) {

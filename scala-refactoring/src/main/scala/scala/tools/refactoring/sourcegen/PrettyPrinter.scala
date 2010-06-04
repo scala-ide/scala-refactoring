@@ -5,30 +5,47 @@ import tools.nsc.symtab.{Flags, Names, Symbols}
 
 trait PrettyPrinter extends AbstractPrinter {
   
-  this: common.PimpedTrees with common.Tracing =>
+  this: common.PimpedTrees with common.Tracing with Indentations =>
   
   import global._
   
-  import Transformations._
-
-  def print(t: Tree, ind: Indentation): Fragment = context("pretty print tree"+ t.getClass.getSimpleName) { 
-       
-    trace("current indentation set to %s", ind.current)
+  def print(t: Tree, ind: Indentation): Fragment = context("pretty print tree "+ t.getClass.getSimpleName) { 
     
-    def prnt(tree: Tree, indent: Boolean = false, before: Requisite = NoRequisite, after: Requisite = NoRequisite): Fragment = {
-
-      printSingleTree(t, tree, if(indent) ind.incrementDefault else ind, indent, before, after)
+    object PrintOverloads {
+      
+      def p(tree: Tree, before: Requisite, after: Requisite): Fragment =
+        printSingleTree(t, tree, ind, false, before, after)
+      
+      def p(tree: Tree, before: Requisite): Fragment =
+        printSingleTree(t, tree, ind, false, before, NoRequisite)
+      
+      def p(tree: Tree): Fragment =
+        printSingleTree(t, tree, ind, false, NoRequisite, NoRequisite)
+        
+      def p(ts: List[Tree], separator: Requisite): Fragment =
+        printManyTrees(t, ts, ind, false, separator, NoRequisite, NoRequisite)
+        
+      def p(ts: List[Tree]): Fragment =
+        printManyTrees(t, ts, ind, false, NoRequisite, NoRequisite, NoRequisite)
+      
+      def p(ts: List[Tree], separator: Requisite, before: Requisite, after: Requisite): Fragment =    
+        printManyTrees(t, ts, ind, false, separator, before, after)
+      
+      def printIndented(tree: Tree, before: Requisite, after: Requisite) =
+        printSingleTree(t, tree, ind.incrementDefault, true, before, after)
+        
+      def printIndented(ts: List[Tree], before: Requisite, separator: Requisite, after: Requisite) =
+        printManyTrees(t, ts, ind.incrementDefault, true, separator = separator, before = before, after = after)
     }
     
-    def prntMany(ts: List[Tree], separator: Requisite = NoRequisite, indent: Boolean = false, before: Requisite = NoRequisite, after: Requisite = NoRequisite): Fragment = {      
-
-      printManyTrees(t, ts, if(indent) ind.incrementDefault else ind, indent, separator, before, after)
-    }
-  
+    import PrintOverloads._
+    
     implicit def stringToRequisite(regex: String) = Requisite.allowSurroundingWhitespace(regex)
     
     def newline = Requisite.newline(ind.current)
     def indentedNewline = Requisite.newline(ind.incrementDefault.current)
+    
+    trace("current indentation set to %s", ind.current)
     
     val code: Fragment = t match {
     
@@ -36,13 +53,10 @@ trait PrettyPrinter extends AbstractPrinter {
         EmptyFragment
           
       case PackageDef(pid, stats) if pid.name.toString == "<empty>" =>
-        prntMany(stats, separator = newline)
+        p(stats, separator = newline)
         
       case PackageDef(pid, stats) =>
-        val _1 = prnt(pid, before = "package ", after = newline)
-        val _2 = prntMany(stats, separator = newline)
-        val r = _1 ++ _2
-        r
+        p(pid, before = "package ", after = newline) ++ p(stats, separator = newline)
       
       case ClassDef(m @ ModifierTree(mods), name, tparams, impl) =>
         //mods.annotations map traverse
@@ -51,23 +65,27 @@ trait PrettyPrinter extends AbstractPrinter {
         Fragment(mods_ + (if(m.isTrait)
           "" // "trait" is a modifier
         else
-          "class ") + name) ++ prntMany(tparams, before = "\\[", separator = ", ", after = "\\]") ++ prnt(impl)
+          "class ") + name) ++ p(tparams, before = "\\[", separator = ", ", after = "\\]") ++ p(impl)
         
       case ModuleDef(ModifierTree(mods), name, impl) =>
 //        mods.annotations map traverse
         val mods_ = mods map (m => m.nameString + " ") mkString ""
-        Fragment(mods_ + "object " + name) ++ prnt(impl)
+        Fragment(mods_ + "object " + name) ++ p(impl)
         
       case t @ ValDef(m @ ModifierTree(mods), name, tpt, rhs)  =>
         //mods.annotations map traverse
         var mods_ = mods map (m => m.nameString + " ") mkString ""
         
-        if(t.needsKeyword && !mods_.contains("val")) {
+        if(!t.symbol.isMutable && t.needsKeyword && !mods_.contains("val")) {
           mods_ = mods_ + "val "
         }
+        
+        val valName = if(t.symbol.isThisSym && name.toString == "_") { // this: ... =>
+          "this"
+        } else name.toString.trim
                 
-        val r = prnt(rhs, before = " = ")
-        val x = Fragment(mods_ + name.toString.trim) ++ prnt(tpt, before = ": ") ++ r
+        val r = p(rhs, before = " = ")
+        val x = Fragment(mods_ + valName) ++ p(tpt, before = ": ") ++ r
         x
         
       case t @ DefDef(ModifierTree(mods), name, tparams, vparamss, tpt, _) =>
@@ -78,29 +96,37 @@ trait PrettyPrinter extends AbstractPrinter {
           mods_ = mods_ + "val "
         }
         
-        val tparams_ = prntMany(tparams, before = "\\[", after = "\\]", separator = ", ")
-        val params = vparamss map (p => prntMany(p, before = "\\(", after = "\\)", separator = ", ")) mkString ""
+        val tparams_ = p(tparams, before = "\\[", after = "\\]", separator = ", ")
+        val params = Layout(vparamss map (vparams => p(vparams, before = "\\(", after = "\\)", separator = ", ")) mkString "")
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
           Fragment(" {\n"+ ind.current +"}")
         } else {
-          prnt(t.rhs, before = " = ")
+          p(t.rhs, before = " = ")
         }
         
-        Fragment(mods_ + t.nameString) ++ tparams_ ++ params ++ prnt(tpt, before = ": ") ++ rhs
+        Fragment(mods_ + t.nameString) ++ tparams_ ++ params ++ p(tpt, before = ": ") ++ rhs
+        
+      case t @ TypeDef(ModifierTree(Nil), _, Nil, EmptyTree) if t.symbol.isSynthetic =>
+        Fragment("[_]")
         
       case TypeDef(ModifierTree(mods), name, tparams, rhs) =>
         //mods.annotations map traverse
         val mods_ = mods map (m => m.nameString + " ") mkString ""
-        val tparams_ = prntMany(tparams, before = "\\[", after = "\\]", separator = ", ")
+        val tparams_ = p(tparams, before = "\\[", after = "\\]", separator = ", ")
         val rhs_ = rhs match {
-          case rhs: TypeTree if rhs.original.isInstanceOf[TypeBoundsTree] => prnt(rhs, before = " ")
-          case _ => prnt(rhs, before = " = ")
+          case rhs: TypeTree if rhs.original.isInstanceOf[TypeBoundsTree] => p(rhs, before = " ")
+          case _ => p(rhs, before = " = ")
         }
-        Fragment(mods_ + name) ++ tparams_ ++ rhs_
+        Fragment(mods_ + t.nameString) ++ tparams_ ++ rhs_
         
-  //    case LabelDef(name, params, rhs) =>
-  //      params map traverse
-  //      traverse(rhs)
+      case label @ LabelDef(_, _, Block(stats, If(cond, _, _))) =>
+        Layout("do ") ++ p(stats) ++ Fragment(" while") ++ Layout("(") ++ p(cond) ++ Layout(")")
+        
+      case label @ LabelDef(name, params, If(cond, Block((body: Block) :: Nil, _), _)) =>
+        Fragment(label.nameString) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ p(body)
+        
+      case label @ LabelDef(name, params, If(cond, then, _)) =>
+        Fragment(label.nameString) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ p(then)
         
       case Import(expr, selectors) =>
         
@@ -114,131 +140,140 @@ trait PrettyPrinter extends AbstractPrinter {
             s.name.toString
         } mkString ", ")
         
-        Layout("import ") ++ prnt(expr) ++ "." ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
+        Layout("import ") ++ p(expr) ++ "." ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
         
-      case TemplateExtractor(params, earlyBody, parents, self, body) =>
+      case tpl @ TemplateExtractor(params, earlyBody, parents, self, body) =>
                 
         val R = Requisite.allowSurroundingWhitespace _
         
         val sup = if(earlyBody.isEmpty) {
           parents match {
             case Nil => EmptyFragment
-            case superclass :: traits => 
-              prnt(superclass, before = " extends ") ++ prntMany(traits, before = " with ", separator = " with ")
+            case parent :: traits => 
+              val superclass = {
+                if(tpl.symbol == NoSymbol)
+                  p(parent)
+                else
+                  p(parent, before = " extends ")
+              }
+              superclass ++ p(traits, before = " with ", separator = " with ", after = NoRequisite)
           }
         } else {
-          prntMany(earlyBody, indent = true, before = R(" extends \\{") ++ 
+          printIndented(earlyBody, before = R(" extends \\{") ++ 
               indentedNewline, after = newline ++ "\\}", separator = indentedNewline) ++
-              prntMany(parents, before = " with ", separator = " with ")
+              p(parents, before = " with ", separator = " with ", after = NoRequisite)
         }
         
         val self_ = (self, body) match {
           case (EmptyTree, body) => 
-            prntMany(body, indent = true, before = R(" \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+            printIndented(body, before = R(" \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
           case (self, Nil) => 
-            prnt(self, indent = true, before = R(" \\{") ++ indentedNewline, after = R(" =>") ++ newline ++ "\\}")
+            printIndented(self, before = R(" \\{") ++ indentedNewline, after = R(" =>") ++ newline ++ "\\}")
           case (self, body) => 
-            prnt(self, indent = true, before = R(" \\{") ++ indentedNewline, after = " =>") ++ 
-            prntMany(body, indent = true, before = indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+            printIndented(self, before = R(" \\{") ++ indentedNewline, after = " =>") ++ 
+            printIndented(body, before = indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
         }
         
                 
-        val x = prntMany(params, before = "\\(", separator = ", ", after = "\\)")
+        val x = p(params, before = "\\(", separator = ", ", after = "\\)")
         x ++ sup ++ self_
 
       case BlockExtractor(stats) =>
         // pretty printing always creates braces around the block statements, even if there is only one
-        prntMany(stats, indent = true, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ ( "\\}"))
+        printIndented(stats, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ ( "\\}"))
         
       case CaseDef(pat, guard, body) =>
-        Layout("case ") ++ prnt(pat) ++ prnt(guard, before = " if ") ++ prnt(body, before = " => ")
+        Layout("case ") ++ p(pat) ++ p(guard, before = " if ") ++ p(body, before = " => ")
         
       case Alternative(trees) =>
-        prntMany(trees, separator = " | ")
+        p(trees, separator = " | ")
         
       case Star(elem) =>
-        prnt(elem) ++ Layout("*")
+        p(elem) ++ Layout("*")
         
       case Bind(name, body: Typed) =>
-        Fragment(name.toString) ++ prnt(body, before = ": ")
+        Layout(name.toString) ++ p(body, before = ": ")
         
       case Bind(name, body: Bind) =>
-        Fragment(name.toString) ++ prnt(body, before = " @ \\(", after = "\\)")
+        Layout(name.toString) ++ p(body, before = " @ \\(", after = "\\)")
         
       case Bind(name, body) =>
-        Fragment(name.toString) ++ prnt(body, before = " @ ")
+        Layout(name.toString) ++ p(body, before = " @ ")
         
       case UnApply(fun, args) =>
-        prnt(fun) ++ prntMany(args, before = "\\(", separator = ", ", after = "\\)")
+        p(fun) ++ p(args, before = "\\(", separator = ", ", after = "\\)")
         
   //    case ArrayValue(elemtpt, trees) =>
   //      traverse(elemtpt)
   //      trees map traverse
         
       case Function(vparams, body) =>
-        prntMany(vparams, before = "\\(", separator = ", ", after = "\\) => ") ++ prnt(body)
+        p(vparams, before = "\\(", separator = ", ", after = "\\) => ") ++ p(body)
         
       case Assign(lhs, rhs) =>
-        prnt(lhs) ++ " = " ++ prnt(rhs)
+        p(lhs) ++ " = " ++ p(rhs)
         
       case If(cond, thenp, elsep) =>
-        prnt(cond, before = "if \\(", after = "\\)") ++ 
-        prnt(thenp, indent = true, before = " ") ++ 
+        p(cond, before = "if \\(", after = "\\)") ++ 
+        printIndented(thenp, before = " ", after = NoRequisite) ++ 
         printSingleTree(t, elsep, ind, indent = true, before = " else ", after = NoRequisite)
         
       case Match(selector, cases) =>
-        prnt(selector, after = " match ") ++ prntMany(cases, indent = true, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+        p(selector, before = NoRequisite, after = " match ") ++ printIndented(cases, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
       
       case Return(expr) =>
-        Layout("return ") ++ prnt(expr)
+        Layout("return ") ++ p(expr)
         
       case Try(block, catches, finalizer) =>        
         
         val _block = if(block.isInstanceOf[Block]) {
-          prnt(block, before = Requisite.allowSurroundingWhitespace("try "))
+          p(block, before = Requisite.allowSurroundingWhitespace("try "))
         } else {
-          prnt(block, indent = true, before = Requisite.allowSurroundingWhitespace("try \\{") ++ indentedNewline, after = newline ++ "\\}")
+          printIndented(block,before = Requisite.allowSurroundingWhitespace("try \\{") ++ indentedNewline, after = newline ++ "\\}")
         }
         
-        val _catches = prntMany(catches, indent = true, before = Requisite.allowSurroundingWhitespace(" catch \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+        val _catches = printIndented(catches, before = Requisite.allowSurroundingWhitespace(" catch \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
         
         val _finalizer = finalizer match {
           case EmptyTree => EmptyFragment
-          case block: Block => prnt(block, before = Requisite.allowSurroundingWhitespace(" finally "))
+          case block: Block => p(block, before = Requisite.allowSurroundingWhitespace(" finally "))
           case _ => 
-            prnt(finalizer, indent = true, before = Requisite.allowSurroundingWhitespace(" finally \\{") ++ indentedNewline, after = newline ++ "\\}")
+            printIndented(finalizer, before = Requisite.allowSurroundingWhitespace(" finally \\{") ++ indentedNewline, after = newline ++ "\\}")
         }
         
         _block ++ _catches ++ _finalizer
 //XXX create a "printBlock"
         
-  //    case Throw(expr) =>
-  //      traverse(expr)
+      case Throw(expr) =>
+        Layout("throw ") ++ p(expr)
         
       case New(tpt) =>
-        Layout("new ") ++ prnt(tpt)
+        Layout("new ") ++ p(tpt)
         
       case Typed(expr, tpt) =>
-        prnt(expr) ++ prnt(tpt)
+        p(expr) ++ p(tpt)
         
       case TypeApply(Select(Select(ths: This, selector), _), _) => 
         Fragment(selector.toString)
         
       case TypeApply(fun, args) =>
-        prnt(fun) ++ prntMany(args)
+        p(fun) ++ p(args)
         
       case Apply(fun, args @ (Function(_, _: Match) :: _)) =>
-        prnt(fun) ++ prntMany(args, before = " ")
+        p(fun) ++ p(args, before = " ", separator = NoRequisite, after = NoRequisite)
+        
+      case t @ Apply(fun: Select, args @ ((arg1: Apply) :: _)) if fun.name.toString endsWith "_$eq" =>
+        p(fun) ++ " = " ++ p(args)
         
       case Apply(fun: Select, arg :: Nil) if fun.name.toString endsWith "_$eq" =>
-        prnt(fun) ++ " = " ++ prnt(arg)
+        p(fun) ++ " = " ++ p(arg)
         
       case Apply(fun: Select, args) if fun.name.toString endsWith "_$eq" =>
-        prnt(fun) ++ " = " ++ prntMany(args, before = "\\(", after = "\\)", separator = ", ")
+        p(fun) ++ " = " ++ p(args, before = "\\(", after = "\\)", separator = ", ")
         
       case Apply(fun, args) =>
-        val _1 = prnt(fun)
-        val _2 = prntMany(args, before = "\\(", after = "\\)", separator = ", ")
+        val _1 = p(fun)
+        val _2 = p(args, before = "\\(", after = "\\)", separator = ", ")
         val _3 = _1 ++ _2
         _3
         
@@ -258,10 +293,10 @@ trait PrettyPrinter extends AbstractPrinter {
         Fragment(t.symbol.nameString)
         
       case t @ Select(qualifier, selector) if (selector.toString == "unapply" || selector.toString == "unapplySeq") =>
-        prnt(qualifier)
+        p(qualifier)
         
       case t @ Select(qualifier, selector) =>
-        prnt(qualifier, after = ".") ++ Fragment(t.nameString)
+        p(qualifier, before = NoRequisite, after = ".") ++ Fragment(t.nameString)
         
       case t: Ident =>
         if (t.symbol.isSynthetic && t.name.toString.contains("$"))
@@ -269,14 +304,21 @@ trait PrettyPrinter extends AbstractPrinter {
         else  
           Fragment(t.name.toString)
         
+      case lit: Literal if lit.value.tag == StringTag =>
+        Fragment("\""+ lit.value.stringValue +"\"")
+          
       case lit: Literal =>
-        Fragment(lit.toString)
+        Fragment(lit.value.stringValue)
         
       case tree: TypeTree =>
         
         Fragment(tree.tpe match {
           case tpe if tpe == EmptyTree.tpe => ""
           case tpe: ConstantType => tpe.underlying.toString
+          case tpe: TypeRef if tree.original != null && tpe.sym.nameString.matches("Tuple\\d+") => 
+            tpe.toString
+          case tpe if tree.original != null && !tpe.isInstanceOf[TypeRef]=> 
+            p(tree.original).asText
           case r @ RefinedType(_ :: parents, _) =>
             parents map {
               case NamedType(name, _)      => name.toString
@@ -284,48 +326,42 @@ trait PrettyPrinter extends AbstractPrinter {
               case RefinedType(parents, _) => parents mkString " with "
               case t => throw new Exception("Unhandled type "+ t.getClass.getSimpleName)
             } mkString
-          case tpe: TypeRef if tree.original != null && tpe.sym.nameString.matches("Tuple\\d+") => 
-            val n = tpe.sym.nameString
-            tpe.toString
           case tpe: TypeRef =>
             tpe.toString
-          case _ if tree.original != null => 
-            prnt(tree.original).asText
           case tpe => 
             tpe.toString
         })
         
-  //    case SingletonTypeTree(ref) =>
-  //      traverse(ref)
-  //      
+      case SingletonTypeTree(ref) =>
+        p(ref) ++ Layout(".type")
+        
   //    case SelectFromTypeTree(qualifier, selector) =>
   //      traverse(qualifier)
-  //      
-  //    case CompoundTypeTree(templ) =>
-  //      traverse(templ)
+        
+      case CompoundTypeTree(templ) =>
+        p(templ)
         
       case AppliedTypeTree(tpt, args) =>
-        prnt(tpt) ++ prntMany(args, before = "\\[", separator = ", ", after = "\\]")
+        p(tpt) ++ p(args, before = "\\[", separator = ", ", after = "\\]")
         
       case TypeBoundsTree(lo, hi) =>
-        prnt(lo, before = ">: ", after = " ") ++ prnt(hi, before = "<: ")
+        p(lo, before = ">: ", after = " ") ++ p(hi, before = "<: ")
         
-  //    case ExistentialTypeTree(tpt, whereClauses) =>
-  //      traverse(tpt)
-  //      whereClauses map traverse
-  //      
-  //    case SelectFromArray(qualifier, selector, erasure) =>
-  //      traverse(qualifier)
+      case ExistentialTypeTree(tpt, (t: TypeDef) :: Nil) if t.symbol.isSynthetic => // [_]
+        p(tpt) ++ p(t)
+        
+      case ExistentialTypeTree(tpt, whereClauses) =>
+        p(tpt) ++ p(whereClauses, before = " forSome \\{", separator = NoRequisite, after = "\\}")
       
       case t: ModifierTree =>
         Fragment(t.nameString)
         
       case SuperConstructorCall(clazz, args) =>
-        prnt(clazz) ++ prntMany(args, before = "\\(", separator = ", ", after = "\\)")
+        p(clazz) ++ p(args, before = "\\(", separator = ", ", after = "\\)")
         
       case t: Tree => 
         Fragment("«?"+ t.getClass.getSimpleName +"?»")
-    } 
+    }
     
     trace("results in %s", code.asText)
     Fragment(code.asText)

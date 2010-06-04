@@ -123,9 +123,13 @@ trait CustomTrees {
    * in the same order they appear in the source code.
    * */
   object BlockExtractor {
-    def unapply(t: Block) = Some((if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
+    def unapply(t: Block) = Some(removeCompilerTreesForMultipleAssignment(if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
       t.expr :: t.stats
     else
       t.stats ::: t.expr :: Nil) filter keepTree) 
   }
+  
+  case class MultipleAssignment(names: List[ValDef], rhs: Tree) extends global.Tree
+  
+  def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree]
 }

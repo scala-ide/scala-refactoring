@@ -3,41 +3,37 @@ package sourcegen
 
 trait ReusingPrinter extends AbstractPrinter {
 
-  this: LayoutHelper with common.Tracing with common.PimpedTrees =>
+  this: LayoutHelper with common.Tracing with common.PimpedTrees with Indentations =>
   
   import global._
   
-  def print(t: Tree, ind: Indentation): Fragment = context("Reuse "+ t.getClass.getSimpleName) { 
-        
+  def print(t: Tree, ind: Indentation): Fragment = context("Printing by reusing: "+ t.getClass.getSimpleName) { 
+    
+    val originalIndentation = indentation(t)
+
     val (leadingParent, leadingChild, trailingChild, trailingParent) = surroundingLayout(t)
-    val allLayout = leadingParent.asText + leadingChild.asText + trailingChild.asText + trailingParent
+
+    val printedFragment = printWithExistingLayout(t, ind.setTo(originalIndentation), leadingChild, trailingChild) 
     
-    val thisIndentation = indentation(t)
+    val indentedFragment = {
+      if(ind.needsToBeFixed(originalIndentation, leadingParent, leadingChild, trailingChild, trailingParent)) {
+        val indentedLeadingLayout = ind.fixIndentation(leadingParent.asText, originalIndentation)
+        val indentedCode = ind.fixIndentation(printedFragment.asText, originalIndentation)
+        Fragment(indentedLeadingLayout, indentedCode, trailingParent)
+      } else 
+        Fragment(leadingParent, printedFragment toLayout, trailingParent)    
+    } \\ (trace("Result "+ t.getClass.getSimpleName +": %s", _))
     
-    val (leading: Layout, center: Fragment) = printWithExistingLayout(t, ind.setTo(thisIndentation), leadingChild, trailingChild) match {
-      case c if ind.current != thisIndentation && allLayout.contains("\n") => 
-        Layout(fixIndentation(leadingParent.asText, t, thisIndentation, ind.current)) →
-        Fragment(fixIndentation(c.asText, t, thisIndentation, ind.current))
-      case c => leadingParent → c
-    }
-    
-    Fragment(leading, center toLayout, trailingParent) \\ (r => trace("result "+ t.getClass.getSimpleName +": %s", r.toString))
+    indentedFragment
   }
   
-  private def fixIndentation(code: String, t: Tree, currentIndentation: String, desiredIndentation: String) = {
-    trace("code is %s", code)
-    trace("desired indentation is %s", desiredIndentation)
-    trace("current indentation is %s", currentIndentation)
-    code.replace("\n"+ currentIndentation, "\n"+ desiredIndentation)
-  }
-
   private def printWithExistingLayout(t: Tree, ind: Indentation, l: Layout, r: Layout): Fragment = {
         
-    //it seems that default arguments here crash the incremental compiler, which is a real PITA, so we don't use them.
+    //it seems that default arguments here crash the incremental compiler, so we don't use them.
     object PrintOverloads {
       
       def p(tree: Tree): Fragment = 
-        printSingleTree(t, tree, ind, indent = false, NoRequisite, NoRequisite)
+        printSingleTree(t, tree, ind, false, NoRequisite, NoRequisite)
       def p(ts: List[Tree]): Fragment = 
         printManyTrees(t, ts, ind, false, NoRequisite, NoRequisite, NoRequisite)
         
@@ -56,16 +52,15 @@ trait ReusingPrinter extends AbstractPrinter {
     }
     
     import PrintOverloads._
-    
-    val newline = "\n"+ ind.current
-     
+         
     val originalTree = findOriginalTree(t) getOrElse {
-      throw new Exception("original tree not found for: "+ t)
+      trace("Original tree not found for %s, returning EmptyFragment.", t)
+      return EmptyFragment
     }
     
     implicit def stringToRequisite(regex: String) = Requisite.allowSurroundingWhitespace(regex)
     
-   (t, originalTree) match {
+    (t, originalTree) match {
             
       case (t @ PackageDef(pid, stats), _) =>
         l ++ printIndented(pid :: stats, separator = Requisite.newline(ind.current)) ++ r
@@ -79,19 +74,27 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t @ TemplateExtractor(params, earlyBody, parents, self, Nil), _) =>
         l ++ p(params, separator = ",") ++ p(earlyBody) ++ p(parents) ++ p(self) ++ r
       
-      case (t @ TemplateExtractor(params, earlyBody, parents, self, body), TemplateExtractor(_, _, _, _, origBody)) =>
+      case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, _, origBody)) =>
+        
+        lazy val isExistingBodyAllOnOneLine = {
+          val tplStartLine = o.pos.source.offsetToLine(o.pos.start)
+          val tplEndLine = o.pos.source.offsetToLine(o.pos.end)
+          tplStartLine == tplEndLine
+        }
         
         val preBody = l ++ p(params, separator = ",", before = NoRequisite, after = Requisite.anywhere(")")) ++ p(earlyBody) ++ p(parents) ++ p(self)
         
-        if(origBody.size == 0) {
-          //there might be an empty body present:
-          val trailingLayout = if(r.matches("(?ms).*\\{.*\\}.*"))
-            NoLayout
-          else
-            r
+        if(origBody.isEmpty) {
+          val alreadyHasBodyInTheCode = r.matches("(?ms).*\\{.*\\}.*") 
+          val trailingLayout = if(alreadyHasBodyInTheCode) NoLayout else r
           
-          val x = preBody ++ trailingLayout ++ Requisite.allowSurroundingWhitespace(" \\{"+newline) ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ Requisite.allowSurroundingWhitespace(newline +"\\}")
-          x
+          val openingBrace = " \\{\n"+ ind.current
+          val closingBrace = "\n"+ ind.current +"\\}"
+          val bodyResult = printIndented(body, separator = Requisite.newline(ind.current))
+          
+          preBody ++ trailingLayout ++ openingBrace ++ bodyResult ++ closingBrace
+        } else if (isExistingBodyAllOnOneLine) {
+          preBody ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
         } else {
           preBody ++ Requisite.newline(ind.current) ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
         }
@@ -104,7 +107,7 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t @ ValDef(ModifierTree(mods), newName, tpt, rhs), orig) =>
         l ++ p(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r
 
-      case (BlockExtractor(stats), _) if stats.allOnSameLine => 
+      case (block @ BlockExtractor(stats), _) if stats.size > 1 && stats.allOnSameLine => 
         l ++ p(stats) ++ r
         
       case (BlockExtractor(stats), _) => 
@@ -115,7 +118,12 @@ trait ReusingPrinter extends AbstractPrinter {
           l ++ rest
         
       case (t: TypeTree, _) if t.original == null && !t.pos.isTransparent => 
-        l ++ Fragment(t.toString) ++ r
+        t.tpe match {
+          case ref @ RefinedType(_ :: parents, _) =>  
+            l ++ Fragment(parents mkString " ") ++ r
+          case t => 
+            l ++ Fragment(t.toString) ++ r
+        }
         
       case (t: TypeTree, _) => 
         l ++ p(t.original) ++ r
@@ -130,24 +138,31 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(t.fun) ++ p(t.args) ++ r
         
       case (t @ TypeDef(ModifierTree(mods), name, tparams, rhs), orig) => 
-        l ++ p(mods ::: (NameTree(name) setPos orig.namePosition) :: Nil, separator = Requisite.Blank) ++ p(tparams) ++ p(rhs)  ++ r
+        l ++ p(mods ::: (NameTree(t.nameString) setPos orig.namePosition) :: Nil, separator = Requisite.Blank) ++ p(tparams) ++ p(rhs)  ++ r
         
       case (t: Ident, _) => 
-        l ++ Fragment(t.nameString)  ++ r
+        l ++ Fragment(t.nameString) ++ r
         
-      // XXX List(..) has an invisible immutable.this qualifier
-      case (t @ Select(qualifier: This, selector), _) if /*qualifier.qual.toString == "immutable" &&*/ qualifier.pos == NoPosition => 
-        l ++ Fragment(t.symbol.nameString)  ++ r
+      case (t @ Select(qualifier: This, selector), _) if qualifier.pos == NoPosition => 
+        l ++ Fragment(t.symbol.nameString) ++ r
         
       // skip <init> from constructor calls
       case (t @ Select(qualifier: New, selector), orig) if t.symbol.isConstructor =>
-        l ++ p(qualifier)  ++ r
+        l ++ p(qualifier) ++ r
         
       case (t @ Select(qualifier, selector), _) if t.pos.sameRange(qualifier.pos) 
           && (selector.toString == "unapply" || selector.toString == "apply" || selector.toString == "unapplySeq") =>
         l ++ p(qualifier) ++ r
         
-      case (t @ Select(qualifier, selector), orig) if selector.toString.startsWith("unary_")=>
+      case (t @ Select(qualifier: Apply, selector), orig) if selector.toString.startsWith("unary_") =>
+        val nameOrig = NameTree(t.nameString) setPos orig.namePosition
+        val printedQualifier = p(qualifier)
+        if(printedQualifier.asText.contains(" ")) //XXX better check to see if we need to print parens
+          l ++ p(nameOrig) ++ "\\(" ++ printedQualifier ++ "\\)" ++ r          
+        else
+          l ++ p(nameOrig) ++ printedQualifier ++ r
+        
+      case (t @ Select(qualifier, selector), orig) if selector.toString.startsWith("unary_") =>
         val nameOrig = NameTree(t.nameString) setPos orig.namePosition
         l ++ p(nameOrig) ++ p(qualifier) ++ r
         
@@ -155,30 +170,40 @@ trait ReusingPrinter extends AbstractPrinter {
         val nameOrig = NameTree(t.nameString) setPos orig.namePosition
         l ++ p(qualifier) ++ p(nameOrig)  ++ r
       
-      case (t: Literal, _) =>
-        l ++ Fragment(t.toString)  ++ r
+      case (t: Literal, _) if t.value.tag == StringTag =>
+        l ++ Fragment("\""+ t.value.stringValue +"\"")  ++ r
         
+      case (t: Literal, _) =>
+        l ++ Fragment(t.value.stringValue) ++ r
+        
+      // handle e.g. a += 1 which is a = (a + 1)
+      case (t @ Apply(fun: Select, args @ ((arg1: Apply) :: _)), orig) if t.pos.sameRange(arg1.pos) && arg1.pos.isTransparent && arg1.fun != EmptyTree =>
+        l ++ p(fun) ++ Requisite.Blank ++ Layout(arg1.fun.symbol.nameString +"=") ++ Requisite.Blank ++ p(arg1.args) ++ r
         
       case (t @ Apply(fun, args @ ((_: Bind) :: ( _: Bind) :: _)), _) =>
-        l ++ p(fun) ++ p(args)  ++ r
+        l ++ p(fun) ++ p(args) ++ r
         
       case (t @ Apply(fun: Select, arg :: Nil), _) if 
           (fun.qualifier != EmptyTree && keepTree(fun.qualifier)) /*has receiver*/
            || fun.name.toString.endsWith("$eq") /*assigns*/ =>
         if(r.contains(")")) {
-          l ++ p(fun) ++ "\\(" ++ p(arg)  ++ r
+          l ++ p(fun) ++ "\\(" ++ p(arg) ++ r
         } else {
-          l ++ p(fun) ++ p(arg)  ++ r
+          l ++ p(fun) ++ p(arg) ++ r
         }
         
       case (t @ Apply(fun @ TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil), _) =>
-        l ++ p(fun) ++ p(arg)  ++ r
+        l ++ p(fun) ++ p(arg) ++ r
         
-      case (t @ Apply(fun @ TypeApply(_: Select, _), arg :: Nil), _) if !arg.isInstanceOf[Function] =>
-        l ++ p(fun) ++ p(arg, before = "\\(", after = "\\)")  ++ r
+      case (t @ Apply(fun @ TypeApply(receiver: Select, _), arg :: Nil), _) if !arg.isInstanceOf[Function] =>
+        if(keepTree(receiver.qualifier)) {
+          l ++ p(fun) ++ p(arg) ++ r
+        } else {
+          l ++ p(fun) ++ p(arg, before = "\\(", after = "\\)") ++ r
+        }
         
       case (t @ Apply(fun, arg :: Nil), _) if !keepTree(fun) =>
-        l ++ p(arg)  ++ r
+        l ++ p(arg) ++ r
         
       case (t @ Apply(EmptyTree, args), _) =>
         l ++ p(args, separator = ",", before = "\\(", after = "\\)")  ++ r 
@@ -186,22 +211,23 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t @ Apply(fun, args), _) =>
         l ++ p(fun) ++ p(args, separator = ",", before = "\\(", after = "\\)")  ++ r
         
+      case (t @ Import(expr, _), _) if t.Selectors().size > 1 =>
+        l ++ p(expr) ++ "\\{" ++ p(t.Selectors(), separator = ", ") ++ "\\}" ++ r
+        
       case (t @ Import(expr, _), _) =>
-        val ts = t.Selectors()
-        if(ts.size > 1) {
-          l ++ p(expr) ++ "\\{" ++ p(ts, separator = ", ") ++ "\\}" ++ r
-        } else {
-          l ++ p(expr) ++ p(ts, separator = ", ")  ++ r
-        }
+        l ++ p(expr) ++ p(t.Selectors(), separator = ", ") ++ r
         
       case (t @ ImportSelectorTree(name, rename), _) =>
-        l ++ p(name) ++ p(rename)  ++ r
+        l ++ p(name) ++ p(rename) ++ r
         
+      case (MultipleAssignment(values, rhs), _) =>
+        l ++ p(values, separator = ",") ++ "\\)" ++ p(rhs) ++ r  
+        
+      case (t: NameTree, _) if t.pos.isTransparent =>
+        l ++ EmptyFragment ++ r
+          
       case (t: NameTree, _) =>
-        if(t.pos.isTransparent) 
-          l ++ EmptyFragment ++ r
-        else 
-          l ++ Fragment(t.nameString)  ++ r
+        l ++ Fragment(t.nameString) ++ r
         
       case (t @ SuperConstructorCall(clazz, args), _) =>
         l ++ p(clazz) ++ p(args, separator = ",", before = "\\(", after = "\\)") ++ r
@@ -243,11 +269,11 @@ trait ReusingPrinter extends AbstractPrinter {
       case (TypeBoundsTree(lo, hi), _) =>
         l ++ p(lo) ++ p(hi) ++ r
         
+      case (t @ New(tpt), _) if t.pos.start > t.pos.point =>
+        l ++ p(tpt) ++ r
+          
       case (t @ New(tpt), _) =>
-        if(t.pos.start > t.pos.point)
-          l ++ p(tpt) ++ r
-        else
-          l ++ Fragment("new") ++ p(tpt) ++ r
+        l ++ Fragment("new") ++ p(tpt) ++ r
           
       case (Match(selector, cases), _) =>
         l ++ p(selector) ++ p(cases) ++ r
@@ -275,6 +301,9 @@ trait ReusingPrinter extends AbstractPrinter {
       case (Star(elem), _) =>
         l ++ p(elem) ++ r
         
+      case (Assign(lhs, rhs), _) =>
+        l ++ p(lhs, after = "=", before = NoRequisite) ++ p(rhs) ++ r
+        
       case (Super(qual, mix), _) =>
         val q = if(qual.toString == "") "" else qual +"."
         val m = if(mix.toString == "") "" else "["+ mix + "]"
@@ -282,7 +311,34 @@ trait ReusingPrinter extends AbstractPrinter {
    
       case (Try(block, catches, finalizer), _) =>
         l ++ p(block) ++ p(catches) ++ p(finalizer) ++ r
+        
+      case (Throw(expr), _) =>
+        l ++ p(expr) ++ r
+        
+      case (label @ LabelDef(_, _, Block(stats, If(cond, _, _))), orig) =>
+        val labelName = (NameTree(label.nameString) setPos orig.namePosition)
+        l ++ p(stats) ++ p(labelName) ++ Layout("(") ++ p(cond) ++ r
+        
+      case (label @ LabelDef(_, _, If(cond, Block((body: Block) :: Nil, _), _)), orig) =>
+        val labelName = (NameTree(label.nameString) setPos orig.namePosition)
+        l ++ p(labelName) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ p(body) ++ r
+        
+      case (label @ LabelDef(_, _, If(cond, then, _)), orig) =>
+        val labelName = (NameTree(label.nameString) setPos orig.namePosition)
+        l ++ p(labelName) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ printIndented(then, before = NoRequisite, after = NoRequisite) ++ r
  
+      case (ExistentialTypeTree(tpt, whereClauses), _) =>
+        l ++ p(tpt) ++ p(whereClauses) ++r
+        
+      case (t @ SelectFromTypeTree(qualifier, _), orig) =>
+        l ++ p(qualifier) ++ p(NameTree(t.nameString) setPos orig.namePosition) ++ r
+        
+      case (SingletonTypeTree(ref), _) =>
+        l ++ p(ref) ++ r
+        
+      case (CompoundTypeTree(templ), _) =>
+        l ++ p(templ) ++ r
+       
       case (t, _) => 
         println("printWithExistingLayout: "+ t.getClass.getSimpleName)
         l ++ Fragment("ø") ++ r

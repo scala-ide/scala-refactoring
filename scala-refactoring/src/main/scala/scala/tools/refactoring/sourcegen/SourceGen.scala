@@ -1,16 +1,16 @@
 package scala.tools.refactoring
 package sourcegen
 
-import common.{PimpedTrees, Tracing}
+import common.{PimpedTrees, Tracing, Change}
 
-trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting  with TreeChangesDiscoverer {
+trait SourceGen extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting  with TreeChangesDiscoverer {
   
   this: Tracing =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
   
-  def createChanges(ts: List[Tree]) = context("Create changes") {
+  def createChanges(ts: List[Tree]): Iterable[Change] = context("Create changes") {
     
     val changesByFile = ts groupBy (_.pos.source)
         
@@ -28,20 +28,20 @@ trait SourceGen extends PrettyPrinter with ReusingPrinter with PimpedTrees with 
       case (source, tree, changes) =>
         val f = generate(tree) 
         trace("Change: %s", f.center.asText)
-        common.Change(source.file, tree.pos.start, tree.pos.end, f.center.asText)
+        Change(source.file, tree.pos.start, tree.pos.end, f.center.asText)
     }
   }
   
-  override def print(t: Tree, ind: Indentation): Fragment = {
+  override def print(t: Tree, i: Indentation): Fragment = {
     if(t.hasExistingCode)
-      super[ReusingPrinter].print(t, ind)
+      super[ReusingPrinter].print(t, i)
     else if(t.hasNoCode)
-      super[PrettyPrinter].print(t, ind)
+      super[PrettyPrinter].print(t, i)
     else
       EmptyFragment
   }
   
-  def generate(tree: Tree): Fragment = {
+  private[refactoring] def generate(tree: Tree): Fragment = {
 
     val initialIndentation = if(tree.hasExistingCode) indentation(tree) else ""
     val in = new Indentation(defaultIndentationStep, initialIndentation)

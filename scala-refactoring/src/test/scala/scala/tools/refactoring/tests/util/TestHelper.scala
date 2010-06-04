@@ -6,6 +6,7 @@
 package scala.tools.refactoring.tests.util
 
 import scala.tools.nsc.util.BatchSourceFile
+import scala.tools.nsc.io.AbstractFile
 import org.junit.Assert._
 
 import scala.tools.refactoring._
@@ -14,7 +15,11 @@ import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.util.CompilerProvider
 
-trait TestHelper extends CompilerProvider with Transformation with SilentTracing with Selections {
+trait TestHelper extends CompilerProvider with Transformation with SilentTracing with Selections with PimpedTrees {
+  
+  def treeForFile(file: AbstractFile) = {
+    global.unitOfFile get file map (_.body)
+  }
   
   /*
    * A project to test multiple compilation units. Add all 
