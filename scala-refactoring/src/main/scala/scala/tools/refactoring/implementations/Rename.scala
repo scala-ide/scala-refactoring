@@ -28,6 +28,10 @@ abstract class Rename extends MultiStageRefactoring {
       case None => Left(PreparationError("no symbol selected found"))
     }
   }
+  
+  override def refactor(changed: List[global.Tree]): List[Change] = context("main") {
+    createChanges(changed) toList
+  }
     
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
 
@@ -49,16 +53,12 @@ abstract class Rename extends MultiStageRefactoring {
       
         val newType = t.tpe map {
           case r @ RefinedType(parents, _) =>
-            println("r"+ r)
             r.copy(parents = parents map {
               case TypeRef(_, sym, _) if sym == prepared.selectedLocal.symbol =>
-                println("found a typeref")
                 new Type {
                   override def safeToString: String = newName
                 }
-              case t =>
-              println("found else")
-              t 
+              case t => t 
             })
           case t => t
         }

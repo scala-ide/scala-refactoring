@@ -22,12 +22,25 @@ trait CustomTrees {
   case class NameTree(name: global.Name) extends global.Tree {
     if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
     def nameString = name.toString.trim
+    override def toString = "NameTree("+ nameString +")"
+    override def hashCode = {
+      nameString.hashCode * 31 + (if(pos == NoPosition) NoPosition.hashCode else pos.start)
+    }
+    override def equals(other: Any) = other match {
+      case other: NameTree if pos == NoPosition && other.pos == NoPosition => 
+        other.nameString == nameString
+      case other: NameTree if pos != NoPosition && other.pos != NoPosition => 
+        other.nameString == nameString && other.pos.start == pos.start && other.pos.source == pos.source
+      case _ => false
+    }
   }
   
   /**
    * Represent a modifier as a tree, including its position.
    * */
   case class ModifierTree(flag: Long) extends global.Tree {
+    
+    override def toString = "ModifierTree("+ nameString +")"
     
     import Flags._
     

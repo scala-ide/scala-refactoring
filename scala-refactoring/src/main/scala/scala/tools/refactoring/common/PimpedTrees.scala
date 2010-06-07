@@ -14,6 +14,8 @@ import reflect.ClassManifest.fromClass
  * */
 trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
   
+  this: Tracing =>
+  
   val global: scala.tools.nsc.interactive.Global
   import global._
 
@@ -26,7 +28,12 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
   /**
    * Returns the compilation unit root for that position.
    * */  
-  def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file)
+  def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file) match {
+    case None =>
+      trace("Tree not found for file "+ p.source.file.name)
+      None
+    case found => found
+  }
 
   /**
    * Given a Position, returns the tree in that compilation
@@ -56,9 +63,12 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
    * because it is likely more specific.
    * */
   def findOriginalTree(t: Tree): Option[Tree] = {
-    val candidates = findOriginalTreeFromPosition(t.pos)
+    val candidates = findOriginalTreeFromPosition(t.pos) flatten
     
-    candidates flatMap (_ filter (_ sameTree t) lastOption)
+    candidates find (_ == t) match {
+      case None => candidates filter (_ sameTree t) lastOption
+      case Some(perfectMatch) => Some(perfectMatch)
+    }
   }
   
   
@@ -300,6 +310,9 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       
     case MultipleAssignment(values, rhs) =>
       values ::: rhs :: Nil
+      
+    case DocDef(_, definition) =>
+      definition :: Nil
       
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      

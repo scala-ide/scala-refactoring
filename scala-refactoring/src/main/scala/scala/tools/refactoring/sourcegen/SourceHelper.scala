@@ -12,10 +12,10 @@ import scala.tools.nsc.util.BatchSourceFile
 
 trait CommentHelpers {
 
-  def stripComment(source: SourceFile): String = splitComment(source)._1
+  def stripCommentFromSourceFile(source: SourceFile): String = splitComment(source)._1
   def stripComment(source: String): String = splitComment(source)._1
   
-  private val memoizedComments = scala.collection.mutable.Map.empty[String, (String, String)]
+  private[this] val memoizedComments = scala.collection.mutable.Map.empty[String, (String, String)]
 
   def splitComment(source: String): (String, String) = splitComment(new BatchSourceFile(source, source))
   
@@ -106,7 +106,7 @@ trait SourceCodeHelpers extends CommentHelpers {
   
   def indentation(start: Int, source: SourceFile): String = {
     var i = if(start == source.length || source.content(start) == '\n') start - 1 else start
-    val contentWithoutComment = stripComment(source)
+    val contentWithoutComment = stripCommentFromSourceFile(source)
         
     while(i >= 0 && contentWithoutComment(i) != '\n')
       i -= 1

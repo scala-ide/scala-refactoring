@@ -14,7 +14,7 @@ import transformation.Transformation
 import common.{Selections, Tracing, SilentTracing}
 import common.Change
 
-abstract class Refactoring extends Analysis with Selections with Transformation with SilentTracing with FullIndexes with sourcegen.SourceGen with common.PimpedTrees {
+abstract class Refactoring extends Analysis with Selections with Transformation with SilentTracing with FullIndexes with sourcegen.SourceGenerator with common.PimpedTrees {
 
   val global: Global
   

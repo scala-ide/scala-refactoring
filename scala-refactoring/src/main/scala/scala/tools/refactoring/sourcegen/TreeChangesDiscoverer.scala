@@ -20,24 +20,39 @@ trait TreeChangesDiscoverer {
    */
   def findAllChangedTrees(t: Tree): List[(Tree, Set[Tree])] = {
     
-    def hasTreeInternallyChanged(t: Tree): Boolean = findOriginalTree(t) map (t → _) getOrElse(return true) match {
-      case (t: NameTree, o: NameTree) => 
-        t.nameString != o.nameString
-      case (t: Literal, o: Literal) =>
-        t.value != o.value
-      case (t: Ident, o: Ident) =>
-        t.nameString != o.nameString
-      case (t: TypeTree, o: TypeTree) =>
-        t != o
-      case _ => 
-        false
-    }
+    def hasTreeInternallyChanged(t: Tree): Boolean = findOriginalTree(t) map (t → _) getOrElse { 
+        trace("original not found for tree %s", t)
+        return true
+      } match {
+        case (t: NameTree, o: NameTree) => 
+          t.nameString != o.nameString
+        case (t: Literal, o: Literal) =>
+          t.value != o.value
+        case (t: Ident, o: Ident) =>
+          t.nameString != o.nameString
+        case (t: TypeTree, o: TypeTree) =>
+          t != o
+        case _ => 
+          false
+      }
     
     def hasChangedChildren(t: Tree): Boolean = findOriginalTree(t) map children match {
       case None =>
         Predef.error("should never happen")
       case Some(origChld) =>
-        !(children(t) corresponds origChld)(_ sameTree _)
+        !(children(t) corresponds origChld) { (t1, t2) =>
+          if(t1.sameTree(t2))
+            true
+          else {
+            val currentTree = t
+            val originalTree = findOriginalTree(t).get
+            
+            val newChildren = children(t)
+            val orgChildren = origChld
+            trace("%s and %s are not the same trees", t1, t2)
+            false
+          }
+        }
     }
     
     def searchChildrenForChanges(parent: Tree): List[Tree] = {
@@ -50,7 +65,7 @@ trait TreeChangesDiscoverer {
           trace("  Tree %s has changed children.", t.getClass.getSimpleName)
           t :: parents ::: searchChildrenForChanges(t)
         } else {
-          trace("  Tree %s has no changes, searching in children.", t.getClass.getSimpleName)
+          //trace("  Tree %s has no changes, searching in children.", t.getClass.getSimpleName)
           children(t) flatMap (c => findChildren(c, t :: parents))
         }
       }
@@ -65,7 +80,7 @@ trait TreeChangesDiscoverer {
       trace("Tree %s has changed children.", t.getClass.getSimpleName)
       List((t, Set(t) ++ searchChildrenForChanges(t)))
     } else {
-      trace("Tree %s has no changes, searching in children.", t.getClass.getSimpleName)
+      //trace("Tree %s has no changes, searching in children.", t.getClass.getSimpleName)
       children(t) flatMap (c => findAllChangedTrees(c))
     }
   }

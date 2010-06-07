@@ -32,9 +32,9 @@ trait TestRefactoring {
         case Right(prepare) =>
           refactoring.perform(selection, prepare, parameters) match {
             case Right(modifications) => refactoring.refactor(modifications)
-            case Left(error) => fail(error.cause); throw new Exception("Unreachable, :-/ Java type system")
+            case Left(error) => Predef.error(error.cause)
           }
-        case Left(error) => fail(error.cause); throw new Exception("Unreachable, :-/ Java type system")
+        case Left(error) => Predef.error(error.cause)
       }
     }
   }
