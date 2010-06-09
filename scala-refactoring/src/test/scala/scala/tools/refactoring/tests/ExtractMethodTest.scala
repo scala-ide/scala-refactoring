@@ -5,7 +5,7 @@
 
 package scala.tools.refactoring.tests
 
-import scala.tools.refactoring.analysis.FullIndexes
+import scala.tools.refactoring.analysis.IndexImplementations
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.common.ConsoleTracing
@@ -22,9 +22,10 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractMethod with ConsoleTracing {
+      val refactoring = new ExtractMethod with ConsoleTracing with IndexImplementations {
         val global = outer.global
-        pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index.processTree _ )
+        val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
+        val index = GlobalIndex(cuIndexes) 
       }
       def extractMethod(name: String, e: String) = doIt(e, new refactoring.RefactoringParameters {
         val methodName = name

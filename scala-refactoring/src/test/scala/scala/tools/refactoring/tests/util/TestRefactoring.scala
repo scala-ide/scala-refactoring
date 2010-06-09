@@ -5,7 +5,7 @@
 
 package scala.tools.refactoring.tests.util
 
-import scala.tools.refactoring.analysis.FullIndexes
+import scala.tools.refactoring.analysis.IndexImplementations
 import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.refactoring.common.Change
 import org.junit.Assert._
@@ -16,7 +16,7 @@ trait TestRefactoring {
    
   abstract class TestRefactoringImpl(project: FileSet) {
       
-    val refactoring: MultiStageRefactoring with FullIndexes
+    val refactoring: MultiStageRefactoring
     
     @Deprecated
     def doIt(expected: String, parameters: refactoring.RefactoringParameters) = {

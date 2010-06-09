@@ -5,7 +5,7 @@
 
 package scala.tools.refactoring.tests.analysis
 
-import scala.tools.refactoring.analysis.FullIndexes
+import scala.tools.refactoring.analysis.IndexImplementations
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.{Test, Before}
 import junit.framework.TestCase
@@ -16,13 +16,15 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class TreeAnalysisTest extends TestHelper with FullIndexes with TreeAnalysis {
+class TreeAnalysisTest extends TestHelper with IndexImplementations with TreeAnalysis {
 
   import global._
   
-  def withIndex(src: String)(body: (Index, Tree) => Unit ) {
+  var index: IndexLookup = null
+  
+  def withIndex(src: String)(body: (IndexLookup, Tree) => Unit ) {
     val tree = treeFrom(src)
-    index.processTree(tree)
+    index = GlobalIndex(List(CompilationUnitIndex(tree)))
     body(index, tree)
   }
   
@@ -58,7 +60,7 @@ class TreeAnalysisTest extends TestHelper with FullIndexes with TreeAnalysis {
   @Test
   def findParameterDependency() = {
     
-    assertInboundLocalDependencies("value i", """
+    assertInboundLocalDependencies("value i, value $anonfun", """
       class A8 {
         def addThree(i: Int) = {
           val a = 1

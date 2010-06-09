@@ -9,7 +9,7 @@ import scala.tools.refactoring.implementations.ExplicitGettersSetters
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.common.ConsoleTracing
-import scala.tools.refactoring.analysis.FullIndexes
+import scala.tools.refactoring.analysis.IndexImplementations
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 import org.junit.Assert._
@@ -20,8 +20,6 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   def explicitGettersSetters(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExplicitGettersSetters with ConsoleTracing {
       val global = outer.global
-      pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
-      
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters)
   }.changes

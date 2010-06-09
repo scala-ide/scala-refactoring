@@ -11,7 +11,6 @@ import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
-import scala.tools.refactoring.analysis.FullIndexes
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.symtab.Types
 

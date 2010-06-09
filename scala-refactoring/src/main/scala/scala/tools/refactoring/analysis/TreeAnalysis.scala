@@ -3,32 +3,49 @@
  */
 // $Id$
 
-package scala.tools.refactoring.analysis
+package scala.tools.refactoring
+package analysis
 
 import scala.tools.nsc.ast.Trees
 import scala.tools.refactoring.common.Selections
 
 trait TreeAnalysis {
   
-  self: Selections with Indexes =>
+  self: Selections with Indexes with common.PimpedTrees /*really needed?*/ =>
   
-  val global: scala.tools.nsc.Global
+  val global: scala.tools.nsc.interactive.Global
   
-  def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: Index) = {
+  def subSymbols(s: global.Symbol, index: IndexLookup): List[global.Symbol] = {
+    
+    def allChildren(t: global.Tree): List[global.Tree] = {
+      t :: (children(t) flatMap allChildren)
+    }
         
-    val allLocals = index children currentOwner map (_.symbol)
+    val decls = index.declaration(s) toList
+    
+    decls flatMap allChildren filter {
+      case t: global.SymTree => t.symbol != global.NoSymbol && t.symbol.ownerChain.contains(s)
+      case _ => false
+    } map (_.symbol) distinct
+  }
+  
+  def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: IndexLookup) = {
+        
+    val allLocals = subSymbols(currentOwner, index)
     
     val selectedLocals = allLocals filter (selection.selectedSymbols contains)
           
-    selectedLocals filterNot (s => index.declaration(s) map selection.contains getOrElse false)
+    selectedLocals filterNot (s => index.declaration(s).map(selection.contains).headOption getOrElse false)
   }
   
-  def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: Index) = {
+  def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: IndexLookup) = {
     
-    val allLocals = index children currentOwner map (_.symbol)
+    val allLocals = subSymbols(currentOwner, index)
     
-    val declarationsInTheSelection = allLocals filter (s => index.declaration(s) map selection.contains getOrElse false)
+    val declarationsInTheSelection = allLocals filter (s => index.declaration(s).map(selection.contains).headOption getOrElse false)
     
-    declarationsInTheSelection flatMap (index references) filterNot (selection contains) map (_.symbol) distinct
+    val occurencesOfSelectedDeclarations = declarationsInTheSelection flatMap (index.occurences)
+    
+    occurencesOfSelectedDeclarations filterNot (selection.contains) map (_.symbol) distinct
   }
 }

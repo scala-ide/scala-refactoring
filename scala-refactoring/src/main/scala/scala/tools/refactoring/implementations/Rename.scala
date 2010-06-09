@@ -6,12 +6,11 @@
 package scala.tools.refactoring
 package implementations
 
-import analysis.FullIndexes
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import common.Change
 
-abstract class Rename extends MultiStageRefactoring {
+abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes {
   
   import global._
     

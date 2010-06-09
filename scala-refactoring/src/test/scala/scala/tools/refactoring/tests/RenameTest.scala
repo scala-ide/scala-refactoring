@@ -9,7 +9,7 @@ import scala.tools.refactoring.implementations.Rename
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
 import scala.tools.refactoring.common.ConsoleTracing
-import scala.tools.refactoring.analysis.FullIndexes
+import scala.tools.refactoring.analysis.IndexImplementations
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
 import org.junit.Assert._
@@ -18,10 +18,10 @@ class RenameTest extends TestHelper with TestRefactoring {
   outer =>
   
   def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new Rename with ConsoleTracing {
+    val refactoring = new Rename with ConsoleTracing with IndexImplementations {
       val global = outer.global
-      pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) foreach ( index processTree _ )
-      println(index.debugString)
+      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
+      val index = GlobalIndex(cuIndexes) 
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters {
       val newName = name

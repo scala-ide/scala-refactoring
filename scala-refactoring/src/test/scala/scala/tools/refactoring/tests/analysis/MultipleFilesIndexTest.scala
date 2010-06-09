@@ -5,7 +5,7 @@
 
 package scala.tools.refactoring.tests.analysis
 
-import scala.tools.refactoring.analysis.FullIndexes
+import scala.tools.refactoring.analysis.IndexImplementations
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.HashMap
 import scala.tools.refactoring.tests.util.TestHelper
@@ -18,21 +18,25 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
 
 @Test
-class MultipleFilesIndexTest extends TestHelper with FullIndexes with TreeAnalysis {
+class MultipleFilesIndexTest extends TestHelper with IndexImplementations with TreeAnalysis {
 
   import global._
+  
+  var index: IndexLookup = null
 
   def findReferences(pro: FileSet): List[String] = {
               
     val sym = pro.selection.selectedSymbols head
     
-    pro.trees foreach index.processTree
+    val cuIndexes = pro.trees map CompilationUnitIndex.apply
+    
+    index = GlobalIndex(cuIndexes)
 
     def aggregateFileNamesWithTrees[T <: Tree](ts: List[T])(conversion: T => String) = {
       ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
     }
     
-    aggregateFileNamesWithTrees(index occurences sym) { symTree => 
+    aggregateFileNamesWithTrees(index.occurences(sym).toList) { symTree => 
       symTree.symbol.nameString +" on line "+ symTree.pos.line   
     }
   }

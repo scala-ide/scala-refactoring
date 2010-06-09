@@ -10,7 +10,6 @@ import scala.tools.refactoring.MultiStageRefactoring
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
-import scala.tools.refactoring.analysis.FullIndexes
 
 abstract class ExtractLocal extends MultiStageRefactoring {
   

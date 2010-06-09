@@ -9,7 +9,6 @@ package implementations
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.nsc.interactive.Global
-import analysis.FullIndexes
 import common.Change
 
 abstract class OrganizeImports extends MultiStageRefactoring {
