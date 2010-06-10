@@ -20,10 +20,11 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
   import global._
 
   /**
-   * Returns the tree that is contained in this file.
-   * Typically done with global.unitOfFile.
+   * Returns the tree that is contained in this file. Is
+   * overriden in testing to manipulate the trees (i.e.
+   * remove compiler generated trees)
    * */
-  def treeForFile(file: AbstractFile): Option[Tree]
+  def treeForFile(file: AbstractFile): Option[Tree] = unitOfFile.get(file) map (_.body)
     
   /**
    * Returns the compilation unit root for that position.

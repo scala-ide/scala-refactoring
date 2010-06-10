@@ -17,10 +17,6 @@ import scala.tools.refactoring.util.CompilerProvider
 
 trait TestHelper extends CompilerProvider with Transformation with SilentTracing with Selections with PimpedTrees {
   
-  def treeForFile(file: AbstractFile) = {
-    global.unitOfFile get file map (_.body)
-  }
-  
   /*
    * A project to test multiple compilation units. Add all 
    * sources using "add" before using any of the lazy vals.

@@ -15,10 +15,6 @@ abstract class Refactoring extends Selections with Transformation with SilentTra
 
   val global: scala.tools.nsc.interactive.Global
   
-  def treeForFile(file: AbstractFile) = {
-    global.unitOfFile get file map (_.body)
-  }
-  
   def refactor(changed: List[global.Tree]): List[Change] = context("main") {
     createChanges(changed) toList
   }
