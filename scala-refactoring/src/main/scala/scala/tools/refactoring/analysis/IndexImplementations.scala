@@ -14,6 +14,8 @@ package analysis
  * 
  * */
 trait IndexImplementations extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes {
+  
+  this: common.CustomTrees =>
 
   import global._
   

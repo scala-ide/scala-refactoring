@@ -22,7 +22,7 @@ class MultipleFilesIndexTest extends TestHelper with IndexImplementations with T
 
   import global._
   
-  var index: IndexLookup = null
+  var index: IndexLookup = GlobalIndex(Nil)
 
   def findReferences(pro: FileSet): List[String] = {
               
@@ -32,12 +32,15 @@ class MultipleFilesIndexTest extends TestHelper with IndexImplementations with T
     
     index = GlobalIndex(cuIndexes)
 
-    def aggregateFileNamesWithTrees[T <: Tree](ts: List[T])(conversion: T => String) = {
+    def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {
       ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
     }
     
-    aggregateFileNamesWithTrees(index.occurences(sym).toList) { symTree => 
-      symTree.symbol.nameString +" on line "+ symTree.pos.line   
+    aggregateFileNamesWithTrees(index.occurences(sym)) { symTree => 
+      if(symTree.hasSymbol)
+        symTree.symbol.nameString +" on line "+ symTree.pos.line
+      else 
+        symTree.nameString +" on line "+ symTree.pos.line
     }
   }
   
@@ -239,6 +242,42 @@ class MultipleFilesIndexTest extends TestHelper with IndexImplementations with T
       }
     """,
     """double on line 4, double on line 8""")
+  } apply(findReferences)
+  
+  @Test
+  def traitImplementation = new FileSet("p9") {
+
+    add(
+    """
+      package p9
+      trait Index {
+         /*(*/ def countDeclarations(s: String): Int /*)*/
+      }
+      object Impl {
+        val a = new Index { def countDeclarations(s: String) = 0 }
+      } 
+    """,
+    """countDeclarations on line 4, countDeclarations on line 7""")
+  } apply(findReferences)
+  
+  @Test
+  def findInImports = new FileSet("p10") {
+
+    add(
+    """
+      package p10
+      /*(*/  class A  /*)*/
+      class AA extends A
+    """,
+    """A on line 3, A on line 4""")
+
+    add(
+    """
+      package unrelated
+      import p10.A
+      class B extends A
+    """,
+    """A on line 3, A on line 4""")
   } apply(findReferences)
 }
 

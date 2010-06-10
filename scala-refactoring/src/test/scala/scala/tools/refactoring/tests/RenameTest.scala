@@ -495,4 +495,29 @@ class RenameTest extends TestHelper with TestRefactoring {
 
     }""")
   } applyRefactoring(renameTo("Trait"))
+    
+  @Test
+  def renameClassWithImport = new FileSet {
+    add(
+    """
+    package withTrait
+    trait /*(*/T/*)*/
+    """,
+    """
+    package withTrait
+    trait /*(*/Trait/*)*/
+    """)
+    
+    add(
+    """
+    package withoutTrait
+    import withTrait.T
+    trait TSub extends T
+    """,
+    """
+    package withoutTrait
+    import withTrait.Trait
+    trait TSub extends Trait
+    """)
+  } applyRefactoring(renameTo("Trait"))
 }

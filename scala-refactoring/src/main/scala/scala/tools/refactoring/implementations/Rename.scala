@@ -47,6 +47,7 @@ abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis w
     }
     
     val renameTree = transform {
+      case t @ ImportSelectorTree(name, rename) =>  ImportSelectorTree(NameTree(newName) setPos name.pos, rename) setPos t.pos
       case s: SymTree => mkRenamedSymTree(s, newName)
       case t: TypeTree => 
       

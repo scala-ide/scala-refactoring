@@ -5,6 +5,8 @@ import reflect.ClassManifest.fromClass
 
 trait AdditionalTreeMethods {
   
+  this: CustomTrees =>
+  
   val global: scala.tools.nsc.interactive.Global
   import global._
   
@@ -46,6 +48,7 @@ trait AdditionalTreeMethods {
       case t: LabelDef if t.name.toString startsWith "doWhile" => "while"
       case t: DefTree => extractName(t.name)
       case t: RefTree => extractName(t.name)
+      case ImportSelectorTree(NameTree(name), _) => name.toString
       case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
     }
   }

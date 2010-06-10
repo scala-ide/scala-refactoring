@@ -13,6 +13,8 @@ import scala.collection.mutable.{HashMap, ListBuffer}
  * */
 trait CompilationUnitIndexes {
   
+  this: common.CustomTrees =>
+  
   val global: scala.tools.nsc.interactive.Global
   
   import global._
@@ -68,6 +70,19 @@ trait CompilationUnitIndexes {
             }
             
             handleType(t.tpe)
+            
+          case t: Import =>
+            
+            def handleImport(iss: List[ImportSelectorTree], sym: Symbol): Unit = iss match {
+              case Nil => 
+                ()
+              case (t @ ImportSelectorTree(NameTree(name), _)) :: _ if (name.toString == sym.name.toString)=> 
+                addReference(sym, t)
+              case _ :: rest => 
+                handleImport(rest, sym)
+            }
+            
+            t.expr.tpe.members foreach (handleImport(t.Selectors(), _))
             
           case _ => ()
         }

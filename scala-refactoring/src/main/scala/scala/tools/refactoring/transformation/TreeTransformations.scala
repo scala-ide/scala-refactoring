@@ -15,7 +15,15 @@ trait TreeTransformations extends AbstractTransformations {
      * one transformation and then returns that result.
      * */
     class TransformOnce extends Transformer {
+      
+      /**
+       * Transforms the children of the trees using `f` and creates
+       * a new t with the transformed children
+       * */
       def once(t: Tree) = t match {
+        
+        case t: ImportSelectorTree =>
+          t
         
         case t: TypeTree if t.original != null =>
           val typeTree = super.transform(t).asInstanceOf[TypeTree]
