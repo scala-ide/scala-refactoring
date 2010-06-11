@@ -213,7 +213,7 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(args, separator = ",", before = "\\(", after = "\\)")  ++ r 
         
       case (t @ Apply(fun, args), _) =>
-        l ++ p(fun) ++ p(args, separator = ",", before = "\\(", after = "\\)")  ++ r
+        l ++ p(fun) ++ p(args, separator = ",", before = "\\(", after = Requisite.anywhere(")"))  ++ r
         
       case (t @ Import(expr, _), _) if t.Selectors().size > 1 =>
         l ++ p(expr) ++ "\\{" ++ p(t.Selectors(), separator = ", ") ++ "\\}" ++ r

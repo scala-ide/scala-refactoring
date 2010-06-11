@@ -229,8 +229,30 @@ trait LayoutHelper extends CommentHelpers {
        case (c, p: If) =>
          layout(c.pos.end, p.pos.end) splitBefore (')')
          
+       // values's right hand side can be wrapped in { } without being a block:
+       case (c, p: ValDef) if c.sameTree(p.rhs) && c.originalLeftSibling.isDefined =>
+         
+         val left = c.originalLeftSibling.get
+         
+         if(layout(left.pos.end, c.pos.start).contains("{")) {
+           
+           val nextPos = (p.originalRightSibling.map(_.pos.start) match {
+             case None => p.originalParent map (_.pos.end - 1) // exclude the parent's trailing }
+             case some => some
+           }) getOrElse p.pos.end
+           
+           if(layout(c.pos.end, nextPos).contains("}")) {
+             layout(c.pos.end, nextPos) splitAfter '}'
+           } else {
+             NoLayout → layout(c.pos.end, p.pos.end)
+           }
+           
+         } else {
+           NoLayout → layout(c.pos.end, p.pos.end)
+         }
+     
        case (c, p: ValOrDefDef) =>
-         layout(c.pos.end, p.pos.end) splitAfter '}' // in case there are { } around a single statement.
+         layout(c.pos.end, p.pos.end) splitAfter '}'
          
        case (c, p: Apply) =>
          NoLayout → layout(c.pos.end, p.pos.end)

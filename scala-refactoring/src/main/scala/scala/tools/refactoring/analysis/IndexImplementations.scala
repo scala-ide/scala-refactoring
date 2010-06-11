@@ -36,15 +36,15 @@ trait IndexImplementations extends Indexes with DependentSymbolExpanders with Co
   
   trait GlobalIndex extends IndexLookup {
     
-    this: DependentSymbolExpander =>
+    this: SymbolExpander =>
     
     def cus(): List[CompilationUnitIndex]
     
-    def declaration(s: Symbol): List[DefTree] = 
-      cus.flatMap(_.definitions.get(s)).flatten distinct
+    def declaration(s: Symbol): Option[DefTree] = 
+      cus.flatMap(_.definitions.get(s)).flatten.headOption
    
     def references(s: Symbol) = {
-      val decls = declaration(s)
+      val decls = declaration(s).toList
       occurences(s) filterNot decls.contains
     }
       
@@ -56,7 +56,7 @@ trait IndexImplementations extends Indexes with DependentSymbolExpanders with Co
       val expanded = expandSymbols(expandSymbols(expandSymbols(List(s))))
 
       expanded flatMap { sym =>
-        declaration(sym) ::: cus.flatMap(_.references.get(sym).flatten)
+        declaration(sym).toList ::: cus.flatMap(_.references.get(sym).flatten)
       } filter (_.pos.isRange) distinct
     }
     

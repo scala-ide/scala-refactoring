@@ -9,11 +9,11 @@ package analysis
 import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.symtab.Symbols
 /**
- * The Indexes trait is mixed in by refactorings that need an index. 
+ * The Indexes trait is mixed in by refactorings that need an index.
  * It provides several lookup functions to find references and decl-
  * arations of symbols.
  * 
- * The IndexLookup trait has been separated into two traits: the 
+ * The IndexLookup trait has been separated into two traits: the
  * TrivialIndexLookup simply gives access to the underlying data,
  * whereas the IndexLookup that is used by clients contains more
  * expensive operations.
@@ -24,16 +24,17 @@ trait Indexes {
 
   val global: scala.tools.nsc.interactive.Global
   
-  private [analysis] trait TrivialIndexLookup {
+  trait TrivialIndexLookup {
     
     /**
-     * Returns a list of all defined symbols, i.e. symbols
+     * Returns all defined symbols, i.e. symbols
      * of DefTrees.
      * */
     def allDefinedSymbols(): List[global.Symbol]
     
     /**
-     * Returns all symbols that are part of the index.
+     * Returns all symbols that are part of the index,
+     * either referenced or defined.
      * */
     def allSymbols(): List[global.Symbol]    
     
@@ -41,7 +42,7 @@ trait Indexes {
      * For a given Symbol, tries to find the tree that declares it.
      * The result tree can have an offset position.
      * */
-    def declaration(s: global.Symbol): List[global.DefTree]
+    def declaration(s: global.Symbol): Option[global.DefTree]
   }
   
   trait IndexLookup extends TrivialIndexLookup {

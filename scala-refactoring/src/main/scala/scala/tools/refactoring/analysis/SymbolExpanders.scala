@@ -25,14 +25,14 @@ trait DependentSymbolExpanders {
    * The expanders themselves need access to the
    * index, but have to take care not to
    * */
-  trait DependentSymbolExpander {
+  trait SymbolExpander {
     
     this: TrivialIndexLookup =>
     
     def expand(s: Symbol): List[Symbol] = List(s)
   }
   
-  trait ExpandGetterSetters extends DependentSymbolExpander {
+  trait ExpandGetterSetters extends SymbolExpander {
     
     this: TrivialIndexLookup =>
     
@@ -46,7 +46,7 @@ trait DependentSymbolExpanders {
     })
   }
   
-  trait SuperConstructorParameters extends DependentSymbolExpander {
+  trait SuperConstructorParameters extends SymbolExpander {
     
     this: TrivialIndexLookup =>
         
@@ -68,14 +68,14 @@ trait DependentSymbolExpanders {
     })
   }
   
-  trait SymbolCompanion extends DependentSymbolExpander {
+  trait SymbolCompanion extends SymbolExpander {
     
     this: TrivialIndexLookup =>
     
     abstract override def expand(s: Symbol) = super.expand(s) ++ List(s.companionSymbol)
   }
   
-  trait OverridesInClassHierarchy extends DependentSymbolExpander {
+  trait OverridesInClassHierarchy extends SymbolExpander {
     
     this: TrivialIndexLookup =>
     
@@ -105,7 +105,7 @@ trait DependentSymbolExpanders {
     })
   } 
   
-  trait SameSymbolPosition extends DependentSymbolExpander {
+  trait SameSymbolPosition extends SymbolExpander {
     
     this: TrivialIndexLookup =>
     

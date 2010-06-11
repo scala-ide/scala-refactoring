@@ -100,11 +100,16 @@ edge [fontname="Verdana", fontsize=10, labelfontname="Palatino", labelfontsize=1
   }
   
   def main(args: Array[String]) : Unit = {
-    val tree = treeFrom("""package p //TODO rename
+    val tree = treeFrom("""
+trait Example {
+  def strlen(str: String) = str.length
+  def abstractMethod: Int
+}
 
-// Now a class
-class MyClass(a: Int /* the int */) {
-}""")
+class SubClass extends Example {
+  def abstractMethod = 1 + strlen("1")
+}
+""")
     
     visualize(tree)
   
