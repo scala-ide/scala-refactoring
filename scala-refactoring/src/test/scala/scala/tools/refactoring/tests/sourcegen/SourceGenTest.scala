@@ -1091,6 +1091,42 @@ object A"""
   }
   
   @Test
+  def valDefRhsAlone(): Unit = {
+    
+    val valDef = treeFrom("""
+    object O {
+      val a = {4 + 3}
+    }
+    """) match {
+      case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: ValDef) :: _)) :: _) => v
+    }
+    
+    
+    assertEquals("""val a = {4 + 3}
+    """, generate(removeAuxiliaryTrees apply valDef get, AllChangeSet).center.asText)
+      
+    assertEquals("""{4 + 3}""", generate(removeAuxiliaryTrees apply valDef.rhs get))
+  }
+  
+  @Test
+  def manyParentheses(): Unit = {
+    
+    val tree = treeFrom("""
+    class VBox[T](i: Int)
+    class Test {
+     var box = new VBox[Int]({ 2 + 4 })
+    }
+    """)
+      
+    assertEquals("""
+    class VBox[T](i: Int)
+    class Test {
+     var box = new VBox[Int]({ 2 + 4 })
+    }
+    """, generate(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
   def testValOrDefDefModifiers() = {
     
     val tree = treeFrom("""

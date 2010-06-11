@@ -13,9 +13,7 @@ import reflect.ClassManifest.fromClass
  * 
  * */
 trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
-  
-  this: Tracing =>
-  
+    
   val global: scala.tools.nsc.interactive.Global
   import global._
 
@@ -29,12 +27,7 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
   /**
    * Returns the compilation unit root for that position.
    * */  
-  def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file) match {
-    case None =>
-      trace("Tree not found for file "+ p.source.file.name)
-      None
-    case found => found
-  }
+  def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file)
 
   /**
    * Given a Position, returns the tree in that compilation

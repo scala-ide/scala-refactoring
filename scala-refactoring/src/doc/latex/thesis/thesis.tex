@@ -41,9 +41,113 @@ describes the three main modules of the refactoring library.
 
 an introduction, mention the basic concepts, also say that trees have to keep their positions if the source code should be regenerated.
 
-\section{Analysis}
+\section{Analysis} \label{section:analysis}
 
-explain the symbol index to resolve symbols to trees
+An import step in each refactoring is to analyze the current program. For example, when doing a Rename refactoring, we need to resolve all references to the renamed name. A more complex example is Extract Method, where we need to perform data-flow analysis to determine the parameters and return values of the extracted method.
+
+IDEs also analyze the program code in a similar way to make the life of the programmer easier: finding the declaration of a variable or listing all subtypes of a class are common operations.
+
+Our analyses heavily depend on the Scala compiler's AST and all the information it provides through the program's symbols. For example, each symbol has an owner that can be used to navigate the logical structure of the program. There are also almost one hundred \src{isXY} methods defined on the \src{Symbol} class that can be used to query information:
+
+\begin{lstlisting}
+abstract class Symbol {
+  %\ldots%
+  def isAnonymousClass: Boolean
+  def isConstructor: Boolean
+  def isGetter: Boolean
+  def isLocal: Boolean
+  def isSubClass(that: Symbol): Boolean
+  %\ldots%
+}
+\end{lstlisting}
+
+All the trees that inherit from the \src{SymTree} trait provide a symbol instance, where \src{DefTrees} usually introduce a new symbol and \src{RefTrees} reference a symbol from a \src{DefTree}. The following illustration shows how symbols are related (not all symbols are colored, for example, the built in types have a symbol as well):
+
+\begin{lstlisting}
+trait %\bluebox{SuperClass}% {
+  def %\greenbox{strlen}%(%\redbox{str}%: String) = %\redbox{str}%.length
+  def %\lgreenbox{abstractMethod}%: Int
+}
+
+class %\yellowbox{SubClass}% extends %\bluebox{SuperClass}% {
+  def %\greybox{abstractMethod}% = 1 + %\greenbox{strlen}%("1")
+}
+\end{lstlisting}
+
+Note that the two \src{abstractMethod} symbols are not the same, but there are other means to find overriden and implemented methods in subclasses, as we shall see later.
+
+While the trees can have a reference to a symbol, the converse is not true: symbols do not know about the trees they are related to. But for refactoring, this information is crucial. This is why the refactoring library contains the means to build an index of symbols and corresponding trees.
+
+\subsection{Refactoring Index Interface}
+
+Building an index over a whole project can be expensive, so ideally, the IDE would maintain the index and pass it to the refactoring library when need, in the same way that the library does not compile the source files itself but gets the ASTs directly from the IDE.
+
+The interface that needs to be implemented and is used by the refactorings to query the index looks as follows:
+
+\begin{lstlisting}
+trait IndexLookup {
+  /**
+    * Returns all defined symbols, i.e. symbols of DefTrees.
+    * */
+  def allDefinedSymbols(): List[global.Symbol]
+  
+  /**
+    * Returns all symbols that are part of the index, either referenced or defined.
+    * */
+  def allSymbols(): List[global.Symbol]    
+  
+  /**
+    * For a given Symbol, tries to find the tree that declares it.
+    * */
+  def declaration(s: global.Symbol): Option[global.DefTree]
+  /**
+    * For a given Symbol, returns all trees that contain a reference to it.
+    * */
+  def references(s: global.Symbol): List[global.Tree]
+  
+  /**
+    * For a given Symbol, returns all trees that reference or declare the Symbol.
+    * */
+  def occurences(s: global.Symbol): List[global.Tree]
+}
+\end{lstlisting}
+
+The library also contains a default implementation that can be used. 
+
+\subsection{Default Index Implementation}
+
+As mentioned previously, building an index can be expensive: whenever a compilation unit in the program changes, references to the symbols from other compilation units can change, and also the other way around. Because of this, it is hard to maintain one monolithic index.
+
+The provided implementation comprises several parts:
+
+\begin{description}
+ \item[CompilationUnitIndex] One index per compilation unit that holds the references and declarations of just this part of the program.. This structure can be rebuilt everytime a compilation unit changes. Rebuilding it traverses the whole tree once and stores mappings from symbols to \src{RefTrees} and \src{DefTrees}.
+ \item[GlobalIndex] An implementation of the \src{IndexLokup} trait that ties together any number of these per compilation unit indices, but is completely stateless itself.
+\end{description}
+
+Whenever a compilation unit changes, one \src{CompilationUnitIndex} needs to be rebuilt and combined with the already existing ones into a new \src{GlobalIndex}.
+
+\subsection{Resolving References}
+
+Resolving the declaration tree of a symbol is an inexpensive lookup, finding all references causes more work. The process of finding all references is done in two steps: first, the symbol is \textit{expanded} and second all references to these expanded symbols are collected. What do we mean by expanding a symbol? Consider the example of the colored symbols we mentioned at the beginning of Section \ref{section:analysis}. The implementing method uses a differen symbol than the abstract declared method. But when we want to find references, we need all references to both symbols. The same is true for getters and setters: renaming a class parameter also needs to rename all useages of getters and setters. To do this, the index implementation uses so called \src{SymbolExpanders}:
+
+\begin{lstlisting}
+trait SymbolExpander {
+  this: IndexLookup =>
+  def expand(s: Symbol): List[Symbol] = List(s)
+}
+\end{lstlisting}
+
+The \src{SymbolExpander} is used as a stackable trait (XXX ref) and implemented in the following variations:
+
+
+
+
+
+An example of a finding references to a method.
+
+
+
 
 \section{Transformation}
 
