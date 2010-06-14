@@ -25,7 +25,7 @@ trait IndexImplementations extends Indexes with DependentSymbolExpanders with Co
       new GlobalIndex with
           ExpandGetterSetters with
           SuperConstructorParameters with
-          SymbolCompanion with
+          Companion with
           SameSymbolPosition with
           OverridesInClassHierarchy {
         val cus = compilationUnits

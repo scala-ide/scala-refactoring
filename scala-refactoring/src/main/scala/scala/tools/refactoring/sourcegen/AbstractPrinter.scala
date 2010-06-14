@@ -12,7 +12,11 @@ trait AbstractPrinter extends SourceCodeHelpers {
     def hasChanged(t: Tree): Boolean
   }
   
-  def print(t: Tree, ind: Indentation, changeSet: ChangeSet): Fragment
+  object AllTreesHaveChanged extends ChangeSet {
+    def hasChanged(t: Tree) = true
+  }
+  
+  private[sourcegen] def print(t: Tree, ind: Indentation, changeSet: ChangeSet): Fragment
   
   private[sourcegen] def printSingleTree(
       parent: Tree,

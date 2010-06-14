@@ -24,7 +24,7 @@ trait Indexes {
 
   val global: scala.tools.nsc.interactive.Global
   
-  trait TrivialIndexLookup {
+  trait IndexLookup {
     
     /**
      * Returns all defined symbols, i.e. symbols
@@ -43,9 +43,6 @@ trait Indexes {
      * The result tree can have an offset position.
      * */
     def declaration(s: global.Symbol): Option[global.DefTree]
-  }
-  
-  trait IndexLookup extends TrivialIndexLookup {
     
     /**
      * For a given Symbol, returns all trees that contain a reference

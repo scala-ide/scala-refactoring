@@ -15,34 +15,18 @@ trait TreeAnalysis {
   
   val global: scala.tools.nsc.interactive.Global
   
-  def subSymbols(s: global.Symbol, index: IndexLookup): List[global.Symbol] = {
-    
-    def allChildren(t: global.Tree): List[global.Tree] = {
-      t :: (children(t) flatMap allChildren)
-    }
-        
-    val decls = index.declaration(s) toList
-    
-    decls flatMap allChildren filter {
-      case t: global.SymTree => t.symbol != global.NoSymbol && t.symbol.ownerChain.contains(s)
-      case _ => false
-    } map (_.symbol) distinct
-  }
-  
   def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: IndexLookup) = {
-        
-    val allLocals = subSymbols(currentOwner, index)
-    
-    val selectedLocals = allLocals filter (selection.selectedSymbols contains)
-          
-    selectedLocals filterNot (s => index.declaration(s).map(selection.contains).headOption getOrElse false)
+
+    selection.selectedSymbols filter {
+        _.ownerChain.contains(currentOwner)
+    } filterNot {
+      index.declaration(_).map(selection.contains) getOrElse false
+    } sortBy(_.pos.start) distinct
   }
   
   def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: IndexLookup) = {
-    
-    val allLocals = subSymbols(currentOwner, index)
-    
-    val declarationsInTheSelection = allLocals filter (s => index.declaration(s).map(selection.contains).headOption getOrElse false)
+        
+    val declarationsInTheSelection = selection.selectedSymbols filter (s => index.declaration(s).map(selection.contains) getOrElse false)
     
     val occurencesOfSelectedDeclarations = declarationsInTheSelection flatMap (index.occurences)
     
