@@ -23,6 +23,10 @@ class MultipleFilesIndexTest extends TestHelper with IndexImplementations with T
   import global._
   
   var index: IndexLookup = GlobalIndex(Nil)
+  
+  def aggregateFileNamesWithTrees[T <: { val pos: Position }](ts: List[T])(conversion: T => String) = {
+    ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
+  }
 
   def findReferences(pro: FileSet): List[String] = {
               
@@ -32,15 +36,26 @@ class MultipleFilesIndexTest extends TestHelper with IndexImplementations with T
     
     index = GlobalIndex(cuIndexes)
 
-    def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {
-      ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
-    }
-    
     aggregateFileNamesWithTrees(index.occurences(sym)) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
       else 
         symTree.nameString +" on line "+ symTree.pos.line
+    }
+  }
+  
+  def classHierarchy(pro: FileSet): List[String] = {
+              
+    val sym = pro.selection.selectedSymbols head
+    
+    val cuIndexes = pro.trees map CompilationUnitIndex.apply
+    
+    index = GlobalIndex(cuIndexes)
+    
+    val i = index.completeClassHierarchy(sym.owner)
+    
+    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner)) { sym => 
+      sym.nameString +" on line "+ sym.pos.line
     }
   }
   
@@ -279,5 +294,23 @@ class MultipleFilesIndexTest extends TestHelper with IndexImplementations with T
     """,
     """A on line 3, A on line 4""")
   } apply(findReferences)
+  
+  @Test
+  def inClassHierarchy = new FileSet("p11") {
+
+    add(
+    """
+    trait Abc
+    trait /*(*/  B  /*)*/
+    """,
+    """Abc on line 2, B on line 3""")
+
+    add(
+    """
+    trait C extends Abc with B
+    object Defg extends C
+    """,
+    """C on line 2, Defg on line 3""")
+  } apply(classHierarchy)
 }
 

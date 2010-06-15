@@ -11,7 +11,7 @@ import scala.tools.nsc.interactive.Global
 import common.Change
 
 abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes {
-  
+    
   import global._
     
   case class PreparationResult(selectedLocal: SymTree, hasLocalScope: Boolean)
@@ -23,7 +23,7 @@ abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis w
   def prepare(s: Selection) = {
     s.selectedSymbolTree match {
       case Some(t) =>
-        Right(PreparationResult(t, s.findSelectedOfType[DefDef] map (_ != t) getOrElse false))
+        Right(PreparationResult(t, t.symbol.isPrivate || t.symbol.isLocal))
       case None => Left(PreparationError("no symbol selected found"))
     }
   }

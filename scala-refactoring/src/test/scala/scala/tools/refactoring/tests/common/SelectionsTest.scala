@@ -3,7 +3,7 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests
+package scala.tools.refactoring.tests.common
 
 import scala.tools.refactoring.tests.util.{TestHelper, TreePath}
 import org.junit.{Test, Before}

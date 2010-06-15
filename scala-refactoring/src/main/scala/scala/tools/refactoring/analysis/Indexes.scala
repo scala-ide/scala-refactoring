@@ -24,7 +24,7 @@ trait Indexes {
 
   val global: scala.tools.nsc.interactive.Global
   
-  trait TrivialIndexLookup {
+  trait IndexLookup {
     
     /**
      * Returns all defined symbols, i.e. symbols
@@ -43,9 +43,6 @@ trait Indexes {
      * The result tree can have an offset position.
      * */
     def declaration(s: global.Symbol): Option[global.DefTree]
-  }
-  
-  trait IndexLookup extends TrivialIndexLookup {
     
     /**
      * For a given Symbol, returns all trees that contain a reference
@@ -59,7 +56,20 @@ trait Indexes {
      * */
     def occurences(s: global.Symbol): List[global.Tree]
 
+    /**
+     * For the given Symbol - which is a class or object - returns a
+     * list of all sub- and super classes, in no particular order.
+     */
+    def completeClassHierarchy(s: global.Symbol): List[global.Symbol] =
+      s :: (allDefinedSymbols filter (_.ancestors contains s) flatMap (s => s :: s.ancestors)) filter (_.pos != global.NoPosition) distinct
     
+    /**
+     * For the given Symbol - which is a package - returns a
+     * list of all sub- and super packages, in no particular order.
+     */
+    def completePackageHierarchy(s: global.Symbol): List[global.Symbol] =
+      allDefinedSymbols filter (_.ownerChain contains s) flatMap (s => s :: s.ownerChain) filter (_.isPackageClass) filter (_.pos != global.NoPosition) distinct
+      
     /**
      * Add more convenience functions here..
      * */

@@ -71,7 +71,7 @@ trait CompilationUnitIndexes {
             
             handleType(t.tpe)
             
-          case t: Import =>
+          case t @ Import(expr, _) if expr.tpe != null =>
             
             def handleImport(iss: List[ImportSelectorTree], sym: Symbol): Unit = iss match {
               case Nil => 
@@ -82,7 +82,7 @@ trait CompilationUnitIndexes {
                 handleImport(rest, sym)
             }
             
-            t.expr.tpe.members foreach (handleImport(t.Selectors(), _))
+            expr.tpe.members foreach (handleImport(t.Selectors(), _))
             
           case _ => ()
         }

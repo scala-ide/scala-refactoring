@@ -21,21 +21,12 @@ trait DependentSymbolExpanders {
   /**
    * The basic trait that is extended by the
    * concrete expanders.
-   * 
-   * The expanders themselves need access to the
-   * index, but have to take care not to
    * */
-  trait SymbolExpander {
-    
-    this: TrivialIndexLookup =>
-    
+  trait SymbolExpander {    
     def expand(s: Symbol): List[Symbol] = List(s)
   }
   
-  trait ExpandGetterSetters extends SymbolExpander {
-    
-    this: TrivialIndexLookup =>
-    
+  trait ExpandGetterSetters extends SymbolExpander {    
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
       case s if s.isGetterOrSetter =>
         s.accessed :: Nil
@@ -48,7 +39,7 @@ trait DependentSymbolExpanders {
   
   trait SuperConstructorParameters extends SymbolExpander {
     
-    this: TrivialIndexLookup =>
+    this: IndexLookup =>
         
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
       
@@ -68,16 +59,13 @@ trait DependentSymbolExpanders {
     })
   }
   
-  trait SymbolCompanion extends SymbolExpander {
-    
-    this: TrivialIndexLookup =>
-    
+  trait Companion extends SymbolExpander {    
     abstract override def expand(s: Symbol) = super.expand(s) ++ List(s.companionSymbol)
   }
   
   trait OverridesInClassHierarchy extends SymbolExpander {
     
-    this: TrivialIndexLookup =>
+    this: IndexLookup =>
     
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
       case s: global.TermSymbol if s.owner.isClass =>
@@ -107,7 +95,7 @@ trait DependentSymbolExpanders {
   
   trait SameSymbolPosition extends SymbolExpander {
     
-    this: TrivialIndexLookup =>
+    this: IndexLookup =>
     
     abstract override def expand(s: Symbol) = super.expand(s) ++ (allSymbols collect {
       case sym if sym.pos.sameRange(s.pos) && sym.pos.source.file.name == s.pos.source.file.name && !sym.pos.isTransparent =>
