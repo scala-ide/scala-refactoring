@@ -8,7 +8,7 @@ package scala.tools.refactoring.tests
 import scala.tools.refactoring.analysis.IndexImplementations
 import scala.tools.refactoring.tests.util.TestRefactoring
 import scala.tools.refactoring.common.Tracing
-import scala.tools.refactoring.common.ConsoleTracing
+import scala.tools.refactoring.common.{ConsoleTracing, SilentTracing}
 import scala.tools.refactoring.implementations.ExtractMethod
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
@@ -22,7 +22,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     
     new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractMethod with ConsoleTracing with IndexImplementations {
+      val refactoring = new ExtractMethod with SilentTracing with IndexImplementations {
         val global = outer.global
         val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
         val index = GlobalIndex(cuIndexes) 

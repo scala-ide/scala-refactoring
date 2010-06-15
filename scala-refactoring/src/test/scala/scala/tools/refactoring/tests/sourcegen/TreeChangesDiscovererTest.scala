@@ -15,7 +15,7 @@ import scala.tools.nsc.ast.Trees
 import scala.tools.nsc.io.AbstractFile
 
 @Test
-class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with ConsoleTracing {
+class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with SilentTracing {
   
   override def treeForFile(file: AbstractFile) = {
     global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees

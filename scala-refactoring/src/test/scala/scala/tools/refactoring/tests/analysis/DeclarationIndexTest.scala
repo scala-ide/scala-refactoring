@@ -112,9 +112,10 @@ class DeclarationIndexTest extends TestHelper with IndexImplementations with Tre
   
   @Test
   def findMethodFromOtherClass() = {
-    assertDeclarationOfSelection("""<stable> <accessor> def x: Int = N.this.x""", """
+    assertDeclarationOfSelection("""def x: Int = 5""", """
+    package findMethodFromOtherClass {
       class N {
-        val x = 5
+        def x: Int = 5
       }
       object M {
         def go  = {
@@ -123,6 +124,7 @@ class DeclarationIndexTest extends TestHelper with IndexImplementations with Tre
           y
         }
       }
+    }
       """)
   }  
   

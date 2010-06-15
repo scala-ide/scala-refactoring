@@ -26,6 +26,7 @@ trait TreeFactory {
     case t: This     => t.copy(qual = name)
     case m: ModuleDef=> m.copy(name = name)
     case t: TypeDef  => t.copy(name = name)
+    case t: PackageDef => t.copy(pid = Ident(name) setPos t.pid.pos)
     case t => throw new Exception("Found "+ t.getClass.getName)
   }) setPos t.pos
   

@@ -7,8 +7,7 @@ package scala.tools.refactoring.tests
 
 import scala.tools.refactoring.implementations.Rename
 import scala.tools.refactoring.tests.util.TestRefactoring
-import scala.tools.refactoring.common.Tracing
-import scala.tools.refactoring.common.ConsoleTracing
+import scala.tools.refactoring.common.{SilentTracing, ConsoleTracing}
 import scala.tools.refactoring.analysis.IndexImplementations
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Test
@@ -18,7 +17,7 @@ class RenameTest extends TestHelper with TestRefactoring {
   outer =>
   
   def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new Rename with ConsoleTracing with IndexImplementations {
+    val refactoring = new Rename with SilentTracing with IndexImplementations {
       val global = outer.global
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes) 
@@ -520,4 +519,56 @@ class RenameTest extends TestHelper with TestRefactoring {
     trait TSub extends Trait
     """)
   } applyRefactoring(renameTo("Trait"))
+    
+  @Test
+  def renamePackages = new FileSet {
+    add(
+    """
+    package /*(*/p1/*)*/
+    """,
+    """
+    package /*(*/refactoring/*)*/
+    """)
+    
+    add(
+    """
+    package p1.p2
+    import  p1._
+    """,
+    """
+    package refactoring.p2
+    import  refactoring._
+    """)
+  } applyRefactoring(renameTo("refactoring"))
+    
+  @Test
+  def renameInnerPackages = new FileSet {
+    add(
+    """
+    package p1
+    package /*(*/   p2  /*)*/ {
+      package p3 {
+        class A
+      }
+    }
+    """,
+    """
+    package p1
+    package /*(*/   refactoring  /*)*/ {
+      package p3 {
+        class A
+      }
+    }
+    """)
+    
+    add(
+    """
+    package p1
+    class B extends  p2.p3.A
+    """,
+    """
+    package p1
+    class B extends  refactoring.p3.A
+    """)
+  } applyRefactoring(renameTo("refactoring"))
 }

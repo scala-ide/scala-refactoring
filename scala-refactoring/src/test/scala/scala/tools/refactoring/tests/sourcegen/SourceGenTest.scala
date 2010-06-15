@@ -18,7 +18,7 @@ import tools.nsc.symtab.Flags
 import scala.tools.nsc.ast.parser.Tokens
 
 @Test
-class SourceGenTest extends TestHelper with SourceGenerator with ConsoleTracing {
+class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   
   import global._
   
@@ -58,7 +58,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with ConsoleTracing 
       t.copy(mods = NoMods withPosition (Flags.PROTECTED, NoPosition) withPosition (Flags.METHOD, NoPosition)) setPos t.pos
     case t: ValDef   =>
       t.copy(mods = NoMods withPosition (Tokens.VAL,   NoPosition)) setPos t.pos
-    case t => t 
+    case t => t
   }
   
   @Test
@@ -1100,6 +1100,7 @@ object A"""
       case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
     }
     
+    val p = valDef.symbol.isPrivateLocal
     
     assertEquals("""val a = {4 + 3}
     """, generate(removeAuxiliaryTrees apply valDef get).center.asText)
