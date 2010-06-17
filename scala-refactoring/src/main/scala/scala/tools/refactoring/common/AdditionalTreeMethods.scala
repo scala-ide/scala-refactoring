@@ -97,7 +97,7 @@ trait AdditionalTreeMethods {
         
       case t @ Select(qualifier, selector) => 
       
-        if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start) /* e.g. !true */ {
+        if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
           t.pos withEnd (t.pos.start + t.nameString.length)
         } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
           t.pos withStart (t.pos.end - t.symbol.nameString.length)

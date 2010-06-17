@@ -509,13 +509,13 @@ trait AbstractPrinter {
   @Test
   def testPlusEquals() = {
     val tree = treeFrom("""
-      trait Demo {
+      trait Demo2 {
         var assignee = 1
         assignee += -42
       }""")
       
     assertEquals("""
-      trait Demo {
+      trait Demo2 {
         var assignee = 1
         assignee += -42
       }""", generateText(tree))
@@ -526,7 +526,7 @@ trait AbstractPrinter {
   @Test
   def testAssign() = {
     val tree = treeFrom("""
-      trait Demo {
+      trait Demo1 {
         def method {
           var i = 0
           i = 1
@@ -534,14 +534,14 @@ trait AbstractPrinter {
       }""")
       
     assertEquals("""
-      trait Demo {
+      trait Demo1 {
         def method {
           var i = 0
           i = 1
         }
       }""", generateText(tree))
     
-    tree prettyPrintsTo """trait Demo {
+    tree prettyPrintsTo """trait Demo1 {
   def method = {
     var i = 0
     i = 1

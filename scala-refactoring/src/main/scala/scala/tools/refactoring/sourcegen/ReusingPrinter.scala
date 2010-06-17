@@ -16,6 +16,7 @@ trait ReusingPrinter extends AbstractPrinter {
     val printedFragment = if(changeSet hasChanged t) {
       printWithExistingLayout(t, ind.setTo(originalIndentation), changeSet, leadingChild, trailingChild)
     } else {
+      trace("Not in change set, keep original code.")
       Fragment(t.pos.source.content.slice(t.pos.start, t.pos.end).mkString)
     }
       
@@ -170,9 +171,24 @@ trait ReusingPrinter extends AbstractPrinter {
         val nameOrig = NameTree(t.nameString) setPos orig.namePosition
         l ++ p(nameOrig) ++ p(qualifier) ++ r
         
-      case (t @ Select(qualifier, selector), orig) =>
+      case (t @ Select(qualifier, selector), orig: Select) =>
         val nameOrig = NameTree(t.nameString) setPos orig.namePosition
-        l ++ p(qualifier) ++ p(nameOrig)  ++ r
+        val _q = p(qualifier)
+        val _n = p(nameOrig)
+
+        def hasNoSeparator = {
+          val between = (_q.trailing ++ _n.leading).asText
+          !between.contains(" ") && !between.contains(".")
+        }
+        
+        def startsWithChar = _q.asText.matches(".*[a-zA-Z]$")
+        def endsWithChar   = _n.asText.matches("^[a-zA-Z].*")
+        
+        if(startsWithChar && endsWithChar && hasNoSeparator) {
+          l ++ _q ++ " " ++ _n ++ r
+        } else {
+          l ++ _q ++ _n ++ r
+        }
       
       case (t: Literal, _) if t.value.tag == StringTag =>
         l ++ Fragment("\""+ t.value.stringValue +"\"")  ++ r
@@ -282,6 +298,9 @@ trait ReusingPrinter extends AbstractPrinter {
       case (Match(selector, cases), _) =>
         l ++ p(selector) ++ p(cases) ++ r
         
+      case (CaseDef(pat, guard, BlockExtractor(body)), _) =>
+        l ++ p(pat) ++ p(guard) ++ ind.current ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
+        
       case (CaseDef(pat, guard, body), _) =>
         l ++ p(pat) ++ p(guard) ++ p(body) ++ r
         
@@ -312,6 +331,9 @@ trait ReusingPrinter extends AbstractPrinter {
         val q = if(qual.toString == "") "" else qual +"."
         val m = if(mix.toString == "") "" else "["+ mix + "]"
         l ++ Fragment(q+ "super" +m) ++ r
+        
+      case (Try(b @ BlockExtractor(block), catches, finalizer), _) if !b.hasExistingCode =>
+        l ++ ind.current ++ printIndented(block, separator = Requisite.newline(ind.current)) ++ p(catches) ++ p(finalizer) ++ r
    
       case (Try(block, catches, finalizer), _) =>
         l ++ p(block) ++ p(catches) ++ p(finalizer) ++ r
