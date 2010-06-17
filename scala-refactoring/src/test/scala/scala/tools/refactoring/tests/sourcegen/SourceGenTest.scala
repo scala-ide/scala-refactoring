@@ -3,21 +3,17 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.sourcegen
+package scala.tools.refactoring
+package tests.sourcegen
 
-import scala.tools.refactoring.tests.util.TestHelper
-import org.junit.Test
-import junit.framework.TestCase
+import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
-import scala.tools.refactoring.sourcegen._
-import scala.tools.refactoring.common._
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.io.AbstractFile
+import sourcegen.SourceGenerator
+import common.SilentTracing
 import tools.nsc.symtab.Flags
-import scala.tools.nsc.ast.parser.Tokens
+import tools.nsc.ast.parser.Tokens
 
-@Test
 class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   
   import global._
@@ -509,13 +505,13 @@ trait AbstractPrinter {
   @Test
   def testPlusEquals() = {
     val tree = treeFrom("""
-      trait Demo {
+      trait Demo2 {
         var assignee = 1
         assignee += -42
       }""")
       
     assertEquals("""
-      trait Demo {
+      trait Demo2 {
         var assignee = 1
         assignee += -42
       }""", generateText(tree))
@@ -526,7 +522,7 @@ trait AbstractPrinter {
   @Test
   def testAssign() = {
     val tree = treeFrom("""
-      trait Demo {
+      trait Demo1 {
         def method {
           var i = 0
           i = 1
@@ -534,14 +530,14 @@ trait AbstractPrinter {
       }""")
       
     assertEquals("""
-      trait Demo {
+      trait Demo1 {
         def method {
           var i = 0
           i = 1
         }
       }""", generateText(tree))
     
-    tree prettyPrintsTo """trait Demo {
+    tree prettyPrintsTo """trait Demo1 {
   def method = {
     var i = 0
     i = 1

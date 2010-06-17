@@ -3,14 +3,12 @@
  */
 // $Id$
 
-package scala.tools.refactoring.scripts
+package scala.tools.refactoring
+package tests.scripts
 
-import scala.tools.refactoring._
-import scala.tools.refactoring.common._
-import scala.tools.refactoring.tests.util._
-import scala.tools.refactoring.util.CompilerProvider
+import util.CompilerProvider
 
-object TreePrinter extends CompilerProvider with SilentTracing {
+object TreePrinter extends CompilerProvider {
   
   import global._
   

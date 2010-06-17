@@ -1,10 +1,12 @@
 package scala.tools.refactoring
 package common
 
-import tools.nsc.io.AbstractFile
+import tools.nsc.symtab.Flags
 import tools.nsc.util.RangePosition
-import tools.nsc.symtab.{Flags, Names, Symbols}
+import tools.nsc.ast.parser.Tokens
 import reflect.ClassManifest.fromClass
+import tools.nsc.io.AbstractFile
+import tools.nsc.symtab.{Flags, Names}
 
 /**
  * A bunch of implicit conversions for ASTs and other helper
@@ -12,7 +14,7 @@ import reflect.ClassManifest.fromClass
  * provide the means to access a file's corresponding tree.
  * 
  * */
-trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
+trait PimpedTrees {
     
   val global: scala.tools.nsc.interactive.Global
   import global._
@@ -29,6 +31,152 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
    * */  
   def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file)
 
+  
+  /**
+   * Represent an import selector as a tree, including both names as trees.
+   * */
+  case class ImportSelectorTree(name: NameTree, rename: global.Tree) extends global.Tree
+  
+  /**
+   * Import selectors are not trees, but we can provide an extractor
+   * that converts the ImportSelectors into our own ImportSelectorTrees.
+   * */
+  implicit def importToImportSelectorTreeExtractor(t: global.Import) = new {
+    // work around for https://lampsvn.epfl.ch/trac/scala/ticket/3392
+    def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
+    
+      val name = NameTree(imp.name) setPos new RangePosition(t.pos.source, imp.namePos, imp.namePos, imp.namePos + imp.name.length)
+      
+      if(imp.renamePos < 0 || imp.name == imp.rename) {
+        ImportSelectorTree(
+          name, 
+          global.EmptyTree) setPos name.pos
+      } else {
+        val rename = NameTree(imp.rename) setPos new RangePosition(t.pos.source, imp.renamePos, imp.renamePos, imp.renamePos + imp.rename.length) 
+        ImportSelectorTree(
+          name, 
+          rename) setPos (name.pos withPoint rename.pos.start withEnd rename.pos.end)
+      }
+    }
+    
+    object Selectors {
+      def unapply(ss: List[global.ImportSelector]) = {
+        Some(Selectors(ss))
+      }
+    }
+  }
+  
+  /**
+   * Add some methods to Tree that make it easier to compare
+   * Trees by position and to extract the position of a tree's
+   * name, which is tricky for Selects.
+   * */
+  implicit def additionalTreeMethodsForPositions(t: Tree) = new {
+    def hasExistingCode = t != null && !t.isEmpty && t.pos.isRange
+    def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
+    def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
+    def samePos(o: Tree)    : Boolean = samePos(o.pos)
+    def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
+    def namePosition(): Position = (t match {
+      case t: ModuleDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+      case t: ClassDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+      case t: TypeDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+      case t if t.pos == NoPosition => NoPosition
+      case t: ValOrDefDef =>
+        
+        val name = if(t.symbol != NoSymbol) t.symbol.nameString else t.name.toString.trim
+        
+        /* In general, the position of the name starts from t.pos.point and is as long as the trimmed name.
+         * But if we have a val in a function: 
+         *   ((parameter: Int) => ..)
+         *     ^^^^^^^^^^^^^^
+         * then the position of the name starts from t.pos.start. To fix this, we extract the source code and
+         * check where the parameter actually starts.
+         * */
+        lazy val src = t.pos.source.content.slice(t.pos.start, t.pos.point).mkString("")
+        
+        val pos = if(t.pos.point - t.pos.start == name.length && src == name) 
+          t.pos withEnd t.pos.point
+        else 
+          new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
+        
+        if(t.mods.isSynthetic && t.pos.isTransparent) 
+          pos.makeTransparent
+        else
+          pos
+          
+      case t @ Select(qualifier: New, selector) if selector.toString == "<init>" =>
+        t.pos withEnd t.pos.start
+        
+      case t @ Select(qualifier, selector) => 
+      
+        if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
+          t.pos withEnd (t.pos.start + nameString.length)
+        } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
+          t.pos withStart (t.pos.end - t.symbol.nameString.length)
+        } else if (qualifier.pos.isRange) {
+          t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
+        } else if (qualifier.pos == NoPosition) {
+          t.pos
+        } else {
+          t.pos withEnd (t.pos.start + t.name.toString.trim.length)
+        }
+        
+      case t @ Bind(name, body) =>
+        t.pos withEnd (t.pos.start + t.name.toString.trim.length)
+      
+      case t @ LabelDef(name, _, _) if name.toString startsWith "while" =>
+        t.pos withEnd (t.pos.start + "while".length)
+        
+      case t @ LabelDef(name, _, Block(stats, cond)) if name.toString startsWith "doWhile" =>
+        val src = stats.last.pos.source.content.slice(stats.last.pos.end, cond.pos.start) mkString
+        val whileStart = stats.last.pos.end + src.indexOf("while")
+        t.pos withStart whileStart withEnd (whileStart + "while".length)
+        
+      case t: SelectFromTypeTree =>
+        t.pos withStart t.pos.point
+        
+      case _ => throw new Exception("uhoh")
+    }) match {
+      case NoPosition => NoPosition
+      case p =>
+        // set all points to the start, keeping wrong points
+        // around leads to the calculation of wrong lines
+        if(p.isTransparent)
+          p withPoint p.start makeTransparent
+        else
+          p withPoint p.start
+    }
+    
+    private def extractName(name: Name) = 
+      if(name.toString == "<empty>")
+        ""
+      else if (t.symbol.isSynthetic && name.toString.contains("$"))
+        "_"
+      else if (t.symbol.isSynthetic)
+        ""
+      else if (t.symbol != NoSymbol) {
+        t.symbol.nameString
+      } else 
+        name.toString.trim
+    
+    def nameString: String = t match {
+      case t: Select if t.name.toString endsWith "_$eq"=>
+        val n = extractName(t.name)
+        n.substring(0, n.length - "_=".length)
+      case t: Select if t.name.toString startsWith "unary_"=>
+        t.symbol.nameString.substring("unary_".length)
+      case t: Select if t.symbol != NoSymbol =>
+        t.symbol.nameString
+      case t: LabelDef if t.name.toString startsWith "while" => "while"
+      case t: LabelDef if t.name.toString startsWith "doWhile" => "while"
+      case t: DefTree => extractName(t.name)
+      case t: RefTree => extractName(t.name)
+      case ImportSelectorTree(NameTree(name), _) => name.toString
+      case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
+    }
+  }
+  
   /**
    * Given a Position, returns the tree in that compilation
    * unit that inhabits that position.
@@ -329,4 +477,142 @@ trait PimpedTrees extends AdditionalTreeMethods with CustomTrees {
       case x => x
     }
   }
+  implicit def additionalValMethods(t: ValDef) = new {
+    def needsKeyword =
+      !t.mods.hasFlag(Flags.PARAM) &&
+      !t.mods.hasFlag(Flags.PARAMACCESSOR) &&
+      !t.mods.hasFlag(Flags.CASEACCESSOR) &&
+      !t.mods.hasFlag(Flags.SYNTHETIC) &&
+      !t.symbol.isSynthetic
+  }
+  
+  /**
+   * Make a Tree aware of its parent and siblings. Note
+   * that these are expensive operations because they
+   * traverse the whole compilation unit.
+   * */
+  implicit def additionalTreeMethodsForFamily(t: Tree) = new {
+    def originalParent = cuRoot(t.pos) flatMap { root =>
+    
+      def find(root: Tree): Option[Tree] = {
+        val cs = children(root)
+        
+        if(cs.exists(_ sameTree t))
+          Some(root)
+        else
+          cs.flatMap(find).lastOption
+      }
+      find(root)
+    }
+    
+    def originalLeftSibling  = findSibling(originalParent, 1, 0)
+    
+    def originalRightSibling = findSibling(originalParent, 0, 1)
+    
+    private def findSibling(parent: Option[Tree], compareIndex: Int, returnIndex: Int) = parent flatMap 
+      (children(_) filter (_.pos.isRange) sliding 2 find (_ lift compareIndex map (_ samePos t) getOrElse false) flatMap (_ lift returnIndex))
+  }
+  
+  implicit def additionalTreeListMethods(ts: List[Tree]) = new {
+    def allOnSameLine: Boolean = {
+      val poss = ts map (_.pos)
+      poss.forall(_.isRange) && (poss.map(_.line).distinct.length <= 1)
+    }
+  }
+  
+  def keepTree(t: Tree) = !t.isEmpty && (t.pos.isRange || t.pos == NoPosition)
+  
+  /**
+   * Represent a Name as a tree, including its position.
+   * */
+  case class NameTree(name: global.Name) extends global.Tree {
+    if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
+    def nameString = name.toString.trim
+    override def toString = "NameTree("+ nameString +")"
+    override def hashCode = {
+      nameString.hashCode * 31 + (if(pos == NoPosition) NoPosition.hashCode else pos.start)
+    }
+    override def equals(other: Any) = other match {
+      case other: NameTree if pos == NoPosition && other.pos == NoPosition => 
+        other.nameString == nameString
+      case other: NameTree if pos != NoPosition && other.pos != NoPosition => 
+        other.nameString == nameString && other.pos.start == pos.start && other.pos.source == pos.source
+      case _ => false
+    }
+  }
+  
+  /**
+   * Represent a modifier as a tree, including its position.
+   * */
+  case class ModifierTree(flag: Long) extends global.Tree {
+    
+    override def toString = "ModifierTree("+ nameString +")"
+    
+    import Flags._
+    
+    def nameString = flag match {
+      case 0            => ""
+      case TRAIT        => "trait"
+      case METHOD       => "def"
+      case FINAL        => "final"
+      case IMPLICIT     => "implicit"
+      case PRIVATE      => "private"
+      case PROTECTED    => "protected"
+      case SEALED       => "sealed"
+      case OVERRIDE     => "override"
+      case CASE         => "case"
+      case ABSTRACT     => "abstract"
+      case PARAM        => ""
+      case LAZY         => "lazy"
+      case Tokens.VAL   => "val"
+      case Tokens.VAR   => "var"
+      case Tokens.TYPE  => "type"
+      case Tokens.DEF   => "def"
+      case _            => "<unknown>: " + flagsToString(flag)
+    }
+  } 
+    
+  /**
+   * Extract the modifiers with their position from a Modifiers
+   * object.
+   * */
+  object ModifierTree {
+    def unapply(m: global.Modifiers) = {
+      Some(m.positions.toList map {
+        case (flag, global.NoPosition) => 
+          ModifierTree(flag)
+        case (flag, pos) =>
+          ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
+      })
+    }
+  }
+  
+  /**
+   * The call to the super constructor in a class:
+   * class A(i: Int) extends B(i)
+   *                         ^^^^ 
+   * */
+  case class SuperConstructorCall(clazz: global.Tree, args: List[global.Tree]) extends global.Tree {
+    if(clazz.pos != global.NoPosition) setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
+  }
+  
+  /**
+   * Representation of self type annotations:
+   *   self: A with B =>
+   *   ^^^^^^^^^^^^^^
+   * */
+  case class SelfTypeTree(name: NameTree, types: List[global.Tree], orig: Tree) extends global.Tree
+    
+  /**
+   * Unify the children of a Block tree and sort them 
+   * in the same order they appear in the source code.
+   * */
+  object BlockExtractor {
+    def unapply(t: Block) = Some(removeCompilerTreesForMultipleAssignment(if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
+      t.expr :: t.stats
+    else
+      t.stats ::: t.expr :: Nil) filter keepTree) 
+  }
+  
+  case class MultipleAssignment(names: List[ValDef], rhs: Tree) extends global.Tree
 }

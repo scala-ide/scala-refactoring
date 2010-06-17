@@ -6,6 +6,8 @@
 package scala.tools.refactoring
 package analysis
 
+import common.PimpedTrees
+
 /**
  * Provides an implementation of the Indexes.IndexLookup trait
  * by combining various CompilationUnitIndexes. Note that creating
@@ -13,9 +15,7 @@ package analysis
  * indexed, and all further work is only done on demand.
  * 
  * */
-trait IndexImplementations extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes {
-  
-  this: common.CustomTrees =>
+trait GlobalIndexes extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes with PimpedTrees {
 
   import global._
   

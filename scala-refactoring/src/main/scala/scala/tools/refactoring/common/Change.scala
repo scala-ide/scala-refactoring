@@ -3,9 +3,10 @@
  */
 // $Id$
 
-package scala.tools.refactoring.common
+package scala.tools.refactoring
+package common
 
-import scala.tools.nsc.io.AbstractFile
+import tools.nsc.io.AbstractFile
 
 case class Change(file: AbstractFile, from: Int, to: Int, text: String)
 

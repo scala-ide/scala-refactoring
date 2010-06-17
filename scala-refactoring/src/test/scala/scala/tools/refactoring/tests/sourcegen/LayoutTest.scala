@@ -3,14 +3,13 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.sourcegen
+package scala.tools.refactoring
+package tests.sourcegen
 
 import org.junit.Test
-import junit.framework.TestCase
 import org.junit.Assert._
-import scala.tools.refactoring.sourcegen._
+import sourcegen._
 
-@Test
 class LayoutTest {
 
   @Test

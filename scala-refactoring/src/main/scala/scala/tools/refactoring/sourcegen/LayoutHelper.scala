@@ -172,8 +172,11 @@ trait LayoutHelper extends CommentHelpers {
       case (p: Star, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
          
-      case (p: Try, c) =>
+      case (p: Try, c: Block) =>
          layout(p.pos.start, c.pos.start) splitBefore ('{')
+         
+      case (p: Try, c) =>
+         layout(p.pos.start, c.pos.start) splitAfter ('\n', '{')
          
       case (p: Assign, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout

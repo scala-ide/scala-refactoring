@@ -35,13 +35,44 @@ This documentation
 
 \chapter{Refactoring Library}
 
-describes the three main modules of the refactoring library.
+The refactoring library is the heart of the Scala Refactoring project. It contains the means to analyze a Scala program, to transform it and to turn it back into source code. Writing a refactoring comprises several steps. One has to:
+
+\begin{itemize}
+ \item provide a user interface so that a specific refactoring can be discovered and invoked from the IDE.
+ \item analyze the program under refactoring to find out whether the refactoring is applicable and further to determine the parameters and constraints for the refactoring.
+ \item transform the program tree from its original form into a new -- refactored -- form according to the refactoring's configuration.
+ \item turn this new form back into source code, keeping as much of the original formatting in place as possible and to generate code for new parts of the program.
+ \item present the result of the refactoring to the user -- typically in the form of a patch --  and apply it to the source code.
+\end{itemize}
+
+From all these steps, the first and the last one are IDE-platform dependent and usually well supported (see Chapter XXX). For the other three, the refactoring library contains the necessary infrastructure to make these steps easier.
+
+The core of the refactoring is a transformation that takes a program and changes its structure. To know what to transform, one has to analyze the program first. That we also have to turn a refactored AST back into source code is a consequence of storing programs as plain text files, but is not an essential part of a refactoring. Therefore, one of the design goals was to provide a generic implementation that can handle all kinds of changes without any help from the transformation phase.
+
+In the remainder of this chapter, we shall first take a look at the architecture of the library and then describe each of the three main components in detail.
 
 \section{Overview}
 
-an introduction, mention the basic concepts, also say that trees have to keep their positions if the source code should be regenerated.
+% Muss ich den AST erklären? Warum es den braucht und so?
+
+Our refactorings do not work on the source code directly but -- just as the Scala compiler -- do most of the work on the abstract syntax tree (AST). We also do not create our own AST but reuse the Scala compiler's (as explained in Chapter XXX, we also do not invoke the compiler ourselves but just take an AST from the IDE). This not only saves time but also makes it easier to implement a new refactoring if one is already familiar with the Scala compiler's AST.
+
+A typical refactoring first takes the current file's AST and the user's selection or caret position and first checks if the chosen refactoring is applicable. The AST is then transformed into its new form and handed over to the source generator to turn the AST back into source code (see \figref{figure:refactoring-flow}). As motivated above, generating the source code is implemented generically and needs no further instructions from the refactoring implementor.
+
+The Scala's AST is explained in more detail in Appendix \vref{chapter:scala-ast}; important to know is that all trees have a position information: either indicating a location from where the tree origins or a \src{NoPosition}, which denotes trees that do not have a corresponding source code location. This information is used by the transformation and code generation: trees with a \src{NoPosition} are pretty printed and the trees with a specific source location are reused (this is needed to preserve the formatting of the source code).  %später?
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{refactoring-flow.pdf}
+  \caption{The work-flow of the refactoring. }
+  \label{figure:refactoring-flow}
+\end{figure}
+
 
 the three subsection follow the packages ...
+
+
+
 
 \section{Analysis} \label{section:analysis}
 
@@ -111,10 +142,19 @@ trait IndexLookup {
     * For a given Symbol, returns all trees that reference or declare the Symbol.
     * */
   def occurences(s: global.Symbol): List[global.Tree]
+
+  /**
+    * For the given Symbol - which can be a class or object - returns a list of all sub- 
+    * and super classes, in no particular order.
+    */
+  def completeClassHierarchy(s: global.Symbol): List[global.Symbol] =
+    (s :: (allDefinedSymbols filter (_.ancestors contains s) flatMap (s => s :: s.ancestors)) 
+      filter (_.pos != global.NoPosition) distinct)
+
 }
 \end{lstlisting}
 
-The library also contains a default implementation that can be used, if the IDE does not already maintain an index itself.
+The library also contains a default implementation that can be used if the IDE does not already maintain an index itself.
 
 \subsection{Default Index Implementation}
 
@@ -129,7 +169,7 @@ Whenever a compilation unit changes, just a single \src{CompilationUnitIndex} ne
 
 \subsection{Resolving References}
 
-Resolving the declaration tree of a symbol is an inexpensive lookup, but the reverse -- finding all references -- causes more work. The process of finding all references is done in multiple steps: first, the symbol is \textit{expanded} and second all references to these expanded symbols are collected. What do we mean by expanding a symbol? Consider the example of the colored symbols we mentioned at the beginning of Section \ref{section:analysis}. The implementing method defines a different symbol than the abstract declared method. But when we want to find references, we need all references to both symbols. The same is true for getters and setters: renaming a class parameter also needs to rename all usages of getters and setters. To do this, the index implementation uses so called \src{SymbolExpanders}:
+Resolving the declaration tree of a symbol is an inexpensive lookup, but the reverse -- finding all references -- causes more work. In \src{GlobalIndex}, the process of finding all references is done in multiple steps: first, the symbol is \textit{expanded} and second all references to these expanded symbols are collected. What do we mean by expanding a symbol? Consider the example of the colored symbols we mentioned at the beginning of Section \ref{section:analysis}. The implementing method defines a different symbol than the abstract declared method. But when we want to find references, we need all references to both symbols. The same is true for getters and setters: renaming a class parameter also needs to rename all usages of getters and setters. To do this, the index implementation uses so called \src{SymbolExpanders}:
 
 \begin{lstlisting}
 trait SymbolExpander {
@@ -180,8 +220,9 @@ The refactoring has to create a method that takes the \src{values} and the \src{
 
 The calculation of these inbound and outbound dependencies is done as follows:
 
-\paragraph{Inbound:} From the current enclosing scope's symbol, find all child symbols. From these, find all that are use inside the selected expressions and substract those that are defined in the selected expressions. This gives us all the inbound parameters. XXX
-\paragraph{Outbound:} For each defined symbol inside the selection, check if it is used outside the selection.
+\paragraph{Inbound:} Find all symbols that are declared in the current scope (e.g. the method we extract from) and remove all declarations that are defined inside the selection. This gives us all the inbound parameters.
+
+\paragraph{Outbound:} For each symbol that is definde inside the selection, check if it is used anywhere outside the selection.
 
 \section{Transformation}
 
@@ -685,8 +726,6 @@ trait SourceGenerator extends PrettyPrinter with ReusingPrinter {
 %\ldots%
 \end{lstlisting}
 
-What we have not yet explained is the \src{Fragment} type.
-
 \subsubsection{Fragments and Layout}
 
 The result of a printing operation is not a plain string but an instance of \src{Fragment}. A fragment contains a leading, center, and trailing layout. A layout is simply a wrapper around a string or a part of the source file with some additional helper methods. For example, in \figref{figure:ast_with_layout}, all the apricot and blue colored boxes are fragments and the green ones are instances of \src{Layout}.
@@ -791,7 +830,13 @@ The result is a list of change objects that describe which parts in a file are t
 case class Change(file: AbstractFile, from: Int, to: Int, text: String)
 \end{lstlisting}
 
-This is the preferred method for IDEs that operate with change objects. Alternatively, if one just wants to generate the source code from a tree, the \src{createFragment} method can also be invoked directly. 
+This is the preferred method for IDEs that operate with change objects. The \src{Change} object contains a useful function that applies a list of changes to a source code string:
+
+\begin{lstlisting}
+def applyChanges(ch: List[Change], source: String): String
+\end{lstlisting}
+
+Alternatively, if one just wants to generate the source code from a tree, the \src{createFragment} method can also be invoked directly. 
 
 \begin{lstlisting}
 def createFragment(t: Tree): Fragment
@@ -819,6 +864,11 @@ how does the current integration look like
 don't describe the unit tests but show how the refactoring tests work and how one could write new test cases.
 
 \chapter{Outlook}
+
+\section{Accomplishments}
+
+XXX needs some kind of conclusion, we have achieved our goal of having source generation that doesn't need user interaction.
+
 
 \section{Acknowledgments}
 

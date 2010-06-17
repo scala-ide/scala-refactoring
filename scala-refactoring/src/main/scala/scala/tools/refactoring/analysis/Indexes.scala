@@ -6,8 +6,6 @@
 package scala.tools.refactoring
 package analysis
 
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.symtab.Symbols
 /**
  * The Indexes trait is mixed in by refactorings that need an index.
  * It provides several lookup functions to find references and decl-

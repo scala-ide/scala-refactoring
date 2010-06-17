@@ -8,11 +8,13 @@ trait Requisite {
   
   def apply(l: Layout, r: Layout): Layout = {
     if(isRequired(l, r)) {
-      l ++ getLayout ++ r
+      insertBetween(l, r)
     } else {
       l ++ r
     }
   }
+  
+  protected def insertBetween(l: Layout, r: Layout) = l ++ getLayout ++ r
   
   protected def getLayout: Layout
   
@@ -64,6 +66,13 @@ object Requisite {
       !(_1 || _2)
     }
     def getLayout = Layout("\n"+ indentation)
+    override def insertBetween(l: Layout, r: Layout) = {
+      if(r.asText.startsWith(indentation)) {
+        l ++ Layout("\n") ++ r
+      } else {
+        l ++ getLayout ++ r
+      }
+    }
   }
 }
 

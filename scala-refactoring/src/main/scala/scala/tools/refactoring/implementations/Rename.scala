@@ -6,11 +6,7 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.tools.nsc.io.AbstractFile
-import scala.tools.nsc.interactive.Global
-import common.Change
-
-abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes {
+abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes with transformation.TreeFactory {
     
   import global._
     
@@ -26,10 +22,6 @@ abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis w
         Right(PreparationResult(t, t.symbol.isPrivate || t.symbol.isLocal))
       case None => Left(PreparationError("no symbol selected found"))
     }
-  }
-  
-  override def refactor(changed: List[global.Tree]): List[Change] = context("main") {
-    createChanges(changed) toList
   }
     
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
