@@ -5,15 +5,11 @@
 
 package scala.tools.refactoring
 
-import scala.tools.nsc.util.SourceFile
-import scala.tools.nsc.io.AbstractFile
-import transformation.Transformation
-import common.{Selections, Tracing, SilentTracing}
-import common.Change
+import transformation.TreeTransformations
+import common.{Selections, Tracing, SilentTracing, Change, PimpedTrees}
+import sourcegen.SourceGenerator
 
-abstract class Refactoring extends Selections with Transformation with SilentTracing with sourcegen.SourceGenerator with common.PimpedTrees {
-
-  val global: scala.tools.nsc.interactive.Global
+abstract class Refactoring extends Selections with TreeTransformations with SilentTracing with SourceGenerator with PimpedTrees {
   
   def refactor(changed: List[global.Tree]): List[Change] = context("main") {
     createChanges(changed) toList

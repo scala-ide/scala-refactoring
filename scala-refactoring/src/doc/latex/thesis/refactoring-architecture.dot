@@ -1,0 +1,37 @@
+digraph G {
+  rankdir = BT
+  compound=true
+  fontname="Verdana"
+  node[shape=record,fontname="Verdana",style=filled,fillcolor=bisque ]
+  edge[fontname="Verdana", arrowhead=onormal, arrowsize=1.5]
+
+  subgraph cluster0 {
+    Indexes
+    TreeAnalysis
+    fontname="Courier"
+    label="package analysis"
+    labelloc="b"
+  }
+
+  subgraph cluster1 {
+    TreeTransformations -> Transformations
+    TreeFactory
+    fontname="Courier"
+    label="package transformation"
+    labelloc="b"
+  }
+
+  subgraph cluster2 {
+    Regeneration -> Partitioner
+    Regeneration -> Merger
+    Regeneration -> TreePrinter
+    Regeneration -> LayoutHandler
+    fontname="Courier"
+    label="package sourcegen"
+    labelloc="b"
+  }
+
+  Refactoring -> Analysis
+  Refactoring -> Regeneration
+  Refactoring -> Transformation
+}

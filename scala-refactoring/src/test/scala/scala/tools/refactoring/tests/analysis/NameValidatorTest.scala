@@ -3,17 +3,14 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.analysis
+package scala.tools.refactoring
+package tests.analysis
 
-import scala.tools.refactoring.tests.util.TestHelper
-import scala.tools.refactoring.analysis._
-import org.junit.Test
-import junit.framework.TestCase
+import tests.util.TestHelper
+import analysis._
 import org.junit.Assert._
-import scala.tools.nsc.util.{SourceFile, BatchSourceFile}
 
-@Test
-class NameValidatorTest extends TestHelper with NameValidator with IndexImplementations {
+class NameValidatorTest extends TestHelper with NameValidator with GlobalIndexes {
 
   var index: IndexLookup = null
   
@@ -44,7 +41,7 @@ class NameValidatorTest extends TestHelper with NameValidator with IndexImplemen
   
   implicit def treeFinder(t: global.Tree) = new {
     def find(name: String) = {
-      new TreeSelection(t).allSelectedTrees find {
+      TreeSelection(t).allSelectedTrees find {
         case t: global.SymTree => t.symbol.nameString == name
         case _ => false
       }
@@ -125,7 +122,7 @@ class NameValidatorTest extends TestHelper with NameValidator with IndexImplemen
   @Test
   def collisionInPackage() {
     val tree = treeFrom("""
-    package p1
+    package justapackage1
     
     class C1
    

@@ -3,17 +3,13 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.common
+package scala.tools.refactoring
+package tests.common
 
-import scala.tools.refactoring.tests.util.{TestHelper, TreePath}
-import org.junit.{Test, Before}
-import junit.framework.TestCase
+import tests.util.{TestHelper, TreePath}
 import org.junit.Assert._
-import scala.tools.refactoring.common.Selections
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
+import common.Selections
 
-@Test
 class SelectionsTest extends TestHelper with TreePath {
 
   import global._

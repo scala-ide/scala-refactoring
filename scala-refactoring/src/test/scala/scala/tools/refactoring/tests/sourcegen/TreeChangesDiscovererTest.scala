@@ -3,18 +3,14 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.sourcegen
+package scala.tools.refactoring
+package tests.sourcegen
 
-import scala.tools.refactoring.tests.util.TestHelper
-import org.junit.Test
-import junit.framework.TestCase
+import tests.util.TestHelper
 import org.junit.Assert._
-import scala.tools.refactoring.common._
-import scala.tools.refactoring.sourcegen._
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.io.AbstractFile
+import common.{SilentTracing, PimpedTrees}
+import sourcegen.TreeChangesDiscoverer
 
-@Test
 class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with SilentTracing {
   
   override def treeForFile(file: AbstractFile) = {

@@ -3,20 +3,14 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.analysis
+package scala.tools.refactoring
+package tests.analysis
 
-import scala.tools.refactoring.tests.util.TestHelper
-import org.junit.{Test, Before}
-import junit.framework.TestCase
+import tests.util.TestHelper
 import org.junit.Assert._
-import scala.tools.refactoring.common.Selections
-import scala.tools.refactoring.util.CompilerProvider
-import scala.tools.refactoring.analysis._
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.util.{SourceFile, BatchSourceFile, RangePosition}
+import analysis._
 
-@Test
-class DeclarationIndexTest extends TestHelper with IndexImplementations with TreeAnalysis {
+class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalysis {
 
   import global._
   

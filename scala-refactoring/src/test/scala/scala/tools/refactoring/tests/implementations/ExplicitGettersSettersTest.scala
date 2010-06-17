@@ -3,15 +3,12 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests
+package scala.tools.refactoring
+package tests.implementations
 
-import scala.tools.refactoring.implementations.ExplicitGettersSetters
-import scala.tools.refactoring.tests.util.TestRefactoring
-import scala.tools.refactoring.common.Tracing
-import scala.tools.refactoring.common.{ConsoleTracing, SilentTracing}
-import scala.tools.refactoring.analysis.IndexImplementations
-import scala.tools.refactoring.tests.util.TestHelper
-import org.junit.Test
+import implementations.ExplicitGettersSetters
+import tests.util.TestHelper
+import tests.util.TestRefactoring
 import org.junit.Assert._
 
 class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {

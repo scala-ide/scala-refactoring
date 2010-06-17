@@ -3,21 +3,17 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.sourcegen
+package scala.tools.refactoring
+package tests.sourcegen
 
-import scala.tools.refactoring.tests.util.TestHelper
-import org.junit.Test
-import junit.framework.TestCase
+import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
-import scala.tools.refactoring.sourcegen._
-import scala.tools.refactoring.common._
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.io.AbstractFile
+import sourcegen.SourceGenerator
+import common.SilentTracing
 import tools.nsc.symtab.Flags
-import scala.tools.nsc.ast.parser.Tokens
+import tools.nsc.ast.parser.Tokens
 
-@Test
 class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   
   import global._

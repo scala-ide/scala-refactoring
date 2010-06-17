@@ -1,7 +1,9 @@
 package scala.tools.refactoring
 package transformation
 
-trait TreeTransformations extends AbstractTransformations {
+import tools.nsc.io.AbstractFile
+
+trait TreeTransformations extends Transformations {
   
   this: common.PimpedTrees =>
   
@@ -44,8 +46,29 @@ trait TreeTransformations extends AbstractTransformations {
   def transform(f: PartialFunction[Tree, Tree]) = transformation(f)
   
   def filter(f: PartialFunction[Tree, Boolean]) = predicate(f)
+    
+  def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(transform {
+    case t if t == from => to
+  }))
+    
+  implicit def abstractFileToTree(file: AbstractFile): global.Tree = global.unitOfFile(file).body
   
-  val removeUnneededTrees = transform {
+  /**
+   * Replace the first sequence of elements with another sequence.
+   * */
+  implicit def additionalListMethods[T](l: List[T]) = new {
+    def replaceSequence(what: List[T], replacement: List[T]): List[T] = {
+      def inner(from: List[T], what: List[T], replacement: List[T]): List[T] = (from, what) match {
+        case (Nil, _) => Nil
+        case (xs, Nil) => xs
+        case (x :: xs, y :: ys) if x == y => replacement ::: inner(xs, ys, Nil)
+        case (x :: xs, _) => x :: inner(xs, what, replacement)
+      }
+      inner(l, what, replacement)
+    }
+  }
+  
+  val removeAuxiliaryTrees = ↓(transform {
     
     /* An empty RHS that is implemented as '.. { }' creates a Literal 
      * tree with a range length of 1, remove that tree.
@@ -57,27 +80,11 @@ trait TreeTransformations extends AbstractTransformations {
     
     case t: Select if t.name.toString == "<init>" => t.qualifier
     
-//    case t: New if t.pos.start > t.pos.point => 
-//      val p = t.pos withStart t.pos.point withPoint t.pos.start
-//      t setPos p
-//      
     case t: Tree if (t.pos == NoPosition || t.pos.isRange) => t
     
     case t: ValDef => emptyValDef
     
     case _ => EmptyTree
-  }
+  })
   
-  val noPosition = transform {
-    case t: Tree => t.pos = NoPosition; t
-  }
-  
-  val emptyTree = transform {
-    case t: ValDef => emptyValDef
-    case _ => EmptyTree
-  }
-  
-  val removeAuxiliaryTrees = ↓(removeUnneededTrees)
-  
-  val emptyAllPositions = ↓(noPosition)
 }

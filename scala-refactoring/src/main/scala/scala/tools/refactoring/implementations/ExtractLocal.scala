@@ -6,12 +6,7 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.tools.refactoring.MultiStageRefactoring
-import scala.tools.nsc.io.AbstractFile
-import scala.tools.nsc.interactive.Global
-import scala.tools.refactoring.common.Change
-
-abstract class ExtractLocal extends MultiStageRefactoring {
+abstract class ExtractLocal extends MultiStageRefactoring with transformation.TreeFactory {
   
   import global._
   

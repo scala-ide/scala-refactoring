@@ -6,9 +6,8 @@
 package scala.tools.refactoring
 package sourcegen
 
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.util.SourceFile
-import scala.tools.nsc.util.BatchSourceFile
+import tools.nsc.util.SourceFile
+import tools.nsc.util.BatchSourceFile
 
 trait CommentHelpers {
 

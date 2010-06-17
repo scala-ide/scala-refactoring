@@ -1,8 +1,8 @@
 package scala.tools.refactoring
 package analysis
 
-import scala.tools.nsc.util.BatchSourceFile
-import scala.tools.nsc.ast.parser.{Scanners, Tokens}
+import tools.nsc.util.BatchSourceFile
+import tools.nsc.ast.parser.{Scanners, Tokens}
 
 trait NameValidator {
 
@@ -34,7 +34,7 @@ trait NameValidator {
   def doesNameCollide(name: String, s: Symbol, index: IndexLookup): List[Symbol] = {
     
     def isNameAlreadyUsedInLocalScope: List[Symbol] = {
-      (index declaration s.owner map (new TreeSelection(_))).toList flatMap {
+      (index declaration s.owner map TreeSelection).toList flatMap {
         _.selectedSymbols.filter(_.nameString == name)
       } 
     }

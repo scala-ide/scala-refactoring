@@ -22,7 +22,7 @@ package transformation
  * Additional functions are provided that apply a transformation top-down
  * or bottom-up.
  * */
-trait AbstractTransformations {
+trait Transformations {
     
   abstract class Transformation[X, Y] extends (X ⇒ Option[Y]) {
     self ⇒

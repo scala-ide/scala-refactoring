@@ -15,7 +15,13 @@ import scala.tools.refactoring.transformation._
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.util.CompilerProvider
 
-trait TestHelper extends CompilerProvider with Transformation with SilentTracing with Selections with PimpedTrees {
+trait TestHelper extends CompilerProvider with TreeTransformations with TreeFactory with SilentTracing with Selections with PimpedTrees {
+  
+  type Test = org.junit.Test
+  type AbstractFile = tools.nsc.io.AbstractFile
+  type ConsoleTracing = common.ConsoleTracing
+  type SilentTracing = common.SilentTracing
+  type GlobalIndexes = analysis.GlobalIndexes
   
   /*
    * A project to test multiple compilation units. Add all 
@@ -39,7 +45,7 @@ trait TestHelper extends CompilerProvider with Transformation with SilentTracing
     
     lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
       // not all refactorings really need a selection:
-      new FileSelection(trees.head.pos.source.file, 0, 0)
+      FileSelection(trees.head.pos.source.file, 0, 0)
     }
     
     def apply(f: FileSet => List[String]) = assert(f(this))
@@ -72,8 +78,20 @@ trait TestHelper extends CompilerProvider with Transformation with SilentTracing
     val end   = src.indexOf(endPattern)
     
     if(start >= 0 && end >= 0)
-      Some(new TreeSelection(tree, start + startPattern.length, end))
+      Some(FileSelection(tree.pos.source.file, start + startPattern.length, end))
     else 
       None
   }
+  
+  val noPosition = transform {
+    case t: global.Tree => t.pos = global.NoPosition; t
+  }
+  
+  val emptyTree = transform {
+    case t: global.ValDef => global.emptyValDef
+    case _ => global.EmptyTree
+  }
+  
+  val emptyAllPositions = ↓(noPosition)
+  
 }

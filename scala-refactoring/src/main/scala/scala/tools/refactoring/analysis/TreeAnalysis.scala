@@ -6,12 +6,11 @@
 package scala.tools.refactoring
 package analysis
 
-import scala.tools.nsc.ast.Trees
-import scala.tools.refactoring.common.Selections
+import common.Selections
 
 trait TreeAnalysis {
   
-  self: Selections with Indexes with common.PimpedTrees /*really needed?*/ =>
+  self: Selections with Indexes =>
   
   val global: scala.tools.nsc.interactive.Global
   

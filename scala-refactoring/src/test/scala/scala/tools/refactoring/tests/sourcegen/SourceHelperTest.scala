@@ -3,17 +3,14 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.sourcegen
+package scala.tools.refactoring
+package tests.sourcegen
 
-import scala.tools.refactoring.tests.util.TestHelper
-import org.junit.Test
-import junit.framework.TestCase
+import tests.util.TestHelper
 import org.junit.Assert._
-import scala.tools.refactoring.sourcegen.SourceCodeHelpers
-import scala.tools.nsc.ast.Trees
-import scala.tools.nsc.util.BatchSourceFile
+import sourcegen.SourceCodeHelpers
+import tools.nsc.util.BatchSourceFile
 
-@Test
 class SourceHelperTest extends TestHelper with SourceCodeHelpers {
   
   implicit def stringToSourceFile(s: String) = new BatchSourceFile(s, s)

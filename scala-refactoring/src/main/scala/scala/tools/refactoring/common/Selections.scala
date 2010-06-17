@@ -3,13 +3,13 @@
  */
 // $Id$
 
-package scala.tools.refactoring.common
+package scala.tools.refactoring
+package common
 
-import scala.tools.nsc.io.AbstractFile
-import scala.collection.mutable.ListBuffer
-import scala.tools.nsc.interactive.Global
-import scala.tools.nsc.util.SourceFile
-import scala.tools.nsc.util.RangePosition
+import tools.nsc.io.AbstractFile
+import collection.mutable.ListBuffer
+import tools.nsc.interactive.Global
+import tools.nsc.util.RangePosition
 
 trait Selections {
   
@@ -73,19 +73,20 @@ trait Selections {
       p1.start < p1.end // some ranges don't have a visible representation
   }
   
-  class FileSelection(val file: AbstractFile, from: Int, to: Int) extends Selection {
+  case class FileSelection(val file: AbstractFile, from: Int, to: Int) extends Selection {
     
     lazy val pos = new RangePosition(root.pos.source, from, from, to)
     
     lazy val root = global.unitOfFile(file).body
   }
   
-  class TreeSelection(val root: Tree, val pos: RangePosition) extends Selection {
- 
-    def this(root: Tree, start: Int, end: Int) = this(root, new RangePosition(root.pos.source, start, start, end))
+  case class TreeSelection(val root: Tree) extends Selection {
     
-    def this(root: Tree) = this(root, if(root.pos.isRange) root.pos.asInstanceOf[RangePosition] else throw new Exception("Position not a range."))
+    if(!root.pos.isRange)
+      error("Position not a range.")
+      
+    val pos = root.pos.asInstanceOf[RangePosition]
     
-    lazy val file = pos.source.file
+    val file = pos.source.file
   }
 }

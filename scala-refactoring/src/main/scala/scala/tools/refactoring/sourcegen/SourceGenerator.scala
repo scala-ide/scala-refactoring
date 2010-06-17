@@ -1,7 +1,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-import scala.tools.nsc.io.AbstractFile
+import tools.nsc.io.AbstractFile
 import common.{PimpedTrees, Tracing, Change}
 
 trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting  with TreeChangesDiscoverer {

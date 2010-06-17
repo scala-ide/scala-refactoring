@@ -6,10 +6,6 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.tools.nsc.io.AbstractFile
-import scala.tools.nsc.interactive.Global
-import common.Change
-
 //object IntepreterFix {
 //  import scala.tools.nsc._
 //  import Interpreter._
@@ -44,7 +40,7 @@ import common.Change
 //import scala.tools.nsc.Interpreter.DebugParam
 //import IntepreterFix._
 
-abstract class ExtractMethod extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes {
+abstract class ExtractMethod extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes with transformation.TreeFactory {
   
   import global._
   

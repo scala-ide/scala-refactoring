@@ -6,11 +6,6 @@
 package scala.tools.refactoring
 package common
 
-object StopWatch {
-  private lazy val start = System.currentTimeMillis
-  def elapsed = System.currentTimeMillis - start
-}
-
 trait Tracing {
   
   var level = 0
@@ -58,3 +53,10 @@ trait Tracing {
   private[common] def print(s: String): Unit
 }
 
+trait ConsoleTracing extends Tracing {
+  override def print(s: String) = println(s)
+}
+
+trait SilentTracing extends Tracing {
+  override def print(s: String) = ()
+}

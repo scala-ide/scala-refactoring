@@ -3,21 +3,19 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests
+package scala.tools.refactoring
+package tests.implementations
 
-import scala.tools.refactoring.implementations.Rename
-import scala.tools.refactoring.tests.util.TestRefactoring
-import scala.tools.refactoring.common.{SilentTracing, ConsoleTracing}
-import scala.tools.refactoring.analysis.IndexImplementations
-import scala.tools.refactoring.tests.util.TestHelper
-import org.junit.Test
+import implementations.Rename
+import tests.util.TestRefactoring
+import tests.util.TestHelper
 import org.junit.Assert._
 
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
   
   def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new Rename with SilentTracing with IndexImplementations {
+    val refactoring = new Rename with SilentTracing with GlobalIndexes {
       val global = outer.global
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes) 

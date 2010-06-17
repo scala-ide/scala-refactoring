@@ -6,13 +6,7 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.tools.nsc.util.RangePosition
-import scala.tools.refactoring.MultiStageRefactoring
-import scala.tools.nsc.io.AbstractFile
-import scala.tools.nsc.interactive.Global
-import scala.tools.refactoring.common.Change
-import scala.tools.nsc.symtab.Flags
-import scala.tools.nsc.symtab.Types
+import tools.nsc.symtab.Flags
 
 abstract class ExplicitGettersSetters extends MultiStageRefactoring {
   

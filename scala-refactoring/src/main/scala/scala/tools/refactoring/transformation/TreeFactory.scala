@@ -3,12 +3,12 @@
  */
 // $Id$
 
-package scala.tools.refactoring.transformation
+package scala.tools.refactoring
+package transformation
 
-import scala.tools.nsc.symtab.Flags
+import tools.nsc.symtab.Flags
 
 trait TreeFactory {
-  self: Transform =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._

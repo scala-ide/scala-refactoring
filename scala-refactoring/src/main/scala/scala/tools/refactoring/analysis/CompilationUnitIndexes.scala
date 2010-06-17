@@ -1,7 +1,8 @@
 package scala.tools.refactoring
 package analysis
 
-import scala.collection.mutable.{HashMap, ListBuffer}
+import common.PimpedTrees
+import collection.mutable.{HashMap, ListBuffer}
 
 /**
  * A CompilationUnitIndex is a light-weight index that
@@ -11,12 +12,8 @@ import scala.collection.mutable.{HashMap, ListBuffer}
  * then memoizes all relations.
  * 
  * */
-trait CompilationUnitIndexes {
-  
-  this: common.CustomTrees =>
-  
-  val global: scala.tools.nsc.interactive.Global
-  
+trait CompilationUnitIndexes extends PimpedTrees {
+    
   import global._
   
   trait CompilationUnitIndex {

@@ -3,11 +3,11 @@
  */
 // $Id$
 
-package scala.tools.refactoring.tests.util
+package scala.tools.refactoring
+package tests.util
 
-import scala.tools.refactoring.analysis.IndexImplementations
-import scala.tools.refactoring.MultiStageRefactoring
-import scala.tools.refactoring.common.Change
+import analysis.GlobalIndexes
+import common.Change
 import org.junit.Assert._
 
 trait TestRefactoring {
@@ -26,7 +26,7 @@ trait TestRefactoring {
     
     def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = {
 
-      val selection = new refactoring.FileSelection(project.selection.file, project.selection.pos.start, project.selection.pos.end)
+      val selection = refactoring.FileSelection(project.selection.file, project.selection.pos.start, project.selection.pos.end)
       
       refactoring.prepare(selection) match {
         case Right(prepare) =>

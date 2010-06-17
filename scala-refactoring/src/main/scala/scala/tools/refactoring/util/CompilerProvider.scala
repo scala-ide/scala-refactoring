@@ -3,14 +3,15 @@
  */
 // $Id$
 
-package scala.tools.refactoring.util
+package scala.tools.refactoring
+package util
 
-import scala.tools.nsc.util.Position
-import scala.tools.nsc.io.AbstractFile
-import scala.tools.nsc.Settings
-import scala.tools.nsc.interactive.Global
-import scala.tools.nsc.reporters.ConsoleReporter
-import scala.tools.nsc.util.BatchSourceFile
+import tools.nsc.util.Position
+import tools.nsc.io.AbstractFile
+import tools.nsc.Settings
+import tools.nsc.interactive.Global
+import tools.nsc.reporters.ConsoleReporter
+import tools.nsc.util.BatchSourceFile
 
 private object CompilerInstance {
   
