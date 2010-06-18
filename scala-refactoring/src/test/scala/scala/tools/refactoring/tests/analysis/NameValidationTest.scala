@@ -10,7 +10,7 @@ import tests.util.TestHelper
 import analysis._
 import org.junit.Assert._
 
-class NameValidatorTest extends TestHelper with NameValidator with GlobalIndexes {
+class NameValidationTest extends TestHelper with NameValidation with GlobalIndexes {
 
   var index: IndexLookup = null
   

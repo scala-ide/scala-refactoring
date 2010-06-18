@@ -27,7 +27,6 @@ class RenameTest extends TestHelper with TestRefactoring {
   
   @Test
   def renameRecursive = new FileSet {
-    add(
     """
       package renameRecursive
       class A {
@@ -36,7 +35,7 @@ class RenameTest extends TestHelper with TestRefactoring {
           case x :: xs => 1 +  /*(*/  length(xs)  /*)*/
         }
       }
-    """,
+    """ becomes
     """
       package renameRecursive
       class A {
@@ -45,12 +44,11 @@ class RenameTest extends TestHelper with TestRefactoring {
           case x :: xs => 1 +  /*(*/  recursiveLength(xs)  /*)*/
         }
       }
-    """)
+    """
   } applyRefactoring(renameTo("recursiveLength")) 
   
   @Test
   def renameLocalValue = new FileSet {
-    add(
     """
       package renameLocal1
       class A {
@@ -61,7 +59,7 @@ class RenameTest extends TestHelper with TestRefactoring {
           double(s + "a")
         }
       }
-    """,
+    """ becomes
     """
       package renameLocal1
       class A {
@@ -72,12 +70,11 @@ class RenameTest extends TestHelper with TestRefactoring {
           double(b + "a")
         }
       }
-    """)
+    """
   } applyRefactoring(renameTo("b"))
         
   @Test
   def renameParameter = new FileSet {
-    add(
     """
     package renameParameter
     class A {
@@ -85,7 +82,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         println(a)
       }
     }
-    """,
+    """ becomes
     """
     package renameParameter
     class A {
@@ -93,12 +90,11 @@ class RenameTest extends TestHelper with TestRefactoring {
         println(b)
       }
     }
-    """)
+    """
   } applyRefactoring(renameTo("b"))
     
   @Test
   def renameWithType = new FileSet {
-    add(
     """
     package renameWithType
     class A {
@@ -108,7 +104,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         }
       }
     }
-    """,
+    """ becomes
     """
     package renameWithType
     class A {
@@ -118,12 +114,11 @@ class RenameTest extends TestHelper with TestRefactoring {
         }
       }
     }
-    """)
+    """
   } applyRefactoring(renameTo("c"))
     
   @Test
   def renameMultiAssignment = new FileSet {
-    add(
     """
     package renameMultiAssignment
     class A {
@@ -132,7 +127,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         println(a + b)
       }
     }
-    """,
+    """ becomes
     """
     package renameMultiAssignment
     class A {
@@ -141,12 +136,11 @@ class RenameTest extends TestHelper with TestRefactoring {
         println(c + b)
       }
     }
-    """)
+    """
   } applyRefactoring(renameTo("c"))
     
   @Test
   def renameBinding = new FileSet {
-    add(
     """
     package renameBinding
     class A {
@@ -154,7 +148,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         1 match { case /*(*/ i /*)*/ => i }
       }
     }
-    """,
+    """ becomes
     """
     package renameBinding
     class A {
@@ -162,12 +156,11 @@ class RenameTest extends TestHelper with TestRefactoring {
         1 match { case /*(*/ integer /*)*/ => integer }
       }
     }
-    """)
+    """
   } applyRefactoring(renameTo("integer"))
     
   @Test
   def renameNewVal = new FileSet {
-    add(
     """
     package renameNewVal
     class A(i: Int) {
@@ -175,7 +168,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         var  /*(*/  l = /*)*/  new A(5)
       }
     }
-    """,
+    """ becomes
     """
     package renameNewVal
     class A(i: Int) {
@@ -183,12 +176,11 @@ class RenameTest extends TestHelper with TestRefactoring {
         var  /*(*/  ls = /*)*/  new A(5)
       }
     }
-    """)
+    """
   } applyRefactoring(renameTo("ls"))
     
   @Test
   def renameLazyArg = new FileSet {
-    add(
     """
     package renameLazyArg
     class A(i: Int) {
@@ -196,7 +188,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         println(/*(*/  a  /*)*/)
       }
     }
-    """,
+    """ becomes
     """
     package renameLazyArg
     class A(i: Int) {
@@ -204,12 +196,11 @@ class RenameTest extends TestHelper with TestRefactoring {
         println(/*(*/  s  /*)*/)
       }
     }
-    """)
+    """
   } applyRefactoring(renameTo("s"))
         
   @Test
   def forComprehension = new FileSet {
-    add(
     """
     package forComprehension
     class A {
@@ -217,7 +208,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         for(  /*(*/  i  /*)*/  <- 1 to 10) yield i
       }
     }
-    """,
+    """ becomes
     """
     package forComprehension
     class A {
@@ -225,29 +216,27 @@ class RenameTest extends TestHelper with TestRefactoring {
         for(  /*(*/  index  /*)*/  <- 1 to 10) yield index
       }
     }
-    """)
+    """
   } applyRefactoring(renameTo("index"))
             
   @Test
   def inConstructor = new FileSet {
-    add(
     """
     package inConstructor
     class A(i: Int) {
       val /*(*/  y  /*)*/ = i * 2
     }
-    """,
+    """ becomes
     """
     package inConstructor
     class A(i: Int) {
       val /*(*/  iTimesTwo  /*)*/ = i * 2
     }
-    """)
+    """
   } applyRefactoring(renameTo("iTimesTwo"))
             
   @Test
   def renameMethod = new FileSet {
-    add(
     """
     package renameMethod
     class A {
@@ -260,7 +249,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     class B(a: A) {
       val x = a.get(10)
     }
-    """,
+    """ becomes
     """
     package renameMethod
     class A {
@@ -273,61 +262,55 @@ class RenameTest extends TestHelper with TestRefactoring {
     class B(a: A) {
       val x = a.x(10)
     }
-    """)
+    """
   } applyRefactoring(renameTo("x"))
     
   @Test
   def renameMethodInMultipleFiles = new FileSet {
-    
-    add(
     """
     package rename
     class A {
       /*(*/  def get(a: Int) = "get"  /*)*/
     }
-    """,
+    """ becomes
     """
     package rename
     class A {
       /*(*/  def x(a: Int) = "get"  /*)*/
     }
-    """)
-    
-    add(
+    """
+    ;
     """
     package rename
     class B {
       val a = new A
       val get = a.get(5)
     }
-    """,
+    """ becomes
     """
     package rename
     class B {
       val a = new A
       val get = a.x(5)
     }
-    """)   
+    """   
   } applyRefactoring(renameTo("x"))
     
   @Test
   def renameClass = new FileSet {
-    
-    add(
     """
     package renameClass
     /*(*/  class A  /*)*/
 
     class B extends A
-    """,
+    """ becomes
     """
     package renameClass
     /*(*/  class X  /*)*/
 
     class B extends X
-    """)
-    
-    add(
+    """
+    ;
     """
     package renameClass
     object C extends A {
@@ -335,7 +318,7 @@ class RenameTest extends TestHelper with TestRefactoring {
       val as = new collection.mutable.ListBuffer[A]
       def doWithA(a: A) = new A
     }
-    """,
+    """ becomes
     """
     package renameClass
     object C extends X {
@@ -343,13 +326,11 @@ class RenameTest extends TestHelper with TestRefactoring {
       val as = new collection.mutable.ListBuffer[X]
       def doWithA(a: X) = new X
     }
-    """)   
+    """   
   } applyRefactoring(renameTo("X"))
     
   @Test
   def renameTypeParameter = new FileSet {
-    
-    add(
     """
     package ex
 
@@ -357,7 +338,7 @@ class RenameTest extends TestHelper with TestRefactoring {
       def flatMap[A, B](a: M[A], f: A => M[B]): M[B]
       def unital[A](a: A): M[A]
     }
-    """,
+    """ becomes
     """
     package ex
 
@@ -365,13 +346,11 @@ class RenameTest extends TestHelper with TestRefactoring {
       def flatMap[A, B](a: Md[A], f: A => Md[B]): Md[B]
       def unital[A](a: A): Md[A]
     }
-    """)
+    """
   } applyRefactoring(renameTo("Md"))
     
   @Test
   def renameSuperClass = new FileSet {
-    
-    add(
     """
     package ex
 
@@ -379,7 +358,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     
     case object TmTrue extends Term
     case class  TmIf(t1: Term, t2: Term, t3: Term) extends Term
-    """,
+    """ becomes
     """
     package ex
 
@@ -387,13 +366,11 @@ class RenameTest extends TestHelper with TestRefactoring {
     
     case object TmTrue extends Expr
     case class  TmIf(t1: Expr, t2: Expr, t3: Expr) extends Expr
-    """)
+    """
   } applyRefactoring(renameTo("Expr"))
     
   @Test
   def renameType = new FileSet {
-    
-    add(
     """
 
     class Person(name: String)
@@ -406,7 +383,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         val people: List[Person] = List(new Person("Mirko"), new Person("Christina"))
         
       }
-    }""",
+    }""" becomes
     """
 
     class Person(name: String)
@@ -419,62 +396,56 @@ class RenameTest extends TestHelper with TestRefactoring {
         val people: List[P] = List(new P("Mirko"), new P("Christina"))
         
       }
-    }""")
+    }"""
   } applyRefactoring(renameTo("P"))
     
   @Test
   def renameCaseClass = new FileSet {
-    
-    add(
     """
     case class /*(*/Person/*)*/(name: String)
 
     object Rename1 {
       val p = Person("Mirko")
-    }""",
+    }""" becomes
     """
     case class /*(*/P/*)*/(name: String)
 
     object Rename1 {
       val p = P("Mirko")
-    }""")
+    }"""
   } applyRefactoring(renameTo("P"))
     
   //@Test FIXME renameByNameParameters
   def renameByNameParameters = new FileSet {
-    
-    add(
     """
     object ByNameParap {
       def withParam(param1: Int,/*(*/name/*)*/: String) = println(name)
       withParam(name = "Mirko", param1 = 5)
       withParam(5, "Mirko")
-    }""",
-    """""")
+    }""" becomes
+    """"""
   } applyRefactoring(renameTo("n"))
     
   @Test
   def renameSelfType = new FileSet {
-    add(
     """
     trait /*(*/T1/*)*/
 
     trait T3 {
       self: T1 =>
 
-    }""",
+    }""" becomes
     """
     trait /*(*/Trait/*)*/
 
     trait T3 {
       self: Trait =>
 
-    }""")
-  } applyRefactoring(renameTo("Trait"))
+    }"""
+  } applyRefactoring renameTo("Trait")
     
   @Test
   def renameSelfType2 = new FileSet {
-    add(
     """
     trait /*(*/T1/*)*/
     trait T2
@@ -482,7 +453,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     trait T3 {
       self: T1 with T2 =>
 
-    }""",
+    }""" becomes
     """
     trait /*(*/Trait/*)*/
     trait T2
@@ -490,58 +461,53 @@ class RenameTest extends TestHelper with TestRefactoring {
     trait T3 {
       self: Trait with T2 =>
 
-    }""")
+    }"""
   } applyRefactoring(renameTo("Trait"))
     
   @Test
   def renameClassWithImport = new FileSet {
-    add(
     """
     package withTrait
     trait /*(*/T/*)*/
-    """,
+    """ becomes
     """
     package withTrait
     trait /*(*/Trait/*)*/
-    """)
-    
-    add(
+    """
+    ;
     """
     package withoutTrait
     import withTrait.T
     trait TSub extends T
-    """,
+    """ becomes
     """
     package withoutTrait
     import withTrait.Trait
     trait TSub extends Trait
-    """)
+    """
   } applyRefactoring(renameTo("Trait"))
     
   @Test
   def renamePackages = new FileSet {
-    add(
     """
     package /*(*/p1/*)*/
-    """,
+    """ becomes
     """
     package /*(*/refactoring/*)*/
-    """)
-    
-    add(
+    """
+    ;
     """
     package p1.p2
     import  p1._
-    """,
+    """ becomes
     """
     package refactoring.p2
     import  refactoring._
-    """)
+    """
   } applyRefactoring(renameTo("refactoring"))
     
   @Test
   def renameInnerPackages = new FileSet {
-    add(
     """
     package p1
     package /*(*/   p2  /*)*/ {
@@ -549,7 +515,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         class A
       }
     }
-    """,
+    """ becomes
     """
     package p1
     package /*(*/   refactoring  /*)*/ {
@@ -557,16 +523,15 @@ class RenameTest extends TestHelper with TestRefactoring {
         class A
       }
     }
-    """)
-    
-    add(
+    """
+    ;
     """
     package p1
     class B extends  p2.p3.A
-    """,
+    """ becomes
     """
     package p1
     class B extends  refactoring.p3.A
-    """)
+    """
   } applyRefactoring(renameTo("refactoring"))
 }

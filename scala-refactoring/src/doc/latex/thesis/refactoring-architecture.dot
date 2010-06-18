@@ -3,11 +3,12 @@ digraph G {
   compound=true
   fontname="Verdana"
   node[shape=record,fontname="Verdana",style=filled,fillcolor=bisque ]
-  edge[fontname="Verdana", arrowhead=onormal, arrowsize=1.5]
+  edge[fontname="Verdana", arrowhead=normal, arrowsize=1.5]
 
   subgraph cluster0 {
-    Indexes
+    GlobalIndexes -> Indexes
     TreeAnalysis
+    NameValidator
     fontname="Courier"
     label="package analysis"
     labelloc="b"
@@ -22,16 +23,16 @@ digraph G {
   }
 
   subgraph cluster2 {
-    Regeneration -> Partitioner
-    Regeneration -> Merger
-    Regeneration -> TreePrinter
-    Regeneration -> LayoutHandler
+    SourceGenerator -> ReusingPrinter -> AbstractPrinter
+    SourceGenerator -> PrettyPrinter -> AbstractPrinter
+    SourceGenerator -> TreeChangesDiscoverer
+    SourceGenerator -> Formatting
     fontname="Courier"
     label="package sourcegen"
     labelloc="b"
   }
 
-  Refactoring -> Analysis
-  Refactoring -> Regeneration
-  Refactoring -> Transformation
+  Refactoring -> SourceGenerator[lhead=cluster2]
+  Refactoring -> TreeTransformations[lhead=cluster1]
+  Refactoring -> GlobalIndexes[lhead=cluster0]
 }

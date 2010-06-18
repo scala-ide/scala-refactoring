@@ -4,7 +4,7 @@
 // $Id$
 
 package scala.tools.refactoring
-package tests.sourcegen
+package tests.common
 
 import tests.util.TestHelper
 import org.junit.Assert._

@@ -32,6 +32,14 @@ Indentation Mode=
 Mode=LaTeX
 ReadWrite=true
 
+[document-settings,item:2_refactoring_library.tex]
+Bookmarks=
+Encoding=ISO-8859-1
+Highlighting=LaTeX
+Indentation Mode=
+Mode=LaTeX
+ReadWrite=true
+
 [document-settings,item:91_scala_ast.tex]
 Bookmarks=
 Encoding=ISO-8859-1
@@ -84,20 +92,30 @@ order=1
 
 [item:0_front.tex]
 archive=true
-column=0
+column=15
 encoding=UTF-8
 highlight=LaTeX
-line=20
+line=14
 mode=LaTeX
 open=true
 order=2
 
-[item:91_scala_ast.tex]
+[item:2_refactoring_library.tex]
 archive=true
-column=26
+column=148
 encoding=ISO-8859-1
 highlight=LaTeX
-line=0
+line=362
+mode=LaTeX
+open=true
+order=6
+
+[item:91_scala_ast.tex]
+archive=true
+column=197
+encoding=ISO-8859-1
+highlight=LaTeX
+line=6
 mode=LaTeX
 open=true
 order=3
@@ -124,10 +142,10 @@ order=-1
 
 [item:bibliography.bib]
 archive=true
-column=25
+column=22
 encoding=ISO-8859-1
 highlight=BibTeX
-line=296
+line=207
 mode=BibTeX
 open=true
 order=4
@@ -144,10 +162,10 @@ order=-1
 
 [item:mystyle.sty]
 archive=true
-column=37
+column=35
 encoding=ISO-8859-1
 highlight=LaTeX
-line=52
+line=51
 mode=LaTeX
 open=true
 order=5
@@ -164,10 +182,10 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=0
+column=139
 encoding=UTF-8
 highlight=LaTeX
-line=62
+line=313
 mode=LaTeX
 open=true
 order=0
@@ -187,25 +205,29 @@ CursorColumn=54
 CursorLine=55
 
 [view-settings,view=0,item:0_front.tex]
-CursorColumn=0
-CursorLine=20
+CursorColumn=15
+CursorLine=14
+
+[view-settings,view=0,item:2_refactoring_library.tex]
+CursorColumn=148
+CursorLine=362
 
 [view-settings,view=0,item:91_scala_ast.tex]
-CursorColumn=26
-CursorLine=0
+CursorColumn=197
+CursorLine=6
 
 [view-settings,view=0,item:9_appendix.tex]
 CursorColumn=0
 CursorLine=3
 
 [view-settings,view=0,item:bibliography.bib]
-CursorColumn=25
-CursorLine=296
+CursorColumn=22
+CursorLine=207
 
 [view-settings,view=0,item:mystyle.sty]
-CursorColumn=37
-CursorLine=52
+CursorColumn=35
+CursorLine=51
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=0
-CursorLine=62
+CursorColumn=139
+CursorLine=313

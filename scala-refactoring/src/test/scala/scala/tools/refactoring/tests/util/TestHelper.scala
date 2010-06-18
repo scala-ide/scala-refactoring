@@ -23,7 +23,7 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
   type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
   
-  /*
+  /**
    * A project to test multiple compilation units. Add all 
    * sources using "add" before using any of the lazy vals.
    * */
@@ -32,8 +32,12 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
     def this() = this("test")
       
     private val srcs = ListBuffer[(String, String)]()
-    
-    protected def add(src: String, expected: String) = srcs += src → expected
+        
+    implicit def addRefactoringFile(src: String) = new {
+      def becomes(expected: String) {
+        srcs += src → expected
+      }
+    }
     
     def fileName(src: String) = name +"_"+ sources.indexOf(src).toString
     
@@ -41,7 +45,7 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
     
     lazy val expected = srcs.unzip._2 toList
     
-    lazy val trees = sources map (x => compile(fileName(x), x)) map (global.unitOfFile(_).body)
+    lazy val trees = sources map (x => addToCompiler(fileName(x), x)) map (global.unitOfFile(_).body)
     
     lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
       // not all refactorings really need a selection:

@@ -4,7 +4,7 @@ package analysis
 import tools.nsc.util.BatchSourceFile
 import tools.nsc.ast.parser.{Scanners, Tokens}
 
-trait NameValidator {
+trait NameValidation {
 
   self: Indexes with common.Selections =>
   
@@ -20,12 +20,12 @@ trait NameValidator {
     
     try {
       scanner.init()
-      val firstToken = scanner.token
+      val firstTokenIsIdentifier = Tokens.isIdentifier(scanner.token)
       
       scanner.nextToken()
-      val secondToken = scanner.token
+      val secondTokenIsEOF = scanner.token == Tokens.EOF
       
-      Tokens.isIdentifier(firstToken) && secondToken == Tokens.EOF
+      firstTokenIsIdentifier && secondTokenIsEOF
     } catch {
       case _ => false
     }

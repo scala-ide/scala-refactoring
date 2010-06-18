@@ -12,135 +12,145 @@ import tests.util.TestHelper
 
 class OrganizeImportsTest extends TestHelper with TestRefactoring {
   outer =>
-
-  implicit def stringToRefactoring(src: String) = {
-    val pro = new FileSet {
-      add(src, src)
+  
+  def organize(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new OrganizeImports with SilentTracing {
+      val global = outer.global
     }
+    val changes = performRefactoring(new refactoring.RefactoringParameters)
+  }.changes
+
+  @Test
+  def sort = new FileSet {
+    """
+      import scala.collection.mutable.ListBuffer
+      import java.lang.Object
+  
+      object Main
+    """ becomes
+    """
+      import java.lang.Object
+      import scala.collection.mutable.ListBuffer
+  
+      object Main
+    """
+  } applyRefactoring organize
     
-    new TestRefactoringImpl(pro) {
-      val refactoring = new OrganizeImports with SilentTracing {
-	      val global = outer.global
+  @Test
+  def collapse = new FileSet {
+    """
+      import java.lang.String
+      import java.lang.Object
+  
+      object Main
+    """ becomes
+    """
+      import java.lang.{Object, String}
+  
+      object Main
+    """
+  } applyRefactoring organize
+    
+  @Test
+  def sortAndCollapse = new FileSet {
+    """
+      import scala.collection.mutable.ListBuffer
+      import java.lang.String
+      import java.lang.Object
+  
+      object Main
+    """ becomes
+    """
+      import java.lang.{Object, String}
+      import scala.collection.mutable.ListBuffer
+  
+      object Main
+    """
+  } applyRefactoring organize
+    
+  @Test
+  def collapseWithRename = new FileSet {
+    """
+      import java.lang.{String => S}
+      import java.lang.{Object => O}
+  
+      object Main
+    """ becomes
+    """
+      import java.lang.{Object => O, String => S}
+  
+      object Main
+    """
+  } applyRefactoring organize
+    
+  @Test
+  def importAll = new FileSet {
+    """
+      import java.lang._
+      import java.lang.String
+  
+      object Main
+    """ becomes
+    """
+      import java.lang._
+  
+      object Main
+    """
+  } applyRefactoring organize
+    
+  @Test
+  def importOnTrait = new FileSet {
+    """
+      package importOnTrait
+      import java.lang._
+      import java.lang.String
+  
+      trait A
+  
+      trait Main extends A {
       }
-      def organize(e: String) = doIt(e, new refactoring.RefactoringParameters)
-    }
-  }
-
-  @Test
-  def sort = """
-    import scala.collection.mutable.ListBuffer
-    import java.lang.Object
-
-    object Main
-    """ organize(
+    """ becomes
     """
-    import java.lang.Object
-    import scala.collection.mutable.ListBuffer
-
-    object Main
-    """)
+      package importOnTrait
+      import java.lang._
+  
+      trait A
+  
+      trait Main extends A {
+      }
+    """
+  } applyRefactoring organize
     
   @Test
-  def collapse = """
-    import java.lang.String
-    import java.lang.Object
-
-    object Main
-    """ organize(
+  def importWithSpace = new FileSet {
     """
-    import java.lang.{Object, String}
-
-    object Main
-    """)    
+  
+      import scala.collection.mutable.ListBuffer
+      import java.lang.String
+  
+      object Main
+    """ becomes
+    """
+  
+      import java.lang.String
+      import scala.collection.mutable.ListBuffer
+  
+      object Main
+    """
+  } applyRefactoring organize
     
   @Test
-  def sortAndCollapse = """
-    import scala.collection.mutable.ListBuffer
-    import java.lang.String
-    import java.lang.Object
-
-    object Main
-    """ organize(
+  def importAllWithRename = new FileSet {
     """
-    import java.lang.{Object, String}
-    import scala.collection.mutable.ListBuffer
-
-    object Main
-    """)    
-    
-  @Test
-  def collapseWithRename = """
-    import java.lang.{String => S}
-    import java.lang.{Object => O}
-
-    object Main
-    """ organize(
+      import java.lang._
+      import java.lang.{String => S}
+  
+      object Main
+    """ becomes
     """
-    import java.lang.{Object => O, String => S}
-
-    object Main
-    """)     
-    
-  @Test
-  def importAll = """
-    import java.lang._
-    import java.lang.String
-
-    object Main
-    """ organize(
+      import java.lang.{String => S, _}
+  
+      object Main
     """
-    import java.lang._
-
-    object Main
-    """)      
-    
-  @Test
-  def importOnTrait = """
-    package importOnTrait
-    import java.lang._
-    import java.lang.String
-
-    trait A
-
-    trait Main extends A {
-    }
-    """ organize(
-    """
-    package importOnTrait
-    import java.lang._
-
-    trait A
-
-    trait Main extends A {
-    }
-    """)    
-    
-  @Test
-  def importWithSpace = """
-
-    import scala.collection.mutable.ListBuffer
-    import java.lang.String
-
-    object Main
-    """ organize(
-    """
-
-    import java.lang.String
-    import scala.collection.mutable.ListBuffer
-
-    object Main
-    """)    
-    
-  @Test
-  def importAllWithRename = """
-    import java.lang._
-    import java.lang.{String => S}
-
-    object Main
-    """ organize(
-    """
-    import java.lang.{String => S, _}
-
-    object Main
-    """)
+  } applyRefactoring organize
 }
