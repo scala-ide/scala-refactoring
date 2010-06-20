@@ -257,7 +257,7 @@ The user of the refactoring library then has to provide this abstract member and
 
 \section{Stackable Traits} \label{section:stackable-traits}
 
-Stackable traits are similar to the decorator design pattern, except that they do not decorate objects at run-time but other traits at compile-time. Assume that we have a trait that allows us to log events and an implementation that logs to the standard output:
+Stackable traits are related to the decorator design pattern, except that they do not decorate objects at run-time but traits at compile-time. Let us take a look at an example. Assume that we have a trait that allows us to log events and an implementation that logs to the standard output:
 
 \begin{lstlisting}
 trait Logging {
@@ -271,7 +271,7 @@ class ConsoleLogger extends Logging {
 }
 \end{lstlisting}
 
-What if we want to have a logger that only logs certain severities? Or one that filters the messages? We could subclass \src{ConsoleLogger}, but there are potentially many concrete loggers, and we want the user of the logger to be able to combine these features as he likes. This is where stackable traits are useful. Stackable traits use the \src{abstract override} modifier to override an abstract method and are then allowed to call \src{super} in the implementation, even though the super method is not really there.
+Now we want to have a logger that only logs certain severities. Or one that filters the messages. We could subclass \src{ConsoleLogger}, but there are potentially many concrete loggers, and we want the user of the logger to be able to combine these features as he likes. This is where stackable traits are useful. Stackable traits use the \src{abstract override} modifier to override an abstract method and are allowed to call \src{super} in the implementation, even though the super method is not implemented.
 
 \begin{lstlisting}
 trait LogOnlyErrors extends Logging {
@@ -280,7 +280,11 @@ trait LogOnlyErrors extends Logging {
       super.log(severity, msg)
   }
 }
+\end{lstlisting}
 
+When we instantiate a \src{new ConsoleLogger with LogOnlyErrors}, the abstract overriden method in \src{LogOnlyErrors} overrides the \src{log} method in \src{ConsoleLogger}. We can also create more such stackable traits and combine them.
+
+\begin{lstlisting}
 trait TreatAllAsErrors extends Logging {
   abstract override def log(severity: Int, msg: String) {
     super.log(3, msg)
@@ -288,7 +292,7 @@ trait TreatAllAsErrors extends Logging {
 }
 \end{lstlisting}
 
-What happens now is that the concrete method implementing \src{log} is called, or in case multiple such traits are extended, the next \src{abstract override} is called. This allows us to instantiate a logger in various variations. Because of Scala's trait linearization, the order of the stackable traits is significant and allows further combinations.
+Because of Scala's trait linearization, the order of the stackable traits is significant and allows further combinations, as shown below.
 
 \begin{lstlisting}
 scala> val logger = new ConsoleLogger with TreatAllAsErrors with LogOnlyErrors  
@@ -311,17 +315,69 @@ scala> logger2.log(1, "A critical error, severity 4!")
 
 \section{Implicit Conversions} \label{section:implicit-conversions}
 
-Implicit conversions (also known as the \textit{pimp my library} pattern) can be used to (seemingly) add new methods to an existing class. 
+Implicit conversions (also known as the \textit{pimp my library} pattern) can be used to (seemingly) add new methods to an existing class. Assume that we are working with currencies and have a class to represent Swiss francs:
 
+\begin{lstlisting}
+class SwissFrancs(private val amount: Int) {
+  def + (other: SwissFrancs) = new SwissFrancs(amount + other.amount)
+  override def toString = "CHF "+ amount
+}
+\end{lstlisting}
 
+Thanks to Scala's support for methods with operator names, we can add instances of Swiss francs using \src{+}, but we still have to construct them verbosely. With an implicit conversion, we can add a \src{francs} method to \src{Int} that makes for a very readable syntax:
 
-This is also how Scala enriches Java's built-in types or why we can form tuples from any two objects:
+\begin{lstlisting}
+implicit def intToSwissFrancs(i: Int) = new Object { def francs = new SwissFrancs(i) }
 
+scala> 5.francs + 10.francs
+res1:  SwissFrancs = CHF 15
+\end{lstlisting}
 
+This is also how Scala enriches Java's built-in types or why we can form tuples from any two objects using $\rightarrow$:
+
+\begin{lstlisting}
+class ArrowAssoc[A](x: A) {
+  %\ldots%
+  def %$\rightarrow$% [B](y: B): Tuple2[A, B] = Tuple2(x, y)
+}
+
+implicit def any2ArrowAssoc[A](x: A): ArrowAssoc[A] = new ArrowAssoc(x)
+
+scala> "answer" %$\rightarrow$% 42
+res2:  (java.lang.String, Int) = (answer,42)
+\end{lstlisting}
 
 \section{Self Type Annotation} \label{section:self-type-annotation}
 
-In this case, think of the self type annotation as an alias for \src{this} that can be used in the body of the class. 
+Scala allows the programmer to specify an alias for \src{this} inside the current class. This is often useful to access the outer instance from an inner class where \src{this} is already bound to the inner class. 
+
+\begin{lstlisting}
+class OuterClass(val name: String) {
+  outerclass =>
+
+  class Inner {
+    println("I'm the inner class of "+ outerclass.name)
+  }
+}
+\end{lstlisting}
+
+The self type annotation allows us to annotate this self type with additional types and are a way to describe dependencies the class or trait has. For example, if we have a class that uses some kind of service interface, we can specify the service interface with a self type annotation:
+
+\begin{lstlisting}
+trait Service {
+  def callWebservice %\ldots%
+}
+
+class ServiceUser {
+  self: Service =>
+
+  callWebservice %\ldots%
+}
+
+val myService = new ServiceUser with SomeServiceImplementation
+\end{lstlisting}
+
+The user of \src{ServiceUser} than has to instantiate it with a suitable implementation of \src{Service} to make the program compile. In most cases, one could also just let \src{ServiceUser} inherit from \src{Service}, but using a self type annotation is conceptually cleared than abusing inheritance.
 
 \include{91_scala_ast}
 
