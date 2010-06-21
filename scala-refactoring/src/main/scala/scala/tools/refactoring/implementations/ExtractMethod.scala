@@ -43,7 +43,7 @@ package implementations
 abstract class ExtractMethod extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes with transformation.TreeFactory {
   
   import global._
-  
+    
   abstract class PreparationResult {
     def selectedMethod: Tree
   }

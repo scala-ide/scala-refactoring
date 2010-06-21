@@ -303,4 +303,87 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("largerThanTwo"))
+  
+  @Test
+  def extractMethod = new FileSet {
+    """
+      class Extr2 {
+        /*(*/List(1,2,3) filter/*)*/ (_> 2) mkString ", "
+      }
+    """ becomes
+    """
+      class Extr2 {
+        val filterList = List(1,2,3) filter/*)*/ _
+        /*(*/filterList(_> 2) mkString ", "
+      }
+    """
+  } applyRefactoring(extract("filterList"))
+  
+  @Test
+  def extractFromFunctionWithCurlyBraces = new FileSet {
+    """
+      class Extr2 {
+        List(1,2,3) filter { it =>
+          /*(*/it + 1 % 2/*)*/ == 0
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        List(1,2,3) filter { it =>
+          val isOdd = it + 1 % 2/*)*/ 
+          /*(*/isOdd== 0
+        }
+      }
+    """
+  } applyRefactoring(extract("isOdd"))
+  
+  @Test
+  def extractFromFunction = new FileSet {
+    """
+      class Extr2 {
+        List(1,2,3) filter (i => /*(*/i + 1 % 2/*)*/ == 0)
+      }
+    """ becomes
+    """
+      class Extr2 {
+        List(1,2,3) filter (i => {
+          val isOdd = i + 1 % 2/*)*/ 
+          /*(*/isOdd== 0
+        })
+      }
+    """
+  } applyRefactoring(extract("isOdd"))
+  
+  @Test
+  def extractFromValBlock = new FileSet {
+    """
+      class Extr2 {
+        val a = {
+          val i = 1
+          /*(*/i + 2/*)*/
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        val a = {
+          val i = 1
+          val addTwo = 
+          /*(*/i + 2
+          addTwo/*)*/
+        }
+      }
+    """
+  } applyRefactoring(extract("addTwo"))
+  
+  //@Test FIXME not yet implemented
+  def extractFromFunction2 = new FileSet {
+    """
+      class Extr2 {
+        List(1,2,3) filter (/*(*/_ + 1 % 2/*)*/ == 0)
+      }
+    """ becomes
+    """"""
+  } applyRefactoring(extract("isOdd"))
 }

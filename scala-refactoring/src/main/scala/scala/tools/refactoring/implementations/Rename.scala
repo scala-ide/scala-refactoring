@@ -9,7 +9,7 @@ package implementations
 abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes with transformation.TreeFactory {
     
   import global._
-    
+      
   case class PreparationResult(selectedLocal: SymTree, hasLocalScope: Boolean)
   
   abstract class RefactoringParameters {

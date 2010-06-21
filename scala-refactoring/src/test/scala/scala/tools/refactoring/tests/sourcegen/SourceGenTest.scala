@@ -995,7 +995,7 @@ object A"""
   List(1, 2).map((i: Int) => i.+(1))
   val sum: (Seq[Int]) => Int = _.reduceLeft(_.+(_))
   List(1, 2).map(_.+(1))
-  List(1, 2).map((i) => i.+(1))
+  List(1, 2).map(i => i.+(1))
 }"""
   }
   

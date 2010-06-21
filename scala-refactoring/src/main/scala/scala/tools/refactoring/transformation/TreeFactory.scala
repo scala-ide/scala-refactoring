@@ -39,8 +39,11 @@ trait TreeFactory {
     }
   }
   
-  def mkValDef(name: String, rhs: Tree): ValDef = {
-    ValDef(NoMods, name, new TypeTree(), rhs)
+  def mkValDef(name: String, rhs: Tree): ValDef = rhs match {
+    case rhs: Select if rhs.symbol.isMethod =>
+      ValDef(NoMods, name, new TypeTree(), Apply(rhs, Ident("_") :: Nil))
+    case _ => 
+      ValDef(NoMods, name, new TypeTree(), rhs)
   }
   
   def mkCallDefDef(name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {

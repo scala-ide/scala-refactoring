@@ -63,6 +63,7 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
         case _: Block => true
         case _: Template => true
         case _: Try => true
+        case _: Function => true
         case CaseDef(_, _, body) if body.pos.includes(near.pos) => true
       }
       
@@ -94,7 +95,8 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
     
     def insertCloseToReference(ts: List[Tree]): List[Tree] = ts match {
       case Nil => Nil
-      case x :: xs if x.pos.includes(selectedExpression.pos) => newVal :: x :: xs
+      case x :: xs if x.pos.overlaps(selectedExpression.pos) => newVal :: x :: xs
+      case x :: xs if x == valRef => newVal :: valRef :: xs
       case x :: xs => x :: insertCloseToReference(xs)
     }
     
@@ -107,6 +109,17 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
         t copy (body = mkBlock(newVal :: body :: Nil)) replaces t
       case t @ Try(block, _, _) if !block.isInstanceOf[Block] =>
         t copy (block = mkBlock(newVal :: block :: Nil)) replaces t
+      case t @ Function(_, body) =>
+        val hasOpeningCurlyBrace = {
+          val src = t.pos.source.content.slice(0, t.pos.start).mkString
+          src.matches("(?ms).*\\{\\s*$")
+        }
+        
+        if(hasOpeningCurlyBrace) {
+          t copy (body = mkBlock(newVal :: body :: Nil)) replaces t
+        } else {        
+          t copy (body = mkBlock(newVal :: body :: Nil))
+        }
       case t => mkBlock(newVal :: t :: Nil)
     }
     

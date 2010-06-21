@@ -207,6 +207,9 @@ trait PrettyPrinter extends AbstractPrinter {
   //      traverse(elemtpt)
   //      trees map traverse
         
+      case Function(vparam :: Nil, body) if !keepTree(vparam.tpt) =>
+        p(vparam, before = "", after = " => ") ++ p(body)
+        
       case Function(vparams, body) =>
         p(vparams, before = "\\(", separator = ", ", after = "\\) => ") ++ p(body)
         
@@ -270,6 +273,9 @@ trait PrettyPrinter extends AbstractPrinter {
         
       case Apply(fun: Select, args) if fun.name.toString endsWith "_$eq" =>
         p(fun) ++ " = " ++ p(args, before = "\\(", after = "\\)", separator = ", ")
+        
+      case Apply(fun, (arg @ Ident(name)) :: Nil) if name.toString == "_" =>
+        p(fun) ++ p(arg)
         
       case Apply(fun, args) =>
         val _1 = p(fun)

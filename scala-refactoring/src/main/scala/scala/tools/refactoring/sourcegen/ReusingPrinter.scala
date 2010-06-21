@@ -258,6 +258,9 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t: ModifierTree, _) =>
         l ++ Fragment(t.nameString) ++ r
         
+      case (t @ Function(vparams, b @ BlockExtractor(body)), _) if !b.hasExistingCode =>
+        l ++ p(vparams) ++ ind.current ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
+        
       case (t @ Function(vparams, body), _) =>
         l ++ p(vparams) ++ p(body) ++ r
 

@@ -16,7 +16,7 @@ package analysis
  * whereas the IndexLookup that is used by clients contains more
  * expensive operations.
  * 
- * An implementation can be found in IndexImplementations.
+ * An implementation can be found in GlobalIndexes.
  * */
 trait Indexes {
 
