@@ -1,19 +1,17 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
-package scala.tools.refactoring.tests.util
+package scala.tools.refactoring
+package tests.util
 
-import scala.tools.nsc.util.BatchSourceFile
-import scala.tools.nsc.io.AbstractFile
+import tools.nsc.util.BatchSourceFile
+import tools.nsc.io.AbstractFile
 import org.junit.Assert._
-
-import scala.tools.refactoring._
-import scala.tools.refactoring.common._
-import scala.tools.refactoring.transformation._
-import scala.collection.mutable.ListBuffer
-import scala.tools.refactoring.util.CompilerProvider
+import common._
+import transformation._
+import collection.mutable.ListBuffer
+import util.CompilerProvider
 
 trait TestHelper extends CompilerProvider with TreeTransformations with TreeFactory with SilentTracing with Selections with PimpedTrees {
   
