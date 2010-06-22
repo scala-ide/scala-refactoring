@@ -22,14 +22,12 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
     
     (if(s.pos.start == s.pos.end) {
       s.root.filter {
-        case t: SymTree => t.pos.start > s.pos.start
-        case t: TermTree => t.pos.start > s.pos.start
+        case t @ (_: SymTree | _: TermTree) => t.pos.start > s.pos.start
         case _ => false
       } lastOption
     } else {
       s.root.find {
-        case t: SymTree => t.pos sameRange s.pos
-        case t: TermTree => t.pos sameRange s.pos
+        case t @ (_: SymTree | _: TermTree) => t.pos sameRange s.pos
         case _ => false
       }
     }) match {

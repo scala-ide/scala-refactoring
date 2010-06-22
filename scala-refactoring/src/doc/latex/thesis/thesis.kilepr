@@ -4,7 +4,7 @@ img_extIsRegExp=false
 img_extensions=.eps .jpg .jpeg .png .pdf .ps .fig .gif
 kileprversion=2
 kileversion=2.0.85
-lastDocument=0_front.tex
+lastDocument=thesis.tex
 masterDocument=thesis.tex
 name=Thesis
 pkg_extIsRegExp=false
@@ -125,7 +125,7 @@ archive=true
 column=0
 encoding=ISO-8859-1
 highlight=LaTeX
-line=3
+line=1
 mode=LaTeX
 open=true
 order=1
@@ -142,10 +142,10 @@ order=-1
 
 [item:bibliography.bib]
 archive=true
-column=22
+column=25
 encoding=ISO-8859-1
 highlight=BibTeX
-line=207
+line=93
 mode=BibTeX
 open=true
 order=4
@@ -160,12 +160,22 @@ mode=
 open=false
 order=-1
 
+[item:ide_refactorings.png]
+archive=true
+column=32723
+encoding=
+highlight=
+line=0
+mode=
+open=false
+order=-1
+
 [item:mystyle.sty]
 archive=true
-column=35
+column=1
 encoding=ISO-8859-1
 highlight=LaTeX
-line=51
+line=64
 mode=LaTeX
 open=true
 order=5
@@ -182,10 +192,10 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=0
+column=85
 encoding=UTF-8
 highlight=LaTeX
-line=380
+line=82
 mode=LaTeX
 open=true
 order=0
@@ -218,16 +228,16 @@ CursorLine=709
 
 [view-settings,view=0,item:9_appendix.tex]
 CursorColumn=0
-CursorLine=3
+CursorLine=1
 
 [view-settings,view=0,item:bibliography.bib]
-CursorColumn=22
-CursorLine=207
+CursorColumn=25
+CursorLine=93
 
 [view-settings,view=0,item:mystyle.sty]
-CursorColumn=35
-CursorLine=51
+CursorColumn=1
+CursorLine=64
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=0
-CursorLine=380
+CursorColumn=85
+CursorLine=82

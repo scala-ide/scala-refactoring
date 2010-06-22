@@ -1,3 +1,196 @@
-\chapter{Project Environment} \label{chapter-project-environment}
+\chapter{Project Environment} \label{chapter:project-environment}
 
+\chapter{Advanced Scala Features} \label{chapter:advanced-scala-features}
 
+This documentation does not introduce the reader to the Scala language, so an understanding of the basic concepts is assumed. This appendix explains some of the more advanced features and patterns of Scala that are used during the explanations in this document.
+
+\section{Path Dependent Types} \label{section:path-dependent-types}
+
+Path dependent types are best shown with an example (taken from Programming Scala \cite{ProgrammingScala}). We have an \src{Animal} class with an abstract type member called \src{SuitableFood} which is then defined in the subclasses to a suitable type.
+\begin{lstlisting}
+abstract class Food
+
+abstract class Animal {
+  type SuitableFood <: Food
+  def eat(food: SuitableFood)
+}
+
+class Grass extends Food
+class Cow extends Animal {
+  type SuitableFood = Grass
+  def eat(food: Grass) {}
+}
+
+class DogFood extends Food
+class Dog extends Animal {
+  type SuitableFood = DogFood
+  def eat(food: DogFood) {}
+}
+\end{lstlisting}
+
+This now prevents us from feeding the wrong kind of food to our animals:
+
+\begin{lstlisting}
+scala> val bessy = new Cow
+bessy: Cow = Cow@3fb01949
+
+scala> val lassie = new Dog
+lassie: Dog = Dog@46c9220
+
+scala> lassie eat (new bessy.SuitableFood)
+<console>:14: error: type mismatch;
+ found   : Grass
+ required: DogFood
+       lassie eat (new bessy.SuitableFood)
+\end{lstlisting}
+
+In the context of the Scala compiler, all instances of \src{Tree} are dependent on the compiler -- that is, impossible to mix trees from different compiler instances.
+
+\begin{lstlisting}
+trait Trees {
+  %\ldots%
+  abstract class Tree extends Product {
+  %\ldots%
+}
+\end{lstlisting}
+
+The Scala Refactoring library follows this design, all functionality that operates on compiler dependent types is in traits that have a compiler instance as an abstract member, like for example in the \src{AbstractPrinter} or the \src{Indexes}:
+
+\begin{lstlisting}
+trait AbstractPrinter {
+  val global: scala.tools.nsc.interactive.Global
+  import global._
+  %\ldots%
+}
+
+trait Indexes {
+  val global: scala.tools.nsc.interactive.Global
+  %\ldots%
+}
+\end{lstlisting}
+
+The user of the refactoring library then has to provide this abstract member and all implemented traits share the same instance. In the automated tests, this is done by the \src{CompilerProvider} trait.
+
+\section{Stackable Traits} \label{section:stackable-traits}
+
+Stackable traits are related to the decorator design pattern, except that they do not decorate objects at run-time but traits at compile-time. Let us take a look at an example. Assume that we have a trait that allows us to log events and an implementation that logs to the standard output:
+
+\begin{lstlisting}
+trait Logging {
+  def log(severity: Int, msg: String): Unit
+}
+
+class ConsoleLogger extends Logging {
+  def log(severity: Int, msg: String) = {
+    println("%\%%d: %\%%s" format (severity, msg))
+  }
+}
+\end{lstlisting}
+
+Now we want to have a logger that only logs certain severities. Or one that filters the messages. We could subclass \src{ConsoleLogger}, but there are potentially many concrete loggers, and we want the user of the logger to be able to combine these features as he likes. This is where stackable traits are useful. Stackable traits use the \src{abstract override} modifier to override an abstract method and are allowed to call \src{super} in the implementation, even though the super method is not implemented.
+
+\begin{lstlisting}
+trait LogOnlyErrors extends Logging {
+  abstract override def log(severity: Int, msg: String) {
+    if(severity >= 3)
+      super.log(severity, msg)
+  }
+}
+\end{lstlisting}
+
+When we instantiate a \src{new ConsoleLogger with LogOnlyErrors}, the abstract overriden method in \src{LogOnlyErrors} overrides the \src{log} method in \src{ConsoleLogger}. We can also create more such stackable traits and combine them.
+
+\begin{lstlisting}
+trait TreatAllAsErrors extends Logging {
+  abstract override def log(severity: Int, msg: String) {
+    super.log(3, msg)
+  }
+}
+\end{lstlisting}
+
+Because of Scala's trait linearization, the order of the stackable traits is significant and allows further combinations, as shown below.
+
+\begin{lstlisting}
+scala> val logger = new ConsoleLogger with TreatAllAsErrors with LogOnlyErrors  
+logger: ConsoleLogger with TreatAllAsErrors with LogOnlyErrors = $anon$1@8aee908
+
+scala> logger.log(1, "Something insignificant happened.")
+
+scala> logger.log(4, "A critical error, severity 4!")
+3: A critical error, severity 4!
+
+scala> val logger2 = new ConsoleLogger with LogOnlyErrors with TreatAllAsErrors
+logger2: ConsoleLogger with LogOnlyErrors with TreatAllAsErrors = $anon$1@2a788315
+
+scala> logger2.log(1, "Something insignificant happened.")
+3: Something insignificant happened.
+
+scala> logger2.log(1, "A critical error, severity 4!")
+3: A critical error, severity 4!
+\end{lstlisting}
+
+\section{Implicit Conversions} \label{section:implicit-conversions}
+
+Implicit conversions (also known as the \textit{pimp my library} pattern) can be used to (seemingly) add new methods to an existing class. Assume that we are working with currencies and have a class to represent Swiss francs:
+
+\begin{lstlisting}
+class SwissFrancs(private val amount: Int) {
+  def + (other: SwissFrancs) = new SwissFrancs(amount + other.amount)
+  override def toString = "CHF "+ amount
+}
+\end{lstlisting}
+
+Thanks to Scala's support for methods with operator names, we can add instances of Swiss francs using \src{+}, but we still have to construct them verbosely. With an implicit conversion, we can add a \src{francs} method to \src{Int} that makes for a very readable syntax:
+
+\begin{lstlisting}
+implicit def intToSwissFrancs(i: Int) = new Object { def francs = new SwissFrancs(i) }
+
+scala> 5.francs + 10.francs
+res1:  SwissFrancs = CHF 15
+\end{lstlisting}
+
+This is also how Scala enriches Java's built-in types or why we can form tuples from any two objects using $\rightarrow$:
+
+\begin{lstlisting}
+class ArrowAssoc[A](x: A) {
+  %\ldots%
+  def %$\rightarrow$% [B](y: B): Tuple2[A, B] = Tuple2(x, y)
+}
+
+implicit def any2ArrowAssoc[A](x: A): ArrowAssoc[A] = new ArrowAssoc(x)
+
+scala> "answer" %$\rightarrow$% 42
+res2:  (java.lang.String, Int) = (answer,42)
+\end{lstlisting}
+
+\section{Self Type Annotation} \label{section:self-type-annotation}
+
+Scala allows the programmer to specify an alias for \src{this} inside the current class. This is often useful to access the outer instance from an inner class where \src{this} is already bound to the inner class. 
+
+\begin{lstlisting}
+class OuterClass(val name: String) {
+  outerclass =>
+
+  class Inner {
+    println("I'm the inner class of "+ outerclass.name)
+  }
+}
+\end{lstlisting}
+
+The self type annotation allows us to annotate this self type with additional types and are a way to describe dependencies the class or trait has. For example, if we have a class that uses some kind of service interface, we can specify the service interface with a self type annotation:
+
+\begin{lstlisting}
+trait Service {
+  def callWebservice %\ldots%
+}
+
+class ServiceUser {
+  self: Service =>
+
+  callWebservice %\ldots%
+}
+
+val myService = new ServiceUser with SomeServiceImplementation
+\end{lstlisting}
+
+The user of \src{ServiceUser} than has to instantiate it with a suitable implementation of \src{Service} to make the program compile. In most cases, one could also just let \src{ServiceUser} inherit from \src{Service}, but using a self type annotation is conceptually cleared than abusing inheritance.
