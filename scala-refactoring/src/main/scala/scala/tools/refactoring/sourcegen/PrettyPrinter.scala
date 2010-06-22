@@ -264,7 +264,7 @@ trait PrettyPrinter extends AbstractPrinter {
         Fragment(selector.toString)
         
       case TypeApply(fun, args) =>
-        p(fun) ++ p(args)
+        p(fun) ++ p(args, before= "\\[", separator = Requisite.Blank,  after = "\\]")
         
       case Apply(fun, args @ (Function(_, _: Match) :: _)) =>
         p(fun) ++ p(args, before = " ", separator = NoRequisite, after = NoRequisite)

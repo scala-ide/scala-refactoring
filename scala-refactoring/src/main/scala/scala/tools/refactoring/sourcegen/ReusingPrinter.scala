@@ -220,7 +220,7 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(fun) ++ p(arg) ++ r
         
       case (t @ Apply(fun @ TypeApply(receiver: Select, _), arg :: Nil), _) if !arg.isInstanceOf[Function] =>
-        if(keepTree(receiver.qualifier)) {
+        if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
           l ++ p(fun) ++ p(arg) ++ r
         } else {
           l ++ p(fun) ++ p(arg, before = "\\(", after = "\\)") ++ r

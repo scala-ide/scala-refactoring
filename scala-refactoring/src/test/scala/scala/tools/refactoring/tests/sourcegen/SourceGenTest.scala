@@ -9,11 +9,11 @@ import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
 import sourcegen.SourceGenerator
-import common.SilentTracing
+import common.{SilentTracing, ConsoleTracing}
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
-class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
+class SourceGenTest extends TestHelper with SourceGenerator with ConsoleTracing {
   
   import global._
   
@@ -276,6 +276,65 @@ class ATest {
     
     tree prettyPrintsTo """class A(l: List[_])
 class B(l: List[T] forSome {type T})"""
+  }
+  
+  @Test
+  def testMissingParentheses() = {
+    
+    val tree = treeFrom("""
+    package com.somedomain.test
+
+    object Transaction {
+      object Kind {
+        val ReadOnly = true
+      }
+      def run[T](readOnyl: Boolean) = ()
+    }
+    
+    object Test4 {
+       def doNothing {
+       }
+    }
+    class Test4 {
+       def bar() {
+         Transaction.run[Unit](Transaction.Kind.ReadOnly)
+       }
+    }""")
+        
+    assertEquals("""
+    package com.somedomain.test
+
+    object Transaction {
+      object Kind {
+        val ReadOnly = true
+      }
+      def run[T](readOnyl: Boolean) = ()
+    }
+    
+    object Test4 {
+       def doNothing {
+       }
+    }
+    class Test4 {
+       def bar() {
+         Transaction.run[Unit](Transaction.Kind.ReadOnly)
+       }
+    }""", generateText(removeAuxiliaryTrees apply tree get))     
+    
+    tree prettyPrintsTo """package com.somedomain.test
+object Transaction {
+  object Kind {
+    val ReadOnly = true
+  }
+  def run[T](readOnyl: Boolean) = ()
+}
+object Test4 {
+  def doNothing {
+  }
+}
+class Test4 {
+  def bar = Transaction.run[Unit](Transaction.Kind.ReadOnly)
+}"""
   }
   
   @Test
