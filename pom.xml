@@ -40,6 +40,7 @@
 	<version>1.0</version>
 	<configuration>
 	  <docsRoot>src/doc/latex</docsRoot>
+	  <binariesPath>/usr/local/texlive/2009/bin/i386-linux</binariesPath>
         </configuration>
       </plugin>
       <plugin>
