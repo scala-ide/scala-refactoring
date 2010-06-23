@@ -1,7 +1,6 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
 package scala.tools.refactoring
 package util
@@ -13,7 +12,7 @@ import tools.nsc.interactive.Global
 import tools.nsc.reporters.ConsoleReporter
 import tools.nsc.util.BatchSourceFile
 
-private object CompilerInstance {
+class CompilerInstance {
   
   val settings = new Settings
   
@@ -37,16 +36,17 @@ private object CompilerInstance {
   new compiler.Run
 }
 
+object CompilerInstance extends CompilerInstance
+
 trait CompilerProvider {
 
   val global = CompilerInstance.compiler
     
-  def treeFrom(src: String) = global.typedTree(new BatchSourceFile("test", src), true)
+  def treeFrom(src: String): global.Tree = global.typedTree(new BatchSourceFile("testFile", src), true)
   
-  def compile(name: String, src: String): AbstractFile = {
+  def addToCompiler(name: String, src: String): AbstractFile = {
     val file = new BatchSourceFile(name, src)
     global.typedTree(file, true)
     file.file
   }
-  
 }

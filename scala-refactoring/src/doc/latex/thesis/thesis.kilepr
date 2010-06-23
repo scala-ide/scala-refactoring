@@ -32,6 +32,14 @@ Indentation Mode=
 Mode=LaTeX
 ReadWrite=true
 
+[document-settings,item:2_refactoring_library.tex]
+Bookmarks=
+Encoding=ISO-8859-1
+Highlighting=LaTeX
+Indentation Mode=
+Mode=LaTeX
+ReadWrite=true
+
 [document-settings,item:91_scala_ast.tex]
 Bookmarks=
 Encoding=ISO-8859-1
@@ -84,17 +92,27 @@ order=1
 
 [item:0_front.tex]
 archive=true
-column=0
+column=21
 encoding=UTF-8
 highlight=LaTeX
-line=20
+line=34
 mode=LaTeX
 open=true
 order=2
 
+[item:2_refactoring_library.tex]
+archive=true
+column=65
+encoding=ISO-8859-1
+highlight=LaTeX
+line=0
+mode=LaTeX
+open=true
+order=6
+
 [item:91_scala_ast.tex]
 archive=true
-column=26
+column=45
 encoding=ISO-8859-1
 highlight=LaTeX
 line=0
@@ -104,10 +122,10 @@ order=3
 
 [item:9_appendix.tex]
 archive=true
-column=0
+column=73
 encoding=ISO-8859-1
 highlight=LaTeX
-line=3
+line=2
 mode=LaTeX
 open=true
 order=1
@@ -124,10 +142,10 @@ order=-1
 
 [item:bibliography.bib]
 archive=true
-column=25
+column=21
 encoding=ISO-8859-1
 highlight=BibTeX
-line=296
+line=86
 mode=BibTeX
 open=true
 order=4
@@ -142,12 +160,22 @@ mode=
 open=false
 order=-1
 
+[item:ide_refactorings.png]
+archive=true
+column=32723
+encoding=
+highlight=
+line=0
+mode=
+open=false
+order=-1
+
 [item:mystyle.sty]
 archive=true
-column=37
+column=1
 encoding=ISO-8859-1
 highlight=LaTeX
-line=52
+line=64
 mode=LaTeX
 open=true
 order=5
@@ -167,7 +195,7 @@ archive=true
 column=0
 encoding=UTF-8
 highlight=LaTeX
-line=62
+line=101
 mode=LaTeX
 open=true
 order=0
@@ -187,25 +215,29 @@ CursorColumn=54
 CursorLine=55
 
 [view-settings,view=0,item:0_front.tex]
-CursorColumn=0
-CursorLine=20
+CursorColumn=21
+CursorLine=34
+
+[view-settings,view=0,item:2_refactoring_library.tex]
+CursorColumn=65
+CursorLine=0
 
 [view-settings,view=0,item:91_scala_ast.tex]
-CursorColumn=26
+CursorColumn=45
 CursorLine=0
 
 [view-settings,view=0,item:9_appendix.tex]
-CursorColumn=0
-CursorLine=3
+CursorColumn=73
+CursorLine=2
 
 [view-settings,view=0,item:bibliography.bib]
-CursorColumn=25
-CursorLine=296
+CursorColumn=21
+CursorLine=86
 
 [view-settings,view=0,item:mystyle.sty]
-CursorColumn=37
-CursorLine=52
+CursorColumn=1
+CursorLine=64
 
 [view-settings,view=0,item:thesis.tex]
 CursorColumn=0
-CursorLine=62
+CursorLine=101

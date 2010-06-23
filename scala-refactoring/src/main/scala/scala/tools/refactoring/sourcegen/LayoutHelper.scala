@@ -1,3 +1,7 @@
+/*
+ * Copyright 2005-2010 LAMP/EPFL
+ */
+
 package scala.tools.refactoring
 package sourcegen
 
@@ -366,7 +370,7 @@ trait LayoutHelper extends CommentHelpers {
   private val Else = """(?ms)(.*?)(?:\n\s*\}\s*)?\n?\s*else\s*(?:[\s\{]*\n\s*)?(.*)""".r
   private val StartComment = """(.*?)(/\*.*)""".r
   private val Class = """(.*?)(class.*)""".r
-  private val EmptyParens = """(.*?\(\s*\)\s*)(.*)""".r
+  private val EmptyParens = """(?ms)(.*?\(\s*\)\s*)(.*)""".r
   private val OpeningBrace = """(.*?)\((.*)""".r
   private val Colon = """(.*?:\s+)(.*)""".r
   private val Arrow = """(.*?=>\s?)(.*)""".r
@@ -436,7 +440,7 @@ trait LayoutHelper extends CommentHelpers {
           case (l, r) => split(layout)
         }
         
-        trace("Rule %s splits (%s, %s) layout into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, ll, lr)
+        trace("Rule %s splits (%s, %s) layout %s into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, layout, ll, lr)
         Layout(mergeLayoutWithComment(ll, comments)) → Layout(mergeLayoutWithComment(lr reverse, comments reverse) reverse)
     }
   }

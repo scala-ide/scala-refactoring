@@ -1,7 +1,6 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
 package scala.tools.refactoring
 package tests.implementations
@@ -23,13 +22,12 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   
   @Test
   def oneVarFromMany = new FileSet {
-    add(
     """
       package oneFromMany
       class Demo(val a: String,  /*(*/var i: Int/*)*/  ) {
         def doNothing = () 
       }
-    """,
+    """ becomes
     """
       package oneFromMany
       class Demo(val a: String,  /*(*/_i: Int/*)*/  ) {
@@ -41,18 +39,17 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
         }
         def doNothing = () 
       }
-    """)
+    """
   } applyRefactoring(explicitGettersSetters)
 
   @Test
   def oneValFromMany = new FileSet {
-    add(
     """
       package oneFromMany
       class Demo(val a: String,  /*(*/val i: Int/*)*/  ) {
         def doNothing = () 
       }
-    """,
+    """ becomes
     """
       package oneFromMany
       class Demo(val a: String,  /*(*/_i: Int/*)*/  ) {
@@ -61,16 +58,15 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
         }
         def doNothing = () 
       }
-    """)
+    """
   } applyRefactoring(explicitGettersSetters)
 
   @Test
   def singleVal = new FileSet {
-    add(
     """
       package oneFromMany
       class Demo(  /*(*/val i: Int/*)*/  )
-    """,
+    """ becomes
     """
       package oneFromMany
       class Demo(  /*(*/_i: Int/*)*/  ) {
@@ -78,18 +74,17 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
           _i
         }
       }
-    """)
+    """
   } applyRefactoring(explicitGettersSetters)
 
   @Test
   def singleValWithEmptyBody = new FileSet {
-    add(
     """
       package oneFromMany
       class Demo(  /*(*/val i: Int/*)*/  ) {
 
       }
-    """,
+    """ becomes
     """
       package oneFromMany
       class Demo(  /*(*/_i: Int/*)*/  ) {
@@ -97,6 +92,6 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
           _i
         }
       }
-    """)
+    """
   } applyRefactoring(explicitGettersSetters)
 }

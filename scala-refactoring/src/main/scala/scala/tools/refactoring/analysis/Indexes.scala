@@ -1,22 +1,21 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
 package scala.tools.refactoring
 package analysis
 
 /**
  * The Indexes trait is mixed in by refactorings that need an index.
- * It provides several lookup functions to find references and decl-
- * arations of symbols.
+ * It provides several lookup functions to find references and decla-
+ * rations of symbols.
  * 
  * The IndexLookup trait has been separated into two traits: the
  * TrivialIndexLookup simply gives access to the underlying data,
  * whereas the IndexLookup that is used by clients contains more
  * expensive operations.
  * 
- * An implementation can be found in IndexImplementations.
+ * An implementation can be found in GlobalIndexes.
  * */
 trait Indexes {
 
@@ -67,6 +66,13 @@ trait Indexes {
      */
     def completePackageHierarchy(s: global.Symbol): List[global.Symbol] =
       allDefinedSymbols filter (_.ownerChain contains s) flatMap (s => s :: s.ownerChain) filter (_.isPackageClass) filter (_.pos != global.NoPosition) distinct
+      
+    /**
+     * Returns a map that associates each defined symbol in the index
+     * with its DefTree.
+     */
+    def allDeclarations(): Map[global.Symbol, global.DefTree] = 
+      allDefinedSymbols() flatMap (sym => declaration(sym) map (sym → _)) toMap
       
     /**
      * Add more convenience functions here..

@@ -1,7 +1,6 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
 package scala.tools.refactoring
 package implementations
@@ -9,7 +8,7 @@ package implementations
 abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes with transformation.TreeFactory {
     
   import global._
-    
+      
   case class PreparationResult(selectedLocal: SymTree, hasLocalScope: Boolean)
   
   abstract class RefactoringParameters {

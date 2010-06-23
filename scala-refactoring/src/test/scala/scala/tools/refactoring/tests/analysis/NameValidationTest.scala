@@ -1,7 +1,6 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
 package scala.tools.refactoring
 package tests.analysis
@@ -10,7 +9,7 @@ import tests.util.TestHelper
 import analysis._
 import org.junit.Assert._
 
-class NameValidatorTest extends TestHelper with NameValidator with GlobalIndexes {
+class NameValidationTest extends TestHelper with NameValidation with GlobalIndexes {
 
   var index: IndexLookup = null
   

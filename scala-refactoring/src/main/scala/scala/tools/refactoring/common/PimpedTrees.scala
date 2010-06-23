@@ -1,3 +1,7 @@
+/*
+ * Copyright 2005-2010 LAMP/EPFL
+ */
+
 package scala.tools.refactoring
 package common
 
@@ -176,22 +180,6 @@ trait PimpedTrees {
       case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
     }
   }
-  
-  /**
-   * Given a Position, returns the tree in that compilation
-   * unit that inhabits that position.
-   * */
-  def findOriginalTreeFromPosition(p: Position): Option[List[Tree]] = {
-    
-    def find(t: Tree): List[Tree] = {
-      (if(t samePos p)
-        t :: Nil
-      else 
-        Nil) ::: children(t).map(find).flatten
-    }
-    
-    cuRoot(p) map find
-  }
 
   /**
    * Find a tree by its position and make sure that the trees
@@ -205,14 +193,21 @@ trait PimpedTrees {
    * because it is likely more specific.
    * */
   def findOriginalTree(t: Tree): Option[Tree] = {
-    val candidates = findOriginalTreeFromPosition(t.pos) flatten
+    
+    def find(t: Tree): List[Tree] = {
+      (if(t samePos t.pos)
+        t :: Nil
+      else 
+        Nil) ::: children(t).map(find).flatten
+    }
+      
+    val candidates = cuRoot(t.pos) map find flatten
     
     candidates find (_ == t) match {
       case None => candidates filter (_ sameTree t) lastOption
       case Some(perfectMatch) => Some(perfectMatch)
     }
   }
-  
   
   implicit def additionalTemplateMethods(t: Template) = new {
     def constructorParameters = t.body.filter {
@@ -237,7 +232,6 @@ trait PimpedTrees {
     } flatten
   }  
   
-      
   /**
    * Name objects are not trees, this extractor creates NameTree instances from Trees.
    * */
@@ -460,7 +454,7 @@ trait PimpedTrees {
      
   }) filter keepTree
   
-  def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
+  private[this] def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
     body match {
       case (v @ ValDef(_, _, _, Match(rhs: Typed, c @ CaseDef(_: Apply, EmptyTree, body) :: Nil))) :: xs 
           if v.symbol.isSynthetic && c.forall(_.pos.isTransparent) =>
@@ -477,6 +471,7 @@ trait PimpedTrees {
       case x => x
     }
   }
+  
   implicit def additionalValMethods(t: ValDef) = new {
     def needsKeyword =
       !t.mods.hasFlag(Flags.PARAM) &&

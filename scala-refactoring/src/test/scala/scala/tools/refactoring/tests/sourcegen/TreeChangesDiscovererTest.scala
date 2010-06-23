@@ -1,7 +1,6 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
 package scala.tools.refactoring
 package tests.sourcegen
@@ -41,7 +40,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
     def describe(t: Tree) = if(t.pos == NoPosition) t.getClass.getSimpleName else t.getClass.getSimpleName +"("+ t.pos.line +")"
 
     val transformed = (removeAuxiliaryTrees &> trans)(treeFrom(src)).get
-    println(transformed)
+
     findAllChangedTrees(transformed) map {
       case (t, c) => describe(t) +": "+ c.map(describe).mkString(", ")
     } mkString " | "

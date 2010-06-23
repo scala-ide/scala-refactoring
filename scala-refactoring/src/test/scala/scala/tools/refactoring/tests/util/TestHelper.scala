@@ -1,19 +1,17 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
-package scala.tools.refactoring.tests.util
+package scala.tools.refactoring
+package tests.util
 
-import scala.tools.nsc.util.BatchSourceFile
-import scala.tools.nsc.io.AbstractFile
+import tools.nsc.util.BatchSourceFile
+import tools.nsc.io.AbstractFile
 import org.junit.Assert._
-
-import scala.tools.refactoring._
-import scala.tools.refactoring.common._
-import scala.tools.refactoring.transformation._
-import scala.collection.mutable.ListBuffer
-import scala.tools.refactoring.util.CompilerProvider
+import common._
+import transformation._
+import collection.mutable.ListBuffer
+import util.CompilerProvider
 
 trait TestHelper extends CompilerProvider with TreeTransformations with TreeFactory with SilentTracing with Selections with PimpedTrees {
   
@@ -23,7 +21,7 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
   type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
   
-  /*
+  /**
    * A project to test multiple compilation units. Add all 
    * sources using "add" before using any of the lazy vals.
    * */
@@ -32,8 +30,12 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
     def this() = this("test")
       
     private val srcs = ListBuffer[(String, String)]()
-    
-    protected def add(src: String, expected: String) = srcs += src → expected
+        
+    implicit def addRefactoringFile(src: String) = new {
+      def becomes(expected: String) {
+        srcs += src → expected
+      }
+    }
     
     def fileName(src: String) = name +"_"+ sources.indexOf(src).toString
     
@@ -41,7 +43,7 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
     
     lazy val expected = srcs.unzip._2 toList
     
-    lazy val trees = sources map (x => compile(fileName(x), x)) map (global.unitOfFile(_).body)
+    lazy val trees = sources map (x => addToCompiler(fileName(x), x)) map (global.unitOfFile(_).body)
     
     lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
       // not all refactorings really need a selection:

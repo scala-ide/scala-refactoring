@@ -1,16 +1,17 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
-package scala.tools.refactoring.tests.util
+package scala.tools.refactoring
+package tests.util
 
-import scala.collection.mutable.ListBuffer
-import scala.tools.nsc.ast._
+import collection.mutable.ListBuffer
+import tools.nsc.ast._
+import tools.nsc.Global
 
 trait TreePath {
 
-  val global: scala.tools.nsc.Global
+  val global: Global
     
   import global._
   

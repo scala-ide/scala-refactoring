@@ -10,7 +10,14 @@ Some remarks on the presentation: on the right of the tree class' name are its a
 
 \section{Base Classes and Traits}
 
-(A nice picture that shows the inheritance relations of the trees and traits)
+\figref{figure:trees-class-diagram} shows a inheritance diagram of the various tree classes.
+
+\begin{figure}
+ \centering
+ \includegraphics[width=\linewidth]{trees-class-diagram.pdf}
+ \caption{The \src{Tree} class with some if its subclasses (some have been omitted for the sake of readability). The gray colored classes are \src{abstract}, blue ones are traits and the bisque colored leafs of the tree are case classes that can be used in pattern matching. The light cyan \src{EmptyTree} is an object (from \cite{ScalaRefactoring}).}
+ \label{figure:trees-class-diagram}
+\end{figure}
 
 \paragraph{Tree} \hfill \newline
 
@@ -662,13 +669,52 @@ Note that the existential type tree is stored in another \src{TypeTree}'s \src{o
 
 \paragraph{For Comprehensions}
 
-\noindent \src{For} or sequence comprehensions are a purely syntatic construct; in the AST, they are represented with \src{foreach}, \src{filter}, \src{map}, and \src{flatMap} calls. The following listing shows some examples. 
+\noindent \src{For} or sequence comprehensions are a purely syntatic construct; in the AST, they are represented with \src{foreach}, \src{withFilter}, \src{map}, and \src{flatMap} calls. The following listing shows some examples. 
+
+\begin{lstlisting}
+val xs = 1 to 10 toList
+val ys = 1 to 10 toList
+
+val coordinates1: List[(Int, Int)] = for(x %$\leftarrow$% xs; y %$\leftarrow$% ys) yield (x %$\rightarrow$% y)
+
+val coordinates2: List[(Int, Int)] = xs.flatMap(x %$\Rightarrow$% ys.map(y %$\Rightarrow$% (x %$\rightarrow$% y)))
+
+for(x %$\leftarrow$% xs if x %\%% 2 == 0) println(x)
+
+xs.withFilter(x %$\Rightarrow$% x %\%% 2 == 0).foreach(x %$\Rightarrow$% println(x))
+\end{lstlisting}
+
 
 \paragraph{Multiple Assignment}
 
-\noindent Scala's multiple or parallel assignment is just an abbreviation for a more complex pattern match expression.
+\noindent Scala's multiple or parallel assignment syntax is just an abbreviation for a more complex pattern match expression. The following listing shows the desugared form for the call \src{val (a, b) = getPair()}:
 
+\begin{lstlisting}
+def getPair() = (1, 2)
 
+val x$1 = getPair() match {
+  case (a, b) %$\Rightarrow$% (a, b)
+}
 
+val a = x$1._1
+val b = x$1._2
+\end{lstlisting}
 
+The same transformation is also performed when extractors are involved in the assignment:
 
+\begin{lstlisting}
+val MyRegex = """(\w)(.*)""".r
+val MyRegex(firstGroup, secondGroup) = "Hello"
+\end{lstlisting}
+
+becomes:
+
+\begin{lstlisting}
+val MyRegex = """(\w)(.*)""".r
+val x$1 = "Hello" match {
+  case MyRegex(firstGroup, secondGroup) %$\Rightarrow$% (firstGroup, secondGroup)
+}
+
+val firstGroup = x$1._1
+val secondGroup = x$1._2
+\end{lstlisting}

@@ -1,7 +1,6 @@
 /*
  * Copyright 2005-2010 LAMP/EPFL
  */
-// $Id$
 
 package scala.tools.refactoring
 package tests.sourcegen
@@ -10,7 +9,7 @@ import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
 import sourcegen.SourceGenerator
-import common.SilentTracing
+import common.{SilentTracing, ConsoleTracing}
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
@@ -277,6 +276,65 @@ class ATest {
     
     tree prettyPrintsTo """class A(l: List[_])
 class B(l: List[T] forSome {type T})"""
+  }
+  
+  @Test
+  def testMissingParentheses() = {
+    
+    val tree = treeFrom("""
+    package com.somedomain.test
+
+    object Transaction {
+      object Kind {
+        val ReadOnly = true
+      }
+      def run[T](readOnyl: Boolean) = ()
+    }
+    
+    object Test4 {
+       def doNothing {
+       }
+    }
+    class Test4 {
+       def bar() {
+         Transaction.run[Unit](Transaction.Kind.ReadOnly)
+       }
+    }""")
+        
+    assertEquals("""
+    package com.somedomain.test
+
+    object Transaction {
+      object Kind {
+        val ReadOnly = true
+      }
+      def run[T](readOnyl: Boolean) = ()
+    }
+    
+    object Test4 {
+       def doNothing {
+       }
+    }
+    class Test4 {
+       def bar() {
+         Transaction.run[Unit](Transaction.Kind.ReadOnly)
+       }
+    }""", generateText(removeAuxiliaryTrees apply tree get))     
+    
+    tree prettyPrintsTo """package com.somedomain.test
+object Transaction {
+  object Kind {
+    val ReadOnly = true
+  }
+  def run[T](readOnyl: Boolean) = ()
+}
+object Test4 {
+  def doNothing {
+  }
+}
+class Test4 {
+  def bar = Transaction.run[Unit](Transaction.Kind.ReadOnly)
+}"""
   }
   
   @Test
@@ -995,7 +1053,7 @@ object A"""
   List(1, 2).map((i: Int) => i.+(1))
   val sum: (Seq[Int]) => Int = _.reduceLeft(_.+(_))
   List(1, 2).map(_.+(1))
-  List(1, 2).map((i) => i.+(1))
+  List(1, 2).map(i => i.+(1))
 }"""
   }
   
@@ -1082,44 +1140,6 @@ object A"""
     tree prettyPrintsTo """object Obj extends java.lang.Object {
   val self = this
 }"""
-  }
-  
-  @Test
-  def valDefRhsAlone(): Unit = {
-    
-    val valDef = treeFrom("""
-    object O {
-      val a = {4 + 3}
-    }
-    """) match {
-      case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: ValDef) :: _)) :: _) => v
-      case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
-    }
-    
-    val p = valDef.symbol.isPrivateLocal
-    
-    assertEquals("""val a = {4 + 3}
-    """, generate(removeAuxiliaryTrees apply valDef get).center.asText)
-      
-    assertEquals("""{4 + 3}""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
-  }
-  
-  @Test
-  def manyParentheses(): Unit = {
-    
-    val tree = treeFrom("""
-    class VBox[T](i: Int)
-    class Test {
-     var box = new VBox[Int]({ 2 + 4 })
-    }
-    """)
-      
-    assertEquals("""
-    class VBox[T](i: Int)
-    class Test {
-     var box = new VBox[Int]({ 2 + 4 })
-    }
-    """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test

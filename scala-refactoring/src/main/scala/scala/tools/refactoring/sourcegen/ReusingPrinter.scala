@@ -1,3 +1,7 @@
+/*
+ * Copyright 2005-2010 LAMP/EPFL
+ */
+
 package scala.tools.refactoring
 package sourcegen
 
@@ -216,7 +220,7 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(fun) ++ p(arg) ++ r
         
       case (t @ Apply(fun @ TypeApply(receiver: Select, _), arg :: Nil), _) if !arg.isInstanceOf[Function] =>
-        if(keepTree(receiver.qualifier)) {
+        if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
           l ++ p(fun) ++ p(arg) ++ r
         } else {
           l ++ p(fun) ++ p(arg, before = "\\(", after = "\\)") ++ r
@@ -258,27 +262,42 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t: ModifierTree, _) =>
         l ++ Fragment(t.nameString) ++ r
         
+      case (t @ Function(vparams, b @ BlockExtractor(body)), _) if !b.hasExistingCode =>
+        l ++ p(vparams) ++ ind.current ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
+        
       case (t @ Function(vparams, body), _) =>
         l ++ p(vparams) ++ p(body) ++ r
 
       case (t @ If(cond, thenp, elsep), orig: If) =>
-        
-        val _else = if(keepTree(orig.elsep) && orig.elsep.pos.isRange) {
-          
-          val layout = between(orig.thenp, orig.elsep)(orig.pos.source).asText
-          
-          if(elsep.isInstanceOf[Block]) {
-            val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\n\\s*$", "else "))
-            p(elsep, before = l, after = NoRequisite)
+                
+        val _else = {
+          if(keepTree(orig.elsep) && orig.elsep.pos.isRange) {
+            
+            val layout = between(orig.thenp, orig.elsep)(orig.pos.source).asText
+            
+            if(elsep.isInstanceOf[Block]) {
+              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\n\\s*$", "else "))
+              p(elsep, before = l, after = NoRequisite)
+            } else {
+              printIndented(elsep, before = Requisite.anywhere(layout), after = NoRequisite)
+            }
           } else {
-            printIndented(elsep, before = Requisite.anywhere(layout), after = NoRequisite)
+            val l = Requisite.newline(ind.current) ++ "else" ++ Requisite.newline(ind.current + ind.defaultIncrement)
+            printIndented(elsep, before = l, after = NoRequisite)
           }
-        } else {
-          val l = Requisite.newline(ind.current) ++ "else" ++ Requisite.newline(ind.current + ind.defaultIncrement)
-          printIndented(elsep, before = l, after = NoRequisite)
         }
         
-        l ++ p(cond, before = "\\(", after = "\\)") ++ printIndented(thenp, before = NoRequisite, after = NoRequisite) ++ _else ++ r
+        val _cond = p(cond, before = "\\(", after = "\\)")
+        
+        val _then = {
+          if(thenp.isInstanceOf[Block]) {
+            p(thenp)
+          } else {
+            printIndented(thenp, before = NoRequisite, after = NoRequisite)
+          }
+        }
+        
+        l ++ _cond ++ _then ++ _else ++ r
         
       case (This(qual), _) =>
         l ++ Fragment((if(qual.toString == "") "" else qual +".") + "this") ++ r

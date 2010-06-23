@@ -1,3 +1,7 @@
+/*
+ * Copyright 2005-2010 LAMP/EPFL
+ */
+
 package scala.tools.refactoring
 package sourcegen
 
@@ -10,16 +14,29 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   
   import global._
   
+  /**
+   * Creates a fragment from a tree, regenerating only those
+   * trees that have changed.
+   * */
   def createFragment(t: Tree): Fragment = {
     generateFragmentsFromTrees(List(t)) map (_._3) head
   }
   
+  /**
+   * Creates a list of changes from a list of trees, regenerating only those
+   * trees that have changed.
+   * */
   def createChanges(ts: List[Tree]): List[Change] = context("Create changes") {
     generateFragmentsFromTrees(ts) map {
       case (file, tree, fragment) =>
         Change(file, tree.pos.start, tree.pos.end, fragment.center.asText)
     }
   }
+  
+  /**
+   * Creates a string from a tree, regenerating all trees.
+   * */
+  def createText(t: Tree): String = generate(t).asText
   
   private[refactoring] def generate(tree: Tree, changeset: ChangeSet = AllTreesHaveChanged): Fragment = {
 
@@ -33,7 +50,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     
     val changesByFile = ts groupBy (_.pos.source)
     
-    global.reloadSources(changesByFile.keys filter { source => !global.unitOfFile.get(source.file).isDefined} toList)
+    //global.reloadSources(changesByFile.keys filter { source => !global.unitOfFile.get(source.file).isDefined} toList)
     
     val topLevelTreesByFile = changesByFile map {
       case (source, ts) => (source, findTopLevelTrees(ts))

@@ -2,7 +2,7 @@
 <feature
       id="scala.tools.refactoring.feature"
       label="Scala Refactoring Feature"
-      version="0.0.0.qualifier">
+      version="0.1.0.qualifier">
 
    <description url="http://scala-refactoring.assembla.com/wiki/show/scala-refactoring">
       The project aims to provide an IDE independent refactoring engine that can be integrated into IDEs and other tools.
@@ -51,15 +51,15 @@ SUCH DAMAGE.
    </license>
 
    <requires>
-      <import plugin="scala.library"/>
-      <import plugin="scala.tools.nsc"/>
+      <import plugin="org.scala-ide.scala.library"/>
+      <import plugin="org.scala-ide.scala.compiler"/>
    </requires>
 
    <plugin
          id="scala.tools.refactoring"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="0.1.0"
          unpack="false"/>
 
 </feature>
