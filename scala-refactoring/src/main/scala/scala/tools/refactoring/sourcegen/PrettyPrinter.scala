@@ -94,16 +94,17 @@ trait PrettyPrinter extends AbstractPrinter {
         
       case t @ DefDef(ModifierTree(mods), name, tparams, vparamss, tpt, _) =>
         //mods.annotations map traverse
+        import Requisite._
         var mods_ = mods map (m => m.nameString + " ") mkString ""
         
         if(t.mods.hasFlag(Flags.STABLE) && !mods_.contains("val")) {
           mods_ = mods_ + "val "
         }
         
-        val tparams_ = p(tparams, before = "\\[", after = "\\]", separator = ", ")
-        val params = Layout(vparamss map (vparams => p(vparams, before = "\\(", after = "\\)", separator = ", ")) mkString "")
+        val tparams_ = p(tparams, before = "\\[", after = anywhere("]"), separator = ", ")
+        val params = Layout(vparamss map (vparams => p(vparams, before = "\\(", after = "\\)", separator = (allowSurroundingWhitespace(",") ++ Blank))) mkString "")
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
-          Fragment(" {\n"+ ind.current +"}")
+          Fragment(" {\n"+ ind.current +"}") 
         } else {
           p(t.rhs, before = " = ")
         }
@@ -183,9 +184,35 @@ trait PrettyPrinter extends AbstractPrinter {
         x ++ sup ++ self_
 
       case BlockExtractor(stats) =>
-        // pretty printing always creates braces around the block statements, even if there is only one
-        printIndented(stats, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ ( "\\}"))
         
+        def printWithEnclosing = printIndented(stats, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ ( "\\}"))
+        
+        // FIXME don't code when tired..
+        
+        if(stats.size > 1 && !stats.head.hasExistingCode && stats.tail.exists(_.hasExistingCode)) {
+          
+          val firstWithExistingCode = stats.find(_.hasExistingCode) get
+          val printed = p(firstWithExistingCode)
+          if(printed.leading.matches("(?ms).*\\{.*")) {
+            
+            val ExtractOpeningBrace = "(?ms)(.*\\{.*)(\n.*)".r
+            val ExtractOpeningBrace(leading, rest) = printed.leading.asText
+            
+            val printedStats = stats map { 
+              case tree if tree == firstWithExistingCode =>
+                Fragment(Layout(rest), printed.center, printed.trailing)
+              case tree =>
+                printIndented(tree, before = NoRequisite, after = NoRequisite)
+            }
+            
+            Layout(leading) ++ indentedNewline ++ printedStats.foldLeft(EmptyFragment: Fragment)(_ ++ _)
+            
+          } else {
+            printWithEnclosing
+          }
+        } else 
+          printWithEnclosing
+
       case CaseDef(pat, guard, body) =>
         Layout("case ") ++ p(pat) ++ p(guard, before = " if ") ++ p(body, before = " => ")
         

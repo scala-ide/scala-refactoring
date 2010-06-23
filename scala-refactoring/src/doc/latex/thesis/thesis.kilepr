@@ -102,30 +102,30 @@ order=2
 
 [item:2_refactoring_library.tex]
 archive=true
-column=62
+column=65
 encoding=ISO-8859-1
 highlight=LaTeX
-line=288
+line=0
 mode=LaTeX
 open=true
 order=6
 
 [item:91_scala_ast.tex]
 archive=true
-column=8
+column=45
 encoding=ISO-8859-1
 highlight=LaTeX
-line=709
+line=0
 mode=LaTeX
 open=true
 order=3
 
 [item:9_appendix.tex]
 archive=true
-column=0
+column=73
 encoding=ISO-8859-1
 highlight=LaTeX
-line=1
+line=2
 mode=LaTeX
 open=true
 order=1
@@ -142,10 +142,10 @@ order=-1
 
 [item:bibliography.bib]
 archive=true
-column=25
+column=21
 encoding=ISO-8859-1
 highlight=BibTeX
-line=93
+line=86
 mode=BibTeX
 open=true
 order=4
@@ -192,10 +192,10 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=85
+column=0
 encoding=UTF-8
 highlight=LaTeX
-line=82
+line=101
 mode=LaTeX
 open=true
 order=0
@@ -219,25 +219,25 @@ CursorColumn=21
 CursorLine=34
 
 [view-settings,view=0,item:2_refactoring_library.tex]
-CursorColumn=62
-CursorLine=288
+CursorColumn=65
+CursorLine=0
 
 [view-settings,view=0,item:91_scala_ast.tex]
-CursorColumn=8
-CursorLine=709
+CursorColumn=45
+CursorLine=0
 
 [view-settings,view=0,item:9_appendix.tex]
-CursorColumn=0
-CursorLine=1
+CursorColumn=73
+CursorLine=2
 
 [view-settings,view=0,item:bibliography.bib]
-CursorColumn=25
-CursorLine=93
+CursorColumn=21
+CursorLine=86
 
 [view-settings,view=0,item:mystyle.sty]
 CursorColumn=1
 CursorLine=64
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=85
-CursorLine=82
+CursorColumn=0
+CursorLine=101

@@ -51,15 +51,15 @@ SUCH DAMAGE.
    </license>
 
    <requires>
-      <import plugin="scala.library"/>
-      <import plugin="scala.tools.nsc"/>
+      <import plugin="org.scala-ide.scala.library"/>
+      <import plugin="org.scala-ide.scala.compiler"/>
    </requires>
 
    <plugin
          id="scala.tools.refactoring"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="0.1.0"
          unpack="false"/>
 
 </feature>

@@ -83,8 +83,6 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
     
     val changes = ↓(matchingChildren(r)) apply abstractFileToTree(selection.file)
     
-    println(changes.get)
-
     Right(changes toList)
   }
 }

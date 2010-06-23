@@ -13,7 +13,7 @@ import common.{SilentTracing, ConsoleTracing}
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
-class SourceGenTest extends TestHelper with SourceGenerator with ConsoleTracing {
+class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   
   import global._
   
@@ -1140,44 +1140,6 @@ object A"""
     tree prettyPrintsTo """object Obj extends java.lang.Object {
   val self = this
 }"""
-  }
-  
-  @Test
-  def valDefRhsAlone(): Unit = {
-    
-    val valDef = treeFrom("""
-    object O {
-      val a = {4 + 3}
-    }
-    """) match {
-      case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: ValDef) :: _)) :: _) => v
-      case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
-    }
-    
-    val p = valDef.symbol.isPrivateLocal
-    
-    assertEquals("""val a = {4 + 3}
-    """, generate(removeAuxiliaryTrees apply valDef get).center.asText)
-      
-    assertEquals("""{4 + 3}""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
-  }
-  
-  @Test
-  def manyParentheses(): Unit = {
-    
-    val tree = treeFrom("""
-    class VBox[T](i: Int)
-    class Test {
-     var box = new VBox[Int]({ 2 + 4 })
-    }
-    """)
-      
-    assertEquals("""
-    class VBox[T](i: Int)
-    class Test {
-     var box = new VBox[Int]({ 2 + 4 })
-    }
-    """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test

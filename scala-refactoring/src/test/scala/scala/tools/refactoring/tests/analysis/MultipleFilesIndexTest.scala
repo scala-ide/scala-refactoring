@@ -18,15 +18,20 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   def aggregateFileNamesWithTrees[T <: { val pos: Position }](ts: List[T])(conversion: T => String) = {
     ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos.isRange) map conversion sortWith(_ < _) mkString ", ")
   }
-
-  def findReferences(pro: FileSet): List[String] = {
-              
-    val sym = pro.selection.selectedSymbols head
+  
+  def buildIndex(pro: FileSet) {
     
     val cuIndexes = pro.trees map CompilationUnitIndex.apply
     
     index = GlobalIndex(cuIndexes)
+  }
 
+  def findReferences(pro: FileSet): List[String] = {
+
+    buildIndex(pro)
+              
+    val sym = pro.selection.selectedSymbols head
+    
     aggregateFileNamesWithTrees(index.occurences(sym)) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
@@ -37,16 +42,24 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   def classHierarchy(pro: FileSet): List[String] = {
               
+    buildIndex(pro)
+
     val sym = pro.selection.selectedSymbols head
-    
-    val cuIndexes = pro.trees map CompilationUnitIndex.apply
-    
-    index = GlobalIndex(cuIndexes)
-    
-    val i = index.completeClassHierarchy(sym.owner)
-    
+        
     aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner)) { sym => 
       sym.nameString +" on line "+ sym.pos.line
+    }
+  }
+  
+  def allDeclarations(pro: FileSet): List[String] = {
+              
+    buildIndex(pro)
+        
+    aggregateFileNamesWithTrees(index.allDeclarations() map (_._2) toList) { sym => 
+      if(sym.nameString == "")
+        "<no-name> on line "+ sym.pos.line
+      else
+        sym.nameString +" on line "+ sym.pos.line
     }
   }
   
@@ -272,5 +285,45 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     """ becomes
     """C on line 2, Defg on line 3"""
   } apply(classHierarchy)
+  
+  @Test
+  def allDeclarationsInClasses = new FileSet {
+    """
+    trait Abc
+    trait B
+    """ becomes
+    "<no-name> on line 2, Abc on line 2, B on line 3"
+    ;
+    """
+    trait C extends Abc with B
+    object Defg extends C
+    """ becomes
+    "C on line 2, Defg on line 3"
+  } apply(allDeclarations)
+  
+  @Test
+  def allDeclarationsMethods = new FileSet {
+    """
+    trait Abc {
+      def someMethod(): String
+    }
+    trait B {
+      def anotherOne(a: String) = {
+        val b = a + ";"
+        b
+      }
+    }
+    """ becomes
+    "<no-name> on line 2, Abc on line 2, B on line 5, a on line 6, anotherOne on line 6, b on line 7, someMethod on line 3"
+    ;
+    """
+    trait C extends Abc {
+      def someMethod(): String = "empty"
+      def m = 5
+      val a = 42
+    }
+    """ becomes
+    "C on line 2, a on line 5, m on line 4, someMethod on line 3"
+  } apply(allDeclarations)
 }
 

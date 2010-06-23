@@ -71,12 +71,12 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
   def collapseWithRename = new FileSet {
     """
       import java.lang.{String => S}
-      import java.lang.{Object => O}
+      import java.lang.{Object => Objekt}
   
       object Main
     """ becomes
     """
-      import java.lang.{Object => O, String => S}
+      import java.lang.{Object => Objekt, String => S}
   
       object Main
     """

@@ -14,32 +14,32 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   import global._
   
   var index: IndexLookup = null
-  
-  def withIndex(src: String)(body: (IndexLookup, Tree) => Unit ) {
+
+  def mapAndCompareSelectedTrees(expected: String, src: String)(m: PartialFunction[Tree, String]) = {
+      
     val tree = treeFrom(src)
+    
     index = GlobalIndex(List(CompilationUnitIndex(tree)))
-    body(index, tree)
+    
+    val firstSelected = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head
+  
+    if(m.isDefinedAt(firstSelected)) {
+      val result = m(firstSelected)
+      assertEquals(expected, result)
+    } else {
+      throw new Exception("found: "+ firstSelected)
+    }
   }
   
-  def assertDeclarationOfSelection(expected: String, src: String) = withIndex(src) { (index, tree) =>
-  
-    val declarations = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head match {
-      case t: RefTree => 
-        index.declaration(t.symbol).head
-      case t => throw new Exception("found: "+ t)
-    }
-    assertEquals(expected, declarations.toString)
-  }  
-  
-  def assertReferencesOfSelection(expected: String, src: String) = withIndex(src) { (index, tree) =>
-  
-    val references = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head match {
-      case t: DefTree => 
-        index.references(t.symbol).toList filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
-      case t => throw new Exception("found: "+ t)
-    }
-    assertEquals(expected, references mkString ", ")
+  def assertDeclarationOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
+    case t: RefTree => 
+      index.declaration(t.symbol).head toString
   }
+  
+  def assertReferencesOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
+    case t: DefTree => 
+      index.references(t.symbol).toList filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" ) mkString ", "
+  } 
   
   @Test
   def findValReference() = {

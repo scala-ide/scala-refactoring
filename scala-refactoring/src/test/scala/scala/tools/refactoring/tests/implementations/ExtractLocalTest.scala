@@ -376,6 +376,25 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(extract("addTwo"))
   
+  @Test
+  def extractFromThen = new FileSet {
+    """
+      class Extr2 {
+        if(true) {
+          /*(*/"a" + "b"/*)*/ + "c"
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        if(true) {
+          val ab = "a" + "b"/*)*/ 
+          /*(*/ab+ "c"
+        }
+      }
+    """
+  } applyRefactoring(extract("ab"))
+  
   //@Test FIXME not yet implemented
   def extractFromFunction2 = new FileSet {
     """
