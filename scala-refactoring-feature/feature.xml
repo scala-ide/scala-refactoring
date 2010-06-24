@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="scala.tools.refactoring.feature"
-      label="Scala Refactoring Feature"
+      label="Scala Refactoring"
       version="0.1.0.qualifier">
+      provider-name="The Scala Refactoring Team">
 
    <description url="http://scala-refactoring.assembla.com/wiki/show/scala-refactoring">
-      The project aims to provide an IDE independent refactoring engine that can be integrated into IDEs and other tools.
+      Provides the core functionality for automated Scala refactoring tools.
    </description>
 
-   <copyright url="http://www.example.com/copyright">
-      Copyright 2010 IFS/HSR
+   <copyright>
+      Copyright (c) 2010 University of Applied Sciences, Rapperswil
+All rights reserved.
    </copyright>
 
    <license url="http://www.scala-lang.org/node/146">
@@ -50,6 +52,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
    </license>
 
+
    <requires>
       <import plugin="org.scala-ide.scala.library"/>
       <import plugin="org.scala-ide.scala.compiler"/>
@@ -59,7 +62,7 @@ SUCH DAMAGE.
          id="scala.tools.refactoring"
          download-size="0"
          install-size="0"
-         version="0.1.0"
+         version="0.0.0"
          unpack="false"/>
 
 </feature>
