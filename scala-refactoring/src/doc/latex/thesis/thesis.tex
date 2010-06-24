@@ -33,43 +33,43 @@ This documentation
 
 \chapter{Introduction} \label{chapter:introduction}
 
-This document describes the development of a library and associated tools to support automated refactoring of Scala programs. This master's thesis is a continuation of a prior term project \cite{ScalaRefactoring} at the University of Applied Sciences Rapperswil, Switzerland.
+The goal of this thesis is to provide Scala developers with automated refactoring tools. This master's thesis is a continuation of a term project (see \cite{ScalaRefactoring}) at the University of Applied Sciences Rapperswil, Switzerland. In this chapter, we will motivate the grundlagendings: refactoring and the Scala programming language, and explain the goals of this thesis.
 
 \section{Refactoring}
 
 Refactoring of programs is a well established practice among professional software engineers. In his 1992 PhD thesis \cite{OpdykeThesis}, William Opdyke defined refactoring as 
 
-\begin{quote}
+\begin{quotation}
 a set of program restructuring operations (refactorings) that support the design, evolution and reuse of object-oriented application frameworks.
-\end{quote}
+\end{quotation}
 
-The breakthrough in the industry followed in 1999, when Martin Fowler and his colleagues published their very popular book \textit{Refactoring: Improving the Design of Existing Code} \cite{FowlerRefactoring}, where refactoring is defined as 
+The breakthrough in industry followed in 1999, when Martin Fowler and his colleagues published their popular book \textit{Refactoring: Improving the Design of Existing Code} \cite{FowlerRefactoring}, where refactoring is defined as 
 
-\begin{quote}
+\begin{quotation}
 the process of changing a software system in such a way that it does not alter the external behavior of the code yet improves its internal structure.
-\end{quote} 
+\end{quotation} 
 
-Today, refactoring has been absorbed by the programming mainstream, and is usually well integrated into the developer's work-flow and development environments. Developers use refactoring tools to keep their code maintainable by applying refactorings such as Rename to quickly change identifiers. In agile environments, where the program is rapidly adapted to handle new requirements, performing regular refactorings is essential to achieve reusable code.
+Today, refactoring has been absorbed by the programming mainstream, and is usually well integrated into the developer's work-flow and development environment. Developers use refactoring tools to keep their code maintainable by applying refactorings such as Rename to quickly change identifiers. In agile environments, where the program is rapidly adapted to handle new requirements, performing regular refactorings is essential to achieve reusable code and to keep up with the pace of change.
 
-Refactoring as a technique does not mandate a tool or depend on a specific programming language.
+Refactoring as a technique does not mandate a tool nor depend on a specific programming language.
 
 \section{Scala}
 
-The Scala programming language \cite{ProgrammingScala}, developed by Martin Odersky and his team at EPFL, is a statically typed language that runs on the Java virtual machine (or on .NET alternatively \cite{ScalacNet}) and excels with its unique combination of object-oriented and functional programming concepts. It has also been called a postfunctional language \cite{ScalaPostFunctional} because it has been designed ``to make functional constructs, imperative constructs, and objects all play well together''. 
+The Scala programming language \cite{ProgrammingScala}, developed by Martin Odersky and his team at EPFL, is a statically typed, compiled language that runs on the Java virtual machine (or on .NET alternatively \cite{ScalacNet}) and excels with its unique combination of object-oriented and functional programming concepts. It has also been called a postfunctional language because it has been designed ``to make functional constructs, imperative constructs, and objects all play well together'' \cite{ScalaPostFunctional}. 
 
 One of Scala's strengths is its seamless interoperability with Java on the class level: Scala classes can extend Java classes and vice-versa. Scala also does not ship with a huge standard library but uses existing Java classes where it is sensible.
 
-Scala provides all of Java's object-oriented features but does away with non-object oriented features like primitives and static class members. Scala also provides code reuse via traits, a kind of interface that can provide an implementation.
+Scala provides all of Java's object-oriented features but does away with the non-object oriented ones like primitive types (?) and static class members. Scala also provides code reuse via traits, a kind of interface that can provide an implementation.
 
-From functional programming, Scala has absorbed functions as first class values and embraces the idea of immutability with various language constructs. Scala even supports lazy evaluation through by-name parameters. A combination from both object-oriented and functional worlds can be seen in Scala's ability to use pattern matching to deconstruct objects while preserving encapsulation.
+From functional programming, Scala has absorbed functions as first class values and embraces the idea of immutability with various language constructs. Scala even supports lazy evaluation through by-name parameters. A combination from both object-oriented and functional worlds can be seen in Scala's ability to use pattern matching to deconstruct objects while still preserving encapsulation.
 
-These were just a few examples of how Scala differs from Java, one last feature worth mentioning is that in Scala, building your own abstractions and control structures is easy, which is the reason why it has been named the ``scalable language''.
+These were just a few examples of how Scala differs from other languages such as Java. One last feature worth mentioning is that in Scala, building your own abstractions and control structures is easy, which is the reason why it has been named the ``scalable language''.
 
 \section{Integrated Development Environments}
 
-Many programmers, particularly of mainstream languages such as Java and C\#, use integrated development environments (IDE) to create their programs. Especially the IDEs for the Java programming language excel with automated refactoring support; the screen-shots in \figref{figure:ide_refactorings} show two examples. If Scala wants to cater to those programmers and become a viable alternative in enterprises, it needs to offer IDE support that is as comfortable to use and as mature as the existing Java tooling is.
+Many programmers, particularly of mainstream languages such as Java and C\#, use integrated development environments (IDE) to write their programs. Especially the IDEs for the Java programming language excel with automated refactoring support; the screen-shots in \figref{figure:ide_refactorings} show two examples. If Scala wants to cater to those programmers and become a viable alternative in enterprises, it needs to offer IDE support that is as comfortable to use and as mature as the existing Java tooling is.
 
-Scala is supported on the three main Java development platforms Eclipse \cite{EclipseScalaIDE}, IntelliJ IDEA \cite{IntelliJScalaIDE}, and the NetBeans \cite{NetBeansJScalaIDE}, but with the exception of IntelliJ IDEA -- which offers a few refactorings -- support for automated refactoring does not yet exist. Although a study by Emerson~Murphy-Hill et al. among developers using Eclipse \cite{RefactoringStudy} indicates that many refactorings are not done with the tool support but by hand, other automated refactorings like Rename, Move and Extract Method are used frequently.
+Scala is supported on the three main Java development platforms Eclipse \cite{EclipseScalaIDE}, IntelliJ IDEA \cite{IntelliJScalaIDE}, and the NetBeans \cite{NetBeansJScalaIDE}, but with the exception of IntelliJ IDEA -- which offers a few refactorings -- support for automated refactoring does not yet exist. Although a study by Emerson~Murphy-Hill et al. among developers using Eclipse \cite{RefactoringStudy} indicates that many refactorings are not performed with the tool support but by hand, other automated refactorings like Rename, Move and Extract Method are used frequently.
 
 \begin{figure}
  \centering
@@ -80,17 +80,17 @@ Scala is supported on the three main Java development platforms Eclipse \cite{Ec
 
 \section{Thesis Goals}
 
-The goal of this thesis is to support Scala IDEs with automated refactoring support. It aims to provide a comprehensive catalogue of refactorings and the necessary infrastructure to create new refactorings. To let (?) as many IDEs and other tools as possible profit from the project, it will provide an IDE independent refactoring library that only depends on the Scala compiler. IDEs can then integrated this library by providing the user interface and interaction. 
+The goal of this thesis is to support Scala IDEs with automated refactoring support. It aims to provide a comprehensive catalogue of refactorings and the necessary infrastructure to create new refactorings. To let (?) as many IDEs and other tools as possible profit from the project, it will provide an IDE independent refactoring library that only depends on the Scala compiler. IDEs can then integrate this library by providing the user interface and interaction.
 
-As most IDEs today are written in Java, integrating a Scala library is no problem. Also, because the majority of Scala IDEs are open source (NetBeans, Eclipse), having a single refactoring library allows the developers to cooperate on an implementation, not fragmenting the already scarce resources any further. As a showcase, this project provides the integration into the Eclipse based Scala IDE \cite{EclipseScalaIDE}.
+As most IDEs today are written in Java, integrating a Scala library is easily possible. Also, because the majority of Scala IDEs are open source (NetBeans, Eclipse), having a single refactoring library allows the developers to cooperate on an implementation, not fragmenting the already scarce resources any further. As a showcase, this project provides the integration into the Eclipse based Scala IDE \cite{EclipseScalaIDE}.
 
-Writing an automated refactoring is no easy task, several things have to be considered: one has to analyze the source code, create an appropriate representation (e.g. abstract or concrete syntax tree) of the program, transform it and turn it back into plain source code. 
+Writing an automated refactoring is no easy task, several things have to be taken care of: one has to analyze the source code, create an appropriate representation (e.g. abstract or concrete syntax tree) of the program, transform it and turn it back into plain source code. 
 
-The heart of a refactoring is the transformation or manipulation of the program representation; but often (from our experience with refactoring tools for languages like Ruby \cite{RubyRefactoring}, C++ \cite{CdtOopsla}, and Groovy \cite{GroovyOopsla}) the developer also has to provide the instructions on how these manipulations are to be translated back into source code. This makes creating new refactorings needlessly complex and is a high barrier to contributors. The Scala refactoring library tries to make this as simple as possible: code generation from the abstract syntax tree is implemented generically and with no input from the refactoring writer.
+The heart of a refactoring is the transformation or manipulation of the program representation; but often (from our experience with refactoring tools for languages like Ruby \cite{RubyRefactoring}, C++ \cite{CdtOopsla}, and Groovy \cite{GroovyOopsla}) the developer also has to provide the instructions or hints on how these manipulations affect the source code. This makes creating new refactorings needlessly complex and is a high entry barrier for contributors. The Scala refactoring library tries to make creating new refactorings as simple as possible: code generation from the abstract syntax tree is implemented generically and needs no help from the refactoring writer.
 
-Transformations of the program are based on the Scala compiler's AST, and are written in a functional programming style that makes it possible to build complex transformations from simple ones.
+Transformations of the program are based on the Scala compiler's own AST, and are written in a functional programming style that makes it possible to assemble complex transformations from simple ones.
 
-To summarize, this project provides an IDE independent refactoring library which makes creating new refactorings as simple as possible. 
+To summarize, the Scala Refactoring project provides an IDE independent refactoring library which makes creating new refactorings as simple as possible.
 
 welche refactorings
 
@@ -238,6 +238,8 @@ def renameTo(name: String)(pro: FileSet): List[Change] = %\ldots%
 \section{Accomplishments}
 
 XXX needs some kind of conclusion, we have achieved our goal of having source generation that doesn't need user interaction.
+
+other usages (Richard?)
 
 
 \section{Acknowledgments}

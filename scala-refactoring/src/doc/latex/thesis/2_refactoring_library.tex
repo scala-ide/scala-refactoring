@@ -1,6 +1,6 @@
 \chapter{Refactoring Library} \label{chapter:refactoring-library}
 
-The refactoring library is the heart of the Scala Refactoring project. It contains the means to analyze a Scala program, to transform it and to turn it back into source code. When writing a refactoring, one usually has to implement the following steps:
+The refactoring library is the heart of the Scala Refactoring project. It contains the means to analyze a Scala program, to transform it and to turn these modifications back into source code. When writing a refactoring, one usually has to take care of the following steps:
 
 \begin{itemize}
  \item provide a user interface so that a specific refactoring can be discovered and invoked from the IDE.
@@ -10,9 +10,9 @@ The refactoring library is the heart of the Scala Refactoring project. It contai
  \item present the result of the refactoring to the user -- typically in the form of a patch --  and apply it to the source code.
 \end{itemize}
 
-From all these steps, the first and the last one are IDE-platform dependent and usually well supported (see Chapter XXX). For the other three, the refactoring library contains the necessary infrastructure to make these steps as simple as possible.
+From all these steps, the first and the last one are IDE-platform dependent and usually well supported (see Chapter XXX). For the remaining three, the refactoring library contains the necessary infrastructure to make these steps as simple as possible.
 
-The essence of a refactoring is a transformation that takes a program in some abstract form and changes its structure. To know what to transform, one has to analyze the program first. That we also have to turn a refactored program back into source code is a consequence of storing programs as plain text files, but is not an essential part of a refactoring. Therefore, one of the design goals was to provide a generic implementation that can handle all kinds of changes without any help from the transformation phase.
+The essence of a refactoring is a transformation that takes a program in some abstract form and changes its structure. To know what to transform, one has to analyze the program first. That we also have to turn a refactored program back into source code is a consequence of storing programs as plain text files, but not an essential part of a refactoring. Therefore, one of the design goals was to provide a generic implementation that can handle all kinds of changes without knowing exactly what the transformation changed.
 
 In the remainder of this chapter, we shall first take a look at the architecture of the library and then describe each of the three main components in detail.
 
@@ -20,11 +20,15 @@ In the remainder of this chapter, we shall first take a look at the architecture
 
 % Muss ich den AST erklären? Warum es den braucht und so?
 
-Refactorings typically do not work on the source code directly but -- just as the Scala compiler -- do most of the work on the abstract syntax tree (AST) of the program. We also do not create our own AST but reuse the Scala compiler's (as explained in Chapter XXX, we also do not invoke the compiler ourselves but just take an AST from the IDE). This not only saves time but also makes it easier to implement a new refactoring if one is already familiar with the Scala compiler's AST.
+Automated refactoring implementations typically do not work on the source code directly but -- just as a compiler -- do the majority of the work on the abstract syntax tree (AST) of the program. We also do not create our own AST representation but reuse the Scala compiler's parser and type checker (as explained in Chapter XXX, we also do not parse the code ourselves but get the AST from the IDE). This not only saved time during the development, but also makes it easier to implement a new refactoring if one is already familiar with the Scala compiler's AST.
 
-The Scala's AST is explained in more detail in Appendix \vref{chapter:scala-ast}. A general knowledge on what an AST is should suffice to follow the explanations in this chapter. Useful to know is that all trees have a position information: either indicating a location from where the tree origins or a \src{NoPosition}, which denotes trees that do not have a corresponding source code location. This information is later used by the transformation and code generation.%: trees with a \src{NoPosition} are pretty printed and the trees with a specific source location are reused (this is needed to preserve the formatting of the source code).
+The Scala AST is heterogeneous, meaning that ...
 
-A typical refactoring first takes the current file's AST and the user's selection or caret position and first checks if the chosen refactoring is applicable. The AST is then transformed into its new form and handed over to the source generator to turn the AST back into source code (see \figref{figure:refactoring-flow} for a visualization of this workflow). As motivated above, generating the source code is already implemented generically and needs no further instructions from the refactoring implementor.
+ The Scala compiler provides some infrastructure to traverse and transform the AST.
+
+Scala's AST is explained in more detail in Appendix~\vref{chapter:scala-ast}, but a general knowledge of what an AST is should suffice to follow the explanations in this chapter. Useful to know is that all trees have a position information: either indicating a location from where the tree origins or a \src{NoPosition}, which denotes trees that do not have a corresponding source code location. This information is later used by the transformation and code generation phases.%: trees with a \src{NoPosition} are pretty printed and the trees with a specific source location are reused (this is needed to preserve the formatting of the source code).
+
+As we have seen at the beginning of this chapter, a typical refactoring takes the current file's AST and the user's selection or caret position and first checks if the chosen refactoring is applicable -- e.g. whether the selected region of the source file corresponds to an AST element that can be handled by the chosen refactoring. If necessary, the refactoring queries aditional configuration from the user -- e.g. extracting a methind needs a new name. The AST is then transformed into its new form and handed over to the source generator to turn the AST back into source code (see \figref{figure:refactoring-flow} for a visualization of this workflow). As motivated above, generating the source code is already implemented generically and needs no further instructions from the refactoring implementer. %zu viel wiederholund von oben?
 
 \begin{figure}
   \centering
@@ -33,7 +37,7 @@ A typical refactoring first takes the current file's AST and the user's selectio
   \label{figure:refactoring-flow}
 \end{figure}
 
-The architecture (see \figref{figure:refactoring-architecture}) and also the source code layout follow these three steps:
+The architecture (see \figref{figure:refactoring-architecture}) and also the source code layout follow these three phases of the refactoring:
 
 \begin{description}
  \item[Analysis] in package \src{analysis} contains the means to analyze the program and to build an index for the identifiers in the program. This will be explained further in Section \vref{section:analysis}.
@@ -50,7 +54,7 @@ The architecture (see \figref{figure:refactoring-architecture}) and also the sou
 
 % path dependent type, global?
 
-In the remainder of this chapter, the three library components will be explained in more detail. Keep in mind that the shown functionality is not meant to be feature complete but can and will be extended as seen fit. %gehört das hier hin?
+In the remainder of this chapter, the three library components will be explained in more detail. %Keep in mind that the shown functionality is not meant to be feature complete but can and will be extended as seen fit. %gehört das hier hin?
 
 \section{Analysis} \label{section:analysis}
 
