@@ -2,7 +2,7 @@
 <feature
       id="scala.tools.refactoring.feature"
       label="Scala Refactoring"
-      version="0.1.0.qualifier">
+      version="0.1.0"
       provider-name="The Scala Refactoring Team">
 
    <description url="http://scala-refactoring.assembla.com/wiki/show/scala-refactoring">
