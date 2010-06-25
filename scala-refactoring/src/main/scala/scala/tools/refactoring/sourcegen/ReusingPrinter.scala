@@ -58,6 +58,8 @@ trait ReusingPrinter extends AbstractPrinter {
         printSingleTree(t, tree, ind, changeSet, true, before, after)
       def printIndented(ts: List[Tree], separator: Requisite): Fragment = 
         printManyTrees(t, ts, ind, changeSet, true, separator, NoRequisite, NoRequisite)
+      def printIndented(ts: List[Tree], separator: Requisite, before: Requisite, after: Requisite): Fragment = 
+        printManyTrees(t, ts, ind, changeSet, true, separator, before, after)
     }
     
     import PrintOverloads._
@@ -108,10 +110,19 @@ trait ReusingPrinter extends AbstractPrinter {
           preBody ++ Requisite.newline(ind.current) ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
         }
         
-      case (t @ DefDef(ModifierTree(mods), newName, tparams, vparamss, tpt, rhs), orig) =>
+      case (t @ DefDef(ModifierTree(mods), newName, tparams, vparamss, tpt, rhs), orig: DefDef) =>
         val nameTree = NameTree(t.nameString) setPos orig.namePosition
+        val body = {
+          lazy val layoutBetween = between(nameTree, orig.rhs)(nameTree.pos.source)
+          rhs match {
+            case BlockExtractor(block) if !rhs.hasExistingCode && layoutBetween.contains("{") =>
+              printIndented(block, before = Requisite.newline(ind.current), separator = Requisite.newline(ind.current), after = NoRequisite)
+            case _ => p(rhs)
+          }
+        }
+        
         l ++ p(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++
-          p(tparams) ++ vparamss.map(vparams => p(vparams, before = "\\(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) ++ p(tpt) ++ p(rhs) ++ r
+          p(tparams) ++ vparamss.map(vparams => p(vparams, before = "\\(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) ++ p(tpt) ++ body ++ r
         
       case (t @ ValDef(ModifierTree(mods), newName, tpt, rhs), orig) =>
         l ++ p(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r

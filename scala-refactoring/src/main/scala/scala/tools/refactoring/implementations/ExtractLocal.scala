@@ -61,6 +61,7 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
         case _: Template => true
         case _: Try => true
         case _: Function => true
+        case _: DefDef => true
         case CaseDef(_, _, body) if body.pos.includes(near.pos) => true
       }
       
@@ -106,6 +107,8 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
         t copy (body = mkBlock(newVal :: body :: Nil)) replaces t
       case t @ Try(block, _, _) if !block.isInstanceOf[Block] =>
         t copy (block = mkBlock(newVal :: block :: Nil)) replaces t
+      case t @ DefDef(_, _, _, _, _, rhs) if !rhs.isInstanceOf[Block] =>
+        t copy (rhs = mkBlock(newVal :: rhs :: Nil)) replaces t
       case t @ Function(_, body) =>
         val hasOpeningCurlyBrace = {
           val src = t.pos.source.content.slice(0, t.pos.start).mkString

@@ -76,12 +76,15 @@ trait PrettyPrinter extends AbstractPrinter {
         val mods_ = mods map (m => m.nameString + " ") mkString ""
         Fragment(mods_ + "object " + name) ++ p(impl)
         
-      case t @ ValDef(m @ ModifierTree(mods), name, tpt, rhs)  =>
+      case t @ ValDef(ModifierTree(mods), name, tpt, rhs)  =>
         //mods.annotations map traverse
-        var mods_ = mods map (m => m.nameString + " ") mkString ""
-        
-        if(!t.symbol.isMutable && t.needsKeyword && !mods_.contains("val")) {
-          mods_ = mods_ + "val "
+        val mods_ = {
+          val existingMods = mods map (m => m.nameString + " ") mkString ""
+          if(!t.symbol.isMutable && t.needsKeyword && !existingMods.contains("val")) {
+            existingMods + "val "
+          } else {
+            existingMods 
+          }
         }
         
         val valName = if(t.symbol.isThisSym && name.toString == "_") { // this: ... =>
@@ -95,19 +98,23 @@ trait PrettyPrinter extends AbstractPrinter {
       case t @ DefDef(ModifierTree(mods), name, tparams, vparamss, tpt, _) =>
         //mods.annotations map traverse
         import Requisite._
-        var mods_ = mods map (m => m.nameString + " ") mkString ""
         
-        if(t.mods.hasFlag(Flags.STABLE) && !mods_.contains("val")) {
-          mods_ = mods_ + "val "
+        val mods_ = {
+          val existingMods = mods map (m => m.nameString + " ") mkString ""
+          if(t.mods.hasFlag(Flags.STABLE)&& !existingMods.contains("val")) {
+            existingMods + "val "
+          } else {
+            existingMods 
+          }
         }
         
         val tparams_ = p(tparams, before = "\\[", after = anywhere("]"), separator = ", ")
         val params = Layout(vparamss map (vparams => p(vparams, before = "\\(", after = "\\)", separator = (allowSurroundingWhitespace(",") ++ Blank))) mkString "")
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
-          Fragment(" {\n"+ ind.current +"}") 
+          Fragment(" {\n"+ ind.current +"}")
         } else {
           p(t.rhs, before = " = ")
-        }
+        } 
         
         Fragment(mods_ + t.nameString) ++ tparams_ ++ params ++ p(tpt, before = ": ") ++ rhs
         

@@ -14,7 +14,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   outer =>
   
   def extract(valName: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractLocal with SilentTracing with GlobalIndexes {
+    val refactoring = new ExtractLocal with ConsoleTracing with GlobalIndexes {
       val global = outer.global
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes)      
@@ -390,6 +390,46 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         if(true) {
           val ab = "a" + "b"/*)*/ 
           /*(*/ab+ "c"
+        }
+      }
+    """
+  } applyRefactoring(extract("ab"))
+  
+  @Test
+  def extractFromSimpleMethod = new FileSet {
+    """
+      class Extr2 {
+        def method {
+          println(/*(*/"Hello World"/*)*/)
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        def method {
+          val ab = /*(*/"Hello World"
+          println(ab/*)*/)
+        }
+      }
+    """
+  } applyRefactoring(extract("ab"))
+  
+  @Test
+  def extractFromMethod = new FileSet {
+    """
+      class Extr2 {
+        def method {
+          println(/*(*/"Hello World"/*)*/)
+          println("Hello World!")
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        def method {
+          val ab = /*(*/"Hello World"
+          println(ab/*)*/)
+          println("Hello World!")
         }
       }
     """
