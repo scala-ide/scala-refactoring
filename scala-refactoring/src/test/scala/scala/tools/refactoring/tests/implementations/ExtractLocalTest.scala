@@ -14,7 +14,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   outer =>
   
   def extract(valName: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractLocal with ConsoleTracing with GlobalIndexes {
+    val refactoring = new ExtractLocal with SilentTracing with GlobalIndexes {
       val global = outer.global
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes)      
