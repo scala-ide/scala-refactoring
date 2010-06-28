@@ -194,3 +194,27 @@ val myService = new ServiceUser with SomeServiceImplementation
 \end{lstlisting}
 
 The user of \src{ServiceUser} than has to instantiate it with a suitable implementation of \src{Service} to make the program compile. In most cases, one could also just let \src{ServiceUser} inherit from \src{Service}, but using a self type annotation is conceptually cleared than abusing inheritance.
+
+
+\section{Package Nesting} \label{section:package-nesting}
+
+It is a common misconception that Java supports nested packages; they are only nested in the file system, but the language itself has no notation of nested packages. In Scala on the other hand, packages can be nested. The following two listings represent different compilation units:
+
+\begin{lstlisting}
+package com.mycompany.project
+package pd
+
+class Student
+\end{lstlisting}
+
+\begin{lstlisting}
+package com.mycompany.project
+package ui
+
+import pd.Student
+\end{lstlisting}
+
+Note how the import statement does not have to specify the fully qualified name but can simply import \src{pd.Student} because both compilation units are in the \src{com.mycompany.project} package.
+
+
+

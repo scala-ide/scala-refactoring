@@ -1,4 +1,3 @@
-\chapter{Refactoring Library} \label{chapter:refactoring-library}
 
 The refactoring library is the heart of the Scala Refactoring project. It contains the means to analyze a Scala program, to transform it and to turn these modifications back into source code. When writing a refactoring, one usually has to take care of the following steps:
 
@@ -54,7 +53,7 @@ The architecture (see \figref{figure:refactoring-architecture}) and also the sou
 
 % path dependent type, global?
 
-In the remainder of this chapter, the three library components will be explained in more detail. %Keep in mind that the shown functionality is not meant to be feature complete but can and will be extended as seen fit. %gehört das hier hin?
+In the remainder of this chapter, the three library components will be explained in more detail. %Keep in mind that the shown functionality is not meant to be feature complete but can and will be extended as seen fit. %gehört das hier hin? was ist mit dem common paket?
 
 \section{Analysis} \label{section:analysis}
 
@@ -833,3 +832,6 @@ Alternatively, if one just wants to generate the source code from a tree, the \s
 \begin{lstlisting}
 def createFragment(t: Tree): Fragment
 \end{lstlisting}
+
+
+3. variante

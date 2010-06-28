@@ -4,7 +4,7 @@
 \begin{document}
 
 \newcommand{\subtitlename}{Master's Thesis}
-\newcommand{\titlename}{Refactoring Tool Support for Scala}
+\newcommand{\titlename}{Scala Refactoring}
 
 \include{0_front}
 
@@ -110,18 +110,226 @@ The appendices contain a user guide to the refactorings in Eclipse (Appendix~\vr
 
 \vref{chapter:scala-ast}
 
+\chapter{Refactoring Library} \label{chapter:refactoring-library}
+
 \include{2_refactoring_library}
 
 \chapter{Implemented Refactorings} \label{chapter:implemented-refactorings}
 
-describe each refactoring, with examples, problems, corner cases and the actual implementation. shows the library internals from the previous chapter in action.
+The previous chapter explained the internals of the Scala Refactoring library; in this chapter, we shall take a look at the refactorings that have so far been implemented on top of the library. 
+
+The three components of the refactoring library -- analysis, transformation, and source generation -- can be used independently from each other, but they also have dependencies expressed through self type annotations. The \src{Refactoring} trait combines the library with their dependencies and can be used as an entry point by library users.
+
+\begin{lstlisting}
+trait Refactoring extends Selections with TreeTransformations with SilentTracing 
+    with SourceGenerator with PimpedTrees {
+  %\ldots%
+}
+\end{lstlisting}
+
+Performing a refactoring is not a single-step process: when the user invokes a refactoring, the first step is to check whether the refactoring can be applied -- for example, to perform a renaming, a name has to be selected. We call this the \textit{prepare} step. This step usually has a result, which is used in a configuration dialog to parameterize the refactoring. In our renaming example, this is the new name. Using the information from the preparation step and the configured parameters, the refactoring can then be \textit{performed}. This yields either a list of changes to be applied or it can also fail.
+
+These steps are represented by the abstract class \src{MultiStageRefactoring}, which is subclassed by all concrete refactoring implementations:
+
+\begin{lstlisting}
+abstract class MultiStageRefactoring extends Refactoring {
+  
+  type PreparationResult
+  
+  case class PreparationError(cause: String)
+
+  def prepare(s: Selection): Either[PreparationError, PreparationResult]
+
+  
+  type RefactoringParameters
+  
+  case class RefactoringError(cause: String)
+  
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters)
+    : Either[RefactoringError, List[Change]]
+}
+\end{lstlisting}
+
+The reason why the selection and the preparation results need to be passed to \src{perform} is to keep it stateless. This makes it much easier for an IDE to let the user going back and forwards and testing different configurations.
+
+The remainder of this chapter introduces each refactoring and explains the current implementation for the Eclipse Scala IDE with examples.
 
 \section{Rename}
-\section{Organize Imports}
-\section{Extract Method}
-\section{Extract Local}
-\section{Explicit Getters And Setters}
 
+Renaming is one of the most used refactorings (see \cite{RefactoringStudy}, \cite{RefactoringInEclipse}). Choosing good names is a very basic and yet important task for a programmer if he wants to get readable code. During the evolution of a program, the roles of the classes, methods and variables change. Having an automated refactoring for renaming considerably reduces the cost of keeping these names in sync with what they do.
+
+\subsection{Features}
+
+This implementation supports renaming of all identifiers that occur in the program -- for example, local values and variables, method definitions and parameters, class fields, variable bindings in pattern matches, classes, objects, traits, packages, and types parameters.
+
+The IDE implementation distinguishes between two different modes: inline renaming as shown in \figref{figure:rename-screenshot-1} and the traditional dialog based implementation in \figref{figure:rename-screenshot-2}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.5\linewidth]{rename_screenshot_1.png}
+  \caption{The Rename refactoring in the inline mode: the selected name along with all references can be renamed without the need of a wizard and without previewing the changes.}
+  \label{figure:rename-screenshot-1}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{rename_screenshot_2.png}
+  \caption{A classical Rename refactoring: All occurences of the selected name are changed across all files in the project.}
+  \label{figure:rename-screenshot-2}
+\end{figure}
+
+Inline renaming is automatically chosen if the identifier that is renamed has only a local scope -- for example, a local variable. All names that can potentially be access from other compilation units in the program are renamed with the wizard and show a change set at the end.
+
+\subsection{Implementation Details}
+
+From the refactoring developer's point of view, the Rename refactoring is a quite different beast than other refactorings, because renaming does not change the shape of the AST at all; the transformations and source generation steps are trivial. On the other hand, having an accurate index is crucial; the inline rename refactoring uses only the index to find the locations of the names.
+
+The implementation looks as follows:
+
+\begin{lstlisting}
+val occurences = index.occurences(prepared.selectedTree.symbol) 
+    
+val isInTheIndex = filter {
+  case t: Tree => occurences contains t 
+}
+
+val renameTree = transform {
+  case t: ImportSelectorTree => 
+    mkRenamedImportTree(t, params.newName)
+  case s: SymTree => 
+    mkRenamedSymTree(s, params.newName)
+  case t: TypeTree => 
+    mkRenamedTypeTree(t, params.newName, prepared.selectedTree.symbol)
+}
+
+val rename = topdown(isInTheIndex &> renameTree |> id)
+
+val renamedTrees = occurences flatMap (rename(_))
+\end{lstlisting}
+
+The \src{renameTree} transformation handles different kinds of trees but delegates to the \src{TreeFactory} to create the renamed trees. The \src{rename} transformation traverses the trees and renames the trees that are in the index, or keeps the original trees otherwise. This transformation is then applied to all trees returned by the index.
+
+Why do we have to traverse the trees, would it not suffice to call \src{occurences flatMap (renameTree(\_))} directly? No, this will not work for recursive method calls, where the method definition also has a child tree that has to be renamed.
+
+\subsection{Examples}
+
+ ?
+
+\subsection{Limitations}
+ ?
+
+\section{Organize Imports}
+
+It can be debated whether Organize Imports really deserves the label Refactoring, because it does not change the structure of your code; but neither does the Rename refactoring. But Organize Imports is definitely useful, therefore we chose to include it under the refactorings.
+
+During the lifetime of a compilation unit, external dependencies can change and new import statements are added and old ones are removed. Organize imports reorders and simplifies these statements.
+
+\subsection{Features}
+
+Organize imports is the only (implemented) refactoring that does not need a configuration. The current implementation of Organize Imports does these three things:
+
+\begin{description}
+  \item[Sort] the statements alphabetically by their full name.
+\begin{multicols}{2}
+\begin{lstlisting}
+import java.lang.{String, Object}
+import java.io.File
+import collection.mutable.ListBuffer
+\end{lstlisting}
+\begin{lstlisting}
+import collection.mutable.ListBuffer
+import java.io.File
+import java.lang.{String, Object}
+\end{lstlisting}
+\end{multicols}
+
+  \item[Collapse] multiple distinct imports from the same package into a single statement:
+\begin{multicols}{2}
+\begin{lstlisting}
+import java.lang.String
+import java.lang.Object
+\end{lstlisting}
+\begin{lstlisting}
+import java.lang.{Object, String}
+
+\end{lstlisting}
+\end{multicols}
+
+  \item[Simpify] the imports: when a wilcard imports the whole package content, individual import from that package are removed, unless they contain renames:
+\begin{multicols}{2}
+\begin{lstlisting}
+import java.io._
+import java.lang._
+import java.io.FileSet
+import java.lang.{String => S}
+\end{lstlisting}
+\needspace{\baselineskip}
+\begin{lstlisting}
+import java.io._
+import java.lang.{String => S, _}
+
+
+\end{lstlisting}
+\end{multicols}
+\end{description}
+
+\figref{figure:organize-screenshot-1} shows a screenshot of the refactoring in action.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{organize_screenshot_1.png}
+  % organize_screenshot_1.png: 960x635 pixel, 96dpi, 25.40x16.80 cm, bb=0 0 720 476
+  \caption{The Organize Imports refactoring: we can see that the imports that were scattered all over the file are now all at the top in alphabetic order. All superfluous statements are getting removed, and imports from the same package are collapsed.}
+  \label{figure:organize-screenshot-1}
+\end{figure}
+
+
+
+\subsection{Limitations}
+
+The current implementation has some limitations compared to its Java counterpart. The refactoring does not do any dependency analysis, imports that are missing are not added, and unneeded imports are not being removed by Organize Imports. There are more features that could be added in future versions:
+
+\paragraph{Save Action} In Eclipse, actions can be performed automatically when a file is saved. Enabling Organize Imports to automatically organize the imports might be useful.
+
+\paragraph{Introduce Import} In Scala, just as in Java, members from other packages do not have to be imported, they can also be used with their fully qualified name. Organize Imports could be extended to replace these fully qualified names with an import statement. 
+
+\paragraph{Expand Wilcards} Once the refactoring does analyze the actually needed dependencies of the compilation unit, the refactoring might also replace all wildcard imports with just the necessary imports. This would also match the JDT's current behaviour.
+
+\paragraph{Shorten Import Paths} In contrast to Java, packages in Scala can be nested (see Appendix~\vref{section:package-nesting}). Organize Imports could take advantage of this and shorten the imported names. For example, the following import on the left could be simplified to the one on the right:
+
+\begin{multicols}{2}
+\begin{lstlisting}
+package scala.tools.refactoring
+package common
+
+import scala.tools.refactoring.analysis.Index
+\end{lstlisting}
+\needspace{\baselineskip}
+\begin{lstlisting}
+package scala.tools.refactoring
+package common
+
+import analysis.Index
+\end{lstlisting}
+\end{multicols}
+
+
+
+\section{Extract Local}
+
+
+\subsection{Features}
+\subsection{Implementation Details}
+\subsection{Examples}
+\subsection{Limitations}
+
+\section{Extract Method}
+
+
+\subsection{Features}
+\subsection{Implementation Details}
+\subsection{Examples}
+\subsection{Limitations}
 
 \chapter{Tool Integration} \label{chapter:tool-integration}
 
