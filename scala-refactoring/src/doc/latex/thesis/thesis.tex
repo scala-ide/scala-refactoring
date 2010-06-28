@@ -152,7 +152,7 @@ abstract class MultiStageRefactoring extends Refactoring {
 
 The reason why the selection and the preparation results need to be passed to \src{perform} is to keep it stateless. This makes it much easier for an IDE to let the user going back and forwards and testing different configurations.
 
-The remainder of this chapter introduces each refactoring and explains the current implementation for the Eclipse Scala IDE with examples.
+The remainder of this chapter introduces each refactoring and explains the current implementation for the Eclipse Scala IDE with examples. 
 
 \section{Rename}
 
@@ -162,7 +162,7 @@ Renaming is one of the most used refactorings (see \cite{RefactoringStudy}, \cit
 
 This implementation supports renaming of all identifiers that occur in the program -- for example, local values and variables, method definitions and parameters, class fields, variable bindings in pattern matches, classes, objects, traits, packages, and types parameters.
 
-The IDE implementation distinguishes between two different modes: inline renaming as shown in \figref{figure:rename-screenshot-1} and the traditional dialog based implementation in \figref{figure:rename-screenshot-2}.
+The IDE implementation distinguishes between two different modes: inline renaming as shown in \figref{figure:rename-screenshot-1} and the traditional dialog based implementation in \figref{figure:rename-screenshot-2}. Inline renaming is implemented using Eclipse's linked mode user interface \cite{LinkedUI}.
 
 \begin{figure}
   \centering
@@ -190,15 +190,15 @@ The implementation looks as follows:
 val occurences = index.occurences(prepared.selectedTree.symbol) 
     
 val isInTheIndex = filter {
-  case t: Tree => occurences contains t 
+  case t: Tree %$\Rightarrow$% occurences contains t 
 }
 
 val renameTree = transform {
-  case t: ImportSelectorTree => 
+  case t: ImportSelectorTree %$\Rightarrow$% 
     mkRenamedImportTree(t, params.newName)
-  case s: SymTree => 
+  case s: SymTree %$\Rightarrow$% 
     mkRenamedSymTree(s, params.newName)
-  case t: TypeTree => 
+  case t: TypeTree %$\Rightarrow$% 
     mkRenamedTypeTree(t, params.newName, prepared.selectedTree.symbol)
 }
 
@@ -210,13 +210,6 @@ val renamedTrees = occurences flatMap (rename(_))
 The \src{renameTree} transformation handles different kinds of trees but delegates to the \src{TreeFactory} to create the renamed trees. The \src{rename} transformation traverses the trees and renames the trees that are in the index, or keeps the original trees otherwise. This transformation is then applied to all trees returned by the index.
 
 Why do we have to traverse the trees, would it not suffice to call \src{occurences flatMap (renameTree(\_))} directly? No, this will not work for recursive method calls, where the method definition also has a child tree that has to be renamed.
-
-\subsection{Examples}
-
- ?
-
-\subsection{Limitations}
- ?
 
 \section{Organize Imports}
 
@@ -261,12 +254,12 @@ import java.lang.{Object, String}
 import java.io._
 import java.lang._
 import java.io.FileSet
-import java.lang.{String => S}
+import java.lang.{String %$\Rightarrow$% S}
 \end{lstlisting}
 \needspace{\baselineskip}
 \begin{lstlisting}
 import java.io._
-import java.lang.{String => S, _}
+import java.lang.{String %$\Rightarrow$% S, _}
 
 
 \end{lstlisting}
@@ -278,12 +271,9 @@ import java.lang.{String => S, _}
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{organize_screenshot_1.png}
-  % organize_screenshot_1.png: 960x635 pixel, 96dpi, 25.40x16.80 cm, bb=0 0 720 476
   \caption{The Organize Imports refactoring: we can see that the imports that were scattered all over the file are now all at the top in alphabetic order. All superfluous statements are getting removed, and imports from the same package are collapsed.}
   \label{figure:organize-screenshot-1}
 \end{figure}
-
-
 
 \subsection{Limitations}
 
@@ -314,21 +304,252 @@ import analysis.Index
 \end{multicols}
 
 
-
 \section{Extract Local}
 
+Extract Local Variable, also known as \textit{Introduce Explaining Variable}, should according to Fowler \cite{FowlerRefactoring} be used whenever ``you have a complicated expression''; and the proposed fix is to 
+
+\begin{quotation}
+put the result of the expression, or parts of the expression, in a temporary variable with a name that explains the purpose.
+\end{quotation}
+
+In Scala, another reason why one would want to introduce new local variables is because existing Java debuggers are easier to use when one can step over single lines and examine the resulting values.
 
 \subsection{Features}
+
+From a selected expression, the Extract Local refactoring will create a new value in the closest scope and replace the selected expression with a reference to that value. Just as the rename refactoring in a local scope, Extract Local also uses Eclipse's linked mode to avoid distracting the user with dialoges (see \figref{figure:extract-local-screenshot-1} for a screenshot).
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.5\linewidth]{extract_local_screenshot_1.png}
+  \caption{The Extract Local refactoring also uses the linked mode, making extracting a local variable much faster than with a wizard.}
+  \label{figure:extract-local-screenshot-1}
+\end{figure}
+
+
+The following listings show a few exampples of the refactoring, on the left is the original code with the selection in blue, and on the right is the refactored code (line breaks were added by the author).
+
+
+\begin{multicols}{2}
+\begin{lstlisting}
+def main(args: Array[String]) {
+
+  println("Detecting OS..")
+  val props = System.getProperties
+  
+
+
+  if(%\bluebox{props.get("os.name") == "Linux"}%) {
+    println("We're on Linux!")
+  } else
+    println("We're not on Linux!")
+}
+\end{lstlisting}
+\begin{lstlisting}
+def main(args: Array[String]) {
+
+  println("Detecting OS..")
+  val props = System.getProperties
+  val %\bluebox{isLinux}% = 
+    props.get("os.name") == "Linux"
+  
+  if(%\bluebox{isLinux}%) {
+    println("We're on Linux!")
+  } else
+    println("We're not on Linux!")
+}
+\end{lstlisting}
+\end{multicols}
+
+\begin{multicols}{2}
+\begin{lstlisting}
+if(props.get("os.name") == "Linux") {
+
+  println(%\bluebox{"We're on Linux!"}%)
+} else
+  println("We're not on Linux!")
+\end{lstlisting}
+\begin{lstlisting}
+if(props.get("os.name") == "Linux") {
+  val %\bluebox{msg}% = "We're on Linux!"
+  println(%\bluebox{msg}%)
+} else
+  println("We're not on Linux!")
+\end{lstlisting}
+\end{multicols}
+
+A more interesting examples shows what happens if there are no curly braces around the scope:
+
+\begin{multicols}{2}
+\begin{lstlisting}
+if(props.get("os.name") == "Linux") {
+  println("We're on Linux!")
+} else
+
+  println(%\bluebox{"We're not on Linux!"}%)
+
+\end{lstlisting}
+\begin{lstlisting}
+if(props.get("os.name") == "Linux") {
+  println("We're on Linux!")
+} else {
+  val %\bluebox{msg}% = "We're not on Linux!"
+  println(%\bluebox{msg}%)
+}
+\end{lstlisting}
+\end{multicols}
+
+We can extract all kinds of expressions -- for example, a part of a chain of expressions:
+
+\begin{multicols}{2}
+\begin{lstlisting}
+val l = List(1,2,3)
+
+%\bluebox{l filter (\_ \% 2 == 0)}% mkString ", "
+\end{lstlisting}
+\begin{lstlisting}
+val l = List(1,2,3) 
+val %\bluebox{filtered}% = l filter (_ %\%% 2 == 0)
+%\bluebox{filtered}% mkString ", "
+\end{lstlisting}
+\end{multicols}
+
+In the examples so far, we have only extracted expressions that resulted in a non-function value. Extract Local also lets you extract a method, which is turned into a partially applied function:
+
+\begin{multicols}{2}
+\begin{lstlisting}
+val l = List(1,2,3)
+%\bluebox{l filter}% (_ %\%% 2 == 0) mkString ", "
+
+\end{lstlisting}
+\begin{lstlisting}
+val l = List(1,2,3) 
+val %\bluebox{filterList}% = l filter _
+%\bluebox{filterList}%(_ %\%% 2 == 0) mkString ", "
+\end{lstlisting}
+\end{multicols}
+
+In the last example, we show how the extraction behaves inside single-expression statements:
+
+\begin{multicols}{2}
+\begin{lstlisting}
+val l = List(1,2,3)
+l filter (i %$\Rightarrow$% %\bluebox{i \% 2}% == 0) mkString ", "
+
+
+
+\end{lstlisting}
+\begin{lstlisting}
+val l = List(1,2,3) 
+l filter (i %$\Rightarrow$% {
+  val %\bluebox{x}% = i %\%% 2 
+  %\bluebox{x}%== 0
+}) mkString ", "
+\end{lstlisting}
+\end{multicols}
+
 \subsection{Implementation Details}
-\subsection{Examples}
+
+On the first glance, extracting a local variable seems to be trivial, but when braces are missing, the source generation has to work hard to create them where necessary. An additional difficulty coming from Scala's AST is that \src{Block} trees around a scope are only created when there are multiple statements present. To illustrate this, the following three listings show their respective AST.
+
+\begin{multicols}{3}
+
+\begin{lstlisting}
+def m() = 42
+
+
+
+\end{lstlisting}
+\begin{center}
+  $\Downarrow$
+\end{center}
+\includegraphics[width=0.9\linewidth]{defdef_without_block.pdf}
+
+\columnbreak
+
+\begin{lstlisting}
+def m() = { 
+  42
+}
+
+\end{lstlisting}
+
+\begin{center}
+  $\Downarrow$
+\end{center}
+\includegraphics[width=0.9\linewidth]{defdef_without_block.pdf}
+
+\columnbreak
+
+\begin{lstlisting}
+def m() = { 
+  42
+  42
+}
+\end{lstlisting}
+
+\begin{center}
+  $\Downarrow$
+\end{center}
+\includegraphics[width=0.9\linewidth]{defdef_with_block.pdf}
+\end{multicols}
+
+We can see that the AST in the middle looks just like the first one, even though the literal is surrounded with curly braces. Adding a second statement obviously forces the parser to surround them with a \src{Block}. When we extract a local variable, the refactoring generates a surrounding \src{Block} tree if needed, and the source generators have then to figure out whether they need to print new curly braces.
+
+The Extract Local transformation is implemented as follows:
+
+\begin{lstlisting}
+val findInsertionPoint = predicate((t: Tree) %$\Rightarrow$% t == insertionPoint)
+
+def replaceTree(from: Tree, to: Tree) = 
+  topdown(matchingChildren(predicate((t: Tree) %$\Rightarrow$% t == from) &> constant(to)))
+
+val insertNewVal = transform {
+
+  case t @ CaseDef(_, _, NoBlock(body)) %$\Rightarrow$%
+    t copy (body = mkBlock(newVal :: body :: Nil)) replaces t
+    
+  case t @ Try(NoBlock(block), _, _) %$\Rightarrow$%
+    t copy (block = mkBlock(newVal :: block :: Nil)) replaces t
+    
+  case t @ DefDef(_, _, _, _, _, NoBlock(rhs)) %$\Rightarrow$%
+    t copy (rhs = mkBlock(newVal :: rhs :: Nil)) replaces t
+    
+  %\ldots%
+}
+
+val extractLocal = 
+  topdown(
+    matchingChildren(
+      findInsertionPoint &> 
+      replaceTree(selectedExpression, extractedValueReference) &>
+      insertNewVal))
+\end{lstlisting}
+
 \subsection{Limitations}
+
+Curly braces are not always placed ideally -- for example, the refactoring generates code like 
+
+\begin{lstlisting}
+(i %$\Rightarrow$% {
+  %\ldots%
+})
+\end{lstlisting}
+
+when it could just generate the code in the simpler form:
+
+\begin{lstlisting}
+{i %$\Rightarrow$%
+  %\ldots%
+}
+\end{lstlisting}
 
 \section{Extract Method}
 
 
+
 \subsection{Features}
 \subsection{Implementation Details}
-\subsection{Examples}
+
 \subsection{Limitations}
 
 \chapter{Tool Integration} \label{chapter:tool-integration}
@@ -420,14 +641,14 @@ def renameSelfType = new FileSet {
   trait /*(*/T1/*)*/
 
   trait T3 {
-    self: T1 =>
+    self: T1 %$\Rightarrow$%
 
   }""" becomes
   """
   trait /*(*/Trait/*)*/
 
   trait T3 {
-    self: Trait =>
+    self: Trait %$\Rightarrow$%
 
   }"""
 } applyRefactoring %\textbf{renameTo}%("Trait")
