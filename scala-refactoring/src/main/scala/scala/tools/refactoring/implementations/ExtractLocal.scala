@@ -5,7 +5,10 @@
 package scala.tools.refactoring
 package implementations
 
-abstract class ExtractLocal extends MultiStageRefactoring with transformation.TreeFactory {
+import common.Change
+import transformation.TreeFactory
+
+abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
   
   import global._
   
@@ -38,14 +41,10 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     import prepared._
     import params._
-    
-    implicit def replacesTree(t1: Tree) = new {
-      def replaces(t2: Tree) = t1 setPos t2.pos
-    }
         
     trace("Selected: %s", selectedExpression)
     
@@ -84,12 +83,8 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
     val insertionPoint = findBlockInsertionPosition(selection.file, selectedExpression) getOrElse {
       return Left(RefactoringError("No insertion point found."))
     }
-    
-    val replaceExpression = replaceTree(selectedExpression, valRef)
-    
-    val findChild = filter {
-       case t => t == insertionPoint
-    }
+        
+    val findInsertionPoint = predicate((t: Tree) => t == insertionPoint)
     
     def insertCloseToReference(ts: List[Tree]): List[Tree] = ts match {
       case Nil => Nil
@@ -99,17 +94,24 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
     }
     
     val insertNewVal = transform {
+      
       case t @ BlockExtractor(stats) =>
         mkBlock(insertCloseToReference(stats)) replaces t
+        
       case tpl: Template =>
         tpl copy (body = insertCloseToReference(tpl.body)) replaces tpl
-      case t @ CaseDef(_, _, body) if !body.isInstanceOf[Block] =>
+        
+      case t @ CaseDef(_, _, NoBlock(body)) =>
         t copy (body = mkBlock(newVal :: body :: Nil)) replaces t
-      case t @ Try(block, _, _) if !block.isInstanceOf[Block] =>
+        
+      case t @ Try(NoBlock(block), _, _) =>
         t copy (block = mkBlock(newVal :: block :: Nil)) replaces t
-      case t @ DefDef(_, _, _, _, _, rhs) if !rhs.isInstanceOf[Block] =>
+        
+      case t @ DefDef(_, _, _, _, _, NoBlock(rhs)) =>
         t copy (rhs = mkBlock(newVal :: rhs :: Nil)) replaces t
-      case t @ Function(_, body) =>
+        
+      case t @ Function(_, NoBlock(body)) =>
+        
         val hasOpeningCurlyBrace = {
           val src = t.pos.source.content.slice(0, t.pos.start).mkString
           src.matches("(?ms).*\\{\\s*$")
@@ -117,16 +119,20 @@ abstract class ExtractLocal extends MultiStageRefactoring with transformation.Tr
         
         if(hasOpeningCurlyBrace) {
           t copy (body = mkBlock(newVal :: body :: Nil)) replaces t
-        } else {        
+        } else {
+          // this will create a block inside the function body, e.g.
+          //   (i => {
+          //     ...
+          //   })
           t copy (body = mkBlock(newVal :: body :: Nil))
         }
       case t => mkBlock(newVal :: t :: Nil)
     }
     
-    val extractLocal = ↓(matchingChildren(findChild &> replaceExpression &> insertNewVal))
+    val extractLocal = topdown(matchingChildren(findInsertionPoint &> replaceTree(selectedExpression, valRef) &> insertNewVal))
     
-    val r = extractLocal apply abstractFileToTree(selection.file) toList
+    val r = extractLocal apply abstractFileToTree(selection.file)
     
-    Right(r)
+    Right(refactor(r toList))
   }
 }

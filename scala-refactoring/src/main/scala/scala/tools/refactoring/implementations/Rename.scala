@@ -5,11 +5,15 @@
 package scala.tools.refactoring
 package implementations
 
-abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis with analysis.Indexes with transformation.TreeFactory {
+import common.Change
+import transformation.TreeFactory
+import analysis.TreeAnalysis
+
+abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory {
     
   import global._
       
-  case class PreparationResult(selectedLocal: SymTree, hasLocalScope: Boolean)
+  case class PreparationResult(selectedTree: SymTree, hasLocalScope: Boolean)
   
   abstract class RefactoringParameters {
     def newName: String
@@ -23,46 +27,31 @@ abstract class Rename extends MultiStageRefactoring with analysis.TreeAnalysis w
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
 
-    import params._
+    trace("Selected tree is %s", prepared.selectedTree)
     
-    trace("Selected tree is %s", prepared.selectedLocal)
-    
-    val occurences = (prepared.selectedLocal :: index.occurences(prepared.selectedLocal.symbol)) distinct 
+    val occurences = index.occurences(prepared.selectedTree.symbol) 
     
     occurences foreach (s => trace("Symbol is referenced at %s (%s:%s)", s, s.pos.source.file.name, s.pos.line))
     
-    val canRename = filter {
+    val isInTheIndex = filter {
       case t: Tree => occurences contains t 
     }
     
     val renameTree = transform {
-      case t @ ImportSelectorTree(name, rename) =>  ImportSelectorTree(NameTree(newName) setPos name.pos, rename) setPos t.pos
-      case s: SymTree => mkRenamedSymTree(s, newName)
+      case t: ImportSelectorTree => 
+        mkRenamedImportTree(t, params.newName)
+      case s: SymTree => 
+        mkRenamedSymTree(s, params.newName)
       case t: TypeTree => 
-      
-        val newType = t.tpe map {
-          case r @ RefinedType(parents, _) =>
-            r.copy(parents = parents map {
-              case TypeRef(_, sym, _) if sym == prepared.selectedLocal.symbol =>
-                new Type {
-                  override def safeToString: String = newName
-                }
-              case t => t 
-            })
-          case t => t
-        }
-      
-        val typeTree = new TypeTree
-        typeTree setType newType
-        typeTree setPos t.pos
+        mkRenamedTypeTree(t, params.newName, prepared.selectedTree.symbol)
     }
     
-    val rename = ↓(canRename &> renameTree |> id)
+    val rename = topdown(isInTheIndex &> renameTree |> id)
     
-    val renamed = occurences flatMap rename.apply
+    val renamed = occurences flatMap (rename(_))
     
-    Right(renamed)
+    Right(refactor(renamed))
   }
 }

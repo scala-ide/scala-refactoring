@@ -50,10 +50,12 @@ trait TreeTransformations extends Transformations {
   def transform(f: PartialFunction[Tree, Tree]) = transformation(f)
   
   def filter(f: PartialFunction[Tree, Boolean]) = predicate(f)
-    
-  def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(transform {
-    case t if t == from => to
-  }))
+  
+  def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(predicate((t: Tree) => t == from) &> constant(to)))
+      
+  implicit def replacesTree(t1: Tree) = new {
+    def replaces(t2: Tree) = t1 setPos t2.pos
+  }
     
   implicit def abstractFileToTree(file: AbstractFile): global.Tree = global.unitOfFile(file).body
   
@@ -91,4 +93,10 @@ trait TreeTransformations extends Transformations {
     case _ => EmptyTree
   })
   
+  object NoBlock {
+    def unapply(t: Tree) = t match {
+      case _: Block => None
+      case _ => Some(t)
+    }
+  }
 }

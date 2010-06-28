@@ -6,8 +6,11 @@ package scala.tools.refactoring
 package transformation
 
 import tools.nsc.symtab.Flags
+import common.PimpedTrees
 
 trait TreeFactory {
+  
+  this: PimpedTrees =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
@@ -28,6 +31,27 @@ trait TreeFactory {
     case t: PackageDef => t.copy(pid = Ident(name) setPos t.pid.pos)
     case t => throw new Exception("Found "+ t.getClass.getName)
   }) setPos t.pos
+  
+  def mkRenamedTypeTree(t: TypeTree, name: String, originalSymbol: Symbol) = {
+    val newType = t.tpe map {
+      case r @ RefinedType(parents, _) =>
+        r.copy(parents = parents map {
+          case TypeRef(_, sym, _) if sym == originalSymbol =>
+            new Type {
+              override def safeToString: String = name
+            }
+          case t => t 
+        })
+      case t => t
+    }
+  
+    val typeTree = new TypeTree
+    typeTree setType newType
+    typeTree setPos t.pos
+  }
+  
+  def mkRenamedImportTree(t: ImportSelectorTree, name: String) = 
+    ImportSelectorTree(NameTree(name) setPos t.name.pos, t.rename) setPos t.pos
   
   def mkReturn(s: List[Symbol]): Tree = s match {
     case Nil => EmptyTree

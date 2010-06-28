@@ -286,13 +286,17 @@ trait ReusingPrinter extends AbstractPrinter {
           if(keepTree(orig.elsep) && orig.elsep.pos.isRange) {
             
             val layout = between(orig.thenp, orig.elsep)(orig.pos.source).asText
+            val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\n\\s*$", "else "))
             
-            if(elsep.isInstanceOf[Block]) {
-              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\n\\s*$", "else "))
-              p(elsep, before = l, after = NoRequisite)
-            } else {
-              printIndented(elsep, before = Requisite.anywhere(layout), after = NoRequisite)
+            elsep match {
+              // we have a new block
+              case BlockExtractor(body) if !orig.elsep.isInstanceOf[Block] && layout.contains("{") =>
+                p(body, before = l, separator = Requisite.newline(ind.current + ind.defaultIncrement), after = NoRequisite)
+              case elsep: Block =>
+                p(elsep, before = l, after = NoRequisite)    
+              case _ => printIndented(elsep, before = Requisite.anywhere(layout), after = NoRequisite)
             }
+
           } else {
             val l = Requisite.newline(ind.current) ++ "else" ++ Requisite.newline(ind.current + ind.defaultIncrement)
             printIndented(elsep, before = l, after = NoRequisite)
@@ -301,12 +305,11 @@ trait ReusingPrinter extends AbstractPrinter {
         
         val _cond = p(cond, before = "\\(", after = "\\)")
         
-        val _then = {
-          if(thenp.isInstanceOf[Block]) {
-            p(thenp)
-          } else {
+        val _then = thenp match {
+          case block: Block =>
+            p(block)
+          case _ => 
             printIndented(thenp, before = NoRequisite, after = NoRequisite)
-          }
         }
         
         l ++ _cond ++ _then ++ _else ++ r

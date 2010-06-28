@@ -7,6 +7,7 @@ package implementations
 
 import analysis.{Indexes, TreeAnalysis}
 import transformation.TreeFactory
+import common.Change
 
 abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis with Indexes with TreeFactory {
   
@@ -30,7 +31,7 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     import prepared._
     import params._
@@ -86,6 +87,6 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
       }
     }
     
-    Right(extractMethod apply abstractFileToTree(selection.file) toList)
+    Right(refactor(extractMethod apply abstractFileToTree(selection.file) toList))
   }
 }

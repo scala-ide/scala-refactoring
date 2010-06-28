@@ -6,6 +6,7 @@ package scala.tools.refactoring
 package implementations
 
 import tools.nsc.symtab.Flags
+import common.Change
 
 abstract class ExplicitGettersSetters extends MultiStageRefactoring {
   
@@ -27,7 +28,7 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
     }
   }
     
-  override def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
+  override def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     import prepared._
     import params._
@@ -83,6 +84,6 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
     
     val changes = ↓(matchingChildren(r)) apply abstractFileToTree(selection.file)
     
-    Right(changes toList)
+    Right(refactor(changes toList))
   }
 }

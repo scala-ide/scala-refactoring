@@ -5,6 +5,8 @@
 package scala.tools.refactoring
 package implementations
 
+import common.Change
+
 abstract class OrganizeImports extends MultiStageRefactoring {
   
   import global._
@@ -15,7 +17,7 @@ abstract class OrganizeImports extends MultiStageRefactoring {
   
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = Right(new PreparationResult)
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Tree]] = {
+  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     val organizeImports = transform {
        case p @ PackageDef(_, stats) =>
@@ -55,6 +57,6 @@ abstract class OrganizeImports extends MultiStageRefactoring {
     
     val changes = organizeImports apply abstractFileToTree(selection.file)
 
-    Right(changes toList)
+    Right(refactor(changes toList))
   }
 }

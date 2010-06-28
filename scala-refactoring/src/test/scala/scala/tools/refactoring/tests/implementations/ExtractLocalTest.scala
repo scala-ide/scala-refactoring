@@ -79,7 +79,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("gr"))
   
   @Test
-  def extractNestedScopes = new FileSet {
+  def extractFromElseWithoutParens = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -394,6 +394,65 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("ab"))
+  
+  @Test
+  def extractFromThenWithoutParent = new FileSet {
+    """
+      class Extr2 {
+        if(true)
+          /*(*/"a" + "b"/*)*/ + "c"
+      }
+    """ becomes
+    """
+      class Extr2 {
+        if(true){
+          val ab = "a" + "b"/*)*/ 
+          /*(*/ab+ "c"
+        }
+      }
+    """
+  } applyRefactoring(extract("ab"))
+  
+  @Test
+  def extractFromElse = new FileSet {
+    """
+ 
+    object ExtractLocal1 {
+    
+      def main(args: Array[String]) {
+    
+        println("Detecting OS..")
+        
+        if(System.getProperties.get("os.name") == "Linux") {
+          println("We're on Linux!")
+        } else {
+          println(/*(*/"We're not on Linux!"/*)*/)
+        }
+          
+        println("Done.")
+      }
+    }
+    """ becomes
+    """
+ 
+    object ExtractLocal1 {
+    
+      def main(args: Array[String]) {
+    
+        println("Detecting OS..")
+        
+        if(System.getProperties.get("os.name") == "Linux") {
+          println("We're on Linux!")
+        } else {
+          val msg = /*(*/"We're not on Linux!"
+          println(msg/*)*/)
+        }
+          
+        println("Done.")
+      }
+    }
+    """
+  } applyRefactoring(extract("msg"))
   
   @Test
   def extractFromSimpleMethod = new FileSet {

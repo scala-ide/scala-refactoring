@@ -22,7 +22,7 @@ trait TestRefactoring extends TestHelper {
       refactoring.prepare(selection) match {
         case Right(prepare) =>
           refactoring.perform(selection, prepare, parameters) match {
-            case Right(modifications) => refactoring.refactor(modifications)
+            case Right(modifications) => modifications
             case Left(error) => Predef.error(error.cause)
           }
         case Left(error) => Predef.error(error.cause)
