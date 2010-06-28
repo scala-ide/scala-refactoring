@@ -16,7 +16,7 @@
       <plugin>
         <groupId>org.sonatype.tycho</groupId>
         <artifactId>maven-osgi-compiler-plugin</artifactId>
-        <version>0.8.0</version>
+        <version>${tycho.version}</version>
         <configuration>
           <excludeResources>
             <excludeResource>**/*.scala</excludeResource>
