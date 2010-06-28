@@ -224,6 +224,26 @@ class ATest {
   }
   
   @Test
+  def literalIdentifier() = {
+    
+    val tree = treeFrom("""
+    class Test {
+      val `class` = 5
+      println(`class`)
+      val threadyield = Thread.`yield` _
+    }
+    """)
+        
+    assertEquals("""
+    class Test {
+      val `class` = 5
+      println(`class`)
+      val threadyield = Thread.`yield` _
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))     
+  }
+  
+  @Test
   def multipleAssignmentWithAnnotatedTree() = {
     
     val tree = treeFrom("""

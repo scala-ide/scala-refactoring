@@ -116,6 +116,8 @@ trait PimpedTrees {
       
         if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
           t.pos withEnd (t.pos.start + nameString.length)
+        } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') {
+          t.pos withStart t.pos.point
         } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
           t.pos withStart (t.pos.end - t.symbol.nameString.length)
         } else if (qualifier.pos.isRange) {
@@ -144,12 +146,17 @@ trait PimpedTrees {
     }) match {
       case NoPosition => NoPosition
       case p =>
+        // it might be a quoted literal:
+        val p2 = if(p.source.content(p.start) == '`') {
+          p withEnd (p.end + 2) 
+        } else p
+      
         // set all points to the start, keeping wrong points
         // around leads to the calculation of wrong lines
-        if(p.isTransparent)
-          p withPoint p.start makeTransparent
+        if(p2.isTransparent)
+          p2 withPoint p2.start makeTransparent
         else
-          p withPoint p.start
+          p2 withPoint p2.start
     }
     
     private def extractName(name: Name) = 
@@ -522,7 +529,13 @@ trait PimpedTrees {
    * */
   case class NameTree(name: global.Name) extends global.Tree {
     if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
-    def nameString = name.toString.trim
+    def nameString = {
+      if(pos.isRange && pos.source.content(pos.start) == '`') {
+        "`"+ name.toString.trim +"`"
+      } else {
+        name.toString.trim 
+      }
+    }
     override def toString = "NameTree("+ nameString +")"
     override def hashCode = {
       nameString.hashCode * 31 + (if(pos == NoPosition) NoPosition.hashCode else pos.start)

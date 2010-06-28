@@ -125,7 +125,8 @@ trait ReusingPrinter extends AbstractPrinter {
           p(tparams) ++ vparamss.map(vparams => p(vparams, before = "\\(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) ++ p(tpt) ++ body ++ r
         
       case (t @ ValDef(ModifierTree(mods), newName, tpt, rhs), orig) =>
-        l ++ p(mods ::: (NameTree(newName) setPos orig.namePosition) :: Nil, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r
+        val nameTree = NameTree(newName) setPos orig.namePosition
+        l ++ p(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r
 
       case (block @ BlockExtractor(stats), _) if stats.size > 1 && stats.allOnSameLine => 
         l ++ p(stats) ++ r
