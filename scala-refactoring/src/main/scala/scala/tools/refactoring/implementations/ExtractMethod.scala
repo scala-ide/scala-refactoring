@@ -35,14 +35,21 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
     
     import prepared._
     import params._
+    
+    val (call, newDef) = {
 
-    val parameters = inboundLocalDependencies(selection, selectedMethod.symbol, index)
-    
-    val returns = outboundLocalDependencies(selection, selectedMethod.symbol, index)
-     
-    val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: (if(returns.isEmpty) Nil else mkReturn(returns) :: Nil))
-    
-    val call = mkCallDefDef(methodName, parameters :: Nil, returns)
+      val parameters = inboundLocalDependencies(selection, selectedMethod.symbol, index)
+      
+      val returns = outboundLocalDependencies(selection, selectedMethod.symbol, index)
+      
+      val returnStatement = if(returns.isEmpty) Nil else mkReturn(returns) :: Nil
+      
+      val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: returnStatement)
+      
+      val call = mkCallDefDef(methodName, parameters :: Nil, returns)
+         
+      (call, newDef)
+    }
     
     val extractSingleStatement = selection.selectedTopLevelTrees.size == 1
     
@@ -59,7 +66,7 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
       matchingChildren {
         transform {
           case block @ BlockExtractor(stats) => {
-            mkBlock(stats.replaceSequence(selection.selectedTopLevelTrees, call :: Nil)) setPos block.pos
+            mkBlock(stats.replaceSequence(selection.selectedTopLevelTrees, call :: Nil)) replaces block
           }
         }
       }
@@ -72,7 +79,7 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
     
     val insertMethodCall = transform {
       case tpl @ Template(_, _, body) => 
-        tpl.copy(body = body ::: newDef :: Nil) setPos tpl.pos
+        tpl copy(body = body ::: newDef :: Nil) replaces tpl
     }
     
     val extractMethod = topdown {

@@ -494,6 +494,37 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(extract("ab"))
   
+  @Test
+  def extractFromMethod2 = new FileSet {
+    """
+object ExtractMethod2 {
+        
+  def main(args: Array[String]) {
+       
+    val a = 1
+    val b = /*(*/1/*)*/ //a
+      val c=1 //comment
+    val d = b + c
+    println(a+b+c+d)
+  }
+}
+    """ becomes
+    """
+object ExtractMethod2 {
+        
+  def main(args: Array[String]) {
+       
+    val a = 1
+    val ab = /*(*/1
+    val b = ab/*)*/ //a
+      val c=1 //comment
+    val d = b + c
+    println(a+b+c+d)
+  }
+}
+    """
+  } applyRefactoring(extract("ab"))
+  
   //@Test FIXME not yet implemented
   def extractFromFunction2 = new FileSet {
     """

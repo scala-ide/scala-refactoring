@@ -545,12 +545,89 @@ when it could just generate the code in the simpler form:
 
 \section{Extract Method}
 
+Also among the most used refactorings by Java programmers is Extract Method. Extract Method is another key refactoring in making your code more readable: if you have some code that can be grouped together, turn it into a method, and give it a meaningful name. The refactoring takes care of passing and returning the necessary parameters.
 
+Martin Fowler once called Extract Method the Refactoring's Rubicon \cite{FowlerRubicon}: 
+
+\begin{quotation}
+if you can do Extract Method, it probably means you can go on more refactorings [because it] requires some serious work. You have to analyze the method, find any temporary variables, then figure out what to do with them.
+\end{quotation} 
 
 \subsection{Features}
+
+There exist several variations of the refactoring depending on how the selected code interacts with surrounding local variables. In the case where no local variables are used, the refactoring is trivial, we can just move the code into its own method and insert a call at the origin. 
+
+When local variables are uses, they need to be passed into the extracted method; the problematic case arises when local variables are re-assigned or declared inside and used outside of the extracted code. In this case, the respective variable has to be returned from the created method and the call to the created method becomes an assignment to the variable. In Java, this scheme works as long as no more than one variable requires such special treatment. In Scala, we are also restricted by a single return value, but in contrast to Java, Scala has tuples and syntactic sugar for tuple creation and deconstruction, as shown in \figref{figure:tuple-deconstruction}. This allows us to perform the refactoring in Scala where it would not (easily) be possible with similar code in Java.
+
+\begin{figure}
+\begin{lstlisting}
+def parse(source: String): (Int, String) = {
+  %\ldots%
+  (intResult, restSource)
+}
+
+val (parsedInt, restSource) = parse("5$")
+\end{lstlisting}
+
+\caption{An example of Scala tuples. The function \src{parseInt} has the type $String => (Int, String)$ (which is syntactic sugar for $String => Tuple2[Int, String]$). Line~3 shows how such a tuple can be returned; and the last line how it is deconstructed into the two variables \src{parsedInt} and \src{restSource}.}
+\label{figure:tuple-deconstruction}
+\end{figure}
+
+Scala has other features like first class functions that allow variations of the refactoring, as described in \cite{ScalaRefactoring}. One more thing to mention is the choice of method placement: Scala allows methods to be defined inside other methods, which could also be an option for a Extract Method refactoring implementation.
+
 \subsection{Implementation Details}
 
+Extracting a method is done in several smaller steps:
+
+\begin{description}
+  \item[Create the Method] we want to extract. This includes determining all the inbound and outbound dependencies to construct the method signature.
+  \item[Replace Extracted Statements] with a call to the newly created method. If the method returns values, we have to assign them to new local values.
+  \item[Insert the Method] somewhere in the surrounding class body.
+\end{description}
+
+The transformations that are used for Extract Method have already been described in Section~\vref{subsection:tree-transformations}. 
+A screenshot of the refactoring can be seen in \figref{figure:extract-method-screenshot-1}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{extract_method_screenshot_1.png}
+  \caption{The Extract Method refactoring: starting with a text selection, the user has to provide a name for the extracted method. The proposed changes are displayed to the user and can then be applied.}
+  \label{figure:extract-method-screenshot-1}
+\end{figure}
+
+\subsection{Examples}
+
+To demo the Extract Method refactoring, we will use the following listing which defines and uses several local values and functions:
+
+The following listing will now be used to demonstrate several instances of the Extract Method refactoring. It contains several local variables and functions.
+
+\begin{lstlisting}
+object ExtractMethodDemo {
+  
+  val instanceValues = 1 to 10 toList
+
+  def main(args: Array[String]) {
+    
+    val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+    val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
+    
+    val localValues = 1 to 10 toList
+    
+    val     sum = sumList(localValues)   // the sum
+    val product = prodList(localValues)  // the product
+
+    println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
+  }
+}
+\end{lstlisting}
+
+
+
 \subsection{Limitations}
+
+lots of limitations
+
+method placement.
 
 \chapter{Tool Integration} \label{chapter:tool-integration}
 

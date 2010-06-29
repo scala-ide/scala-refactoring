@@ -40,26 +40,22 @@ trait AbstractPrinter extends SourceCodeHelpers {
       }
     } else if(indent) {
       
-      val (child, leading) = if (parent.hasExistingCode) {
+      val child = if (parent.hasExistingCode) {
                 
-        val child = getChildrenIndentation(parent, tree) match {
+        getChildrenIndentation(parent, tree) match {
           case Some(childIndent) => 
             print(tree, ind.setTo(childIndent), changeSet)
           case None =>
             print(tree, ind.incrementDefault, changeSet)
         }
         
-        val leading = if(tree.hasExistingCode) NoLayout else Layout(ind.defaultIncrement)
-        
-        child → leading
-        
       } else {
-        print(tree, ind, changeSet) → NoLayout
+        print(tree, ind, changeSet)
       }
       
       child match {
         case EmptyFragment => EmptyFragment
-        case f => Fragment(leading ++ f.leading , f.center, f.trailing) ++ (f.post ++ after, before ++ f.pre)
+        case f => f ++ (f.post ++ after, before ++ f.pre)
       }
        
     } else {
@@ -78,19 +74,40 @@ trait AbstractPrinter extends SourceCodeHelpers {
       indent: Boolean,
       separator: Requisite,
       before: Requisite,
-      after: Requisite): Fragment = {
+      after: Requisite,
+      isFirst: Boolean = true): Fragment = {
+    
+    // FIXME these two methods should be pushed down to the two printers where they can be implemented much simpler. 
+    // FIXME also, indentation handling is still ugly.
+    
     (trees match {
       case Nil => EmptyFragment
-      case t :: rest => (printSingleTree(parent, t, ind, changeSet, indent, NoRequisite, NoRequisite), printManyTrees(parent, rest, ind, changeSet, indent, separator, NoRequisite, NoRequisite)) match {
+      case t :: rest => (printSingleTree(parent, t, ind, changeSet, indent, NoRequisite, NoRequisite), printManyTrees(parent, rest, ind, changeSet, indent, separator, NoRequisite, NoRequisite, false)) match {
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
-          val mid: Layout = (l.post(l.center ++ l.trailing, NoLayout) ++ separator ++ r.pre(NoLayout, r.leading ++ r.center)).toLayout
+        
+          val fixedIndentationSeparator = {
+            if(indent && parent.hasExistingCode && !rest.head.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
+              Requisite.newline(ind.current + ind.defaultIncrement)
+            } else {
+              separator
+            }
+          }
+        
+          val lr = l.post(l.center ++ l.trailing, NoLayout)
+          val rr = r.pre(NoLayout, r.leading ++ r.center)
+          val mid: Layout = (lr ++ fixedIndentationSeparator ++ rr).toLayout
           Fragment(l.leading, mid, r.trailing) ++ (r.post, l.pre)
       }
     }) match {
       case EmptyFragment => EmptyFragment
-      case f => f ++ (after, before)
+      case f => 
+        if(isFirst && indent && parent.hasExistingCode && !trees.head.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
+          (Layout(ind.defaultIncrement) ++ f) ++ (after, before)
+        } else {
+          f ++ (after, before)
+        }
     }
   }
   

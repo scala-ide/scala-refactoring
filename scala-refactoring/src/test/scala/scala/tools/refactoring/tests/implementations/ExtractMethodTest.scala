@@ -353,7 +353,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     package extractIfThen
     class A {
       def extractFrom(): Boolean = {
-        if(true == true)  test /*)*/
+        if(true == true)test /*)*/
         else
           false 
       }
@@ -385,7 +385,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         if(true == true)
           true
         else {
- /*(*/      test /*)*/
+ /*(*/    test /*)*/
         }
       }
       def test: Boolean = {
@@ -409,7 +409,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     package extractIfSingleLineElse
     class A {
       def extractFrom(): Boolean = {
-        if(true == true) true else /*(*/   test /*)*/
+        if(true == true) true else /*(*/ test /*)*/
       }
       def test: Boolean = {
         false
@@ -441,7 +441,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     package extractIfElseTry
     class A {
       def extractFrom(): Boolean = {
-        if(true == true)  test  /*)*/
+        if(true == true)test  /*)*/
         else {
           try {
             println("hello world")

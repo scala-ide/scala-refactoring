@@ -20,7 +20,7 @@ trait Requisite {
   
   protected def insertBetween(l: Layout, r: Layout) = l ++ getLayout ++ r
   
-  protected def getLayout: Layout
+  def getLayout: Layout
   
   def ++(other: Requisite): Requisite = (self, other) match {
     case (r, NoRequisite) => r
