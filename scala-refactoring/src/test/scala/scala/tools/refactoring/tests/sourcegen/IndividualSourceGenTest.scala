@@ -111,7 +111,7 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     
     val valDef = treeFrom("""
     object O {
-      val a = {4 + 3}
+      val a = {4 + 3  }
     }
     """) match {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: ValDef) :: _)) :: _) => v
@@ -120,10 +120,9 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     
     val p = valDef.symbol.isPrivateLocal
     
-    assertEquals("""val a = {4 + 3}
-    """, generate(removeAuxiliaryTrees apply valDef get).center.asText)
+    assertEquals("""val a = {4 + 3  }""", generate(removeAuxiliaryTrees apply valDef get).center.asText)
       
-    assertEquals("""{4 + 3}""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
+    assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
   }
   
   @Test
@@ -141,6 +140,82 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     class Test {
      var box = new VBox[Int]({ 2 + 4 })
     }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def bracesAndComments(): Unit = {
+    
+    val tree = treeFrom("""
+package com.megaannum.test
+
+class Foo3 {
+   // before idFoo
+   private var idFoo = { 3 + 4 }
+   // after idFoo
+
+   // before getIdFoo
+   def getIdFoo = idFoo
+   // after getIdFoo
+   def setIdFoo(id: Int) = idFoo = id
+}
+    """)
+      
+    assertEquals("""
+package com.megaannum.test
+
+class Foo3 {
+   // before idFoo
+   private var idFoo = { 3 + 4 }
+   // after idFoo
+
+   // before getIdFoo
+   def getIdFoo = idFoo
+   // after getIdFoo
+   def setIdFoo(id: Int) = idFoo = id
+}
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def bracesAndComments2(): Unit = {
+    
+    val tree = treeFrom("""
+package com.megaannum.test
+
+class Foo3 {
+   // before idFoo
+   private var idFoo = { 3 + 4 }
+   // after idFoo
+}
+    """)
+      
+    assertEquals("""
+package com.megaannum.test
+
+class Foo3 {
+   // before idFoo
+   private var idFoo = { 3 + 4 }
+   // after idFoo
+}
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def missingDot(): Unit = {
+    
+    val tree = treeFrom("""
+class Foo3 {
+   var _idFoo = 7
+   this._idFoo = 5
+}
+    """)
+      
+    assertEquals("""
+class Foo3 {
+   var _idFoo = 7
+   this._idFoo = 5
+}
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
 }

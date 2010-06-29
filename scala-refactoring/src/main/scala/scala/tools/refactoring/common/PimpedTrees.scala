@@ -119,17 +119,17 @@ trait PimpedTrees {
         } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') {
           t.pos withStart t.pos.point
         } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
-          t.pos withStart (t.pos.end - t.symbol.nameString.length)
+          t.pos withStart (t.pos.end - nameString.length)
         } else if (qualifier.pos.isRange) {
           t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
         } else if (qualifier.pos == NoPosition) {
           t.pos
         } else {
-          t.pos withEnd (t.pos.start + t.name.toString.trim.length)
+          t.pos withEnd (t.pos.start + nameString.length)
         }
         
       case t @ Bind(name, body) =>
-        t.pos withEnd (t.pos.start + t.name.toString.trim.length)
+        t.pos withEnd (t.pos.start + nameString.length)
       
       case t @ LabelDef(name, _, _) if name.toString startsWith "while" =>
         t.pos withEnd (t.pos.start + "while".length)

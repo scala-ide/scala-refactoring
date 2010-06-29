@@ -37,9 +37,9 @@ trait LayoutHelper extends CommentHelpers {
     val (leadingLayoutFromChild, trailingLayoutFromChild) = layoutFromChildren()
     
     trace("parent leading:  %s", leadingLayoutFromParent.toString)
+    trace("parent trailing: %s", trailingLayoutFromParent.toString)
     trace("child leading:   %s", leadingLayoutFromChild.toString)
     trace("child trailing:  %s", trailingLayoutFromChild.toString)
-    trace("parent trailing: %s", trailingLayoutFromParent.toString)
     
     (leadingLayoutFromParent, leadingLayoutFromChild, trailingLayoutFromChild, trailingLayoutFromParent)
     
@@ -70,9 +70,11 @@ trait LayoutHelper extends CommentHelpers {
 
   def splitLayoutBetweenParentAndFirstChild(child: Tree, parent: Tree): (Layout, Layout) = {
     
+    trace("splitting layout between parent %s and first child %s", parent.getClass.getSimpleName, child.getClass.getSimpleName)
+    
     implicit val currentFile = child.pos.source
     
-    (parent, child) match {
+    (fixValDefPosition(parent), fixValDefPosition(child)) match {
       
       case (p: PackageDef, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
@@ -212,52 +214,54 @@ trait LayoutHelper extends CommentHelpers {
       case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
   }
+           
+  private def fixValDefPosition(t: Tree): Tree = {
+    
+    t match {
+      case t @ ValDef(_, _, _, rhs) =>
+      
+        val childBeforeRhs = children(t) takeWhile (c => !(c samePos rhs)) last
+      
+        if(childBeforeRhs.pos.isRange && rhs.pos.isRange && between(childBeforeRhs, rhs)(t.pos.source).contains("{")) {
+        
+          // strip comments
+          val offsetToClosing = t.pos.source.content.slice(rhs.pos.end, t.pos.source.length) takeWhile (_ != '}') length
+          val ct = t.copy().copyAttrs(t)
+        
+          val end = t.pos.end + offsetToClosing + 1
+          ct setPos (ct.pos withEnd end)
+        } else {
+          t
+        }
+      
+      case _ => 
+        t
+    }
+  }
 
-   def splitLayoutBetweenLastChildAndParent(child: Tree, parent: Tree): (Layout, Layout) = {
+  def splitLayoutBetweenLastChildAndParent(child: Tree, parent: Tree): (Layout, Layout) = {
      
-     trace("splitting layout between child %s and parent %s", child.getClass.getSimpleName, parent.getClass.getSimpleName)
+    trace("splitting layout between last child %s and parent %s", child.getClass.getSimpleName, parent.getClass.getSimpleName)
      
-     implicit val currentFile = child.pos.source
+    implicit val currentFile = child.pos.source
      
-     (child, parent) match {
+    (fixValDefPosition(child), fixValDefPosition(parent)) match {
        
-       case (c: Block, p) =>
-         layout(c.pos.end, p.pos.end) splitAfter '}'
+      case (c: Block, p) =>
+        layout(c.pos.end, p.pos.end) splitAfter '}'
        
-       case (c, p: PackageDef) =>
-         layout(c.pos.end, p.pos.end) splitAfter '\n'
+      case (c, p: PackageDef) =>
+        layout(c.pos.end, p.pos.end) splitAfter '\n'
          
-       case (c, p @ (_: ClassDef | _: ModuleDef)) =>
-         layout(c.pos.end, p.pos.end) splitAfter '}'
+      case (c, p @ (_: ClassDef | _: ModuleDef)) =>
+        layout(c.pos.end, p.pos.end) splitAfter '}'
          
        case (c, p: Template) =>
          layout(c.pos.end, p.pos.end) splitBefore (')', '\n')
          
-       case (c, p: If) =>
+       case (c, p: If) =>         
          layout(c.pos.end, p.pos.end) splitBefore (')')
-         
-       // values's right hand side can be wrapped in { } without being a block:
-       case (c, p: ValDef) if c.sameTree(p.rhs) && c.originalLeftSibling.isDefined =>
-         
-         val left = c.originalLeftSibling.get
-         
-         if(layout(left.pos.end, c.pos.start).contains("{")) {
-           
-           val nextPos = (p.originalRightSibling.map(_.pos.start) match {
-             case None => p.originalParent map (_.pos.end - 1) // exclude the parent's trailing }
-             case some => some
-           }) getOrElse p.pos.end
-           
-           if(layout(c.pos.end, nextPos).contains("}")) {
-             layout(c.pos.end, nextPos) splitAfter '}'
-           } else {
-             NoLayout → layout(c.pos.end, p.pos.end)
-           }
-           
-         } else {
-           NoLayout → layout(c.pos.end, p.pos.end)
-         }
-     
+    
        case (c, p: ValOrDefDef) =>
          layout(c.pos.end, p.pos.end) splitAfter '}'
          
@@ -415,7 +419,7 @@ trait LayoutHelper extends CommentHelpers {
       }) get
     }
     
-    (left, right) match {
+    (fixValDefPosition(left), fixValDefPosition(right)) match {
       case (_, EmptyTree) | (EmptyTree, _) => NoLayout → NoLayout
       case (l: Import, r: Import) => NoLayout → NoLayout
         
