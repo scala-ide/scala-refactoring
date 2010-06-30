@@ -54,7 +54,7 @@ class TreeAnalysisTest extends TestHelper with GlobalIndexes with TreeAnalysis {
   @Test
   def findParameterDependency() = {
     
-    assertInboundLocalDependencies("value i, value $anonfun", """
+    assertInboundLocalDependencies("value i", """
       class A8 {
         def addThree(i: Int) = {
           val a = 1
@@ -138,7 +138,7 @@ class TreeAnalysisTest extends TestHelper with GlobalIndexes with TreeAnalysis {
   @Test
   def findOnClassLevel() = {
     
-    assertInboundLocalDependencies("value a", """
+    assertInboundLocalDependencies("", """
     class Outer {
       class B2 {
         val a = 1

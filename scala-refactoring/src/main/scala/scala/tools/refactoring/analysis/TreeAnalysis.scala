@@ -14,12 +14,14 @@ trait TreeAnalysis {
   val global: scala.tools.nsc.interactive.Global
   
   def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: IndexLookup) = {
-
-    selection.selectedSymbols filter {
+    
+    val allLocalSymbols = selection.selectedSymbols filter {
         _.ownerChain.contains(currentOwner)
-    } filterNot {
-      index.declaration(_).map(selection.contains) getOrElse false
-    } sortBy(_.pos.start) distinct
+    }
+
+    allLocalSymbols filterNot {
+      index.declaration(_).map(selection.contains) getOrElse true
+    } filter (t => t.pos.isRange && !t.pos.isTransparent) sortBy (_.pos.start) distinct
   }
   
   def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol, index: IndexLookup) = {

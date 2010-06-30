@@ -585,8 +585,7 @@ Extracting a method is done in several smaller steps:
   \item[Insert the Method] somewhere in the surrounding class body.
 \end{description}
 
-The transformations that are used for Extract Method have already been described in Section~\vref{subsection:tree-transformations}. 
-A screenshot of the refactoring can be seen in \figref{figure:extract-method-screenshot-1}.
+The transformations that are used for Extract Method have already been described in Section~\vref{subsection:tree-transformations}. A screenshot of the refactoring can be seen in \figref{figure:extract-method-screenshot-1}.
 
 \begin{figure}
   \centering
@@ -597,29 +596,74 @@ A screenshot of the refactoring can be seen in \figref{figure:extract-method-scr
 
 \subsection{Examples}
 
-To demo the Extract Method refactoring, we will use the following listing which defines and uses several local values and functions:
-
-The following listing will now be used to demonstrate several instances of the Extract Method refactoring. It contains several local variables and functions.
+To start, let us extract a statement that uses local variables and defines a variable that is used later in the program:
 
 \begin{lstlisting}
-object ExtractMethodDemo {
-  
-  val instanceValues = 1 to 10 toList
-
-  def main(args: Array[String]) {
-    
-    val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
-    val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
-    
-    val localValues = 1 to 10 toList
-    
-    val     sum = sumList(localValues)   // the sum
-    val product = prodList(localValues)  // the product
-
-    println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
-  }
+def main(args: Array[String]) {
+  println("Hello World!")
+  //create a message:
+   %\bluebox{val msg = args mkString ", "}%
+  println(msg)
 }
 \end{lstlisting}
+
+Applying the Extract Method refactoring results in a new method that takes an array as parameter and returns the created string.
+
+\begin{lstlisting}
+def main(args: Array[String]) {
+  println("Hello World!")
+  val msg = makeString(args)
+  println(msg)
+}
+def makeString(args: Array[String]): String = {
+  //create a message:
+  val msg = args mkString ", "
+  msg
+}
+\end{lstlisting}
+
+Using tuples to return values, we can return multiple values from an extracted method. The next two listings show an example:
+
+\begin{lstlisting}    
+def main(args: Array[String]) {
+  val start =  0
+  %\bluebox{val end   = 10}%
+  %\bluebox{val sum = start to end reduceLeft ((x, y) => x + y)}%
+  println("The sum from %\%%d to %\%%d is %\%%d".format(start, end, sum))
+}
+\end{lstlisting}
+
+\begin{lstlisting}        
+def main(args: Array[String]) {
+  val start =  0
+  val (end, sum) = calculateSum(start)
+  println("The sum from %\%%d to %\%%d is %\%%d".format(start, end, sum))
+}
+def calculateSum(start: Int): (Int, Int) = {
+  val end   = 10
+  val sum = start to end reduceLeft ((x, y) => x + y)
+  (end, sum)
+}
+\end{lstlisting}
+
+Extract Method can also create a higher order function, as shown below:
+
+\begin{lstlisting}  
+def method() {
+  
+  val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+  val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
+  
+  val values = 1 to 10 toList
+  
+  %\bluebox{val     sum = sumList(values)   // the sum}%
+  %\bluebox{val product = prodList(values)}%  // the product
+
+  println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
+}
+\end{lstlisting}
+
+We can now extract the calculation of the \src{sum} and the \src{product} values:
 
 
 

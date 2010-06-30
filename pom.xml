@@ -139,18 +139,6 @@
       <id>scala-tools.org.releases</id>
       <name>Scala Tools Maven2 Repository</name>
       <url>http://scala-tools.org/repo-releases</url>
-      <snapshots/>
-    </repository>
-    <repository>
-      <id>scala-tools.org.snapshots</id>
-      <name>Scala Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-      <snapshots/>
-    </repository>
-    <repository>
-      <id>codehaus</id>
-      <name>Maven Codehaus repository</name>
-      <url>http://repository.codehaus.org/</url>
     </repository>
     <repository>
       <id>codehaus-snapshots</id>

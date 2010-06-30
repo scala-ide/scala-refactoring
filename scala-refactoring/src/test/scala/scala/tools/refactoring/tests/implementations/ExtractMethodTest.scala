@@ -335,6 +335,96 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring extract("test")
+    
+  @Test
+  def extractAnonFunction = new FileSet {
+    """
+object ExtractMethod3 {
+    
+  def main(args: Array[String]) {
+    val start =  0
+    /*(*/val end   = 10
+    val sum = start to end reduceLeft ((x, y) => x + y)/*)*/
+    println("The sum from %d to %d is %d".format(start, end, sum))
+  }
+}
+    """ becomes
+    """
+object ExtractMethod3 {
+    
+  def main(args: Array[String]) {
+    val start =  0
+    val (end, sum) = test(start)
+    println("The sum from %d to %d is %d".format(start, end, sum))
+  }
+  def test(start: Int): (Int, Int) = {
+    /*(*/val end   = 10
+    val sum = start to end reduceLeft ((x, y) => x + y)/*)*/
+    (end, sum)
+  }
+}
+    """
+  } applyRefactoring extract("test")
+    
+  @Test
+  def extractAnonFunction2 = new FileSet {
+    """
+object ExtractMethod3 {
+    
+  def main(args: Array[String]) {
+    val start =  0
+    /*(*/val end   = 10
+    val sum = start to end reduceLeft (_ + _)/*)*/
+    println("The sum from %d to %d is %d".format(start, end, sum))
+  }
+}
+    """ becomes
+    """
+object ExtractMethod3 {
+    
+  def main(args: Array[String]) {
+    val start =  0
+    val (end, sum) = test(start)
+    println("The sum from %d to %d is %d".format(start, end, sum))
+  }
+  def test(start: Int): (Int, Int) = {
+    /*(*/val end   = 10
+    val sum = start to end reduceLeft (_ + _)/*)*/
+    (end, sum)
+  }
+}
+    """
+  } applyRefactoring extract("test")
+    
+  @Test
+  def extractAnonFunction3 = new FileSet {
+    """
+object ExtractMethod3 {
+
+  def add(x: Int, y: Int) = x + y  
+
+  def main(args: Array[String]) {
+    /*(*/val sum = 0 to 10 reduceLeft add/*)*/
+    println("The sum is %d".format(sum))
+  }
+}
+    """ becomes
+    """
+object ExtractMethod3 {
+
+  def add(x: Int, y: Int) = x + y  
+
+  def main(args: Array[String]) {
+    val sum = test
+    println("The sum is %d".format(sum))
+  }
+  def test: Int = {
+    /*(*/val sum = 0 to 10 reduceLeft add/*)*/
+    sum
+  }
+}
+    """
+  } applyRefactoring extract("test")
         
   @Test
   def extractIfThen = new FileSet {

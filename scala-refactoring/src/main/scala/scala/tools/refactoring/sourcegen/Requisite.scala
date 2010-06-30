@@ -63,7 +63,7 @@ object Requisite {
     val getLayout = Layout(" ")
   }
   
-  def newline(indentation: String) = new Requisite {
+  def newline(indentation: String, force: Boolean = false) = new Requisite {
     def isRequired(l: Layout, r: Layout) = {
       val _1 = l.matches("(?ms).*\n\\s*$")
       val _2 = r.matches("(?ms)^\\s*\n.*")
@@ -71,7 +71,7 @@ object Requisite {
     }
     def getLayout = Layout("\n"+ indentation)
     override def insertBetween(l: Layout, r: Layout) = {
-      if(r.asText.startsWith(indentation)) {
+      if(!force && r.asText.startsWith(indentation)) {
         l ++ Layout("\n") ++ r
       } else {
         l ++ getLayout ++ r

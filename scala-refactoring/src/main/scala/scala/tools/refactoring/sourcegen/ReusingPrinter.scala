@@ -131,10 +131,10 @@ trait ReusingPrinter extends AbstractPrinter {
       case (block @ BlockExtractor(stats), _) if stats.size > 1 && stats.allOnSameLine => 
         l ++ p(stats) ++ r
         
-      case (BlockExtractor(stats), _) => 
+      case (BlockExtractor(stats), _) =>
         val rest = printIndented(stats, separator = Requisite.newline(ind.current)) ++ r 
-        if(l contains "{")
-          l ++ Requisite.newline(ind.current) ++ rest
+        if(l.contains("{") && !stats.head.hasExistingCode)
+          l ++ Requisite.newline(ind.current, force = true) ++ rest
         else 
           l ++ rest
         
