@@ -44,7 +44,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = prntln
         a * a
       }
-      def prntln: Int = {
+      private def prntln: Int = {
 /*(*/   val a = {
           val b = 1
           b * 5
@@ -73,7 +73,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         myOwnPrint
         ()
       }
-      def myOwnPrint: Unit = {
+      private def myOwnPrint: Unit = {
 /*(*/   println("hello")/*)*/
       }
     }
@@ -101,7 +101,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln
         ()
       }
-      def prntln: Unit = {
+      private def prntln: Unit = {
 /*(*/   println("hello")/*)*/
       }
     }
@@ -131,10 +131,48 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln(a)
         ()
       }
-      def prntln(a: Int): Unit = {
+      private def prntln(a: Int): Unit = {
 /*(*/   println(a)  /*)*/
       }
     }
+    """
+  } applyRefactoring extract("prntln")
+
+  @Test
+  def extractRangeParameter = new FileSet {
+    """
+  object ExtractMethod3 {
+    
+    def main(args: Array[String]) {
+      
+      val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+      
+      val values = 1 to 10
+      
+      /*(*/val sum = sumList(values)/*)*/   // the sum
+  
+      println("The sum from 1 to 10 is "+ sum)
+    }
+  }
+    """ becomes
+    """
+  object ExtractMethod3 {
+    
+    def main(args: Array[String]) {
+      
+      val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+      
+      val values = 1 to 10
+      val sum = prntln(sumList, values)
+  
+      println("The sum from 1 to 10 is "+ sum)
+    }
+    private def prntln(sumList: (Seq[Int]) => Int, values: scala.collection.immutable.Range.Inclusive with scala.collection.immutable.Range.ByOne): Int = {
+      
+      /*(*/val sum = sumList(values)/*)*/   // the sum
+      sum
+    }
+  }
     """
   } applyRefactoring extract("prntln")
 
@@ -162,7 +200,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln(d, a, b, c)
         ()
       }
-      def prntln(d: Int, a: Int, b: Int, c: Int): Unit = {
+      private def prntln(d: Int, a: Int, b: Int, c: Int): Unit = {
 /*(*/   println(a + b + c + d)  /*)*/
       }
     }
@@ -187,7 +225,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = prntln
         a
       }
-      def prntln: Int = {
+      private def prntln: Int = {
 /*(*/   val a = 1  /*)*/
         a
       }
@@ -214,7 +252,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val (a, b) = prntln
         a + b
       }
-      def prntln: (Int, Int) = {
+      private def prntln: (Int, Int) = {
 /*(*/   val a = 1
         val b = 1  /*)*/
         (a, b)
@@ -248,7 +286,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val (d, e) = prntln(a, c)
         a+b+c+d+e
       }
-      def prntln(a: Int, c: Int): (Int, Int) = {
+      private def prntln(a: Int, c: Int): (Int, Int) = {
 /*(*/   val d = a + c
         val e = d + a  /*)*/
         (d, e)
@@ -275,7 +313,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = 1
         inc(a)    /*)*/
       }
-      def inc(a: Int): Int = {
+      private def inc(a: Int): Int = {
 /*(*/   a + 1
       }
     }
@@ -299,7 +337,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       def extractFrom(): Int = {
         inc    /*)*/
       }
-      def inc: Int = {
+      private def inc: Int = {
 /*(*/   val a = 1
         a + 1
       }
@@ -329,7 +367,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         else
           false 
       }
-      def test: Boolean = {
+      private def test: Boolean = {
          /*(*/ true == true /*)*/ 
       }
     }
@@ -357,7 +395,7 @@ object ExtractMethod3 {
     val (end, sum) = test(start)
     println("The sum from %d to %d is %d".format(start, end, sum))
   }
-  def test(start: Int): (Int, Int) = {
+  private def test(start: Int): (Int, Int) = {
     /*(*/val end   = 10
     val sum = start to end reduceLeft ((x, y) => x + y)/*)*/
     (end, sum)
@@ -387,7 +425,7 @@ object ExtractMethod3 {
     val (end, sum) = test(start)
     println("The sum from %d to %d is %d".format(start, end, sum))
   }
-  def test(start: Int): (Int, Int) = {
+  private def test(start: Int): (Int, Int) = {
     /*(*/val end   = 10
     val sum = start to end reduceLeft (_ + _)/*)*/
     (end, sum)
@@ -418,7 +456,7 @@ object ExtractMethod3 {
     val sum = test
     println("The sum is %d".format(sum))
   }
-  def test: Int = {
+  private def test: Int = {
     /*(*/val sum = 0 to 10 reduceLeft add/*)*/
     sum
   }
@@ -447,7 +485,7 @@ object ExtractMethod3 {
         else
           false 
       }
-      def test: Boolean = {
+      private def test: Boolean = {
  /*(*/    true
       }
     }
@@ -478,7 +516,7 @@ object ExtractMethod3 {
  /*(*/    test /*)*/
         }
       }
-      def test: Boolean = {
+      private def test: Boolean = {
         false
       }
     }
@@ -501,7 +539,7 @@ object ExtractMethod3 {
       def extractFrom(): Boolean = {
         if(true == true) true else /*(*/ test /*)*/
       }
-      def test: Boolean = {
+      private def test: Boolean = {
         false
       }
     }
@@ -542,7 +580,7 @@ object ExtractMethod3 {
           }
         }
       }
-      def test: Boolean = {
+      private def test: Boolean = {
          /*(*/  true
       }
     }
@@ -571,7 +609,7 @@ object ExtractMethod3 {
           else
             println("It's true")
         }
-        def isFalse(check: Boolean): Boolean = {
+        private def isFalse(check: Boolean): Boolean = {
           /*(*/check == false/*)*/ /*hi*/
         }
       }
@@ -600,7 +638,7 @@ object ExtractMethod3 {
         val b = certainlyTrue(invert, a)
         b
       }
-      def certainlyTrue(invert: (Boolean) => Boolean, a: Boolean): Boolean = {
+      private def certainlyTrue(invert: (Boolean) => Boolean, a: Boolean): Boolean = {
 /*(*/   val b = invert(a)    /*)*/
         b
       }
@@ -635,7 +673,7 @@ object ExtractMethod3 {
     
         println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
       }
-      def magic(sumList: (Seq[Int]) => Int, prodList: (Seq[Int]) => Int, values: List[Int]): (Int, Int) = {
+      private def magic(sumList: (Seq[Int]) => Int, prodList: (Seq[Int]) => Int, values: List[Int]): (Int, Int) = {
     /*(*/    val     sum = sumList(values)   // the sum
         val product = prodList(values) /*)*/ // the product
         (sum, product)
@@ -696,7 +734,7 @@ object ExtractMethod3 {
       def unrelated3 {
         println("unrelated3")
       }
-      def isFalse(check: Boolean): Boolean = {
+      private def isFalse(check: Boolean): Boolean = {
         /*(*/check == false/*)*/ /*hi*/
       }
     }

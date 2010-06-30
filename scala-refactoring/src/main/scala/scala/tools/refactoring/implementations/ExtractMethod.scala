@@ -5,6 +5,7 @@
 package scala.tools.refactoring
 package implementations
 
+import tools.nsc.symtab.Flags
 import analysis.{Indexes, TreeAnalysis}
 import transformation.TreeFactory
 import common.Change
@@ -44,7 +45,7 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
       
       val returnStatement = if(returns.isEmpty) Nil else mkReturn(returns) :: Nil
       
-      val newDef = mkDefDef(NoMods, methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: returnStatement)
+      val newDef = mkDefDef(NoMods withPosition (Flags.PRIVATE, NoPosition), methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: returnStatement)
       
       val call = mkCallDefDef(methodName, parameters :: Nil, returns)
          

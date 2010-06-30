@@ -363,13 +363,13 @@ trait PrettyPrinter extends AbstractPrinter {
             tpe.toString
           case tpe if tree.original != null && !tpe.isInstanceOf[TypeRef]=> 
             p(tree.original).asText
-          case r @ RefinedType(_ :: parents, _) =>
+          case r @ RefinedType(parents, _) =>
             parents map {
               case NamedType(name, _)      => name.toString
-              case TypeRef(pre, sym, args) => sym.nameString
+              case t @ TypeRef(pre, sym, args) => t.toString
               case RefinedType(parents, _) => parents mkString " with "
               case t => throw new Exception("Unhandled type "+ t.getClass.getSimpleName)
-            } mkString
+            } mkString " with "
           case tpe: TypeRef =>
             tpe.toString
           case tpe => 

@@ -460,7 +460,7 @@ class B(t: A#T)"""
 trait Tracing
 trait PimpedTrees
 trait AbstractPrinter {
-  this: common.Tracing with common.PimpedTrees =>
+  this: AbstractPrinter with common.Tracing with common.PimpedTrees =>
 }"""
   }
   
@@ -1253,10 +1253,10 @@ class D"""
   self =>
 }
 trait BTrait {
-  self: ATrait =>
+  self: BTrait with ATrait =>
 }
 trait CTrait {
-  self: BTrait with ATrait =>
+  self: CTrait with BTrait with ATrait =>
 }"""
   }
   

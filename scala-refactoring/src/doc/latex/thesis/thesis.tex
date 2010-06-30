@@ -615,7 +615,7 @@ def main(args: Array[String]) {
   val msg = makeString(args)
   println(msg)
 }
-def makeString(args: Array[String]): String = {
+private def makeString(args: Array[String]): String = {
   //create a message:
   val msg = args mkString ", "
   msg
@@ -639,7 +639,7 @@ def main(args: Array[String]) {
   val (end, sum) = calculateSum(start)
   println("The sum from %\%%d to %\%%d is %\%%d".format(start, end, sum))
 }
-def calculateSum(start: Int): (Int, Int) = {
+private def calculateSum(start: Int): (Int, Int) = {
   val end   = 10
   val sum = start to end reduceLeft ((x, y) => x + y)
   (end, sum)
@@ -649,7 +649,7 @@ def calculateSum(start: Int): (Int, Int) = {
 Extract Method can also create a higher order function, as shown below:
 
 \begin{lstlisting}  
-def method() {
+def main() {
   
   val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
   val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
@@ -663,15 +663,86 @@ def method() {
 }
 \end{lstlisting}
 
-We can now extract the calculation of the \src{sum} and the \src{product} values:
+We can now extract the calculation of the \src{sum} and the \src{product} values. Both values are returned because they are used later in the print statement (line breaks were added manually):
 
+\begin{lstlisting}
+def main() {
+  
+  val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+  val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
+  
+  val values = 1 to 10 toList
+  val (sum, product) = sumAndProd(sumList, prodList, values)
 
+  println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
+}
+private def sumAndProd(sumList: (Seq[Int]) => Int, 
+                        prodList: (Seq[Int]) => Int, 
+                        values: List[Int]): (Int, Int) = {
+  val     sum = sumList(values)   // the sum
+  val product = prodList(values)  // the product
+  (sum, product)
+}
+\end{lstlisting}
+
+In our examples so far, we have only extracted statements from blocks. But we can also extract single expressions from within other expressions. The following example extracts the condition of an if-expression:
+
+\begin{lstlisting}
+def main(args: Array[String]) {
+
+  println("Detecting OS..")
+  
+  if(%\bluebox{System.getProperties.get("os.name") == "Linux"}%) {
+    println("We're on Linux!")
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+def main(args: Array[String]) {
+
+  println("Detecting OS..")
+  
+  if(isLinux) {
+    println("We're on Linux!")
+  }
+}
+private def isLinux: Boolean = {
+  System.getProperties.get("os.name") == "Linux"
+}
+\end{lstlisting}
 
 \subsection{Limitations}
 
-lots of limitations
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\linewidth]{extract_method_java_screenshot_1.png}
+  \caption{a}
+  \label{figure:extract-method-java-screenshot-1}
+\end{figure}
 
-method placement.
+
+Compared to Eclipse's Extract Method for Java (see \figref{figure:extract-method-java-screenshot-1}), our version offers far less features -- for example, one cannot reorder the parameters, nor rename them. Allowing the user to choose where the extracted method should be placed also has not been implemented yet, and the visibility of the extracted method is always set to private.
+
+Also, the generated code is not always as simple as it could be. Consider the following example:
+
+\begin{lstlisting}
+private def makeString(args: Array[String]): String = {
+  //create a message:
+  val msg = args mkString ", "
+  msg
+}
+\end{lstlisting}
+
+The local value \src{msg} could be inlined to get this simplified extracted method:
+
+\begin{lstlisting}
+private def makeString(args: Array[String]): String = {
+  //create a message:
+  args mkString ", "
+
+}
+\end{lstlisting}
 
 \chapter{Tool Integration} \label{chapter:tool-integration}
 
