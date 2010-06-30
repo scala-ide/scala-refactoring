@@ -127,7 +127,7 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
 }
 \end{lstlisting}
 
-Performing a refactoring is not a single-step process: when the user invokes a refactoring, the first step is to check whether the refactoring can be applied -- for example, to perform a renaming, a name has to be selected. We call this the \textit{prepare} step. This step usually has a result, which is used in a configuration dialog to parameterize the refactoring. In our renaming example, this is the new name. Using the information from the preparation step and the configured parameters, the refactoring can then be \textit{performed}. This yields either a list of changes to be applied or it can also fail.
+Performing a refactoring is not a single-step process: when the user invokes a refactoring, the first step is to check whether the refactoring can be applied -- for example, to perform a renaming, a name has to be selected. We call this the \textit{prepare} step. This step usually has a result, which is used in a configuration dialog to parameterize the refactoring. In our renaming example, this is the new name. Using the information from the preparation step and the configured parameters, the refactoring can then be \textit{performed}. This yields either a list of changes to be applied or it can also fail. See  \figref{figure:refactoring-sequence} for a visualization.
 
 These steps are represented by the abstract class \src{MultiStageRefactoring}, which is subclassed by all concrete refactoring implementations:
 
@@ -622,6 +622,8 @@ private def makeString(args: Array[String]): String = {
 }
 \end{lstlisting}
 
+\subsubsection{Returning Multiple Values}
+
 Using tuples to return values, we can return multiple values from an extracted method. The next two listings show an example:
 
 \begin{lstlisting}    
@@ -645,6 +647,8 @@ private def calculateSum(start: Int): (Int, Int) = {
   (end, sum)
 }
 \end{lstlisting}
+
+\subsubsection{Higher Order Functions}
 
 Extract Method can also create a higher order function, as shown below:
 
@@ -685,6 +689,8 @@ private def sumAndProd(sumList: (Seq[Int]) => Int,
 }
 \end{lstlisting}
 
+\subsubsection{Arbitrary Expressions}
+
 In our examples so far, we have only extracted statements from blocks. But we can also extract single expressions from within other expressions. The following example extracts the condition of an if-expression:
 
 \begin{lstlisting}
@@ -717,7 +723,7 @@ private def isLinux: Boolean = {
 \begin{figure}
   \centering
   \includegraphics[width=0.6\linewidth]{extract_method_java_screenshot_1.png}
-  \caption{a}
+  \caption{Eclipse JDT's Extract Method Refactoring can be highly customized.}
   \label{figure:extract-method-java-screenshot-1}
 \end{figure}
 
@@ -746,8 +752,44 @@ private def makeString(args: Array[String]): String = {
 
 \chapter{Tool Integration} \label{chapter:tool-integration}
 
-how can the refactorings be integrated into a new tool?
-how does the current integration look like
+In this chapter, we're going to look at how the implemented refactorings can be integrated into other software and how the current integration into the Scala IDE for Eclipse looks like.
+
+\section{Dependencies}
+
+The library depends only on the Scala compiler and libraries, no third party libraries are used. To allow a seamless and performand integration into IDEs, the refactoring implementations do not instantiate their own compiler to parse and typecheck the code. This is typically already done or being done by the IDE and would only lead to duplicate effort and significantly slow down the refactoring.
+
+To access the compilation units, the \src{Refactoring} trait -- from which all implementations inherit -- has an abstract member of a compiler instance:
+
+\begin{lstlisting}
+trait Refactoring extends %\ldots% {
+  val global: scala.tools.nsc.interactive.Global
+   %\ldots% 
+}
+\end{lstlisting}
+
+So in order to instantiate a refactoring implementation, a reference to the compiler has to be provided. How this is done for the automated tests is described in Chapter~\vref{chapter:testing}.
+
+As explained at the beginning of Chapter~\vref{chapter:implemented-refactorings}, a refactoring is performed in several steps; \figref{figure:refactoring-sequence} shows the interaction between the user, the IDE and the refactoring library. The prepare and perform as well as the required parameters are part of the \src{MutliStageRefactoring} abstract class.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{refactoring-sequence.pdf}
+  \caption{The simplified (error conditions are not shown) interaction that happens when a refactoring is called.}
+  \label{figure:refactoring-sequence}
+\end{figure}
+
+
+
+First, let us take a look at the package layout of the refactoring library:
+
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{package-layout.png}
+\end{center}
+
+
+
+
+
 
 \chapter{Testing} \label{chapter:testing}
 

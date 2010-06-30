@@ -15,6 +15,8 @@ import sourcegen.SourceGenerator
  * */
 trait Refactoring extends Selections with TreeTransformations with SilentTracing with SourceGenerator with PimpedTrees {
   
+  val global: scala.tools.nsc.interactive.Global
+  
   def refactor(changed: List[global.Tree]): List[Change] = context("main") {
     createChanges(changed) toList
   }
