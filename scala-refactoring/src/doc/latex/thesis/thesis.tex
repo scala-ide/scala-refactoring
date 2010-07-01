@@ -102,6 +102,8 @@ This document is organized as follows: Chapter~\vref{chapter:refactoring-library
 
 The appendices contain a user guide to the refactorings in Eclipse (Appendix~\vref{chapter:user-guide}), ...
 
+% wer soll es lesen, und was.
+
 \vref{chapter:developer-how-to}
 
 \vref{chapter:project-environment}
@@ -112,7 +114,7 @@ The appendices contain a user guide to the refactorings in Eclipse (Appendix~\vr
 
 \chapter{Refactoring Library} \label{chapter:refactoring-library}
 
-\include{2_refactoring_library}
+\input{2_refactoring_library}
 
 \chapter{Implemented Refactorings} \label{chapter:implemented-refactorings}
 
@@ -756,20 +758,22 @@ In this chapter, we're going to look at how the implemented refactorings can be 
 
 \section{Dependencies}
 
-The library depends only on the Scala compiler and libraries, no third party libraries are used. To allow a seamless and performand integration into IDEs, the refactoring implementations do not instantiate their own compiler to parse and typecheck the code. This is typically already done or being done by the IDE and would only lead to duplicate effort and significantly slow down the refactoring.
+The refactoring library depends only on the Scala compiler -- no third party libraries are used. But it also does not contain any user interface; for a seamless integration, this needs to be implemented by the integrating tool.
 
-To access the compilation units, the \src{Refactoring} trait -- from which all implementations inherit -- has an abstract member of a compiler instance:
+For a performant integration into IDEs, the refactoring implementations do not instantiate their own compiler to parse and typecheck the code. This is typically already being done by the IDE and would only lead to duplicate effort and significantly slow down the refactoring process.
+
+To access the compilation units of a project, the \src{Refactoring} trait -- from which all implementations inherit -- has an abstract member of a compiler instance:
 
 \begin{lstlisting}
 trait Refactoring extends %\ldots% {
   val global: scala.tools.nsc.interactive.Global
-   %\ldots% 
+  %\ldots% 
 }
 \end{lstlisting}
 
 So in order to instantiate a refactoring implementation, a reference to the compiler has to be provided. How this is done for the automated tests is described in Chapter~\vref{chapter:testing}.
 
-As explained at the beginning of Chapter~\vref{chapter:implemented-refactorings}, a refactoring is performed in several steps; \figref{figure:refactoring-sequence} shows the interaction between the user, the IDE and the refactoring library. The prepare and perform as well as the required parameters are part of the \src{MutliStageRefactoring} abstract class.
+As explained at the beginning of Chapter~\vref{chapter:implemented-refactorings}, a refactoring is performed in several steps; \figref{figure:refactoring-sequence} presents the interaction between the user, the IDE and the refactoring library. The prepare and perform methods as well as the required parameters are part of the \src{MutliStageRefactoring} abstract class (also see \figref{figure:package-layout}).
 
 \begin{figure}
   \centering
@@ -778,16 +782,209 @@ As explained at the beginning of Chapter~\vref{chapter:implemented-refactorings}
   \label{figure:refactoring-sequence}
 \end{figure}
 
-
-
-First, let us take a look at the package layout of the refactoring library:
-
-\begin{center}
+\begin{figure}
+  \centering
   \includegraphics[width=0.5\linewidth]{package-layout.png}
-\end{center}
+  \caption{The package layout of the library, showing the base classes and the implemented refactorings.}
+  \label{figure:package-layout}
+\end{figure}
 
+\section{Integrating the Library}
 
+\begin{figure}
+  \centering
+  \includegraphics[width=0.7\linewidth]{refactoring-editor.png}
+  \caption{The Refactoring Editor: A simple Swing editor that can open files and invoke the refactorings.}
+  \label{figure:refactoring-editor}
+\end{figure}
 
+How the refactorings can be integrated will be shown with a concrete example: the Refactoring Editor shown in \figref{figure:refactoring-editor}. We show the detailed instructions for the \src{Rename} refactoring only, but others can be integrated analog. The following code is all performed in an action listener. First we have to instantiate the refactoring:
+
+\begin{lstlisting}
+val refactoring = new Rename with CompilerProvider with GlobalIndexes {
+  val ast = treeFrom(editor.getText)
+  val index = GlobalIndex(ast)
+}
+\end{lstlisting}
+
+The compiler in this example is provided by the \src{CompilerProvider} trait, which also offers the \src{treeFrom} method to turn a string into a \src{Tree} instance. The Rename refactoring also needs an index of the whole program; we mix in the \src{GlobalIndexes} trait that allows us to construct an index (more on the index can be found in Section~\vref{section:analysis}).
+
+Most of the refactorings need a selection to work. The \src{Selection} trait is implemented in two variations: \src{FileSelection} and \src{TreeSelection}. Depending on where the selection comes from, one or the other is easier to use. We create a \src{FileSelection} from the editor's selection:
+
+\begin{lstlisting}
+val selection: refactoring.Selection = {
+  val file = refactoring.ast.pos.source.file
+  val from = editor.getSelectionStart
+  val to = editor.getSelectionEnd
+  new refactoring.FileSelection(file, from, to)
+}
+\end{lstlisting}
+
+Having a selection, we can now invoke the first refactoring step: the \src{prepare} method. Calling \src{prepare} returns \src{Either[PreparationError, PreparationResult]}, so we have to extract the result, or abort if an error occured (a typical error cause is an unsuitable selection).
+
+\begin{lstlisting}
+val preparationResult = refactoring.prepare(selection) match {
+  case Left(refactoring.PreparationError(error)) => 
+    showError(error)
+    return
+  case Right(r) => r
+}
+\end{lstlisting}
+
+The preparation result's concrete type depends on the chosen refactoring. In the case of Rename, it simply contains the tree that we want to rename. Now to perform the refactoring, we need to pass the required parameters -- the new name. The \src{askName} function of our editor opens a dialog to enter a new name.
+
+\begin{lstlisting}
+val refactoringParameters = new refactoring.RefactoringParameters {
+  val newName = {
+    val oldName = preparationResult.selectedTree.symbol.nameString
+    askNewName(oldName)
+  }
+}
+\end{lstlisting}
+
+Performing the refactoring is very similar to preparing it, except that we pass more parameters and get back a list of changes on success:
+
+\begin{lstlisting}
+val changes: List[Change] = 
+  refactoring.perform(selection, preparationResult, refactoringParameters) match {
+    case Left(refactoring.RefactoringError(error)) => 
+      showError(error)
+      return
+    case Right(r) => r
+  }
+\end{lstlisting}
+
+In our editor, we simply apply the changes to the file, using the \src{Change.applyChanges} method. In a real editor, the user should get a chance to see the proposed changes before they are applied.
+
+\section{Scala IDE for Eclipse Integration}
+
+The Eclipse integration is of course more complex than our previous example with the Refactoring Editor. Eclipse's Java Development Tools provides a rich set of refactorings; the core of this -- the Eclipse Language Toolkit \cite{LTK} -- can be used independently of the JDT and provides common functionality -- for example, wizards that guide the user through the refactoring process, edit and change objects that represent the refactoring's outcome, a viewer to visualize the patch. The LTK also takes care of applying the changes to the source code and undo management. 
+
+\subsection{Integrating with Eclipse LTK}
+
+We will now take a look at how the Refactoring library has been integrated into the Scala IDE for Eclipse. The diagram in \figref{figure:eclipse-integration} gives on overview over the main classes. 
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{eclipse-integration.pdf}
+  \caption{An overview over the integration in the Scala IDE for Eclipse. }
+  \label{figure:eclipse-integration}
+\end{figure}
+
+\begin{description}
+  \item[ActionAdapter] unifies and simplifies the integration into Eclipse's menu bar and context menus. It provides default implementations for unused methods.
+  \item[ScalaIdeRefactoring] serves as a bridge between the LTK and a refactoring in the library; it connects the LTK's refactoring with the library's refactorings by creating the change objects for Eclipse (these are not the same as the \src{Change} objects in the library) and checks the initial and final conditions of a refactoring, i.e. it displays the errors that can be returned by \src{prepare} and \src{perform}. \src{ScalaIdeRefactoring} follows the template method pattern.
+  \item[ScalaRefactoringWizard] wraps the \src{ScalaIdeRefactoring} in a wizard and adds pages from the refactoring to the wizard.
+  \item[RefactoringAction] is the abstract driver of a refactoring execution: it is the entry point when a refactoring is executed and manages the wizards.
+  \item[RenameAction] finaly implements the \src{RefactoringAction} and contains all refactoring specific code. It instantiates the corresponding refactoring from the library and provides it to the generic \src{RefactoringAction}. The other refactorings are implemented analog by their respective actions.
+  \item[RenameScalaIdeRefactoring] Adapts the Rename Refactoring from the library to the \src{ScalaIdeRefactoring} interface. An example of the \src{ExtractMethodScalaIdeRefactoring} will be shown later.
+\end{description}
+
+All these actions are hooked up to the Eclipse menus in the Scala IDE's \src{plugin.xml}.
+
+\subsection{Interfacing with the Scala IDE}
+
+As we have mentioned several times, the refactoring library needs to be given an instance of the compiler. In the Scala IDE integration, the compiler can be accessed through the \src{ScalaSourceFile}, which mixes in the \src{ScalaCompilationUnit} trait that offers the following method:
+
+\begin{lstlisting}
+trait ScalaCompilationUnit extends %\ldots%
+  def withCompilerResult[T](op: ScalaPresentationCompiler.CompilerResultHolder => T): T
+  %\ldots%
+}
+object ScalaPresentationCompiler {
+  
+  trait CompilerResultHolder {
+    val compiler : ScalaPresentationCompiler
+    val sourceFile : SourceFile
+    val body : compiler.Tree
+    val problems : List[IProblem]
+  }
+  %\ldots%
+}
+\end{lstlisting}
+
+This gives us access to the underlying compiler and the parsed and type-checked tree. In the integration code, this can then be used as follows:
+
+\begin{lstlisting}
+file.withCompilerResult(crh =>  %\ldots%)
+\end{lstlisting}
+
+The \src{EditorHelpers} object contains additional methods that make some of the often used Eclipse functions make suitable for Scala -- working with \src{Option} instead of \src{null} and helper functions similar to the \src{withCompilerResult} method above:
+
+\begin{lstlisting}
+object EditorHelpers {
+
+  def activeWorkbenchWindow: Option[IWorkbenchWindow] = %\ldots%
+
+  def activePage(w: IWorkbenchWindow): Option[IWorkbenchPage] = %\ldots%
+
+  def activeEditor(p: IWorkbenchPage): Option[IEditorPart] = %\ldots%
+
+  def textEditor(e: IEditorPart): Option[ScalaSourceFileEditor] = %\ldots%
+
+  def withCurrentEditor[T](block: ScalaSourceFileEditor => Option[T]): Option[T] = %\ldots%
+
+  def withCurrentScalaSourceFile[T](block: ScalaSourceFile => T): Option[T] = %\ldots%
+}
+\end{lstlisting}
+
+\subsection{A Concrete Example}
+
+To wrap up this chapter, let us take a look at concrete \src{ScalaIdeRefactoring} and \src{RefactoringAction} implementations. The \src{ExtractMethodAction} inherits from the \src{RefactoringAction} template method and has to implement the \src{createRefactoring} method which returns a \src{ScalaIdeRefactoring} instance:
+
+\begin{lstlisting}
+class ExtractMethodAction extends RefactoringAction {
+  def createRefactoring(start: Int, end: Int, file: ScalaSourceFile) = 
+    Some(new ExtractMethodScalaIdeRefactoring(start, end, file))
+}
+\end{lstlisting}
+
+The \src{ExtractMethodScalaIdeRefactoring} class then adapts the library's Extract Method. All the non-refactoring specific code like calling \src{perform} is done in \src{ScalaIdeRefactoring}.
+
+\begin{lstlisting}
+class ExtractMethodScalaIdeRefactoring(start: Int, end: Int, file: ScalaSourceFile) 
+    extends ScalaIdeRefactoring("Extract Method") {
+  
+  var name = ""
+  
+  val refactoring = file withCompilerResult { crh => 
+    new ExtractMethod with GlobalIndexes with NameValidation {
+      val global = crh.compiler
+      val index = GlobalIndex(global.unitOfFile(crh.sourceFile.file).body)
+    }
+  }
+
+  lazy val selection = createSelection(file, start, end)
+
+  def initialCheck = file.withCompilerResult { crh =>
+    refactoring.prepare(selection)
+  }
+  
+  def refactoringParameters = new refactoring.RefactoringParameters {
+    val methodName = name
+  }
+  
+  override def getPages = 
+    new NewNameWizardPage(
+      s => name = s, 
+      refactoring.isValidIdentifier, 
+      defaultName = "extractedMethod") :: Nil 
+}
+\end{lstlisting}
+
+The \src{NewNameWizardPage} is an SWT page that asks the user for a new name (see \figref{figure:extract-local-screenshot-1} for a screenshot). The closure passed as the first parameter is called whenever the name changes, so we can update our reference. The second parameter is a function of type $String \Rightarrow Boolean$ which is used to validate the entered name. Our name-updating closure is only called when the name passes the validation.
+
+The actions for refactorings that use the inline mode -- Extract Local and Rename (Local) -- override some of the \src{ScalaIdeRefactoring}'s methods to bypass the wizard and set up the linked mode user interface directly.
+
+\subsection{Adding New Refactorings}
+
+Adding a new refactoring can be done in three steps:
+
+\begin{enumerate}
+  \item Subclass \src{ScalaIdeRefactoring} and implement the necessary methods, analog to the existing IDE refactoring implementations.
+  \item Create a \src{RefactoringAction} subclass that instantiates the previously created IDE refactoring.
+  \item Add the new \src{RefactoringAction} to the plugin xml.
+\end{enumerate}
 
 
 
@@ -896,7 +1093,7 @@ def renameTo(name: String)(pro: FileSet): List[Change] = %\ldots%
 
 %The structure of the test packages follows the main library.
 
-\chapter{Outlook} \label{chapter:outlook}
+\chapter{Outlook and Conclusion} \label{chapter:outlook}
 
 \section{Accomplishments}
 
