@@ -220,12 +220,14 @@ trait LayoutHelper extends CommentHelpers {
     t match {
       case t @ ValDef(_, _, _, rhs) =>
       
-        val childBeforeRhs = children(t) takeWhile (c => !(c samePos rhs)) last
+        val childBeforeRhs = children(t) takeWhile (c => !(c samePos rhs)) lastOption match {
+          case Some(tree) => tree
+          case None => return t
+        }
       
         if(childBeforeRhs.pos.isRange && rhs.pos.isRange && between(childBeforeRhs, rhs)(t.pos.source).contains("{")) {
         
-          // strip comments
-          val offsetToClosing = t.pos.source.content.slice(rhs.pos.end, t.pos.source.length) takeWhile (_ != '}') length
+          val offsetToClosing = layout(rhs.pos.end, t.pos.source.length)(t.pos.source).asText takeWhile (_ != '}') length
           val ct = t.copy().copyAttrs(t)
         
           val end = t.pos.end + offsetToClosing + 1
@@ -234,8 +236,7 @@ trait LayoutHelper extends CommentHelpers {
           t
         }
       
-      case _ => 
-        t
+      case _ => t
     }
   }
 
