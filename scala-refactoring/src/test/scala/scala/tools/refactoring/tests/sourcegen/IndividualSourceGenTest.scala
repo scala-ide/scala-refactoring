@@ -218,5 +218,49 @@ class Foo3 {
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
+  
+  @Test
+  def doubledName(): Unit = {
+    
+    val tree = treeFrom("""
+class Account {
+   var value = 0
+   def add1(v: Int) {
+     value += v
+   }
+}
+    """)
+      
+    assertEquals("""
+class Account {
+   var value = 0
+   def add1(v: Int) {
+     value += v
+   }
+}
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def extraParens(): Unit = {
+    
+    val tree = treeFrom("""
+object Account {
+   def amethod(v: Int, a: Int) = 
+     synchronized({
+       v + a
+     })
+}
+    """)
+      
+    assertEquals("""
+object Account {
+   def amethod(v: Int, a: Int) = 
+     synchronized({
+       v + a
+     })
+}
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
 }
 

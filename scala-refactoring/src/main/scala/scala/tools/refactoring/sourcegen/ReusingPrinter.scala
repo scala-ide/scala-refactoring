@@ -213,8 +213,8 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ Fragment(t.value.stringValue) ++ r
         
       // handle e.g. a += 1 which is a = (a + 1)
-      case (t @ Apply(fun: Select, args @ ((arg1: Apply) :: _)), orig) if t.pos.sameRange(arg1.pos) && arg1.pos.isTransparent && arg1.fun != EmptyTree =>
-        l ++ p(fun) ++ Requisite.Blank ++ Layout(arg1.fun.symbol.nameString +"=") ++ Requisite.Blank ++ p(arg1.args) ++ r
+      case (t @ Apply(fun: Select, args @ ((arg1: Apply) :: _)), _) if t.pos.sameRange(arg1.pos) && arg1.pos.isTransparent =>
+        l ++ p(fun) ++ between(fun, arg1.args.head)(t.pos.source) ++ p(arg1.args) ++ r
         
       case (t @ Apply(fun, args @ ((_: Bind) :: ( _: Bind) :: _)), _) =>
         l ++ p(fun) ++ p(args) ++ r
@@ -235,7 +235,7 @@ trait ReusingPrinter extends AbstractPrinter {
         if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
           l ++ p(fun) ++ p(arg) ++ r
         } else {
-          l ++ p(fun) ++ p(arg, before = "\\(", after = "\\)") ++ r
+          l ++ p(fun) ++ p(arg, before = Requisite.anywhere("("), after = Requisite.anywhere(")")) ++ r
         }
         
       case (t @ Apply(fun, arg :: Nil), _) if !keepTree(fun) =>
