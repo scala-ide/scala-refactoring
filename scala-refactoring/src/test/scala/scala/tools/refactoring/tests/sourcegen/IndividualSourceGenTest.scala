@@ -262,5 +262,125 @@ object Account {
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
+  
+  @Test
+  def namedArgs(): Unit = {
+    
+    val tree = treeFrom("""
+    object Account {
+      def p(i: Int, before: String, separator: String, after: String) = ()
+ 
+      p(5, separator = ", ", before = "\\{", after = "\\}")  
+    }
+    """)
+      
+    assertEquals("""
+    object Account {
+      def p(i: Int, before: String, separator: String, after: String) = ()
+ 
+      p(5, separator = ", ", before = "\\{", after = "\\}")  
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def namedArg(): Unit = {
+    
+    val tree = treeFrom("""
+    object Account {
+      def p(first: String, second: Int) = ()
+ 
+      def callP = {
+        p(second = 42, first = "-")
+      }
+    }
+    """)
+      
+    assertEquals("""
+    object Account {
+      def p(first: String, second: Int) = ()
+ 
+      def callP = {
+        p(second = 42, first = "-")
+      }
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def namedArgWithDefault(): Unit = {
+    
+    val tree = treeFrom("""
+    object Account {
+      def p(first: String = "default", second: Int) = ()
+ 
+      def callP = {
+        p(second = 42)
+      }
+    }
+    """)
+      
+    assertEquals("""
+    object Account {
+      def p(first: String = "default", second: Int) = ()
+ 
+      def callP = {
+        p(second = 42)
+      }
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def patternMatch(): Unit = {
+    
+    val tree = treeFrom("""
+    object O {
+      case class ModuleDef(i: Int, s: String)
+
+      ModuleDef(42, "foo") match {
+        case ModuleDef(theI, theS) =>
+//        mods.annotations map traverse
+          val mods_ = theS
+          mods_ + theI
+      }
+    }
+    """)
+      
+    assertEquals("""
+    object O {
+      case class ModuleDef(i: Int, s: String)
+
+      ModuleDef(42, "foo") match {
+        case ModuleDef(theI, theS) =>
+//        mods.annotations map traverse
+          val mods_ = theS
+          mods_ + theI
+      }
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def patternMatchOnTupel(): Unit = {
+    
+    val tree = treeFrom("""
+    object O {
+      (42, "foo") match {
+        case (theI, theS) =>
+          ()
+      }
+    }
+    """)
+      
+    assertEquals("""
+    object O {
+      (42, "foo") match {
+        case (theI, theS) =>
+          ()
+      }
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
 }
 

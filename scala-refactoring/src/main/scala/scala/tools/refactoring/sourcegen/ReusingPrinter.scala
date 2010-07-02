@@ -207,7 +207,8 @@ trait ReusingPrinter extends AbstractPrinter {
         }
       
       case (t: Literal, _) if t.value.tag == StringTag =>
-        l ++ Fragment("\""+ t.value.stringValue +"\"")  ++ r
+        val escaped = t.value.stringValue.replace("""\""", """\\""")
+        l ++ Fragment("\""+ escaped +"\"")  ++ r
         
       case (t: Literal, _) =>
         l ++ Fragment(t.value.stringValue) ++ r
@@ -216,8 +217,12 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t @ Apply(fun: Select, args @ ((arg1: Apply) :: _)), _) if t.pos.sameRange(arg1.pos) && arg1.pos.isTransparent =>
         l ++ p(fun) ++ between(fun, arg1.args.head)(t.pos.source) ++ p(arg1.args) ++ r
         
+      // x :: xs in pattern match:
+      case (t @ Apply(EmptyTree, args @ ((_: Bind) :: ( _: Bind) :: _)), _) if t.tpe.toString.contains("::") =>
+        l ++ p(args) ++ r
+        
       case (t @ Apply(fun, args @ ((_: Bind) :: ( _: Bind) :: _)), _) =>
-        l ++ p(fun) ++ p(args) ++ r
+        l ++ p(fun) ++ p(args, before = if(l contains "(") NoRequisite else "\\(", separator = ",", after = "\\)") ++ r
         
       case (t @ Apply(fun: Select, arg :: Nil), _) if 
           (fun.qualifier != EmptyTree && keepTree(fun.qualifier)) /*has receiver*/
@@ -332,8 +337,8 @@ trait ReusingPrinter extends AbstractPrinter {
       case (Match(selector, cases), _) =>
         l ++ p(selector) ++ p(cases) ++ r
         
-      case (CaseDef(pat, guard, BlockExtractor(body)), _) =>
-        l ++ p(pat) ++ p(guard) ++ ind.current ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
+      case (CaseDef(pat, guard, b @ BlockExtractor(body)), _) if !b.hasExistingCode =>
+        l ++ p(pat) ++ p(guard) ++ " =>\n" ++ ind.current ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
         
       case (CaseDef(pat, guard, body), _) =>
         l ++ p(pat) ++ p(guard) ++ p(body) ++ r

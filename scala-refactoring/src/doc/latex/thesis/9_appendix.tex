@@ -2,11 +2,11 @@
 
 \chapter{Advanced Scala Features} \label{chapter:advanced-scala-features}
 
-This documentation does not introduce the reader to the Scala language, so an understanding of the basic concepts is assumed. This appendix explains some of the more advanced features and patterns of Scala that are used during the explanations in this document.
+This documentation does not contain an introduction to the Scala language, so an understanding of the basic concepts is assumed. This appendix explains some of the more advanced features and patterns of Scala that are used during the explanations in this thesis.
 
 \section{Path Dependent Types} \label{section:path-dependent-types}
 
-Path dependent types are best shown with an example (taken from Programming Scala \cite{ProgrammingScala}). We have an \src{Animal} class with an abstract type member called \src{SuitableFood} which is then defined in the subclasses to a suitable type.
+Path dependent types are best explained with an example (taken from Programming Scala \cite{ProgrammingScala}). We have an \src{Animal} class with an abstract type member called \src{SuitableFood} which is then defined in the subclasses to a suitable type.
 \begin{lstlisting}
 abstract class Food
 
@@ -30,6 +30,7 @@ class Dog extends Animal {
 
 This now prevents us from feeding the wrong kind of food to our animals:
 
+\needspace{11\baselineskip}
 \begin{lstlisting}
 scala> val bessy = new Cow
 bessy: Cow = Cow@3fb01949
@@ -87,7 +88,7 @@ class ConsoleLogger extends Logging {
 }
 \end{lstlisting}
 
-Now we want to have a logger that only logs certain severities. Or one that filters the messages. We could subclass \src{ConsoleLogger}, but there are potentially many concrete loggers, and we want the user of the logger to be able to combine these features as he likes. This is where stackable traits are useful. Stackable traits use the \src{abstract override} modifier to override an abstract method and are allowed to call \src{super} in the implementation, even though the super method is not implemented.
+Now we want to have a logger that only logs events of a certain severity, or one that filters the messages. We could subclass \src{ConsoleLogger}, but there are potentially many concrete loggers, and we want the user of the logger to be able to combine these features as he likes. This is where stackable traits are useful. Stackable traits use the \src{abstract override} modifier to override an abstract method and are allowed to call \src{super} in the implementation, even though the super method is not implemented.
 
 \begin{lstlisting}
 trait LogOnlyErrors extends Logging {
@@ -193,13 +194,14 @@ class ServiceUser {
 val myService = new ServiceUser with SomeServiceImplementation
 \end{lstlisting}
 
-The user of \src{ServiceUser} than has to instantiate it with a suitable implementation of \src{Service} to make the program compile. In most cases, one could also just let \src{ServiceUser} inherit from \src{Service}, but using a self type annotation is conceptually cleared than abusing inheritance.
+The user of \src{ServiceUser} than has to instantiate it with a suitable implementation of \src{Service} to make the program compile. In most cases, one could also just let \src{ServiceUser} inherit from \src{Service}, but using a self type annotation is conceptually cleared than inheritance.
 
 
 \section{Package Nesting} \label{section:package-nesting}
 
 It is a common misconception that Java supports nested packages; they are only nested in the file system, but the language itself has no notation of nested packages. In Scala on the other hand, packages can be nested. The following two listings represent different compilation units:
 
+\needspace{4\baselineskip}
 \begin{lstlisting}
 package com.mycompany.project
 package pd
@@ -214,5 +216,5 @@ package ui
 import pd.Student
 \end{lstlisting}
 
-Note how the import statement does not have to specify the fully qualified name but can simply import \src{pd.Student} because both compilation units are in the \src{com.mycompany.project} package.
+Note how the import statement does not have to specify the fully qualified name but can simply import \src{pd.Student} because both compilation units are in the \src{com.mycompany. project} package.
 

@@ -258,12 +258,14 @@ trait PimpedTrees {
   object TemplateExtractor {
     def unapply(t: Tree) = t match {
       case tpl: Template => 
+      
+        val pimpedTpl = additionalTemplateMethods(tpl)
               
-        val classParams = tpl.constructorParameters
+        val classParams = pimpedTpl.constructorParameters
         
-        val body = removeCompilerTreesForMultipleAssignment((tpl.body filterNot (tpl.primaryConstructor ::: classParams contains)) filter keepTree)
+        val body = removeCompilerTreesForMultipleAssignment((tpl.body filterNot (pimpedTpl.primaryConstructor ::: classParams contains)) filter keepTree)
         
-        val parents = (tpl.superConstructorParameters match {
+        val parents = (pimpedTpl.superConstructorParameters match {
           case Nil => tpl.parents
           case params => SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
         }) filterNot (_.isEmpty)
@@ -306,7 +308,7 @@ trait PimpedTrees {
           }
         }
 
-        Some((classParams, tpl.earlyDefs, parents, self, body))
+        Some((classParams, pimpedTpl.earlyDefs, parents, self, body))
       
       case _ => 
         None
@@ -614,12 +616,79 @@ trait PimpedTrees {
   /**
    * Unify the children of a Block tree and sort them 
    * in the same order they appear in the source code.
+   * 
+   * Also reshapes some trees: multiple assignments are
+   * removed and named arguments are reordered.
    * */
   object BlockExtractor {
-    def unapply(t: Block) = Some(removeCompilerTreesForMultipleAssignment(if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
-      t.expr :: t.stats
-    else
-      t.stats ::: t.expr :: Nil) filter keepTree) 
+    def unapply(t: Block) = {
+      
+      /**
+       * Names argument calls are 
+       * */
+      def fixNamedArgumentCall(block: Block): Tree = block match {
+        case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if emptyArgs.size == stats.size && emptyArgs.forall(_.isEmpty) =>
+        
+          val allValDefs = stats forall {
+            case t: ValDef => t.pos.isRange && t.pos.start > apply.pos.start
+            case _ => return block
+          }
+          
+          val argumentNames = fun.tpe match {
+            case tpe: MethodType => tpe.params map (_.name)
+            case _ => return block
+          }
+          
+          // The arguments of apply all have an offset position, so they
+          // were removed during the transformations. Therefore we have
+          // to look up the original apply method
+          val argumentsFromOriginalTree = unitOfFile get apply.pos.source.file map (_.body) flatMap { root =>
+            root.find(_ sameTree apply) collect { case Apply(_, args) => args }
+          } getOrElse (return block)
+          
+          val syntheticNamesToRealNames = (argumentsFromOriginalTree map { 
+            case a: Ident => a.name 
+            case _ => return block
+          }) zip argumentNames toMap
+          
+          val startOffset = apply.pos.point 
+          // FIXME strip comments!
+          val argumentsSource = apply.pos.source.content.slice(startOffset, apply.pos.end) mkString
+          
+          val newValDefs = stats collect {
+            case t: ValDef if t.pos != NoPosition=> 
+              val newVal = t.copy(name = syntheticNamesToRealNames(t.name)) 
+              // FIXME we can do a better search..
+              val nameStart = argumentsSource.indexOf(newVal.name.toString)
+              
+              if(nameStart >= 0) {
+                val nameLength = newVal.name.length
+                newVal setPos (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+              } else /*no named argument*/ {
+                t.rhs
+              }
+          }
+          
+          Apply(fun, newValDefs) setPos apply.pos
+            
+        case _ => block
+      }
+      
+      fixNamedArgumentCall(t) match {
+        case t: Block => 
+       
+          val trees = if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
+            t.expr :: t.stats
+          else
+            t.stats ::: t.expr :: Nil
+            
+          val fixedTrees = removeCompilerTreesForMultipleAssignment(trees)
+    
+          Some(fixedTrees filter keepTree)       
+          
+        case t => Some(List(t))
+      }
+    }
   }
   
   case class MultipleAssignment(names: List[ValDef], rhs: Tree) extends global.Tree

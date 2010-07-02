@@ -213,6 +213,8 @@ The \src{renameTree} transformation handles different kinds of trees but delegat
 
 Why do we have to traverse the trees, would it not suffice to call \src{occurences flatMap (renameTree(\_))} directly? No, this will not work for recursive method calls, where the method definition also has a child tree that has to be renamed.
 
+There is currently one limitation with the Rename refactoring: named parameters will not be renamed because they are not represented in the AST.
+
 \section{Organize Imports}
 
 It can be debated whether Organize Imports really deserves the label Refactoring, because it does not change the structure of your code; but neither does the Rename refactoring. But Organize Imports is definitely useful, therefore we chose to include it under the refactorings.
@@ -992,9 +994,9 @@ Adding a new refactoring can be done in three steps:
 
 The necessity of automated testing in modern software projects bears no repetition. Especially with a project that is so intrinsically dependent on another component -- the Scala compiler -- and its internals, having a strong suite of integration tests is essential. The following chapter shows how the refactoring integration tests are implemented with the goal to provide a guide for creating new tests.
 
-\section{Compiler}
+\section{Compiling Test Code}
 
-When the refactoring implementations are used, the IDE or more generally the invoking tool provides access to the compiler. The refactoring themselves do not posses the ability to parse the code. In the tests, we therefore also have to provide a compiler that parses and type-checks our test code.
+When the refactoring implementations are used, the IDE or more generally the invoking tool provides access to the compiler. The refactoring themselves do not posses the ability to analyze the code. In the tests, we therefore also have to provide a compiler that parses and type-checks our test code.
 
 Because instantiating and initializing the compiler is a rather expensive operation, one compiler instance is shared among all the tests. The \src{CompilerProvider} trait shown below gives us access to this instance and provides functionality to turn a string into a fully typed \src{Tree} instance and to add a file in the form of a string to the compiler:
 
@@ -1013,7 +1015,7 @@ Sharing a compiler instance is not without problems: because all the compilation
 
 \section{Creating a Project Layout}
 
-Now that we have a compiler, we need a way to represent Scala source files and combine them to a something like a project. Thanks to Scala's support for raw strings, we can embed the Scala source code directly in our test cases and do not have to store them in external files or concatenate strings together. So in our test cases we can construct an AST from a string like this:
+Now that we have a compiler, we need a way to represent Scala source files and combine them to a project-like structure. Thanks to Scala's support for raw strings, we can embed the Scala source code directly in our test cases and do not have to store them in external files or concatenate strings together. So in our test cases we can construct an AST from a string like this:
 
 \begin{lstlisting}
 val tree: global.Tree = treeFrom("""
@@ -1039,7 +1041,7 @@ val project = new FileSet {
 }
 \end{lstlisting}
 
-The \src{FileSet} class also contains a method \src{applyRefactoring} that takes a function from \src{FileSet} to \src{List[Change]} which it uses to turn the specified source files into a list of changes. The changes are then applied to the sources and their result compared to the expected results using the standard JUnit asserts.
+The \src{FileSet} class also contains a method \src{applyRefactoring} that takes a function of type $FileSet \Rightarrow List[Change]$ which it uses to turn the specified source files into a list of changes. The changes are then applied to the sources and their result compared to the expected results using the standard JUnit asserts.
 
 \section{Implementation}
 
@@ -1085,13 +1087,15 @@ def renameSelfType = new FileSet {
 } applyRefactoring %\textbf{renameTo}%("Trait")
 \end{lstlisting}
 
-The selection is indicated by the two comments \src{/*(*/} and \src{/*)*/}. The comments remain in the source code, this is why we also see them in the expected result. With the help of Scala's multiple argument lists and partial application of functions, the \src{renameTo} function can be implemented like this:
+The selection is indicated by the two comments \src{/*(*/} and \src{/*)*/}. The comments remain in the source code, this is why we also see them in the expected result. 
+
+Now we also need a way to pass the new method's name. With the help of Scala's multiple argument lists and partial application of functions, the \src{renameTo} function can be implemented like this:
 
 \begin{lstlisting}
 def renameTo(name: String)(pro: FileSet): List[Change] = %\ldots%
 \end{lstlisting}
 
-%The structure of the test packages follows the main library.
+Now the first argument -- the new name -- is applied during the test setup, and the resulting function is then passed to the \src{applyRefactoring} just like before.
 
 \chapter{Outlook and Conclusion} \label{chapter:outlook}
 
@@ -1114,7 +1118,75 @@ what is left to do, how can the work be extended
 
 \chapter{User Guide} \label{chapter:user-guide}
 
+This appendix describes the implemented refactorings from the user's perspective. The refactorings are all accessible from the Refactoring menu and with various shortcuts.
+
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{refactoring-menu-screenshot.png}
+\end{center}
+
+\section{Rename}
+
+The Rename refactoring can be used to rename all the names that occur in a Scala program. This includes for example: methods, classes, objects, local variables, method parameters, type parameters. To invoke the refactoring, the name can be selected -- placing the cursor on the name suffices -- and the refactoring invoked. 
+
+If the name to rename is only accessible in the current compilation unit, for example a local variable, or a method inside another method, then the refactoring is invoked in the inline mode, which links all occurences in the source file and changes them as you type:
+
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{rename_screenshot_3.png}
+\end{center}
+
+If the name is accessible from outside the source file, the renaming is done in the wizard and the changes can be previewed:
+
+\begin{center}
+  \includegraphics[width=\linewidth]{rename_screenshot_2.png}
+\end{center}
+
+When the new name is entered via the wizard, it is checked if it is valid and not already in use.
+
+\subsection{Limitations}
+
+When renaming a top-level type in a file where the source file has the same name as the type, the file is currently not renamed. 
+
+Scala 2.8 introduced named parameters, but because of how they are represented internally, they are not being renamed, leading to compile errors.
+
+\section{Organize Imports}
+
+Organize Imports cleans up the import statements in the current file. It does however not remove any unused imports or adds imports that are needed for the program to compile. The refactoring performs the following with the imports:
+
+\begin{description}
+  \item[Sort] the statements alphabetically by their full name.
+  \item[Collapse] multiple distinct imports from the same package into a single statement:
+  \item[Simplify] the imports: when a wilcard imports the whole package content, individual import from that package are removed, unless they contain renames.
+\end{description}
+
+The following screenshot shows the changes Organize Imports proposes:
+
+\begin{center}
+  \includegraphics[width=\linewidth]{organize_screenshot_1.png}
+\end{center}
+
+\subsection{Limitations}
+
+The current implementation has some limitations compared to its Java counterpart. The refactoring does not do any dependency analysis, imports that are missing are not added, and unneeded imports are not being removed by Organize Imports. 
+
+\section{Extract Local}
+
+\begin{center}
+  \includegraphics[width=0.8\linewidth]{extract_local_screenshot_2.png}
+\end{center}
+
+\begin{center}
+  \includegraphics[width=0.8\linewidth]{extract_local_screenshot_3.png}
+\end{center}
+
+
+\section{Extract Method}
+
+
+
 User guide, also in HTML on the Wiki. Describes the usage of the implemented refactoring along with their shortcomings.
+
+
+
 
 \chapter{Developer How-To} \label{chapter:developer-how-to}
 

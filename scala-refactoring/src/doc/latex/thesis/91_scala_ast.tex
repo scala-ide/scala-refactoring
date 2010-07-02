@@ -1,16 +1,16 @@
 \chapter{Scala AST} \label{chapter:scala-ast}
 
-This chapter describes the abstract syntax tree classes that are used in the Scala compiler. The implementations can be found in the \src{scala.reflect.generic.Trees} trait, ...
+This chapter describes the abstract syntax tree classes that are used in the Scala compiler; the implementations can be found in the \src{scala.reflect.generic.Trees} trait. Note that the list is not complete -- some tree classes are only used during parsing and have already been eliminated at the point tools typically see the code, which is after the typer phase.
 
-We start with the root class \src{Tree}, some of the more interesting traits and abstract classes and then describe all the concrete trees. Scala constructs -- syntactic sugar -- that are not represented as trees like parallel assignment and for-comprehensions are described in the last section.
+We start with the root class \src{Tree}, some of the more interesting traits and abstract classes and then describe the concrete trees. Scala constructs -- syntactic sugar -- that are not represented as trees like parallel assignment and for-comprehensions are described in the last section.
 
-Some remarks on the presentation: on the right of the tree class' name are its ancestor classes and traits. All concrete trees are case classes, so their parameters are listed below the class name.
+Some remarks on the presentation: on the right of the tree class' name are its ancestor classes and traits. All concrete trees are case classes, so their parameters are listed below the class name. In two-column listings, the one on the left is the original source code and the one on the right is the (cleaned up) result of the \src{Tree}'s \src{toString} method.
 
 \newcommand{\member} [2] {\hfill \begin{footnotesize}\src{#1} \newline \vspace{5pt} \src{#2}\end{footnotesize}\vspace{5pt}}
 
 \section{Base Classes and Traits}
 
-\figref{figure:trees-class-diagram} shows a inheritance diagram of the various tree classes.
+\figref{figure:trees-class-diagram} shows a inheritance diagram of the various tree classes in the compiler.
 
 \begin{figure}
  \centering
@@ -21,9 +21,9 @@ Some remarks on the presentation: on the right of the tree class' name are its a
 
 \paragraph{Tree} \hfill \newline
 
-\noindent The \src{Tree} class is the root of all other trees in the AST. It provides some common functionality for all other trees, for example the position (\src{\textit{pos}: Position}), the type (\src{\textit{tpe}: Type}), and the symbol (\src{\textit{symbol}: Symbol}). Not all subtrees have symbols or types, so these attributes might return \src{null}.
+\noindent The \src{Tree} class is the root of all other trees in the AST. It provides some common functionality for all others, for example the position (the \src{\textit{pos}: Position} attribute), the type (\src{\textit{tpe}: Type}), and the symbol (\src{\textit{symbol}: Symbol}). Not all subtrees have symbols or types, so these attributes might return \src{null}.
 
-More operations of the \src{Tree} class are defined in \src{TreeOps}.
+More operations of the \src{Tree} class are defined in \src{TreeOps}, for example to filter trees or find elements in subtrees.
 
 \paragraph{SymTree} \hfill \begin{footnotesize}\src{Tree}\end{footnotesize} \newline
 
@@ -35,15 +35,18 @@ More operations of the \src{Tree} class are defined in \src{TreeOps}.
 
 \paragraph{RefTree} \hfill \begin{footnotesize}\src{SymTree <: Tree}\end{footnotesize} \newline
 
-\noindent \src{RefTrees} are references to \src{DefTrees}. They also have a name and their symbol is the same as their corresponding \src{DefTree's}.
+\noindent \src{RefTrees} represent references to \src{DefTrees}. They also have a name and their symbol is the same as their corresponding \src{DefTree's} -- i.e. it can be compared using \src{==}.
 
 \paragraph{Symbol}
 
+Symbols provide another view on the program. Symbols are introduced by \src{DefTrees} and referenced by \src{RefTrees}. Symbols provide a lot more information about the program than the Trees -- there are several dozen \src{isXy} methods defined on symbol to query information. In contrast to Trees, 
+Symbols are much more connected to each other: this allows us to resolve class hierarchies or find the enclosing method or class for a symbol. Martin Odersky recorded three videos \cite{ScalaVideos} that walk through the compiler, explaining many Symbol-related concepts.
+
 \paragraph{Position}
 
-\noindent The \src{pos} attribute of the trees are very important for us during refactoring. Unless the compiler runs in IDE mode, the compiler generates only \src{OffsetPositions}, which have only a single offset -- the point -- that shows where the tree comes and is sufficient for non-interactive useage. When running in interactive -- IDE -- mode, the compiler generates \src{RangePositions} to represent the source range a tree originally comes from and \src{OffsetPositions} for those trees that were compiler-generated. Ranges have a start, a point an an end offset, where the end offset points to the position after the last character.
+\noindent The \src{pos} attribute of the trees is very important for us during refactoring. Unless the compiler runs in IDE mode, it generates \src{OffsetPositions}, which have only a single offset -- the point -- that indicates where a tree comes from; this is sufficient for non-interactive usage. When running in interactive -- IDE -- mode, the compiler generates \src{RangePositions} to represent the source range a tree originally comes from and \src{OffsetPositions} for those trees that were compiler-generated. Ranges have a start-, a point- and an end offset, where the end offset points to the position after the last character.
 
-Range positions satisfy the following invariants, as specified in the \src{Position.scala} documentation:
+Range positions satisfy the following invariants, as specified in the \src{Position.scala} source's documentation:
 
 \begin{enumerate}
   \item A tree with an offset position never contains a child with a range position.
@@ -59,11 +62,13 @@ There's also a NoPosition object that is assign to trees that have no origin in 
 
 \paragraph{EmptyTree} \hfill \begin{footnotesize}\src{TermTree <: Tree}\end{footnotesize} \newline
 
-\noindent An object that can stand in for most other trees, it has no position, no type and no symbol. For \src{ValDefs}, the equivalent is the \src{emptyValDef} object.
+\noindent A \src{Tree} object that can stand in for most other trees, it has no position, no type and no symbol. For \src{ValDefs}, the equivalent is the \src{emptyValDef} object.
 
 \paragraph{PackageDef} \member{MemberDef <: DefTree <: SymTree <: Tree}{\textit{pid}: RefTree, \textit{stats}: List[Tree]}
 
-\noindent Describes a package clause with a package identifier and a list of statements. The package identifier is either an instance of \src{Ident} for a package like \src{package a} or \src{Select} for a package name like \src{package a.b}. A compilation unit root is always a package, even if there is no explicit package declaration. In this case, the identifier is simply \src{<empty>}. According to the Scala Language Specification, the two different notations are equal:
+\noindent Describes a package clause with a package identifier and a list of statements. The package identifier is either an instance of \src{Ident} for a package like \src{package a} or an instance of \src{Select} for a package name like \src{package a.b}. The compilation unit root is always a package, even if there is no explicit package declaration present. In this case, the identifier is simply \src{<empty>}. 
+
+According to the Scala Language Specification, the two different notations are equal:
 
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -81,14 +86,13 @@ package a {
 \end{lstlisting}
 \end{multicols}
 
-
-If there exists a top level package definition, its position does not necessarily enclose the whole source file, everything that lies before the \src{package} keyword or after the last statement in the package is not contained in the position. In a package that contains no explicit package declaration and only one statement, the package definition has the same start and end position as the statement, but a different point.
+If there exists a top level package definition, its position does not necessarily enclose the whole source file, everything that lies before the \src{package} keyword or after the last statement in the package is not contained in the position. In a package that contains no explicit package declaration and only one statement, the package definition has the same start and end position as the statement, but a different point, which makes them distinguishable.
 
 \paragraph{ClassDef} \member{ImplDef <: MemberDef <: DefTree <: SymTree <: Tree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tparams}: List[TypeDef], \textit{impl}: Template}
 
 \noindent The definition for all kinds of classes and traits (objects are defined in \src{ModuleDef}). The definition contains all modifiers, the name and the type parameters. The class' constructor arguments, super classes and its body are all defined in the impl \src{Template}.
 
-Modifiers are a set of \src{abstract, final, sealed, private, protected, trait, case}. The \src{class} keyword is not contained in the modifiers. If the class is anonymous (can be queried with \src{isAnonymousClass} on the class' symbol), the name is of the form \src{\$anon}.
+Modifiers are a set of \src{abstract, final, sealed, private, protected, trait, case}. Note that the \src{class} keyword is not contained in the modifiers. If the class is anonymous (this can be queried with \src{isAnonymousClass} on the class' symbol), the name is of the form \src{\$anon}.
 
 \paragraph{ModuleDef} \member{ImplDef <: MemberDef <: DefTree <: SymTree <: Tree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{impl}: Template}
 
@@ -108,11 +112,12 @@ class B(i: Int) extends A(i)
 
 
 
-\end{lstlisting}
 
+\end{lstlisting}
 \begin{lstlisting}
 class B extends A with ScalaObject {
-  <paramaccessor> private[this] val i: Int = _
+  <paramaccessor> 
+    private[this] val i: Int = _
   def this(i: Int): B = {
     B.super.this(i)
   }
@@ -120,12 +125,13 @@ class B extends A with ScalaObject {
 \end{lstlisting}
 \end{multicols}
 
-To identify the parameters from the list of body statements, we can check the modifiers of all \src{ValDefs} for the \src{PARAMACCESSOR} and \src{CASEACCESSOR} flags. In the same way, values and types from the early definition are identified by their \src{PRESUPER} flag. To check whether a value or type belongs to the early definitions, the compiler's \src{treeInfo.isEarlyDef} method can be used.
+To identify the parameters from the list of body statements, we can check the modifiers of all \src{ValDefs} for the \textsc{\src{paramaccessor}} and \textsc{\src{caseaccessor}} flags. In the same way, values and types from the early definition are identified by their \textsc{\src{presuper}} flag. To check whether a value or type belongs to the early definitions, the compiler's \src{treeInfo.isEarlyDef} method can be used.
 
 The super call parameters can be identified as follows: find the constructor \src{DefDef} (\src{symbol.isConstructor} is \src{true}) and then check its body \src{Block} for the following pattern: \src{Apply(Select(Super(\_, \_), \_), args)}. Because only super classes and not traits can have constructor arguments, there can be at most one such super call.
 
 If the self type is not specified, it is the \src{emptyValDef} object. Otherwise, there are several different kinds of self type annotations:
 
+\needspace{11\baselineskip}
 \begin{multicols}{2}
 \begin{lstlisting}
 trait Trait {
@@ -161,9 +167,9 @@ It is also allowed to use \src{this} for the self type's name. This introduces n
 
 \paragraph{ValDef} \member{ValOrDefDef <: MemberDef <: DefTree <: SymTree <: Tree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tpt}: Tree, \textit{rhs}: Tree}
 
-\noindent Value definitions are all definitions of \src{vals}, \src{vars} (identified by the \src{MUTABLE} flag) and parameters (identified by the \src{PARAM} flag).
+\noindent Value definitions are all definitions of \src{vals}, \src{vars} (identified by the \textsc{\src{mutable}} flag) and parameters (identified by the \textsc{\src{param}} flag).
 
-The modifiers also contain the other properties a value can have: \src{override, abstract, final, implicit, lazy, private, protected}. Whether a modifier is applicable depends on the context where a value is used. A value can also be synthetic, i.e. compiler-generated (identified by the \src{SYNTHETIC} flag) -- for example in the following two equivalent statements, a synthetic value is passed to \src{println}:
+The modifiers also contain the other properties a value can have: \src{override, abstract, final, implicit, lazy, private, protected}. Whether a modifier is applicable depends on the context where a value is used. A value can also be synthetic, i.e. compiler-generated (identified by the \textsc{\src{synthetic}} flag) -- for example in the following listing of two equivalent statements, a synthetic value is passed to \src{println}:
 
 \begin{lstlisting}
 List(1, 2) foreach println
@@ -174,6 +180,7 @@ Even though the value is compiler generated, it sometimes still has a name. In t
 
 Note that not every \src{val} in the source code is necessarily also represented by a \src{ValDef}. The following listing shows how the abstract value in the trait on the left is actually represented by the compiler:
 
+\needspace{3\baselineskip}
 \begin{multicols}{2}
 \begin{lstlisting}
 trait A {
@@ -208,11 +215,11 @@ Several methods defined on \src{Symbol} can be used to cross-reference between t
 
 \paragraph{DefDef} \member{ValOrDefDef <: MemberDef <: DefTree <: SymTree <: Tree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tparams}: List[TypeDef], \textit{vparamss}: List[List[ValDef]], \textit{tpt}: Tree, \textit{rhs}: Tree}
 
-\noindent The \src{DefDef} trees represent method definitions. Methods can have modifiers that further describe the implementation or constrain its visibility. Every method also has a name, but note that symbolic names are stored in their ASCII form, to get the original name, the symbol's \src{nameString} method can be used.
+\noindent The \src{DefDef} trees represent method definitions. Methods can have modifiers that further describe the implementation or constrain its visibility. Every method also has a name, but note that symbolic names are stored in their alphabetic form, to get the original name, the symbol's \src{nameString} method can be used.
 
 In contrast to a \src{ValDef}, a method can be parametrized with types and may have several argument lists. Each argument is represented by a \src{ValDef}.
 
-Abstract methods have the \src{DEFERRED} flag and an \src{EmptyTree} right hand side child.
+Abstract methods have the \textsc{\src{deferred}} flag and an \src{EmptyTree} right hand side child.
 
 Finding methods in sub- or super classes requires the use of their \src{symbols}. Super classes can be found via the \src{ancestors} method on the class' symbol. In contrast, moving down the inheritance hierarchy is more expensive. To find all subclasses of a class $C$ one has to collect all other classes in the universe and test each's ancestors for the presence of $C$. Once the class hierarchy is assembled, the definition symbol's \src{overriddenSymbol} method can be used on each class in the hierarchy to gather all overrides.
 
@@ -232,9 +239,21 @@ Just as the other member definitions trees (\src{ValDef} and \src{DefDef}), type
 
 \paragraph{LabelDef} \member{DefTree <: SymTree  <: Tree $\wedge$ TermTree <: Tree}{name: Name, params: List[Ident], rhs: Tree}
 
-\noindent The \src{LabelDef} tree is used to represent \src{while} and \src{do \ldots while} loops. The name holds the name of the label
+\noindent The \src{LabelDef} tree is used to represent \src{while} and \src{do \ldots while} loops. The name holds the name of the label.
 
-The Scala language specification says ... and we can also see this when we print the \src{LabelDef}:
+The Scala language specification \cite{ScalaLanguageSpecification} says 
+
+\begin{quotation}
+The while loop expression \src{while ($e_1$) $e_2$} is typed and evaluated as if it was an application of \src{whileLoop ($e_1$) ($e_2$)} where the hypothetical function \src{whileLoop} is defined as follows.
+
+\begin{lstlisting}
+def whileLoop(cond: => Boolean)(body: => Unit): Unit =
+if (cond) { body ; whileLoop(cond)(body) } else {}
+\end{lstlisting}
+
+\end{quotation} 
+
+We can also see this when we print the \src{LabelDef}:
 
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -314,6 +333,7 @@ Import trees can also be comma separated, in this case, only the first import in
 
 The \src{expr} is usually the last line of a block, with regards to their positions, but this is not always the case. For example, when creating an anonymous class, the class is introduced with a compiler generated name and then instantiated:
 
+\needspace{6\baselineskip}
 \begin{multicols}{2}
 \begin{lstlisting}
 val a = new {
@@ -337,7 +357,7 @@ val a: java.lang.Object = {
 
 \noindent The body of a \src{Match} tree contains a number of \src{CaseDefs} trees. The guard can be an empty tree if it is not present. Note that even though the \src{if} keyword is used, the tree is not an \src{If} tree.
 
-Patterns can be of different form, the catch-all \src{\_} is simly an \src{Ident} tree, whereas extractors are represented through the \src{UnApply} trees. Patterns that use an \src{@} binding or are restricted by type with \src{:} are \src{Bind} trees. The body can again be an arbitrary tree.
+Patterns can be of different form, the catch-all \src{\_} is simply an \src{Ident} tree, whereas extractors are represented through the \src{UnApply} trees. Patterns that use an \src{@} binding or are restricted by type with \src{:} are \src{Bind} trees. The body can again be an arbitrary tree.
 
 \paragraph{Alternative} \member{TermTree <: Tree}{\textit{trees}: List[Tree]}
 
@@ -401,7 +421,7 @@ case (a @ Ex.unapply(<unapply-selector>)
 
 \paragraph{Function} \member{TermTree <: Tree $\wedge$ SymTree <: Tree}{vparams: List[ValDef], body: Tree}
 
-\noindent The \src{Function} tree contains a single list of parameters and a body for the implementation. The following listing shows various usages of the \src{Function} tree and how their desugared function trees look like.
+\noindent The \src{Function} tree contains a single list of parameters and a body for the implementation. The following listing shows various usages of the \src{Function} tree and how their trees look like.
 
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -432,11 +452,11 @@ list foreach (((x0$1: Int) => x0$1 match {
 \end{lstlisting}
 \end{multicols}
 
-In the first two examples, the functions are encapsulated in an additional \src{Block} (hence the curly braces). When the function parameter is not given a name explicitly, the compiler generates one and marks it with the \src{SYNTHETIC} flag. In the last of the examples, we can see that the pattern matching on the parameter is made explicit in the AST.
+In the first two examples, the functions are encapsulated in an additional \src{Block} -- hence the curly braces. When the function parameter does not have a name, the compiler generates one and marks it with the \textsc{\src{synthetic}} flag. In the last example, we see that the pattern matching on the parameter is made explicit in the AST.
 
 \paragraph{Assign} \member{TermTree <: Tree}{\textit{lhs}: Tree, \textit{rhs}: Tree}
 
-\noindent \src{Assign} trees are not used whenever a \src{=} is involved, only for non-initial assignments to variables. Calls to setter method are not represented by \src{Assign} trees.
+\noindent \src{Assign} trees are not used for all \src{=} calls, only for non-initial assignments to variables. Calls to setter methods are not represented by \src{Assign} trees but are regular method calls.
 
 \paragraph{If} \member{TermTree <: Tree}{\textit{cond}: Tree, \textit{thenp}: Tree, \textit{elsep}: Tree}
 
@@ -465,7 +485,7 @@ else
 \end{lstlisting}
 \end{multicols}
 
-Note that the \src{if} used in pattern matching guards is not an \src{If} tree but a member of a \src{CaseDef} tree.
+Note that the \src{if} used in pattern matching guards is not an \src{If} tree but a designated member of the \src{CaseDef} tree.
 
 \paragraph{Match} \member{TermTree <: Tree}{\textit{selector}: Tree, \textit{cases}: List[CaseDef]}
 
@@ -490,7 +510,7 @@ list foreach (((x0$1: Int) => x0$1 match {
 
 \paragraph{Try} \member{TermTree <: Tree}{\textit{block}: Tree, \textit{catches}: List[CaseDef], \textit{finalizer}: Tree}
 
-\noindent The \src{Try} tree represents \src{try \ldots catch} expressions. Both the catchers and the finalizer are optional.
+\noindent The \src{Try} tree represents \src{try \ldots catch} expressions. Both the catches and the finalizer are optional.
 
 \paragraph{Throw} \member{TermTree <: Tree}{\textit{expr}: Tree}
 
@@ -502,7 +522,7 @@ list foreach (((x0$1: Int) => x0$1 match {
 
 \paragraph{Typed} \member{TermTree <: Tree}{\textit{expr}: Tree, \textit{tpt}: Tree}
 
-\noindent The \src{Typed} tree is used whenever a expression is annotated with a type. For example, in the following listing, the second and third occurences of \src{Int} are \src{Typed} trees:
+\noindent The \src{Typed} tree is used whenever an expression is annotated with a type. For example, in the following listing, the second and third occurences of \src{Int} are \src{Typed} trees:
 
 \begin{lstlisting}
 val a: Int = 42: Int
@@ -513,7 +533,7 @@ println(a: Int)
 
 \paragraph{TypeApply} \member{GenericApply <: TermTree <: Tree}{\textit{fun}: Tree, \textit{args}: List[Tree]}
 
-\noindent \src{TypeApply} trees are used whenever a type is applied to a generic function. For example, in the following listing, both expressions on the left are represented by the same AST on the right.
+\noindent \src{TypeApply} trees are used whenever a type is applied to a generic method. For example, in the following listing, both expressions on the left are represented by the same AST on the right.
 
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -555,7 +575,7 @@ class C extends A with B {
 \paragraph{This} \member{TermTree <: Tree $\wedge$ SymTree <: Tree}{\textit{qual}: Name}
 
 \noindent The \src{This} tree represents the \src{this} reference, with an optional qualifier:
-
+\needspace{5\baselineskip}
 \begin{lstlisting}
 class Outer {
   class Inner {
@@ -587,15 +607,15 @@ As usual, these generated trees then have an \src{OffsetPosition}.
 
 \paragraph{Ident} \member{RefTree <: Symtree <: Tree}{\textit{name}: Name}
 
-\noindent Holds a \src{Name}, which can be generated (check with \src{symbol.isSynthetic}) by the compiler. Note that the name is in its ASCII form; the printed name can be found via the tree's symbol.
+\noindent Holds a \src{Name}, which can be generated (check with \src{symbol.isSynthetic}) by the compiler. Note that the name is in its alphabetic form; the real name can be found via the tree's symbol.
 
 \paragraph{Literal} \member{TermTree <: Tree}{value: Constant}
 
-\noindent All literals are represented by \src{Literal} trees. All possible kinds of constants can be seen in the \src{Constant} trait.
+\noindent All literals are represented by \src{Literal} trees. All possible kinds of constants are listed in the \src{Constant} trait.
 
 \paragraph{TypeTree} \member{AbsTypeTree <: TypTree <: Tree}{\textit{original}: Tree}
 
-\noindent From the Scala compiler's documentation: 
+\noindent From the Scala compiler's documentation \cite{AbsTypeTree}: 
 
 \begin{quote}
 A synthetic term holding an arbitrary type. Not to be confused with with TypTree, the trait for trees that are only used for type trees. TypeTrees are inserted in several places, but most notably in \src{RefCheck}, where the arbitrary type trees are all replaced by TypeTrees.\end{quote}
@@ -628,7 +648,7 @@ trait B
 
 \paragraph{TypeBoundsTree} \member{TypTree <: Tree}{\textit{lo}: Tree, \textit{hi}: Tree}
 
-\noindent Whenever a type is constrained to lower or upper bounds, \src{TypeBoundsTree} represents these bounds. If one of the bounds is omitted, the compiler inserts \src{Nothing} respectively \src{Any} for the missing lower or upper bound. This is illustrated in the following example.
+\noindent Whenever a type is constrained to lower or upper bounds, \src{TypeBoundsTree} represents these bounds. If one of the bounds is omitted, the compiler inserts \src{Nothing} respectively \src{Any} for the missing lower or upper bound. This is illustrated in the following example:
 
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -665,27 +685,28 @@ List[T] forSome {
 
 Note that the existential type tree is stored in another \src{TypeTree}'s \src{orig} member, which is not traversed and transformed by the Scala compiler's \src{Traverser} and \src{Transformer} classes.
 
-\section{Others}
+\section{Other AST Constructs}
 
-\paragraph{For Comprehensions}
+\subsubsection*{For Comprehensions}
 
 \noindent \src{For} or sequence comprehensions are a purely syntatic construct; in the AST, they are represented with \src{foreach}, \src{withFilter}, \src{map}, and \src{flatMap} calls. The following listing shows some examples. 
 
+\needspace{10\baselineskip}
 \begin{lstlisting}
 val xs = 1 to 10 toList
 val ys = 1 to 10 toList
 
 val coordinates1: List[(Int, Int)] = for(x %$\leftarrow$% xs; y %$\leftarrow$% ys) yield (x %$\rightarrow$% y)
-
+// is equal to
 val coordinates2: List[(Int, Int)] = xs.flatMap(x %$\Rightarrow$% ys.map(y %$\Rightarrow$% (x %$\rightarrow$% y)))
 
 for(x %$\leftarrow$% xs if x %\%% 2 == 0) println(x)
-
+// is equal to
 xs.withFilter(x %$\Rightarrow$% x %\%% 2 == 0).foreach(x %$\Rightarrow$% println(x))
 \end{lstlisting}
 
 
-\paragraph{Multiple Assignment}
+\subsubsection*{Multiple Assignment}
 
 \noindent Scala's multiple or parallel assignment syntax is just an abbreviation for a more complex pattern match expression. The following listing shows the desugared form for the call \src{val (a, b) = getPair()}:
 
@@ -718,3 +739,29 @@ val x$1 = "Hello" match {
 val firstGroup = x$1._1
 val secondGroup = x$1._2
 \end{lstlisting}
+
+\subsubsection*{Named Arguments}
+
+Named arguments are desugared into a series of local values that are then passed in the right order to the method. That is, the following code:
+
+\begin{lstlisting}
+def p(first: String, second: Int) = ()
+
+p(second = 42, first = "-")      
+\end{lstlisting}
+
+is represented as:
+
+\begin{lstlisting}
+def p(first: String, second: Int): Unit = ()
+{
+  val x$1 = 42
+  val x$2 = "-"
+  Account.this.p(x$2, x$1)
+}
+\end{lstlisting}
+
+This is described in the first Scala Improvement Document \cite{SID1}.
+
+
+
