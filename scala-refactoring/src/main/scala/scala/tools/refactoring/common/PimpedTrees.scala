@@ -45,7 +45,7 @@ trait PimpedTrees {
    * Import selectors are not trees, but we can provide an extractor
    * that converts the ImportSelectors into our own ImportSelectorTrees.
    * */
-  implicit def importToImportSelectorTreeExtractor(t: global.Import) = new {
+  class ImportSelectorTreeExtractor(t: global.Import) {
     // work around for https://lampsvn.epfl.ch/trac/scala/ticket/3392
     def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
     
@@ -67,15 +67,17 @@ trait PimpedTrees {
       def unapply(ss: List[global.ImportSelector]) = {
         Some(Selectors(ss))
       }
-    }
+    }    
   }
+  
+  implicit def importToImportSelectorTreeExtractor(t: global.Import) = new ImportSelectorTreeExtractor(t)
   
   /**
    * Add some methods to Tree that make it easier to compare
    * Trees by position and to extract the position of a tree's
    * name, which is tricky for Selects.
    * */
-  implicit def additionalTreeMethodsForPositions(t: Tree) = new {
+  class TreeMethodsForPositions(t: Tree) {
     def hasExistingCode = t != null && !t.isEmpty && t.pos.isRange
     def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
@@ -187,6 +189,8 @@ trait PimpedTrees {
       case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
     }
   }
+  
+  implicit def additionalTreeMethodsForPositions(t: Tree) = new TreeMethodsForPositions(t)
 
   /**
    * Find a tree by its position and make sure that the trees
@@ -216,7 +220,7 @@ trait PimpedTrees {
     }
   }
   
-  implicit def additionalTemplateMethods(t: Template) = new {
+  class TemplateMethods(t: Template) {
     def constructorParameters = t.body.filter {
       case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
       case _ => false
@@ -237,18 +241,22 @@ trait PimpedTrees {
         case Apply(Super(_, _), args) => args
       } flatten
     } flatten
-  }  
+  }
+  
+  implicit def additionalTemplateMethods(t: Template) = new TemplateMethods(t)
   
   /**
    * Name objects are not trees, this extractor creates NameTree instances from Trees.
    * */
-  implicit def nameTreeToNameTreeExtractor(t: global.Tree) = new {
+  class TreeToNameTreeExtractor(t: global.Tree) {
     object Name {
       def unapply(name: global.Name) = {
         Some(NameTree(name) setPos t.namePosition)
       }
     }
   }
+  
+  implicit def nameTreeToNameTreeExtractor(t: global.Tree) = new TreeToNameTreeExtractor(t)
   
   /**
    * Provides a finer-grained extractor for Template that distinguishes
@@ -495,7 +503,7 @@ trait PimpedTrees {
    * that these are expensive operations because they
    * traverse the whole compilation unit.
    * */
-  implicit def additionalTreeMethodsForFamily(t: Tree) = new {
+  class TreeMethodsForFamily(t: Tree) {
     def originalParent = cuRoot(t.pos) flatMap { root =>
     
       def find(root: Tree): Option[Tree] = {
@@ -516,6 +524,8 @@ trait PimpedTrees {
     private def findSibling(parent: Option[Tree], compareIndex: Int, returnIndex: Int) = parent flatMap 
       (children(_) filter (_.pos.isRange) sliding 2 find (_ lift compareIndex map (_ samePos t) getOrElse false) flatMap (_ lift returnIndex))
   }
+  
+  implicit def additionalTreeMethodsForFamily(t: Tree) = new TreeMethodsForFamily(t)
   
   implicit def additionalTreeListMethods(ts: List[Tree]) = new {
     def allOnSameLine: Boolean = {
