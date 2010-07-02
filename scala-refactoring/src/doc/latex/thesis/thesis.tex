@@ -1170,23 +1170,35 @@ The current implementation has some limitations compared to its Java counterpart
 
 \section{Extract Local}
 
+Extract Local allows you to introduce a new local variable from an expression: the value is initialized with the selected expression and the original  expression is replaced with a reference to the new value. 
+
+The refactoring is also known as Introduce Explaining Variable, because it allows the programmer to simplify long expressions by splitting them into several smaller ones and making the code more readable. 
+
+Selecting an expression like in the following screenshot:
+
 \begin{center}
   \includegraphics[width=0.8\linewidth]{extract_local_screenshot_2.png}
 \end{center}
+
+and then executing the refactoring creates a new local variable and lets you change the name in Eclipse's linked mode:
 
 \begin{center}
   \includegraphics[width=0.8\linewidth]{extract_local_screenshot_3.png}
 \end{center}
 
+Extracting new local values can also be useful for debugging to see the intermediate results of a computation.
 
 \section{Extract Method}
 
+The Extract Method refactoring lets you extract one or many expressions into a new private method. The refactoring takes care of passing all necessary parameters to the method and returns all values that are needed.
 
+To invoke the refactoring, a selection inside of a method has to be made. The refactoring wizard will then asks for a new name and shows a preview of the changes:
 
-User guide, also in HTML on the Wiki. Describes the usage of the implemented refactoring along with their shortcomings.
+\begin{center}
+  \includegraphics[width=\linewidth]{extract_method_screenshot_1.png}
+\end{center}
 
-
-
+Compared to Eclipse's Extract Method for Java, the Scala version currently lacks many features -- for example, one cannot reorder the parameters, nor rename them. Allowing the user to choose where the extracted method should be placed also has not been implemented yet, and the visibility of the extracted method is always set to private.
 
 \chapter{Developer How-To} \label{chapter:developer-how-to}
 
