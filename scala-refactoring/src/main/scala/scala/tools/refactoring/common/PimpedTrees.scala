@@ -702,4 +702,11 @@ trait PimpedTrees {
   }
   
   case class MultipleAssignment(names: List[ValDef], rhs: Tree) extends global.Tree
+  
+  object NoBlock {
+    def unapply(t: Tree) = t match {
+      case _: Block => None
+      case _ => Some(t)
+    }
+  }
 }

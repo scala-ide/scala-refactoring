@@ -467,7 +467,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         def method {
           val ab = /*(*/"Hello World"
-          println(ab/*)*/)
+          println(ab)
         }
       }
     """

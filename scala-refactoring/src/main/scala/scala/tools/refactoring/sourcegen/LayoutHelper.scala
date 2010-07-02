@@ -22,7 +22,7 @@ trait LayoutHelper extends CommentHelpers {
       case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child with parent %s", p.getClass.getSimpleName))
       case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child with parent %s", p.getClass.getSimpleName))
       case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child with parent %s", p.getClass.getSimpleName))
-      case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right) \\ (_ => trace("enclosed child"))
+      case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right, parent = p) \\ (_ => trace("enclosed child"))
     }
     
     def layoutFromChildren() = children(t) match {
@@ -56,17 +56,17 @@ trait LayoutHelper extends CommentHelpers {
     splitLayoutBetweenParentAndFirstChild(child = t, parent = p)._2 →     
     splitLayoutBetweenLastChildAndParent(child = t, parent = p)._1
     
-  def layoutForLeftOuterChild(t: Tree, p: Tree, right: Tree): (Layout, Layout) = 
-    splitLayoutBetweenParentAndFirstChild(child = t, parent = p)._2 → 
-    splitLayoutBetweenSiblings(left = t, right = right)._1 
+  def layoutForLeftOuterChild(t: Tree, parent: Tree, right: Tree): (Layout, Layout) = 
+    splitLayoutBetweenParentAndFirstChild(child = t, parent = parent)._2 → 
+    splitLayoutBetweenSiblings(left = t, right = right, parent = parent)._1 
     
-  def layoutForRightOuterChild(t: Tree, p: Tree, left: Tree): (Layout, Layout) = 
-    splitLayoutBetweenSiblings(left = left, right = t)._2  → 
-    splitLayoutBetweenLastChildAndParent(child = t, parent = p)._1
+  def layoutForRightOuterChild(t: Tree, parent: Tree, left: Tree): (Layout, Layout) = 
+    splitLayoutBetweenSiblings(left = left, right = t, parent = parent)._2  → 
+    splitLayoutBetweenLastChildAndParent(child = t, parent = parent)._1
     
-  def layoutForEnclosedChild(t: Tree, left: Tree, right: Tree): (Layout, Layout) = 
-    splitLayoutBetweenSiblings(left = left, right = t)._2 →
-    splitLayoutBetweenSiblings(left = t, right = right)._1
+  def layoutForEnclosedChild(t: Tree, left: Tree, right: Tree, parent: Tree): (Layout, Layout) = 
+    splitLayoutBetweenSiblings(parent = parent, left = left, right = t)._2 →
+    splitLayoutBetweenSiblings(parent = parent, left = t, right = right)._1
 
   def splitLayoutBetweenParentAndFirstChild(child: Tree, parent: Tree): (Layout, Layout) = {
     
@@ -118,100 +118,20 @@ trait LayoutHelper extends CommentHelpers {
       case (p: Block, c) =>
          layout(p.pos.start, c.pos.start) splitAfter '{'
          
-      case (p: Import, c) =>
-         layout(p.pos.start, p.pos.point) → NoLayout
-         
-      case (p: ImportSelectorTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: SuperConstructorCall, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Ident, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Literal, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: SelfTypeTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: TypeApply, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Function, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: TypeTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: AppliedTypeTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: TypeBoundsTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Return, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: New, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Match, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: CaseDef, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Bind, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Typed, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Alternative, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: UnApply, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Star, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
       case (p: Try, c: Block) =>
          layout(p.pos.start, c.pos.start) splitBefore ('{')
          
       case (p: Try, c) =>
          layout(p.pos.start, c.pos.start) splitAfter ('\n', '{')
          
-      case (p: Assign, c) =>
+      case (p: Import, c) =>
+         layout(p.pos.start, p.pos.point) → NoLayout
+         
+      case (p: ImportSelectorTree, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
          
-      case (p: Throw, c) =>
+      case (p, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: Annotated, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: LabelDef, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: ExistentialTypeTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: SelectFromTypeTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: SingletonTypeTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: CompoundTypeTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-         
-      case (p: MultipleAssignment, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
-      
-      case (p, t) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ t.getClass.getSimpleName)
     }
   }
            
@@ -260,14 +180,11 @@ trait LayoutHelper extends CommentHelpers {
        case (c, p: Template) =>
          layout(c.pos.end, p.pos.end) splitBefore (')', '\n')
          
-       case (c, p: If) =>         
+       case (c, p: If) =>
          layout(c.pos.end, p.pos.end) splitBefore (')')
     
        case (c, p: ValOrDefDef) =>
          layout(c.pos.end, p.pos.end) splitAfter '}'
-         
-       case (c, p: Apply) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
        
        case (c, p: Select) =>
          NoLayout → NoLayout
@@ -275,100 +192,11 @@ trait LayoutHelper extends CommentHelpers {
        case (c, p: Block) =>
          layout(c.pos.end, p.pos.end) splitAfter '\n'
          
-       case (c, p: Import) =>
-         NoLayout → layout(c.pos.end, p.pos.end) // for renames, associate the '}' to the parent
-         
-       case (c, p: ImportSelectorTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: SuperConstructorCall) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Ident) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Literal) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: SelfTypeTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: TypeApply) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Function) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: TypeTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: AppliedTypeTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: TypeBoundsTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Return) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: New) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: TypeDef) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
        case (c, p: Match) =>
          layout(c.pos.end, p.pos.end) splitBefore ('\n')
          
-       case (c, p: CaseDef) =>
+       case (c, p) =>
          NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Bind) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Typed) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Alternative) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-       
-       case (c, p: UnApply) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-       
-       case (c, p: Star) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Try) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Assign) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Throw) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: Annotated) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: LabelDef) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: ExistentialTypeTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: SelectFromTypeTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: SingletonTypeTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: CompoundTypeTree) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p: MultipleAssignment) =>
-         NoLayout → layout(c.pos.end, p.pos.end)
-         
-       case (c, p) => throw new Exception("Unhandled parent: "+ p.getClass.getSimpleName +", child: "+ c.getClass.getSimpleName)
      }
    }
    
@@ -377,6 +205,7 @@ trait LayoutHelper extends CommentHelpers {
   private val Class = """(.*?)(class.*)""".r
   private val EmptyParens = """(?ms)(.*?\(\s*\)\s*)(.*)""".r
   private val OpeningBrace = """(.*?)\((.*)""".r
+  private val OpeningCurlyBrace = """(?ms)(.*?)\{(.*)""".r
   private val Colon = """(.*?:\s+)(.*)""".r
   private val Arrow = """(.*?=>\s?)(.*)""".r
   private val Dot = """(.*)(\..*)""".r
@@ -388,7 +217,7 @@ trait LayoutHelper extends CommentHelpers {
   private val ImportStatementNewline = """(?ms)(.*)(\n.*?import.*)""".r
   private val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
  
-  def splitLayoutBetweenSiblings(left: Tree, right: Tree): (Layout, Layout) = {
+  def splitLayoutBetweenSiblings(parent: Tree, left: Tree, right: Tree): (Layout, Layout) = {
       
     def mergeLayoutWithComment(l: Seq[Char], c: Seq[Char]) = l zip c map {
       case (' ', _1) => _1
@@ -433,16 +262,21 @@ trait LayoutHelper extends CommentHelpers {
         val source = between(l, r)(left.pos.source).toString
         val (layout, comments) = splitComment(source)
         
-        val (ll: String, lr: String, rule: String) = (l, r) match {
+        val (ll, lr, rule) = (l, parent, r) match {
             
-          case (l: ValOrDefDef, r: ValOrDefDef) => 
+          case (l: ValOrDefDef, _, r: ValOrDefDef) => 
             layout match {
               case Comma(l, r)   => (l, r, "Comma")
               case NewLine(l, r) => (l, r, "NewLine")
               case _ => split(layout)
             }
             
-          case (l, r) => split(layout)
+          case (l, parent: ValOrDefDef, NoBlock(r)) if r == parent.rhs && layout.contains("{") => 
+            layout match {
+              case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace")
+            }
+            
+          case (l, _, r) => split(layout)
         }
         
         trace("Rule %s splits (%s, %s) layout %s into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, layout, ll, lr)

@@ -108,7 +108,8 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
         t copy (block = mkBlock(newVal :: block :: Nil)) replaces t
         
       case t @ DefDef(_, _, _, _, _, NoBlock(rhs)) =>
-        t copy (rhs = mkBlock(newVal :: rhs :: Nil)) replaces t
+        val newRhs = shallowDuplicate(rhs) setPos NoPosition
+        t copy (rhs = mkBlock(newVal :: newRhs :: Nil)) replaces t
         
       case t @ Function(_, NoBlock(body)) =>
         

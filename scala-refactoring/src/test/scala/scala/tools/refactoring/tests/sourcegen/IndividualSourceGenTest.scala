@@ -126,7 +126,7 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   @Test
   def modifiedDefDef(): Unit = {
     
-    val originalefDef = treeFrom("""
+    val originalDefDef = treeFrom("""
     object Account {
        def amethod(v: Int, a: Account): Unit = {
          a.add(v)
@@ -145,30 +145,20 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
       case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
     }
-
-    val newRHS = Apply(
-                 TypeApply(
-                   Select(
-                     Select(
-                       Select(
-                         Select(
-                           Select(
-                             Ident("com"),
-                             "megaannum"),
-                           "yass0"),
-                         "GlobalSTM"),
-                       "lock"),
-                     "synchronized"),
-                     List()
-                   ),
-                   List(
-                     shallowDuplicate(originalefDef.rhs) setPos NoPosition
-                   )
-                 )
     
-    val newDefDef = originalefDef copy (rhs = newRHS) setPos originalefDef.pos
+    val newRHS1 = Apply(Select(Ident("com"),"synchronized"), List(shallowDuplicate(originalDefDef.rhs) setPos NoPosition))
+    
+    val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
         
-    assertEquals("""def amethod(v: Int, a: Account): Unit = {com.megaannum.yass0.GlobalSTM.lock.synchronized(a.add(v))}""", generate(removeAuxiliaryTrees apply newDefDef get).center.asText)
+    assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", generate(removeAuxiliaryTrees apply newDefDef1 get).center.asText)
+
+    val newRHS2 = Apply(Select(Ident("com"),"synchronized"), List(originalDefDef.rhs))
+    
+    val newDefDef2 = originalDefDef copy (rhs = newRHS2) setPos originalDefDef.pos
+        
+    assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized({
+       a.add(v)
+       })""", generate(removeAuxiliaryTrees apply newDefDef2 get).center.asText)
   }
   
   @Test
