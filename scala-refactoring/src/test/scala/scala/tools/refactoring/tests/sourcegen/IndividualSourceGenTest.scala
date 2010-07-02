@@ -117,12 +117,58 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: ValDef) :: _)) :: _) => v
       case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
     }
-    
-    val p = valDef.symbol.isPrivateLocal
-    
+        
     assertEquals("""val a = {4 + 3  }""", generate(removeAuxiliaryTrees apply valDef get).center.asText)
       
     assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
+  }
+  
+  @Test
+  def modifiedDefDef(): Unit = {
+    
+    val originalefDef = treeFrom("""
+    object Account {
+       def amethod(v: Int, a: Account): Unit = {
+         a.add(v)
+       }
+    }
+    class Account {
+       // before value
+       var value = 4
+       // after value
+    
+       def add(v: Int) {
+         value += v
+       }
+    }
+    """) match {
+      case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
+      case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
+    }
+
+    val newRHS = Apply(
+                 TypeApply(
+                   Select(
+                     Select(
+                       Select(
+                         Select(
+                           Select(
+                             Ident("com"),
+                             "megaannum"),
+                           "yass0"),
+                         "GlobalSTM"),
+                       "lock"),
+                     "synchronized"),
+                     List()
+                   ),
+                   List(
+                     shallowDuplicate(originalefDef.rhs) setPos NoPosition
+                   )
+                 )
+    
+    val newDefDef = originalefDef copy (rhs = newRHS) setPos originalefDef.pos
+        
+    assertEquals("""def amethod(v: Int, a: Account): Unit = {com.megaannum.yass0.GlobalSTM.lock.synchronized(a.add(v))}""", generate(removeAuxiliaryTrees apply newDefDef get).center.asText)
   }
   
   @Test

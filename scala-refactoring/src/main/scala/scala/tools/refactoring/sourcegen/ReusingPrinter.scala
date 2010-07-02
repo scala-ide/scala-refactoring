@@ -117,13 +117,21 @@ trait ReusingPrinter extends AbstractPrinter {
           rhs match {
             case BlockExtractor(block) if !rhs.hasExistingCode && layoutBetween.contains("{") =>
               printIndented(block, before = Requisite.newline(ind.current), separator = Requisite.newline(ind.current), after = NoRequisite)
-            case _ => p(rhs)
+            case _ => 
+              p(rhs)
           }
         }
         
-        l ++ p(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++
-          p(tparams) ++ vparamss.map(vparams => p(vparams, before = "\\(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) ++ p(tpt) ++ body ++ r
+        val _tpt = p(tpt)
+
+        val result =  l ++ p(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++
+          p(tparams) ++ vparamss.map(vparams => p(vparams, before = "\\(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) ++ _tpt ++ body ++ r
         
+        if(_tpt.trailing.contains("{") && !r.contains("}") && !result.trailing.contains("}")) {
+          result ++ "}"
+        } else
+          result
+          
       case (t @ ValDef(ModifierTree(mods), newName, tpt, rhs), orig) =>
         val nameTree = NameTree(newName) setPos orig.namePosition
         l ++ p(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r

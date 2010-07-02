@@ -93,6 +93,16 @@ trait TreeTransformations extends Transformations {
     case _ => EmptyTree
   })
   
+  // copied from Trees.scala
+  class ShallowDuplicator(orig: Tree) extends Transformer {
+    override val treeCopy = new StrictTreeCopier
+    override def transform(tree: Tree) =
+      if (tree eq orig) super.transform(tree)
+      else tree
+  }
+  
+  def shallowDuplicate(tree: Tree): Tree = new ShallowDuplicator(tree) transform tree
+  
   object NoBlock {
     def unapply(t: Tree) = t match {
       case _: Block => None
