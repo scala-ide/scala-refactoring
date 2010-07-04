@@ -203,20 +203,22 @@ trait PimpedTrees {
    * If multiple trees are candidates, then take the last one, 
    * because it is likely more specific.
    * */
-  def findOriginalTree(t: Tree): Option[Tree] = {
+  def findOriginalTree(tree: Tree): Option[Tree] = {
     
     def find(t: Tree): List[Tree] = {
-      (if(t samePos t.pos)
+      (if(t samePos tree.pos)
         t :: Nil
       else 
         Nil) ::: children(t).map(find).flatten
     }
       
-    val candidates = cuRoot(t.pos) map find flatten
+    val candidates = cuRoot(tree.pos) map find flatten
     
-    candidates find (_ == t) match {
-      case None => candidates filter (_ sameTree t) lastOption
-      case Some(perfectMatch) => Some(perfectMatch)
+    candidates find (_ == tree) match {
+      case None => 
+        candidates filter (_ sameTree tree) lastOption
+      case Some(perfectMatch) => 
+        Some(perfectMatch)
     }
   }
   
@@ -238,7 +240,7 @@ trait PimpedTrees {
     
     def superConstructorParameters = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats collect {
-        case Apply(Super(_, _), args) => args
+        case Apply(EmptyTree, args) => args
       } flatten
     } flatten
   }

@@ -130,6 +130,9 @@ trait LayoutHelper extends CommentHelpers {
       case (p: ImportSelectorTree, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
          
+      case (p: New, c) =>
+         layout(p.pos.start + "new".length, c.pos.start) → NoLayout
+         
       case (p, c) =>
          layout(p.pos.start, c.pos.start) → NoLayout
     }
@@ -176,6 +179,9 @@ trait LayoutHelper extends CommentHelpers {
          
       case (c, p @ (_: ClassDef | _: ModuleDef)) =>
         layout(c.pos.end, p.pos.end) splitAfter '}'
+         
+       case (c: SuperConstructorCall, p: Template) =>
+         layout(c.pos.end, p.pos.end) splitAtAndExclude ')'
          
        case (c, p: Template) =>
          layout(c.pos.end, p.pos.end) splitBefore (')', '\n')

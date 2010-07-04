@@ -651,11 +651,13 @@ class Demo(val a: String, private var _i: Int) {
   def testClassConstructorParams() = {
     val tree = treeFrom("""
       class Demo1(a: String, b: Int)
-      class Demo2(a: String, b: Int)""")
+      class Demo2(a: String, b: Int)
+    """)
       
     assertEquals("""
       class Demo1(a: String, b: Int)
-      class Demo2(a: String, b: Int)""", generateText(removeAuxiliaryTrees apply tree get))
+      class Demo2(a: String, b: Int)
+    """, generateText(removeAuxiliaryTrees apply tree get))
     
     tree prettyPrintsTo """class Demo1(a: String, b: Int)
 class Demo2(a: String, b: Int)"""
@@ -1290,6 +1292,25 @@ class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, 
   def someMethod {
   }
 }"""
+  }
+  
+  @Test
+  def testSuperClass() = {
+    
+    val tree = treeFrom("""
+    class ASuperClass(x: Int, val d: String)
+    class AClass(i: Int, var b: String) extends ASuperClass(i, b) {
+    }
+    """)
+    
+    assertEquals("""
+    class ASuperClass(x: Int, val d: String)
+    class AClass(i: Int, var b: String) extends ASuperClass(i, b) {
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    tree prettyPrintsTo """class ASuperClass(x: Int, val d: String)
+class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
   }
   
   @Test

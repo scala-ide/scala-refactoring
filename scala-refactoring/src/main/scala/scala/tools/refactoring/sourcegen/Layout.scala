@@ -56,6 +56,11 @@ object Layout {
       case Some(i) => copy(end = i+1) → copy(start = i+1)
     }
     
+    def splitAtAndExclude(cs: Char*): (Layout, Layout) = split(cs) match {
+      case None => this → NoLayout
+      case Some(i) => copy(end = i) → copy(start = i+1)
+    }
+    
     def splitBefore(cs: Char*): (Layout, Layout) = split(cs) match {
       case None => NoLayout → this
       case Some(i) => copy(end = i) → copy(start = i)

@@ -84,7 +84,7 @@ trait TreeTransformations extends Transformations {
     // hide the implicit "apply" call
     case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => qualifier
     
-    case t: Select if t.name.toString == "<init>" => t.qualifier
+    //case t: Select if t.name.toString == "<init>" => t.qualifier
     
     case t: Tree if (t.pos == NoPosition || t.pos.isRange) => t
     

@@ -418,5 +418,73 @@ object Account {
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
+  
+  @Test
+  def newObject(): Unit = {
+    
+    val tree = treeFrom("""
+    object Foo {
+       def apply() = new Foo
+    }
+    
+    class Foo
+    """)
+      
+    assertEquals("""
+    object Foo {
+       def apply() = new Foo
+    }
+    
+    class Foo
+    """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
+  }
+  
+  @Test
+  def newParameterizedObject(): Unit = {
+    
+    val tree = treeFrom("""
+object Foo {
+   def apply[T](name: String) = new Foo[T](name)
+}
+
+class Foo[T](name: String) {
+   def echo[T](t: T):T = t
+}
+    """)
+      
+    assertEquals("""
+object Foo {
+   def apply[T](name: String) = new Foo[T](name)
+}
+
+class Foo[T](name: String) {
+   def echo[T](t: T):T = t
+}
+    """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
+  }
+  
+  @Test
+  def newParameterizedObject2(): Unit = {
+    
+    val tree = treeFrom("""
+object Foo {
+   def apply() = { new Foo }
+}
+class Foo
+    """)
+      
+    assertEquals("""
+object Foo {
+   def apply() = { new Foo }
+}
+class Foo
+    """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
+  }
 }
 

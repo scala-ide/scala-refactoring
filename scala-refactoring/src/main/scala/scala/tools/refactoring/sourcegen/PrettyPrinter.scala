@@ -333,6 +333,9 @@ trait PrettyPrinter extends AbstractPrinter {
       case This(qual) =>
         Fragment((if(qual.toString == "") "" else qual +".") + "this")
         
+      case t @ Select(qualifier, name) if name.toString == "<init>" => 
+        p(qualifier)
+        
       case t @ Select(qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
         Fragment(t.symbol.nameString)
         

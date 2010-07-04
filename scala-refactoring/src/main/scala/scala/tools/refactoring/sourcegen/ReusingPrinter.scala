@@ -83,7 +83,9 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(mods) ++ p(NameTree(name) setPos orig.namePosition) ++ p(impl) ++ r
       
       case (t @ TemplateExtractor(params, earlyBody, parents, self, Nil), _) =>
-        l ++ p(params, separator = ",") ++ p(earlyBody) ++ p(parents) ++ p(self) ++ r
+        val _params = p(params, separator = ",", before = "\\(", after = "\\)")
+        val _parents = p(parents)
+        l ++ _params ++ p(earlyBody) ++ _parents ++ p(self) ++ r
       
       case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, _, origBody)) =>
         
@@ -95,7 +97,7 @@ trait ReusingPrinter extends AbstractPrinter {
         
         val preBody = l ++ p(params, separator = ",", before = NoRequisite, after = Requisite.anywhere(")")) ++ p(earlyBody) ++ p(parents) ++ p(self)
         
-        if(origBody.isEmpty) {
+        if(origBody.isEmpty && !body.isEmpty) {
           val alreadyHasBodyInTheCode = r.matches("(?ms).*\\{.*\\}.*") 
           val trailingLayout = if(alreadyHasBodyInTheCode) NoLayout else r
           
@@ -154,6 +156,9 @@ trait ReusingPrinter extends AbstractPrinter {
         
       case (t: Ident, _) => 
         l ++ Fragment(t.nameString) ++ r
+        
+      case (t @ Select(qualifier, name), _) if name.toString == "<init>" => 
+        l ++ p(qualifier) ++ r
         
       case (t @ Select(qualifier: This, selector), _) if qualifier.pos == NoPosition => 
         l ++ Fragment(t.symbol.nameString) ++ r
@@ -262,7 +267,8 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ Fragment(t.nameString) ++ r
         
       case (t @ SuperConstructorCall(clazz, args), _) =>
-        l ++ p(clazz) ++ p(args, separator = ",", before = "\\(", after = "\\)") ++ r
+        val after = if(r.contains(")")) NoRequisite else Requisite.allowSurroundingWhitespace("\\)")
+        l ++ p(clazz) ++ p(args, separator = ",", before = "\\(", after = after) ++ r
         
       case (t @ SelfTypeTree(name, types, orig), _) =>
         l ++ p(name) ++ p(types) ++ r
@@ -323,7 +329,7 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(tpt) ++ r
           
       case (t @ New(tpt), _) =>
-        l ++ Fragment("new") ++ p(tpt) ++ r
+        Fragment("new") ++ l ++ p(tpt) ++ r
           
       case (Match(selector, cases), _) =>
         l ++ p(selector) ++ p(cases) ++ r

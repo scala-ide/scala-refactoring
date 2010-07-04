@@ -62,6 +62,10 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
       }
     }
     
+    if(changesPerFile.isEmpty) {
+      trace("No changes were found.")
+    }
+    
     changesPerFile map {
       case (source, tree, changes) =>
         trace("Creating code for %s. %d tree(s) in changeset.", tree.getClass.getSimpleName, changes.size)
