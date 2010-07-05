@@ -2,13 +2,13 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>scala.tools.refactoring</groupId>
-  <artifactId>scala.tools.refactoring.feature</artifactId>
+  <groupId>org.scala-refactoring</groupId>
+  <artifactId>org.scala-refactoring.update-site</artifactId>
   <version>0.1.2-SNAPSHOT</version>
-  <packaging>eclipse-feature</packaging>
+  <packaging>eclipse-update-site</packaging>
   <parent>
-    <groupId>scala.tools.refactoring</groupId>
-    <artifactId>scala.tools.refactoring.parent</artifactId>
+    <groupId>org.scala-refactoring</groupId>
+    <artifactId>org.scala-refactoring</artifactId>
     <version>0.1.2-SNAPSHOT</version>
   </parent>
 </project>

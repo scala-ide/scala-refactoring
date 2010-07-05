@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="scala.tools.refactoring.feature"
+      id="org.scala-refactoring.feature"
       label="Scala Refactoring"
       version="0.1.2.qualifier">
       provider-name="The Scala Refactoring Team">
@@ -59,7 +59,7 @@ SUCH DAMAGE.
    </requires>
 
    <plugin
-         id="scala.tools.refactoring"
+         id="org.scala-refactoring.library"
          download-size="0"
          install-size="0"
          version="0.0.0"

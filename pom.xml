@@ -2,8 +2,8 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>scala.tools.refactoring</groupId>
-  <artifactId>scala.tools.refactoring.parent</artifactId>
+  <groupId>org.scala-refactoring</groupId>
+  <artifactId>org.scala-refactoring</artifactId>
   <version>0.1.2-SNAPSHOT</version>
   <packaging>pom</packaging>
   <properties>
@@ -13,9 +13,9 @@
     <encoding>UTF-8</encoding>
   </properties>
   <modules>
-    <module>scala-refactoring</module>
-    <module>scala-refactoring-feature</module>
-    <module>scala-refactoring-updatesite</module>
+    <module>org.scala-refactoring.library</module>
+    <module>org.scala-refactoring.feature</module>
+    <module>org.scala-refactoring.update-site</module>
   </modules>
   <dependencies>
     <dependency>
@@ -170,9 +170,6 @@
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
-  <scm>
-    <connection>scm:git:ssh://scala.ifs.hsr.ch/var/www/repos/scala-refactoring.git</connection>
-  </scm>
   <reporting>
     <plugins>
       <plugin>
