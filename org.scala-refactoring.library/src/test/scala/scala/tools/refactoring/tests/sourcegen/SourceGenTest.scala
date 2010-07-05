@@ -349,8 +349,7 @@ object Transaction {
   def run[T](readOnyl: Boolean) = ()
 }
 object Test4 {
-  def doNothing {
-  }
+  def doNothing = ()
 }
 class Test4 {
   def bar = Transaction.run[Unit](Transaction.Kind.ReadOnly)
@@ -927,7 +926,7 @@ class B extends A with Root {
     """, generateText(removeAuxiliaryTrees apply tree get))     
     
     tree prettyPrintsTo """object Extractor {
-  def unapply(i: Int) = Some(i)
+  def unapply(i: Int) = Some.apply(i)
 }
 object User {
   5 match {
@@ -1136,7 +1135,7 @@ object A"""
   case class Person(name: String)
   def printName(ppp: Rename1.Person) = println(ppp.name)
   def main(args: Array[String]) = {
-    val people: List[Rename1.Person] = List(Person("Mirko"), Person("Christina"))
+    val people: List[Rename1.Person] = List(Person.apply("Mirko"), Person.apply("Christina"))
     people.foreach({
       (ppp: Rename1.Person) => printName(ppp)
     })
@@ -1289,8 +1288,7 @@ trait CTrait {
 class ASuperClass(x: Int, val d: String)
 class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
   self_type_annotation =>
-  def someMethod {
-  }
+  def someMethod = ()
 }"""
   }
   

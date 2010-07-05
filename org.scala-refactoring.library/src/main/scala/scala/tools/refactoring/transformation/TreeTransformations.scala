@@ -75,17 +75,7 @@ trait TreeTransformations extends Transformations {
   }
   
   val removeAuxiliaryTrees = ↓(transform {
-    
-    /* An empty RHS that is implemented as '.. { }' creates a Literal 
-     * tree with a range length of 1, remove that tree.
-     * */
-    case t: Literal if t.pos.isRange && t.pos.end - t.pos.start == 1 && t.toString == "()" => EmptyTree
-      
-    // hide the implicit "apply" call
-    case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => qualifier
-    
-    //case t: Select if t.name.toString == "<init>" => t.qualifier
-    
+
     case t: Tree if (t.pos == NoPosition || t.pos.isRange) => t
     
     case t: ValDef => emptyValDef

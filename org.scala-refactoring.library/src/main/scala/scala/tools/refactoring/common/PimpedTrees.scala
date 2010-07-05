@@ -469,9 +469,28 @@ trait PimpedTrees {
     case DocDef(_, definition) =>
       definition :: Nil
       
+    case EmptyTree =>
+      Nil
+      
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
-  }) filter keepTree
+  }) map {
+                 
+     /**
+     * An empty RHS that is implemented as '.. { }' creates a Literal 
+     * tree with a range length of 1, remove that tree.
+     * */
+    case t: Literal if t.pos.isRange && t.pos.end - t.pos.start == 1 && t.toString == "()" => 
+      EmptyTree
+      
+    /**
+     * hide the implicit "apply" call
+     * */
+    case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => 
+      qualifier   
+      
+    case t => t
+  } filter keepTree 
   
   private[this] def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
     body match {
@@ -639,7 +658,7 @@ trait PimpedTrees {
        * Names argument calls are 
        * */
       def fixNamedArgumentCall(block: Block): Tree = block match {
-        case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if emptyArgs.size == stats.size && emptyArgs.forall(_.isEmpty) =>
+        case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if apply.pos.isRange && emptyArgs.size == stats.size && emptyArgs.forall(i => i.isEmpty || !i.pos.isRange) =>
         
           val allValDefs = stats forall {
             case t: ValDef => t.pos.isRange && t.pos.start > apply.pos.start

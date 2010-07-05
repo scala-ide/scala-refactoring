@@ -121,6 +121,8 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     assertEquals("""val a = {4 + 3  }""", generate(removeAuxiliaryTrees apply valDef get).center.asText)
       
     assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
+    
+    assertEquals(0, createChanges(List(valDef)).size)
   }
   
   @Test
@@ -159,6 +161,10 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
        })""", generate(removeAuxiliaryTrees apply newDefDef2 get).center.asText)
+    
+    assertEquals(1, createChanges(List(newDefDef1)).size)
+    
+    assertEquals(1, createChanges(List(newDefDef2)).size)
   }
   
   @Test
@@ -177,6 +183,8 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
      var box = new VBox[Int]({ 2 + 4 })
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -211,6 +219,8 @@ class Foo3 {
    def setIdFoo(id: Int) = idFoo = id
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -235,6 +245,8 @@ class Foo3 {
    // after idFoo
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -253,6 +265,8 @@ class Foo3 {
    this._idFoo = 5
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -275,6 +289,8 @@ class Account {
    }
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -297,6 +313,8 @@ object Account {
      })
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -317,6 +335,8 @@ object Account {
       p(5, separator = ", ", before = "\\{", after = "\\}")  
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -341,6 +361,8 @@ object Account {
       }
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -365,6 +387,8 @@ object Account {
       }
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -395,6 +419,8 @@ object Account {
       }
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
@@ -417,6 +443,8 @@ object Account {
       }
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
   }
   
   @Test
