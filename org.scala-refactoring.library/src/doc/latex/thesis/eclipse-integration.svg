@@ -22,14 +22,14 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="330.9252"
-     inkscape:cy="196.41635"
+     inkscape:zoom="1.4"
+     inkscape:cx="393.35976"
+     inkscape:cy="55.801994"
      inkscape:document-units="px"
      inkscape:current-layer="svg2"
      showgrid="false"
-     inkscape:window-width="1440"
-     inkscape:window-height="839"
+     inkscape:window-width="1920"
+     inkscape:window-height="1139"
      inkscape:window-x="-4"
      inkscape:window-y="38"
      inkscape:window-maximized="1"
@@ -981,5 +981,53 @@
          x="94.039604"
          y="233.27544"
          style="font-size:18px">RenameScalaIdeRefactoring</tspan></text>
+  </g>
+  <g
+     id="g3162"
+     transform="matrix(0.88472299,-0.46611719,-0.46611719,-0.88472299,73.294434,862.83894)">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.99999994;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:none"
+       d="m 288.93587,289.07647 116.00934,0.27141"
+       id="path3164" />
+    <path
+       transform="matrix(0.74294726,0,0,0.74414357,226.69205,62.847477)"
+       d="m 223.32511,320.42042 0,-16.04313 0,-16.04313 13.89376,8.02156 13.89376,8.02157 -13.89376,8.02156 -13.89376,8.02157 z"
+       inkscape:randomized="0"
+       inkscape:rounded="0"
+       inkscape:flatsided="false"
+       sodipodi:arg2="3.1415927"
+       sodipodi:arg1="2.0943951"
+       sodipodi:r2="9.2625055"
+       sodipodi:r1="18.525011"
+       sodipodi:cy="304.37729"
+       sodipodi:cx="232.58762"
+       sodipodi:sides="3"
+       id="path3166"
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.34490824;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       sodipodi:type="star" />
+  </g>
+  <g
+     id="g3168"
+     transform="matrix(0.9893766,0,0,0.9893766,-120.57939,378.05908)">
+    <rect
+       style="fill:#fecdcd;fill-opacity:1;stroke:#000000;stroke-width:1.01073742;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect3170"
+       width="44.323696"
+       height="45"
+       x="283.49493"
+       y="89.38105"
+       ry="10.107375"
+       rx="10.107373" />
+    <text
+       id="text3172"
+       y="116.84687"
+       x="296.57492"
+       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         style="font-size:18px"
+         y="116.84687"
+         x="296.57492"
+         id="tspan3174"
+         sodipodi:role="line">...</tspan></text>
   </g>
 </svg>

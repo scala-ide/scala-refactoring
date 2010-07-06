@@ -47,8 +47,10 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     }
   }
   
-  def checkNameForCollision(s: String, t: global.Tree, r: global.Tree) = 
-    !doesNameCollide(s, t.symbol, GlobalIndex(List(CompilationUnitIndex(r)))).isEmpty
+  def checkNameForCollision(s: String, t: global.Tree, r: global.Tree) = {
+    index = GlobalIndex(r)
+    !doesNameCollide(s, t.symbol).isEmpty
+  }
 
   @Test
   def localNameCollision() {

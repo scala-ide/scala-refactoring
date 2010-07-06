@@ -30,7 +30,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package oneFromMany
-      class Demo(val a: String,  /*(*/_i: Int/*)*/  ) {
+      class Demo(val a: String,  /*(*/private var _i: Int/*)*/  ) {
         def i = {
           _i
         }

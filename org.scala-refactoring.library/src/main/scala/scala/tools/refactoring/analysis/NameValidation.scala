@@ -15,7 +15,7 @@ trait NameValidation {
   val global: scala.tools.nsc.Global
   import global._
   
-  def isValidIdentifier(name: String) = {
+  def isValidIdentifier(name: String): Boolean = {
 
     val scanner = new { val global = self.global } with Scanners {
       val cu = new global.CompilationUnit(new BatchSourceFile("", name))
@@ -35,7 +35,7 @@ trait NameValidation {
     }
   }
   
-  def doesNameCollide(name: String, s: Symbol, index: IndexLookup): List[Symbol] = {
+  def doesNameCollide(name: String, s: Symbol): List[Symbol] = {
     
     def isNameAlreadyUsedInLocalScope: List[Symbol] = {
       (index declaration s.owner map TreeSelection).toList flatMap {

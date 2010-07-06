@@ -6,6 +6,7 @@ package scala.tools.refactoring
 package implementations
 
 import tools.nsc.symtab.Flags
+import tools.nsc.ast.parser.Tokens
 import common.Change
 
 abstract class ExplicitGettersSetters extends MultiStageRefactoring {
@@ -31,41 +32,47 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
   override def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     import prepared._
-    import params._
     
     val template = selection.findSelectedOfType[Template].getOrElse {
       return Left(RefactoringError("no template found"))
     }
     
-    def createSetter = selectedValue.symbol.isMutable
+    val createSetter = selectedValue.symbol.isMutable
     
     val publicName = selectedValue.name.toString.trim
     
     val privateName = "_"+ publicName
-    //var flag
-    val privateField = selectedValue copy (mods = Modifiers(Flags.PARAMACCESSOR) | Flags.PRIVATE, name = privateName)
+    
+    val privateFieldMods = if(createSetter)
+      Modifiers(Flags.PARAMACCESSOR).
+        withPosition (Flags.PRIVATE, NoPosition).
+        withPosition (Tokens.VAR, NoPosition)
+    else
+      Modifiers(Flags.PARAMACCESSOR)
+      
+    val privateField = selectedValue copy (mods = privateFieldMods, name = privateName)
     
     val getter = DefDef(
-        NoMods withPosition (Flags.METHOD, NoPosition), 
-        publicName, 
-        Nil, 
-        List(Nil), 
-        EmptyTree, 
-        Block(
+        mods = Modifiers(Flags.METHOD) withPosition (Flags.METHOD, NoPosition), 
+        name = publicName, 
+        tparams = Nil, 
+        vparamss = List(Nil), 
+        tpt = EmptyTree, 
+        rhs = Block(
             Ident(privateName) :: Nil, EmptyTree))
     
     val setter = DefDef(
-        NoMods withPosition (Flags.METHOD, NoPosition), 
-        publicName +"_=",
-        Nil,
-        List(List(ValDef(Modifiers(Flags.PARAM), publicName, TypeTree(selectedValue.tpt.tpe), EmptyTree))), 
-        EmptyTree,
-        Block(
+        mods = Modifiers(Flags.METHOD) withPosition (Flags.METHOD, NoPosition), 
+        name = publicName +"_=",
+        tparams = Nil,
+        vparamss = List(List(ValDef(Modifiers(Flags.PARAM), publicName, TypeTree(selectedValue.tpt.tpe), EmptyTree))), 
+        tpt = EmptyTree,
+        rhs = Block(
             Assign(
                 Ident(privateName),
                 Ident(publicName)) :: Nil, EmptyTree))
     
-    val r = transform {
+    val insertGetterSettersTransformation = transform {
         
       case tpl: Template if tpl == template =>
       
@@ -82,8 +89,10 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
         tpl.copy(body = body) setPos tpl.pos
     }
     
-    val changes = ↓(matchingChildren(r)) apply abstractFileToTree(selection.file)
+    val transformedAst = ↓(matchingChildren(insertGetterSettersTransformation)) apply selection.root
     
-    Right(refactor(changes toList))
+    val changes = refactor(transformedAst.toList)
+    
+    Right(changes)
   }
 }

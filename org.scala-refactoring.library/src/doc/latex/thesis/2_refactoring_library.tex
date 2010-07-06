@@ -9,7 +9,7 @@ The refactoring library is the heart of the Scala Refactoring project. It contai
  \item present the result of the refactoring to the user -- typically in the form of a patch --  and apply it to the source code.
 \end{itemize}
 
-From all these steps, the first and the last one are IDE-platform dependent and usually well supported (see Chapter XXX). For the remaining three, the refactoring library contains the necessary infrastructure to make these steps as simple as possible.
+From all these steps, the first and the last one are IDE-platform dependent and usually well supported (see Chapter \ref{chapter:tool-integration} for details on Eclipse's refactoring infrastructure). For the remaining three, the refactoring library contains the necessary infrastructure to make these steps as simple as possible.
 
 The essence of a refactoring is a transformation that takes a program in some abstract form and changes its structure. To know what to transform, one has to analyze the program first. That we also have to turn a refactored program back into source code is a consequence of storing programs as plain text files, but not an essential part of a refactoring. Therefore, one of the design goals was to provide a generic implementation that can handle all kinds of changes without knowing exactly what the transformation changed.
 
@@ -17,31 +17,27 @@ In the remainder of this chapter, we shall first take a look at the architecture
 
 \section{Overview}
 
-% Muss ich den AST erklären? Warum es den braucht und so?
+Automated refactoring implementations typically do not work on the source code directly but -- just as a compiler -- do the majority of the work on the abstract syntax tree (AST) of the program. We also do not create our own AST representation but reuse the Scala compiler's parser and type checker (as explained in Chapter~\ref{chapter:tool-integration}, we also do not parse the code ourselves but get the AST from the IDE). This not only saved time during the development of the library, but also makes it easier to implement a new refactoring if one is already familiar with the Scala compiler's AST. Additionally, the Scala compiler also already provides some infrastructure to traverse and transform an AST.
 
-Automated refactoring implementations typically do not work on the source code directly but -- just as a compiler -- do the majority of the work on the abstract syntax tree (AST) of the program. We also do not create our own AST representation but reuse the Scala compiler's parser and type checker (as explained in Chapter XXX, we also do not parse the code ourselves but get the AST from the IDE). This not only saved time during the development, but also makes it easier to implement a new refactoring if one is already familiar with the Scala compiler's AST.
+%The Scala AST is heterogeneous, meaning that ...
 
-The Scala AST is heterogeneous, meaning that ...
+Scala's AST is explained in more detail in Appendix~\vref{chapter:scala-ast}; a general knowledge of what an AST is should suffice to follow the explanations in this chapter. Useful to know is that all trees have a position information: either indicating a location from where the tree origins or a \src{NoPosition}, which denotes trees that do not have a corresponding source code location. This information is later used by the transformation and code generation phases.
 
- The Scala compiler provides some infrastructure to traverse and transform the AST.
-
-Scala's AST is explained in more detail in Appendix~\vref{chapter:scala-ast}, but a general knowledge of what an AST is should suffice to follow the explanations in this chapter. Useful to know is that all trees have a position information: either indicating a location from where the tree origins or a \src{NoPosition}, which denotes trees that do not have a corresponding source code location. This information is later used by the transformation and code generation phases.%: trees with a \src{NoPosition} are pretty printed and the trees with a specific source location are reused (this is needed to preserve the formatting of the source code).
-
-As we have seen at the beginning of this chapter, a typical refactoring takes the current file's AST and the user's selection or caret position and first checks if the chosen refactoring is applicable -- e.g. whether the selected region of the source file corresponds to an AST element that can be handled by the chosen refactoring. If necessary, the refactoring queries aditional configuration from the user -- e.g. extracting a methind needs a new name. The AST is then transformed into its new form and handed over to the source generator to turn the AST back into source code (see \figref{figure:refactoring-flow} for a visualization of this workflow). As motivated above, generating the source code is already implemented generically and needs no further instructions from the refactoring implementer. %zu viel wiederholund von oben?
+As we have seen at the beginning of this chapter, a typical refactoring takes the current file's AST and the user's selection or caret position and first checks if the chosen refactoring is applicable -- for example, whether the selected region of the source file corresponds to an AST element that can be handled by the chosen refactoring. If necessary, the refactoring queries aditional configuration -- for example, a new name -- from the user. The AST is then transformed into its new form and handed over to the source generator to turn the AST back into source code (see \figref{figure:refactoring-flow} for a visualization of this workflow). As motivated above, generating the source code is already implemented generically and needs no further instructions from the refactoring implementer. %zu viel wiederholund von oben?
 
 \begin{figure}
   \centering
   \includegraphics[width=\linewidth]{refactoring-flow.pdf}
-  \caption{The work-flow of the refactoring. The IDE uses the compiler to parse the source file and passes the resulting syntax tree to the refactoring tool. The result of a refactoring is a set of changes, viz. a patch, that the IDE has to apply to the source files (adapted from \cite{ScalaRefactoring}).}
+  \caption{The work-flow of the refactoring. The IDE uses the compiler to parse the source file and passes the resulting syntax tree to the refactoring tool. The result of a refactoring is a set of changes -- a patch -- that the IDE has to apply to the source files (adapted from \cite{ScalaRefactoring}).}
   \label{figure:refactoring-flow}
 \end{figure}
 
 The architecture (see \figref{figure:refactoring-architecture}) and also the source code layout follow these three phases of the refactoring:
 
 \begin{description}
- \item[Analysis] in package \src{analysis} contains the means to analyze the program and to build an index for the identifiers in the program. This will be explained further in Section \vref{section:analysis}.
- \item[Transformation] in package \src{transformation} provides a framework to write, combine and apply transformations on trees, as well as some factory methods to create new trees. How these work is described in Section \vref{section:transformation}.
- \item[Source Generation] in package \src{sourcegen} mainly contains the \src{SourceGenerator} that turns an AST back into change objects (i.e. patches) for the source code as explained in Section \vref{section:source-generation}.
+ \item[Analysis] in package \src{analysis} contains the means to analyze the program and to build an index for the identifiers in the program. This will be explained further in Section~\vref{section:analysis}.
+ \item[Transformation] in package \src{transformation} provides a framework to write, combine and apply transformations to trees, as well as factory methods to create new trees. How this works is described in Section~\vref{section:transformation}.
+ \item[Source Generation] in package \src{sourcegen} primarily contains the \src{SourceGenerator} that turns an AST back into change objects (i.e. patches) for the source code and is explained in Section~\vref{section:source-generation}.
 \end{description}
 
 \begin{figure}
@@ -51,18 +47,18 @@ The architecture (see \figref{figure:refactoring-architecture}) and also the sou
   \label{figure:refactoring-architecture}
 \end{figure}
 
-% path dependent type, global?
-
-In the remainder of this chapter, the three library components will be explained in more detail. %Keep in mind that the shown functionality is not meant to be feature complete but can and will be extended as seen fit. %gehört das hier hin? was ist mit dem common paket?
+Classes that are shared between these three packages -- for example, the \src{Change} class, custom exception classes and other utility traits -- are all located in the \src{common} package. In the remainder of this chapter, the three library components will be explained in more detail. 
 
 \section{Analysis} \label{section:analysis}
 
-An import step in each refactoring is to analyze the current program that is being refactored. For example, when doing a Rename refactoring, we need to resolve all references to the renamed name. A more complex example is Extract Method, where we need to perform data-flow analysis to determine the parameters and return values of the extracted method.
+An import first step in each refactoring is analyzing the current program that is being refactored. For example, when doing a Rename Method refactoring, we need to resolve all references to the renamed method. A more complex example is Extract Method, where we need to perform data-flow analysis to determine the parameters and return values of the extracted method.
 
 Our IDEs also analyze the program code in a similar way to make the life of the programmer easier: finding the declaration of a variable or listing all subtypes of a class are common operations.
 
-Our analyses heavily depend on the Scala compiler's AST and all the information it provides through the program's symbols. For example, each symbol has an owner that can be used to navigate the logical structure of the program. There are also almost one hundred \src{isXY} methods defined on the \src{Symbol} class that can be used to query information:
+\subsection{Symbols}
 
+Our analyses heavily depend on the Scala compiler's AST and all the information it provides through the program's \textit{symbols}. For example, each symbol has an owner that can be used to navigate the logical structure of the program. There are also almost one hundred \src{isXY} methods defined on the \src{Symbol} class that can be used to query information:
+\needspace{9\baselineskip}
 \begin{lstlisting}
 abstract class Symbol {
   %\ldots%
@@ -88,16 +84,17 @@ class %\yellowbox{SubClass}% extends %\bluebox{SuperClass}% {
 }
 \end{lstlisting}
 
-Note that the two \src{abstractMethod} symbols are not the same, but there are other means to find overriden and implemented methods in subclasses, as we shall see later.
+Note that the two \src{abstractMethod} symbols are not the same; but there are ways to find overriden and implemented methods in subclasses, as we shall see later.
 
-While the trees can have a reference to a symbol, the converse is not true: symbols do not know about the trees they are related to. But for refactoring, this information is crucial. This is why the refactoring library contains the means to build an index that relates symbols and corresponding trees.
+While the trees can have a reference to a symbol, the converse is not true: symbols do not know about the trees they are related to. But for a refactoring which mainly works with trees, this information is crucial. This is why the refactoring library contains the means to build an index that relates symbols with corresponding trees.
 
 \subsection{Refactoring Index Interface}
 
-Building an index over a whole project can be expensive, so ideally, the IDE would maintain the index and pass it to the refactoring library when need, in the same way that the library does not compile the source files itself but gets the ASTs directly from the IDE.
+Indexing a complete project can be expensive, so ideally, the IDE would maintain the index and pass it to the refactoring library when need, in the same way that the library does not compile the source files itself but gets the ASTs directly from the IDE.
 
-The interface that needs to be implemented and is used by the refactorings to query the index looks as follows (note that \src{global} is an instance of the compiler that is provided by an outer trait so the trees can be used as path dependent types (see Appendix \vref{section:path-dependent-types})):
+The interface that needs to be implemented and that is used by the refactorings to query the index looks as follows (note that \src{global} is an instance of the compiler that is provided by an outer trait; see the Appendix~\vref{section:path-dependent-types} on path dependent types):
 
+\needspace{34\baselineskip}
 \begin{lstlisting}
 trait IndexLookup {
   /**
@@ -135,14 +132,14 @@ trait IndexLookup {
 }
 \end{lstlisting}
 
-The library also contains a default implementation that can be used if the IDE does not already maintain an index itself, as described in the following section.
+The library contains a default implementation of this trait that can be used if the IDE does not already maintain an index itself. This implementation is described in the following section.
 
 \subsection{Default Index Implementation}
 
-Building an index can be expensive: whenever a compilation unit in the program changes, references to the symbols from other compilation units can change, and also the other way around. Because of this, it is expensive to maintain one monolithic index that needs to be recreated on every change in the program. The provided implementation avoids this by maintaining a data structure for each compilation unit and combining these for queries. The implementation comprises these parts:
+Building an index can be expensive: whenever a compilation unit in the program changes, references to the symbols from other compilation units can change, and also the other way around. Because of this, it is not wise to maintain one monolithic index that needs to be thrown away and recreated on every change in the program. The provided implementation avoids this by maintaining a data structure for each compilation unit and combining these for queries. The implementation comprises these parts:
 
 \begin{description}
- \item[CompilationUnitIndex] One index per compilation unit that holds the references and declarations of just this part of the program.. This structure can be rebuilt everytime a compilation unit changes. Rebuilding it traverses the whole tree once and stores mappings from symbols to \src{RefTrees} and \src{DefTrees}.
+ \item[CompilationUnitIndex] One index per compilation unit that holds the references and declarations of just this part of the program. This structure can be rebuilt everytime a compilation unit changes. Rebuilding it traverses the whole tree once and stores mappings from symbols to \src{RefTrees} and \src{DefTrees}.
  \item[GlobalIndex] An implementation of the \src{IndexLokup} trait that ties together any number of these per compilation unit indices, but is completely stateless itself.
 \end{description}
 
@@ -161,13 +158,13 @@ trait SymbolExpander {
 The \src{SymbolExpander} is used as a stackable trait (see Appendix \vref{section:stackable-traits}) and is at the time of this writing implemented in the following variations:
 
 \begin{description}
- \item[ExpandGetterSetters] connects getters, setters and the underlying field as well as constructor parameters. This can be done with the symbol alone and 
+ \item[ExpandGetterSetters] connects getters, setters and the underlying field as well as constructor parameters.
  \item[SuperConstructorParameters] resolves class parameters that are passed to a superconstructor.
- \item[Companion] to find the companion objects or class for a symbol.
+ \item[Companion] to find the companion object or class for a symbol.
  \item[OverridesInClassHierarchy] searches for a symbol in all sub- and superclasses. that might override or implement it.
 \end{description}
 
-The \src{GlobalIndex} uses all these traits, but it would also be possible for an implementation of the index to use only a subset of these to improve the performance. So when for example all references to a method need to be found, the initial symbol is run through all the expanders until a fix point is reached.
+The \src{GlobalIndex} uses all these traits, but it would also be possible for an implementation of the index to use only a subset of these to improve the performance. For example, when all references to a method need to be found, the initial symbol is run through all the expanders until a fix point is reached.
 
 The following graphic illustrates the process with an example; circles represent symbols and squares trees. We start with a single symbol on the left -- e.g. a class field -- and in the first step, it is expanded to two symbols -- for example because the class field has a getter method. We do another round of expansion and find yet another related symbol (the getter might be overridden in a subclass). The third expansion yields no new symbols, thus the fourth step concludes by collecting all references and declarations to these symbols.
 
@@ -204,34 +201,39 @@ The calculation of these inbound and outbound dependencies is done as follows:
 \paragraph{Inbound:} Find all symbols that are declared in the current scope (e.g. the method we extract from) and remove all declarations that are defined inside the selection. This gives us all the inbound parameters.
 
 \paragraph{Outbound:} For each symbol that is definde inside the selection, check if it is used anywhere outside the selection.
+\\\\
+The \src{inboundLocalDependencies} and \src{outboundLocalDependencies} methods implement these two calculations. 
 
 \subsection{Name Validation}
 
 When doing refactoring, one often has to introduce new names into the program, that can potentially conflict with an already existing name that is currently in scope. The \src{NameValidation} trait offers the functionality to check whether a name is a valid identifier -- based on the Scala compiler -- and checking if a name will collide with an already existing name:
 
 \begin{lstlisting}
-
+trait NameValidation {
+  def isValidIdentifier(name: String): Boolean = %\ldots%
+  def doesNameCollide(name: String, s: Symbol): List[Symbol] = %\ldots%
+}
 \end{lstlisting}
 
-
+The \src{doesNameCollide} method takes a name and a symbol and returns a list of all symbols that collide with the given name in symbol's context.
 
 \section{Transformation} \label{section:transformation}
 
-At the heart of every refactoring lies a \textit{transformation} that takes the current program in its abstract syntax tree form and transforms it into its refactored form. Such a transformation can be as simple as changing names -- think of the Rename refactoring -- or restructure large parts of the AST as in an Extract or Move refactoring. 
+The core of every refactoring is a \textit{transformation} that takes the current program in its abstract syntax tree form and transforms it into its refactored form. Such a transformation can be as simple as changing names -- think of the Rename refactoring -- or restructure large parts of the AST as in an Extract or Move refactoring. 
 
 Often, a larger refactoring comprises many smaller transformations. An illustrative example is the Extract Method refactoring, which can be assembled from three basic transformations:
 
 \begin{description}
  \item[Create Method] to introduce a new (empty) method.
  \item[Copy Statements] to copy the selected statements into the newly created method.
- \item[Replace Statements] to replace the original statements that have been copied to the new method with a call to it.
+ \item[Replace Statements] to replace the original statements that have been copied to the new method with a call to the new method.
 \end{description}
 
 The \textit{replace} transformation itself is again a combination of two even more fundamental transformations: \textit{insert} and \textit{delete}. Once we have our Extract Method transformation, it can then again be combined with other transformations -- for example into an Extract Class refactoring. It should be clear from this that the key to a reusable refactoring library lies in the composability of its transformations. 
 
-Conceptually, chaining simple transformations to build more powerful ones follows the Unix pipes philosophy. The design of this implementation was inspired by the Stratego program transformation tool-set (referenz) and the Kiama language processing library (referenz). Functional programming also uses the term \textit{combinator} to denote functions that can be combined and yield new functions of the same kind. An example of this are parser combinators (referenz), which are part of the Scala standard library.
+Conceptually, chaining simple transformations to build more powerful ones follows the Unix pipes philosophy. The design of this implementation was inspired by the Stratego program transformation tool-set \cite{Stratego} and the Kiama language processing library \cite{Kiama}. Functional programming also uses the term \textit{combinator} for functions that can be combined and yield new functions of the same kind. An example of this are parser combinators \cite{ParserCombinators}, which are part of the Scala standard library.
 
-In contrast to unix pipes that operate on their input line by line, performing transformations on a tree datastructure adds an additional dimension. When transforming trees, we are also concerned with questions on how we want to traverse the tree -- i.e. pre-order or post-order -- and to which children a transformation should be applied. The presented implementation handles all these concerns in a uniform way.
+In contrast to unix pipes that operate on their input line by line, performing transformations on a tree data structure adds an additional dimension. When transforming trees, we are also concerned with questions on how we want to traverse the tree -- i.e. pre-order or post-order -- and to which children a transformation should be applied. The presented implementation handles all these concerns in a uniform way.
 
 In the remainder of this section, we will develop the basics of the Scala refactoring's transformation combinators and show examples of their usage.
 
@@ -356,11 +358,12 @@ Applying a transformation to a single tree element is not difficult, but once we
 \vspace{7pt} Takes a transformation and creates a new one that applies the given transformation to all children, returning a single tree. Because there is no generic way to get all children and construct a new tree, we constrain the type parameter \src{A} to be convertible to $(A \Rightarrow B) \Rightarrow B$. This means that the user of the generic transformation has to pass us its children and create a new tree. When a child cannot be transformed, \src{allChildren} immediately aborts and returns \src{None}.
 
 \begin{lstlisting}
-def allChildren[A <%\%% (A %$\Rightarrow$% B) %$\Rightarrow$% B, B](t: %$\Rightarrow$% Transformation[A, B]) = new Transformation[A, B] {
-  def apply(a: A): Option[B] = {
-    Some(a(child %$\Rightarrow$% t(child) getOrElse (return None)))
+def allChildren[A <%\%% (A %$\Rightarrow$% B) %$\Rightarrow$% B, B](t: %$\Rightarrow$% Transformation[A, B]) = 
+  new Transformation[A, B] {
+    def apply(a: A): Option[B] = {
+      Some(a(child %$\Rightarrow$% t(child) getOrElse (return None)))
+    }
   }
-}
 \end{lstlisting}
 
 \src{X <\% Y} is called a \textit{view bound} and demands that there exists an implicit conversion from type \src{X} to \src{Y} (see Appendix \vref{section:implicit-conversions}). This is less constrictive than \src{X <: Y}, where \src{X} has to be a subtype of \src{Y}. In our case, we can then treat \src{a} as if it were of type \src{(A $\Rightarrow$ B) $\Rightarrow$ B}. This allows us to apply the transformation to the children of \src{a}.
@@ -387,7 +390,8 @@ The next step after being able to apply a transformation to a tree or all of its
 
 \begin{lstlisting}
   def %$\downarrow$ \hspace{19pt} %      [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = t &> allChildren(%$\downarrow$%(t))
-  def preorder[A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\downarrow$%(t)
+  def preorder%\hspace{2pt}%[A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\downarrow$%(t)
+  def topdown[A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\downarrow$%(t)
 \end{lstlisting}
 
 Using a pre-order transformation has the benefit that trees are always in their original state when they are transformed, this can be used when the trees need to be compared for equality. A disadvantage is that a transformation can diverge when it modifies a tree so that it again applies to one of its new children. For example, applying the following transformation to a tree results in a stack overflow when applied with pre-order traversal:
@@ -406,12 +410,11 @@ This will not happen when the transformation is applied using post-order travers
 
 \begin{lstlisting}
   def %$\uparrow$ \hspace{27pt} %      [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = allChildren(%$\uparrow$%(t)) &> t
-  def postorder [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\uparrow$%(t)
+  def postorder%\hspace{5pt}%[A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\uparrow$%(t)
+  def bottomup [A <%\%% (A %$\Rightarrow$% A) %$\Rightarrow$% A](t: Transformation[A, A]) = %$\uparrow$%(t)
 \end{lstlisting}
 
-Combining all these transformations with combinators and traversal strategies allows us to describe transformations in a very concise way.
-
-\figref{figure:traversal_mode} illustrates the difference between the two traversal modes.
+Combining all these transformations with combinators and traversal strategies allows us to describe transformations in a very concise way. \figref{figure:traversal_mode} illustrates the difference between the two traversal modes.
 
 \begin{figure}
  \centering
@@ -420,7 +423,9 @@ Combining all these transformations with combinators and traversal strategies al
  \label{figure:traversal_mode}
 \end{figure}
 
-As a first example, let us write and use a transformation that replaces all trees in the AST which do not have a range position with the \src{EmptyTree}.
+\subsubsection{Examples}
+
+As a first example, let us write and apply a transformation that replaces all trees in the AST which do not have a range position with the \src{EmptyTree}.
 
 \begin{lstlisting}
 val tree: Tree = %\ldots%
@@ -439,7 +444,7 @@ Preorder traversal already applies the transformation to all children, so we can
 preorder(emptyTree) apply tree
 \end{lstlisting}
 
-Of course, this is not the only way to achieve this, here is a variation that separates the testing for the range position into a predicate and uses a simple transformation to replace the tree. If the tree has a range position, it is not transformed (remember that the \src{id} transformation simply returns its argument unchanged). In case the predicate fails, the tree is replaced.
+Of course, this is not the only way to achieve this, here is a variation that separates the testing for the range position into a predicate and uses a simpler transformation to replace the tree. If the tree has a range position, it is not transformed (remember that the \src{id} transformation simply returns its argument unchanged). In case the predicate fails, the tree is replaced.
 
 \begin{lstlisting}
 val hasRangePosition = predicate((t: Tree) => t.pos.isRange)
@@ -493,8 +498,6 @@ Unfortunately, all these tree construction helpers are problematic for us: they 
 
 \begin{lstlisting}
 def mkRenamedSymTree(t: SymTree, name: String): SymTree
-
-def mkReturn(s: List[Symbol]): Tree
 
 def mkValDef(name: String, rhs: Tree): ValDef
 
@@ -574,7 +577,7 @@ Now we can combine these to assemble a new transformation that performs the foll
 
 %\includegraphics[width=\linewidth]{extract_method_transformation.pdf}
 
-All these steps can be expressed with a simple transformation:
+All these steps can be expressed with the following transformation:
 
 \begin{lstlisting}
 val extractMethod = topdown {
@@ -590,20 +593,22 @@ val extractMethod = topdown {
 }
 \end{lstlisting}
 
+More concrete implementations of transformations can be found in Chapter~\vref{chapter:implemented-refactorings}.
+\newpage
 \section{Source Generation}\label{section:source-generation}
 
 Once our abstract syntax tree has been refactored, we need to convert it back into its textual source code representation. This process comprises two main steps: the \textit{detection of modifications} to minimize the amount of code that is regenerated and the actual \textit{source generation}.
 
-The first step is necessary because we -- in contrast to many other refactoring implementations -- do not keep track of modifications to the AST while they are happening but reconstruct this information afterwards. This allows us to keep the transformations simpler but consequently makes the code generation more complex. This tradeoff is worthwile because we intend the library to be reused and the transformations to be implemented by third parties.
+The first step is necessary because we -- in contrast to many other refactoring implementations -- do not keep track of modifications to the AST while they are happening but reconstruct this information afterwards. This allows us to keep the transformations simpler but consequently makes the code generation more complex. This tradeoff is worthwile because we intend the library to be reused and the transformations to be implemented by developers who do not (need to) know the details of the source generation.
 
-The AST after the refactoring may contain several kinds of modifications. Trees can be moved around, deleted and new trees can be introduced. From the transformations we know that trees that are moved around keep their original position information, and newly created trees have a \src{NoPosition} attribute per default. This allows us to detect changes and can later be used during source generation to preserve the layout of already existing trees. 
+The AST after the refactoring may contain several kinds of modifications: trees can be moved around, deleted and new trees can be introduced. From the transformations we know that trees that are moved around keep their original position information, and newly created trees have a \src{NoPosition} attribute per default. This allows us to detect changes and can later be used during source generation to preserve the layout of already existing trees. 
 
 \subsection{Modification Detection}
 
 The primary goal of a fine-grained modification detection is to reduce the amount of trees that are regenerated. The source generation is invoked with a list of trees from various files that all can have an arbitrary number of changed children:
 
 \begin{lstlisting}
-def createChanges(ts: List[Tree]): Iterable[Change]
+def createChanges(ts: List[Tree]): List[Change]
 \end{lstlisting}
 
 Modification detection performs the following three steps on the input trees:
@@ -620,7 +625,7 @@ Top-level trees are trees that are ancestors of other changed trees. For example
 \includegraphics[width=0.2\linewidth]{ast_with_changes.pdf}
 \end{center}
 
-The \src{createChanges} method is invoked with the two green trees, but the blue tree has also been modified by a transformation.
+The \src{createChanges} method is invoked with the two green trees, but the blue tree has also been modified by a (sub-) transformation.
 
 Now if we were to generate two changes from the two green trees, we would get a problem when applying the changes because they overlap each other. The two changes would either overwrite each other or, in the case of Eclipse's Language Toolkit, yield an error. Therefore the second step of the modification detection is to find those trees that contain other changed trees. In the AST above, this would be the root node.
 
@@ -643,7 +648,7 @@ Once we have identified all top-level tree changes, we start generating source c
 
 \subsection{Code Generation}
 
-The AST does -- by its very nature -- not contain all the information that is necessary to fully reconstruct its original textual representation. Also, syntactic sugar of the programming language is typically not represented in the AST; only the desugared representation is preserved. An example for this are Scala's \src{for} comprehensions. Because they are equivalent with function calls to \src{map, filter, flatMap,} and \src{foreach}, there is no need to create additional tree classes for them. This means that the two statements in the following listing have the same representation in the AST.
+The AST does -- by its very nature -- not contain all the information that is necessary to fully reconstruct its original textual representation. Also, syntactic sugar of the programming language is typically not represented in the AST (see Section~\vref{section:other-ast-constructs} for some examples); only the desugared representation is preserved. An example for this are Scala's \src{for} comprehensions. Because they are equivalent with function calls to \src{map, filter, flatMap,} and \src{foreach}, there is no need to create additional tree classes for them. This means that the two statements in the following listing have the same representation in the AST.
 
 \begin{lstlisting}
 val v1 = List(1,2,3) map (i => i * 2)
@@ -656,7 +661,7 @@ If we were only interested in a semantically equivalent program, we could simply
 
 The original source code is always available to the refactoring tool, and with the position information on the trees, we have a means to look up the original source code for a tree.
 
-Other refactoring tools (e.g. the C++ Development Tooling for Eclipse \cite{CdtOopsla} or the Ruby Development Tools \cite{RubyOopsla}) have used various approaches to solve this problem (XX ref to old doku). For some cases -- for example in a rename refactoring -- it might even be acceptable to pretty print the code as long as only very small regions of the program change. This approach can be problematic -- for example with the Extract Method refactoring, where arbitrary large parts of the program are moved around. A tool can handle this situation by cut-and-pasting the body of the extracted method. This is not feasible for us because we need a generic way to handle all kinds of unforseeable changes to the source code.
+Other refactoring tools (e.g. the C++ Development Tooling for Eclipse \cite{CdtOopsla} or the Ruby Development Tools \cite{RubyOopsla}) have used various approaches to solve this problem (see \cite{ScalaRefactoring} for details on these approaches). For some cases -- for example, in a rename refactoring -- it might even be acceptable to pretty print the code as long as only very small regions of the program change. But as a general solution, this approach is problematic. For example, with the Extract Method refactoring, where arbitrary large parts of the program are moved around. A tool can handle this situation by cutting-and-pasting the body of the extracted method. This is not feasible for us because we need a generic way to handle all kinds of unforseeable changes to the source code.
 
 \subsubsection{Preserving Layout}
 
@@ -696,7 +701,9 @@ Whether we can reuse existing code or have to invoke the pretty printed needs to
 trait AbstractPrinter {
   def print(t: Tree, ind: Indentation): Fragment
 }
-
+\end{lstlisting}
+\needspace{18\baselineskip}
+\begin{lstlisting}
 trait PrettyPrinter extends AbstractPrinter {
   def print %\ldots%
 }
@@ -714,14 +721,15 @@ trait SourceGenerator extends PrettyPrinter with ReusingPrinter {
     else
       EmptyFragment
   }
-%\ldots%
+  %\ldots%
+}
 \end{lstlisting}
 
 \subsubsection{Fragments and Layout}
 
 The result of a printing operation is not a plain string but an instance of \src{Fragment}. A fragment contains a leading, center, and trailing layout. A layout is simply a wrapper around a string or a part of the source file with some additional helper methods. For example, in \figref{figure:ast_with_layout}, all the apricot and blue colored boxes are fragments and the green ones are instances of \src{Layout}.
 
-The fragments and layouts are created in the printers, where they pattern match on the tree and recursively print the children of a tree. This is an excerpt from the pretty printer:
+The fragments and layouts are created in the printers. Printers pattern match on the current tree and recursively print the children of a tree. This is an excerpt from the pretty printer:
 
 \begin{lstlisting}
 def print(t: Tree, ind: Indentation) = t match {
@@ -732,7 +740,7 @@ def print(t: Tree, ind: Indentation) = t match {
 %\ldots%
 \end{lstlisting}
 
-The \src{++} operation on the layout and the fragments simply concatenate their operands, again yielding a fragment. So far, we could also have just used plain Strings and concatenate them with \src{+}, except that using strings weakens the typesystem because every object can be concatenated to a String using the implicit \src{toString} method.
+The \src{++} operation on the layout and the fragments simply concatenate their operands, again yielding a fragment. So far, we could also have just used plain Strings and concatenate them with \src{+}, except that using strings is dangerous because every object can be concatenated with a String using the implicit \src{toString} method.
 
 \subsubsection{Reusing Layout}
 
@@ -756,7 +764,7 @@ case Block(stats) =>
     Requisite(newline+"}")
 \end{lstlisting}
 
-Now during the concatenation of fragments and layout objects with \src{++}, it is checked whether a certain requisite is already satisfied. The layout is only generated when it is nedeed.
+Now during the concatenation of fragments and layout objects with \src{++}, it is checked whether a certain requisite is already satisfied. The \src{Requisite's} layout is only inserted when it is nedeed.
 
 This leads us to the following three interfaces (the \src{++} operators and some other methods have been omitted) that are used to represent the source code in the printers:
 
@@ -769,7 +777,9 @@ trait Requisite {
   def isRequired(l: Layout, r: Layout): Boolean
   def apply(l: Layout, r: Layout): Layout
 }
-
+\end{lstlisting}
+\needspace{10\baselineskip}
+\begin{lstlisting}
 trait Fragment {
   def leading:  Layout
   def center:   Layout
@@ -782,7 +792,7 @@ trait Fragment {
 }
 \end{lstlisting}
 
-Using implicit conversions (XX anhang), short aliases for the print methods and Scala's named and defaul arguments, this allows us to write the code for the two printers in a very concise way. Pattern matching gives us the ability to easily handle special cases and variations, as can be seen from the \src{Bind} matches below:
+Using implicit conversions (see Appendix~\vref{section:implicit-conversions}), short aliases for the print methods and Scala's named and default arguments, this allows us to write the code for the two printers in a very concise way. Pattern matching gives us the ability to easily handle special cases and variations, as can be seen from the \src{Bind} matches below:
 
 \begin{lstlisting}
 trait PrettyPrinter  {
@@ -811,6 +821,7 @@ trait PrettyPrinter  {
 
 For users of the code generation, there are several methods to transform a tree back into source code. The \src{createChanges} method of the \src{SourceGenerator} trait creates the change objects from a list of trees by first narrowing down the changed trees and then generating the code for them:
 
+\needspace{1\baselineskip}
 \begin{lstlisting}
 def createChanges(ts: List[Tree]): List[Change]
 \end{lstlisting}
@@ -827,11 +838,13 @@ This is the preferred method for IDEs that operate with change objects. The \src
 def applyChanges(ch: List[Change], source: String): String
 \end{lstlisting}
 
-Alternatively, if one just wants to generate the source code from a tree, the \src{createFragment} method can also be invoked directly. 
+Alternatively, if one just wants to generate the source code from a tree, the \src{createFragment} method can also be invoked directly, yielding a fragment for the lop-level tree. 
 
 \begin{lstlisting}
 def createFragment(t: Tree): Fragment
 \end{lstlisting}
 
+The \src{createFragment} method also minimizes the trees that are regenerated using the technique explained at the beginning of this section.
 
-3. variante
+We have now completed our tour through the library's internals. The next chapter will explain how the implemented refactorings use the library.
+
