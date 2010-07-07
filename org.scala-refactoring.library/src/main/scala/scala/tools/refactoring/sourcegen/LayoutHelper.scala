@@ -190,7 +190,7 @@ trait LayoutHelper extends CommentHelpers {
          layout(c.pos.end, p.pos.end) splitBefore (')')
     
        case (c, p: ValOrDefDef) =>
-         layout(c.pos.end, p.pos.end) splitAfter '}'
+         layout(c.pos.end, p.pos.end) splitAfterLast '}'
        
        case (c, p: Select) =>
          NoLayout → NoLayout

@@ -58,7 +58,7 @@ trait Indexes {
      * list of all sub- and super classes, in no particular order.
      */
     def completeClassHierarchy(s: global.Symbol): List[global.Symbol] =
-      s :: (allDefinedSymbols filter (_.ancestors contains s) flatMap (s => s :: s.ancestors)) filter (_.pos != global.NoPosition) distinct
+      s :: (allDefinedSymbols filter (_.ancestors contains s)) flatMap (s => s :: s.ancestors) filter (_.pos != global.NoPosition) distinct
     
     /**
      * For the given Symbol - which is a package - returns a
@@ -74,6 +74,12 @@ trait Indexes {
     def allDeclarations(): Map[global.Symbol, global.DefTree] = 
       allDefinedSymbols() flatMap (sym => declaration(sym) map (sym → _)) toMap
       
+    /**
+     * Returns all overrides of the symbol s.
+     */
+    def overridesInClasses(s: global.Symbol): List[global.Symbol] =
+      completeClassHierarchy(s.owner) map s.overridingSymbol  filterNot global.NoSymbol.==
+    
     /**
      * Add more convenience functions here..
      * */

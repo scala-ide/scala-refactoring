@@ -114,8 +114,10 @@ trait ReusingPrinter extends AbstractPrinter {
         
       case (t @ DefDef(ModifierTree(mods), newName, tparams, vparamss, tpt, rhs), orig: DefDef) =>
         val nameTree = NameTree(t.nameString) setPos orig.namePosition
-        l ++ p(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++
-          p(tparams) ++ vparamss.map(vparams => p(vparams, before = "\\(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) ++ p(tpt) ++ p(rhs) ++ r
+        val modsAndName = p(mods ::: nameTree :: Nil, separator = Requisite.Blank)
+        val parameters = vparamss.map(vparams => p(vparams, before = "\\(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) 
+       
+        l ++ modsAndName ++ p(tparams) ++ parameters ++ p(tpt) ++ p(rhs) ++ r
           
       case (t @ ValDef(ModifierTree(mods), newName, tpt, rhs), orig) =>
         val nameTree = NameTree(newName) setPos orig.namePosition

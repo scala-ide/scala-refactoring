@@ -119,9 +119,9 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     }
         
     assertEquals("""val a = {4 + 3  }""", generate(removeAuxiliaryTrees apply valDef get).center.asText)
-      
+          
     assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
-    
+          
     assertEquals(0, createChanges(List(valDef)).size)
   }
   
@@ -153,7 +153,10 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
         
     assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", generate(removeAuxiliaryTrees apply newDefDef1 get).center.asText)
-
+   
+    assertEquals("""
+       def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", createFragment(removeAuxiliaryTrees apply newDefDef1 get).asText)
+   
     val newRHS2 = Apply(Select(Ident("com"),"synchronized"), List(originalDefDef.rhs))
     
     val newDefDef2 = originalDefDef copy (rhs = newRHS2) setPos originalDefDef.pos
@@ -161,10 +164,56 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
        })""", generate(removeAuxiliaryTrees apply newDefDef2 get).center.asText)
-    
+          
+    assertEquals("""
+       def amethod(v: Int, a: Account): Unit = com.synchronized({
+       a.add(v)
+       })""", createFragment(removeAuxiliaryTrees apply newDefDef2 get).asText)
+ 
+       
     assertEquals(1, createChanges(List(newDefDef1)).size)
     
     assertEquals(1, createChanges(List(newDefDef2)).size)
+  }
+  
+  @Test
+  def modifiedDefDefWithFor(): Unit = {
+    
+    val originalDefDef = treeFrom("""
+    object Account {
+      def addInterest(accounts: Array[Account], rate: Float) {
+        for (a <- accounts) {
+          println(a.value)
+        }
+      }
+    }
+    class Account {
+       // before value
+       var value = 4
+       // after value
+    
+       def add(v: Int) {
+         value += v
+       }
+    }
+    """) match {
+      case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
+      case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
+    }
+    
+    val newRHS1 = new Block(List(Apply(Select(Ident("com"),"synchronized"), List(originalDefDef.rhs))), EmptyTree)
+    
+    val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
+    
+    assertEquals("""
+      def addInterest(accounts: Array[Account], rate: Float){
+        com.synchronized( {
+        for (a <- accounts) {
+          println(a.value)
+        }
+      })
+      }""", createFragment(removeAuxiliaryTrees apply newDefDef1 get).asText)
+
   }
   
   @Test

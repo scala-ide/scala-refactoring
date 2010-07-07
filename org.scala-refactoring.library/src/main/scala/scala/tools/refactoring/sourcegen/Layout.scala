@@ -51,30 +51,39 @@ object Layout {
   
     lazy val asText = source.content.slice(start, end) mkString
           
-    def splitAfter(cs: Char*): (Layout, Layout) = split(cs) match {
+    def splitAfter(cs: Char*): (Layout, Layout) = splitFromLeft(cs) match {
       case None => this → NoLayout
       case Some(i) => copy(end = i+1) → copy(start = i+1)
     }
     
-    def splitAtAndExclude(cs: Char*): (Layout, Layout) = split(cs) match {
+    def splitAfterLast(cs: Char*): (Layout, Layout) = splitFromRight(cs) match {
+      case None => this → NoLayout
+      case Some(i) => copy(end = i+1) → copy(start = i+1)
+    }
+    
+    def splitAtAndExclude(cs: Char*): (Layout, Layout) = splitFromLeft(cs) match {
       case None => this → NoLayout
       case Some(i) => copy(end = i) → copy(start = i+1)
     }
     
-    def splitBefore(cs: Char*): (Layout, Layout) = split(cs) match {
+    def splitBefore(cs: Char*): (Layout, Layout) = splitFromLeft(cs) match {
       case None => NoLayout → this
       case Some(i) => copy(end = i) → copy(start = i)
     }
     
-    private def split(cs: Seq[Char]): Option[Int] = cs.toList match {
+    private def splitFromLeft(cs: Seq[Char]): Option[Int] = split(cs, c => stripComment(asText).indexOf(c))
+    
+    private def splitFromRight(cs: Seq[Char]): Option[Int] = split(cs, c => stripComment(asText).lastIndexOf(c))
+
+    private def split(cs: Seq[Char], findIndex: Char => Int): Option[Int] = cs.toList match {
       case Nil => 
         None
       case x :: xs =>
-        val i = stripComment(asText).indexOf(x) 
+        val i = findIndex(x) 
         if(i >= 0 ) {
           Some(start + i)
         } else
-          split(xs)
+          split(xs, findIndex)
     }
   }
   
