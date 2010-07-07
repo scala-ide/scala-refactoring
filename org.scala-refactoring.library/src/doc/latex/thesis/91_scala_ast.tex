@@ -1,6 +1,6 @@
 \chapter{Scala AST} \label{chapter:scala-ast}
 
-This chapter describes the abstract syntax tree classes that are used in the Scala compiler; the implementations can be found in the \src{scala.reflect.generic.Trees} trait. Note that the list is not complete -- some tree classes are only used during parsing and have already been eliminated at the point tools typically see the code, which is after the typer phase.
+This chapter describes the abstract syntax tree classes that are used in the Scala compiler; the implementations can be found in the \src{scala.reflect.generic.Trees} trait (not to be confused with \src{scala.reflect.Tree}, which provides an undocumented representation of the code at runtime). Note that the list is not complete -- some tree classes are only used during parsing and have already been eliminated at the point tools typically see the code, which is after the typer phase.
 
 We start with the root class \src{Tree}, some of the more interesting traits and abstract classes and then describe the concrete trees. Scala constructs -- syntactic sugar -- that are not represented as trees like parallel assignment and for-comprehensions are described in the last section.
 

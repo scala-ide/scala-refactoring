@@ -31,7 +31,9 @@ trait Indexes {
     
     /**
      * Returns all symbols that are part of the index,
-     * either referenced or defined.
+     * either referenced or defined. This also includes
+     * symbols from the Scala library that are used
+     * in the compilation units.
      * */
     def allSymbols(): List[global.Symbol]    
     
@@ -42,8 +44,13 @@ trait Indexes {
     def declaration(s: global.Symbol): Option[global.DefTree]
     
     /**
-     * For a given Symbol, returns all trees that contain a reference
-     * to it. Only returns trees with a range position.
+     * For a given Symbol, returns all trees that directly 
+     * reference the symbol. This does not include parents
+     * of trees that reference a symbol, e.g. for a method
+     * call, the Select tree is returned, but not its parent
+     * Apply tree. 
+     * 
+     * Only returns trees with a range position.
      * */
     def references(s: global.Symbol): List[global.Tree]
     

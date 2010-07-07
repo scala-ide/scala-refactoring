@@ -4,7 +4,7 @@ img_extIsRegExp=false
 img_extensions=.eps .jpg .jpeg .png .pdf .ps .fig .gif
 kileprversion=2
 kileversion=2.0.85
-lastDocument=thesis.tex
+lastDocument=91_scala_ast.tex
 masterDocument=thesis.tex
 name=Thesis
 pkg_extIsRegExp=false
@@ -92,20 +92,20 @@ order=1
 
 [item:0_front.tex]
 archive=true
-column=14
+column=0
 encoding=UTF-8
 highlight=LaTeX
-line=12
+line=30
 mode=LaTeX
 open=true
 order=2
 
 [item:2_refactoring_library.tex]
 archive=true
-column=141
+column=372
 encoding=ISO-8859-1
 highlight=LaTeX
-line=846
+line=247
 mode=LaTeX
 open=true
 order=5
@@ -115,17 +115,17 @@ archive=true
 column=67
 encoding=ISO-8859-1
 highlight=LaTeX
-line=687
+line=12
 mode=LaTeX
 open=true
 order=3
 
 [item:9_appendix.tex]
 archive=true
-column=66
+column=170
 encoding=ISO-8859-1
 highlight=LaTeX
-line=166
+line=218
 mode=LaTeX
 open=true
 order=1
@@ -292,10 +292,10 @@ order=-1
 
 [item:thesis.bib]
 archive=true
-column=21
+column=32
 encoding=ISO-8859-1
 highlight=BibTeX
-line=100
+line=331
 mode=BibTeX
 open=true
 order=6
@@ -312,10 +312,10 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=21
+column=0
 encoding=UTF-8
 highlight=LaTeX
-line=1162
+line=30
 mode=LaTeX
 open=true
 order=0
@@ -335,29 +335,29 @@ CursorColumn=54
 CursorLine=55
 
 [view-settings,view=0,item:0_front.tex]
-CursorColumn=14
-CursorLine=12
+CursorColumn=0
+CursorLine=30
 
 [view-settings,view=0,item:2_refactoring_library.tex]
-CursorColumn=141
-CursorLine=846
+CursorColumn=372
+CursorLine=247
 
 [view-settings,view=0,item:91_scala_ast.tex]
 CursorColumn=67
-CursorLine=687
+CursorLine=12
 
 [view-settings,view=0,item:9_appendix.tex]
-CursorColumn=66
-CursorLine=166
+CursorColumn=170
+CursorLine=218
 
 [view-settings,view=0,item:mystyle.sty]
 CursorColumn=108
 CursorLine=74
 
 [view-settings,view=0,item:thesis.bib]
-CursorColumn=21
-CursorLine=100
+CursorColumn=32
+CursorLine=331
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=21
-CursorLine=1162
+CursorColumn=0
+CursorLine=30

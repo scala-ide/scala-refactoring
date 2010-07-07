@@ -77,6 +77,13 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     }
   }
   
+  def allSymbols(pro: FileSet): List[String] = {
+              
+    buildIndex(pro)
+        
+    List((index.allSymbols() map (_.toString) sortWith (_ < _)) mkString (", "))
+  }
+  
   @Test
   def findReferencesToClass = new FileSet("p1") {
     """
@@ -314,6 +321,15 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     """ becomes
     "C on line 2, Defg on line 3, this on line 3"
   } apply(allDeclarations)
+  
+  @Test
+  def allSymbolsInIndex = new FileSet {
+    """
+    trait Abc
+    class B(s: String)
+    """ becomes
+    "class B, class Object, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, trait ScalaObject, type AnyRef, type String, value s, value s"
+  } apply(allSymbols)
   
   //@Test FIXME fails when run with Maven
   def allDeclarationsMethods = new FileSet {

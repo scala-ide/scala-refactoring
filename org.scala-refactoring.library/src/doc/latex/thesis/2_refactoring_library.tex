@@ -103,7 +103,8 @@ trait IndexLookup {
   def allDefinedSymbols(): List[global.Symbol]
   
   /**
-    * Returns all symbols that are part of the index, either referenced or defined.
+    * Returns all symbols that are part of the index, either referenced or defined. This also 
+    * includes symbols from the Scala library that are used in the compilation units.
     * */
   def allSymbols(): List[global.Symbol]    
   
@@ -111,8 +112,13 @@ trait IndexLookup {
     * For a given Symbol, tries to find the tree that declares it.
     * */
   def declaration(s: global.Symbol): Option[global.DefTree]
+
   /**
-    * For a given Symbol, returns all trees that contain a reference to it.
+    * For a given Symbol, returns all trees that directly reference the symbol. This does not 
+    * include parents of trees that reference a symbol, e.g. for a method call, the Select tree 
+    * is returned, but not its parent Apply tree. 
+    * 
+    * Only returns trees with a range position.
     * */
   def references(s: global.Symbol): List[global.Tree]
   
@@ -239,7 +245,7 @@ In the remainder of this section, we will develop the basics of the Scala refact
 
 \subsection{Transformations}
 
-A refactoring transformation is essentially a function that transforms a tree into an other tree. But because most transformations do not apply to all kinds of possible trees, we model a transformation as a function of type $Tree\Rightarrow Option[Tree]$, making use of Scala's \src{Option} monad to indicate the potential inability to transform. In the actual implementation, the transformations are implemented generically as a \src{Transformation[A,~B]} that extend \src{A~$\Rightarrow$~Option[B]}:
+A refactoring transformation is essentially a function that transforms a tree into another tree. But because most transformations do not apply to all kinds of possible trees, we model a transformation as a function of type $Tree\Rightarrow Option[Tree]$, making use of Scala's \src{Option} monad to indicate the potential inability to transform. In the actual implementation, the transformations are implemented generically as a \src{Transformation[A,~B]} that extend \src{A~$\Rightarrow$~Option[B]}:
 
 \begin{lstlisting}
 abstract class Transformation[A, B] extends (A %$\Rightarrow$% Option[B]) {
