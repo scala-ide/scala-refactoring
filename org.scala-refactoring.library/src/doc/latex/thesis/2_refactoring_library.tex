@@ -23,7 +23,7 @@ Automated refactoring implementations typically do not work on the source code d
 
 Scala's AST is explained in more detail in Appendix~\vref{chapter:scala-ast}; a general knowledge of what an AST is should suffice to follow the explanations in this chapter. Useful to know is that all trees have a position information: either indicating a location from where the tree origins or a \src{NoPosition}, which denotes trees that do not have a corresponding source code location. This information is later used by the transformation and code generation phases.
 
-As we have seen at the beginning of this chapter, a typical refactoring takes the current file's AST and the user's selection or caret position and first checks if the chosen refactoring is applicable -- for example, whether the selected region of the source file corresponds to an AST element that can be handled by the chosen refactoring. If necessary, the refactoring queries aditional configuration -- for example, a new name -- from the user. The AST is then transformed into its new form and handed over to the source generator to turn the AST back into source code (see \figref{figure:refactoring-flow} for a visualization of this workflow). As motivated above, generating the source code is already implemented generically and needs no further instructions from the refactoring implementer. %zu viel wiederholund von oben?
+As we have seen at the beginning of this chapter, a typical refactoring takes the current file's AST and the user's selection or caret position and first checks if the chosen refactoring is applicable -- for example, whether the selected region of the source file corresponds to an AST element that can be handled by the chosen refactoring. If necessary, the refactoring queries additional configuration -- for example, a new name -- from the user. The AST is then transformed into its new form and handed over to the source generator to turn the AST back into source code (see \figref{figure:refactoring-flow} for a visualization of this work-flow). As motivated above, generating the source code is already implemented generically and needs no further instructions from the refactoring implementer. %zu viel wiederholund von oben?
 
 \begin{figure}
   \centering
@@ -84,7 +84,7 @@ class %\yellowbox{SubClass}% extends %\bluebox{SuperClass}% {
 }
 \end{lstlisting}
 
-Note that the two \src{abstractMethod} symbols are not the same; but there are ways to find overriden and implemented methods in subclasses, as we shall see later.
+Note that the two \src{abstractMethod} symbols are not the same; but there are ways to find overridden and implemented methods in subclasses, as we shall see later.
 
 While the trees can have a reference to a symbol, the converse is not true: symbols do not know about the trees they are related to. But for a refactoring which mainly works with trees, this information is crucial. This is why the refactoring library contains the means to build an index that relates symbols with corresponding trees.
 
@@ -139,7 +139,7 @@ The library contains a default implementation of this trait that can be used if 
 Building an index can be expensive: whenever a compilation unit in the program changes, references to the symbols from other compilation units can change, and also the other way around. Because of this, it is not wise to maintain one monolithic index that needs to be thrown away and recreated on every change in the program. The provided implementation avoids this by maintaining a data structure for each compilation unit and combining these for queries. The implementation comprises these parts:
 
 \begin{description}
- \item[CompilationUnitIndex] One index per compilation unit that holds the references and declarations of just this part of the program. This structure can be rebuilt everytime a compilation unit changes. Rebuilding it traverses the whole tree once and stores mappings from symbols to \src{RefTrees} and \src{DefTrees}.
+ \item[CompilationUnitIndex] One index per compilation unit that holds the references and declarations of just this part of the program. This structure can be rebuilt every time a compilation unit changes. Rebuilding it traverses the whole tree once and stores mappings from symbols to \src{RefTrees} and \src{DefTrees}.
  \item[GlobalIndex] An implementation of the \src{IndexLokup} trait that ties together any number of these per compilation unit indices, but is completely stateless itself.
 \end{description}
 
@@ -159,9 +159,9 @@ The \src{SymbolExpander} is used as a stackable trait (see Appendix \vref{sectio
 
 \begin{description}
  \item[ExpandGetterSetters] connects getters, setters and the underlying field as well as constructor parameters.
- \item[SuperConstructorParameters] resolves class parameters that are passed to a superconstructor.
+ \item[SuperConstructorParameters] resolves class parameters that are passed to a super constructor.
  \item[Companion] to find the companion object or class for a symbol.
- \item[OverridesInClassHierarchy] searches for a symbol in all sub- and superclasses. that might override or implement it.
+ \item[OverridesInClassHierarchy] searches for a symbol in all sub- and super-classes. that might override or implement it.
 \end{description}
 
 The \src{GlobalIndex} uses all these traits, but it would also be possible for an implementation of the index to use only a subset of these to improve the performance. For example, when all references to a method need to be found, the initial symbol is run through all the expanders until a fix point is reached.
@@ -200,7 +200,7 @@ The calculation of these inbound and outbound dependencies is done as follows:
 
 \paragraph{Inbound:} Find all symbols that are declared in the current scope (e.g. the method we extract from) and remove all declarations that are defined inside the selection. This gives us all the inbound parameters.
 
-\paragraph{Outbound:} For each symbol that is definde inside the selection, check if it is used anywhere outside the selection.
+\paragraph{Outbound:} For each symbol that is defined inside the selection, check if it is used anywhere outside the selection.
 \\\\
 The \src{inboundLocalDependencies} and \src{outboundLocalDependencies} methods implement these two calculations. 
 
@@ -233,7 +233,7 @@ The \textit{replace} transformation itself is again a combination of two even mo
 
 Conceptually, chaining simple transformations to build more powerful ones follows the Unix pipes philosophy. The design of this implementation was inspired by the Stratego program transformation tool-set \cite{Stratego} and the Kiama language processing library \cite{Kiama}. Functional programming also uses the term \textit{combinator} for functions that can be combined and yield new functions of the same kind. An example of this are parser combinators \cite{ParserCombinators}, which are part of the Scala standard library.
 
-In contrast to unix pipes that operate on their input line by line, performing transformations on a tree data structure adds an additional dimension. When transforming trees, we are also concerned with questions on how we want to traverse the tree -- i.e. pre-order or post-order -- and to which children a transformation should be applied. The presented implementation handles all these concerns in a uniform way.
+In contrast to Unix pipes that operate on their input line by line, performing transformations on a tree data structure adds an additional dimension. When transforming trees, we are also concerned with questions on how we want to traverse the tree -- i.e. pre-order or post-order -- and to which children a transformation should be applied. The presented implementation handles all these concerns in a uniform way.
 
 In the remainder of this section, we will develop the basics of the Scala refactoring's transformation combinators and show examples of their usage.
 
@@ -438,7 +438,7 @@ val emptyTree = transformation[Tree, Tree] {
 preorder(allChildren(emptyTree)) apply tree
 \end{lstlisting}
 
-Preorder traversal already applies the transformation to all children, so we can simplify this to:
+Pre-order traversal already applies the transformation to all children, so we can simplify this to:
 
 \begin{lstlisting}
 preorder(emptyTree) apply tree
@@ -599,7 +599,7 @@ More concrete implementations of transformations can be found in Chapter~\vref{c
 
 Once our abstract syntax tree has been refactored, we need to convert it back into its textual source code representation. This process comprises two main steps: the \textit{detection of modifications} to minimize the amount of code that is regenerated and the actual \textit{source generation}.
 
-The first step is necessary because we -- in contrast to many other refactoring implementations -- do not keep track of modifications to the AST while they are happening but reconstruct this information afterwards. This allows us to keep the transformations simpler but consequently makes the code generation more complex. This tradeoff is worthwile because we intend the library to be reused and the transformations to be implemented by developers who do not (need to) know the details of the source generation.
+The first step is necessary because we -- in contrast to many other refactoring implementations -- do not keep track of modifications to the AST while they are happening but reconstruct this information afterwards. This allows us to keep the transformations simpler but consequently makes the code generation more complex. This trade off is worthwhile because we intend the library to be reused and the transformations to be implemented by developers who do not (need to) know the details of the source generation.
 
 The AST after the refactoring may contain several kinds of modifications: trees can be moved around, deleted and new trees can be introduced. From the transformations we know that trees that are moved around keep their original position information, and newly created trees have a \src{NoPosition} attribute per default. This allows us to detect changes and can later be used during source generation to preserve the layout of already existing trees. 
 
@@ -661,7 +661,7 @@ If we were only interested in a semantically equivalent program, we could simply
 
 The original source code is always available to the refactoring tool, and with the position information on the trees, we have a means to look up the original source code for a tree.
 
-Other refactoring tools (e.g. the C++ Development Tooling for Eclipse \cite{CdtOopsla} or the Ruby Development Tools \cite{RubyOopsla}) have used various approaches to solve this problem (see \cite{ScalaRefactoring} for details on these approaches). For some cases -- for example, in a rename refactoring -- it might even be acceptable to pretty print the code as long as only very small regions of the program change. But as a general solution, this approach is problematic. For example, with the Extract Method refactoring, where arbitrary large parts of the program are moved around. A tool can handle this situation by cutting-and-pasting the body of the extracted method. This is not feasible for us because we need a generic way to handle all kinds of unforseeable changes to the source code.
+Other refactoring tools (e.g. the C++ Development Tooling for Eclipse \cite{CdtOopsla} or the Ruby Development Tools \cite{RubyOopsla}) have used various approaches to solve this problem (see \cite{ScalaRefactoring} for details on these approaches). For some cases -- for example, in a rename refactoring -- it might even be acceptable to pretty print the code as long as only very small regions of the program change. But as a general solution, this approach is problematic. For example, with the Extract Method refactoring, where arbitrary large parts of the program are moved around. A tool can handle this situation by cutting-and-pasting the body of the extracted method. This is not feasible for us because we need a generic way to handle all kinds of unforeseeable changes to the source code.
 
 \subsubsection{Preserving Layout}
 
@@ -669,7 +669,7 @@ Our approach is based on using two different kinds of source printers: one that 
 
 The source generation algorithm then alternates between these two printers during the code generation process.
 
-Now we just need to know how we can reuse the existing layout. What we need is a way to decide how all these layout elements can be associated to their enclosing trees. If we take a look at the following listing, we can see several occurences of whitespace and other layout, like the three comments and the braces.
+Now we just need to know how we can reuse the existing layout. What we need is a way to decide how all these layout elements can be associated to their enclosing trees. If we take a look at the following listing, we can see several occurrences of whitespace and other layout, like the three comments and the braces.
 
 \begin{lstlisting}
 package p //TODO
@@ -764,7 +764,7 @@ case Block(stats) =>
     Requisite(newline+"}")
 \end{lstlisting}
 
-Now during the concatenation of fragments and layout objects with \src{++}, it is checked whether a certain requisite is already satisfied. The \src{Requisite's} layout is only inserted when it is nedeed.
+Now during the concatenation of fragments and layout objects with \src{++}, it is checked whether a certain requisite is already satisfied. The \src{Requisite's} layout is only inserted when it is needed.
 
 This leads us to the following three interfaces (the \src{++} operators and some other methods have been omitted) that are used to represent the source code in the printers:
 

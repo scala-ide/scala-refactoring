@@ -161,7 +161,7 @@ abstract trait CTrait extends scala.AnyRef {
 \end{lstlisting}
 \end{multicols}
 
-We see that a self type annotation automatically intersects the current trait type with all explicitly named types. Extracting the exact positions of all type names is not trivial and involves searching the value's position for the occurences of the names.
+We see that a self type annotation automatically intersects the current trait type with all explicitly named types. Extracting the exact positions of all type names is not trivial and involves searching the value's position for the occurrences of the names.
 
 It is also allowed to use \src{this} for the self type's name. This introduces no alias and the name of the \src{ValDef} is just \src{\_}.
 
@@ -225,7 +225,7 @@ Finding methods in sub- or super classes requires the use of their \src{symbols}
 
 \paragraph{TypeDef} \member{MemberDef <: DefTree <: SymTree <: Tree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tparams}: List[TypeDef], \textit{rhs}: Tree}
 
-\noindent \src{TypeDef} trees are definitions of types. The following listing shows three occurences -- \src{A, B, C} -- of \src{TypeDefs}:
+\noindent \src{TypeDef} trees are definitions of types. The following listing shows three occurrences -- \src{A, B, C} -- of \src{TypeDefs}:
 
 \begin{lstlisting}
 class Types {
@@ -506,7 +506,7 @@ list foreach (((x0$1: Int) => x0$1 match {
 
 \paragraph{Return} \member{TermTree <: Tree $\wedge$ SymTree <: Tree}{\textit{expr}: Tree}
 
-\noindent The \src{Return} tree contains an expression that consitutes the return value. For \src{return} statements without an expression, the compiler generates a \src{()} literal.
+\noindent The \src{Return} tree contains an expression that constitutes the return value. For \src{return} statements without an expression, the compiler generates a \src{()} literal.
 
 \paragraph{Try} \member{TermTree <: Tree}{\textit{block}: Tree, \textit{catches}: List[CaseDef], \textit{finalizer}: Tree}
 
@@ -522,7 +522,7 @@ list foreach (((x0$1: Int) => x0$1 match {
 
 \paragraph{Typed} \member{TermTree <: Tree}{\textit{expr}: Tree, \textit{tpt}: Tree}
 
-\noindent The \src{Typed} tree is used whenever an expression is annotated with a type. For example, in the following listing, the second and third occurences of \src{Int} are \src{Typed} trees:
+\noindent The \src{Typed} tree is used whenever an expression is annotated with a type. For example, in the following listing, the second and third occurrences of \src{Int} are \src{Typed} trees:
 
 \begin{lstlisting}
 val a: Int = 42: Int
@@ -689,7 +689,7 @@ Note that the existential type tree is stored in another \src{TypeTree}'s \src{o
 
 \subsubsection*{For Comprehensions}
 
-\noindent \src{For} or sequence comprehensions are a purely syntatic construct; in the AST, they are represented with \src{foreach}, \src{withFilter}, \src{map}, and \src{flatMap} calls. The following listing shows some examples. 
+\noindent \src{For} or sequence comprehensions are a purely syntactic construct; in the AST, they are represented with \src{foreach}, \src{withFilter}, \src{map}, and \src{flatMap} calls. The following listing shows some examples. 
 
 \needspace{10\baselineskip}
 \begin{lstlisting}

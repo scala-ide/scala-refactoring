@@ -92,10 +92,10 @@ order=1
 
 [item:0_front.tex]
 archive=true
-column=21
+column=14
 encoding=UTF-8
 highlight=LaTeX
-line=34
+line=12
 mode=LaTeX
 open=true
 order=2
@@ -292,10 +292,10 @@ order=-1
 
 [item:thesis.bib]
 archive=true
-column=29
+column=21
 encoding=ISO-8859-1
 highlight=BibTeX
-line=278
+line=100
 mode=BibTeX
 open=true
 order=6
@@ -312,10 +312,10 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=132
+column=21
 encoding=UTF-8
 highlight=LaTeX
-line=1390
+line=1162
 mode=LaTeX
 open=true
 order=0
@@ -335,8 +335,8 @@ CursorColumn=54
 CursorLine=55
 
 [view-settings,view=0,item:0_front.tex]
-CursorColumn=21
-CursorLine=34
+CursorColumn=14
+CursorLine=12
 
 [view-settings,view=0,item:2_refactoring_library.tex]
 CursorColumn=141
@@ -355,9 +355,9 @@ CursorColumn=108
 CursorLine=74
 
 [view-settings,view=0,item:thesis.bib]
-CursorColumn=29
-CursorLine=278
+CursorColumn=21
+CursorLine=100
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=132
-CursorLine=1390
+CursorColumn=21
+CursorLine=1162

@@ -99,7 +99,7 @@ trait LogOnlyErrors extends Logging {
 }
 \end{lstlisting}
 
-When we instantiate a \src{new ConsoleLogger with LogOnlyErrors}, the abstract overriden method in \src{LogOnlyErrors} overrides the \src{log} method in \src{ConsoleLogger}. We can also create more such stackable traits and combine them.
+When we instantiate a \src{new ConsoleLogger with LogOnlyErrors}, the abstract override method in \src{LogOnlyErrors} overrides the \src{log} method in \src{ConsoleLogger}. We can also create more such stackable traits and combine them.
 
 \begin{lstlisting}
 trait TreatAllAsErrors extends Logging {
