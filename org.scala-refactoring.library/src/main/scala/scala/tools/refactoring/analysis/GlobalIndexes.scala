@@ -46,15 +46,16 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
       val decls = declaration(s).toList
       occurences(s) filterNot decls.contains
     }
+    
+    def expandSymbol(s: global.Symbol): List[global.Symbol] = {
+      def expandSymbols(ss: List[Symbol]) = ss flatMap expand filter (_ != NoSymbol) distinct
+            
+      // we should probably do this until a fixpoint is reached. but for now, three times seems to be enough
+      expandSymbols(expandSymbols(expandSymbols(List(s))))
+    }
       
     def occurences(s: global.Symbol) = {
-      
-      def expandSymbols(ss: List[Symbol]) = ss flatMap expand filter (_ != NoSymbol) distinct
-      
-      // we should probably do this until a fixpoint is reached. but for now, three times seems to be enough
-      val expanded = expandSymbols(expandSymbols(expandSymbols(List(s))))
-
-      expanded flatMap { sym =>
+      expandSymbol(s) flatMap { sym =>
         declaration(sym).toList ::: cus.flatMap(_.references.get(sym).flatten)
       } filter (_.pos.isRange) distinct
     }
