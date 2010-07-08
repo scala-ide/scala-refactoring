@@ -19,7 +19,7 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
   
   def prepare(s: Selection) = {
     s.findSelectedOfType[ValDef] match {
-      case Some(t) if (t.symbol.isPrivate || t.symbol.isLocal) && !t.symbol.isMutable => Right(t)
+      case Some(t) if (t.symbol.isPrivate || t.symbol.isLocal) && !t.symbol.isMutable && !t.symbol.isParameter => Right(t)
       case _ => Left(PreparationError("No local value selected."))
     }
   }
@@ -27,30 +27,36 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
   def perform(selection: Selection, selectedValue: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
             
     trace("Selected: %s", selectedValue)
-    
-    val references = index references selectedValue.symbol
-    
-    val replacement = selectedValue.rhs match {
-      // inlining `list.filter _` should not include the `_`
-      case Function(vparams, Apply(fun, args)) if vparams forall (_.symbol.isSynthetic) => fun
-      case t => t
+
+    val removeSelectedValue = {
+          
+      def replaceSelectedValue(ts: List[Tree]) = {
+        ts replaceSequence (List(selectedValue), Nil)
+      }
+      
+      transform {
+        case tpl @ Template(_, _, stats) if stats contains selectedValue =>
+          tpl.copy(body = replaceSelectedValue(stats)) replaces tpl
+        case block @ BlockExtractor(stats) if stats contains selectedValue =>
+          mkBlock(replaceSelectedValue(stats)) replaces block
+      }
     }
     
-    trace("Value is referenced on lines: %s", references map (_.pos.lineContent) mkString "\n  ")
-    
-    def replateSelectedValueInBlock(ts: List[Tree]) = {
-      ts replaceSequence (List(selectedValue), Nil)
-    }
-    
-    val removeSelectedValue = transform {
-      case tpl @ Template(_, _, stats) if stats contains selectedValue =>
-        tpl.copy(body = replateSelectedValueInBlock(stats)) replaces tpl
-      case block @ BlockExtractor(stats) if stats contains selectedValue =>
-        mkBlock(replateSelectedValueInBlock(stats)) replaces block
-    }
-    
-    val replaceReferenceWithRhs = transform {
-      case t if references contains t => replacement
+    val replaceReferenceWithRhs = {
+          
+      val references = index references selectedValue.symbol
+      
+      val replacement = selectedValue.rhs match {
+        // inlining `list.filter _` should not include the `_`
+        case Function(vparams, Apply(fun, args)) if vparams forall (_.symbol.isSynthetic) => fun
+        case t => t
+      }
+      
+      trace("Value is referenced on lines: %s", references map (_.pos.lineContent) mkString "\n  ")
+
+      transform {
+        case t if references contains t => replacement
+      }
     }
     
     val inlined = topdown(matchingChildren(removeSelectedValue &> topdown(matchingChildren(replaceReferenceWithRhs)))) apply selection.root

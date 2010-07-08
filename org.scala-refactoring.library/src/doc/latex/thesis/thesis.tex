@@ -586,6 +586,81 @@ when it could just generate the code in the simpler form:
 }
 \end{lstlisting}
 
+\section{Inline Local}
+
+The Inline Local -- also known as Inline Temp -- refactoring is the dual to Extract Local. It can be used to eliminate a local values by replacing all references to the local value by its right hand side.
+
+Restricting the refactoring to \src{vals} only makes the refactoring easier to implement than its Java counterpart, where local variables can be reassigned. Still, inlining a local value can change the semantics of a program if the computation of the value has side-effects.
+
+\figref{figure:inline-local-screenshot-1} shows a screenshot of the refactoring in the Scala IDE for Eclipse.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{inline_local_screenshot_1.png}
+  \caption{The Inline Local refactoring lets us undo the extracted local refactoring from \figref{figure:extract-local-screenshot-1}.}
+  \label{figure:inline-local-screenshot-1}
+\end{figure}
+
+\subsection{Implementation Details}
+
+The Inline Local refactoring implementation is straight forward and is assembled from two transformations: one to remove the value and another one that replaces the references to the value with its original right hand side.
+
+The implementation for the first transformation looks as follows:
+
+\begin{lstlisting}
+val removeSelectedValue = {
+      
+  def replaceSelectedValue(ts: List[Tree]) = {
+    ts replaceSequence (List(selectedValue), Nil)
+  }
+  
+  transform {
+    case tpl @ Template(_, _, stats) if stats contains selectedValue =>
+      tpl.copy(body = replaceSelectedValue(stats)) replaces tpl
+    case block @ BlockExtractor(stats) if stats contains selectedValue =>
+      mkBlock(replaceSelectedValue(stats)) replaces block
+  }
+}
+\end{lstlisting}
+
+The selected value can either be contained in a block, or directly in a class template's body. To replace the reference, we first have to find out with what we want to replace it. If the value is bound to a method as follows:
+
+\begin{lstlisting}
+val inlineThis = someList filter _
+\end{lstlisting}
+
+We the \src{\_} to be removed, this is why we cannot just take the value's right hand side. The replace transformation then simply replaces all trees that reference the value:
+
+\begin{lstlisting}
+val replaceReferenceWithRhs = {
+      
+  val references = index references selectedValue.symbol
+  
+  val replacement = selectedValue.rhs match {
+    // inlining `list.filter _` should not include the `_`
+    case Function(vparams, Apply(fun, args)) if vparams forall (_.symbol.isSynthetic) => fun
+    case t => t
+  }
+  
+  transform {
+    case t if references contains t => replacement
+  }
+}
+\end{lstlisting}
+
+Combining these two transformations leads to the Inline Local refactoring:
+\needspace{7\baselineskip}
+\begin{lstlisting}
+val inlineLocal = 
+  topdown(
+    matchingChildren(
+      removeSelectedValue &> 
+      topdown(
+        matchingChildren(
+          replaceReferenceWithRhs))))
+\end{lstlisting}
+
+
 \section{Extract Method}
 
 Also among the most used refactorings by Java programmers is Extract Method. Extract Method is another key refactoring in making code more readable: if there is some code that can be grouped together, turn it into a method, and give it a meaningful name. The refactoring takes care of passing and returning the necessary parameters.
@@ -1146,6 +1221,7 @@ Now the first argument -- the new name -- is applied during the test setup, and 
 
 \chapter{Conclusion} \label{chapter:outlook}
 
+In this chapter, we shall review the results of this thesis and take a look at different ways the project could be continued.
 
 \section{Accomplishments}
 
@@ -1154,7 +1230,7 @@ This thesis explored how Scala programmers can be supported with automated refac
 \begin{itemize}
   \item We built an IDE independent refactoring library and integrated it into the Scala IDE for Eclipse. The library only depends on the Scala compiler and can thus be easily integrated into other IDEs and tools that manipulate Scala source code. Because the whole interaction and integration is handled by the IDE, the user does not notice that the refactorings are performed by a library. The library is currently used by the Scala IDE for Eclipse \cite{EclipseScalaIDE} and the integration is planned for the Emacs based ENSIME Scala IDE \cite{Ensime}.
 
-  \item The following refactorings have been implemented so far: Rename, Extract Method, Extract Local, and Organize Imports.
+  \item The following refactorings have been implemented so far: Rename, Extract Method, Extract Local, Inline Local, and Organize Imports.
 
   \item Creating a new refactoring does not require intimate knowledge of all parts of the library. The main task when writing a new refactoring is creating a transformation that can be applied to the Scala abstract syntax tree. To analyze the program, and index of the program symbols can be built an queried. The different parts of the library can also be used for other code manipulation tasks. For example, one project \cite{RichardEmberson} that manipulates Scala ASTs  is using the library's code generation to turn these manipulations back into source code.
 
@@ -1177,7 +1253,6 @@ Miguel Garcia from EPFL provided me with the Scala listings style definition and
 Many thanks to everyone from the Scala team and in the Scala community who encouraged me and provided feedback. 
 
 A special thanks goes to Richard Emberson who uncovered many bugs in the implementation and always patiently waited for a fix.
-
 
 \section{Future Work}
 
@@ -1272,6 +1347,18 @@ and then executing the refactoring creates a new local variable and lets you cha
 \end{center}
 
 Extracting new local values can also be useful for debugging to see the intermediate results of a computation.
+
+\section{Inline Local}
+
+The Inline Local refactoring lets you remove unneeded local values. Selecting a value and invoking the refactoring will replace all references to the value with the value's right hand side.
+
+Note that when there are side-effects in the evaluation of the value, the refactoring might change you program's behavior. Only local \src{vals} can be inlined, \src{vars} are not supported.
+
+The following screenshot shows the refactoring in action:
+
+\begin{center}
+  \includegraphics[width=\linewidth]{inline_local_screenshot_1.png}
+\end{center}
 
 \section{Extract Method}
 

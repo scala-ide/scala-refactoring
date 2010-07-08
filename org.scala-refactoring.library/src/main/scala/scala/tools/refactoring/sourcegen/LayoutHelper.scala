@@ -116,25 +116,29 @@ trait LayoutHelper extends CommentHelpers {
         NoLayout → NoLayout
         
       case (p: Block, c) =>
-         layout(p.pos.start, c.pos.start) splitAfter '{'
+        val l = layout(p.pos.start, c.pos.start)
+        if(l contains "{")
+          l splitAfter '{'
+        else
+          l splitBefore '\n'
          
       case (p: Try, c: Block) =>
-         layout(p.pos.start, c.pos.start) splitBefore ('{')
+        layout(p.pos.start, c.pos.start) splitBefore ('{')
          
       case (p: Try, c) =>
-         layout(p.pos.start, c.pos.start) splitAfter ('\n', '{')
+        layout(p.pos.start, c.pos.start) splitAfter ('\n', '{')
          
       case (p: Import, c) =>
-         layout(p.pos.start, p.pos.point) → NoLayout
+        layout(p.pos.start, p.pos.point) → NoLayout
          
       case (p: ImportSelectorTree, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
+        layout(p.pos.start, c.pos.start) → NoLayout
          
       case (p: New, c) =>
-         layout(p.pos.start + "new".length, c.pos.start) → NoLayout
+        layout(p.pos.start + "new".length, c.pos.start) → NoLayout
          
       case (p, c) =>
-         layout(p.pos.start, c.pos.start) → NoLayout
+        layout(p.pos.start, c.pos.start) → NoLayout
     }
   }
            

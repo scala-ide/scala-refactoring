@@ -48,6 +48,37 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(inline)
+  
+  @Test
+  def inlineInMatch = new FileSet {
+    """ 
+  object ExtractLocal1 {
+  
+    def main(args: Array[String]) {
+  
+      args toList match {
+        case x :: Nil =>
+          val x = /*(*/"one argument"/*)*/
+          println(x)
+        case _ =>
+          println("more than one argument")
+      }
+    }
+  }""" becomes
+    """ 
+  object ExtractLocal1 {
+  
+    def main(args: Array[String]) {
+  
+      args toList match {
+        case x :: Nil =>
+          println(/*(*/"one argument")
+        case _ =>
+          println("more than one argument")
+      }
+    }
+  }"""
+  } applyRefactoring(inline)
  
   @Test
   def inlineLocal = new FileSet {
