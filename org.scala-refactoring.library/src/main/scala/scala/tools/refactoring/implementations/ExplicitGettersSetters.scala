@@ -13,26 +13,19 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
   
   import global._
   
-  abstract class PreparationResult {
-    def selectedValue: ValDef
-  }
-  
+  type PreparationResult = ValDef
+
   class RefactoringParameters
   
   def prepare(s: Selection) = {
     s.findSelectedOfType[ValDef] match {
-      case Some(valdef) =>
-        Right(new PreparationResult {
-          val selectedValue = valdef
-        })
+      case Some(valdef) => Right(valdef)
       case None => Left(new PreparationError("no valdef selected"))
     }
   }
     
-  override def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    
-    import prepared._
-    
+  override def perform(selection: Selection, selectedValue: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+        
     val template = selection.findSelectedOfType[Template].getOrElse {
       return Left(RefactoringError("no template found"))
     }

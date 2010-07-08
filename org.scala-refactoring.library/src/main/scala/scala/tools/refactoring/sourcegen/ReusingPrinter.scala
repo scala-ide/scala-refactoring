@@ -185,6 +185,19 @@ trait ReusingPrinter extends AbstractPrinter {
         val nameOrig = NameTree(t.nameString) setPos orig.namePosition
         l ++ p(nameOrig) ++ p(qualifier) ++ r
         
+       case (t @ Select(qualifier @ Apply(s @ Select(qual, name), Nil), selector), orig) =>
+        val nameOrig = NameTree(t.nameString) setPos orig.namePosition
+        val sName = NameTree(s.nameString) setPos s.namePosition
+        val l = between(qual, sName)(s.pos.source)
+        
+        val _qualifier = p(qualifier)
+        
+        if(!_qualifier.asText.matches("^\\s*\\(.*\\)\\s*") && l.contains(" ")) {
+          l ++ "\\(" ++ _qualifier ++ "\\)" ++ " " ++ p(nameOrig) ++ r
+        } else {
+          l ++ _qualifier ++ p(nameOrig) ++ r
+        }
+        
       case (t @ Select(qualifier, selector), orig: Select) =>
         val nameOrig = NameTree(t.nameString) setPos orig.namePosition
         val _q = p(qualifier)
@@ -195,8 +208,8 @@ trait ReusingPrinter extends AbstractPrinter {
           !between.contains(" ") && !between.contains(".")
         }
         
-        def startsWithChar = _q.asText.matches(".*[a-zA-Z]$")
-        def endsWithChar   = _n.asText.matches("^[a-zA-Z].*")
+        def startsWithChar = _q.asText.matches(".*[a-zA-Z0-9]$")
+        def endsWithChar   = _n.asText.matches("^[a-zA-Z0-9].*")
         
         if(startsWithChar && endsWithChar && hasNoSeparator) {
           l ++ _q ++ " " ++ _n ++ r

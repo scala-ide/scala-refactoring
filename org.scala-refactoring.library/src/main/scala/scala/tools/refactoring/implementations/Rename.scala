@@ -15,9 +15,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
       
   case class PreparationResult(selectedTree: SymTree, hasLocalScope: Boolean)
   
-  abstract class RefactoringParameters {
-    def newName: String
-  }
+  type RefactoringParameters = String
   
   def prepare(s: Selection) = {
     s.selectedSymbolTree match {
@@ -27,7 +25,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, prepared: PreparationResult, newName: RefactoringParameters): Either[RefactoringError, List[Change]] = {
 
     trace("Selected tree is %s", prepared.selectedTree)
     
@@ -41,11 +39,11 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     
     val renameTree = transform {
       case t: ImportSelectorTree => 
-        mkRenamedImportTree(t, params.newName)
+        mkRenamedImportTree(t, newName)
       case s: SymTree => 
-        mkRenamedSymTree(s, params.newName)
+        mkRenamedSymTree(s, newName)
       case t: TypeTree => 
-        mkRenamedTypeTree(t, params.newName, prepared.selectedTree.symbol)
+        mkRenamedTypeTree(t, newName, prepared.selectedTree.symbol)
     }
     
     val rename = topdown(isInTheIndex &> renameTree |> id)

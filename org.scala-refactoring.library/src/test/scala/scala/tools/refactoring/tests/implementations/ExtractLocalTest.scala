@@ -19,9 +19,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes)      
     }
-    val changes = performRefactoring(new refactoring.RefactoringParameters {
-      val name = valName
-    })
+    val changes = performRefactoring(valName)
   }.changes
   
   @Test

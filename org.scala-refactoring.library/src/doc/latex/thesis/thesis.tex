@@ -879,11 +879,9 @@ The preparation result's concrete type depends on the chosen refactoring. In the
 
 \needspace{6\baselineskip}
 \begin{lstlisting}
-val refactoringParameters = new refactoring.RefactoringParameters {
-  val newName = {
-    val oldName = preparationResult.selectedTree.symbol.nameString
-    askNewName(oldName)
-  }
+val refactoringParameters = {
+  val selectedName = preparationResult.selectedTree.symbol.nameString
+  askNewName(selectedName)
 }
 \end{lstlisting}
 
@@ -1011,9 +1009,7 @@ class ExtractMethodScalaIdeRefactoring(start: Int, end: Int, file: ScalaSourceFi
     refactoring.prepare(selection)
   }
   
-  def refactoringParameters = new refactoring.RefactoringParameters {
-    val methodName = name
-  }
+  def refactoringParameters = name
   
   override def getPages = 
     new NewNameWizardPage(

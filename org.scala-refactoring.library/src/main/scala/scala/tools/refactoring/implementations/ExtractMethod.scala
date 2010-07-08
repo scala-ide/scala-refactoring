@@ -14,29 +14,19 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
   
   import global._
     
-  abstract class PreparationResult {
-    def selectedMethod: Tree
-  }
+  type PreparationResult = Tree
   
-  abstract class RefactoringParameters {
-    def methodName: String
-  }
-  
+  type RefactoringParameters = String
+
   def prepare(s: Selection) = {
     s.findSelectedOfType[DefDef] match {
-      case Some(defdef) =>
-        Right(new PreparationResult {
-          val selectedMethod = defdef
-        })
+      case Some(defdef) => Right(defdef)
       case None => Left(new PreparationError("no enclosing defdef found"))
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    
-    import prepared._
-    import params._
-    
+  def perform(selection: Selection, selectedMethod: PreparationResult, methodName: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+        
     val (call, newDef) = {
 
       val parameters = inboundLocalDependencies(selection, selectedMethod.symbol, index)

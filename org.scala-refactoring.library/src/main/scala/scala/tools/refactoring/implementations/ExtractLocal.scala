@@ -12,13 +12,9 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
   
   import global._
   
-  abstract class PreparationResult {
-    def selectedExpression: Tree
-  }
+  type PreparationResult = Tree
   
-  abstract class RefactoringParameters {
-    def name: String
-  }
+  type RefactoringParameters = String
   
   def prepare(s: Selection) = {
     
@@ -34,18 +30,13 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
       }
     }) match {
       case Some(term) =>
-        Right(new PreparationResult {
-          val selectedExpression = term
-        })
+        Right(term)
       case None => Left(new PreparationError("no term selected"))
     }
   }
     
-  def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    
-    import prepared._
-    import params._
-        
+  def perform(selection: Selection, selectedExpression: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+            
     trace("Selected: %s", selectedExpression)
     
     val newVal = mkValDef(name, selectedExpression)

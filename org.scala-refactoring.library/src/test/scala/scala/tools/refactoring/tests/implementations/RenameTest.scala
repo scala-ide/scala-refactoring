@@ -19,9 +19,7 @@ class RenameTest extends TestHelper with TestRefactoring {
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes) 
     }
-    val changes = performRefactoring(new refactoring.RefactoringParameters {
-      val newName = name
-    })
+    val changes = performRefactoring(name)
   }.changes
   
   @Test

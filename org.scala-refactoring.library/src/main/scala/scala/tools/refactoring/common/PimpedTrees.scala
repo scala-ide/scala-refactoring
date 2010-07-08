@@ -118,8 +118,10 @@ trait PimpedTrees {
       
         if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
           t.pos withEnd (t.pos.start + nameString.length)
-        } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') {
+        } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') /*`a`*/ {
           t.pos withStart t.pos.point
+        } else if (qualifier.pos.sameRange(t.pos) && t.name.toString == "apply") {
+          t.pos withEnd t.pos.start
         } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
           t.pos withStart (t.pos.end - nameString.length)
         } else if (qualifier.pos.isRange) {
