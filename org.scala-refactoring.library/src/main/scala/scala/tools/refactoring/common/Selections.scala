@@ -25,6 +25,10 @@ trait Selections {
     
     def file: AbstractFile
     
+    /**
+     * Returns all selected trees that are not
+     * children of other selected trees.
+     * */
     lazy val selectedTopLevelTrees: List[Tree] = {
       val hits = new ListBuffer[Tree]
       new Traverser {
@@ -38,20 +42,42 @@ trait Selections {
       hits.toList
     }
      
+    /**
+     * Returns all symbols that are either used or 
+     * defined in the selected trees and their children.
+     * */
     lazy val selectedSymbols = allSelectedTrees flatMap {
       case t: SymTree => Some(t.symbol)
       case _ => None
     }
     
+    /**
+     * Returns true if the given Tree is fully contained in the selection.
+     * */
     def contains(t: Tree) = isPosContainedIn(t.pos, pos)
+    
+    /**
+     * Returns true if the given Tree fully contains this selection.
+     * */
     def isContainedIn(t: Tree) = isPosContainedIn(pos, t.pos)
     
+    /**
+     * Tries to find the selected SymTree: first it is checked if the selection
+     * fully contains a SymTree, if true, the first selected is returned. Otherwise
+     * the result of findSelectedOfType[SymTree] is returned.
+     */
     lazy val selectedSymbolTree = (root filter (cond(_) { case t: SymTree => contains(t) }) match {
       case (x: SymTree) :: _ => Some(x)
       case _ => None
     }) orElse findSelectedOfType[SymTree]
     
-    def findSelectedOfType[T](implicit m: Manifest[T]) = root filter (cond(_) {
+    /**
+     * Finds a selected tree by its type. The tree does not have to be selected completely,
+     * it is only checked whether this selection is contained in the tree.
+     * 
+     * If multiple trees of the type are found, the last one (i.e. the deepest child) is returned.
+     * */
+    def findSelectedOfType[T](implicit m: Manifest[T]): Option[T] = root filter (cond(_) {
       case t => m.erasure.isInstance(t) && isContainedIn(t)
     }) reverse match {
       case x :: _ => Some(x.asInstanceOf[T])

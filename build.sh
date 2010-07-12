@@ -1,4 +1,2 @@
 #!/bin/sh
-
-mvn clean package surefire:test
-
+mvn clean package

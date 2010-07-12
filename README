@@ -1,1 +1,49 @@
-This is an empty README file.
+================================================================================
+  The Scala Refactoring Project -- www.scala-refactoring.org
+================================================================================
+
+Welcome to the Scala Refactoring project!
+
+1. Project Layout
+--------------------------------------------------------------------------------
+
+The project is organized as follows. The main project is the library, the feature and update-site projects are only needed when the library is used as a plug-in for Eclipse.
+
+├── pom.xml
+├── build_p2_repo.sh
+├── org.scala-refactoring.library
+│   ├── build.properties
+│   ├── META-INF
+│   ├── pom.xml
+│   └── src
+│       ├── doc
+│       │   └── latex
+│       ├── main
+│       │   └── scala
+│       └── test
+│           └── scala
+├── org.scala-refactoring.feature
+│   ├── build.properties
+│   ├── feature.xml
+│   └── pom.xml
+└── org.scala-refactoring.update-site
+    ├── index.html
+    ├── pom.xml
+    ├── site.xml
+    └── web
+
+2. Building
+--------------------------------------------------------------------------------
+
+We use Maven (minimum version is 3 because we use Tycho) to build the project:
+
+> mvn package
+
+creates all the artifacts, except for the documentation, which needs to be built separately.
+
+A separate P2 repository can be built using the build_p2_repo.sh script.
+
+3. License
+--------------------------------------------------------------------------------
+
+The project is licensed under the Scala license, see the LICENSE file for details.

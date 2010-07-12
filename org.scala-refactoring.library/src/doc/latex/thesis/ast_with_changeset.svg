@@ -33,13 +33,13 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="252.00558"
-     inkscape:cy="151.24329"
+     inkscape:cx="166.14261"
+     inkscape:cy="147.45522"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1139"
+     inkscape:window-width="1440"
+     inkscape:window-height="839"
      inkscape:window-x="-4"
      inkscape:window-y="38"
      inkscape:window-maximized="1">
@@ -59,7 +59,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -69,7 +69,7 @@
      id="layer1"
      transform="translate(-59.575,-52.937303)">
     <rect
-       style="fill:#e1ffc7;fill-opacity:0.49775786;stroke:#000000;stroke-width:0.85000002;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#cbc7ff;fill-opacity:1;stroke:#000000;stroke-width:0.85000001999999986;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect3606"
        width="40"
        height="40"
@@ -83,7 +83,7 @@
        id="rect3608"
        style="fill:none;stroke:#000000;stroke-width:0.85000002;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
     <rect
-       style="fill:#e1ffc7;stroke:#000000;stroke-width:0.85000001999999997;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;fill-opacity:0.49775785"
+       style="fill:#cbc7ff;stroke:#000000;stroke-width:0.85000001999999986;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;fill-opacity:1"
        id="rect3610"
        width="40"
        height="40"
@@ -97,7 +97,7 @@
        id="rect3612"
        style="fill:none;stroke:#000000;stroke-width:0.85000002;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
     <rect
-       style="fill:#e1ffc7;fill-opacity:0.49775786;stroke:#000000;stroke-width:0.85000002;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#cbc7ff;fill-opacity:1;stroke:#000000;stroke-width:0.85000001999999986;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect3614"
        width="40"
        height="40"
@@ -118,7 +118,7 @@
        id="rect3622"
        style="fill:#ffffff;fill-opacity:0.49775785;stroke:#000000;stroke-width:0.85000001999999986;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
     <rect
-       style="fill:#e1ffc7;fill-opacity:0.49775786;stroke:#000000;stroke-width:0.85000002;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#cbc7ff;fill-opacity:1;stroke:#000000;stroke-width:0.85000001999999986;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect3624"
        width="40"
        height="40"

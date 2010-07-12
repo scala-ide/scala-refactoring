@@ -9,12 +9,12 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="744.09448819"
-   height="1052.3622047"
+   width="257.42001"
+   height="41.450001"
    id="svg2"
    version="1.1"
    inkscape:version="0.47 r22583"
-   sodipodi:docname="New document 1">
+   sodipodi:docname="titles.svg">
   <defs
      id="defs4">
     <inkscape:perspective
@@ -32,14 +32,14 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="275.66628"
-     inkscape:cy="702.87645"
+     inkscape:zoom="2.8"
+     inkscape:cx="149.96188"
+     inkscape:cy="30.119816"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1139"
+     inkscape:window-width="1440"
+     inkscape:window-height="839"
      inkscape:window-x="-4"
      inkscape:window-y="38"
      inkscape:window-maximized="1" />
@@ -58,7 +58,8 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-28.886049,-579.08796)">
     <text
        xml:space="preserve"
        style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
@@ -86,26 +87,50 @@
     <text
        xml:space="preserve"
        style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="58.192513"
-       y="448.26208"
+       x="60.192513"
+       y="444.26208"
        id="text2824"><tspan
          sodipodi:role="line"
          id="tspan2826"
-         x="58.192513"
-         y="448.26208"
+         x="60.192513"
+         y="444.26208"
          style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Miama;-inkscape-font-specification:Miama Bold Italic"
-         dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0">Scala Refactoring</tspan></text>
+         dx="0 0 0 0 0 0 0 2.2728431 -1.0101526 -3.0304577 0 0 0 0 0 0 0">Scala Refactoring</tspan></text>
     <text
        id="text2828"
-       y="188.26208"
-       x="58.192513"
+       y="176.47636"
+       x="34.621086"
        style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
        xml:space="preserve"><tspan
          dx="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0"
          style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-family:Scriptina Pro;-inkscape-font-specification:Scriptina Pro Light"
-         y="188.26208"
-         x="58.192513"
+         y="176.47636"
+         x="34.621086"
          id="tspan2830"
          sodipodi:role="line">Scala Refactoring</tspan></text>
+    <text
+       id="text2821"
+       y="523.27234"
+       x="61.182365"
+       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         dx="0 0 0 0 0 0 0 2.2728431 -1.0101526 -3.0304577 0 0 0 0 0 0 0"
+         style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Freebooter Script;-inkscape-font-specification:Freebooter Script Bold Italic"
+         y="523.27234"
+         x="61.182365"
+         id="tspan2823"
+         sodipodi:role="line">Scala Refactoring</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="28.682367"
+       y="610.41522"
+       id="text2822"><tspan
+         sodipodi:role="line"
+         id="tspan2824"
+         x="28.682367"
+         y="610.41522"
+         style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Gentium;-inkscape-font-specification:Gentium Italic"
+         dx="0 0 0 0 0 0 0 2.2728431 -1.0101526 -3.0304577 0 0 0 0 0 0 0">Scala Refactoring</tspan></text>
   </g>
 </svg>

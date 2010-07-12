@@ -146,7 +146,11 @@ trait PimpedTrees {
       case t: SelectFromTypeTree =>
         t.pos withStart t.pos.point
         
-      case _ => throw new Exception("uhoh")
+      case t: DefTree => t.pos withStart t.pos.point withEnd (t.pos.point + nameString.length)
+      
+      case t: RefTree => t.pos
+        
+      case t => throw new Exception(t.getClass.getSimpleName +" not handled in namePosition")
     }) match {
       case NoPosition => NoPosition
       case p =>

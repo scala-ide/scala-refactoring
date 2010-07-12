@@ -5,7 +5,5 @@
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="src" path="src/main/scala"/>
 	<classpathentry kind="src" path="src/test/scala"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/org.scala-ide.scala.compiler"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/org.scala-ide.scala.library"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -8,12 +8,11 @@ package tests.util
 import tools.nsc.util.BatchSourceFile
 import tools.nsc.io.AbstractFile
 import org.junit.Assert._
-import common._
-import transformation._
+import common.Change
 import collection.mutable.ListBuffer
 import util.CompilerProvider
 
-trait TestHelper extends CompilerProvider with TreeTransformations with TreeFactory with SilentTracing with Selections with PimpedTrees {
+trait TestHelper extends Refactoring with CompilerProvider {
   
   type Test = org.junit.Test
   type AbstractFile = tools.nsc.io.AbstractFile
@@ -46,7 +45,7 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
     lazy val trees = sources map (x => addToCompiler(fileName(x), x)) map (global.unitOfFile(_).body)
     
     lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
-      // not all refactorings really need a selection:
+      // not all refactorings need a selection:
       FileSelection(trees.head.pos.source.file, 0, 0)
     }
     
@@ -84,16 +83,4 @@ trait TestHelper extends CompilerProvider with TreeTransformations with TreeFact
     else 
       None
   }
-  
-  val noPosition = transform {
-    case t: global.Tree => t.pos = global.NoPosition; t
-  }
-  
-  val emptyTree = transform {
-    case t: global.ValDef => global.emptyValDef
-    case _ => global.EmptyTree
-  }
-  
-  val emptyAllPositions = ↓(noPosition)
-  
 }

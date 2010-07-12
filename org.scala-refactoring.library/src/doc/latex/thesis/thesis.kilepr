@@ -4,7 +4,7 @@ img_extIsRegExp=false
 img_extensions=.eps .jpg .jpeg .png .pdf .ps .fig .gif
 kileprversion=2
 kileversion=2.0.85
-lastDocument=91_scala_ast.tex
+lastDocument=thesis.tex
 masterDocument=thesis.tex
 name=Thesis
 pkg_extIsRegExp=false
@@ -92,20 +92,20 @@ order=1
 
 [item:0_front.tex]
 archive=true
-column=0
+column=13
 encoding=UTF-8
 highlight=LaTeX
-line=30
+line=32
 mode=LaTeX
 open=true
 order=2
 
 [item:2_refactoring_library.tex]
 archive=true
-column=372
+column=201
 encoding=ISO-8859-1
 highlight=LaTeX
-line=247
+line=924
 mode=LaTeX
 open=true
 order=5
@@ -122,10 +122,10 @@ order=3
 
 [item:9_appendix.tex]
 archive=true
-column=170
+column=0
 encoding=ISO-8859-1
 highlight=LaTeX
-line=218
+line=0
 mode=LaTeX
 open=true
 order=1
@@ -210,12 +210,22 @@ mode=
 open=false
 order=-1
 
+[item:inline_local_screenshot_1.png]
+archive=true
+column=0
+encoding=
+highlight=
+line=0
+mode=
+open=false
+order=-1
+
 [item:mystyle.sty]
 archive=true
-column=108
+column=0
 encoding=ISO-8859-1
 highlight=LaTeX
-line=74
+line=35
 mode=LaTeX
 open=true
 order=4
@@ -233,6 +243,16 @@ order=-1
 [item:package-layout.png]
 archive=true
 column=0
+encoding=
+highlight=
+line=0
+mode=
+open=false
+order=-1
+
+[item:project_plan_1.pdf]
+archive=true
+column=6619245
 encoding=
 highlight=
 line=0
@@ -292,10 +312,10 @@ order=-1
 
 [item:thesis.bib]
 archive=true
-column=32
+column=9
 encoding=ISO-8859-1
 highlight=BibTeX
-line=331
+line=135
 mode=BibTeX
 open=true
 order=6
@@ -312,13 +332,23 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=0
+column=24
 encoding=UTF-8
 highlight=LaTeX
-line=30
+line=1252
 mode=LaTeX
 open=true
 order=0
+
+[item:title_scriptina.pdf]
+archive=true
+column=0
+encoding=
+highlight=
+line=0
+mode=
+open=false
+order=-1
 
 [item:traversal_mode.pdf]
 archive=true
@@ -335,29 +365,29 @@ CursorColumn=54
 CursorLine=55
 
 [view-settings,view=0,item:0_front.tex]
-CursorColumn=0
-CursorLine=30
+CursorColumn=13
+CursorLine=32
 
 [view-settings,view=0,item:2_refactoring_library.tex]
-CursorColumn=372
-CursorLine=247
+CursorColumn=201
+CursorLine=924
 
 [view-settings,view=0,item:91_scala_ast.tex]
 CursorColumn=67
 CursorLine=12
 
 [view-settings,view=0,item:9_appendix.tex]
-CursorColumn=170
-CursorLine=218
+CursorColumn=0
+CursorLine=0
 
 [view-settings,view=0,item:mystyle.sty]
-CursorColumn=108
-CursorLine=74
+CursorColumn=0
+CursorLine=35
 
 [view-settings,view=0,item:thesis.bib]
-CursorColumn=32
-CursorLine=331
+CursorColumn=9
+CursorLine=135
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=0
-CursorLine=30
+CursorColumn=24
+CursorLine=1252
