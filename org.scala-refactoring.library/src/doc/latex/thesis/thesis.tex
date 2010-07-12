@@ -20,9 +20,9 @@
 
 Refactoring -- the technique to improve the internal structure of a program -- has become a widely adopted practice among software engineers, but manual refactoring is tedious and error prone. 
 
-The Scala programming language is supported on all major Java development platforms, but most do not yet support (?) the programmer with automated refactoring tools. 
+The Scala programming language is supported on all major Java development platforms, but most do not yet assist the programmer with automated refactoring tools. 
 
-This project provides an IDE independent library to create automated refactorings for Scala. A refactoring is essentially a transformation of the abstract syntax tree. The library makes writing such transformations as simple as possible: combinators can be used to build complex transformations from basic ones. Creating (?) the source code changes from these converted trees is handled transparently by the library.
+This project provides an IDE independent library to create automated refactorings for Scala. A refactoring is essentially a transformation of the abstract syntax tree. The library makes writing such transformations as simple as possible: combinators can be used to build complex transformations from basic ones. Deriving the source code changes from these converted trees is handled transparently by the library.
 
 Several refactorings have been implemented on top of the library, along with the integration into the Scala IDE for Eclipse: Rename, Extract Local, Extract Method, Inline Local and Organize Imports.
 
@@ -50,15 +50,15 @@ Several refactorings have been implemented on top of the library, along with the
 % These refactorings transformations are assembled from basic transformations using combinators.
 % 
 % 
-%  a refactoring is a transformation of the astract syntax tree. These refactorings transformations are assembled from basic transformations using combinators.
+%  a refactoring is a transformation of the abstract syntax tree. These refactorings transformations are assembled from basic transformations using combinators.
 % 
 % combinators are used to assemble a refactoring 
 % 
-% a refactoring is a series of transformations built from combinatores that
+% a refactoring is a series of transformations built from combinators that
 % 
 % combination of transformations that can be as
 % 
-% implementing a refactoring .. writing simpel transformations; combinators are then
+% implementing a refactoring .. writing simple transformations; combinators are then
 % 
 % 
 % implementing a refactoring is mainly writing a transformation on the abstract syntax tree; 
@@ -1397,7 +1397,7 @@ The results of this thesis could be continued in various ways:
 \begin{itemize}
   \item Creating new refactorings benefits all the IDEs that integrate the library. At the moment, only a handful of refactorings have been implemented, but a lot of work has been spent on the underlying library components. It would be interesting to see if larger refactorings can be built from the implemented simple refactoring transformations. For example, renaming the parameters during Extract Method could be implemented by applying the rename transformation to the extracted method. There are other refactorings that build on simpler ones: Form Template Method uses Extract Method. For a more detailed list, see \cite{Refactor}.
 
-  \item One could also take the idea of user created refactorings one step further and create a graphical representation of the transformations and let the user assemble and apply them to his code. This feature could take inspiration from IntelliJIDEA's Structural Search and Replace \cite{SSR}.
+  \item One could also take the idea of user created refactorings one step further and create a graphical representation of the transformations and let the user assemble and apply them to his code. This feature could take inspiration from IntelliJ IDEA's Structural Search and Replace \cite{SSR}.
 
   \item Instead of creating new refactoring implementations, the existing ones could be integrated into other IDEs. For example, the NetBeans based IDE \cite{NetBeansJScalaIDE} also uses the Scala compiler, so an integration should easily be possible.
 
