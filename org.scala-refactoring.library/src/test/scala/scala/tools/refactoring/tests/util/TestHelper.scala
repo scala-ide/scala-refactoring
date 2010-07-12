@@ -83,4 +83,10 @@ trait TestHelper extends Refactoring with CompilerProvider {
     else 
       None
   }
+
+  val noPosition = transform {
+    case t: global.Tree => t.pos = global.NoPosition; t
+  }
+
+  val emptyAllPositions = topdown(noPosition)
 }
