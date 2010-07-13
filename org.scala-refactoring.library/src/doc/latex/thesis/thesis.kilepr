@@ -4,7 +4,7 @@ img_extIsRegExp=false
 img_extensions=.eps .jpg .jpeg .png .pdf .ps .fig .gif
 kileprversion=2
 kileversion=2.0.85
-lastDocument=0_front.tex
+lastDocument=thesis.tex
 masterDocument=thesis.tex
 name=Thesis
 pkg_extIsRegExp=false
@@ -312,10 +312,10 @@ order=-1
 
 [item:thesis.bib]
 archive=true
-column=40
+column=9
 encoding=ISO-8859-1
 highlight=BibTeX
-line=138
+line=307
 mode=BibTeX
 open=true
 order=6
@@ -332,10 +332,10 @@ order=-1
 
 [item:thesis.tex]
 archive=true
-column=49
+column=677
 encoding=UTF-8
 highlight=LaTeX
-line=1470
+line=197
 mode=LaTeX
 open=true
 order=0
@@ -395,9 +395,9 @@ CursorColumn=0
 CursorLine=35
 
 [view-settings,view=0,item:thesis.bib]
-CursorColumn=40
-CursorLine=138
+CursorColumn=9
+CursorLine=307
 
 [view-settings,view=0,item:thesis.tex]
-CursorColumn=49
-CursorLine=1470
+CursorColumn=677
+CursorLine=197
