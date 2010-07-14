@@ -16,23 +16,23 @@ class TreeAnalysisTest extends TestHelper with GlobalIndexes with TreeAnalysis {
   
   var index: IndexLookup = null
   
-  def withIndex(src: String)(body: (IndexLookup, Tree) => Unit ) {
+  def withIndex(src: String)(body: Tree => Unit ) {
     val tree = treeFrom(src)
     index = GlobalIndex(List(CompilationUnitIndex(tree)))
-    body(index, tree)
+    body(tree)
   }
   
-  def assertInboundLocalDependencies(expected: String, src: String) = withIndex(src) { (index, tree) =>
+  def assertInboundLocalDependencies(expected: String, src: String) = withIndex(src) { tree =>
 
     val selection = findMarkedNodes(src, tree) get
-    val in = inboundLocalDependencies(selection, selection.selectedSymbols.head.owner, index)
+    val in = inboundLocalDependencies(selection, selection.selectedSymbols.head.owner)
     assertEquals(expected, in mkString ", ")
   }
   
-  def assertOutboundLocalDependencies(expected: String, src: String) = withIndex(src) { (index, tree) =>
+  def assertOutboundLocalDependencies(expected: String, src: String) = withIndex(src) { tree =>
 
     val selection = findMarkedNodes(src, tree) get
-    val out = outboundLocalDependencies(selection, selection.selectedSymbols.head.owner, index)
+    val out = outboundLocalDependencies(selection, selection.selectedSymbols.head.owner)
     assertEquals(expected, out mkString ", ")
   }
   

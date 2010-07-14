@@ -8,7 +8,7 @@ import common.Change
 
 /**
  * The super class of all refactoring implementations,
- * implementing the several phases of the refactoring
+ * representing the several phases of the refactoring
  * process.
  * */
 abstract class MultiStageRefactoring extends Refactoring {

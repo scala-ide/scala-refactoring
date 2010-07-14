@@ -82,7 +82,7 @@ trait DependentSymbolExpanders {
               s overriddenSymbol otherClassDecl
             } catch {
               case e: Error =>
-                // ?
+                // FIXME What can we do here?
                 throw e
             }
         }

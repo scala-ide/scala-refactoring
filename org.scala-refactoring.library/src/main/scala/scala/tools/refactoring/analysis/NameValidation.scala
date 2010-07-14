@@ -8,6 +8,10 @@ package analysis
 import tools.nsc.util.BatchSourceFile
 import tools.nsc.ast.parser.{Scanners, Tokens}
 
+/**
+ * NameValidation offers several methods to validate
+ * new names; depending on the context they are used.
+ * */
 trait NameValidation {
 
   self: Indexes with common.Selections =>
@@ -15,6 +19,10 @@ trait NameValidation {
   val global: scala.tools.nsc.Global
   import global._
   
+  /**
+   * Returns true if this name is a valid identifier, 
+   * as accepted by the Scala compiler.
+   * */
   def isValidIdentifier(name: String): Boolean = {
 
     val scanner = new { val global = self.global } with Scanners {
@@ -35,6 +43,17 @@ trait NameValidation {
     }
   }
   
+  /**
+   * Returns all symbols that might collide with the new name
+   * at the given symbol's location.
+   * 
+   * For example, if the symbol is a method, it is checked if
+   * there already exists a method with this name in the full
+   * class hierarchy of that method's class.
+   * 
+   * The implemented checks are only an approximation and not
+   * necessarily correct.
+   * */
   def doesNameCollide(name: String, s: Symbol): List[Symbol] = {
     
     def isNameAlreadyUsedInLocalScope: List[Symbol] = {

@@ -9,7 +9,7 @@ The refactoring library is the heart of the Scala Refactoring project. It contai
  \item present the result of the refactoring to the user -- typically in the form of a patch --  and apply it to the source code.
 \end{itemize}
 
-From all these steps, the first and the last one are IDE-platform dependent and usually well supported (see Chapter \ref{chapter:tool-integration} for details on Eclipse's refactoring support). For the remaining three, the refactoring library contains the necessary infrastructure to make these steps as simple as possible.
+From all these steps, the first and the last one are IDE-platform dependent and usually well supported (see Chapter \ref{chapter:tool-integration} for details on Eclipse's refactoring support). For the remaining three, the refactoring library contains the necessary infrastructure to implement these steps.
 
 The essence of a refactoring is a transformation that takes a program in some abstract form and changes its structure. To know what to transform, one has to analyze the program first. That we also have to turn a refactored program back into source code is a consequence of storing programs as plain text files, but not an essential part of a refactoring. Therefore, one of the design goals was to provide a generic implementation that can handle all kinds of changes without knowing exactly what the transformation changed.
 
@@ -148,9 +148,9 @@ While the trees can have a reference to a symbol, the converse is not true: symb
 
 Indexing a complete project can be expensive, so ideally, the IDE would maintain the index and pass it to the refactoring library when need, in the same way that the library does not compile the source files itself but gets the ASTs directly from the IDE.
 
-The interface that needs to be implemented and that is used by the refactorings to query the index looks as follows (note that \src{global} is an instance of the compiler that is provided by an outer trait; see the Appendix~\vref{section:path-dependent-types} on path dependent types):
+The trait that needs to be implemented and that is used by the refactorings to query the index is shown in \figref{listing:index-lookup}.
 
-\needspace{40\baselineskip}
+\begin{figure}
 \begin{lstlisting}
 trait IndexLookup {
   /**
@@ -193,6 +193,9 @@ trait IndexLookup {
 
 }
 \end{lstlisting}
+  \caption{The index interface used by the library and the refactorings. Note that \src{global} is an instance of the compiler that is provided by an outer trait; see the Appendix~\vref{section:path-dependent-types} on path dependent types.}
+  \label{listing:index-lookup}
+\end{figure}
 
 The library contains a default implementation of this trait that can be used if the IDE does not already maintain an index itself. This implementation is described in the following section.
 
@@ -230,13 +233,15 @@ The \src{SymbolExpander} is used as a stackable trait (see Appendix \vref{sectio
 
 The \src{GlobalIndex} uses all these traits, but it would also be possible for an implementation of the index to use only a subset of these to improve the performance. 
 
-Now when all references to a method need to be found, the initial symbol is run through all the symbol expanders until a fix point is reached.
+Now when all references to a method need to be found, the initial symbol is run through all the symbol expanders until a fix point is reached. The graphic \figref{figure:expanding-symbols} shows an example of the process works.
 
-The following graphic illustrates the process with an example; circles represent symbols and squares trees. We start with a single symbol on the left -- e.g. a class field -- and in the first step, it is expanded to two symbols -- for example because the class field has a getter method. We do another round of expansion and find yet another related symbol (the getter might be overridden in a subclass). The third expansion yields no new symbols, thus the fourth step concludes by collecting all references and declarations to these symbols.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.5\linewidth]{expanding_symbols.pdf}
+  \caption{An illustration how the symbol-expanding process works; circles represent symbols and squares trees. We start with a single symbol on the left -- e.g. a class field -- and in the first step, it is expanded to two symbols -- for example because the class field has a getter method. We do another round of expansion and find yet another related symbol (the getter might be overridden in a subclass). The third expansion yields no new symbols, thus the fourth step concludes by collecting all references and declarations to these symbols.}
+  \label{figure:expanding-symbols}
+\end{figure}
 
-\begin{center}
-\includegraphics[width=0.5\linewidth]{expanding_symbols.pdf}
-\end{center}
 
 \subsection{Tree Analysis}
 
@@ -264,11 +269,26 @@ The refactoring has to create a method that takes the \src{values} and the \src{
 
 The calculation of these inbound and outbound dependencies is done as follows:
 
-\paragraph{Inbound:} Find all symbols that are declared in the current scope (e.g. the method we extract from) and remove all declarations that are defined inside the selection. This gives us all the inbound parameters.
+\paragraph{Inbound:} Find all symbols that are declared in the current scope (e.g. the method we extract from) and remove all declarations that are defined inside the selection. This gives us all the inbound parameters.	
 
 \paragraph{Outbound:} For each symbol that is defined inside the selection, check if it is used anywhere outside the selection.
 \\\\
-The \src{inboundLocalDependencies} and \src{outboundLocalDependencies} methods implement these two calculations. 
+The \src{inboundLocalDependencies} and \src{outboundLocalDependencies} methods implement these two calculations:
+
+\begin{lstlisting}
+trait TreeAnalysis {
+  
+  self: Selections with Indexes =>
+  
+  val global: Global
+  
+  def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol): 
+    List[global.Symbol] = %\ldots%
+  
+  def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol): 
+    List[global.Symbol] = %\ldots%
+}
+\end{lstlisting}
 
 \subsection{Name Validation}
 
@@ -306,7 +326,7 @@ In the remainder of this section, we will develop the basics of the Scala refact
 
 \subsection{Transformations}
 
-A refactoring transformation is essentially a function that transforms a tree into another tree. But because most transformations do not apply to all kinds of possible trees, we model a transformation as a function of type $Tree\Rightarrow Option[Tree]$, making use of Scala's \src{Option} monad to indicate the potential inability to transform. In the actual implementation, the transformations are implemented generically as a \src{Transformation[A,~B]} that extend \src{A~$\Rightarrow$~Option[B]}:
+A refactoring transformation is essentially a function that transforms a tree into another tree. But because most transformations do not apply to all kinds of possible trees, we model a transformation as a function of type \src{Tree $\Rightarrow$ Option[Tree]}, making use of Scala's \src{Option} monad to indicate the potential inability to transform. In the actual implementation, the transformations are implemented generically as a \src{Transformation[A,~B]} that extend \src{A~$\Rightarrow$~Option[B]}:
 
 \begin{lstlisting}
 abstract class Transformation[A, B] extends (A %$\Rightarrow$% Option[B]) {
@@ -317,7 +337,7 @@ abstract class Transformation[A, B] extends (A %$\Rightarrow$% Option[B]) {
 }
 \end{lstlisting}
 
-The explicit self type annotation (see Appendix \vref{section:self-type-annotation}) will be used later in the implementation of the combinators. Note that all transformations are implemented polymorphic, but to make the explanations more clear, we will assume that they are used to transform trees.
+The explicit self type annotation (see Appendix \vref{section:self-type-annotation}) will be used later in the implementation of the combinators. Note that all transformations are implemented polymorphically, but to make the explanations more clear, we will assume that they are used to transform trees.
 
 Transformations can be created from partial functions using the \src{transformation} convenience function. As an example, we create a transformation that reverses the order of a class, trait, or object's member definitions and apply it to a given template instance.
 

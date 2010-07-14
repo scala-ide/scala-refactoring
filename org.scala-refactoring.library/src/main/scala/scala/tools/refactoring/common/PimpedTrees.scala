@@ -11,21 +11,20 @@ import tools.nsc.ast.parser.Tokens
 import reflect.ClassManifest.fromClass
 import tools.nsc.io.AbstractFile
 import tools.nsc.symtab.{Flags, Names}
+import scala.tools.nsc.interactive.Global
 
 /**
- * A bunch of implicit conversions for ASTs and other helper
- * functions that work on trees. Users of the trait need to
- * provide the means to access a file's corresponding tree.
- * 
+ * A collection of implicit conversions for ASTs and other 
+ * helper functions that work on trees.
  * */
 trait PimpedTrees {
     
-  val global: scala.tools.nsc.interactive.Global
+  val global: Global
   import global._
 
   /**
    * Returns the tree that is contained in this file. Is
-   * overriden in testing to manipulate the trees (i.e.
+   * overridden in testing to manipulate the trees (i.e.
    * remove compiler generated trees)
    * */
   def treeForFile(file: AbstractFile): Option[Tree] = unitOfFile.get(file) map (_.body)
@@ -35,7 +34,6 @@ trait PimpedTrees {
    * */  
   def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file)
 
-  
   /**
    * Represent an import selector as a tree, including both names as trees.
    * */
@@ -83,6 +81,11 @@ trait PimpedTrees {
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
     def samePos(o: Tree)    : Boolean = samePos(o.pos)
     def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
+    
+    /**
+     * Returns the position this tree's name has in the source code.
+     * Can also return NoPosition if the tree does not have a name.
+     * */
     def namePosition(): Position = (t match {
       case t: ModuleDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
       case t: ClassDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
@@ -166,45 +169,51 @@ trait PimpedTrees {
         else
           p2 withPoint p2.start
     }
-    
-    private def extractName(name: Name) = 
-      if(name.toString == "<empty>")
-        ""
-      else if (t.symbol.isSynthetic && name.toString.contains("$"))
-        "_"
-      else if (t.symbol.isSynthetic)
-        ""
-      else if (t.symbol != NoSymbol) {
-        t.symbol.nameString
-      } else 
-        name.toString.trim
-    
-    def nameString: String = t match {
-      case t: Select if t.name.toString endsWith "_$eq"=>
-        val n = extractName(t.name)
-        n.substring(0, n.length - "_=".length)
-      case t: Select if t.name.toString startsWith "unary_"=>
-        t.symbol.nameString.substring("unary_".length)
-      case t: Select if t.symbol != NoSymbol =>
-        t.symbol.nameString
-      case t: LabelDef if t.name.toString startsWith "while" => "while"
-      case t: LabelDef if t.name.toString startsWith "doWhile" => "while"
-      case t: DefTree => extractName(t.name)
-      case t: RefTree => extractName(t.name)
-      case ImportSelectorTree(NameTree(name), _) => name.toString
-      case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
+
+    /**
+     * Returns the name for the tree that matches what was
+     * printed in the source code. Compiler generated names
+     * for '_' return '_' and otherwise synthetic names
+     * return "". 
+     * */
+    def nameString: String = {
+      
+      def extractName(name: Name) = {
+        if(name.toString == "<empty>")
+          ""
+        else if (t.symbol.isSynthetic && name.toString.contains("$"))
+          "_"
+        else if (t.symbol.isSynthetic)
+          ""
+        else if (t.symbol != NoSymbol) {
+          t.symbol.nameString
+        } else 
+          name.toString.trim
+      }
+        
+      t match {
+        case t: Select if t.name.toString endsWith "_$eq"=>
+          val n = extractName(t.name)
+          n.substring(0, n.length - "_=".length)
+        case t: Select if t.name.toString startsWith "unary_"=>
+          t.symbol.nameString.substring("unary_".length)
+        case t: Select if t.symbol != NoSymbol =>
+          t.symbol.nameString
+        case t: LabelDef if t.name.toString startsWith "while" => "while"
+        case t: LabelDef if t.name.toString startsWith "doWhile" => "while"
+        case t: DefTree => extractName(t.name)
+        case t: RefTree => extractName(t.name)
+        case ImportSelectorTree(NameTree(name), _) => name.toString
+        case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
+      }
     }
   }
   
   implicit def additionalTreeMethodsForPositions(t: Tree) = new TreeMethodsForPositions(t)
 
   /**
-   * Find a tree by its position and make sure that the trees
-   * or of the same type. This is necessary because some trees
-   * have the same position, for example, a compilation unit
-   * without an explicit package and just a single top level
-   * class, then the package and the class will have the same
-   * position.
+   * Finds a tree by its position, can be used to find
+   * the original tree from a transformed tree.
    * 
    * If multiple trees are candidates, then take the last one, 
    * because it is likely more specific.
@@ -227,23 +236,36 @@ trait PimpedTrees {
         Some(perfectMatch)
     }
   }
-  
+
   class TemplateMethods(t: Template) {
+    
+    /**
+     * Returns all constructor parameters from the template body.
+     * */
     def constructorParameters = t.body.filter {
       case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
       case _ => false
     }
     
+    /**
+     * Returns the primary constructor of the template.
+     * */
     def primaryConstructor = t.body.filter {
       case t: DefDef => t.symbol.isPrimaryConstructor
       case _ => false
     }
-    
+       
+    /**
+     * Returns all early definitions from the template body.
+     * */
     def earlyDefs = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats filter treeInfo.isEarlyDef
       case t @ DefDef(_, _, _, _, _, rhs)        if t.symbol.isConstructor && treeInfo.isEarlyDef(rhs) => rhs :: Nil
     } flatten
-    
+      
+    /**
+     * Returns the trees that are passed to a super constructor call.
+     * */
     def superConstructorParameters = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats collect {
         case Apply(EmptyTree, args) => args
@@ -659,10 +681,7 @@ trait PimpedTrees {
    * */
   object BlockExtractor {
     def unapply(t: Block) = {
-      
-      /**
-       * Names argument calls are 
-       * */
+
       def fixNamedArgumentCall(block: Block): Tree = block match {
         case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if apply.pos.isRange && emptyArgs.size == stats.size && emptyArgs.forall(i => i.isEmpty || !i.pos.isRange) =>
         

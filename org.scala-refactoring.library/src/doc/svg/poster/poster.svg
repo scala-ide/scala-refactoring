@@ -347,18 +347,6 @@
     </filter>
     <filter
        inkscape:collect="always"
-       id="filter3984"
-       x="-0.033941226"
-       width="1.0678825"
-       y="-0.25835536"
-       height="1.5167107">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="19.435935"
-         id="feGaussianBlur3986" />
-    </filter>
-    <filter
-       inkscape:collect="always"
        id="filter4004">
       <feGaussianBlur
          inkscape:collect="always"
@@ -404,14 +392,6 @@
          inkscape:collect="always"
          stdDeviation="1.251608"
          id="feGaussianBlur4074" />
-    </filter>
-    <filter
-       inkscape:collect="always"
-       id="filter4080">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="1.3314535"
-         id="feGaussianBlur4082" />
     </filter>
     <inkscape:perspective
        id="perspective3388"
@@ -777,18 +757,6 @@
        y2="589.39862" />
     <filter
        inkscape:collect="always"
-       id="filter6120"
-       x="-0.033941226"
-       width="1.0678825"
-       y="-0.25835536"
-       height="1.5167107">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="19.435935"
-         id="feGaussianBlur6122" />
-    </filter>
-    <filter
-       inkscape:collect="always"
        id="filter6158"
        x="-0.033941226"
        width="1.0678825"
@@ -867,9 +835,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.5"
-     inkscape:cx="3527.8704"
-     inkscape:cy="760.4262"
+     inkscape:zoom="0.35355339"
+     inkscape:cx="2563.7693"
+     inkscape:cy="1366.3761"
      inkscape:document-units="px"
      inkscape:current-layer="layer4"
      showgrid="false"
@@ -1314,12 +1282,12 @@
        id="text3568"
        y="1872.5238"
        x="1671.1233"><tspan
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;letter-spacing:-0.86152351000000005;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
          sodipodi:role="line"
          y="1872.5238"
          x="1671.1233"
          id="tspan3608">www.scala-ide.org </tspan><tspan
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium;-inkscape-font-specification:Gentium"
+         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
          sodipodi:role="line"
          y="1941.63"
          x="1671.1233"
@@ -1338,7 +1306,7 @@
          x="1671.1233"
          y="2105.6299"
          sodipodi:role="line"
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium;-inkscape-font-specification:Gentium"
+         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
          id="tspan3630">    for the project's website. </tspan></text>
     <image
        xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/scala.png"
