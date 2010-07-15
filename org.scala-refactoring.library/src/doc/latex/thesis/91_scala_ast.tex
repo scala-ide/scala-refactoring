@@ -125,7 +125,7 @@ class B extends A with ScalaObject {
 \end{lstlisting}
 \end{multicols}
 
-To identify the parameters from the list of body statements, we can check the modifiers of all \src{ValDefs} for the \textsc{\src{paramaccessor}} and \textsc{\src{caseaccessor}} flags. In the same way, values and types from the early definition are identified by their \textsc{\src{presuper}} flag. To check whether a value or type belongs to the early definitions, the compiler's \src{treeInfo.isEarlyDef} method can be used.
+To identify the parameters from the list of body statements, we can check the modifiers of all \src{ValDefs} for the \src{PARAMACCESSOR} and \src{CASEACCESSOR} flags. In the same way, values and types from the early definition are identified by their \src{PRESUPER} flag. To check whether a value or type belongs to the early definitions, the compiler's \src{treeInfo.isEarlyDef} method can be used.
 
 The super call parameters can be identified as follows: find the constructor \src{DefDef} (\src{symbol.isConstructor} is \src{true}) and then check its body \src{Block} for the following pattern: \src{Apply(Select(Super(\_, \_), \_), args)}. Because only super classes and not traits can have constructor arguments, there can be at most one such super call.
 
@@ -167,9 +167,9 @@ It is also allowed to use \src{this} for the self type's name. This introduces n
 
 \paragraph{ValDef} \member{ValOrDefDef <: MemberDef <: DefTree <: SymTree <: Tree}{\textit{mods}: Modifiers, \textit{name}: Name, \textit{tpt}: Tree, \textit{rhs}: Tree}
 
-\noindent Value definitions are all definitions of \src{vals}, \src{vars} (identified by the \textsc{\src{mutable}} flag) and parameters (identified by the \textsc{\src{param}} flag).
+\noindent Value definitions are all definitions of \src{vals}, \src{vars} (identified by the \src{MUTABLE} flag) and parameters (identified by the \src{param} flag).
 
-The modifiers also contain the other properties a value can have: \src{override, abstract, final, implicit, lazy, private, protected}. Whether a modifier is applicable depends on the context where a value is used. A value can also be synthetic, i.e. compiler-generated (identified by the \textsc{\src{synthetic}} flag) -- for example in the following listing of two equivalent statements, a synthetic value is passed to \src{println}:
+The modifiers also contain the other properties a value can have: \src{override, abstract, final, implicit, lazy, private, protected}. Whether a modifier is applicable depends on the context where a value is used. A value can also be synthetic, i.e. compiler-generated (identified by the \src{SYNTHETIC} flag) -- for example in the following listing of two equivalent statements, a synthetic value is passed to \src{println}:
 
 \begin{lstlisting}
 List(1, 2) foreach println
@@ -206,7 +206,7 @@ class A {
 \begin{lstlisting}
 class A extends Object with ScalaObject {
   private[this] val a: Int = 42;
-  <stable> <accessor> def a: Int = A.this.a
+  <stable><accessor> def a: Int = A.this.a
 }
 \end{lstlisting}
 \end{multicols}
@@ -219,7 +219,7 @@ Several methods defined on \src{Symbol} can be used to cross-reference between t
 
 In contrast to a \src{ValDef}, a method can be parametrized with types and may have several argument lists. Each argument is represented by a \src{ValDef}.
 
-Abstract methods have the \textsc{\src{deferred}} flag and an \src{EmptyTree} right hand side child.
+Abstract methods have the \src{DEFERRED} flag and an \src{EmptyTree} right hand side child.
 
 Finding methods in sub- or super classes requires the use of their \src{symbols}. Super classes can be found via the \src{ancestors} method on the class' symbol. In contrast, moving down the inheritance hierarchy is more expensive. To find all subclasses of a class $C$ one has to collect all other classes in the universe and test each's ancestors for the presence of $C$. Once the class hierarchy is assembled, the definition symbol's \src{overriddenSymbol} method can be used on each class in the hierarchy to gather all overrides.
 
@@ -452,7 +452,7 @@ list foreach (((x0$1: Int) => x0$1 match {
 \end{lstlisting}
 \end{multicols}
 
-In the first two examples, the functions are encapsulated in an additional \src{Block} -- hence the curly braces. When the function parameter does not have a name, the compiler generates one and marks it with the \textsc{\src{synthetic}} flag. In the last example, we see that the pattern matching on the parameter is made explicit in the AST.
+In the first two examples, the functions are encapsulated in an additional \src{Block} -- hence the curly braces. When the function parameter does not have a name, the compiler generates one and marks it with the \src{SYNTHETIC} flag. In the last example, we see that the pattern matching on the parameter is made explicit in the AST.
 
 \paragraph{Assign} \member{TermTree <: Tree}{\textit{lhs}: Tree, \textit{rhs}: Tree}
 

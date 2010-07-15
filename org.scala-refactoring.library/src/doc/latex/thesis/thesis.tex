@@ -33,6 +33,8 @@ This project provides an IDE independent library to create automated refactoring
 
 Several refactorings have been implemented on top of the library, along with the integration into the Scala IDE for Eclipse: Rename, Extract Local, Extract Method, Inline Local and Organize Imports.
 
+\emptypage
+
 \chapter*{Management Summary}
 
 In this thesis, we describe the development of a refactoring tool for the Scala programming language, conducted at the Institute for Software at the University of Applied Sciences Rapperswil. This master's thesis is a continuation of a previous term project by the same author.
@@ -85,14 +87,16 @@ I, Mirko Stocker, declare that this thesis and the work presented in it is my ow
 
 \noindent Signature: \hspace{1.77cm} \ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots\ldots
 
+\emptypage
+
 \newpage
 
 \setcounter{tocdepth}{2}
 
 \tableofcontents
 
+\emptypage
 \newpage
-
 \pagenumbering{arabic}
 
 \chapter{Introduction} \label{chapter:introduction}
@@ -178,9 +182,13 @@ For those wishing to implement new refactorings, the how-to in Appendix~\rref{ch
 
 Users who wish to provide accurate bug reports should take a look at Chapter~\rref{chapter:testing}{end-chapter:testing} on testing to learn how a new test that points out a failure can be implemented.
 
+\emptypage
+
 \chapter{Refactoring Library} \label{chapter:refactoring-library}
 
 \input{2_refactoring_library} \label{end-chapter:refactoring-library}
+
+\emptypage
 
 \chapter{Implemented Refactorings} \label{chapter:implemented-refactorings}
 
@@ -229,7 +237,7 @@ The remainder of this chapter introduces each refactoring and explains the curre
 
 \section{Rename}
 
-Renaming is one of the most used refactorings abmong Eclipse using Java programmers (see \cite{RefactoringStudy}, \cite{RefactoringInEclipse}). Choosing good names is a very basic and yet important task for a programmer if he wants to write readable code. During the evolution of a program, the roles of the classes, methods and variables change. Having an automated refactoring for renaming considerably reduces the cost of keeping these names in sync with their functionality.
+Renaming is one of the most used refactorings among Eclipse using Java programmers (see \cite{RefactoringStudy}, \cite{RefactoringInEclipse}). Choosing good names is a very basic and yet important task for a programmer if he wants to write readable code. During the evolution of a program, the roles of the classes, methods and variables change. Having an automated refactoring for renaming considerably reduces the cost of keeping these names in sync with their functionality.
 
 \subsection{Features}
 
@@ -402,7 +410,7 @@ From a selected expression, the Extract Local refactoring will create a new valu
 \end{figure}
 
 
-The following listings show a few examples of the refactoring, on the left is the original code with the selection in blue, and on the right is the refactored code (line breaks were added by the author).
+The following listings show a few examples of the refactoring, on the left is the original code with the selection in gray, and on the right is the refactored code (line breaks were added by the author).
 
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -791,7 +799,7 @@ Extracting a method is done in several smaller steps:
 
 \begin{description}
   \item[Create the Method] we want to extract. This includes determining all the inbound and outbound dependencies to construct the method signature.
-  \item[Replace Extracted Statements] with a call to the newly created method. If the method returns values, we have to assign them to new local values.
+  \item[Replace Extracted Statements] with a call to the newly created method. In case the method returns values, we have to assign them to new local values.
   \item[Insert the Method] somewhere in the surrounding class body.
 \end{description}
 
@@ -972,6 +980,8 @@ private def makeString(args: Array[String]): String = {
 \end{lstlisting}
 
 \label{end-chapter:implemented-refactorings}
+
+\emptypage
 
 \chapter{Tool Integration} \label{chapter:tool-integration}
 
@@ -1203,7 +1213,7 @@ class ExtractMethodScalaIdeRefactoring(start: Int, end: Int, file: ScalaSourceFi
 }
 \end{lstlisting}
 
-The \src{NewNameWizardPage} is an SWT page that asks the user for a new name (see \figref{figure:extract-local-screenshot-1} for a screenshot). The closure passed as the first parameter is called whenever the name changes, so we can update our reference. The second parameter is a function of type $String \Rightarrow Boolean$ which is used to validate the entered name. Our name-updating closure is only called when the name passes the validation. There's also a default name for the extracted method's name and a \src{helpId} parameter that is used to hook up the online help with this wizard.
+The \src{NewNameWizardPage} is an SWT page that asks the user for a new name (see \figref{figure:extract-local-screenshot-1} for a screenshot). The closure passed as the first parameter is called whenever the name changes, so we can update our reference. The second parameter is a function of type $String \Rightarrow Boolean$ which is used to validate the entered name. Our name-updating closure is only called when the name passes the validation. There is also a default name for the extracted method's name and a \src{helpId} parameter that is used to hook up the online help with this wizard.
 
 The actions for refactorings that use the inline mode -- Extract Local and Rename (Local) -- override some of the \src{ScalaIdeRefactoring}'s methods to bypass the wizard and set up the linked mode user interface directly.
 
@@ -1407,11 +1417,13 @@ A special thanks goes to Richard Emberson who uncovered many bugs in the impleme
 
 \appendix
 
+\emptypage
+
 \chapter{Project Environment} \label{chapter:project-environment}
 
-The project's website is located at \url{www.scala-refactoring.org}. The Git repository, wiki and issue tracker are all hosted by \textit{Assembla} and can be reached from the website. The Scala IDE for Eclipse is located at \url{www.scala-ide.org}.
+The project's website is located at \url{http://www.scala-refactoring.org}. The Git repository, wiki and issue tracker are all hosted by \textit{Assembla} and can be reached from the website. The Scala IDE for Eclipse is located at \url{http://www.scala-ide.org}.
 
-The library is also published to the Scala community's central Maven repository on \url{www.scala-tools.org}, under the \src{org.scala-refactoring} group and the  \src{org.scala-refactoring.library} artifact identifier.
+The library is also published to the Scala community's central Maven repository on \url{http://www.scala-tools.org}, under the \src{org.scala-refactoring} group and the  \src{org.scala-refactoring.library} artifact identifier.
 
 \section{Tools}
 
@@ -1430,7 +1442,7 @@ The following tools were used to manage and produce the almost 15'000 lines of c
 
 \section{Time Report}
 
-The mandatory work load for this thesis was 810 hours; distributed over the 21 weeks, this is about 39 hours per week:
+The mandatory work load for this thesis was 810 hours; distributed over the 21 weeks, this is about 39 hours per week. The actual time was a bit higher, around 850 hours, distributed over the 21 weeks as follows:
 
 \begin{center}
   \includegraphics[width=\linewidth]{time.pdf}
@@ -1451,12 +1463,14 @@ The two project plans on the following two pages show the originally planned and
 
 \newpage
 \thispagestyle{empty}
+\enlargethispage{5cm}
 \begin{center}
   \includegraphics[width=1.7\linewidth,angle=90]{project_plan_1.pdf}
 \end{center}
 
 \newpage
 \thispagestyle{empty}
+\enlargethispage{5cm}
 \begin{center}
   \includegraphics[width=1.7\linewidth,angle=90]{project_plan_2.pdf}
 
@@ -1675,7 +1689,7 @@ Now that we know more about the selected value, we can start creating the new tr
     val privateField = selectedValue copy (mods = privateFieldMods, name = privateName)
 \end{lstlisting}
 
-The \src{withPosition} calls make sure that the field gets \src{private var} modifiers. Modifiers serve two purposes here: they describe the role of the tree -- \textsc{\src{paramaccessor}} -- and the modifiers that need to be present in the source code -- \textsc{\src{private}} and \textsc{\src{var}}.
+The \src{withPosition} calls make sure that the field gets \src{private var} modifiers. Modifiers serve two purposes here: they describe the role of the tree -- {\src{PARAMACCESSOR} -- and the modifiers that need to be present in the source code -- \src{PRIVATE} and \src{VAR}.
 
 The getter and setter trees are simple method definitions (see Appendix~\vref{chapter:scala-ast} for more information on the AST classes):
 
@@ -1786,6 +1800,7 @@ The implementation of this refactoring can be found in the \src{implementations}
 
 \include{91_scala_ast}
 
+\emptypage
 
 \chapter{Advanced Scala Features} \label{chapter:advanced-scala-features}
 
@@ -2011,7 +2026,7 @@ Note how the import statement does not have to specify the fully qualified name 
 
 The project is licensed under the Scala license:
 
-\begin{verbatim}
+\begin{small}\begin{verbatim}
 
 Copyright (c) 2002-2010 EPFL, Lausanne, unless otherwise specified.
 All rights reserved.
@@ -2046,8 +2061,9 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
-\end{verbatim} 
+\end{verbatim}                \end{small}
 
+\emptypage
 \clearpage
 \bib
 

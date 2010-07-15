@@ -2,7 +2,7 @@
 \usepackage{graphicx}
 %\input{graphviz}
 \usepackage{varioref}
-\usepackage[colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black, plainpages=false]{hyperref}
+\usepackage[colorlinks=true, linkcolor=black, urlcolor=black, citecolor=black, plainpages=false, pdfpagelabels, breaklinks=true]{hyperref}
 \usepackage{lmodern}
 \usepackage[T1]{fontenc}
 \usepackage[scaled]{beramono}
@@ -17,7 +17,6 @@
 \usepackage{balance}
 \usepackage{microtype}
 \usepackage{framed}
-\usepackage[hyphenbreaks]{breakurl}
 \usepackage{needspace}
 \usepackage{amssymb}
 \usepackage{amsmath}
@@ -49,11 +48,12 @@
 
 \definecolor{MyGreen}{rgb}{0.8671875, 0.9375, 0.62890625}
 \definecolor{DarkGrey}{rgb}{0.4, 0.4, 0.4}
+\definecolor{LightGray}{rgb}{0.9, 0.9, 0.9}
 \definecolor{MyRed}{rgb}{0.98046875, 0.76171875, 0.67578125}
 \definecolor{MyBlue}{rgb}{.67843137254901960784, .84705882352941176470, .90196078431372549019}
 \definecolor{darkblue}{RGB}{0,0,100}
 
-\newcommand{\bluebox}  [1] {\colorbox{MyBlue}{#1}}
+\newcommand{\bluebox}  [1] {\colorbox{LightGray}{#1}}
 \newcommand{\redbox}   [1] {\colorbox{MyRed}{#1}}
 \newcommand{\greenbox} [1] {\colorbox{Orange}{#1}}
 \newcommand{\lgreenbox}[1] {\colorbox{LimeGreen}{#1}}
@@ -61,8 +61,8 @@
 \newcommand{\greybox}  [1] {\colorbox{Gray}{#1}}
 
 \newcommand{\emptypage} [0] {
-  \thispagestyle{empty}
   \newpage
+  \thispagestyle{empty}
   \mbox{}
 }
 
@@ -108,7 +108,6 @@
 \newcommand{\subtt}[1]{$_{\texttt{\footnotesize{#1}}}$}
 
 \newcommand{\bib}{
- \balance
  \bibliographystyle{alpha}
  \bibliography{thesis}
 }
