@@ -4,12 +4,10 @@
 
 package scala.tools.refactoring.sourcegen
 
+/**
+ * Holds default formatting preferences.
+ */
 trait Formatting {
-  
-  val global: scala.tools.nsc.interactive.Global
-  import global._
-  
+
   val defaultIndentationStep = "  "
-  
-  // hold formatting preferences
 }

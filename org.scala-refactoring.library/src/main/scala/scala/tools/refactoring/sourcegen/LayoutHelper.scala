@@ -5,14 +5,17 @@
 package scala.tools.refactoring
 package sourcegen
 
+import tools.nsc.interactive.Global
 import tools.nsc.util.RangePosition
 import tools.nsc.util.SourceFile
+import common.Tracing
+import common.PimpedTrees
 
 trait LayoutHelper extends CommentHelpers {
   
-  self: Formatting with common.Tracing with common.PimpedTrees =>
+  self: Formatting with Tracing with PimpedTrees =>
   
-  val global: scala.tools.nsc.interactive.Global
+  val global: Global
   import global._
       
   def surroundingLayout(t: Tree) = findOriginalTree(t) map { t =>

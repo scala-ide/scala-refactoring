@@ -5,13 +5,16 @@
 package scala.tools.refactoring
 package sourcegen
 
+import common.Tracing
+import common.PimpedTrees
+
 /**
  * Provides a function that discovers all trees that have changed
- * and need to be re-generated.
+ * and need to be regenerated.
  */
 trait TreeChangesDiscoverer {
   
-  self: common.Tracing with common.PimpedTrees =>
+  self: Tracing with PimpedTrees =>
   
   val global: scala.tools.nsc.interactive.Global
   import global._
@@ -44,19 +47,7 @@ trait TreeChangesDiscoverer {
       case None =>
         Predef.error("should never happen")
       case Some(origChld) =>
-        !(children(t) corresponds origChld) { (t1, t2) =>
-          if(t1.sameTree(t2))
-            true
-          else {
-            val currentTree = t
-            val originalTree = findOriginalTree(t).get
-            
-            val newChildren = children(t)
-            val orgChildren = origChld
-            trace("%s and %s are not the same trees", t1, t2)
-            false
-          }
-        }
+        !(children(t) corresponds origChld) { (t1, t2) => t1.sameTree(t2) }
     }
     
     def searchChildrenForChanges(parent: Tree): List[Tree] = {
@@ -69,7 +60,6 @@ trait TreeChangesDiscoverer {
           trace("  Tree %s has changed children.", t.getClass.getSimpleName)
           t :: parents ::: searchChildrenForChanges(t)
         } else {
-          //trace("  Tree %s has no changes, searching in children.", t.getClass.getSimpleName)
           children(t) flatMap (c => findChildren(c, t :: parents))
         }
       }
@@ -84,7 +74,6 @@ trait TreeChangesDiscoverer {
       trace("Tree %s has changed children.", t.getClass.getSimpleName)
       List((t, Set(t) ++ searchChildrenForChanges(t)))
     } else {
-      //trace("Tree %s has no changes, searching in children.", t.getClass.getSimpleName)
       children(t) flatMap (c => findAllChangedTrees(c))
     }
   }

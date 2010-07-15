@@ -8,7 +8,7 @@ package analysis
 /**
  * Provides various traits that are used by the indexer
  * to expand symbols; that is, to find symbols that are
- * related to each other. For example, it finds overriden
+ * related to each other. For example, it finds overridden
  * methods in subclasses.
  */
 trait DependentSymbolExpanders {

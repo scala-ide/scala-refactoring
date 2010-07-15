@@ -48,8 +48,8 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     
     val rename = topdown(isInTheIndex &> renameTree |> id)
     
-    val renamed = occurences flatMap (rename(_))
+    val renamedTrees = occurences flatMap (rename(_))
     
-    Right(refactor(renamed))
+    Right(refactor(renamedTrees))
   }
 }
