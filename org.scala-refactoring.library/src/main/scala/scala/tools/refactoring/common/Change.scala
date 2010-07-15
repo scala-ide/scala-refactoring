@@ -13,7 +13,7 @@ object Change {
   
   /**
    * Applies the list of changes to the source string.
-   * */
+   */
   def applyChanges(ch: List[Change], source: String): String = {
     (source /: ch.sortBy(-_.to)) { (src, change) =>
       src.substring(0, change.from) + change.text + src.substring(change.to)

@@ -15,7 +15,7 @@ import collection.mutable.{HashMap, ListBuffer}
  * which traverses the whole compilation unit once and
  * then memoizes all relations.
  * 
- * */
+ */
 trait CompilationUnitIndexes extends PimpedTrees {
     
   import global._

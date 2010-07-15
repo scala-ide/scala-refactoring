@@ -11,7 +11,7 @@ import tools.nsc.ast.parser.{Scanners, Tokens}
 /**
  * NameValidation offers several methods to validate
  * new names; depending on the context they are used.
- * */
+ */
 trait NameValidation {
 
   self: Indexes with common.Selections =>
@@ -22,7 +22,7 @@ trait NameValidation {
   /**
    * Returns true if this name is a valid identifier, 
    * as accepted by the Scala compiler.
-   * */
+   */
   def isValidIdentifier(name: String): Boolean = {
 
     val scanner = new { val global = self.global } with Scanners {
@@ -53,7 +53,7 @@ trait NameValidation {
    * 
    * The implemented checks are only an approximation and not
    * necessarily correct.
-   * */
+   */
   def doesNameCollide(name: String, s: Symbol): List[Symbol] = {
     
     def isNameAlreadyUsedInLocalScope: List[Symbol] = {

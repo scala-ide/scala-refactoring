@@ -2,6 +2,13 @@
 \usepackage{mystyle}
 
 \begin{document}
+
+\hypersetup{
+  pdftitle={Scala Refactoring},
+  pdfauthor={Mirko Stocker},
+  pdfkeywords={Scala Refactoring IDE Eclipse Thesis}
+}
+
 \begin{titlepage}
   
 \enlargethispage{10cm}
@@ -66,7 +73,7 @@ The implemented refactorings are already part of the current development builds 
 
 \newpage
 
-\chapter*{Declaration Of Authorship}
+\chapter*{Declaration of Authorship}
 
 I, Mirko Stocker, declare that this thesis and the work presented in it is my own, original work. All the sources I consulted and cited are clearly attributed. I have acknowledged all main sources of help.
 
@@ -116,11 +123,11 @@ Refactoring as a technique does not mandate a tool nor depend on a specific prog
 
 The Scala programming language \cite{ProgrammingScala}, developed by Martin Odersky and his team at EPFL, is a statically typed, compiled language that runs on the Java Virtual Machine (or on .NET alternatively \cite{ScalacNet}) and excels with its unique combination of object-oriented and functional programming concepts. Odersky also calls Scala a postfunctional language because it has been designed ``to make functional constructs, imperative constructs, and objects all play well together'' \cite{ScalaPostFunctional}. 
 
-One of Scala's strengths is its seamless interoperability with Java on the class level: Scala classes can extend Java classes and vice-versa. Scala also does not ship with a huge standard library but uses existing Java classes where it is sensible.
+One of Scala's strengths is its seamless interoperability with Java on the class level: Scala classes can extend Java classes and vice-versa. Scala also does not ship with a large standard library but uses existing Java classes where it is sensible.
 
 Scala provides all of Java's object-oriented features but does away with the not really object oriented ones like primitive data types and static class members. Scala also provides code reuse via traits; a kind of interface that may contain implementations.
 
-From functional programming, Scala has absorbed functions as first class values and embraces the idea of immutability with various language constructs. Scala even supports lazy evaluation through by-name parameters and the \src{lazy} modifier for values. A combination from both object-oriented and functional worlds can be seen in Scala's ability to use pattern matching to deconstruct objects while still preserving encapsulation.
+From functional programming, Scala has absorbed functions as first class values and embraces the idea of immutability with various language constructs. Scala even supports lazy evaluation through call-by-name parameters and the \src{lazy} modifier for values. A combination from both object-oriented and functional worlds can be seen in Scala's ability to use pattern matching to deconstruct objects while still preserving encapsulation.
 
 These were just a few examples of how Scala differs from other languages such as Java. One last feature worth mentioning is that in Scala, building your own abstractions and control structures is easy, which is the reason why it has been named the ``scalable language''. For a short introduction and a tutorial, see \cite{ScalaTutorial} and \cite{ScalaByExample}.
 
@@ -141,7 +148,7 @@ Scala is supported on the three main Java development platforms Eclipse \cite{Ec
 
 The goal of this thesis is to support Scala IDEs with automated refactoring tools. It aims to provide a comprehensive catalog of refactorings and the necessary infrastructure to create new refactorings. To maximize the number of IDEs and other tools that can profit from the project, it will provide an IDE independent refactoring library that only depends on the Scala compiler. IDEs can then seamlessly integrate this library by providing the user interface and interaction.
 
-As most IDEs today are written in Java, integrating a Scala library is no problem. Also, because the majority of Scala IDEs are completely open source (NetBeans, Eclipse), having a single refactoring library allows their developers to cooperate on an implementation, not fragmenting the already scarce resources any further. As a showcase, this project provides the integration into the Eclipse based Scala IDE \cite{EclipseScalaIDE}.
+As many IDEs today are written in Java, integrating a Scala library is no problem. Also, because the majority of Scala IDEs are completely open source (NetBeans, Eclipse), having a single refactoring library allows their developers to cooperate on an implementation, not fragmenting the already scarce resources any further. As a showcase, this project provides the integration into the Eclipse based Scala IDE \cite{EclipseScalaIDE}.
 
 Writing an automated refactoring is no trivial task, several things have to be taken care of: one has to analyze the source code, create an appropriate representation (e.g. abstract or concrete syntax tree) of the program, transform it and turn it back into plain source code. 
 
@@ -153,29 +160,31 @@ To summarize, the Scala Refactoring project develops an IDE independent refactor
 
 \section{Contents of This Report}
 
-This document is organized as follows: Chapter~\vref{chapter:refactoring-library} explains the concepts and implementation of the refactoring library. The details of the implemented refactorings are described in Chapter~\vref{chapter:implemented-refactorings}. How these refactorings can be integrated into an IDE or other tool is the topic of Chapter~\vref{chapter:tool-integration}. How the implemented refactorings are tested is explained in Chapter~\vref{chapter:testing}. Chapter~\vref{chapter:outlook} concludes this thesis with a review of the achievements and an outlook on further work.
+\newcommand{\rref}[2]{\ref{#1} on pages~\pageref{#1}--\pageref{#2}}
 
-The project environment is briefly explained in Appendix~\vref{chapter:project-environment}. The appendices also contain a user guide to the refactorings in Eclipse (Appendix~\vref{chapter:user-guide}), and a how-to introduction for developers that explains how a new refactoring can be created in Appendix~\vref{chapter:developer-how-to}. Developers that work with Scala's AST might also be interested in Appendix~\vref{chapter:scala-ast}, where the specific trees of the AST are described. Appendix~\vref{chapter:advanced-scala-features} contains explanations of more advanced Scala features and is referenced where needed in this document. The source code of this thesis is released under the Scala license, which is printed in Appendix~ \vref{chapter:scala-license}
+This document is organized as follows: Chapter~\rref{chapter:refactoring-library}{end-chapter:refactoring-library} explains the concepts and implementation of the refactoring library. The details of the implemented refactorings are described in Chapter~\rref{chapter:implemented-refactorings}{end-chapter:implemented-refactorings}. How these refactorings can be integrated into an IDE or other tool is the topic of Chapter~\rref{chapter:tool-integration}{end-chapter:tool-integration}. How the implemented refactorings are tested is explained in Chapter~\rref{chapter:testing}{end-chapter:testing}. Chapter~\rref{chapter:outlook}{end-chapter:outlook} concludes this thesis with a review of the achievements and an outlook on further work.
+
+The project environment is briefly explained in Appendix~\rref{chapter:project-environment}{end-chapter:project-environment}. The appendices also contain a user guide to the refactorings in Eclipse (Appendix~\rref{chapter:user-guide}{end-chapter:user-guide}), and a how-to introduction for developers that explains how a new refactoring can be created in Appendix~\rref{chapter:developer-how-to}{end-chapter:developer-how-to}. Developers that work with Scala's AST might also be interested in Appendix~\rref{chapter:scala-ast}{end-chapter:scala-ast}, where the specific trees of the AST are described. Appendix~\rref{chapter:advanced-scala-features}{end-chapter:advanced-scala-features} contains explanations of more advanced Scala features and is referenced where needed in this document. The source code of this thesis is released under the Scala license, which is printed in Appendix~ \vref{chapter:scala-license}
 
 \section{Target Audience}
 
 We assume that the reader knows the basic Scala concepts (if not, Scala by Example \cite{ScalaByExample} is a good starting point) and is able to read Scala source code. Whenever more advanced or possibly confusing concepts are used, a reference to Appendix~\ref{chapter:advanced-scala-features} will be provided.
 
-Developers who want to use the library to transform Scala source code should read Chapter~\vref{chapter:refactoring-library} on the library internals and Appendix~\vref{chapter:scala-ast} to learn more about Scala's AST. 
+Developers who want to use the library to transform Scala source code should start with Chapter~\vref{chapter:refactoring-library} on the library internals and Appendix~\rref{chapter:scala-ast}{end-chapter:scala-ast} to learn more about Scala's AST. 
 
-To integrate the existing refactorings in a new tool, Chapter~\vref{chapter:tool-integration} shows how this can be done with a made up editor and how the integration into the Scala IDE for Eclipse looks like.
+To integrate the existing refactorings in a new tool, Chapter~\rref{chapter:tool-integration}{end-chapter:tool-integration} shows how this can be done with a made up editor and how the integration into the Scala IDE for Eclipse looks like.
 
-For those wishing to implement new refactorings, the how-to in Appendix~\vref{chapter:developer-how-to} and Chapter~\vref{chapter:implemented-refactorings} on the implemented refactorings can serve as a starting point. How the new refactoring can be tested is explained in Chapter~\vref{chapter:testing}.
+For those wishing to implement new refactorings, the how-to in Appendix~\rref{chapter:developer-how-to}{end-chapter:developer-how-to} and Chapter~\rref{chapter:implemented-refactorings}{end-chapter:implemented-refactorings} on the implemented refactorings can serve as a starting point. How the new refactoring can be tested is explained in Chapter~\rref{chapter:testing}{end-chapter:testing}.
 
-Users who wish to provide accurate bug reports should take a look at Chapter~\vref{chapter:testing} on testing to learn how a new test that points out a failure can be implemented.
+Users who wish to provide accurate bug reports should take a look at Chapter~\rref{chapter:testing}{end-chapter:testing} on testing to learn how a new test that points out a failure can be implemented.
 
 \chapter{Refactoring Library} \label{chapter:refactoring-library}
 
-\input{2_refactoring_library}
+\input{2_refactoring_library} \label{end-chapter:refactoring-library}
 
 \chapter{Implemented Refactorings} \label{chapter:implemented-refactorings}
 
-The previous chapter explained the internals of the Scala Refactoring library; in this chapter, we shall take a look at the refactorings that have so far been implemented on top of the library. 
+The previous chapter explained the internals of the Scala Refactoring library; in this chapter, we shall take a look at the refactorings that have so far been implemented on top of it. 
 
 The three components of the refactoring library -- analysis, transformation, and source generation -- can be used independently from each other, but they also have dependencies expressed through self type annotations (see \vref{section:self-type-annotation}). 
 
@@ -220,7 +229,7 @@ The remainder of this chapter introduces each refactoring and explains the curre
 
 \section{Rename}
 
-Renaming is one of the most used refactorings among Eclipse using Java programmers (see \cite{RefactoringStudy}, \cite{RefactoringInEclipse}). Choosing good names is a very basic and yet important task for a programmer if he wants to write readable code. During the evolution of a program, the roles of the classes, methods and variables change. Having an automated refactoring for renaming considerably reduces the cost of keeping these names in sync with their functionality.
+Renaming is one of the most used refactorings abmong Eclipse using Java programmers (see \cite{RefactoringStudy}, \cite{RefactoringInEclipse}). Choosing good names is a very basic and yet important task for a programmer if he wants to write readable code. During the evolution of a program, the roles of the classes, methods and variables change. Having an automated refactoring for renaming considerably reduces the cost of keeping these names in sync with their functionality.
 
 \subsection{Features}
 
@@ -246,12 +255,12 @@ Inline renaming is automatically chosen if the identifier that is renamed has on
 
 \subsection{Implementation Details}
 
-From the refactoring developer's point of view, the Rename refactoring is a quite different beast than other refactorings. Because renaming does not change the shape of the AST at all, the transformations and source generation steps are trivial. On the other hand, having an accurate index is crucial; the inline rename refactoring uses the index to find the locations of the names and does not use the source generator or tree transformations.
+From the refactoring developer's point of view, the Rename refactoring is quite different from other refactorings. Because renaming does not change the shape of the AST at all, the transformations and source generation steps are trivial -- or not even needed. On the other hand, having an accurate index is crucial. The inline rename refactoring uses the index to find the locations of the names and uses neither the source generator nor tree transformations.
 
-The implementation for the non-inline mode looks as follows:
+The implementation of the non-inline mode looks as follows:
 
 \begin{lstlisting}
-val occurences = index.occurences(prepared.selectedTree.symbol) 
+val occurences = index.occurences(selectedTree.symbol) 
     
 val isInTheIndex = filter {
   case t: Tree %$\Rightarrow$% occurences contains t 
@@ -259,11 +268,11 @@ val isInTheIndex = filter {
 
 val renameTree = transform {
   case t: ImportSelectorTree %$\Rightarrow$% 
-    mkRenamedImportTree(t, params.newName)
+    mkRenamedImportTree(t, newName)
   case s: SymTree %$\Rightarrow$% 
-    mkRenamedSymTree(s, params.newName)
+    mkRenamedSymTree(s, newName)
   case t: TypeTree %$\Rightarrow$% 
-    mkRenamedTypeTree(t, params.newName, prepared.selectedTree.symbol)
+    mkRenamedTypeTree(t, newName, selectedTree.symbol)
 }
 
 val rename = topdown(isInTheIndex &> renameTree |> id)
@@ -281,13 +290,13 @@ There is currently one limitation with the Rename refactoring: named parameters 
 
 \section{Organize Imports}
 
-It can be debated whether Organize Imports really deserves the label Refactoring, because it does not change the structure of your code; but neither does the Rename refactoring. But Organize Imports is definitely useful, therefore we chose to include it under the refactorings.
+It can be debated whether Organize Imports really deserves the label Refactoring, because it does not change the structure of your code; but neither does the Rename refactoring. But Organize Imports is definitely useful, therefore we chose to include it in our refactorings.
 
 During the lifetime of a compilation unit, external dependencies can change and new import statements are added and old ones are removed. Organize imports reorders and simplifies these statements.
 
 \subsection{Features}
 
-Organize imports is the only implemented refactoring that does not need a configuration. The current implementation of Organize Imports performs these three steps:
+Organize Imports does not need a configuration; the current implementation performs these three steps:
 
 \begin{description}
   \item[Sort] the statements alphabetically by their full name.
@@ -316,7 +325,7 @@ import java.lang.{Object, String}
 \end{lstlisting}
 \end{multicols}
 
-  \item[Simplify] the imports: when a wildcard imports the whole package content, individual import from that package are removed, unless they contain renames:
+  \item[Simplify] the imports: when a wildcard imports the whole package content, individual imports from that package are removed, unless they contain renames:
 \begin{multicols}{2}
 \begin{lstlisting}
 import java.io._
@@ -345,7 +354,7 @@ import java.lang.{String %$\Rightarrow$% S, _}
 
 \subsection{Limitations}
 
-The current implementation has some limitations compared to its Java counterpart. The refactoring does not do any dependency analysis, imports that are missing are not added, and unneeded imports are not being removed by Organize Imports. There are more features that could be added in future versions:
+The current implementation has several limitations compared to its Java counterpart. The refactoring does not do any dependency analysis, imports that are missing are not added, and unneeded imports are not being removed by Organize Imports. And there are more features that could be added in future versions:
 
 \paragraph{Save Action} In Eclipse, actions can be performed automatically when a file is saved. Enabling Organize Imports to automatically organize the imports might be useful.
 
@@ -383,11 +392,11 @@ In Scala, another reason why one would want to introduce new local variables is 
 
 \subsection{Features}
 
-From a selected expression, the Extract Local refactoring will create a new value in the closest scope and replace the selected expression with a reference to that value. Just as the rename refactoring in a local scope, Extract Local also uses Eclipse's linked mode to avoid distracting the user with dialogs (see \figref{figure:extract-local-screenshot-1} for a screenshot).
+From a selected expression, the Extract Local refactoring will create a new value in the enclosing scope and replace the selected expression with a reference to that value. Just as the rename refactoring in a local scope, Extract Local also uses Eclipse's linked mode to avoid distracting the user with dialogs (see \figref{figure:extract-local-screenshot-1} for a screenshot).
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.5\linewidth]{extract_local_screenshot_1.png}
+  \includegraphics[width=0.55\linewidth]{extract_local_screenshot_1.png}
   \caption{The Extract Local refactoring also uses the linked mode, making extracting a local variable much faster than with a wizard.}
   \label{figure:extract-local-screenshot-1}
 \end{figure}
@@ -495,7 +504,7 @@ val %\bluebox{filterList}% = l filter _
 \end{lstlisting}
 \end{multicols}
 
-In the last example, we show how the extraction behaves inside single-expression statements:
+In the last example, we show how the extraction behaves inside single-expression functions:
 
 \begin{multicols}{2}
 \begin{lstlisting}
@@ -592,6 +601,8 @@ val extractLocal =
       insertNewVal))
 \end{lstlisting}
 
+The \src{findInsertionPoint} transformation acts as a simple predicate to find the insertion point in the AST. Next, \src{replaceTree} creates a transformation that replaces two trees by top-down traversal. The \src{insertNewVal} transformation then takes care of inserting the value, creating the necessary surrounding \src{Block} trees. Finally, the transformations are combined and applied using a top-down traversal strategy.
+
 \subsection{Limitations}
 
 Curly braces are not always placed ideally -- for example, the refactoring generates code like 
@@ -603,7 +614,7 @@ Curly braces are not always placed ideally -- for example, the refactoring gener
 \end{lstlisting}
 
 when it could just generate the code in the simpler form:
-
+\needspace{3\baselineskip}
 \begin{lstlisting}
 {i %$\Rightarrow$%
   %\ldots%
@@ -627,7 +638,7 @@ Restricting the refactoring to \src{vals} only makes the refactoring easier to i
 
 \subsection{Examples}
 
-Inlining a local value is in most cases trivial, but there are a few cases where it gets more complicated. Scala allows the programmer to omit the \src{.} when calling methods in certain cases:
+Inlining a local value is in most cases trivial, but there are a few cases where it gets more complicated. Scala allows the programmer to omit the ''\src{.}`` when calling methods in certain cases:
 
 \needspace{8\baselineskip}
 \begin{lstlisting}
@@ -695,7 +706,7 @@ val removeSelectedValue = {
   
   transform {
     case tpl @ Template(_, _, stats) if stats contains selectedValue =>
-      tpl.copy(body = replaceSelectedValue(stats)) replaces tpl
+      tpl copy(body = replaceSelectedValue(stats)) replaces tpl
     case block @ BlockExtractor(stats) if stats contains selectedValue =>
       mkBlock(replaceSelectedValue(stats)) replaces block
   }
@@ -708,7 +719,7 @@ The selected value can either be contained in a block, or directly in a class te
 val inlineThis = someList filter _
 \end{lstlisting}
 
-We the \src{\_} to be removed, this is why we cannot just take the value's right hand side. The replace transformation then simply replaces all trees that reference the value:
+We need the \src{\_} to be removed, this is why we cannot just take the value's right hand side. The replace transformation then simply replaces all trees that reference the value:
 
 \begin{lstlisting}
 val replaceReferenceWithRhs = {
@@ -752,7 +763,7 @@ if you can do Extract Method, it probably means you can go on more refactorings 
 
 \subsection{Features}
 
-There exist several variations of the refactoring depending on how the selected code interacts with surrounding local variables. In the case where no local variables are used, the refactoring is trivial, we can just move the code into its own method and insert a call at the origin. 
+There exist several variations of the refactoring depending on how the selected code interacts with surrounding local variables. In the case where no local variables are used, the refactoring is trivial, we can just move the code into its own method and insert a call to it from its origin. 
 
 When local variables are used, they need to be passed into the extracted method; the problematic case arises when local variables are re-assigned or declared inside and used outside of the extracted code. In this case, the respective variable has to be returned from the created method and the call to the created method becomes an assignment to the variable. 
 
@@ -768,7 +779,7 @@ def parse(source: String): (Int, String) = {
 val (parsedInt, restSource) = parse("5$")
 \end{lstlisting}
 
-\caption{An example of Scala tuples. The function \src{parseInt} has the type $String => (Int, String)$ (which is syntactic sugar for $String => Tuple2[Int, String]$). Line~3 shows how such a tuple can be returned; and the last line how it is deconstructed into the two variables \src{parsedInt} and \src{restSource}.}
+\caption{An example of Scala tuples. The function \src{parseInt} has the type \src{String $\Rightarrow$ (Int, String)}, which is syntactic sugar for \src{String $\Rightarrow$ Tuple2[Int, String]}. Line~3 shows how such a tuple can be returned; and the last line how it is deconstructed into the two variables \src{parsedInt} and \src{restSource}.}
 \label{figure:tuple-deconstruction}
 \end{figure}
 
@@ -836,6 +847,8 @@ def main(args: Array[String]) {
   println("The sum from %\%%d to %\%%d is %\%%d".format(start, end, sum))
 }
 \end{lstlisting}
+
+becomes
 
 \needspace{10\baselineskip}
 \begin{lstlisting}        
@@ -958,9 +971,11 @@ private def makeString(args: Array[String]): String = {
 }
 \end{lstlisting}
 
+\label{end-chapter:implemented-refactorings}
+
 \chapter{Tool Integration} \label{chapter:tool-integration}
 
-In this chapter, we're going to look at how the implemented refactorings can be integrated into other software and how the current integration into the Scala IDE for Eclipse looks like.
+In this chapter, we are going to look at how the implemented refactorings can be integrated into other software and how the current integration into the Scala IDE for Eclipse looks like.
 
 \section{Dependencies}
 
@@ -977,7 +992,7 @@ trait Refactoring extends %\ldots% {
 }
 \end{lstlisting}
 
-So in order to instantiate a refactoring implementation, a reference to the compiler has to be provided. How this is done for the automated tests is described in Chapter~\vref{chapter:testing}.
+To instantiate a refactoring implementation, a reference to the compiler needs to be provided. How this is done for the automated tests is described in Chapter~\vref{chapter:testing}.
 
 As explained at the beginning of Chapter~\vref{chapter:implemented-refactorings}, a refactoring is performed in several steps; \figref{figure:refactoring-sequence} visualizes the interaction between the user, the IDE and the refactoring library. The prepare and perform methods as well as the required parameters are part of the \src{MutliStageRefactoring} abstract class (see \figref{figure:package-layout}).
 
@@ -1004,7 +1019,7 @@ As explained at the beginning of Chapter~\vref{chapter:implemented-refactorings}
   \label{figure:refactoring-editor}
 \end{figure}
 
-How the refactorings can be integrated will be shown on a concrete example: the Refactoring Editor shown in \figref{figure:refactoring-editor}. We show the detailed instructions for the \src{Rename} refactoring only, but others can be integrated analog. The following code is all performed in an action listener. First we have to instantiate the refactoring:
+How the refactorings can be integrated will be shown with a concrete example: the Refactoring Editor shown in \figref{figure:refactoring-editor}. We show the detailed instructions for the \src{Rename} refactoring only, but others can be integrated analog. The following code is all performed in an action listener. First we have to instantiate the refactoring:
 
 \begin{lstlisting}
 val refactoring = new Rename with CompilerProvider with GlobalIndexes {
@@ -1013,9 +1028,11 @@ val refactoring = new Rename with CompilerProvider with GlobalIndexes {
 }
 \end{lstlisting}
 
-The compiler in this example is provided by the \src{CompilerProvider} trait, which also offers the \src{treeFrom} method to turn a \src{String} into a \src{Tree} instance. The Rename refactoring further needs an index of the whole program; we mix in the \src{GlobalIndexes} trait that allows us to construct an index from the AST (more on the index can be found in Section~\vref{section:analysis}).
+The compiler in this example is provided by the \src{CompilerProvider} trait, which also offers the \src{treeFrom} method to turn a \src{String} into a \src{Tree} instance. We need to do this ourselves because our editor does not already parse the code, which would likely be different if we were to integrate the refactorings into a real IDE.
 
-Most of the refactorings need a selection to work. The \src{Selection} trait is implemented in two variations: \src{FileSelection} and \src{TreeSelection}. Depending on where the selection comes from, one or the other is easier to use. We create a \src{FileSelection} from the editor's selection:
+The Rename refactoring further needs an index of the whole program; we mix in the \src{GlobalIndexes} trait that allows us to construct an index from the AST (more on the index can be found in Section~\vref{section:analysis}).
+
+Most of the refactorings need a selection to work. The \src{Selection} trait is implemented in two variations: \src{FileSelection} and \src{TreeSelection}. Depending on where the selection comes from, one or the other is easier to use. We create a \src{FileSelection} from the editor widget's selection:
 
 \begin{lstlisting}
 val selection: refactoring.Selection = {
@@ -1026,7 +1043,9 @@ val selection: refactoring.Selection = {
 }
 \end{lstlisting}
 
-Having a selection, we can now invoke the first refactoring step: the \src{prepare} method. Calling \src{prepare} returns \src{Either[PreparationError, PreparationResult]}, so we have to extract the result, or abort if an error occurred (a typical error cause is an unsuitable selection).
+Having a selection, we can now invoke the first refactoring step: the \src{prepare} method. Calling \src{prepare} returns \src{Either[PreparationError, PreparationResult]}, so we have to extract the result, or abort if an error occurred (a typical error cause for the Rename refactoring is an unsuitable selection).
+
+
 
 \begin{lstlisting}
 val preparationResult = refactoring.prepare(selection) match {
@@ -1200,6 +1219,8 @@ Integrating a new refactoring with the Scala Eclipse plug-in can be done in thre
 
 With the existing refactoring implementations as a guideline, adding a new refactoring to the Scala IDE for Eclipse should be trivial.
 
+\label{end-chapter:tool-integration}
+
 \chapter{Testing} \label{chapter:testing}
 
 The necessity of automated testing in modern software projects bears no repetition. Especially with a project that is so intrinsically dependent on another component -- the Scala compiler -- and its internals, having a strong suite of integration tests is essential. 
@@ -1328,6 +1349,8 @@ def renameTo(name: String)(pro: FileSet): List[Change] = %\ldots%
 
 Now the first argument -- the new name -- is applied during the test setup, and the resulting function is then passed to the \src{applyRefactoring} just like before.
 
+\label{end-chapter:testing}
+
 \chapter{Conclusion} \label{chapter:outlook}
 
 In this chapter, we shall review the results of this thesis and take a look at different ways the project could be continued.
@@ -1380,6 +1403,8 @@ Many thanks to everyone from the Scala team and in the Scala community who encou
 
 A special thanks goes to Richard Emberson who uncovered many bugs in the implementation and always patiently waited for a fix.
 
+\label{end-chapter:outlook}
+
 \appendix
 
 \chapter{Project Environment} \label{chapter:project-environment}
@@ -1405,7 +1430,12 @@ The following tools were used to manage and produce the almost 15'000 lines of c
 
 \section{Time Report}
 
-The mandatory work load for this thesis was 810 hours; distributed over the 21 weeks, this makes about 39 hours per week. %unterschiedlich wegen konferenzen.
+The mandatory work load for this thesis was 810 hours; distributed over the 21 weeks, this is about 39 hours per week:
+
+\begin{center}
+  \includegraphics[width=\linewidth]{time.pdf}
+\end{center}
+
 
 \section{Project Plan}
 
@@ -1413,8 +1443,8 @@ The two project plans on the following two pages show the originally planned and
 
 \begin{itemize}
   \item The original plan did not cover the whole project duration, instead it was agreed that we would assess the situation after half of the project's duration to determine the direction for the second half. 
-  \item We noticed that the original plan was too ambitious, so many planned implementations could not be done. Instead, the whole source generation part had to be rewritten (see \vref{subsection:comparison-with-the-term-project} for more details on why this was necessary).
-  \item The original plan contained the Scala IDE integration as one of the first tasks, but this was subsequently moved to the end because of some larger restructurings in the Scala IDE (changes of build systems). All implemented refactorings are now part of the nightly build and are going to be included in the next release.
+  \item During the project, we noticed that the original plan was too ambitious, so many planned implementations could not be done. Instead, the whole source generation part had to be rewritten (see \vref{subsection:comparison-with-the-term-project} for more details on why this was necessary).
+  \item The original plan contained the Scala IDE integration as one of the first tasks, but this was subsequently moved to the end because of some larger restructurings in the Scala IDE (switch to a new build system). All implemented refactorings are now part of the nightly build and are going to be included in the next release.
 \end{itemize}
 
 
@@ -1429,6 +1459,8 @@ The two project plans on the following two pages show the originally planned and
 \thispagestyle{empty}
 \begin{center}
   \includegraphics[width=1.7\linewidth,angle=90]{project_plan_2.pdf}
+
+\label{end-chapter:project-environment}
 \end{center}
 
 
@@ -1533,6 +1565,8 @@ To invoke the refactoring, a selection inside of a method has to be made. The re
 \subsection{Limitations}
 
 Compared to Eclipse's Extract Method for Java, the Scala version currently lacks many features -- for example, one cannot reorder the parameters, nor rename them. Allowing the user to choose where the extracted method should be placed also has not been implemented yet, and the visibility of the extracted method is always set to private.
+
+\label{end-chapter:user-guide}
 
 \chapter{Developer How-To} \label{chapter:developer-how-to}
 
@@ -1748,6 +1782,8 @@ This concludes our example of an automated refactoring implementation. All we ha
 
 The implementation of this refactoring can be found in the \src{implementations} package of the library. To see how other refactorings were implemented, continue reading Chapter~\vref{chapter:implemented-refactorings}. To learn more about the internals of the library, take a look at Chapter~\vref{chapter:refactoring-library}.
 
+\label{end-chapter:developer-how-to}
+
 \include{91_scala_ast}
 
 
@@ -1945,7 +1981,7 @@ class ServiceUser {
 val myService = new ServiceUser with SomeServiceImplementation
 \end{lstlisting}
 
-The user of \src{ServiceUser} than has to instantiate it with a suitable implementation of \src{Service} to make the program compile. In most cases, one could also just let \src{ServiceUser} inherit from \src{Service}, but using a self type annotation is conceptually cleared than inheritance.
+The user of \src{ServiceUser} then has to instantiate it with a suitable implementation of \src{Service} to make the program compile. In most cases, one could also just let \src{ServiceUser} inherit from \src{Service}, but using a self type annotation is conceptually clearer than inheritance.
 
 
 \section{Package Nesting} \label{section:package-nesting}
@@ -1968,6 +2004,8 @@ import pd.Student
 \end{lstlisting}
 
 Note how the import statement does not have to specify the fully qualified name but can simply import \src{pd.Student} because both compilation units are in the \src{com.mycompany. project} package.
+
+\label{end-chapter:advanced-scala-features}
 
 \chapter{License} \label{chapter:scala-license}
 

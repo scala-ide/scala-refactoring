@@ -13,7 +13,7 @@ import common.PimpedTrees
  * the GlobalIndex is cheap, all the compilation units were already
  * indexed, and all further work is only done on demand.
  * 
- * */
+ */
 trait GlobalIndexes extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes with PimpedTrees {
 
   import global._

@@ -23,7 +23,7 @@ trait TestHelper extends Refactoring with CompilerProvider {
   /**
    * A project to test multiple compilation units. Add all 
    * sources using "add" before using any of the lazy vals.
-   * */
+   */
   abstract class FileSet(val name: String) {
     
     def this() = this("test")

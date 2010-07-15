@@ -25,7 +25,7 @@ package transformation
  * 
  * Additional functions are provided that apply a transformation top-down
  * or bottom-up.
- * */
+ */
 trait Transformations {
     
   abstract class Transformation[X, Y] extends (X ⇒ Option[Y]) {
@@ -58,7 +58,7 @@ trait Transformations {
    *   val reverse_all_class_members = transformation[Tree, Tree] {
    *     case t: Template => t.copy(body = t.body.reverse) 
    *   }
-   * */
+   */
   def transformation[X, Y](f: PartialFunction[X, Y]) = new T[X, Y] {
     def apply(x: X): Option[Y] = f lift x
   }
@@ -73,7 +73,7 @@ trait Transformations {
    *   
    * We can then use the predicate like this:
    *   tree_with_range_pos andThen do_something_with_the_tree orElse nothing
-   * */
+   */
   def predicate[X](f: PartialFunction[X, Boolean]) = new T[X, X] {
     def apply(t: X): Option[X] = if (f.isDefinedAt(t) && f(t)) Some(t) else None
   }
@@ -84,7 +84,7 @@ trait Transformations {
   
   /**
    * Always succeeds and returns the input unchanged.
-   * */
+   */
   def succeed[X] = new T[X, X] {
     def apply(in: X): Option[X] = Some(in)
   }
@@ -93,14 +93,14 @@ trait Transformations {
 
   /**
    * Always fails, independent of the input.
-   * */
+   */
   def fail[X] = new T[X, X] {
     def apply(in: X): Option[X] = None
   }
 
   /**
    * Success and fail can be used to implement `not` 
-   * */
+   */
   def not[X](t: ⇒ T[X, X]) = t &> fail |> succeed
   def !  [X](t: ⇒ T[X, X]) = not(t)
   
@@ -110,7 +110,7 @@ trait Transformations {
    * 
    * If the transformation fails on one child, abort and
    * fail the whole application.
-   * */
+   */
   def allChildren[X <% (X ⇒ Y) ⇒ Y, Y](t: ⇒ T[X, Y]) = new T[X, Y] {
     def apply(in: X): Option[Y] = {
       Some(in(child => t(child) getOrElse (return None)))
@@ -124,7 +124,7 @@ trait Transformations {
    * If the transformation fails on one child, apply the 
    * identity transformation `id` and don't fail, unlike
    * `allChildren`.
-   * */
+   */
   def matchingChildren [X <% (X ⇒ X) ⇒ X](t: T[X, X]) = allChildren(t |> id[X])
   
   /**
@@ -132,7 +132,7 @@ trait Transformations {
    * the transformation to the tree T and then passes the
    * transformed T to all children. The consequence is that
    * the children "see" their new parent.
-   * */
+   */
   def ↓       [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
   def topdown [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↓(t)
   def preorder[X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↓(t)
@@ -142,14 +142,14 @@ trait Transformations {
    * the transformation to the children of the tree first and
    * then to their parent. The consequence is that the parent
    * "sees" its transformed children.
-   * */ 
+   */ 
   def ↑        [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
   def bottomup [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↑(t)
   def postorder[X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↑(t)
   
   /**
    * Creates a transformation that always returns the value x.
-   * */ 
+   */ 
   def constant[X, Y](y: Y) = transformation[X, Y] {
     case _ => y
   }

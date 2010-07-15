@@ -19,13 +19,13 @@ trait TreeTransformations extends Transformations {
     /**
      * Hooks into the Scala compiler's Transformer but applies only 
      * one transformation and then returns that result.
-     * */
+     */
     class TransformOnce extends Transformer {
       
       /**
        * Transforms the children of the trees using `f` and creates
        * a new t with the transformed children
-       * */
+       */
       def once(t: Tree) = t match {
         
         case t: ImportSelectorTree =>
@@ -61,7 +61,7 @@ trait TreeTransformations extends Transformations {
   
   /**
    * Replace the first sequence of elements with another sequence.
-   * */
+   */
   implicit def additionalListMethods[T](l: List[T]) = new {
     def replaceSequence(what: List[T], replacement: List[T]): List[T] = {
       def inner(from: List[T], what: List[T], replacement: List[T]): List[T] = (from, what) match {

@@ -8,7 +8,7 @@ package sourcegen
 /**
  * Provides a function that discovers all trees that have changed
  * and need to be re-generated.
- * */
+ */
 trait TreeChangesDiscoverer {
   
   self: common.Tracing with common.PimpedTrees =>

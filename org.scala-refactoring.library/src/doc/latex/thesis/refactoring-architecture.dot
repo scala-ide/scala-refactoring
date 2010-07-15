@@ -32,7 +32,7 @@ digraph G {
     labelloc="b"
   }
 
-  Refactoring -> SourceGenerator[lhead=cluster2]
+  /*Refactoring -> SourceGenerator[lhead=cluster2]
   Refactoring -> TreeTransformations[lhead=cluster1]
-  Refactoring -> GlobalIndexes[lhead=cluster0]
+  Refactoring -> GlobalIndexes[lhead=cluster0]*/
 }

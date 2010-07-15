@@ -16,7 +16,7 @@ package analysis
  * expensive operations.
  * 
  * An implementation can be found in GlobalIndexes.
- * */
+ */
 trait Indexes {
 
   val global: scala.tools.nsc.interactive.Global
@@ -26,7 +26,7 @@ trait Indexes {
     /**
      * Returns all defined symbols, i.e. symbols
      * of DefTrees.
-     * */
+     */
     def allDefinedSymbols(): List[global.Symbol]
     
     /**
@@ -34,13 +34,13 @@ trait Indexes {
      * either referenced or defined. This also includes
      * symbols from the Scala library that are used
      * in the compilation units.
-     * */
+     */
     def allSymbols(): List[global.Symbol]    
     
     /**
      * For a given Symbol, tries to find the tree that declares it.
      * The result tree can have an offset position.
-     * */
+     */
     def declaration(s: global.Symbol): Option[global.DefTree]
     
     /**
@@ -51,13 +51,13 @@ trait Indexes {
      * Apply tree. 
      * 
      * Only returns trees with a range position.
-     * */
+     */
     def references(s: global.Symbol): List[global.Tree]
     
     /**
      * For a given Symbol, returns all trees that reference or
      * declare the symbol that have a range position.
-     * */
+     */
     def occurences(s: global.Symbol): List[global.Tree]
 
     /**
@@ -89,7 +89,7 @@ trait Indexes {
     
     /**
      * Add more convenience functions here..
-     * */
+     */
   }
   
   def index: IndexLookup

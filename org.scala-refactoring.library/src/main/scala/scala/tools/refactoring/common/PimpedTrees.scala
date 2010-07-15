@@ -16,7 +16,7 @@ import scala.tools.nsc.interactive.Global
 /**
  * A collection of implicit conversions for ASTs and other 
  * helper functions that work on trees.
- * */
+ */
 trait PimpedTrees {
     
   val global: Global
@@ -26,23 +26,23 @@ trait PimpedTrees {
    * Returns the tree that is contained in this file. Is
    * overridden in testing to manipulate the trees (i.e.
    * remove compiler generated trees)
-   * */
+   */
   def treeForFile(file: AbstractFile): Option[Tree] = unitOfFile.get(file) map (_.body)
     
   /**
    * Returns the compilation unit root for that position.
-   * */  
+   */  
   def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file)
 
   /**
    * Represent an import selector as a tree, including both names as trees.
-   * */
+   */
   case class ImportSelectorTree(name: NameTree, rename: global.Tree) extends global.Tree
   
   /**
    * Import selectors are not trees, but we can provide an extractor
    * that converts the ImportSelectors into our own ImportSelectorTrees.
-   * */
+   */
   class ImportSelectorTreeExtractor(t: global.Import) {
     // work around for https://lampsvn.epfl.ch/trac/scala/ticket/3392
     def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
@@ -74,7 +74,7 @@ trait PimpedTrees {
    * Add some methods to Tree that make it easier to compare
    * Trees by position and to extract the position of a tree's
    * name, which is tricky for Selects.
-   * */
+   */
   class TreeMethodsForPositions(t: Tree) {
     def hasExistingCode = t != null && !t.isEmpty && t.pos.isRange
     def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
@@ -85,7 +85,7 @@ trait PimpedTrees {
     /**
      * Returns the position this tree's name has in the source code.
      * Can also return NoPosition if the tree does not have a name.
-     * */
+     */
     def namePosition(): Position = (t match {
       case t: ModuleDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
       case t: ClassDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
@@ -101,7 +101,7 @@ trait PimpedTrees {
          *     ^^^^^^^^^^^^^^
          * then the position of the name starts from t.pos.start. To fix this, we extract the source code and
          * check where the parameter actually starts.
-         * */
+         */
         lazy val src = t.pos.source.content.slice(t.pos.start, t.pos.point).mkString("")
         
         val pos = if(t.pos.point - t.pos.start == name.length && src == name) 
@@ -175,7 +175,7 @@ trait PimpedTrees {
      * printed in the source code. Compiler generated names
      * for '_' return '_' and otherwise synthetic names
      * return "". 
-     * */
+     */
     def nameString: String = {
       
       def extractName(name: Name) = {
@@ -217,7 +217,7 @@ trait PimpedTrees {
    * 
    * If multiple trees are candidates, then take the last one, 
    * because it is likely more specific.
-   * */
+   */
   def findOriginalTree(tree: Tree): Option[Tree] = {
     
     def find(t: Tree): List[Tree] = {
@@ -241,7 +241,7 @@ trait PimpedTrees {
     
     /**
      * Returns all constructor parameters from the template body.
-     * */
+     */
     def constructorParameters = t.body.filter {
       case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
       case _ => false
@@ -249,7 +249,7 @@ trait PimpedTrees {
     
     /**
      * Returns the primary constructor of the template.
-     * */
+     */
     def primaryConstructor = t.body.filter {
       case t: DefDef => t.symbol.isPrimaryConstructor
       case _ => false
@@ -257,7 +257,7 @@ trait PimpedTrees {
        
     /**
      * Returns all early definitions from the template body.
-     * */
+     */
     def earlyDefs = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats filter treeInfo.isEarlyDef
       case t @ DefDef(_, _, _, _, _, rhs)        if t.symbol.isConstructor && treeInfo.isEarlyDef(rhs) => rhs :: Nil
@@ -265,7 +265,7 @@ trait PimpedTrees {
       
     /**
      * Returns the trees that are passed to a super constructor call.
-     * */
+     */
     def superConstructorParameters = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats collect {
         case Apply(EmptyTree, args) => args
@@ -277,7 +277,7 @@ trait PimpedTrees {
   
   /**
    * Name objects are not trees, this extractor creates NameTree instances from Trees.
-   * */
+   */
   class TreeToNameTreeExtractor(t: global.Tree) {
     object Name {
       def unapply(name: global.Name) = {
@@ -292,7 +292,7 @@ trait PimpedTrees {
    * Provides a finer-grained extractor for Template that distinguishes
    * between class constructor parameters, early definitions, parents, 
    * self type annotation and the real body.
-   * */
+   */
   object TemplateExtractor {
     def unapply(t: Tree) = t match {
       case tpl: Template => 
@@ -358,7 +358,7 @@ trait PimpedTrees {
    * Returns all children that have a representation in the source code.
    * This includes Name and Modifier trees and excludes everything that
    * has no Position or is an EmptyTree.
-   * */
+   */
   def children(t: Tree): List[Tree] = (t match {
     
     case PackageDef(pid, stats) => 
@@ -507,13 +507,13 @@ trait PimpedTrees {
      /**
      * An empty RHS that is implemented as '.. { }' creates a Literal 
      * tree with a range length of 1, remove that tree.
-     * */
+     */
     case t: Literal if t.pos.isRange && t.pos.end - t.pos.start == 1 && t.toString == "()" => 
       EmptyTree
       
     /**
      * hide the implicit "apply" call
-     * */
+     */
     case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => 
       qualifier   
       
@@ -551,7 +551,7 @@ trait PimpedTrees {
    * Make a Tree aware of its parent and siblings. Note
    * that these are expensive operations because they
    * traverse the whole compilation unit.
-   * */
+   */
   class TreeMethodsForFamily(t: Tree) {
     def originalParent = cuRoot(t.pos) flatMap { root =>
     
@@ -587,7 +587,7 @@ trait PimpedTrees {
   
   /**
    * Represent a Name as a tree, including its position.
-   * */
+   */
   case class NameTree(name: global.Name) extends global.Tree {
     if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
     def nameString = {
@@ -612,7 +612,7 @@ trait PimpedTrees {
   
   /**
    * Represent a modifier as a tree, including its position.
-   * */
+   */
   case class ModifierTree(flag: Long) extends global.Tree {
     
     override def toString = "ModifierTree("+ nameString +")"
@@ -644,7 +644,7 @@ trait PimpedTrees {
   /**
    * Extract the modifiers with their position from a Modifiers
    * object.
-   * */
+   */
   object ModifierTree {
     def unapply(m: global.Modifiers) = {
       Some(m.positions.toList map {
@@ -660,7 +660,7 @@ trait PimpedTrees {
    * The call to the super constructor in a class:
    * class A(i: Int) extends B(i)
    *                         ^^^^ 
-   * */
+   */
   case class SuperConstructorCall(clazz: global.Tree, args: List[global.Tree]) extends global.Tree {
     if(clazz.pos != global.NoPosition) setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
   }
@@ -669,7 +669,7 @@ trait PimpedTrees {
    * Representation of self type annotations:
    *   self: A with B =>
    *   ^^^^^^^^^^^^^^
-   * */
+   */
   case class SelfTypeTree(name: NameTree, types: List[global.Tree], orig: Tree) extends global.Tree
     
   /**
@@ -678,7 +678,7 @@ trait PimpedTrees {
    * 
    * Also reshapes some trees: multiple assignments are
    * removed and named arguments are reordered.
-   * */
+   */
   object BlockExtractor {
     def unapply(t: Block) = {
 

@@ -10,14 +10,14 @@ import common.Change
  * The super class of all refactoring implementations,
  * representing the several phases of the refactoring
  * process.
- * */
+ */
 abstract class MultiStageRefactoring extends Refactoring {
   
   /**
    * Preparing a refactoring can either return a result
    * or an instance of PreparationError, describing the
    * cause why the refactoring cannot be performed.
-   * */
+   */
   
   type PreparationResult
   
@@ -32,7 +32,7 @@ abstract class MultiStageRefactoring extends Refactoring {
    * 
    * The result can either be an error or a list of trees that
    * contain changes.
-   * */
+   */
   
   type RefactoringParameters
   

@@ -28,7 +28,7 @@ trait Fragment {
    * 
    * Combining two fragments (a,b,c) and (d,e,f)
    * yields a fragment (a,bcde,f).
-   * */
+   */
   def ++ (o: Fragment): Fragment = o match {
     case EmptyFragment => this
     case _ => new Fragment {
@@ -47,7 +47,7 @@ trait Fragment {
    * 
    * Combining (a,b,c) and (d)
    * yields a fragment (a,b,cd).
-   * */
+   */
   def ++ (o: Layout): Fragment = o match {
     case NoLayout => this
     case _ => new Fragment {

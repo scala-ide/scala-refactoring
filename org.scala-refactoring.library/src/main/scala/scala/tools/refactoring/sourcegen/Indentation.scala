@@ -11,7 +11,7 @@ package sourcegen
  * 
  * defaultIncrement specifies how much the indentation should
  * be incremented for newly generated code (pretty printer).
- * */
+ */
 trait Indentations {
   
   this: common.Tracing =>

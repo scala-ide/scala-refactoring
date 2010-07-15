@@ -10,7 +10,7 @@ package analysis
  * to expand symbols; that is, to find symbols that are
  * related to each other. For example, it finds overriden
  * methods in subclasses.
- * */
+ */
 trait DependentSymbolExpanders {
   
   this: Indexes =>
@@ -20,7 +20,7 @@ trait DependentSymbolExpanders {
   /**
    * The basic trait that is extended by the
    * concrete expanders.
-   * */
+   */
   trait SymbolExpander {    
     def expand(s: Symbol): List[Symbol] = List(s)
   }
