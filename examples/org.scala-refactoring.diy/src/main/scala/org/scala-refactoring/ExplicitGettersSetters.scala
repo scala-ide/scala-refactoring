@@ -2,11 +2,10 @@ package scala.tools.refactoring
 
 import scala.tools.nsc.symtab.Flags
 import scala.tools.nsc.ast.parser.Tokens
-import scala.tools.refactoring.Refactoring
-import scala.tools.refactoring.common.Change
-import scala.tools.refactoring.common.Tracing
-import scala.tools.refactoring.util.CompilerProvider
 import scala.swing._
+import common.Change
+import common.Tracing
+import util.CompilerProvider
 
 class MyRefactoring(sourceCode: String, caretPosition: Int) extends Refactoring with Tracing with CompilerProvider {
   
@@ -90,7 +89,11 @@ object ExplicitGettersSetters extends SimpleSwingApplication {
   override def main(args: Array[String]): Unit = { 
     
     if(!args.isEmpty) {
-      input.text = scala.io.Source.fromFile(args.head).mkString
+      try {
+        input.text = scala.io.Source.fromFile(args.head).mkString
+      } catch {
+        case _: java.io.FileNotFoundException => ()
+      }
     }
   
     super.main(args)
