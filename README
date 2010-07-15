@@ -7,7 +7,9 @@ Welcome to the Scala Refactoring project!
 1. Project Layout
 --------------------------------------------------------------------------------
 
-The project is organized as follows. The main project is the library, the feature and update-site projects are only needed when the library is used as a plug-in for Eclipse.
+The project is organized as follows. The main project is the library, the
+feature and update-site projects are only needed when the library is used as a
+plug-in for Eclipse.
 
 ├── pom.xml
 ├── build_p2_repo.sh
@@ -17,7 +19,8 @@ The project is organized as follows. The main project is the library, the featur
 │   ├── pom.xml
 │   └── src
 │       ├── doc
-│       │   └── latex
+│       │   ├── latex
+│       │   └── svg
 │       ├── main
 │       │   └── scala
 │       └── test
@@ -39,7 +42,8 @@ We use Maven (minimum version is 3 because we use Tycho) to build the project:
 
 > mvn package
 
-creates all the artifacts, except for the documentation, which needs to be built separately.
+creates all the artifacts, except for the documentation, which needs to be
+built separately.
 
 A separate P2 repository can be built using the build_p2_repo.sh script.
 

@@ -16,7 +16,10 @@
    version="1.1"
    inkscape:version="0.47 r22583"
    sodipodi:docname="poster.svg"
-   enable-background="new">
+   enable-background="new"
+   inkscape:export-filename="/home/misto/poster.png"
+   inkscape:export-xdpi="21.879999"
+   inkscape:export-ydpi="21.879999">
   <defs
      id="defs4">
     <linearGradient
@@ -111,15 +114,6 @@
        inkscape:vp_y="0 : 1000 : 0"
        inkscape:vp_x="0 : 0.5 : 1"
        sodipodi:type="inkscape:persp3d" />
-    <filter
-       id="filter6769"
-       inkscape:collect="always"
-       color-interpolation-filters="sRGB">
-      <feGaussianBlur
-         stdDeviation="1.7803571"
-         id="feGaussianBlur6771"
-         inkscape:collect="always" />
-    </filter>
     <linearGradient
        id="linearGradient5684">
       <stop
@@ -623,36 +617,6 @@
        y1="460.57648"
        x2="371.78571"
        y2="589.39862" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient5684"
-       id="linearGradient5716"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(5.4964368,0,0,4.5306945,-1351.7021,-268.39536)"
-       x1="371.78571"
-       y1="460.57648"
-       x2="371.78571"
-       y2="589.39862" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient5698-7"
-       id="linearGradient5718"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,5.068258)"
-       x1="371.78571"
-       y1="460.57648"
-       x2="371.78571"
-       y2="589.39862" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient7115"
-       id="linearGradient5720"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,-74.931742)"
-       x1="371.78571"
-       y1="460.57648"
-       x2="371.78571"
-       y2="589.39862" />
     <inkscape:perspective
        id="perspective5766"
        inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
@@ -725,36 +689,6 @@
        y1="460.57648"
        x2="371.78571"
        y2="589.39862" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient5684"
-       id="linearGradient5944"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(4.5306945,0,0,4.5306945,329.29462,-1168.3071)"
-       x1="371.78571"
-       y1="460.57648"
-       x2="371.78571"
-       y2="589.39862" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient5698-7"
-       id="linearGradient5946"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,5.068258)"
-       x1="371.78571"
-       y1="460.57648"
-       x2="371.78571"
-       y2="589.39862" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient7115"
-       id="linearGradient5948"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,-74.931742)"
-       x1="371.78571"
-       y1="460.57648"
-       x2="371.78571"
-       y2="589.39862" />
     <filter
        inkscape:collect="always"
        id="filter6158"
@@ -777,10 +711,236 @@
        y1="460.57648"
        x2="371.78571"
        y2="589.39862" />
+    <inkscape:perspective
+       id="perspective3111"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3125"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3139"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <filter
+       inkscape:collect="always"
+       id="filter4009"
+       x="-0.20404667"
+       width="1.4080933"
+       y="-1.5273797"
+       height="4.0547595">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="27.494824"
+         id="feGaussianBlur4011" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4017">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.91649414"
+         id="feGaussianBlur4019" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4029">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="2.2617773"
+         id="feGaussianBlur4031" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4041">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.1010059"
+         id="feGaussianBlur4043" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4049">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.8873633"
+         id="feGaussianBlur4051" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4061">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.3600195"
+         id="feGaussianBlur4063" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4069">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.2113086"
+         id="feGaussianBlur4071" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4077">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.6575293"
+         id="feGaussianBlur4079" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4085">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.73757812"
+         id="feGaussianBlur4087" />
+    </filter>
+    <inkscape:perspective
+       id="perspective4128"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <filter
+       inkscape:collect="always"
+       id="filter4158">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.8919701"
+         id="feGaussianBlur4160" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4162">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.3479574"
+         id="feGaussianBlur4164" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4174">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.7952287"
+         id="feGaussianBlur4176" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4178">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="1.7952287"
+         id="feGaussianBlur4180" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4186">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="2.1958361"
+         id="feGaussianBlur4188" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4194">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="5.1074451"
+         id="feGaussianBlur4196" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4202">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="5.1074451"
+         id="feGaussianBlur4204" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4226">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="4.5832555"
+         id="feGaussianBlur4228" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4230">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="4.3392854"
+         id="feGaussianBlur4232" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4234">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="4.033127"
+         id="feGaussianBlur4236" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4254">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="2.5365852"
+         id="feGaussianBlur4256" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4258">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="5.1074451"
+         id="feGaussianBlur4260" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4262">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="5.1074451"
+         id="feGaussianBlur4264" />
+    </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter4297">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="0.89793702"
+         id="feGaussianBlur4299" />
+    </filter>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5684"
+       id="linearGradient4369"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(4.5306945,0,0,4.5306945,329.29462,-1168.3071)"
+       x1="371.78571"
+       y1="460.57648"
+       x2="371.78571"
+       y2="589.39862" />
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient5698-7"
-       id="linearGradient6225"
+       id="linearGradient4371"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(0.99,0,0,0.99,5.5928639,5.068258)"
        x1="371.78571"
@@ -789,10 +949,10 @@
        y2="589.39862" />
     <linearGradient
        inkscape:collect="always"
-       xlink:href="#linearGradient5684"
-       id="linearGradient6231"
+       xlink:href="#linearGradient7115"
+       id="linearGradient4373"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.7620026,0,0,3.4632923,1426.9768,-1123.8109)"
+       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,-74.931742)"
        x1="371.78571"
        y1="460.57648"
        x2="371.78571"
@@ -800,7 +960,7 @@
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient5684"
-       id="linearGradient6250"
+       id="linearGradient4375"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(5.0681511,0,0,4.5306945,176.49641,-456.03903)"
        x1="371.78571"
@@ -809,8 +969,18 @@
        y2="589.39862" />
     <linearGradient
        inkscape:collect="always"
+       xlink:href="#linearGradient5698-7"
+       id="linearGradient4377"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,5.068258)"
+       x1="371.78571"
+       y1="460.57648"
+       x2="371.78571"
+       y2="589.39862" />
+    <linearGradient
+       inkscape:collect="always"
        xlink:href="#linearGradient7115"
-       id="linearGradient6253"
+       id="linearGradient4379"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(0.99,0,0,0.99,5.5928639,-74.931742)"
        x1="371.78571"
@@ -820,9 +990,49 @@
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient5698-7"
-       id="linearGradient6255"
+       id="linearGradient4383"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(0.99,0,0,0.99,5.5928639,5.068258)"
+       x1="371.78571"
+       y1="460.57648"
+       x2="371.78571"
+       y2="589.39862" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient7115"
+       id="linearGradient4385"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,-74.931742)"
+       x1="371.78571"
+       y1="460.57648"
+       x2="371.78571"
+       y2="589.39862" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5684"
+       id="linearGradient4387"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.7620026,0,0,3.4632923,1426.9768,-1123.8109)"
+       x1="371.78571"
+       y1="460.57648"
+       x2="371.78571"
+       y2="589.39862" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5698-7"
+       id="linearGradient4389"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.99,0,0,0.99,5.5928639,5.068258)"
+       x1="371.78571"
+       y1="460.57648"
+       x2="371.78571"
+       y2="589.39862" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient5684"
+       id="linearGradient4415"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(5.4964368,0,0,4.5306945,14.838686,195.60464)"
        x1="371.78571"
        y1="460.57648"
        x2="371.78571"
@@ -835,9 +1045,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35355339"
-     inkscape:cx="2563.7693"
-     inkscape:cy="1366.3761"
+     inkscape:zoom="0.25"
+     inkscape:cx="1884.4051"
+     inkscape:cy="1557.3033"
      inkscape:document-units="px"
      inkscape:current-layer="layer4"
      showgrid="false"
@@ -856,7 +1066,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -935,32 +1145,6 @@
          id="image3625"
          x="2994.6394"
          y="-1762.635" />
-    </g>
-    <g
-       id="g6124"
-       transform="translate(-4.7718302e-5,-80)">
-      <text
-         id="text3755"
-         y="-1476.6617"
-         x="1411.5425"
-         style="font-size:180.99258423px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter6158);font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-         xml:space="preserve"><tspan
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-           y="-1476.6617"
-           x="1411.5425"
-           id="tspan3757"
-           sodipodi:role="line">Scala Refactoring</tspan></text>
-      <text
-         xml:space="preserve"
-         style="font-size:180.99258423px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-         x="1411.5425"
-         y="-1495.6508"
-         id="text3972"><tspan
-           sodipodi:role="line"
-           id="tspan3974"
-           x="1411.5425"
-           y="-1495.6508"
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">Scala Refactoring</tspan></text>
     </g>
     <g
        id="g6259"
@@ -1139,195 +1323,17 @@
      inkscape:label="Main"
      style="display:inline">
     <g
-       id="g5885"
-       transform="translate(51.99999,60.624518)">
-      <rect
-         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)"
-         id="rect7565"
-         width="227.85715"
-         transform="matrix(4.5306945,0,0,4.5306945,320.23342,-1168.3071)"
-         y="462.89789"
-         ry="16.907"
-         x="270"
-         height="128.21428"
-         rx="16.907" />
-      <rect
-         style="fill:url(#linearGradient5944);fill-opacity:1;stroke:none;display:inline"
-         id="rect7567"
-         width="1032.3511"
-         ry="76.600449"
-         y="918.42419"
-         x="1538.019"
-         height="580.89972"
-         rx="76.600449" />
-      <rect
-         style="fill:url(#linearGradient5946);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)"
-         id="rect7569"
-         width="225.57858"
-         transform="matrix(4.5306945,0,0,4.5306945,320.23342,-1168.3071)"
-         y="461.03897"
-         ry="16.73793"
-         x="269.71072"
-         height="126.93214"
-         rx="16.73793" />
-      <rect
-         style="opacity:0.79615383;fill:url(#linearGradient5948);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)"
-         id="rect7571"
-         width="225.57858"
-         ry="16.73793"
-         y="381.03897"
-         transform="matrix(-4.4191071,0,0,-0.9791572,3737.8115,1433.4846)"
-         x="269.71072"
-         height="126.93214"
-         rx="16.73793" />
-      <text
-         xml:space="preserve"
-         style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
-         id="text7573"
-         y="1012.7203"
-         x="1854.9697"><tspan
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-           sodipodi:role="line"
-           id="tspan7575"
-           y="1012.7203"
-           x="1854.9697">Thesis Goals</tspan></text>
-      <text
-         xml:space="preserve"
-         style="font-size:56px;font-weight:normal;display:inline"
-         id="text7583"
-         y="1176.2556"
-         x="1599.1233"><tspan
-           id="tspan3906"
-           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
-           sodipodi:role="line"
-           y="1176.2556"
-           x="1599.1233">Provide an IDE independent Refactoring</tspan><tspan
-           id="tspan3911"
-           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
-           sodipodi:role="line"
-           y="1246.2556"
-           x="1599.1233">library.</tspan></text>
-      <text
-         x="1599.1233"
-         y="1372.2556"
-         id="text2950"
-         style="font-size:56px;font-weight:normal;display:inline"
-         xml:space="preserve"><tspan
-           x="1599.1233"
-           y="1372.2556"
-           sodipodi:role="line"
-           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
-           id="tspan2954">Integrate it into the Scala IDE for Eclipse.</tspan></text>
-      <image
-         xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/scala.png"
-         width="75.919685"
-         height="117.67551"
-         id="image3390"
-         x="2445.5054"
-         y="933.03528" />
-    </g>
-    <rect
-       style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)"
-       id="rect3556"
-       width="227.85715"
-       transform="matrix(5.0681511,0,0,4.5306945,166.36032,-456.03903)"
-       y="462.89789"
-       ry="16.907"
-       x="270"
-       height="128.21428"
-       rx="15.114081" />
-    <rect
-       style="fill:url(#linearGradient6250);fill-opacity:1;stroke:none;display:inline"
-       id="rect3558"
-       width="1154.8145"
-       ry="76.600449"
-       y="1630.6923"
-       x="1528.6066"
-       height="580.89972"
-       rx="76.600449" />
-    <rect
-       style="fill:url(#linearGradient6255);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)"
-       id="rect3560"
-       width="225.57858"
-       transform="matrix(5.0681511,0,0,4.5306945,166.36032,-456.03903)"
-       y="461.03897"
-       ry="16.73793"
-       x="269.71072"
-       height="126.93214"
-       rx="14.962941" />
-    <rect
-       style="opacity:0.79615383;fill:url(#linearGradient6253);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)"
-       id="rect3562"
-       width="225.57858"
-       ry="16.73793"
-       y="381.03897"
-       transform="matrix(-4.9433266,0,0,-0.9791572,3989.3509,2145.7527)"
-       x="269.71072"
-       height="126.93214"
-       rx="14.962941" />
-    <text
-       xml:space="preserve"
-       style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
-       id="text3564"
-       y="1724.9884"
-       x="1892.0986"><tspan
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-         sodipodi:role="line"
-         id="tspan3566"
-         y="1724.9884"
-         x="1892.0986">Downloading</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:56px;font-weight:normal;display:inline"
-       id="text3568"
-       y="1872.5238"
-       x="1671.1233"><tspan
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;letter-spacing:-0.86152351000000005;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-         sodipodi:role="line"
-         y="1872.5238"
-         x="1671.1233"
-         id="tspan3608">www.scala-ide.org </tspan><tspan
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
-         sodipodi:role="line"
-         y="1941.63"
-         x="1671.1233"
-         id="tspan3612">    for the IDE with refactoring support.</tspan></text>
-    <text
-       x="1671.1233"
-       y="2036.5238"
-       id="text3574"
-       style="font-size:56px;font-weight:normal;display:inline"
-       xml:space="preserve"><tspan
-         x="1671.1233"
-         y="2036.5238"
-         sodipodi:role="line"
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-         id="tspan3576">www.scala-refactoring.org </tspan><tspan
-         x="1671.1233"
-         y="2105.6299"
-         sodipodi:role="line"
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
-         id="tspan3630">    for the project's website. </tspan></text>
-    <image
-       xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/scala.png"
-       width="75.919685"
-       height="117.67551"
-       id="image3578"
-       x="2557.5054"
-       y="1645.3033" />
-    <g
        id="g5329"
        transform="translate(-14.000004,126.6673)">
       <rect
-         rx="15.459705"
-         height="128.21428"
-         x="270"
-         ry="10.745596"
-         y="462.89789"
-         transform="matrix(4.9548454,0,0,7.1285436,-1187.4914,-2511.6948)"
-         width="227.85715"
+         rx="76.600449"
+         height="913.98108"
+         x="148.06686"
+         ry="76.600449"
+         y="779.59296"
+         width="1128.9969"
          id="rect3693"
-         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)" />
+         style="opacity:0.50000000000000000;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4194)" />
       <rect
          rx="76.600449"
          height="913.98108"
@@ -1357,6 +1363,17 @@
          width="225.57858"
          id="rect3699"
          style="opacity:0.79615383;fill:url(#linearGradient5353);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)" />
+      <text
+         xml:space="preserve"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium;filter:url(#filter4029)"
+         id="text4021"
+         y="856.05304"
+         x="242.82202"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold;fill:#ffffff;fill-opacity:1"
+           sodipodi:role="line"
+           id="tspan4023"
+           y="856.05304"
+           x="242.82202">Implemented Refactorings</tspan></text>
       <text
          x="242.82202"
          y="856.05304"
@@ -1413,7 +1430,7 @@
            x="235.2984"
            y="1485.5884"
            sodipodi:role="line"
-           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic">    to sync names with what they do.</tspan><tspan
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic">    to keep names and roles in sync.</tspan><tspan
            id="tspan3749"
            x="235.2984"
            y="1555.5884"
@@ -1425,8 +1442,8 @@
            sodipodi:role="line"
            style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic">    to clean up external dependencies.</tspan></text>
       <image
-         y="776.36804"
-         x="1139.744"
+         y="784.68695"
+         x="1151.6305"
          id="image3715"
          height="117.67551"
          width="75.919685"
@@ -1436,15 +1453,14 @@
        id="g4140"
        transform="translate(1749.867,-919.8507)">
       <rect
-         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)"
+         style="opacity:0.50000000000000000;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4258)"
          id="rect3804"
-         width="227.85715"
-         transform="matrix(4.9548454,0,0,7.1285436,-128.85157,-1465.1768)"
-         y="462.89789"
-         ry="10.745596"
-         x="270"
-         height="128.21428"
-         rx="15.459705" />
+         width="1128.9969"
+         y="1826.611"
+         ry="76.600449"
+         x="1206.9567"
+         height="913.98108"
+         rx="76.600449" />
       <rect
          style="fill:url(#linearGradient4165);fill-opacity:1;stroke:none;display:inline"
          id="rect3806"
@@ -1474,6 +1490,17 @@
          x="269.71072"
          height="126.93214"
          rx="15.305109" />
+      <text
+         x="1376.626"
+         y="1902.571"
+         id="text4045"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium;filter:url(#filter4049)"
+         xml:space="preserve"><tspan
+           x="1376.626"
+           y="1902.571"
+           id="tspan4047"
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold;fill:#ffffff;fill-opacity:1">Creating Refactorings</tspan></text>
       <text
          xml:space="preserve"
          style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
@@ -1552,8 +1579,8 @@
          width="75.919685"
          height="117.67551"
          id="image3838"
-         x="2198.384"
-         y="1822.8861" />
+         x="2210.2703"
+         y="1831.205" />
       <text
          x="1293.657"
          y="2042.1066"
@@ -1572,119 +1599,17 @@
            id="tspan4051" /></text>
     </g>
     <g
-       id="g5701"
-       transform="translate(1365,464)">
-      <rect
-         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)"
-         id="rect5208"
-         width="227.85715"
-         transform="matrix(5.4964368,0,0,4.5306945,-1362.6948,-268.39536)"
-         y="462.89789"
-         ry="16.907"
-         x="270"
-         height="128.21428"
-         rx="13.936383" />
-      <rect
-         style="fill:url(#linearGradient5716);fill-opacity:1;stroke:none;display:inline"
-         id="rect5210"
-         width="1252.4023"
-         ry="76.600449"
-         y="1818.3359"
-         x="114.66861"
-         height="580.89972"
-         rx="76.600449" />
-      <rect
-         style="fill:url(#linearGradient5718);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)"
-         id="rect5212"
-         width="225.57858"
-         transform="matrix(5.4964368,0,0,4.5306945,-1362.6948,-268.39536)"
-         y="461.03897"
-         ry="16.73793"
-         x="269.71072"
-         height="126.93214"
-         rx="13.79702" />
-      <g
-         transform="translate(-73.14409,-53.13863)"
-         id="g5151">
-        <rect
-           style="fill:#ffffff;fill-opacity:1;stroke:none"
-           id="rect5149"
-           width="571.74634"
-           height="242.43661"
-           x="214.71295"
-           y="2098.0159"
-           rx="20"
-           ry="20" />
-        <image
-           y="2108.0901"
-           x="216.2804"
-           id="image4335"
-           height="199"
-           width="547"
-           xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/extract_local_screenshot_2.png" />
-      </g>
-      <g
-         transform="translate(-75.14409,-53.13863)"
-         id="g5155">
-        <rect
-           ry="20"
-           rx="20"
-           y="2098.0159"
-           x="838.71295"
-           height="242.43661"
-           width="571.74634"
-           id="rect5117"
-           style="fill:#ffffff;fill-opacity:1;stroke:none" />
-        <image
-           y="2109.4321"
-           x="841.99469"
-           id="image5129"
-           height="216"
-           width="518"
-           xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/extract_local_screenshot_3.png" />
-      </g>
-      <rect
-         style="opacity:0.79615383;fill:url(#linearGradient5720);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)"
-         id="rect5214"
-         width="225.57858"
-         ry="16.73793"
-         y="381.03897"
-         transform="matrix(-5.361064,0,0,-0.9791572,2783.3588,2333.3964)"
-         x="269.71072"
-         height="126.93214"
-         rx="13.79702" />
-      <text
-         xml:space="preserve"
-         style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
-         id="text5216"
-         y="1912.6321"
-         x="427.5076"><tspan
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
-           sodipodi:role="line"
-           id="tspan5218"
-           y="1912.6321"
-           x="427.5076">Extract Local Value</tspan></text>
-      <image
-         xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/scala.png"
-         width="75.919685"
-         height="117.67551"
-         id="image5232"
-         x="1247.5054"
-         y="1832.947" />
-    </g>
-    <g
        id="g5557"
-       transform="translate(-114.94567,-52.27381)">
+       transform="translate(-114.94565,-44.002808)">
       <rect
-         rx="15.459705"
-         height="128.21428"
-         x="270"
-         ry="10.745596"
-         y="462.89789"
-         transform="matrix(4.9548454,0,0,7.1285436,1735.9611,-1298.842)"
-         width="227.85715"
+         rx="76.600449"
+         height="913.98108"
+         x="3071.7693"
+         ry="76.600449"
+         y="1992.9458"
+         width="1128.9969"
          id="rect5391"
-         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)" />
+         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4262)" />
       <rect
          rx="76.600449"
          height="913.98108"
@@ -1715,6 +1640,17 @@
          id="rect5397"
          style="opacity:0.79615383;fill:url(#linearGradient5573);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)" />
       <text
+         xml:space="preserve"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4061);font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         id="text4053"
+         y="2068.9058"
+         x="3379.1907"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+           sodipodi:role="line"
+           id="tspan4055"
+           y="2068.9058"
+           x="3379.1907">Extract Method</tspan></text>
+      <text
          x="3379.1907"
          y="2068.9058"
          id="text5399"
@@ -1726,8 +1662,8 @@
            sodipodi:role="line"
            style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">Extract Method</tspan></text>
       <image
-         y="1989.2209"
-         x="4063.1968"
+         y="1997.5398"
+         x="4075.083"
          id="image5429"
          height="117.67551"
          width="75.919685"
@@ -1743,7 +1679,7 @@
            height="742.36108"
            width="1014.3078"
            id="rect5547"
-           style="fill:#ffffff;fill-opacity:1;stroke:none;opacity:1" />
+           style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter4186)" />
         <image
            y="2146.4211"
            x="3153.5"
@@ -1755,17 +1691,16 @@
     </g>
     <g
        id="g5919"
-       transform="translate(48.602096,-49.36661)">
+       transform="translate(48.602096,-41.095608)">
       <rect
-         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)"
+         style="opacity:0.50000000000000000;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4202)"
          id="rect5617"
-         width="227.85715"
-         transform="matrix(4.9548454,0,0,7.1285436,-1250.0936,-1301.7492)"
-         y="462.89789"
-         ry="10.745596"
-         x="270"
-         height="128.21428"
-         rx="15.459705" />
+         width="1128.9969"
+         y="1989.3315"
+         ry="76.600449"
+         x="85.361107"
+         height="913.98108"
+         rx="76.600449" />
       <rect
          style="fill:url(#linearGradient5938);fill-opacity:1;stroke:none;display:inline"
          id="rect5619"
@@ -1796,6 +1731,17 @@
          height="126.93214"
          rx="15.305109" />
       <text
+         x="513.51093"
+         y="2065.9985"
+         id="text4081"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4085);font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         xml:space="preserve"><tspan
+           x="513.51093"
+           y="2065.9985"
+           id="tspan4083"
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">Rename</tspan></text>
+      <text
          xml:space="preserve"
          style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
          id="text5625"
@@ -1811,8 +1757,8 @@
          width="75.919685"
          height="117.67551"
          id="image5629"
-         x="1077.1421"
-         y="1986.3137" />
+         x="1089.0283"
+         y="1994.6326" />
       <g
          transform="translate(675.28126,13.75736)"
          id="g5901">
@@ -1824,7 +1770,7 @@
            height="185.43661"
            width="353.74634"
            id="rect5676"
-           style="fill:#ffffff;fill-opacity:1;stroke:none" />
+           style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter4162)" />
         <image
            y="2141.6958"
            x="145.62994"
@@ -1837,7 +1783,7 @@
          transform="translate(-5.1981057,20)"
          id="g5905">
         <rect
-           style="fill:#ffffff;fill-opacity:1;stroke:none"
+           style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter4158)"
            id="rect5851"
            width="1032.5688"
            height="481.00723"
@@ -1857,65 +1803,437 @@
          xml:space="preserve"
          style="font-size:56px;font-weight:normal;display:inline"
          id="text5881"
-         y="2337.1443"
+         y="2317.1443"
          x="128.30354"><tspan
            id="tspan5899"
            style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
            sodipodi:role="line"
-           y="2337.1443"
+           y="2317.1443"
            x="128.30354">wizard based:</tspan></text>
       <text
-         x="639.1322"
+         x="619.1322"
          y="2260.0977"
          id="text5909"
          style="font-size:56px;font-weight:normal;display:inline"
          xml:space="preserve"><tspan
-           x="639.1322"
+           x="619.1322"
            y="2260.0977"
            sodipodi:role="line"
            style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
            id="tspan5913">inline:</tspan></text>
     </g>
+    <g
+       style="display:inline"
+       id="g6124"
+       transform="translate(-5.6336623,1847.559)">
+      <text
+         id="text3755"
+         y="-1476.6617"
+         x="1411.5425"
+         style="font-size:180.99258423px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter6158);font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+         xml:space="preserve"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+           y="-1476.6617"
+           x="1411.5425"
+           id="tspan3757"
+           sodipodi:role="line">Scala Refactoring</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:180.99258423px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+         x="1411.5425"
+         y="-1495.6508"
+         id="text3972"><tspan
+           sodipodi:role="line"
+           id="tspan3974"
+           x="1411.5425"
+           y="-1495.6508"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">Scala Refactoring</tspan></text>
+    </g>
+    <g
+       id="g5885"
+       transform="translate(52.280222,62.89011)">
+      <rect
+         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4234)"
+         id="rect7565"
+         width="1032.3511"
+         y="926.23474"
+         ry="76.600449"
+         x="1542.1066"
+         height="580.89972"
+         rx="76.600449" />
+      <rect
+         style="fill:url(#linearGradient4369);fill-opacity:1;stroke:none;display:inline"
+         id="rect7567"
+         width="1032.3511"
+         ry="76.600449"
+         y="918.42419"
+         x="1538.019"
+         height="580.89972"
+         rx="76.600449" />
+      <rect
+         style="fill:url(#linearGradient4371);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)"
+         id="rect7569"
+         width="225.57858"
+         transform="matrix(4.5306945,0,0,4.5306945,320.23342,-1168.3071)"
+         y="461.03897"
+         ry="16.73793"
+         x="269.71072"
+         height="126.93214"
+         rx="16.73793" />
+      <rect
+         style="opacity:0.79615383;fill:url(#linearGradient4373);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)"
+         id="rect7571"
+         width="225.57858"
+         ry="16.73793"
+         y="381.03897"
+         transform="matrix(-4.4191071,0,0,-0.9791572,3737.8115,1433.4846)"
+         x="269.71072"
+         height="126.93214"
+         rx="16.73793" />
+      <text
+         x="1854.9697"
+         y="1012.7203"
+         id="text4033"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4041);font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         xml:space="preserve"><tspan
+           x="1854.9697"
+           y="1012.7203"
+           id="tspan4035"
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">Thesis Goals</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         id="text7573"
+         y="1012.7203"
+         x="1854.9697"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+           sodipodi:role="line"
+           id="tspan7575"
+           y="1012.7203"
+           x="1854.9697">Thesis Goals</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:56px;font-weight:normal;display:inline"
+         id="text7583"
+         y="1176.2556"
+         x="1599.1233"><tspan
+           id="tspan3906"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
+           sodipodi:role="line"
+           y="1176.2556"
+           x="1599.1233">Provide an IDE independent Refactoring</tspan><tspan
+           id="tspan3911"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
+           sodipodi:role="line"
+           y="1246.2556"
+           x="1599.1233">library for Scala.</tspan></text>
+      <text
+         x="1599.1233"
+         y="1372.2556"
+         id="text2950"
+         style="font-size:56px;font-weight:normal;display:inline"
+         xml:space="preserve"><tspan
+           x="1599.1233"
+           y="1372.2556"
+           sodipodi:role="line"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
+           id="tspan2954">Integrate it into the Scala IDE for Eclipse.</tspan></text>
+      <image
+         xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/scala.png"
+         width="75.919685"
+         height="117.67551"
+         id="image3390"
+         x="2447.4836"
+         y="941.35419" />
+    </g>
+    <g
+       id="g4103"
+       transform="translate(0.9817476,1.1329047)">
+      <rect
+         rx="76.600449"
+         height="580.89972"
+         x="1532.4076"
+         ry="76.600449"
+         y="1638.5028"
+         width="1154.8145"
+         id="rect3556"
+         style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4230)" />
+      <rect
+         rx="76.600449"
+         height="580.89972"
+         x="1528.6066"
+         y="1630.6923"
+         ry="76.600449"
+         width="1154.8145"
+         id="rect3558"
+         style="fill:url(#linearGradient4375);fill-opacity:1;stroke:none;display:inline" />
+      <rect
+         rx="14.962941"
+         height="126.93214"
+         x="269.71072"
+         ry="16.73793"
+         y="461.03897"
+         transform="matrix(5.0681511,0,0,4.5306945,166.36032,-456.03903)"
+         width="225.57858"
+         id="rect3560"
+         style="fill:url(#linearGradient4377);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)" />
+      <rect
+         rx="14.962941"
+         height="126.93214"
+         x="269.71072"
+         transform="matrix(-4.9433266,0,0,-0.9791572,3989.3509,2145.7527)"
+         y="381.03897"
+         ry="16.73793"
+         width="225.57858"
+         id="rect3562"
+         style="opacity:0.79615383;fill:url(#linearGradient4379);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)" />
+      <text
+         xml:space="preserve"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4069);font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         id="text4065"
+         y="1724.9884"
+         x="1892.0986"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+           sodipodi:role="line"
+           id="tspan4067"
+           y="1724.9884"
+           x="1892.0986">Downloading</tspan></text>
+      <text
+         x="1892.0986"
+         y="1724.9884"
+         id="text3564"
+         style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         xml:space="preserve"><tspan
+           x="1892.0986"
+           y="1724.9884"
+           id="tspan3566"
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">Downloading</tspan></text>
+      <text
+         x="1671.1233"
+         y="1872.5238"
+         id="text3568"
+         style="font-size:56px;font-weight:normal;display:inline"
+         xml:space="preserve"><tspan
+           id="tspan3608"
+           x="1671.1233"
+           y="1872.5238"
+           sodipodi:role="line"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">www.scala-ide.org </tspan><tspan
+           id="tspan3612"
+           x="1671.1233"
+           y="1942.5238"
+           sodipodi:role="line"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic">    for the IDE with refactoring support.</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:56px;font-weight:normal;display:inline"
+         id="text3574"
+         y="2036.5238"
+         x="1671.1233"><tspan
+           id="tspan3576"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
+           sodipodi:role="line"
+           y="2036.5238"
+           x="1671.1233">www.scala-refactoring.org </tspan><tspan
+           id="tspan3630"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:-0.86152351;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
+           sodipodi:role="line"
+           y="2106.5239"
+           x="1671.1233">    for the project's website. </tspan></text>
+      <image
+         y="1653.6223"
+         x="2562.0806"
+         id="image3578"
+         height="117.67551"
+         width="75.919685"
+         xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/scala.png" />
+    </g>
     <rect
-       style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter6769)"
-       id="rect6168"
-       width="227.85715"
-       transform="matrix(1.7620026,0,0,3.4632923,1423.4528,-1123.8109)"
-       y="462.89789"
-       ry="22.117813"
-       x="270"
-       height="128.21428"
-       rx="43.473522" />
-    <rect
-       style="fill:url(#linearGradient6231);fill-opacity:1;stroke:none;display:inline"
-       id="rect6170"
-       width="401.4848"
+       rx="76.600449"
+       height="580.89972"
+       x="1484.5909"
        ry="76.600449"
-       y="471.30014"
-       x="1897.054"
-       height="444.04349"
-       rx="76.600449" />
+       y="2290.5"
+       width="1252.4025"
+       id="rect5208"
+       style="opacity:0.5;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4226)" />
     <rect
-       style="fill:url(#linearGradient6225);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)"
-       id="rect6172"
-       width="225.57858"
-       transform="matrix(1.7620026,0,0,3.4632923,1423.4528,-1123.8109)"
-       y="461.03897"
-       ry="21.896635"
-       x="269.71072"
+       rx="76.600449"
+       height="580.89972"
+       x="1481.2094"
+       y="2282.3359"
+       ry="76.600449"
+       width="1252.4023"
+       id="rect5210"
+       style="fill:url(#linearGradient4415);fill-opacity:1;stroke:none;display:inline" />
+    <rect
+       rx="13.79702"
        height="126.93214"
-       rx="43.038784" />
+       x="269.71072"
+       ry="16.73793"
+       y="461.03897"
+       transform="matrix(5.4964368,0,0,4.5306945,3.8460061,195.60464)"
+       width="225.57858"
+       id="rect5212"
+       style="fill:url(#linearGradient4383);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)" />
+    <path
+       sodipodi:type="star"
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:0.125;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0;filter:url(#filter4297)"
+       id="path4266"
+       sodipodi:sides="3"
+       sodipodi:cx="1793"
+       sodipodi:cy="2463.9211"
+       sodipodi:r1="54.230988"
+       sodipodi:r2="27.115494"
+       sodipodi:arg1="0"
+       sodipodi:arg2="1.0471976"
+       inkscape:flatsided="false"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       d="m 1847.231,2463.9211 -40.6733,23.4827 -40.6732,23.4828 0,-46.9655 0,-46.9654 40.6732,23.4827 40.6733,23.4827 z"
+       transform="translate(274.36639,166.1744)" />
+    <g
+       id="g5151"
+       transform="translate(1293.3967,410.86137)">
+      <rect
+         ry="20"
+         rx="20"
+         y="2098.0159"
+         x="214.71295"
+         height="242.43661"
+         width="571.74634"
+         id="rect5149"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter4174)" />
+      <image
+         xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/extract_local_screenshot_2.png"
+         width="547"
+         height="199"
+         id="image4335"
+         x="222.2804"
+         y="2108.0901" />
+    </g>
+    <g
+       id="g5155"
+       transform="translate(1291.3967,410.86137)">
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter4178)"
+         id="rect5117"
+         width="571.74634"
+         height="242.43661"
+         x="838.71295"
+         y="2098.0159"
+         rx="20"
+         ry="20" />
+      <image
+         xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/extract_local_screenshot_3.png"
+         width="518"
+         height="216"
+         id="image5129"
+         x="847.99469"
+         y="2109.4321" />
+    </g>
+    <rect
+       rx="13.79702"
+       height="126.93214"
+       x="269.71072"
+       transform="matrix(-5.361064,0,0,-0.9791572,4149.8996,2797.3964)"
+       y="381.03897"
+       ry="16.73793"
+       width="225.57858"
+       id="rect5214"
+       style="opacity:0.79615383;fill:url(#linearGradient4385);fill-opacity:1;stroke:none;display:inline;filter:url(#filter7131)" />
     <text
        xml:space="preserve"
-       style="font-size:56.32706451px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
-       id="text6176"
-       y="866.07172"
-       x="1934.0809"><tspan
-         style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
+       style="font-size:72px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4077);font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+       id="text4073"
+       y="2376.6321"
+       x="1794.0483"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold"
          sodipodi:role="line"
-         id="tspan6178"
-         y="866.07172"
-         x="1934.0809">Mirko Stocker</tspan></text>
+         id="tspan4075"
+         y="2376.6321"
+         x="1794.0483">Extract Local Value</tspan></text>
+    <text
+       x="1794.0483"
+       y="2376.6321"
+       id="text5216"
+       style="font-size:72px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+       xml:space="preserve"><tspan
+         x="1794.0483"
+         y="2376.6321"
+         id="tspan5218"
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic Bold">Extract Local Value</tspan></text>
+    <image
+       y="2305.2661"
+       x="2613.5034"
+       id="image5232"
+       height="117.67551"
+       width="75.919685"
+       xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/scala.png" />
+    <g
+       id="g4089"
+       transform="translate(4.6663046,-5.159079e-5)">
+      <rect
+         rx="76.600456"
+         height="444.04352"
+         x="1901.1935"
+         ry="76.600449"
+         y="477.33978"
+         width="401.48489"
+         id="rect6168"
+         style="opacity:0.48333333;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4254)" />
+      <rect
+         rx="76.600449"
+         height="444.04349"
+         x="1897.054"
+         y="471.30014"
+         ry="76.600449"
+         width="401.4848"
+         id="rect6170"
+         style="fill:url(#linearGradient4387);fill-opacity:1;stroke:none;display:inline" />
+      <rect
+         rx="43.038784"
+         height="126.93214"
+         x="269.71072"
+         ry="21.896635"
+         y="461.03897"
+         transform="matrix(1.7620026,0,0,3.4632923,1423.4528,-1123.8109)"
+         width="225.57858"
+         id="rect6172"
+         style="fill:url(#linearGradient4389);fill-opacity:1;stroke:none;display:inline;filter:url(#filter6819)" />
+      <text
+         xml:space="preserve"
+         style="font-size:56.32706451px;font-style:normal;font-weight:normal;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;filter:url(#filter4017);font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         id="text4013"
+         y="868.07172"
+         x="1934.0809"><tspan
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#ffffff;fill-opacity:1;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic"
+           sodipodi:role="line"
+           id="tspan4015"
+           y="868.07172"
+           x="1934.0809">Mirko Stocker</tspan></text>
+      <text
+         x="1934.0809"
+         y="868.07172"
+         id="text6176"
+         style="font-size:56.32706451px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Gentium"
+         xml:space="preserve"><tspan
+           x="1934.0809"
+           y="868.07172"
+           id="tspan6178"
+           sodipodi:role="line"
+           style="font-size:56px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Gentium Basic;-inkscape-font-specification:Gentium Basic">Mirko Stocker</tspan></text>
+      <image
+         xlink:href="file:///home/misto/repos/scala-refactoring/org.scala-refactoring.library/src/doc/svg/poster/mirko.png"
+         width="252"
+         height="296.35199"
+         id="image3141"
+         x="1971.4188"
+         y="519.92114" />
+    </g>
   </g>
   <g
      inkscape:groupmode="layer"
