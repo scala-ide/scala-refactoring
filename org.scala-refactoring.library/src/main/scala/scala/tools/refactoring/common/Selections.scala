@@ -66,7 +66,7 @@ trait Selections {
      * fully contains a SymTree, if true, the first selected is returned. Otherwise
      * the result of findSelectedOfType[SymTree] is returned.
      */
-    lazy val selectedSymbolTree = (root filter (cond(_) { case t: SymTree => contains(t) }) match {
+    lazy val selectedSymbolTree = (root filter (cond(_) { case t: SymTree => contains(t) }) filter (t => t.pos.start < t.pos.end) match {
       case (x: SymTree) :: _ => Some(x)
       case _ => None
     }) orElse findSelectedOfType[SymTree]
@@ -78,7 +78,7 @@ trait Selections {
      * If multiple trees of the type are found, the last one (i.e. the deepest child) is returned.
      */
     def findSelectedOfType[T](implicit m: Manifest[T]): Option[T] = root filter (cond(_) {
-      case t => m.erasure.isInstance(t) && isContainedIn(t)
+      case t => m.erasure.isInstance(t) && isPosContainedIn(pos, t.pos)
     }) reverse match {
       case x :: _ => Some(x.asInstanceOf[T])
       case _ => None
@@ -88,14 +88,14 @@ trait Selections {
       selectedTopLevelTrees flatMap (_ filter (t => t.pos.isRange && pos.includes(t.pos)))
     }
     
-    private def isPosContainedIn(p1: Position, p2: Position) = 
+    private def isPosContainedIn(p1: Position, p2: Position) = {
       p1.isRange && 
       !p1.isTransparent && 
       p2.isRange && 
       !p2.isTransparent && 
       p2.includes(p1) && 
-      p1.source == p2.source &&
-      p1.start < p1.end // some ranges don't have a visible representation
+      p1.source == p2.source
+    }
   }
   
   case class FileSelection(val file: AbstractFile, from: Int, to: Int) extends Selection {

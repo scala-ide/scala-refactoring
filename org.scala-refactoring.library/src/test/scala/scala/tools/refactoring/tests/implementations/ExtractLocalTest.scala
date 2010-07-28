@@ -532,4 +532,43 @@ object ExtractMethod2 {
     """ becomes
     """"""
   } applyRefactoring(extract("isOdd"))
+  
+  @Test
+  def extractFromCaseClause = new FileSet {
+    """
+      class Extr2 {
+        List() match {
+          case Nil => true && /*(*/false/*)*/
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        List() match {
+          case Nil => 
+            val isFalse = false
+          true && /*(*/isFalse/*)*/
+        }
+      }
+    """
+  } applyRefactoring(extract("isFalse"))
+  
+  @Test
+  def extractFromMatch = new FileSet {
+    """
+      class Extr2 {
+        /*(*/List(1,2,3)/*)*/ match {
+          case Nil => true
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        val l = List(1,2,3)/*)*/
+        /*(*/l match {
+          case Nil => true
+        }
+      }
+    """
+  } applyRefactoring(extract("l"))
 }

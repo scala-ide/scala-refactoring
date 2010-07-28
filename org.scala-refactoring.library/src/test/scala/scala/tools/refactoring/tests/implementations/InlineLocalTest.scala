@@ -445,5 +445,48 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(inline)
+  
+  @Test
+  def inlineFromSeveralVals = new FileSet {
+    """
+    class InlineTest {
+      {
+        val /*(*//*)*/bbb = 42
+        val c = List(bbb)
+        c
+      }
+    }
+    """ becomes
+    """
+    class InlineTest {
+      {
+        val c = List(42)
+        c
+      }
+    }
+    """
+  } applyRefactoring(inline)
+  
+  @Test
+  def inlineFromVal = new FileSet {
+    """
+    class InlineTest {
+      {
+        val bbb = 42
+        val c = List(/*(*/bbb/*)*/)
+        c
+      }
+    }
+    """ becomes
+    """
+    class InlineTest {
+      {
+        val c = List(42/*)*/)
+        c
+      }
+    }
+    """
+  } applyRefactoring(inline)
+
 
 }

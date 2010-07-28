@@ -219,6 +219,7 @@ trait LayoutHelper extends CommentHelpers {
   private val EmptyParens = """(?ms)(.*?\(\s*\)\s*)(.*)""".r
   private val OpeningBrace = """(.*?)\((.*)""".r
   private val OpeningCurlyBrace = """(?ms)(.*?)\{(.*)""".r
+  private val Match = """(?ms)(.*?)\s?match(.*)""".r
   private val Colon = """(.*?:\s+)(.*)""".r
   private val Arrow = """(.*?=>\s?)(.*)""".r
   private val Dot = """(.*)(\..*)""".r
@@ -242,6 +243,7 @@ trait LayoutHelper extends CommentHelpers {
 
       (layout match {
         case Else(l, r)            => Some(l, r, "else")
+        case Match(l, r)           => Some(l, r, "match")
         case StartComment(l, r)    => Some(l, r, "StartComment")
         case Class(l, r)           => Some(l, r, "Class")
         case Colon(l, r)           => Some(l, r, "Colon")
@@ -288,6 +290,8 @@ trait LayoutHelper extends CommentHelpers {
             layout match {
               case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace")
             }
+            
+          
             
           case (l, _, r) => split(layout)
         }

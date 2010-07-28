@@ -346,11 +346,14 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t @ New(tpt), _) =>
         Fragment("new") ++ l ++ p(tpt) ++ r
           
+      case (Match(selector, cases), _) if keepTree(selector) =>
+        l ++ p(selector) ++ " match" ++ p(cases) ++ r
+          
       case (Match(selector, cases), _) =>
-        l ++ p(selector) ++ p(cases) ++ r
+        l ++ p(cases) ++ r
         
       case (CaseDef(pat, guard, b @ BlockExtractor(body)), _) if !b.hasExistingCode =>
-        l ++ p(pat) ++ p(guard) ++ " =>\n" ++ ind.current ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
+        l ++ p(pat) ++ p(guard) ++ "=>" ++ "\n" ++ Fragment("") ++ ind.current ++ printIndented(body, separator = Requisite.newline(ind.current)) ++ r
         
       case (CaseDef(pat, guard, body), _) =>
         l ++ p(pat) ++ p(guard) ++ p(body) ++ r

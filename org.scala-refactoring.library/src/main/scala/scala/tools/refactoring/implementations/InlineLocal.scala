@@ -18,7 +18,17 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
   class RefactoringParameters
   
   def prepare(s: Selection) = {
-    s.findSelectedOfType[ValDef] match {
+    
+    val selectedValue = s.findSelectedOfType[RefTree] match {
+      case Some(t) => 
+        index.declaration(t.symbol) match {
+          case Some(v: ValDef) => Some(v) 
+          case _ => None
+        }
+      case None => s.findSelectedOfType[ValDef]
+    }
+    
+    selectedValue match {
       case Some(t) if (t.symbol.isPrivate || t.symbol.isLocal) && !t.symbol.isMutable && !t.symbol.isParameter => Right(t)
       case _ => Left(PreparationError("No local value selected."))
     }

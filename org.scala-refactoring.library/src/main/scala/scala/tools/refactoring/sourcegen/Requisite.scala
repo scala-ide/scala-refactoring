@@ -41,7 +41,7 @@ object Requisite {
     
   def allowSurroundingWhitespace(regex: String) = new Requisite {
     def isRequired(l: Layout, r: Layout) = {
-      !l.matches(".*"+ regex +"\\s*$") && !r.matches("^\\s*"+ regex + ".*")
+      !l.matches(".*\\s*"+ regex +"\\s*$") && !r.matches("^\\s*"+ regex + ".*")
     }
     def getLayout = Layout(regex.replace("\\", ""))
   }
