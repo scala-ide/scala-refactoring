@@ -211,8 +211,18 @@ trait ReusingPrinter extends AbstractPrinter {
         def startsWithChar = _q.asText.matches(".*[a-zA-Z0-9]$")
         def endsWithChar   = _n.asText.matches("^[a-zA-Z0-9].*")
         
+        def qualifierHasNoDot = qualifier match {
+          case Apply(s @ Select(qual, name), _) if qual.pos.isRange => 
+            val nme = NameTree(name).setPos(s.namePosition)
+            val b = between(qual, nme)(qual.pos.source)
+            !b.contains(".")
+          case _ => false
+        }
+        
         if(startsWithChar && endsWithChar && hasNoSeparator) {
           l ++ _q ++ " " ++ _n ++ r
+        } else if (qualifierHasNoDot && _n.leading.contains(".")) {
+          l ++ "\\(" ++ _q ++ "\\)" ++ _n ++ r
         } else {
           l ++ _q ++ _n ++ r
         }

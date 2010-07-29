@@ -325,6 +325,48 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
   
   @Test
+  def inliningNeedsParens2 = new FileSet {
+    """
+      class Extr2 {
+        def m {
+          /*(*/val largerThree = List(1) filter (_ > 3)/*)*/;
+          println(largerThree.size)
+          largerThree.size + "a"
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        def m {
+          println((List(1) filter (_ > 3)).size)
+          (List(1) filter (_ > 3)).size + "a"
+        }
+      }
+    """
+  } applyRefactoring(inline)
+  
+  @Test
+  def inliningNeedsNoParens = new FileSet {
+    """
+      class Extr2 {
+        def m {
+          /*(*/val largerThree /*)*/= (List(1) filter (_ > 3))
+          println(largerThree.size)
+          largerThree.size + "a"
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        def m {
+          println((List(1) filter (_ > 3)).size)
+          (List(1) filter (_ > 3)).size + "a"
+        }
+      }
+    """
+  } applyRefactoring(inline)
+  
+  @Test
   def inlineFromTry = new FileSet {
     """
       class Extr2 {
