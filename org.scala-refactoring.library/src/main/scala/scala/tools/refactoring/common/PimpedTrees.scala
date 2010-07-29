@@ -153,7 +153,7 @@ trait PimpedTrees {
       
       case t: RefTree => t.pos
         
-      case t => throw new Exception(t.getClass.getSimpleName +" not handled in namePosition")
+      case t => NoPosition //throw new Exception(t.getClass.getSimpleName +" not handled in namePosition")
     }) match {
       case NoPosition => NoPosition
       case p =>
