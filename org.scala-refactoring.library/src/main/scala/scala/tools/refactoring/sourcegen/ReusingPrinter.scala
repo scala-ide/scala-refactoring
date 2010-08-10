@@ -74,7 +74,7 @@ trait ReusingPrinter extends AbstractPrinter {
     (t, originalTree) match {
             
       case (t @ PackageDef(pid, stats), _) =>
-        l ++ printIndented(pid :: stats, separator = Requisite.newline(ind.current)) ++ r
+        l ++ p(pid :: stats, separator = Requisite.newline(ind.current)) ++ r
       
       case (t @ ClassDef(ModifierTree(mods), name, tparams, impl), orig) =>
         l ++ p(mods) ++ (if(t.symbol.isAnonymousClass) EmptyFragment else p(NameTree(name) setPos orig.namePosition)) ++ p(tparams) ++ p(impl) ++ r
@@ -274,10 +274,10 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(fun) ++ p(args, separator = ",", before = "\\(", after = Requisite.anywhere(")"))  ++ r
         
       case (t @ Import(expr, _), _) if t.Selectors().size > 1 =>
-        l ++ p(expr) ++ "\\{" ++ p(t.Selectors(), separator = ", ") ++ "\\}" ++ r
+        l ++ "import " ++ p(expr) ++ "\\{" ++ p(t.Selectors(), separator = ", ") ++ "\\}" ++ r
         
       case (t @ Import(expr, _), _) =>
-        l ++ p(expr) ++ p(t.Selectors(), separator = ", ") ++ r
+        l ++ "import " ++ p(expr) ++ p(t.Selectors(), separator = ", ") ++ r
         
       case (t @ ImportSelectorTree(name, rename), _) =>
         l ++ p(name) ++ p(rename) ++ r

@@ -268,7 +268,10 @@ trait LayoutHelper extends CommentHelpers {
       case (_, EmptyTree) | (EmptyTree, _) => NoLayout → NoLayout
       case (l: Import, r: Import) => NoLayout → NoLayout
         
-      case (l, r: ImportSelectorTree) =>
+      case (l: ImportSelectorTree, r: ImportSelectorTree) =>
+        NoLayout → NoLayout
+        
+      case (l, r: ImportSelectorTree) if !l.isInstanceOf[ImportSelectorTree] =>
         // All the layout, like '.' and '{' belongs to the selector.
         layout(l.pos.end, r.pos.start)(l.pos.source) → NoLayout
 

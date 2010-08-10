@@ -39,6 +39,8 @@ trait TreeChangesDiscoverer {
           t.nameString != o.nameString
         case (t: TypeTree, o: TypeTree) =>
           t != o
+        case (t: Import, o: Import) =>
+          t != o
         case _ => 
           false
       }

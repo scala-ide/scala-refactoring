@@ -4,9 +4,9 @@
 
 package scala.tools.refactoring
 
-import transformation.TreeTransformations
-import common.{Selections, Tracing, SilentTracing, Change, PimpedTrees}
+import common.{Selections, SilentTracing, Change, PimpedTrees}
 import sourcegen.SourceGenerator
+import transformation.TreeTransformations
 
 /**
  * The Refactoring trait combines the transformation and source generation traits with
