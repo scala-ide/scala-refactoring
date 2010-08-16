@@ -59,7 +59,10 @@ trait CompilationUnitIndexes extends PimpedTrees {
           case t: DefTree if t.symbol != NoSymbol =>
             addDefinition(t)
           case t: RefTree =>
-            addReference(t.symbol, t)
+            val tree = if(t.pos.isRange) {
+              t setPos fixTreePositionIncludingCarriageReturn(t.pos)
+            } else t 
+            addReference(t.symbol, tree)
           case t: TypeTree =>
             
             def handleType(typ: Type): Unit = typ match {

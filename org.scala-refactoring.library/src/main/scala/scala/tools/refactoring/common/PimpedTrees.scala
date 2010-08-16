@@ -157,10 +157,13 @@ trait PimpedTrees {
     }) match {
       case NoPosition => NoPosition
       case p =>
+      
+        val p1 = fixTreePositionIncludingCarriageReturn(p)
+      
         // it might be a quoted literal:
-        val p2 = if(p.source.content(p.start) == '`') {
-          p withEnd (p.end + 2) 
-        } else p
+        val p2 = if(p1.source.content(p1.start) == '`') {
+          p1 withEnd (p1.end + 2) 
+        } else p1
       
         // set all points to the start, keeping wrong points
         // around leads to the calculation of wrong lines
@@ -206,6 +209,15 @@ trait PimpedTrees {
         case ImportSelectorTree(NameTree(name), _) => name.toString
         case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
       }
+    }
+  }
+   
+  // workaround for https://lampsvn.epfl.ch/trac/scala/ticket/3765
+  def fixTreePositionIncludingCarriageReturn(p: Position) = {
+    if(p.source.content(p.end - 1) == '\r') {
+      p withEnd (p.end - 1)
+    } else {
+      p
     }
   }
   
@@ -515,7 +527,9 @@ trait PimpedTrees {
      * hide the implicit "apply" call
      */
     case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => 
-      qualifier   
+      qualifier
+    
+    case t: RefTree if t.pos.isRange => t setPos fixTreePositionIncludingCarriageReturn(t.pos)
       
     case t => t
   } filter keepTree 

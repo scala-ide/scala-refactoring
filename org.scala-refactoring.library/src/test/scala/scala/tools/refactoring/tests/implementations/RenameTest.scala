@@ -531,4 +531,10 @@ class RenameTest extends TestHelper with TestRefactoring {
     class B extends  refactoring.p3.A
     """
   } applyRefactoring(renameTo("refactoring"))
+    
+  @Test
+  def renameUnderWindows = new FileSet {
+    "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/loc/*)*/ = 42\r\n    loc * loc\r\n  }\r\n}" becomes
+    "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/fourtytwo/*)*/ = 42\r\n    fourtytwo * fourtytwo\r\n  }\r\n}"
+  } applyRefactoring(renameTo("fourtytwo"))
 }
