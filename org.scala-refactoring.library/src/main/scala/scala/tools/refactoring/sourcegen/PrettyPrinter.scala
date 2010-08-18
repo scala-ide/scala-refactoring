@@ -217,6 +217,12 @@ trait PrettyPrinter extends AbstractPrinter {
           } else {
             printWithEnclosing
           }
+        } else if (stats.head.hasExistingCode) {
+          val printed = p(stats.head)
+          if(printed.leading.matches("(?ms).*\\{.*")) {
+            printIndented(stats, before = NoRequisite, separator = indentedNewline, after = newline ++ ( "\\}"))
+          } else
+            printWithEnclosing
         } else 
           printWithEnclosing
 

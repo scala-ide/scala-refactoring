@@ -744,4 +744,29 @@ object ExtractMethod3 {
     }
   """
   } applyRefactoring extract("isFalse")
+    
+  @Test
+  def singleIfInMethod = new FileSet {
+    """
+object ExtractMethod2 { 
+  def method {
+    if(true) {
+      /*(*/println("true")/*)*/
+    }
+  }
+}
+    """ becomes
+    """
+object ExtractMethod2 { 
+  def method {
+    if(true) {
+      /*(*/certainlyTrue/*)*/
+    }
+  }
+  private def certainlyTrue: Unit =  {
+      /*(*/println("true")
+  }
+}
+    """
+  } applyRefactoring extract("certainlyTrue")
 }

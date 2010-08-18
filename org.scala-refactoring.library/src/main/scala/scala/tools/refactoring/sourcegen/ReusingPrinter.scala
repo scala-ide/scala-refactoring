@@ -330,11 +330,23 @@ trait ReusingPrinter extends AbstractPrinter {
           }
         }
         
-        val _cond = p(cond, before = "\\(", after = "\\)")
+        val _cond = p(cond, before = "\\(", after = Requisite.anywhere(")"))
         
         val _then = thenp match {
           case block: Block =>
             p(block)
+          case _ if keepTree(orig.thenp) && orig.thenp.pos.isRange =>
+            val layout = between(orig.cond, orig.thenp)(orig.pos.source).asText
+            val printedThen = printIndented(thenp, before = NoRequisite, after = NoRequisite)
+            
+            if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
+              val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
+              println(left)
+              printIndented(thenp, before = Requisite.anywhere(right), after = NoRequisite)
+            } else {
+              printIndented(thenp, before = NoRequisite, after = NoRequisite)
+            }
+            
           case _ => 
             printIndented(thenp, before = NoRequisite, after = NoRequisite)
         }

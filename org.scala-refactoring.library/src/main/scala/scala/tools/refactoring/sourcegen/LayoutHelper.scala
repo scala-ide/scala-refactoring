@@ -241,6 +241,8 @@ trait LayoutHelper extends CommentHelpers {
     
     def split(layout: String): (String, String, String) = {
 
+      def layoutDoesNotIncludeAnnotation = !layout.contains("@")
+      
       (layout match {
         case Else(l, r)            => Some(l, r, "else")
         case Match(l, r)           => Some(l, r, "match")
@@ -252,13 +254,15 @@ trait LayoutHelper extends CommentHelpers {
         case Arrow(l, r)           => Some(l, r, "Arrow")
         case _                     => None
       }) orElse (layout match { // Work around https://lampsvn.epfl.ch/trac/scala/ticket/1133
-        case ClosingBrace(l, r)    => Some(l, r, "ClosingBrace")
+        case ClosingBrace(l, r) if layoutDoesNotIncludeAnnotation => Some(l, r, "ClosingBrace")
         case Equals(l, r)          => Some(l, r, "Equals")
         case ImportStatementNewline(l, r) => Some(l, r, "ImportStatement Newline")
         case ImportStatement(l, r) => Some(l, r, "ImportStatement")
         case ClosingCurlyBrace(l, r)=> Some(l, r, "ClosingCurlyBrace")
         case NewLine(l, r)         => Some(l, r, "NewLine")
         case Comma(l, r)           => Some(l, r, "Comma")
+        case _                     => None
+      }) orElse (layout match {
         case Dot(l, r)             => Some(l, r, "Dot")
         case s                     => Some(s, "", "NoMatch")
       }) get

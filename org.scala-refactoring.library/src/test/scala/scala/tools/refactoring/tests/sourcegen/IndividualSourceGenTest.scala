@@ -563,5 +563,33 @@ class Foo
     
     assertEquals(0, createChanges(List(tree)).size)
   }
+  
+  @Test
+  def annotation(): Unit = {
+    
+    val tree = treeFrom("""
+import java.lang.String
+
+class RunWith(c: Class[_]) extends StaticAnnotation
+
+/*(*/  /*)*/
+
+@RunWith(classOf[String])
+class Test
+    """)
+      
+    assertEquals("""
+import java.lang.String
+
+class RunWith(c: Class[_]) extends StaticAnnotation
+
+/*(*/  /*)*/
+
+@RunWith(classOf[String])
+class Test
+    """, generateText(removeAuxiliaryTrees apply tree get))
+    
+    assertEquals(0, createChanges(List(tree)).size)
+  }
 }
 
