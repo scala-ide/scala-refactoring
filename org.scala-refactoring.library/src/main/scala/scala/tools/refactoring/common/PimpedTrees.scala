@@ -213,7 +213,11 @@ trait PimpedTrees {
   }
    
   // workaround for https://lampsvn.epfl.ch/trac/scala/ticket/3765
-  def fixTreePositionIncludingCarriageReturn(p: Position) = {
+  def fixTreePositionIncludingCarriageReturn(p: Position): Position = {
+    if(p.end - 1 >= p.source.length || p.end == 0) {
+      return p
+    }
+    
     if(p.source.content(p.end - 1) == '\r') {
       p withEnd (p.end - 1)
     } else {
