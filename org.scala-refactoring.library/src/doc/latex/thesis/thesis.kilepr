@@ -76,10 +76,10 @@ order=1
 
 [item:2_refactoring_library.tex]
 archive=true
-column=301
+column=18
 encoding=ISO-8859-1
 highlight=LaTeX
-line=328
+line=432
 mode=LaTeX
 open=true
 order=3
@@ -339,8 +339,8 @@ CursorColumn=54
 CursorLine=55
 
 [view-settings,view=0,item:2_refactoring_library.tex]
-CursorColumn=301
-CursorLine=328
+CursorColumn=18
+CursorLine=432
 
 [view-settings,view=0,item:91_scala_ast.tex]
 CursorColumn=0
