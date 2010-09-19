@@ -647,6 +647,23 @@ class Demo(val a: String, private var _i: Int) {
   }
   
   @Test
+  def typeParametersAreSeparatedByComma() = {
+    val tree = treeFrom("""
+      class MethodWithTypeParam {
+        def foo[A, B, C] = 1
+      }""")
+      
+    assertEquals("""
+      class MethodWithTypeParam {
+        def foo[A, B, C] = 1
+      }""", generateText(removeAuxiliaryTrees apply tree get))
+    
+    tree prettyPrintsTo """class MethodWithTypeParam {
+  def foo[A, B, C] = 1
+}"""
+  }
+  
+  @Test
   def testClassConstructorParams() = {
     val tree = treeFrom("""
       class Demo1(a: String, b: Int)
