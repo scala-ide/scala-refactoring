@@ -428,10 +428,12 @@ def predicate[A](f: %$\Rightarrow$% PartialFunction[A, Boolean]) = new Transform
 
 \paragraph{Not} \hfill \lstinline{!: } $(A \overset{t}{\rightarrow} [A]) \Rightarrow (A \overset{t}{\rightarrow} [A])$
 
-\vspace{7pt} A combinator that inverts a transformation. Given a transformation that succeeds, then \src{not} will fail. Should the given transformation fail, then \src{not} returns the original input unchanged. This behavior is useful for transformations that act as predicates; \src{not} can be implemented using the \src{fail} and \src{id} transformations as follows.
+\vspace{7pt} A combinator that inverts a transformation. Given a transformation that succeeds, then \src{not} will fail. Should the given transformation fail, then \src{not} returns the original input unchanged. This behavior is useful for transformations that act as predicates.
 
 \begin{lstlisting}
-def not[A](t: %$\Rightarrow$% Transformation[A, A]) = t &> fail |> succeed
+def not[A](t: %$\Rightarrow$% Transformation[A, A]) = new Transformation[A, A] {
+  def apply(a: A) = if (t(a).isDefined) None else Some(a)
+}
 \end{lstlisting}
 
 Now that we have several means to specify and combine our transformations, we also need a way to apply them to a whole AST, instead of just single tree nodes. For this, there exist several traversal strategies.

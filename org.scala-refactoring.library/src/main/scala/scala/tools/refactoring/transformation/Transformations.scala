@@ -98,10 +98,9 @@ trait Transformations {
     def apply(in: X): Option[X] = None
   }
 
-  /**
-   * Success and fail can be used to implement `not` 
-   */
-  def not[X](t: ⇒ T[X, X]) = t &> fail |> succeed
+  def not[X](t: => T[X, X]) = new Transformation[X, X] {
+    def apply(x: X) = if (t(x).isDefined) None else Some(x)
+  }
   def !  [X](t: ⇒ T[X, X]) = not(t)
   
   /**
