@@ -5,6 +5,8 @@
 package scala.tools.refactoring
 package analysis
 
+import tools.nsc.symtab.Flags
+
 /**
  * Provides various traits that are used by the indexer
  * to expand symbols; that is, to find symbols that are
@@ -27,7 +29,7 @@ trait DependentSymbolExpanders {
   
   trait ExpandGetterSetters extends SymbolExpander {    
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
-      case s if s.isGetterOrSetter =>
+      case s if s.hasFlag(Flags.ACCESSOR) =>
         s.accessed :: Nil
       case s if s != NoSymbol && s.owner != NoSymbol =>
         s.getter(s.owner) :: s.setter(s.owner) :: Nil
@@ -42,7 +44,7 @@ trait DependentSymbolExpanders {
         
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
       
-      case s if s != NoSymbol && s.owner.isClass && s.isGetterOrSetter =>
+      case s if s != NoSymbol && s.owner.isClass && s.hasFlag(Flags.ACCESSOR) =>
 
         declaration(s.owner) collect {
           case ClassDef(_, _, _, Template(_, _, body)) => body collect {
