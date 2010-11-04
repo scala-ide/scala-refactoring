@@ -161,8 +161,8 @@ trait PimpedTrees {
         val p1 = fixTreePositionIncludingCarriageReturn(p)
       
         // it might be a quoted literal:
-        val p2 = if(p1.source.content(p1.start) == '`') {
-          p1 withEnd (p1.end + 2) 
+        val p2 = if(p1.start >= 0 && p1.start < p1.source.content.length && p1.source.content(p1.start) == '`') {
+          p1 withEnd (p1.end + 2)
         } else p1
       
         // set all points to the start, keeping wrong points
