@@ -35,7 +35,7 @@ class CompilerInstance {
     
     val compiler = new Global(settings, new ConsoleReporter(settings) {
       override def printMessage(pos: Position, msg: String) {
-        throw new Exception(pos.source.file.name + pos.show + msg)
+        //throw new Exception(pos.source.file.name + pos.show + msg)
       }
     })
   
