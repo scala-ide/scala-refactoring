@@ -12,7 +12,7 @@ import common.Change
 import collection.mutable.ListBuffer
 import util.CompilerProvider
 
-trait TestHelper extends Refactoring with CompilerProvider {
+trait TestHelper extends Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
   type Test = org.junit.Test
   type AbstractFile = tools.nsc.io.AbstractFile

@@ -14,9 +14,8 @@ import tools.nsc.ast.parser.{Scanners, Tokens}
  */
 trait NameValidation {
 
-  self: Indexes with common.Selections =>
+  self: Indexes with common.Selections with common.CompilerAccess =>
   
-  val global: scala.tools.nsc.Global
   import global._
   
   /**

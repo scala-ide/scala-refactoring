@@ -9,7 +9,7 @@ import tools.nsc.symtab.{Flags, Names, Symbols}
 
 trait PrettyPrinter extends AbstractPrinter {
   
-  this: common.PimpedTrees with common.Tracing with Indentations =>
+  this: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations =>
   
   import global._
   
@@ -411,6 +411,9 @@ trait PrettyPrinter extends AbstractPrinter {
         
       case SuperConstructorCall(clazz, args) =>
         p(clazz) ++ p(args, before = "\\(", separator = ", ", after = "\\)")
+        
+      case t: ImportSelectorTree => 
+        Fragment(t.nameString)
         
       case t: Tree => 
         Fragment("«?"+ t.getClass.getSimpleName +"?»")

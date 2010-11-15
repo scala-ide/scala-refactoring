@@ -7,7 +7,7 @@ package sourcegen
 
 trait ReusingPrinter extends AbstractPrinter {
 
-  this: LayoutHelper with common.Tracing with common.PimpedTrees with Indentations =>
+  this: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with Indentations =>
   
   import global._
   

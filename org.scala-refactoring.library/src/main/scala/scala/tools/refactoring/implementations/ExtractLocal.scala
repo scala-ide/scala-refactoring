@@ -10,6 +10,7 @@ import transformation.TreeFactory
 
 abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
   
+  val global: tools.nsc.interactive.Global
   import global._
   
   type PreparationResult = Tree

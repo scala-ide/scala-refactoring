@@ -4,15 +4,15 @@
 
 package scala.tools.refactoring
 
-import common.Change
+import common.{Change, InteractiveScalaCompiler}
 
 /**
  * The super class of all refactoring implementations,
  * representing the several phases of the refactoring
  * process.
  */
-abstract class MultiStageRefactoring extends Refactoring {
-  
+abstract class MultiStageRefactoring extends Refactoring with InteractiveScalaCompiler {
+    
   /**
    * Preparing a refactoring can either return a result
    * or an instance of PreparationError, describing the

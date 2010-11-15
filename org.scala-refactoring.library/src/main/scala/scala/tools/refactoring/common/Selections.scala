@@ -7,12 +7,13 @@ package common
 
 import tools.nsc.io.AbstractFile
 import collection.mutable.ListBuffer
-import tools.nsc.interactive.Global
+import tools.nsc.Global
 import tools.nsc.util.RangePosition
 
 trait Selections {
   
-  val global: Global
+  this: CompilerAccess =>
+  
   import global._
   import PartialFunction._
   
@@ -102,7 +103,7 @@ trait Selections {
     
     lazy val pos = new RangePosition(root.pos.source, from, from, to)
     
-    lazy val root = global.unitOfFile(file).body
+    lazy val root = compilationUnitOfFile(file).get.body
   }
   
   case class TreeSelection(val root: Tree) extends Selection {

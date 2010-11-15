@@ -9,9 +9,8 @@ import tools.nsc.io.AbstractFile
 
 trait TreeTransformations extends Transformations {
   
-  this: common.PimpedTrees =>
+  this: common.PimpedTrees with common.CompilerAccess =>
   
-  val global: scala.tools.nsc.interactive.Global
   import global._
         
   implicit def treesToTraversalFunction(tree: Tree): (Tree => Tree) => Tree = f => {
@@ -57,7 +56,7 @@ trait TreeTransformations extends Transformations {
     def replaces(t2: Tree) = t1 setPos t2.pos
   }
     
-  implicit def abstractFileToTree(file: AbstractFile): global.Tree = global.unitOfFile(file).body
+  implicit def abstractFileToTree(file: AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
   
   /**
    * Replace the first sequence of elements with another sequence.

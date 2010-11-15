@@ -7,9 +7,8 @@ package sourcegen
 
 trait AbstractPrinter extends SourceCodeHelpers {
   
-  this: common.Tracing with common.PimpedTrees with Indentations =>
+  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess =>
   
-  val global: scala.tools.nsc.interactive.Global
   import global._
   
   trait ChangeSet {

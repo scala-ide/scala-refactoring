@@ -96,7 +96,7 @@ trait CommentHelpers {
 
 trait SourceCodeHelpers extends CommentHelpers {
   
-  val global: scala.tools.nsc.interactive.Global
+  val global: scala.tools.nsc.Global
   
   def indentation(tree: global.Tree): String = {
     indentation(tree.pos.start, tree.pos.source)

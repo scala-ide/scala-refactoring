@@ -10,9 +10,8 @@ import common.PimpedTrees
 
 trait TreeFactory {
   
-  this: PimpedTrees =>
+  this: PimpedTrees with common.CompilerAccess =>
   
-  val global: scala.tools.nsc.interactive.Global
   import global._
   
   object Invisible extends Position

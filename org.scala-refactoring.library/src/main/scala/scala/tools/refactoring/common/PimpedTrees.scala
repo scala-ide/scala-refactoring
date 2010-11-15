@@ -11,15 +11,16 @@ import tools.nsc.ast.parser.Tokens
 import reflect.ClassManifest.fromClass
 import tools.nsc.io.AbstractFile
 import tools.nsc.symtab.{Flags, Names}
-import scala.tools.nsc.interactive.Global
+import scala.tools.nsc.Global
 
 /**
  * A collection of implicit conversions for ASTs and other 
  * helper functions that work on trees.
  */
 trait PimpedTrees {
+  
+  this: CompilerAccess =>
     
-  val global: Global
   import global._
 
   /**
@@ -27,7 +28,7 @@ trait PimpedTrees {
    * overridden in testing to manipulate the trees (i.e.
    * remove compiler generated trees)
    */
-  def treeForFile(file: AbstractFile): Option[Tree] = unitOfFile.get(file) map (_.body)
+  def treeForFile(file: AbstractFile): Option[Tree] = compilationUnitOfFile(file) map (_.body)
     
   /**
    * Returns the compilation unit root for that position.
@@ -47,7 +48,14 @@ trait PimpedTrees {
     // work around for https://lampsvn.epfl.ch/trac/scala/ticket/3392
     def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
     
-      val name = NameTree(imp.name) setPos new RangePosition(t.pos.source, imp.namePos, imp.namePos, imp.namePos + imp.name.length)
+      val pos = {
+        if(t.pos == NoPosition || t.pos.start < 0 || imp.namePos  < 0) 
+          NoPosition
+        else 
+          new RangePosition(t.pos.source, imp.namePos, imp.namePos, imp.namePos + imp.name.length)
+      }
+    
+      val name = NameTree(imp.name) setPos pos
       
       if(imp.renamePos < 0 || imp.name == imp.rename) {
         ImportSelectorTree(
@@ -538,7 +546,7 @@ trait PimpedTrees {
     case t => t
   } filter keepTree 
   
-  private[this] def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
+  private def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
     body match {
       case (v @ ValDef(_, _, _, Match(rhs: Typed, c @ CaseDef(_: Apply, EmptyTree, body) :: Nil))) :: xs 
           if v.symbol.isSynthetic && c.forall(_.pos.isTransparent) =>
@@ -625,6 +633,12 @@ trait PimpedTrees {
       case other: NameTree if pos != NoPosition && other.pos != NoPosition => 
         other.nameString == nameString && other.pos.start == pos.start && other.pos.source == pos.source
       case _ => false
+    }
+    override def setPos(p: Position) = {
+      if(p != NoPosition && p.start < 0) {
+        Predef.error("pos.start is"+ p.start)
+      }
+      super.setPos(p)
     }
   }
   
@@ -716,7 +730,7 @@ trait PimpedTrees {
           // The arguments of apply all have an offset position, so they
           // were removed during the transformations. Therefore we have
           // to look up the original apply method
-          val argumentsFromOriginalTree = unitOfFile get apply.pos.source.file map (_.body) flatMap { root =>
+          val argumentsFromOriginalTree = compilationUnitOfFile(apply.pos.source.file) map (_.body) flatMap { root =>
             root.find(_ sameTree apply) collect { case Apply(_, args) => args }
           } getOrElse (return block)
           

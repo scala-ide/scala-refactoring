@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package analysis
 
-import tools.nsc.interactive.Global
 import common.Selections
 
 /**
@@ -14,38 +13,36 @@ import common.Selections
  * parameters.
  */
 trait TreeAnalysis {
-  
-  this: Selections with Indexes =>
-  
-  val global: Global
-  
+
+  this: Selections with Indexes with common.CompilerAccess =>
+
   /**
    * From the selection and in the scope of the currentOwner, returns
    * a list of all symbols that are owned by currentOwner and used inside
    * but declared outside the selection.
    */
   def inboundLocalDependencies(selection: Selection, currentOwner: global.Symbol): List[global.Symbol] = {
-    
+
     val allLocalSymbols = selection.selectedSymbols filter {
-        _.ownerChain.contains(currentOwner)
+      _.ownerChain.contains(currentOwner)
     }
 
     allLocalSymbols filterNot {
       index.declaration(_).map(selection.contains) getOrElse true
     } filter (t => t.pos.isRange && !t.pos.isTransparent) sortBy (_.pos.start) distinct
   }
-  
+
   /**
    * From the selection and in the scope of the currentOwner, returns
    * a list of all symbols that are defined inside the selection and
    * used outside of it.
    */
   def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol): List[global.Symbol] = {
-        
+
     val declarationsInTheSelection = selection.selectedSymbols filter (s => index.declaration(s).map(selection.contains) getOrElse false)
-    
+
     val occurencesOfSelectedDeclarations = declarationsInTheSelection flatMap (index.occurences)
-    
+
     occurencesOfSelectedDeclarations filterNot (selection.contains) map (_.symbol) distinct
   }
 }

@@ -19,7 +19,7 @@ package analysis
  */
 trait Indexes {
 
-  val global: scala.tools.nsc.interactive.Global
+  this: common.CompilerAccess =>
   
   trait IndexLookup {
     

@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package analysis
 
-import common.PimpedTrees
 import collection.mutable.{HashMap, ListBuffer}
 
 /**
@@ -16,8 +15,10 @@ import collection.mutable.{HashMap, ListBuffer}
  * then memoizes all relations.
  * 
  */
-trait CompilationUnitIndexes extends PimpedTrees {
-    
+trait CompilationUnitIndexes {
+  
+  this: common.PimpedTrees with common.CompilerAccess =>
+  
   import global._
   
   trait CompilationUnitIndex {

@@ -8,9 +8,11 @@ package implementations
 import common.Change
 import transformation.TreeFactory
 import analysis.TreeAnalysis
+import tools.nsc.symtab.Flags
 
 abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory {
     
+  val global: tools.nsc.interactive.Global
   import global._
       
   case class PreparationResult(selectedTree: SymTree, hasLocalScope: Boolean)
@@ -20,7 +22,8 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
   def prepare(s: Selection) = {
     s.selectedSymbolTree match {
       case Some(t) =>
-        Right(PreparationResult(t, t.symbol.isPrivate || t.symbol.isLocal))
+        val isLocalRename = (t.symbol.isPrivate || t.symbol.isLocal) && !  t.symbol.hasFlag(Flags.ACCESSOR)
+        Right(PreparationResult(t,isLocalRename))
       case None => Left(PreparationError("no symbol selected found"))
     }
   }
@@ -32,6 +35,8 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     val occurences = index.occurences(prepared.selectedTree.symbol) 
     
     occurences foreach (s => trace("Symbol is referenced at %s (%s:%s)", s, s.pos.source.file.name, s.pos.line))
+    
+    val namePositions = occurences map (_.namePosition)
     
     val isInTheIndex = filter {
       case t: Tree => occurences contains t 

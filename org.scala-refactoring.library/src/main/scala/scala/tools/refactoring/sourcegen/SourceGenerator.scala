@@ -10,7 +10,7 @@ import common.{PimpedTrees, Tracing, Change}
 
 trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting  with TreeChangesDiscoverer {
   
-  self: Tracing =>
+  self: Tracing with common.CompilerAccess =>
   
   import global._
   
@@ -82,7 +82,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     def hasOriginalTree = findOriginalTree(t).isDefined
     
     def originalTreeNotFound() = {
-      if(!global.unitOfFile.get(t.pos.source.file).isDefined)
+      if(!compilationUnitOfFile(t.pos.source.file).isDefined)
         throw new common.TreeNotFound(t.pos.source.file.name)  
     }
     

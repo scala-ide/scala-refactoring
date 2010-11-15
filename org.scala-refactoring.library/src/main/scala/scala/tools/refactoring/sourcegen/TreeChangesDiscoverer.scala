@@ -14,9 +14,8 @@ import common.PimpedTrees
  */
 trait TreeChangesDiscoverer {
   
-  self: Tracing with PimpedTrees =>
+  this: Tracing with PimpedTrees with common.CompilerAccess =>
   
-  val global: scala.tools.nsc.interactive.Global
   import global._
   
   /**

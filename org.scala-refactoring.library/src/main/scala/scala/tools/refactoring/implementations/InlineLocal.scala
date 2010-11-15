@@ -11,6 +11,7 @@ import analysis.Indexes
 
 abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with Indexes {
   
+  val global: tools.nsc.interactive.Global
   import global._
   
   type PreparationResult = ValDef

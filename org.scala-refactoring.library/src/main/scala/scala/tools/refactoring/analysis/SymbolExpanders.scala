@@ -15,7 +15,7 @@ import tools.nsc.symtab.Flags
  */
 trait DependentSymbolExpanders {
   
-  this: Indexes =>
+  this: Indexes with common.CompilerAccess =>
   
   import global._
   
