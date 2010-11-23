@@ -680,10 +680,10 @@ trait PimpedTrees {
   object ModifierTree {
     def unapply(m: global.Modifiers) = {
       Some(m.positions.toList map {
-        case (flag, global.NoPosition) => 
-          ModifierTree(flag)
-        case (flag, pos) =>
+        case (flag, pos) if pos.isRange =>
           ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
+        case (flag, _) =>
+          ModifierTree(flag)
       })
     }
   }
