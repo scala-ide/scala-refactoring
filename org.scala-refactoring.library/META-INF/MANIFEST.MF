@@ -14,9 +14,9 @@ Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.util
 Bundle-ClassPath: .
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Import-Package: scala.tools.nsc.ast;version="2.8.0.final",
- scala.tools.nsc.ast.parser;version="2.8.0.final",
- scala.tools.nsc.interactive;version="2.8.0.final",
- scala.tools.nsc.settings;version="2.8.0.final",
- scala.tools.nsc.symtab;version="2.8.0.final",
- scala.tools.nsc.util;version="2.8.0.final"
+Import-Package: scala.tools.nsc.ast,
+ scala.tools.nsc.ast.parser,
+ scala.tools.nsc.interactive,
+ scala.tools.nsc.settings,
+ scala.tools.nsc.symtab,
+ scala.tools.nsc.util
