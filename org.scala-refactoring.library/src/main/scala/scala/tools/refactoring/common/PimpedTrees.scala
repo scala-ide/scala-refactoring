@@ -266,9 +266,8 @@ trait PimpedTrees {
     /**
      * Returns all constructor parameters from the template body.
      */
-    def constructorParameters = t.body.filter {
-      case ValDef(mods, _, _, _) => mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) 
-      case _ => false
+    def constructorParameters = t.body.collect {
+      case vd @ ValDef(mods, _, _, _) if (mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) ) => vd
     }
     
     /**
