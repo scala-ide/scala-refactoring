@@ -16,6 +16,11 @@ trait Fragment {
   
   override def toString() = asText
   
+  def ifNotEmpty(f: Fragment => Fragment): Fragment = this match {
+    case EmptyFragment => EmptyFragment
+    case _ => f(this)
+  } 
+  
   def toLayout = new Layout {
     def asText = self.asText
   }

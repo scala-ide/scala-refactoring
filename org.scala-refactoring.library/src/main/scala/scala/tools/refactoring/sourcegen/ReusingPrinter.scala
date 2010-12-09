@@ -18,7 +18,8 @@ trait ReusingPrinter extends AbstractPrinter {
     val (leadingParent, leadingChild, trailingChild, trailingParent) = surroundingLayout(t)
 
     val printedFragment = if(changeSet hasChanged t) {
-      printWithExistingLayout(t, ind.setTo(originalIndentation), changeSet, leadingChild, trailingChild)
+      val ctx = PrintingContext(ind.setTo(originalIndentation), changeSet, t)
+      printWithExistingLayout(leadingChild, trailingChild)(ctx)
     } else {
       trace("Not in change set, keep original code.")
       Fragment(t.pos.source.content.slice(t.pos.start, t.pos.end).mkString)
@@ -36,42 +37,44 @@ trait ReusingPrinter extends AbstractPrinter {
     indentedFragment
   }
   
-  private def printWithExistingLayout(t: Tree, ind: Indentation, changeSet: ChangeSet, l: Layout, r: Layout): Fragment = {
+  private def printWithExistingLayout(l: Layout, r: Layout)(implicit ctx: PrintingContext): Fragment = {
         
+    import ctx._
+    
     //it seems that default arguments here crash the incremental compiler, so we don't use them.
     object PrintOverloads {
       
       def p(tree: Tree): Fragment = 
-        printSingleTree(t, tree, ind, changeSet, false, NoRequisite, NoRequisite)
+        printSingleTree(tree, NoRequisite, NoRequisite)
       def p(ts: List[Tree]): Fragment = 
-        printManyTrees(t, ts, ind, changeSet, false, NoRequisite, NoRequisite, NoRequisite)
+        printManyTrees(ts, NoRequisite, NoRequisite, NoRequisite)
         
       def p(ts: List[Tree], separator: Requisite): Fragment =
-        printManyTrees(t, ts, ind, changeSet, false, separator, NoRequisite, NoRequisite)
+        printManyTrees(ts, separator, NoRequisite, NoRequisite)
       
       def p(tree: Tree, before: Requisite, after: Requisite): Fragment = 
-        printSingleTree(t, tree, ind, changeSet, false, before, after)
+        printSingleTree(tree, before, after)
       def p(ts: List[Tree], separator: Requisite, before: Requisite, after: Requisite): Fragment = 
-        printManyTrees(t, ts, ind, changeSet, false, separator, before, after)
+        printManyTrees(ts, separator, before, after)
         
       def printIndented(tree: Tree, before: Requisite, after: Requisite): Fragment = 
-        printSingleTree(t, tree, ind, changeSet, true, before, after)
+        printIndentedSingleTree(tree, before, after)
       def printIndented(ts: List[Tree], separator: Requisite): Fragment = 
-        printManyTrees(t, ts, ind, changeSet, true, separator, NoRequisite, NoRequisite)
+        printIndentedManyTrees(ts, separator, NoRequisite, NoRequisite)
       def printIndented(ts: List[Tree], separator: Requisite, before: Requisite, after: Requisite): Fragment = 
-        printManyTrees(t, ts, ind, changeSet, true, separator, before, after)
+        printIndentedManyTrees(ts, separator, before, after)
     }
     
     import PrintOverloads._
-         
-    val originalTree = findOriginalTree(t) getOrElse {
-      trace("Original tree not found for %s, returning EmptyFragment.", t)
+    
+    val originalTree = findOriginalTree(parent) getOrElse {
+      trace("Original tree not found for %s, returning EmptyFragment.", parent)
       return EmptyFragment
     }
     
     implicit def stringToRequisite(regex: String) = Requisite.allowSurroundingWhitespace(regex)
     
-    (t, originalTree) match {
+    (parent, originalTree) match {
             
       case (t @ PackageDef(pid, stats), _) =>
         l ++ p(pid :: stats, separator = Requisite.newline(ind.current)) ++ r

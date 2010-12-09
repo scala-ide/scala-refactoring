@@ -6,10 +6,12 @@ package scala.tools.refactoring
 package sourcegen
 
 trait AbstractPrinter extends SourceCodeHelpers {
-  
+    
   this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess =>
   
   import global._
+  
+  case class PrintingContext(ind: Indentation, changeSet: ChangeSet, parent: Tree)
   
   trait ChangeSet {
     def hasChanged(t: Tree): Boolean
@@ -21,73 +23,59 @@ trait AbstractPrinter extends SourceCodeHelpers {
   
   private[sourcegen] def print(t: Tree, ind: Indentation, changeSet: ChangeSet): Fragment
   
-  private[sourcegen] def printSingleTree(
-      parent: Tree,
-      tree: Tree, 
-      ind: Indentation,
-      changeSet: ChangeSet,
-      indent: Boolean,
+  private[sourcegen] def printIndentedSingleTree(
+      tree: Tree,
       before: Requisite,
-      after: Requisite): Fragment = {
+      after: Requisite)(implicit ctx: PrintingContext): Fragment = {
 
-    if(indent && tree.hasExistingCode && parent.isInstanceOf[If] && tree.pos.isRange) {
-      print(tree, ind.setTo(indentation(tree)), changeSet) match {
-        case EmptyFragment => EmptyFragment
-        case f => 
-          val x = f
-          f ++ (after, before)
-      }
-    } else if(indent) {
-      
-      val child = if (parent.hasExistingCode) {
-                
-        getChildrenIndentation(parent, tree) match {
-          case Some(childIndent) => 
-            print(tree, ind.setTo(childIndent), changeSet)
-          case None =>
-            print(tree, ind.incrementDefault, changeSet)
-        }
-        
-      } else {
-        print(tree, ind, changeSet)
+    import ctx._
+    
+    val child = if (parent.hasExistingCode) {
+              
+      getChildrenIndentation(parent, tree) match {
+        case Some(childIndent) => 
+          print(tree, ind.setTo(childIndent), changeSet)
+        case None =>
+          print(tree, ind.incrementDefault, changeSet)
       }
       
-      child match {
-        case EmptyFragment => EmptyFragment
-        case f => f ++ (f.post ++ after, before ++ f.pre)
-      }
-       
     } else {
-      print(tree, ind.setTo(getChildrenIndentation(parent, tree) getOrElse ind.current), changeSet) match {
-        case EmptyFragment => EmptyFragment
-        case f => f ++ (after, before)
-      }
+      print(tree, ind, changeSet)
     }
+    
+    child ifNotEmpty (f => f ++ (f.post ++ after, before ++ f.pre))  
   }
   
-  private[sourcegen] def printManyTrees(
-      parent: Tree,
+  private[sourcegen] def printSingleTree(
+      tree: Tree,
+      before: Requisite,
+      after: Requisite)(implicit ctx: PrintingContext): Fragment = {
+
+    import ctx._
+    
+    val newIndent = ind.setTo(getChildrenIndentation(parent, tree) getOrElse ind.current)
+    
+    print(tree, newIndent, changeSet) ifNotEmpty (_ ++ (after, before))
+  }
+  
+  private[sourcegen] def printIndentedManyTrees(
       trees: List[Tree], 
-      ind: Indentation, 
-      changeSet: ChangeSet,
-      indent: Boolean,
       separator: Requisite,
       before: Requisite,
       after: Requisite,
-      isFirst: Boolean = true): Fragment = {
+      isFirst: Boolean = true)(implicit ctx: PrintingContext): Fragment = {
     
-    // FIXME these two methods should be pushed down to the two printers where they can be implemented much simpler. 
-    // FIXME also, indentation handling is still ugly.
+    import ctx._
     
     (trees match {
       case Nil => EmptyFragment
-      case t :: rest => (printSingleTree(parent, t, ind, changeSet, indent, NoRequisite, NoRequisite), printManyTrees(parent, rest, ind, changeSet, indent, separator, NoRequisite, NoRequisite, false)) match {
+      case t :: rest => (printIndentedSingleTree(t, NoRequisite, NoRequisite), printIndentedManyTrees(rest, separator, NoRequisite, NoRequisite, false)) match {
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
         
           val fixedIndentationSeparator = {
-            if(indent && parent.hasExistingCode && !rest.head.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
+            if(parent.hasExistingCode && !rest.head.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
               Requisite.newline(ind.current + ind.defaultIncrement)
             } else {
               separator
@@ -99,15 +87,37 @@ trait AbstractPrinter extends SourceCodeHelpers {
           val mid: Layout = (lr ++ fixedIndentationSeparator ++ rr).toLayout
           Fragment(l.leading, mid, r.trailing) ++ (r.post, l.pre)
       }
-    }) match {
-      case EmptyFragment => EmptyFragment
-      case f => 
-        if(isFirst && indent && parent.hasExistingCode && !trees.head.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
-          (Layout(ind.defaultIncrement) ++ f) ++ (after, before)
-        } else {
-          f ++ (after, before)
-        }
+    }) ifNotEmpty { f => 
+      if(isFirst && parent.hasExistingCode && !trees.head.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
+        (Layout(ind.defaultIncrement) ++ f) ++ (after, before)
+      } else {
+        f ++ (after, before)
+      }
     }
+  }
+  
+  private[sourcegen] def printManyTrees(
+      trees: List[Tree], 
+      separator: Requisite,
+      before: Requisite,
+      after: Requisite,
+      isFirst: Boolean = true)(implicit ctx: PrintingContext): Fragment = {
+    
+    import ctx._
+    
+    (trees match {
+      case Nil => EmptyFragment
+      case t :: rest => (printSingleTree(t, NoRequisite, NoRequisite), printManyTrees(rest, separator, NoRequisite, NoRequisite, false)) match {
+        case (l, r) if l.asText == "" => r
+        case (l, r) if r.asText == "" => l
+        case (l, r) =>
+        
+          val lr = l.post(l.center ++ l.trailing, NoLayout)
+          val rr = r.pre(NoLayout, r.leading ++ r.center)
+          val mid: Layout = (lr ++ separator ++ rr).toLayout
+          Fragment(l.leading, mid, r.trailing) ++ (r.post, l.pre)
+      }
+    }) ifNotEmpty ( _ ++ (after, before))
   }
   
   private def getChildrenIndentation(p: Tree, t: Tree): Option[String] = {
