@@ -61,8 +61,6 @@ trait ReusingPrinter extends AbstractPrinter {
         printIndentedSingleTree(tree, before, after)
       def printIndented(ts: List[Tree], separator: Requisite): Fragment = 
         printIndentedManyTrees(ts, separator, NoRequisite, NoRequisite)
-      def printIndented(ts: List[Tree], separator: Requisite, before: Requisite, after: Requisite): Fragment = 
-        printIndentedManyTrees(ts, separator, before, after)
     }
     
     import PrintOverloads._
@@ -314,18 +312,41 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t @ If(cond, thenp, elsep), orig: If) =>
                 
         val _else = {
-          if(keepTree(orig.elsep) && orig.elsep.pos.isRange) {
+          
+          /*
+           * Printing the else branch is tricky because of how {} are handled in the AST,
+           * but only if the else branch already existed:
+           */
+          val elseBranchAlreadyExisted = keepTree(orig.elsep) && orig.elsep.pos.isRange
+          
+          if(elseBranchAlreadyExisted) {
             
             val layout = between(orig.thenp, orig.elsep)(orig.pos.source).asText
             val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\n\\s*$", "else "))
             
+            val curlyBracesAlreadyExist = layout.contains("{")
+            val originalElseHasNoBlock = !orig.elsep.isInstanceOf[Block]
+            
             elsep match {
-              // we have a new block
-              case BlockExtractor(body) if !orig.elsep.isInstanceOf[Block] && layout.contains("{") =>
+              
+              /*
+               * The existing else branch was enclosed by {} but contained only a single
+               * statement.
+               * */
+              case BlockExtractor(body) if originalElseHasNoBlock && curlyBracesAlreadyExist =>
                 p(body, before = l, separator = Requisite.newline(ind.current + ind.defaultIncrement), after = NoRequisite)
+              
+              /*
+               * If there was no block before and also no curly braces, we have to write
+               * them now (indirectly through the Block), but we don't want to add any
+               * indentation.
+               * */
               case elsep: Block =>
-                p(elsep, before = l, after = NoRequisite)    
-              case _ => printIndented(elsep, before = Requisite.anywhere(layout), after = NoRequisite)
+                print(elsep, ind, changeSet) ifNotEmpty (_ ++ (NoRequisite, l))
+
+              /* If it's a single statemens, we print it indented: */
+              case _ => 
+                printIndented(elsep, before = Requisite.anywhere(layout), after = NoRequisite)
             }
 
           } else {

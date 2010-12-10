@@ -38,10 +38,10 @@ trait PrettyPrinter extends AbstractPrinter {
         printManyTrees(ts, separator, before, after)
       
       def printIndented(tree: Tree, before: Requisite, after: Requisite) =
-        printIndentedSingleTree(tree, before, after)(PrintingContext(ind.incrementDefault, changeSet, t))
+        printIndentedSingleTree(tree, before, after)
         
       def printIndented(ts: List[Tree], before: Requisite, separator: Requisite, after: Requisite) =
-        printIndentedManyTrees(ts, separator = separator, before = before, after = after)(PrintingContext(ind.incrementDefault, changeSet, t)) 
+        printIndentedManyTrees(ts, separator = separator, before = before, after = after) 
     }
     
     import PrintOverloads._
@@ -263,9 +263,13 @@ trait PrettyPrinter extends AbstractPrinter {
         p(lhs) ++ " = " ++ p(rhs)
         
       case If(cond, thenp, elsep) =>
-        p(cond, before = "if \\(", after = "\\)") ++ 
-        printIndented(thenp, before = " ", after = NoRequisite) ++ 
-        printIndentedSingleTree(elsep, before = " else ", after = NoRequisite)
+        val cond_ = p(cond, before = "if \\(", after = "\\)")
+        
+        val then_ = printIndented(thenp, before = " ", after = NoRequisite)
+        
+        val else_ = printSingleTree(elsep, before = " else ", after = NoRequisite) 
+        
+        cond_ ++ then_ ++ else_ 
         
       case Match(selector, cases) =>
         p(selector, before = NoRequisite, after = " match ") ++ printIndented(cases, before = Requisite.allowSurroundingWhitespace("\\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
