@@ -274,7 +274,7 @@ trait PimpedTrees {
      * Returns the primary constructor of the template.
      */
     def primaryConstructor = t.body.filter {
-      case t: DefDef => t.symbol.isPrimaryConstructor
+      case t: DefDef => t.symbol.isPrimaryConstructor || t.name.toString == nme.CONSTRUCTOR.toString
       case _ => false
     }
        
@@ -283,14 +283,14 @@ trait PimpedTrees {
      */
     def earlyDefs = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats filter treeInfo.isEarlyDef
-      case t @ DefDef(_, _, _, _, _, rhs)        if t.symbol.isConstructor && treeInfo.isEarlyDef(rhs) => rhs :: Nil
+      case t @ DefDef(_, _, _, _, _, rhs) if t.symbol.isConstructor && treeInfo.isEarlyDef(rhs) => rhs :: Nil
     } flatten
       
     /**
      * Returns the trees that are passed to a super constructor call.
      */
     def superConstructorParameters = t.body.collect {
-      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats collect {
+      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => stats collect {
         case Apply(EmptyTree, args) => args
       } flatten
     } flatten

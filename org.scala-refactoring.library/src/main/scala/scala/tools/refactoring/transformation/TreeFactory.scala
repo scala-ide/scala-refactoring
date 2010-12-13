@@ -102,28 +102,48 @@ trait TreeFactory {
     case x :: Nil => Block(x :: Nil, EmptyTree)
     case xs => Block(xs.init, xs.last)
   }
+  
+  def mkClass(
+    mods: Modifiers = NoMods,
+    name: String,
+    tparams: List[TypeDef] = Nil,
+    args: List[(Modifiers, String, Tree)],
+    body: List[Tree] = Nil,
+    parents: List[Tree] = Nil,
+    superArgs: List[Tree] = Nil) = {
+  
+    val constructorArguments = args.map {
+      case (mods, name, tpe) =>
+        ValDef(mods | Flags.PARAMACCESSOR, name, tpe, EmptyTree)
+    }
+    
+    val superArgsCall = superArgs match {
+      case Nil => EmptyTree
+      case args => 
+        mkDefDef(name = nme.CONSTRUCTOR.toString, body = Apply(EmptyTree, args) :: Nil)
+    }
+
+    ClassDef(
+      mods,
+      name,
+      tparams,
+      Template(
+        parents,
+        emptyValDef,
+        superArgsCall :: constructorArguments ::: body))
+  }
 
   def mkCaseClass(
     mods: Modifiers = NoMods,
     name: String,
     tparams: List[TypeDef] = Nil,
-    args: List[(String, Tree)],
-    body: List[Tree] = Nil) = {
+    args: List[(Modifiers, String, Tree)],
+    body: List[Tree] = Nil,
+    parents: List[Tree] = Nil,
+    superArgs: List[Tree] = Nil) = {
 
-    if(args.size < 1) throw new IllegalArgumentException("Case-class must have at least one argument.")
+    if (args.size < 1) throw new IllegalArgumentException("Case-class must have at least one argument.")
     
-    val constructorArguments = args.map {
-      case (name, tpe) =>
-        ValDef(Modifiers(Flags.PARAMACCESSOR), name, tpe, EmptyTree)
-    }
-
-    ClassDef(
-      mods withPosition (Flags.CASE, NoPosition),
-      name,
-      tparams,
-      Template(
-        EmptyTree :: Nil,
-        emptyValDef,
-        constructorArguments ::: body))
+    mkClass(mods withPosition (Flags.CASE, NoPosition), name, tparams, args, body, parents, superArgs)
   }
 }

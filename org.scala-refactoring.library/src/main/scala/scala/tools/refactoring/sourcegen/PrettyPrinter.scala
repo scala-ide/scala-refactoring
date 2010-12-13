@@ -46,12 +46,49 @@ trait PrettyPrinter extends AbstractPrinter {
     
     import PrintOverloads._
     
+    
     implicit def stringToRequisite(regex: String) = Requisite.allowSurroundingWhitespace(regex)
     
     def newline = Requisite.newline(ind.current)
     def indentedNewline = Requisite.newline(ind.incrementDefault.current)
     
     trace("current indentation set to %s", ind.current)
+    
+    def printTemplate(tpl: Template, printExtends: Boolean): Fragment = tpl match {
+      case TemplateExtractor(params, earlyBody, parents, self, body) =>
+                
+        val R = Requisite.allowSurroundingWhitespace _
+        
+        val sup = if(earlyBody.isEmpty) {
+          parents match {
+            case Nil => EmptyFragment
+            case parent :: traits => 
+              val superclass = {
+                if(printExtends)
+                  p(parent, before = " extends ")
+                else
+                  p(parent)
+              }
+              superclass ++ p(traits, before = " with ", separator = " with ", after = NoRequisite)
+          }
+        } else {
+          printIndented(earlyBody, before = R(" extends \\{") ++ 
+              indentedNewline, after = newline ++ "\\}", separator = indentedNewline) ++
+              p(parents, before = " with ", separator = " with ", after = NoRequisite)
+        }
+        
+        val self_ = (self, body) match {
+          case (EmptyTree, body) => 
+            printIndented(body, before = R(" \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+          case (self, Nil) => 
+            printIndented(self, before = R(" \\{") ++ indentedNewline, after = R(" =>") ++ newline ++ "\\}")
+          case (self, body) => 
+            printIndented(self, before = R(" \\{") ++ indentedNewline, after = " =>") ++ 
+            printIndented(body, before = indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
+        }
+
+        p(params, before = "\\(", separator = ", ", after = "\\)") ++ sup ++ self_
+    }
     
     val code: Fragment = t match {
     
@@ -156,41 +193,9 @@ trait PrettyPrinter extends AbstractPrinter {
         
         Layout("import ") ++ p(expr) ++ "." ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
         
-      case tpl @ TemplateExtractor(params, earlyBody, parents, self, body) =>
-                
-        val R = Requisite.allowSurroundingWhitespace _
-        
-        val sup = if(earlyBody.isEmpty) {
-          parents match {
-            case Nil => EmptyFragment
-            case parent :: traits => 
-              val superclass = {
-                if(tpl.symbol == NoSymbol)
-                  p(parent)
-                else
-                  p(parent, before = " extends ")
-              }
-              superclass ++ p(traits, before = " with ", separator = " with ", after = NoRequisite)
-          }
-        } else {
-          printIndented(earlyBody, before = R(" extends \\{") ++ 
-              indentedNewline, after = newline ++ "\\}", separator = indentedNewline) ++
-              p(parents, before = " with ", separator = " with ", after = NoRequisite)
-        }
-        
-        val self_ = (self, body) match {
-          case (EmptyTree, body) => 
-            printIndented(body, before = R(" \\{") ++ indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
-          case (self, Nil) => 
-            printIndented(self, before = R(" \\{") ++ indentedNewline, after = R(" =>") ++ newline ++ "\\}")
-          case (self, body) => 
-            printIndented(self, before = R(" \\{") ++ indentedNewline, after = " =>") ++ 
-            printIndented(body, before = indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
-        }
-        
-                
-        val x = p(params, before = "\\(", separator = ", ", after = "\\)")
-        x ++ sup ++ self_
+      case tpl: Template =>
+
+        printTemplate(tpl, true)
 
       case BlockExtractor(stats) =>
         
@@ -397,8 +402,8 @@ trait PrettyPrinter extends AbstractPrinter {
   //    case SelectFromTypeTree(qualifier, selector) =>
   //      traverse(qualifier)
         
-      case CompoundTypeTree(templ) =>
-        p(templ)
+      case CompoundTypeTree(tpl: Template) =>
+        printTemplate(tpl, false)
         
       case AppliedTypeTree(tpt, args) =>
         p(tpt) ++ p(args, before = "\\[", separator = ", ", after = "\\]")
@@ -420,6 +425,9 @@ trait PrettyPrinter extends AbstractPrinter {
         
       case t: ImportSelectorTree => 
         Fragment(t.nameString)
+        
+      case DocDef(DocComment(comment, pos), tree) =>
+         Fragment(comment) ++ p(tree)
         
       case t: Tree => 
         Fragment("«?"+ t.getClass.getSimpleName +"?»")

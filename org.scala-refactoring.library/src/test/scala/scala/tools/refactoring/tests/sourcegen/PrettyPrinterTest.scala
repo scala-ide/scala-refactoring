@@ -47,12 +47,66 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
 
   @Test
   def testCaseClassOneArg() = {
-    mkCaseClass(name = "A", args = List("rate" -> Ident("Rate"))) prettyPrintsTo "case class A(rate: Rate)"
+    mkCaseClass(
+        name = "A", 
+        args = (NoMods, "rate", Ident("Rate")) :: Nil) prettyPrintsTo "case class A(rate: Rate)"
   }
 
   @Test
   def testCaseClassTwoArgs() = {
-    mkCaseClass(name = "A", args = List("x" -> Ident("Int"), "y" -> Ident("String"))) prettyPrintsTo "case class A(x: Int, y: String)"
+    mkCaseClass(
+        name = "A", 
+        args = List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String")))) prettyPrintsTo "case class A(x: Int, y: String)"
+  }
+
+  @Test
+  def testClassTwoArgs() = {
+    mkClass(
+        name = "A", 
+        args = List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String")))) prettyPrintsTo "class A(x: Int, y: String)"
+  }
+
+  @Test
+  def testClassTwoValVarArgs() = {
+    mkClass(
+        name = "A", 
+        args = List((NoMods withPosition (Tokens.VAL, NoPosition), "x", Ident("Int")), (NoMods withPosition (Tokens.VAR, NoPosition), "y", Ident("String")))) prettyPrintsTo "class A(val x: Int, var y: String)"
+  }
+  
+  @Test
+  def testSuperCall =  {
+    
+    val tree = mkCaseClass(
+        name = "A", 
+        args = (NoMods, "x", Ident("Int")) :: Nil, 
+        parents = Ident("X") :: Ident("Y") :: Nil)
+    
+    tree prettyPrintsTo "case class A(x: Int) extends X with Y"
+  }
+  
+  @Test
+  def testSuperConstructorCall =  {
+    
+    val tree = mkCaseClass(
+        name = "A", 
+        args = (NoMods, "x", Ident("Int")) :: Nil, 
+        parents = Ident("X") :: Nil,
+        superArgs = Ident("x") :: Nil)
+    
+    tree prettyPrintsTo "case class A(x: Int) extends X(x)"
+  }
+  
+  @Test
+  def testDocDef() = {
+
+    val doc = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree)
+    
+    val tree = mkDefDef(name = "meth", body = doc :: Ident("()") :: Nil)
+    
+    tree prettyPrintsTo """def meth = {
+  /** Kuuka */
+  ()
+}"""
   }
   
   @Test
