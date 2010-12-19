@@ -44,7 +44,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
    
     def references(s: Symbol) = {
       val decls = declaration(s).toList
-      occurences(s) filterNot decls.contains
+      val occs = occurences(s) 
+      occs filterNot decls.contains
     }
     
     def expandSymbol(s: global.Symbol): List[global.Symbol] = {
@@ -56,7 +57,9 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
       
     def occurences(s: global.Symbol) = {
       expandSymbol(s) flatMap { sym =>
-        declaration(sym).toList ::: cus.flatMap(_.references.get(sym).flatten)
+        declaration(sym).toList ::: cus.flatMap { cu => 
+            cu.references.get(sym).flatten
+          }
       } filter (_.pos.isRange) distinct
     }
     

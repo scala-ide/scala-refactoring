@@ -27,7 +27,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       val result = m(firstSelected)
       assertEquals(expected, result)
     } else {
-      throw new Exception("found: "+ firstSelected)
+      throw new Exception("found: "+ firstSelected + "(" + firstSelected.getClass.getSimpleName + ")")
     }
   }
   
@@ -37,9 +37,9 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   }
   
   def assertReferencesOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
-    case t: DefTree => 
+    case t @ (_: TypeTree | _: DefTree) =>
       index.references(t.symbol).toList filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" ) mkString ", "
-  } 
+  }
   
   @Test
   def findValReference() = {
@@ -159,6 +159,32 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
 
       class C(a: Z) {
         def get(a: Z): Z = new Z
+      }
+      """)
+  }
+    
+  @Test
+  def findClassDeclarationToMethodParameter() = {
+    assertReferencesOfSelection("""scala.this.Predef.String (59, 65), scala.this.Predef.String (91, 97)""", """
+      class Xy
+      
+      object A {
+        def go(xy: String) = {
+          xy: /*(*/ String /*)*/
+        }
+      }
+      """)
+  }
+    
+  @Test
+  def findClassDeclarationFromMethodParameter() = {
+    assertReferencesOfSelection("""scala.this.Predef.String (65, 71), scala.this.Predef.String (97, 103)""", """
+      class Xy
+      
+      object A {
+        def go(xy: /*(*/ String /*)*/) = {
+          xy: String
+        }
       }
       """)
   }

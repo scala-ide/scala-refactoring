@@ -40,7 +40,29 @@ trait CompilationUnitIndexes {
         }
   
         def addReference(s: Symbol, t: Tree) {
-          refs.getOrElseUpdate(s, new ListBuffer[Tree]) += t
+          def add(s: Symbol) = 
+            refs.getOrElseUpdate(s, new ListBuffer[Tree]) += t
+
+          add(s)
+          
+          s match {
+            case _: ClassSymbol => ()
+            /*
+             * If we only have a TypeSymbol, we check if it is 
+             * a reference to another symbol and add this to the
+             * index as well.
+             * 
+             * This is needed for example to find the TypeTree
+             * of a DefDef parameter-ValDef
+             * */
+            case ts: TypeSymbol =>
+              ts.info match {
+                case tr: TypeRef if tr.sym != null =>
+                  add(tr.sym)
+                case _ => ()
+              }
+            case _ => ()
+          }
         }
   
         tree foreach {

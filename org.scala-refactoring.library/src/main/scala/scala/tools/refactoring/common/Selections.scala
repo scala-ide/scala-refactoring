@@ -67,7 +67,9 @@ trait Selections {
      * fully contains a SymTree, if true, the first selected is returned. Otherwise
      * the result of findSelectedOfType[SymTree] is returned.
      */
-    lazy val selectedSymbolTree = (root filter (cond(_) { case t: SymTree => contains(t) }) filter (t => t.pos.start < t.pos.end) match {
+    lazy val selectedSymbolTree = (root filter (cond(_) { 
+      case t: SymTree => contains(t) 
+    }) filter (t => t.pos.start < t.pos.end) match {
       case (x: SymTree) :: _ => Some(x)
       case _ => None
     }) orElse findSelectedOfType[SymTree]

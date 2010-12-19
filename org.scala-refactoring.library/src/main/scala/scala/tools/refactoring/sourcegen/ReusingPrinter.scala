@@ -366,7 +366,6 @@ trait ReusingPrinter extends AbstractPrinter {
             
             if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
               val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
-              println(left)
               printIndented(thenp, before = Requisite.anywhere(right), after = NoRequisite)
             } else {
               printIndented(thenp, before = NoRequisite, after = NoRequisite)
