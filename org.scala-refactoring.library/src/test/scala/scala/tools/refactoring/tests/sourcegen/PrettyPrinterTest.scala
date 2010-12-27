@@ -97,13 +97,40 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   }
   
   @Test
+  def testDefDefWithoutParens =  {
+    
+    val tree = Block(
+        DefDef(
+          NoMods withPosition (Flags.METHOD, NoPosition),
+          "eins",
+          Nil,
+          Nil,
+          EmptyTree,
+          Literal(Constant(()))
+        ),
+        DefDef(
+          NoMods withPosition (Flags.METHOD, NoPosition),
+          "zwei",
+          Nil,
+          Nil :: Nil,
+          EmptyTree,
+          Literal(Constant(()))
+        ))
+    
+    tree prettyPrintsTo """{
+  def eins = ()
+  def zwei() = ()
+}"""
+  }
+  
+  @Test
   def testDocDef() = {
 
     val doc = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree)
     
     val tree = mkDefDef(name = "meth", body = doc :: Ident("()") :: Nil)
     
-    tree prettyPrintsTo """def meth = {
+    tree prettyPrintsTo """def meth() = {
   /** Kuuka */
   ()
 }"""
@@ -259,7 +286,7 @@ object Test4 {
   def doNothing = ()
 }
 class Test4 {
-  def bar = Transaction.run[Unit](Transaction.Kind.ReadOnly)
+  def bar() = Transaction.run[Unit](Transaction.Kind.ReadOnly)
 }"""
   }
 
@@ -293,7 +320,7 @@ abstract class C(val a: A with B) {
     """)
 
     tree prettyPrintsTo """trait A {
-  def doSomething: this.type
+  def doSomething(): this.type
 }"""
   }
 
@@ -815,9 +842,9 @@ object A"""
     """)
 
     tree prettyPrintsTo """class A {
-  private def test = 5
+  private def test() = 5
   lazy val i = 5
-  final protected def a = i
+  final protected def a() = i
 }"""
   }
 
@@ -890,7 +917,7 @@ trait CTrait {
 class ASuperClass(x: Int, val d: String)
 class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
   self_type_annotation =>
-  def someMethod = ()
+  def someMethod() = ()
 }"""
   }
 
@@ -1038,9 +1065,9 @@ trait B {
     
     class A {
       def a(): Int
-      def b(): Int = 5
+      def b: Int = 5
       def c() = 5
-      def d() = {
+      def d = {
         val a = 5
         a
       }
@@ -1052,9 +1079,9 @@ trait B {
     }
     """) prettyPrintsTo """package xy
 class A {
-  def a: Int
+  def a(): Int
   def b: Int = 5
-  def c = 5
+  def c() = 5
   def d = {
     val a = 5
     a

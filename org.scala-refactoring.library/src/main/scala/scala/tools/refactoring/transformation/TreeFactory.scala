@@ -95,7 +95,12 @@ trait TreeFactory {
 
   def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil): DefDef = {
 
-    val formalParameters = parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), s.nameString, TypeTree(s.tpe), EmptyTree)))
+    val formalParameters = { 
+      if(parameters.isEmpty)
+        Nil
+      else
+        parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), s.nameString, TypeTree(s.tpe), EmptyTree)))
+    }
 
     DefDef(mods withPosition (Flags.METHOD, NoPosition), name, Nil /*type parameters*/ , formalParameters, TypeTree(body.last.tpe), mkBlock(body))
   }

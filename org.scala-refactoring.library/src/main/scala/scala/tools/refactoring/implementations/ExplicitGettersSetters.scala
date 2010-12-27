@@ -49,7 +49,7 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
         mods = Modifiers(Flags.METHOD) withPosition (Flags.METHOD, NoPosition), 
         name = publicName, 
         tparams = Nil, 
-        vparamss = List(Nil), 
+        vparamss = Nil, 
         tpt = EmptyTree, 
         rhs = Block(
             Ident(privateName) :: Nil, EmptyTree))

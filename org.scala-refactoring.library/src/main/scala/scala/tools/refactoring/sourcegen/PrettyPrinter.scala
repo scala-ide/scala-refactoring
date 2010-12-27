@@ -148,7 +148,21 @@ trait PrettyPrinter extends AbstractPrinter {
         }
         
         val tparams_ = p(tparams, before = "\\[", after = anywhere("]"), separator = ", ")
-        val params = Layout(vparamss map (vparams => p(vparams, before = "\\(", after = "\\)", separator = (allowSurroundingWhitespace(",") ++ Blank))) mkString "")
+        
+        val params = vparamss match {
+          // no parameter list, not even an empty one
+          case Nil => 
+            NoLayout
+          case vparamss =>
+            val layout = Layout(vparamss map (vparams => p(vparams, before = "\\(", after = "\\)", separator = (allowSurroundingWhitespace(",") ++ Blank))) mkString "")
+            
+            // we want to at least empty parens, the case without any parameters is handled above
+            if(layout.asText.isEmpty && !tparams_.asText.matches(".*\\(.*\\).*")) 
+              Layout("()")
+            else
+              layout
+        }
+        
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
           Fragment(" {\n"+ ind.current +"}")
         } else {

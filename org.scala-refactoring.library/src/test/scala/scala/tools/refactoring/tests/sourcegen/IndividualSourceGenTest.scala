@@ -70,7 +70,7 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
       def someMethod(): String
     }
     """, 
-    """def someMethod: String {
+    """def someMethod(): String {
 }""", 
     """
       def someMethod(): String""")

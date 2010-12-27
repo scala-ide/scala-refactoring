@@ -30,15 +30,22 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
         
     val (call, newDef) = {
 
-      val parameters = inboundLocalDependencies(selection, selectedMethod.symbol)
+      val deps = inboundLocalDependencies(selection, selectedMethod.symbol)
+
+      val parameters = {
+        if(deps.isEmpty)
+          Nil // no argument list
+        else
+          deps :: Nil // single argument list with all parameters
+      }
       
       val returns = outboundLocalDependencies(selection, selectedMethod.symbol)
       
       val returnStatement = if(returns.isEmpty) Nil else mkReturn(returns) :: Nil
       
-      val newDef = mkDefDef(NoMods withPosition (Flags.PRIVATE, NoPosition), methodName, parameters :: Nil, selection.selectedTopLevelTrees ::: returnStatement)
+      val newDef = mkDefDef(NoMods withPosition (Flags.PRIVATE, NoPosition), methodName, parameters, selection.selectedTopLevelTrees ::: returnStatement)
       
-      val call = mkCallDefDef(methodName, parameters :: Nil, returns)
+      val call = mkCallDefDef(methodName, deps :: Nil, returns)
          
       (call, newDef)
     }
