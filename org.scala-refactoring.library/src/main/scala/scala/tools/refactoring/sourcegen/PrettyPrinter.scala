@@ -179,8 +179,12 @@ trait PrettyPrinter extends AbstractPrinter {
         val mods_ = mods map (m => m.nameString + " ") mkString ""
         val tparams_ = p(tparams, before = "\\[", after = "\\]", separator = ", ")
         val rhs_ = rhs match {
-          case rhs: TypeTree if rhs.original.isInstanceOf[TypeBoundsTree] => p(rhs, before = " ")
-          case _ => p(rhs, before = " = ")
+          case rhs: TypeTree if rhs.original.isInstanceOf[TypeBoundsTree] => 
+            p(rhs, before = " ")
+          case rhs: TypeBoundsTree => 
+            p(rhs, before = " ")
+          case _ => 
+            p(rhs, before = " = ")
         }
         Fragment(mods_ + t.nameString) ++ tparams_ ++ rhs_
         

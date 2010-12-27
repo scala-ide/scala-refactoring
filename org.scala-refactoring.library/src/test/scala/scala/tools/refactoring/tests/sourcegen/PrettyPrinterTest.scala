@@ -137,6 +137,21 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   }
   
   @Test
+  def testUpperBound() = {
+
+    val tree = DefDef(
+          NoMods withPosition (Flags.METHOD, NoPosition),
+          "eins",
+          TypeDef( NoMods, "R", Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, "Rate", Nil, EmptyTree ))) :: Nil,
+          Nil,
+          EmptyTree,
+          Literal(Constant(()))
+        )
+
+    tree prettyPrintsTo """def eins[R <: Rate] = ()"""
+  }
+  
+  @Test
   def testNew() = {
 
     val tree = treeFrom("""
