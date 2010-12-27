@@ -74,7 +74,10 @@ trait TreeFactory {
     // currying not yet supported
     val args = arguments.head map (s => Ident(s))
 
-    val call = Apply(Select(This("") setPos Invisible, name), args)
+    val call = if(args.isEmpty)
+      Select(This("") setPos Invisible, name)
+    else
+      Apply(Select(This("") setPos Invisible, name), args)
 
     returns match {
       case Nil => call

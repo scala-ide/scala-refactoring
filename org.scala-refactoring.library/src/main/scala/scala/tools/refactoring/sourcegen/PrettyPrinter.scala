@@ -332,11 +332,14 @@ trait PrettyPrinter extends AbstractPrinter {
       case Apply(fun, (arg @ Ident(name)) :: Nil) if name.toString == "_" =>
         p(fun) ++ p(arg)
         
+      // the empty tree is an implicit parameter, so we mustn't print parenthesis
+      case Apply(fun, List(EmptyTree)) =>
+        p(fun)
+        
       case Apply(fun, args) =>
-        val _1 = p(fun)
-        val _2 = p(args, before = "\\(", after = "\\)", separator = ", ")
-        val _3 = _1 ++ _2
-        _3
+        val _1 = p(fun) 
+        val _2 = p(args, separator = ", ")
+        _1 ++ "\\(" ++ _2 ++ "\\)"
         
   //    case ApplyDynamic(qual, args) =>
   //      traverse(qual)

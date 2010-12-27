@@ -128,7 +128,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     class $anon {
       println("hello from an anonymous class")
     }
-    new 
+    new ()
   }
 }"""
   }
