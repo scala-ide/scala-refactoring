@@ -10,7 +10,7 @@ import collection.mutable.ListBuffer
 import tools.nsc.Global
 import tools.nsc.util.RangePosition
 
-trait Selections {
+trait Selections extends TreeTraverser {
   
   this: CompilerAccess =>
   

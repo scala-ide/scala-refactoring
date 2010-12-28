@@ -66,5 +66,19 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     def allDefinedSymbols = cus.flatMap(_.definitions.keys)
     
     def allSymbols = cus.flatMap(cu => cu.definitions.keys ++ cu.references.keys)
+    
+    def positionToSymbol(p: global.Position): List[global.Symbol] = {
+      
+      val hasTreeWithPos: Pair[global.Symbol, List[global.Tree]] => List[global.Symbol] = {
+        case (sym, trees) if trees.exists(_.pos == p) =>
+            List(sym)
+        case _ =>
+            Nil
+      }
+      
+      cus.flatMap { cu =>
+        cu.definitions.flatMap(hasTreeWithPos) ++ cu.references.flatMap(hasTreeWithPos)
+      } filter (_ != NoSymbol) distinct
+    }
   }
 }

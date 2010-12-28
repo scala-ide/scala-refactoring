@@ -34,7 +34,8 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     
     val occurences = index.occurences(prepared.selectedTree.symbol) 
     
-    occurences foreach (s => trace("Symbol is referenced at %s (%s:%s)", s, s.pos.source.file.name, s.pos.line))
+    occurences foreach (s => trace("Symbol is referenced at %s (%s:%s, %s:%s)", 
+        s, s.pos.source.file.name, s.pos.line, s.pos.start, s.pos.end))
     
     val namePositions = occurences map (_.namePosition)
     

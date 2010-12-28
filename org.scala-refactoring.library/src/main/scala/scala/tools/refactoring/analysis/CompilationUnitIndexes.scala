@@ -36,7 +36,10 @@ trait CompilationUnitIndexes {
       def processTree(tree: Tree): Unit = {
   
         def addDefinition(t: DefTree) {
-          defs.getOrElseUpdate(t.symbol, new ListBuffer[DefTree]) += t
+          def add(s: Symbol) = 
+            defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
+          
+          add(t.symbol)
         }
   
         def addReference(s: Symbol, t: Tree) {
@@ -70,15 +73,21 @@ trait CompilationUnitIndexes {
           case t: TypeTree if t.original != null =>
             processTree(t.original)
   
-            // Special treatment for type ascription
             (t.original, t.tpe) match {
-              case (AppliedTypeTree(_, args1), TypeRef(_, _, args2)) =>
-                args1 zip args2 collect {
-                  case (i: RefTree, tpe: TypeRef) => addReference(tpe.sym, i)
-                }
+              case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
+
+                // add a reference for AppliedTypeTrees, e.g. List[T] adds a reference to List
+                //addReference(tref.sym, t)
+
+                // Special treatment for type ascription
+                args1 zip args2 foreach {
+                  case (i: RefTree, tpe: TypeRef) => 
+                    addReference(tpe.sym, i)
+                  case _ => ()
+                }              
               case _ => ()
             }
-  
+            
           case t: DefTree if t.symbol != NoSymbol =>
             addDefinition(t)
           case t: RefTree =>

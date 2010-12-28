@@ -33,18 +33,18 @@ trait TreeFactory {
 
   def mkRenamedTypeTree(t: TypeTree, name: String, originalSymbol: Symbol) = {
     val newType = t.tpe map {
-      case r@RefinedType(parents, _) =>
-        r.copy(parents = parents map {
-          case TypeRef(_, sym, _) if sym == originalSymbol =>
-            new Type {
-              override def safeToString: String = name
-            }
-          case t => t
-        })
+      case TypeRef(pre, `originalSymbol`, args) =>
+        new Type {
+          override def safeToString: String = name
+        }
       case t => t
     }
 
-    val typeTree = new TypeTree
+    val typeTree = t match {
+      case att: AppliedTypeTree => att.copy()
+      case _ => new TypeTree
+    }
+    
     typeTree setType newType
     typeTree setPos t.pos
   }

@@ -88,6 +88,15 @@ trait Indexes {
       completeClassHierarchy(s.owner) map s.overridingSymbol  filterNot global.NoSymbol.==
     
     /**
+     * From a position, returns the symbols that contain a tree 
+     * reference to that position.
+     * 
+     * This operation is expensive because it needs to scan all
+     * trees in the index.
+     */
+    def positionToSymbol(p: global.Position): List[global.Symbol]
+        
+    /**
      * Add more convenience functions here..
      */
   }

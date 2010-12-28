@@ -32,13 +32,23 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   }
   
   def assertDeclarationOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
-    case t: RefTree => 
+    case t @ (_: TypeTree | _: RefTree) => 
       index.declaration(t.symbol).head toString
   }
   
   def assertReferencesOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
-    case t @ (_: TypeTree | _: DefTree) =>
-      index.references(t.symbol).toList filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" ) mkString ", "
+    
+    def refs(s: Symbol): String =
+       index.references(s).toList filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" ) mkString ", "
+    
+    t => t match {
+      case t @ (_: TypeTree | _: DefTree) => 
+        refs(t.symbol)
+      case t: Ident =>
+        val syms = index.positionToSymbol(t.pos)
+        val allRefs = syms map refs 
+        allRefs.distinct mkString ", "
+    }
   }
   
   @Test
@@ -187,6 +197,33 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
         }
       }
       """)
+  }
+  
+    
+  @Test
+  def referencesToTypes() = {
+    val tree =  """      
+      object A {
+        def go[T](t: /*(*/ T /*)*/) = {
+          t: T
+        }
+      }
+      """
+    assertReferencesOfSelection("""T (51, 52), T (77, 78)""", tree)
+    assertDeclarationOfSelection("""type T>: Nothing <: Any""", tree)
+  }
+
+  @Test
+  def referencesToTypesInAppliedTypes() = {
+    val tree =  """      
+      object A {
+        def go(t: List[ /*(*/ String /*)*/ ]) = {
+          val s: String = ""
+          t: List[String]
+        }
+      }
+      """
+    assertReferencesOfSelection("""String (54, 60), scala.this.Predef.String (91, 97), String (121, 127)""", tree)
   }
 }
 
