@@ -69,11 +69,11 @@ trait TestHelper extends Refactoring with CompilerProvider with common.Interacti
       expected zip res foreach (p => assertEquals(p._1, p._2))
     }
   }
+  
+  val startPattern = "/*(*/"
+  val endPattern = "/*)*/"
     
   def findMarkedNodes(src: String, tree: global.Tree) = {
-    
-    val startPattern = "/*(*/"
-    val endPattern = "/*)*/"
     
     val start = src.indexOf(startPattern)
     val end   = src.indexOf(endPattern)

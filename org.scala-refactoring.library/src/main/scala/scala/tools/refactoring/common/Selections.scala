@@ -75,16 +75,28 @@ trait Selections extends TreeTraverser {
     }) orElse findSelectedOfType[SymTree]
     
     /**
-     * Finds a selected tree by its type. The tree does not have to be selected completely,
+     * Finds a selected tree by its type. 
+     * 
+     * @see findSelectedWithPredicate for more information
+     */
+    def findSelectedOfType[T](implicit m: Manifest[T]): Option[T] = 
+      findSelectedWithPredicate(t => m.erasure.isInstance(t)) map (_.asInstanceOf[T])
+    
+    /**
+     * Finds a selected tree by a predicate. The tree does not have to be selected completely,
      * it is only checked whether this selection is contained in the tree.
      * 
      * If multiple trees of the type are found, the last one (i.e. the deepest child) is returned.
-     */
-    def findSelectedOfType[T](implicit m: Manifest[T]): Option[T] = root filter (cond(_) {
-      case t => m.erasure.isInstance(t) && isPosContainedIn(pos, t.pos)
-    }) reverse match {
-      case x :: _ => Some(x.asInstanceOf[T])
-      case _ => None
+     */     
+    def findSelectedWithPredicate(predicate: Tree => Boolean): Option[Tree] = {
+      
+      val filterer = new FilterTreeTraverser(cond(_) {
+        case t => predicate(t) && isPosContainedIn(pos, t.pos)
+      })
+      
+      filterer.traverse(root)
+      
+      filterer.hits.lastOption
     }
     
     private[refactoring] lazy val allSelectedTrees: List[Tree] = {
