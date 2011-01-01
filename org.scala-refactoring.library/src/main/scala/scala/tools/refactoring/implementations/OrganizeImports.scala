@@ -56,61 +56,62 @@ abstract class OrganizeImports extends MultiStageRefactoring {
       case (pkg, tpe) =>
         new Import(Ident(pkg), new ImportSelector(tpe, -1, tpe, -1) :: Nil)
     }
-        
+            
     val organizeImports = transform {
-       case p @ PackageDef(_, stats) =>
-        
-          p copy (stats = stats partition {
-              case _: Import => true
-              case _ => false
-            } match {
-              case (existingImports, others) => 
-              
-                val sortImports: List[Tree] => List[Tree] = _.sortBy {
-                  case t: Import => t.expr.toString
-                }
-                  
-                val collapseImports: List[Tree] => List[Tree] = _.foldRight(Nil: List[Import]) { 
-                  case (imp: Import, x :: xs) if imp.expr.toString == x.expr.toString => 
-                    x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
-                  case (imp: Import, xs) => 
-                    imp :: xs
-                }
+      // in nested packages, skip the outer packages
+      case p @ PackageDef(_, stats @ (NoPackageDef(_) :: _)) =>
+         
+        p copy (stats = stats partition {
+            case _: Import => true
+            case _ => false
+          } match {
+            case (existingImports, others) => 
+            
+              val sortImports: List[Tree] => List[Tree] = _.sortBy {
+                case t: Import => t.expr.toString
+              }
+                
+              val collapseImports: List[Tree] => List[Tree] = _.foldRight(Nil: List[Import]) { 
+                case (imp: Import, x :: xs) if imp.expr.toString == x.expr.toString => 
+                  x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
+                case (imp: Import, xs) => 
+                  imp :: xs
+              }
 
-                def importsAll(i: ImportSelector) = i.name == nme.WILDCARD
+              def importsAll(i: ImportSelector) = i.name == nme.WILDCARD
+              
+              val simplifyWildcards: List[Tree] => List[Tree] = {
+                def renames(i: ImportSelector) = i.name != i.rename
                 
-                val simplifyWildcards: List[Tree] => List[Tree] = {
-                  def renames(i: ImportSelector) = i.name != i.rename
-                  
-                  _ map {
-                    case imp @ Import(_, selectors) if selectors.exists(importsAll) && !selectors.exists(renames) => 
-                      imp.copy(selectors = selectors.filter(importsAll)).setPos(imp.pos)
-                    case imp =>
-                      imp
-                  }
+                _ map {
+                  case imp @ Import(_, selectors) if selectors.exists(importsAll) && !selectors.exists(renames) => 
+                    imp.copy(selectors = selectors.filter(importsAll)).setPos(imp.pos)
+                  case imp =>
+                    imp
                 }
+              }
+              
+              val removeUnused: List[Tree] => List[Tree] = {
                 
-                val removeUnused: List[Tree] => List[Tree] = {
-                  
-                  val additionallyImportedTypes = params.importsToAdd.unzip._2
-                  
-                  _ map {
-                    case imp @ Import(_, selectors) =>
-                      val neededSelectors = selectors.filter {
-                        s => importsAll(s) || dependencies.contains(s.name.toString) || additionallyImportedTypes.contains(s.name.toString)
-                      }
-                      if(neededSelectors.size > 0)
-                        imp.copy(selectors = neededSelectors).setPos(imp.pos)
-                      else EmptyTree
-                  }
+                val additionallyImportedTypes = params.importsToAdd.unzip._2
+                
+                _ map {
+                  case imp @ Import(_, selectors) =>
+                    val neededSelectors = selectors.filter {
+                      s => importsAll(s) || dependencies.contains(s.name.toString) || additionallyImportedTypes.contains(s.name.toString)
+                    }
+                    if(neededSelectors.size > 0)
+                      imp.copy(selectors = neededSelectors).setPos(imp.pos)
+                    else EmptyTree
                 }
-                
-                ((sortImports andThen collapseImports andThen simplifyWildcards andThen removeUnused) apply (newImports ::: existingImports)) ::: others
-            }
-          ) setPos p.pos
+              }
+              
+              ((sortImports andThen collapseImports andThen simplifyWildcards andThen removeUnused) apply (newImports ::: existingImports)) ::: others
+          }
+        ) setPos p.pos
     }
     
-    val changes = organizeImports apply abstractFileToTree(selection.file)
+    val changes = (organizeImports |> topdown(matchingChildren(organizeImports))) apply abstractFileToTree(selection.file)
 
     Right(refactor(changes toList))
   }

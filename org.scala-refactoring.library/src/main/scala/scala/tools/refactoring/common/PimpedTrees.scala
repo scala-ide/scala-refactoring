@@ -781,11 +781,22 @@ trait PimpedTrees {
   }
   
   case class MultipleAssignment(names: List[ValDef], rhs: Tree) extends global.Tree
-  
-  object NoBlock {
-    def unapply(t: Tree) = t match {
-      case _: Block => None
-      case _ => Some(t)
+   
+  class NotInstanceOf[T](m: Manifest[T]) {
+    def unapply(t: Tree): Option[Tree] = {
+      if(m.erasure.isInstance(t)) {
+        None
+      } else
+        Some(t)
     }
   }
+  
+  object NotInstanceOf {
+    def apply[T](implicit m: Manifest[T]) = {
+      new NotInstanceOf[T](m)
+    }
+  }
+  
+  val NoBlock = NotInstanceOf[Block]
+  val NoPackageDef = NotInstanceOf[PackageDef]
 }

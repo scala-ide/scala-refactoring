@@ -210,4 +210,27 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
         val s: String = ""
       }    """
   } applyRefactoring organize
+    
+  @Test
+  def importsInNestedPackages = new FileSet {
+    """
+       package outer
+       package inner
+
+       import scala.collection.mutable.ListBuffer
+       import scala.collection.mutable.HashMap
+
+       object Main {
+         var hm: HashMap = null
+       }
+      """ becomes """
+       package outer
+       package inner
+       import scala.collection.mutable.HashMap
+
+       object Main {
+         var hm: HashMap = null
+       }
+      """
+  } applyRefactoring organize
 }
