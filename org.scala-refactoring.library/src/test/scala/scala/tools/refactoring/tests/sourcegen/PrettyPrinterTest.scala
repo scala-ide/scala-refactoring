@@ -142,7 +142,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
           "eins",
-          TypeDef( NoMods, "R", Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, "Rate", Nil, EmptyTree ))) :: Nil,
+          TypeDef( NoMods, mkTypeName("R"), Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, mkTypeName("Rate"), Nil, EmptyTree ))) :: Nil,
           Nil,
           EmptyTree,
           Literal(Constant(()))

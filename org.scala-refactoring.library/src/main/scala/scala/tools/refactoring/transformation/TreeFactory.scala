@@ -22,11 +22,11 @@ trait TreeFactory {
     case d: DefDef => d.copy(name = name)
     case b: Bind => b.copy(name = name)
     case s: Select => s.copy(name = name)
-    case c: ClassDef => c.copy(name = name)
-    case s: Super => s.copy(qual = name)
-    case t: This => t.copy(qual = name)
+    case c: ClassDef => c.copy(name = mkTypeName(name))
+    case s: Super => s.copy(qual = mkTypeName(name))
+    case t: This => t.copy(qual = mkTypeName(name))
     case m: ModuleDef => m.copy(name = name)
-    case t: TypeDef => t.copy(name = name)
+    case t: TypeDef => t.copy(name = mkTypeName(name))
     case t: PackageDef => t.copy(pid = Ident(name) setPos t.pid.pos)
     case t => throw new Exception("Found " + t.getClass.getName)
   }) setPos t.pos
@@ -75,9 +75,9 @@ trait TreeFactory {
     val args = arguments.head map (s => Ident(s))
 
     val call = if(args.isEmpty)
-      Select(This("") setPos Invisible, name)
+      Select(This(mkTypeName("")) setPos Invisible, name)
     else
-      Apply(Select(This("") setPos Invisible, name), args)
+      Apply(Select(This(mkTypeName("")) setPos Invisible, name), args)
 
     returns match {
       case Nil => call
@@ -133,7 +133,7 @@ trait TreeFactory {
 
     ClassDef(
       mods,
-      name,
+      mkTypeName(name),
       tparams,
       Template(
         parents,

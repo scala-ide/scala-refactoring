@@ -240,13 +240,13 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     import scala.collection.breakOut
     import scala.collection.mutable.ListBuffer
 
-    object Test {
+    object TestbreakOut {
       val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
     }
     """ becomes """
     import scala.collection.breakOut
 
-    object Test {
+    object TestbreakOut {
       val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
     }
     """
