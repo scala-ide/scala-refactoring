@@ -50,7 +50,8 @@ abstract class OrganizeImports extends MultiStageRefactoring {
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     val unit = compilationUnitOfFile(selection.pos.source.file).get
-    val dependencies = unit.depends map (_.name.toString)
+    lazy val dependencies = unit.depends map (_.name.toString)
+    lazy val dependentPackageObjectNames = unit.depends filter (_.isPackageObjectClass) map (_.tpe.safeToString)
     
     val newImports = params.importsToAdd.map {
       case (pkg, tpe) =>
@@ -93,12 +94,23 @@ abstract class OrganizeImports extends MultiStageRefactoring {
               
               val removeUnused: List[Tree] => List[Tree] = {
                 
+                def importSelectorImportsFromNeededPackageObject(t: Tree) = {
+                  dependentPackageObjectNames.exists {
+                    name =>                       
+                      val treeString = createText(t)
+                      name == "object " + treeString + "package"
+                  }                  
+                }
+                
                 val additionallyImportedTypes = params.importsToAdd.unzip._2
                 
                 _ map {
-                  case imp @ Import(_, selectors) =>
+                  case imp @ Import(expr, selectors) =>
                     val neededSelectors = selectors.filter {
-                      s => importsAll(s) || dependencies.contains(s.name.toString) || additionallyImportedTypes.contains(s.name.toString)
+                      s => importsAll(s) || 
+                           dependencies.contains(s.name.toString) || 
+                           additionallyImportedTypes.contains(s.name.toString) ||
+                           importSelectorImportsFromNeededPackageObject(expr)
                     }
                     if(neededSelectors.size > 0)
                       imp.copy(selectors = neededSelectors).setPos(imp.pos)
