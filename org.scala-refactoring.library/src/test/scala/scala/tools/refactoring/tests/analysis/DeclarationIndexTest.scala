@@ -78,7 +78,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   
   @Test
   def findShadowed() = {
-    assertDeclarationOfSelection("""val x: java.lang.String = "a"""", """
+    val src = """
       object AfindShadowed {
         private[this] val x = 1
         def go  = {
@@ -87,7 +87,11 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
           y
         }
       }
-      """)
+      """
+    if(isScala28)
+      assertDeclarationOfSelection("""val x: java.lang.String = "a"""", src)
+    else
+      assertDeclarationOfSelection("""val x: java.lang.String("a") = "a"""", src)
   }
 
   @Test
@@ -226,7 +230,11 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
         }
       }
       """
-    assertReferencesOfSelection("""String (54, 60), scala.this.Predef.String (91, 97), String (121, 127)""", tree)
+    
+    if(isScala28)        
+      assertReferencesOfSelection("""String (54, 60), scala.this.Predef.String (91, 97), String (121, 127)""", tree)
+    else
+      assertReferencesOfSelection("""scala.this.Predef.String (54, 60), scala.this.Predef.String (91, 97), scala.this.Predef.String (121, 127)""", tree)
   }
 }
 
