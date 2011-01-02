@@ -38,8 +38,11 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   
   def assertReferencesOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
     
-    def refs(s: Symbol): String =
-       index.references(s).toList filter (_.pos.isRange) map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" ) mkString ", "
+    def refs(s: Symbol): String = {
+       val ranges = index.references(s).toList filter (_.pos.isRange) sortBy(_.pos.start)
+       val strings = ranges map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
+       strings mkString ", "
+    }
     
     t => t match {
       case t @ (_: TypeTree | _: DefTree) => 
@@ -54,7 +57,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @Test
   def findValReference() = {
     assertDeclarationOfSelection("private[this] val x: Int = 1", """
-      object A {
+      object AfindValReference {
         private[this] val x = 1
         val y = /*(*/  x  /*)*/
       }
@@ -64,7 +67,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @Test
   def findValReferenceFromMethod() = {
     assertDeclarationOfSelection("private[this] val x: Int = 1", """
-      object A {
+      object AfindValReferenceFromMethod {
         private[this] val x = 1
         def go {
           val y = /*(*/  x  /*)*/
@@ -76,7 +79,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @Test
   def findShadowed() = {
     assertDeclarationOfSelection("""val x: java.lang.String = "a"""", """
-      object A {
+      object AfindShadowed {
         private[this] val x = 1
         def go  = {
           val x = "a"
@@ -90,7 +93,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @Test
   def findShadowedWithThis() = {
     assertDeclarationOfSelection("""private[this] val x: Int = 1""", """
-      object A {
+      object AfindShadowedWithThis {
         private[this] val x = 1
         def go = {
           val x = "a"
@@ -103,7 +106,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @Test
   def findMethod() = {
     assertDeclarationOfSelection("""def x(): Int = 5""", """
-      object A {
+      object AfindMethod {
         def x() = 5
         def go  = {
           val y = /*(*/  x  /*)*/ ()
@@ -178,7 +181,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     assertReferencesOfSelection("""scala.this.Predef.String (59, 65), scala.this.Predef.String (91, 97)""", """
       class Xy
       
-      object A {
+      object I {
         def go(xy: String) = {
           xy: /*(*/ String /*)*/
         }
@@ -191,7 +194,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     assertReferencesOfSelection("""scala.this.Predef.String (65, 71), scala.this.Predef.String (97, 103)""", """
       class Xy
       
-      object A {
+      object J {
         def go(xy: /*(*/ String /*)*/) = {
           xy: String
         }
@@ -203,7 +206,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @Test
   def referencesToTypes() = {
     val tree =  """      
-      object A {
+      object L {
         def go[T](t: /*(*/ T /*)*/) = {
           t: T
         }
@@ -216,7 +219,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @Test
   def referencesToTypesInAppliedTypes() = {
     val tree =  """      
-      object A {
+      object U {
         def go(t: List[ /*(*/ String /*)*/ ]) = {
           val s: String = ""
           t: List[String]

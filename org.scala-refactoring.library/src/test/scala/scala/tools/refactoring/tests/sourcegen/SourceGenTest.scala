@@ -954,20 +954,20 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     
     val tree = treeFrom("""
     package xy
-    abstract class A
-    sealed class B
-    final class C
-    protected sealed class D
+    abstract class A9
+    sealed class B9
+    final class C9
+    protected sealed class D9
     """)
     
     val modTree = (removeAuxiliaryTrees &> ↓(changeSomeModifiers)) apply tree get
     
     assertEquals("""
     package xy
-    class A
-    class B
-    class C
-    class D
+    class A9
+    class B9
+    class C9
+    class D9
     """, generateText(modTree))
   }
   
@@ -1044,7 +1044,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     
     val tree = treeFrom("""
     import java.io._
-    object A {
+    object Au {
       var file: PrintStream = null
       try { 
         val out = new FileOutputStream("myfile.txt")
@@ -1072,7 +1072,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     
     assertEquals("""
     import java.io._
-    object A {
+    object Au {
       var file: PrintStream = null
       try { 
         val out = new FileOutputStream("myfile.txt")

@@ -54,7 +54,7 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
     
     val tree = treeFrom("""
     package xy
-    case class A(i: Int, a: String)
+    case class AllEmpty(i: Int, a: String)
     """)
     
     val newTree = (removeAuxiliaryTrees &> emptyAllPositions)(tree).get

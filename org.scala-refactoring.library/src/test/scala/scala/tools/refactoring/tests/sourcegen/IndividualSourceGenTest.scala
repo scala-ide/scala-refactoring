@@ -180,14 +180,14 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   def modifiedDefDefWithFor(): Unit = {
     
     val originalDefDef = treeFrom("""
-    object Account {
-      def addInterest(accounts: Array[Account], rate: Float) {
+    object Account1 {
+      def addInterest(accounts: Array[Account1], rate: Float) {
         for (a <- accounts) {
           println(a.value)
         }
       }
     }
-    class Account {
+    class Account1 {
        // before value
        var value = 4
        // after value
@@ -206,7 +206,7 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
     
     assertEquals("""
-      def addInterest(accounts: Array[Account], rate: Float){
+      def addInterest(accounts: Array[Account1], rate: Float){
         com.synchronized( {
         for (a <- accounts) {
           println(a.value)
@@ -322,7 +322,7 @@ class Foo3 {
   def doubledName(): Unit = {
     
     val tree = treeFrom("""
-class Account {
+class Account2 {
    var value = 0
    def add1(v: Int) {
      value += v
@@ -331,7 +331,7 @@ class Account {
     """)
       
     assertEquals("""
-class Account {
+class Account2 {
    var value = 0
    def add1(v: Int) {
      value += v
@@ -346,7 +346,7 @@ class Account {
   def extraParens(): Unit = {
     
     val tree = treeFrom("""
-object Account {
+object Acco {
    def amethod(v: Int, a: Int) = 
      synchronized({
        v + a
@@ -355,7 +355,7 @@ object Account {
     """)
       
     assertEquals("""
-object Account {
+object Acco {
    def amethod(v: Int, a: Int) = 
      synchronized({
        v + a
@@ -370,7 +370,7 @@ object Account {
   def namedArgs(): Unit = {
     
     val tree = treeFrom("""
-    object Account {
+    object NamedArguments {
       def p(i: Int, before: String, separator: String, after: String) = ()
  
       p(5, separator = ", ", before = "\\{", after = "\\}")  
@@ -378,7 +378,7 @@ object Account {
     """)
       
     assertEquals("""
-    object Account {
+    object NamedArguments {
       def p(i: Int, before: String, separator: String, after: String) = ()
  
       p(5, separator = ", ", before = "\\{", after = "\\}")  
@@ -392,7 +392,7 @@ object Account {
   def namedArg(): Unit = {
     
     val tree = treeFrom("""
-    object Account {
+    object NamedArg {
       def p(first: String, second: Int) = ()
  
       def callP = {
@@ -402,7 +402,7 @@ object Account {
     """)
       
     assertEquals("""
-    object Account {
+    object NamedArg {
       def p(first: String, second: Int) = ()
  
       def callP = {
@@ -418,7 +418,7 @@ object Account {
   def namedArgWithDefault(): Unit = {
     
     val tree = treeFrom("""
-    object Account {
+    object NamedArgWithDefault {
       def p(first: String = "default", second: Int) = ()
  
       def callP = {
@@ -428,7 +428,7 @@ object Account {
     """)
       
     assertEquals("""
-    object Account {
+    object NamedArgWithDefault {
       def p(first: String = "default", second: Int) = ()
  
       def callP = {
@@ -522,21 +522,21 @@ object Account {
   def newParameterizedObject(): Unit = {
     
     val tree = treeFrom("""
-object Foo {
-   def apply[T](name: String) = new Foo[T](name)
+object Foo4 {
+   def apply[T](name: String) = new Foo4[T](name)
 }
 
-class Foo[T](name: String) {
+class Foo4[T](name: String) {
    def echo[T](t: T):T = t
 }
     """)
       
     assertEquals("""
-object Foo {
-   def apply[T](name: String) = new Foo[T](name)
+object Foo4 {
+   def apply[T](name: String) = new Foo4[T](name)
 }
 
-class Foo[T](name: String) {
+class Foo4[T](name: String) {
    def echo[T](t: T):T = t
 }
     """, generateText(removeAuxiliaryTrees apply tree get))
@@ -548,17 +548,17 @@ class Foo[T](name: String) {
   def newParameterizedObject2(): Unit = {
     
     val tree = treeFrom("""
-object Foo {
-   def apply() = { new Foo }
+object Foo5 {
+   def apply() = { new Foo5 }
 }
-class Foo
+class Foo5
     """)
       
     assertEquals("""
-object Foo {
-   def apply() = { new Foo }
+object Foo5 {
+   def apply() = { new Foo5 }
 }
-class Foo
+class Foo5
     """, generateText(removeAuxiliaryTrees apply tree get))
     
     assertEquals(0, createChanges(List(tree)).size)

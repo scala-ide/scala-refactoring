@@ -280,11 +280,11 @@ class B(l: List[T] forSome {type T})"""
       def run[T](readOnyl: Boolean) = ()
     }
     
-    object Test4 {
+    object Test44 {
        def doNothing {
        }
     }
-    class Test4 {
+    class Test44 {
        def bar() {
          Transaction.run[Unit](Transaction.Kind.ReadOnly)
        }
@@ -297,10 +297,10 @@ object Transaction {
   }
   def run[T](readOnyl: Boolean) = ()
 }
-object Test4 {
+object Test44 {
   def doNothing = ()
 }
-class Test4 {
+class Test44 {
   def bar() = Transaction.run[Unit](Transaction.Kind.ReadOnly)
 }"""
   }
@@ -868,25 +868,25 @@ object A"""
 
     val tree = treeFrom("""
     package xy
-    abstract class A
-    sealed class B
-    final class C
-    protected sealed class D
+    abstract class Aaa
+    sealed class Bbbb
+    final class Cccc
+    protected sealed class Dddd
     """)
 
     val modTree = (removeAuxiliaryTrees &> ↓(changeSomeModifiers)) apply tree get
 
     tree prettyPrintsTo """package xy
-abstract class A
-sealed class B
-final class C
-protected sealed class D"""
+abstract class Aaa
+sealed class Bbbb
+final class Cccc
+protected sealed class Dddd"""
 
     modTree prettyPrintsTo """package xy
-class A
-class B
-class C
-class D"""
+class Aaa
+class Bbbb
+class Cccc
+class Dddd"""
   }
 
   @Test
@@ -954,7 +954,7 @@ class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
 
     val tree = treeFrom("""
     import java.io._
-    object A {
+    object Aua {
       var file: PrintStream = null
       try { 
         val out = new FileOutputStream("myfile.txt")
@@ -981,7 +981,7 @@ class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
     """)
 
     tree prettyPrintsTo """import java.io._
-object A {
+object Aua {
   var file: java.io.PrintStream = null
   try {
     val out = new FileOutputStream("myfile.txt")
