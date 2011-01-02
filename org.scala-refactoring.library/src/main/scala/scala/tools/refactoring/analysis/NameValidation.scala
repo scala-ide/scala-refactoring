@@ -68,10 +68,12 @@ trait NameValidation {
     def isNameAlreadyUsedInPackageHierarchy = {
       index completePackageHierarchy s.owner flatMap (_.tpe.members) filter (_.nameString == name)
     }
-    
+
+    val owner = s.owner
+
     if(s.isPrivate || s.isLocal) {
       isNameAlreadyUsedInLocalScope
-    } else if(s.owner.isClass && !s.owner.isClassOfModule) {
+    } else if(owner.isClass && !(owner.isModuleClass || owner.isClass && nme.isLocalName(owner.name))) {
       isNameAlreadyUsedInClassHierarchy
     } else {
       isNameAlreadyUsedInPackageHierarchy
