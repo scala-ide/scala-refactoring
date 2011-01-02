@@ -19,14 +19,14 @@ trait TestHelper extends Refactoring with CompilerProvider with common.Interacti
   type ConsoleTracing = common.ConsoleTracing
   type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
-  
+    
   /**
    * A project to test multiple compilation units. Add all 
    * sources using "add" before using any of the lazy vals.
    */
   abstract class FileSet(val name: String) {
     
-    def this() = this("test")
+    def this() = this(randomFileName())
       
     private val srcs = ListBuffer[(String, String)]()
         

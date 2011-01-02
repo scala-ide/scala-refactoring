@@ -48,9 +48,15 @@ class CompilerInstance {
 trait TreeCreationMethods {
   
   val global: scala.tools.nsc.interactive.Global
+  
+  val randomFileName = {
+    val r = new java.util.Random
+    () => "file"+ r.nextInt
+  }
     
-  def treeFrom(src: String): global.Tree = 
-    global.typedTree(new BatchSourceFile("testFile", src), true)
+  def treeFrom(src: String): global.Tree = {
+    global.typedTree(new BatchSourceFile(randomFileName(), src), true)
+  }
   
   def treeFrom(source: SourceFile, forceReload: Boolean): global.Tree = 
     global.typedTree(source, forceReload)
@@ -58,6 +64,11 @@ trait TreeCreationMethods {
   def treesFrom(sources: List[SourceFile], forceReload: Boolean): List[global.Tree] =
     sources map ( treeFrom(_, forceReload) )
   
+  /**
+   * Add a source file with the given name and content to this compiler instance.
+   * 
+   * @param name the name of the file; adding different files with the same name can lead to problems
+   */
   def addToCompiler(name: String, src: String): AbstractFile = {
     val file = new BatchSourceFile(name, src)
     global.typedTree(file, true)
