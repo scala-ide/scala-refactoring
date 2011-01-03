@@ -5,6 +5,8 @@
 package scala.tools.refactoring
 package sourcegen
 
+import tools.nsc.util.RangePosition
+
 trait ReusingPrinter extends AbstractPrinter {
 
   this: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with Indentations =>
@@ -68,6 +70,16 @@ trait ReusingPrinter extends AbstractPrinter {
     val originalTree = findOriginalTree(parent) getOrElse {
       trace("Original tree not found for %s, returning EmptyFragment.", parent)
       return EmptyFragment
+    }
+    
+    def charAtTreeStartPos(t: Tree) = t.pos match {
+      case range: RangePosition => Some(t.pos.source.content(t.pos.start))
+      case _ => None
+    }
+    
+    def charBeforeTreeEndPos(t: Tree) = t.pos match {
+      case range: RangePosition => Some(t.pos.source.content(t.pos.end - 1))
+      case _ => None
     }
     
     implicit def stringToRequisite(regex: String) = Requisite.allowSurroundingWhitespace(regex)
@@ -232,6 +244,15 @@ trait ReusingPrinter extends AbstractPrinter {
       case (t: Literal, _) if t.value.tag == StringTag =>
         val escaped = t.value.stringValue.replace("""\""", """\\""")
         l ++ Fragment("\""+ escaped +"\"")  ++ r
+        
+      /*
+       * Scala 2.9:
+       * 
+       * Empty RHS of DefDefs are Literals
+       * */
+      case (t: Literal, _) if charAtTreeStartPos(t) == Some('{') && charBeforeTreeEndPos(t) == Some('}') =>
+        trace("Literal tree is empty { }")
+        Fragment((l ++ layout(t.pos.start, t.pos.end)(t.pos.source) ++ r).asText)
         
       case (t: Literal, _) =>
         l ++ Fragment(t.value.stringValue) ++ r
