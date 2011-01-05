@@ -40,37 +40,50 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     case t => t
   }
 
-  @Test(expected=classOf[IllegalArgumentException])
+  @Test
+  def testCaseClassNoArgList() {
+    mkCaseClass(name = "A", argss = Nil) prettyPrintsTo "case class A"
+  }
+  
+  @Test
+  def testCaseClassTwoArgLists() {
+    val argsList1 = (NoMods, "r1", Ident("Rate")) :: Nil
+    val argsList2 = (NoMods, "r2", Ident("Rate")) :: (NoMods, "r3", Ident("Rate")) :: Nil
+        
+    mkCaseClass(name = "A", argss = List(argsList1, argsList2)) prettyPrintsTo "case class A(r1: Rate)(r2: Rate, r3: Rate)"
+  }
+  
+  @Test
   def testCaseClassZeroArgs() {
-    mkCaseClass(name = "A", args = Nil)
+    mkCaseClass(name = "A", argss = Nil :: Nil) prettyPrintsTo "case class A()"
   }
 
   @Test
   def testCaseClassOneArg() = {
     mkCaseClass(
         name = "A", 
-        args = (NoMods, "rate", Ident("Rate")) :: Nil) prettyPrintsTo "case class A(rate: Rate)"
+        argss = ((NoMods, "rate", Ident("Rate")) :: Nil) :: Nil) prettyPrintsTo "case class A(rate: Rate)"
   }
 
   @Test
   def testCaseClassTwoArgs() = {
     mkCaseClass(
         name = "A", 
-        args = List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String")))) prettyPrintsTo "case class A(x: Int, y: String)"
+        argss = List(List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String"))))) prettyPrintsTo "case class A(x: Int, y: String)"
   }
 
   @Test
   def testClassTwoArgs() = {
     mkClass(
         name = "A", 
-        args = List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String")))) prettyPrintsTo "class A(x: Int, y: String)"
+        argss = List(List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String"))))) prettyPrintsTo "class A(x: Int, y: String)"
   }
 
   @Test
   def testClassTwoValVarArgs() = {
     mkClass(
         name = "A", 
-        args = List((NoMods withPosition (Tokens.VAL, NoPosition), "x", Ident("Int")), (NoMods withPosition (Tokens.VAR, NoPosition), "y", Ident("String")))) prettyPrintsTo "class A(val x: Int, var y: String)"
+        argss = List(List((NoMods withPosition (Tokens.VAL, NoPosition), "x", Ident("Int")), (NoMods withPosition (Tokens.VAR, NoPosition), "y", Ident("String"))))) prettyPrintsTo "class A(val x: Int, var y: String)"
   }
   
   @Test
@@ -78,7 +91,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = mkCaseClass(
         name = "A", 
-        args = (NoMods, "x", Ident("Int")) :: Nil, 
+        argss = ((NoMods, "x", Ident("Int")) :: Nil) :: Nil, 
         parents = Ident("X") :: Ident("Y") :: Nil)
     
     tree prettyPrintsTo "case class A(x: Int) extends X with Y"
@@ -89,7 +102,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = mkCaseClass(
         name = "A", 
-        args = (NoMods, "x", Ident("Int")) :: Nil, 
+        argss = ((NoMods, "x", Ident("Int")) :: Nil) :: Nil, 
         parents = Ident("X") :: Nil,
         superArgs = Ident("x") :: Nil)
     
@@ -136,6 +149,16 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
 }"""
   }
   
+  @Test
+  def testApplyHasParens() = {
+    Apply(Ident( "aa" ), Nil) prettyPrintsTo """aa()"""
+  }
+  
+  @Test
+  def testFloatLiteral() = {
+   Ident( "33.3f") prettyPrintsTo """33.3f"""
+  }
+
   @Test
   def testUpperBound() = {
 

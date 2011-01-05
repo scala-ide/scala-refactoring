@@ -44,7 +44,7 @@ trait TreeFactory {
       case att: AppliedTypeTree => att.copy()
       case _ => new TypeTree
     }
-    
+
     typeTree setType newType
     typeTree setPos t.pos
   }
@@ -74,7 +74,7 @@ trait TreeFactory {
     // currying not yet supported
     val args = arguments.head map (s => Ident(s))
 
-    val call = if(args.isEmpty)
+    val call = if (args.isEmpty)
       Select(This(mkTypeName("")) setPos Invisible, name)
     else
       Apply(Select(This(mkTypeName("")) setPos Invisible, name), args)
@@ -95,8 +95,8 @@ trait TreeFactory {
 
   def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil): DefDef = {
 
-    val formalParameters = { 
-      if(parameters.isEmpty)
+    val formalParameters = {
+      if (parameters.isEmpty)
         Nil
       else
         parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), s.nameString, TypeTree(s.tpe), EmptyTree)))
@@ -110,25 +110,30 @@ trait TreeFactory {
     case x :: Nil => Block(x :: Nil, EmptyTree)
     case xs => Block(xs.init, xs.last)
   }
-  
+
   def mkClass(
     mods: Modifiers = NoMods,
     name: String,
     tparams: List[TypeDef] = Nil,
-    args: List[(Modifiers, String, Tree)],
+    argss: List[List[(Modifiers, String, Tree)]],
     body: List[Tree] = Nil,
     parents: List[Tree] = Nil,
     superArgs: List[Tree] = Nil) = {
-  
-    val constructorArguments = args.map {
+
+    val constructorArguments = argss map (_ map {
       case (mods, name, tpe) =>
         ValDef(mods | Flags.PARAMACCESSOR, name, tpe, EmptyTree)
-    }
-    
-    val superArgsCall = superArgs match {
-      case Nil => EmptyTree
-      case args => 
-        mkDefDef(name = nme.CONSTRUCTOR.toString, body = Apply(EmptyTree, args) :: Nil)
+    })
+
+    val constructor = {
+      val body = List(superArgs) map {
+        case Nil =>
+          EmptyTree
+        case args =>
+          Apply(EmptyTree, args)
+      }
+
+      DefDef(mods withPosition (Flags.METHOD, NoPosition), nme.CONSTRUCTOR.toString, Nil, constructorArguments, TypeTree(NoType), mkBlock(body))
     }
 
     ClassDef(
@@ -138,20 +143,18 @@ trait TreeFactory {
       Template(
         parents,
         emptyValDef,
-        superArgsCall :: constructorArguments ::: body))
+        constructor :: constructorArguments.flatten ::: body))
   }
 
   def mkCaseClass(
     mods: Modifiers = NoMods,
     name: String,
     tparams: List[TypeDef] = Nil,
-    args: List[(Modifiers, String, Tree)],
+    argss: List[List[(Modifiers, String, Tree)]],
     body: List[Tree] = Nil,
     parents: List[Tree] = Nil,
     superArgs: List[Tree] = Nil) = {
 
-    if (args.size < 1) throw new IllegalArgumentException("Case-class must have at least one argument.")
-    
-    mkClass(mods withPosition (Flags.CASE, NoPosition), name, tparams, args, body, parents, superArgs)
+    mkClass(mods withPosition (Flags.CASE, NoPosition), name, tparams, argss, body, parents, superArgs)
   }
 }

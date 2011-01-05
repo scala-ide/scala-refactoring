@@ -96,7 +96,7 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(mods) ++ p(NameTree(name) setPos orig.namePosition) ++ p(impl) ++ r
       
       case (t @ TemplateExtractor(params, earlyBody, parents, self, Nil), _) =>
-        val _params = p(params, separator = ",", before = "\\(", after = "\\)")
+        val _params = params.headOption map (pms => p(pms, separator = ",", before = "\\(", after = "\\)")) getOrElse EmptyFragment
         val _parents = p(parents)
         l ++ _params ++ p(earlyBody) ++ _parents ++ p(self) ++ r
       
@@ -108,7 +108,9 @@ trait ReusingPrinter extends AbstractPrinter {
           tplStartLine == tplEndLine
         }
         
-        val preBody = l ++ p(params, separator = ",", before = NoRequisite, after = Requisite.anywhere(")")) ++ p(earlyBody) ++ p(parents) ++ p(self)
+        val params_ = params.headOption map (pms => p(pms, separator = ",", before = NoRequisite, after = Requisite.anywhere(")"))) getOrElse EmptyFragment
+        
+        val preBody = l ++ params_ ++ p(earlyBody) ++ p(parents) ++ p(self)
         
         if(origBody.isEmpty && !body.isEmpty) {
           val alreadyHasBodyInTheCode = r.matches("(?ms).*\\{.*\\}.*") 

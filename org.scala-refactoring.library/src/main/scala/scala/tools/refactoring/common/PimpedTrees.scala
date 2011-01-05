@@ -324,9 +324,30 @@ trait PimpedTrees {
       
         val pimpedTpl = additionalTemplateMethods(tpl)
               
-        val classParams = pimpedTpl.constructorParameters
+        val primaryConstructorArgs = (pimpedTpl.primaryConstructor flatMap (t => t.asInstanceOf[DefDef].vparamss)) map (_.size)
         
-        val body = removeCompilerTreesForMultipleAssignment((tpl.body filterNot (pimpedTpl.primaryConstructor ::: classParams contains)) filter keepTree)
+        // FIXME this is very very ugly
+        val classParams: List[List[ValDef]] = {
+          
+          var cp = pimpedTpl.constructorParameters
+        
+          if(primaryConstructorArgs.sum != cp.size) {
+            List(cp)
+          } else {
+          
+            val xx = primaryConstructorArgs map { i =>
+              val(current, rest) = cp.splitAt(i)
+              cp = rest
+              current
+            }
+            
+            assert(cp == Nil)
+            
+            xx
+          }
+        }
+        
+        val body = removeCompilerTreesForMultipleAssignment((tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains)) filter keepTree)
         
         val parents = (pimpedTpl.superConstructorParameters match {
           case Nil => tpl.parents
@@ -396,7 +417,7 @@ trait PimpedTrees {
       mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
       
     case TemplateExtractor(params, earlyBody, parents, self, body) =>
-      params ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
+      params.flatten ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
 
     case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
       mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil

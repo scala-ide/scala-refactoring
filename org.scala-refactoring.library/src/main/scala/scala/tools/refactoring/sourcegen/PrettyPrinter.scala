@@ -54,6 +54,25 @@ trait PrettyPrinter extends AbstractPrinter {
     
     trace("current indentation set to %s", ind.current)
     
+    def printParameterList(vparamss: List[List[ValDef]], alreadyHasParensInLayout: => Boolean) = vparamss match {
+      // no parameter list, not even an empty one
+      case Nil => 
+        NoLayout
+      case vparamss =>
+        
+        val layout = Layout(
+            vparamss map { vparams => 
+                p(vparams, before = "\\(", after = "\\)", separator = (Requisite.allowSurroundingWhitespace(",") ++ Requisite.Blank))
+            } mkString "" // ?
+        )
+        
+        // we want to at least empty parens, the case without any parameters is handled above
+        if(layout.asText.isEmpty && !alreadyHasParensInLayout) 
+          Layout("()")
+        else
+          layout
+    }
+    
     def printTemplate(tpl: Template, printExtends: Boolean): Fragment = tpl match {
       case TemplateExtractor(params, earlyBody, parents, self, body) =>
                 
@@ -86,8 +105,10 @@ trait PrettyPrinter extends AbstractPrinter {
             printIndented(self, before = R(" \\{") ++ indentedNewline, after = " =>") ++ 
             printIndented(body, before = indentedNewline, separator = indentedNewline, after = newline ++ "\\}")
         }
+        
+        val params_ = printParameterList(params, false)
 
-        p(params, before = "\\(", separator = ", ", after = "\\)") ++ sup ++ self_
+        params_ ++ sup ++ self_
     }
     
     val code: Fragment = t match {
@@ -149,19 +170,7 @@ trait PrettyPrinter extends AbstractPrinter {
         
         val tparams_ = p(tparams, before = "\\[", after = anywhere("]"), separator = ", ")
         
-        val params = vparamss match {
-          // no parameter list, not even an empty one
-          case Nil => 
-            NoLayout
-          case vparamss =>
-            val layout = Layout(vparamss map (vparams => p(vparams, before = "\\(", after = "\\)", separator = (allowSurroundingWhitespace(",") ++ Blank))) mkString "")
-            
-            // we want to at least empty parens, the case without any parameters is handled above
-            if(layout.asText.isEmpty && !tparams_.asText.matches(".*\\(.*\\).*")) 
-              Layout("()")
-            else
-              layout
-        }
+        val params = printParameterList(vparamss, tparams_.asText.matches(".*\\(.*\\).*"))
         
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
           Fragment(" {\n"+ ind.current +"}")
