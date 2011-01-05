@@ -17,7 +17,7 @@ abstract class MarkOccurrences extends common.Selections with analysis.Indexes w
     
     def positionOverlapsSelection(p: Position) = (
           ((new RangePosition(null, from, from, to)) overlaps p) ||
-          from == to && to == p.end
+          (from == to && ( to == p.end || to == p.start))
       )
     
     def occurrencesForSymbol(s: Symbol) = 
