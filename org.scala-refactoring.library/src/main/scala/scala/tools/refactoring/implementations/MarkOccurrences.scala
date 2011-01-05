@@ -37,7 +37,14 @@ abstract class MarkOccurrences extends common.Selections with analysis.Indexes w
         symbols flatMap occurrencesForSymbol
         
       case selectedLocal =>
-        val namePos = selectedLocal.namePosition
+        // source files that contain errors can lead to 
+        // position exceptions in various places, so we
+        // just catch everything here
+        val namePos = try {
+          selectedLocal.namePosition
+        } catch {
+          case _ => NoPosition
+        }
         val symbol = selectedLocal.symbol
         
         if(symbol == null || namePos == NoPosition || !positionOverlapsSelection(namePos))
