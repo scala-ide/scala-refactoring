@@ -137,6 +137,39 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   }
   
   @Test
+  def testImplicitKeyword =  {
+    
+    val tree = DefDef(
+          NoMods withPosition (Flags.IMPLICIT, NoPosition) withPosition (Flags.METHOD, NoPosition) ,
+          "eins",
+          Nil,
+          List(List(ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), "a", EmptyTree, EmptyTree))),
+          EmptyTree,
+          Literal(Constant(()))
+        )
+    
+    tree prettyPrintsTo """implicit def eins(implicit val a) = ()"""
+  }
+  
+  @Test
+  def testDefDefWithTypeParams =  {
+    
+    val arg = ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), "a", 
+                TypeDef(NoMods, "R", TypeDef(NoMods, "X", Nil, EmptyTree) :: Nil, EmptyTree), EmptyTree)
+    
+    val tree = DefDef(
+          NoMods withPosition (Flags.METHOD, NoPosition) ,
+          "m",
+          TypeDef(NoMods, "X", Nil, EmptyTree) :: Nil,
+          List(List(arg)),
+          EmptyTree,
+          Literal(Constant(()))
+        )
+    
+    tree prettyPrintsTo """def m[X](implicit val a: R[X]) = ()"""
+  }
+  
+  @Test
   def testDocDef() = {
 
     val doc = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree)

@@ -167,7 +167,7 @@ trait ReusingPrinter extends AbstractPrinter {
         l ++ p(fun) ++ p(t.args) ++ r
         
       case (t: TypeApply, _) => 
-        l ++ p(t.fun) ++ p(t.args) ++ r
+        l ++ p(t.fun) ++ p(t.args, separator = ", ") ++ r
         
       case (t @ TypeDef(ModifierTree(mods), name, tparams, rhs), orig) => 
         l ++ p(mods ::: (NameTree(t.nameString) setPos orig.namePosition) :: Nil, separator = Requisite.Blank) ++ p(tparams) ++ p(rhs)  ++ r

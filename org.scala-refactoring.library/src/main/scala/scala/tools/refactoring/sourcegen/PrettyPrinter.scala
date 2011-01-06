@@ -168,8 +168,14 @@ trait PrettyPrinter extends AbstractPrinter {
           }
         }
         
-        val tparams_ = p(tparams, before = "\\[", after = anywhere("]"), separator = ", ")
+        val tparams_ = {
+          p(tparams, before = "\\[", after = anywhere("]"), separator = ", ").toLayout 
+          // toLayout this fragment so that the anywhere-requisite gets applied here
+          // and does not match on ] that might come later (see testNewDefDefWithOriginalContent3
+          // and testDefDefWithTypeParams).
+        }
         
+        // if there's existing layout, the type parameter's layout might already contain "()"
         val params = printParameterList(vparamss, tparams_.asText.matches(".*\\(.*\\).*"))
         
         val rhs = if(t.rhs == EmptyTree && !t.symbol.isDeferred) {
