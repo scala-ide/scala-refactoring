@@ -155,6 +155,17 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   }
   
   @Test
+  def testApplyTypesToClass() = {
+    TypeApply(Ident("MyClass"), Ident("A") :: Ident("B") :: Nil) prettyPrintsTo """MyClass[A, B]"""
+  }
+  
+  @Test
+  def testClassWithTypeParams() = {
+    val c = mkClass(name = "A", tparams = List(TypeDef(NoMods, "T", Nil, EmptyTree), TypeDef(NoMods, "U", Nil, EmptyTree)))
+    c prettyPrintsTo """class A[T, U]"""
+  }
+  
+  @Test
   def testFloatLiteral() = {
    Ident( "33.3f") prettyPrintsTo """33.3f"""
   }

@@ -115,7 +115,7 @@ trait TreeFactory {
     mods: Modifiers = NoMods,
     name: String,
     tparams: List[TypeDef] = Nil,
-    argss: List[List[(Modifiers, String, Tree)]],
+    argss: List[List[(Modifiers, String, Tree)]] = Nil,
     body: List[Tree] = Nil,
     parents: List[Tree] = Nil,
     superArgs: List[Tree] = Nil) = {
@@ -150,7 +150,7 @@ trait TreeFactory {
     mods: Modifiers = NoMods,
     name: String,
     tparams: List[TypeDef] = Nil,
-    argss: List[List[(Modifiers, String, Tree)]],
+    argss: List[List[(Modifiers, String, Tree)]] = Nil,
     body: List[Tree] = Nil,
     parents: List[Tree] = Nil,
     superArgs: List[Tree] = Nil) = {
