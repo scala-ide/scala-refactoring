@@ -62,10 +62,15 @@ trait PimpedTrees {
           name, 
           global.EmptyTree) setPos name.pos
       } else {
-        val rename = NameTree(imp.rename) setPos new RangePosition(t.pos.source, imp.renamePos, imp.renamePos, imp.renamePos + imp.rename.length) 
-        ImportSelectorTree(
-          name, 
-          rename) setPos (name.pos withPoint rename.pos.start withEnd rename.pos.end)
+        val newName = NameTree(imp.rename)
+        val newTree = ImportSelectorTree(name, newName)
+        
+        if(t.pos.isRange) {
+          newName setPos new RangePosition(t.pos.source, imp.renamePos, imp.renamePos, imp.renamePos + imp.rename.length) 
+          newTree setPos (name.pos withPoint newName.pos.start withEnd newName.pos.end)
+        }
+        
+        newTree
       }
     }
     
