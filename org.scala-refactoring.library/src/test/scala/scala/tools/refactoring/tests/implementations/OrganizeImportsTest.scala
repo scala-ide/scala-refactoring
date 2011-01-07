@@ -90,7 +90,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main {val s: String = ""}
     """ becomes
     """
-      import java.lang.{String}
+      import java.lang.String
   
       object Main {val s: String = ""}
     """

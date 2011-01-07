@@ -202,7 +202,7 @@ trait LayoutHelper extends CommentHelpers {
          NoLayout → NoLayout
         
        case (c, p: Block) =>
-         layout(c.pos.end, p.pos.end) splitAfter '\n'
+         layout(c.pos.end, p.pos.end) splitBefore '\n'
          
        case (c, p: Match) =>
          layout(c.pos.end, p.pos.end) splitBefore ('\n')

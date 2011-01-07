@@ -91,4 +91,9 @@ trait TreeTransformations extends Transformations {
         tree
     }
   } transform orig
+  
+  
+  val setNoPosition = transform {
+    case t: global.Tree => t.pos = global.NoPosition; t
+  }
 }

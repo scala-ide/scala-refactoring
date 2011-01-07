@@ -407,6 +407,14 @@ trait PrettyPrinter extends AbstractPrinter {
       case lit: Literal if lit.value.tag == StringTag =>
         Fragment("\""+ lit.value.stringValue +"\"")
           
+      case Literal(c: Constant) if c.isNumeric =>
+        val suffix = c.tag match {
+          case FloatTag => "f"
+          case LongTag => "l"
+          case _ => ""
+        }
+        Fragment(c.stringValue + suffix)
+        
       case lit: Literal =>
         Fragment(lit.value.stringValue)
         

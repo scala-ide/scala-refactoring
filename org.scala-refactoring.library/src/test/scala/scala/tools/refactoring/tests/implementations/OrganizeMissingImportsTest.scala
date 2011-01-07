@@ -198,7 +198,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
       object Main {val s: String = ""; val ll = new LinkedList}
     """ becomes
     """
-      import java.lang.{String}
+      import java.lang.String
       import scala.collection.mutable.LinkedList
   
       object Main {val s: String = ""; val ll = new LinkedList}

@@ -84,11 +84,7 @@ trait TestHelper extends Refactoring with CompilerProvider with common.Interacti
       None
   }
 
-  val noPosition = transform {
-    case t: global.Tree => t.pos = global.NoPosition; t
-  }
-
-  val emptyAllPositions = topdown(noPosition)
+  val emptyAllPositions = topdown(setNoPosition)
   
   def isScala29 = isScala("2.9")
   def isScala28 = isScala("2.8")

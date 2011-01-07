@@ -109,11 +109,13 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   @Test
   def valDefRhsAlone(): Unit = {
     
-    val valDef = treeFrom("""
+    val tree = treeFrom("""
     object O {
       val a = {4 + 3  }
     }
-    """) match {
+    """)
+    
+    val valDef = tree match {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: ValDef) :: _)) :: _) => v
       case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
     }

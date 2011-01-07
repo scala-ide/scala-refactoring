@@ -137,42 +137,71 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def extractRangeParameter = new FileSet {
-    """
-  object ExtractMethod3 {
+  def extractRangeParameter = {
+    val src: String = """
+      object ExtractMethod3 {
+      
+        def main(args: Array[String]) {
+      
+          val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+      
+          val values = 1 to 10
+      
+          /*(*/val sum = sumList(values)/*)*/   // the sum
+      
+          println("The sum from 1 to 10 is "+ sum)
+        }
+      }
+      """
+      
+    val exp28: String = """
+      object ExtractMethod3 {
+      
+        def main(args: Array[String]) {
+      
+          val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+      
+          val values = 1 to 10
+          val sum = prntln(sumList, values)
+      
+          println("The sum from 1 to 10 is "+ sum)
+        }
+        private def prntln(sumList: (Seq[Int]) => Int, values: scala.collection.immutable.Range.Inclusive with scala.collection.immutable.Range.ByOne): Int = {
+      
+          /*(*/val sum = sumList(values)/*)*/   // the sum
+          sum
+        }
+      }
+      """
+      
+    val exp29: String = """
+      object ExtractMethod3 {
+      
+        def main(args: Array[String]) {
+      
+          val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+      
+          val values = 1 to 10
+          val sum = prntln(sumList, values)
+      
+          println("The sum from 1 to 10 is "+ sum)
+        }
+        private def prntln(sumList: (Seq[Int]) => Int, values: scala.collection.immutable.Range.Inclusive): Int = {
+      
+          /*(*/val sum = sumList(values)/*)*/   // the sum
+          sum
+        }
+      }
+      """
+      
+    val exp = if (isScala28) exp28 else exp29 
     
-    def main(args: Array[String]) {
-      
-      val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
-      
-      val values = 1 to 10
-      
-      /*(*/val sum = sumList(values)/*)*/   // the sum
-  
-      println("The sum from 1 to 10 is "+ sum)
+    val fs = new FileSet { 
+      src becomes exp
     }
+      
+    fs applyRefactoring extract("prntln")
   }
-    """ becomes
-    """
-  object ExtractMethod3 {
-    
-    def main(args: Array[String]) {
-      
-      val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
-      
-      val values = 1 to 10
-      val sum = prntln(sumList, values)
-  
-      println("The sum from 1 to 10 is "+ sum)
-    }
-    private def prntln(sumList: (Seq[Int]) => Int, values: scala.collection.immutable.Range.Inclusive with scala.collection.immutable.Range.ByOne): Int = {
-      
-      /*(*/val sum = sumList(values)/*)*/   // the sum
-      sum
-    }
-  }
-    """
-  } applyRefactoring extract("prntln")
 
   @Test
   def simpleExtractSeveralParameters = new FileSet {

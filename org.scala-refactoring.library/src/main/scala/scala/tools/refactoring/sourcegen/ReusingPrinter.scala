@@ -247,6 +247,9 @@ trait ReusingPrinter extends AbstractPrinter {
         val escaped = t.value.stringValue.replace("""\""", """\\""")
         l ++ Fragment("\""+ escaped +"\"")  ++ r
         
+      case (lit @ Literal(c: Constant), _) if c.isNumeric =>
+        Fragment((l ++ layout(lit.pos.start, lit.pos.end)(lit.pos.source) ++ r).asText)
+        
       /*
        * Scala 2.9:
        * 

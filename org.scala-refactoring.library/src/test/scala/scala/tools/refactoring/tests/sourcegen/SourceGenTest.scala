@@ -483,8 +483,25 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         var assignee = 1
         assignee += -42
       }""", generateText(tree))
-    
-    //TODO fixme tree prettyPrintsTo """"""
+  }
+  
+  @Test
+  def testNegativeNumber() = {
+    val tree = treeFrom("""
+      trait NegativeNumber {
+        val i = -1
+        val d = -1d
+        val f = -1f
+        val l = -1l
+      }""")
+      
+    assertEquals("""
+      trait NegativeNumber {
+        val i = -1
+        val d = -1d
+        val f = -1f
+        val l = -1l
+      }""", generateText(tree))
   }
   
   @Test

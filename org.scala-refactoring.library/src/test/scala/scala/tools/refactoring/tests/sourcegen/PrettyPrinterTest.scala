@@ -199,8 +199,16 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   }
   
   @Test
-  def testFloatLiteral() = {
+  def testFloatLiteralFromIdent() = {
    Ident( "33.3f") prettyPrintsTo """33.3f"""
+  }
+  
+  @Test
+  def testNumericLiterals() = {
+   Literal(Constant(33.3f)) prettyPrintsTo """33.3f"""
+   Literal(Constant(33.3d)) prettyPrintsTo """33.3"""
+   Literal(Constant(33)) prettyPrintsTo """33"""
+   Literal(Constant(33l)) prettyPrintsTo """33l"""
   }
 
   @Test

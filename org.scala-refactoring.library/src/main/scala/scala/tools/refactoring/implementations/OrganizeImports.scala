@@ -112,8 +112,13 @@ abstract class OrganizeImports extends MultiStageRefactoring {
                            additionallyImportedTypes.contains(s.name.toString) ||
                            importSelectorImportsFromNeededPackageObject(expr)
                     }
-                    if(neededSelectors.size > 0)
-                      imp.copy(selectors = neededSelectors).setPos(imp.pos)
+                    
+                    if(neededSelectors.size > 0) {
+                      val newExpr = (↓(setNoPosition) apply duplicateTree(expr) getOrElse expr)
+                      val newImport = imp.copy(selectors = neededSelectors, expr = newExpr)
+                      
+                      newImport
+                    }
                     else EmptyTree
                 }
               }
