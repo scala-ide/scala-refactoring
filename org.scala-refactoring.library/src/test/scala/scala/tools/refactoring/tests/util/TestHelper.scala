@@ -73,13 +73,13 @@ trait TestHelper extends Refactoring with CompilerProvider with common.Interacti
   val startPattern = "/*(*/"
   val endPattern = "/*)*/"
     
-  def findMarkedNodes(src: String, tree: global.Tree) = {
+  def findMarkedNodes(src: String, tree: global.Tree): Option[Selection] = {
     
-    val start = src.indexOf(startPattern)
-    val end   = src.indexOf(endPattern)
+    val start = commentSelectionStart(src)
+    val end   = commentSelectionEnd(src)
     
     if(start >= 0 && end >= 0)
-      Some(FileSelection(tree.pos.source.file, start + startPattern.length, end))
+      Some(FileSelection(tree.pos.source.file, start, end))
     else 
       None
   }
@@ -90,4 +90,11 @@ trait TestHelper extends Refactoring with CompilerProvider with common.Interacti
   def isScala28 = isScala("2.8")
   def isScala(version: String) = scala.util.Properties.versionString.contains(version)
   
+  def commentSelectionStart(src: String): Int = {
+    src.indexOf(startPattern) + startPattern.length
+  }
+  
+  def commentSelectionEnd(src: String): Int = {
+    src.indexOf(endPattern)
+  }
 }

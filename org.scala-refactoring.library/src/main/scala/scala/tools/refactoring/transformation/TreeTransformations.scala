@@ -73,6 +73,18 @@ trait TreeTransformations extends Transformations {
     }
   }
   
+  /**
+   * Locates the imports in a PackageDef. If we have nested packages, it will only match in the innermost.
+   */
+  val locatePackageLevelImports = transformation[Tree, (PackageDef, List[Import], List[Tree])] {
+    case p @ PackageDef(_, stats @ (NoPackageDef(_) :: _)) =>
+      val (imports, others) = stats partition {
+        case _: Import => true
+        case _ => false
+      }
+      (p, imports map (_.asInstanceOf[Import]), others)
+  }
+  
   val removeAuxiliaryTrees = ↓(transform {
 
     case t: Tree if (t.pos == NoPosition || t.pos.isRange) => t

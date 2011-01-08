@@ -48,6 +48,9 @@ trait TreeFactory {
     typeTree setType newType
     typeTree setPos t.pos
   }
+  
+  def mkImportFromStrings(qualifier: String, name: String) = 
+    new Import(Ident(qualifier), new ImportSelector(name, -1, name, -1) :: Nil)
 
   def mkRenamedImportTree(t: ImportSelectorTree, name: String) =
     ImportSelectorTree(NameTree(name) setPos t.name.pos, t.rename) setPos t.pos

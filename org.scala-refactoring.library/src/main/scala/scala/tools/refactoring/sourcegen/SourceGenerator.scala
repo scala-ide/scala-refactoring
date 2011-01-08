@@ -48,6 +48,9 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   
   private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(AbstractFile, Tree, Fragment)] = {
     
+    if(ts.exists(_.pos == NoPosition))
+      throw new IllegalArgumentException("Top-level trees cannot have a NoPosition because we need to get the source file.")
+    
     val changesByFile = ts groupBy (_.pos.source)
     
     //global.reloadSources(changesByFile.keys filter { source => !global.unitOfFile.get(source.file).isDefined} toList)
