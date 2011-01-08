@@ -18,9 +18,20 @@ trait ReusingPrinter extends AbstractPrinter {
     val originalIndentation = indentation(t)
 
     val (leadingParent, leadingChild, trailingChild, trailingParent) = surroundingLayout(t)
+    lazy val ctx = PrintingContext(ind.setTo(originalIndentation), changeSet, t)
 
     val printedFragment = if(changeSet hasChanged t) {
-      val ctx = PrintingContext(ind.setTo(originalIndentation), changeSet, t)
+      printWithExistingLayout(leadingChild, trailingChild)(ctx)
+    } else if (t.pos.isTransparent) {
+      trace("Not in change set but transparent, continue printing...")
+      /*
+       * If we have a position that is not in the changeset, we can stop printing
+       * and just use the existing source code. But there are potentially many
+       * trees with the same transparent position besides a non-transparent range,
+       * so we need to look further until we find that non-transparent range and
+       * can take its source code.
+       * 
+       * */
       printWithExistingLayout(leadingChild, trailingChild)(ctx)
     } else {
       trace("Not in change set, keep original code.")

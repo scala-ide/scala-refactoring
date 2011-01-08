@@ -93,7 +93,7 @@ trait PimpedTrees {
     def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
     def samePos(o: Tree)    : Boolean = samePos(o.pos)
-    def sameTree(o: Tree)   : Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
+    def samePosAndType(o: Tree): Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
     
     /**
      * Returns the position this tree's name has in the source code.
@@ -260,12 +260,7 @@ trait PimpedTrees {
       
     val candidates = cuRoot(tree.pos) map find flatten
     
-    candidates find (_ == tree) match {
-      case None => 
-        candidates filter (_ sameTree tree) lastOption
-      case Some(perfectMatch) => 
-        Some(perfectMatch)
-    }
+    candidates find (_ eq tree) orElse (candidates filter (_ samePosAndType tree) lastOption)
   }
 
   class TemplateMethods(t: Template) {
@@ -304,19 +299,6 @@ trait PimpedTrees {
   }
   
   implicit def additionalTemplateMethods(t: Template) = new TemplateMethods(t)
-  
-  /**
-   * Name objects are not trees, this extractor creates NameTree instances from Trees.
-   */
-  class TreeToNameTreeExtractor(t: global.Tree) {
-    object Name {
-      def unapply(name: global.Name) = {
-        Some(NameTree(name) setPos t.namePosition)
-      }
-    }
-  }
-  
-  implicit def nameTreeToNameTreeExtractor(t: global.Tree) = new TreeToNameTreeExtractor(t)
   
   /**
    * Provides a finer-grained extractor for Template that distinguishes
@@ -611,7 +593,7 @@ trait PimpedTrees {
       def find(root: Tree): Option[Tree] = {
         val cs = children(root)
         
-        if(cs.exists(_ sameTree t))
+        if(cs.exists(_ samePosAndType t))
           Some(root)
         else
           cs.flatMap(find).lastOption
@@ -651,16 +633,6 @@ trait PimpedTrees {
       }
     }
     override def toString = "NameTree("+ nameString +")"
-    override def hashCode = {
-      nameString.hashCode * 31 + (if(pos == NoPosition) NoPosition.hashCode else pos.start)
-    }
-    override def equals(other: Any) = other match {
-      case other: NameTree if pos == NoPosition && other.pos == NoPosition => 
-        other.nameString == nameString
-      case other: NameTree if pos != NoPosition && other.pos != NoPosition => 
-        other.nameString == nameString && other.pos.start == pos.start && other.pos.source == pos.source
-      case _ => false
-    }
     override def setPos(p: Position) = {
       if(p != NoPosition && p.start < 0) {
         Predef.error("pos.start is"+ p.start)
@@ -758,7 +730,7 @@ trait PimpedTrees {
           // were removed during the transformations. Therefore we have
           // to look up the original apply method
           val argumentsFromOriginalTree = compilationUnitOfFile(apply.pos.source.file) map (_.body) flatMap { root =>
-            root.find(_ sameTree apply) collect { case Apply(_, args) => args }
+            root.find(_ samePosAndType apply) collect { case Apply(_, args) => args }
           } getOrElse (return block)
           
           val syntheticNamesToRealNames = (argumentsFromOriginalTree map { 

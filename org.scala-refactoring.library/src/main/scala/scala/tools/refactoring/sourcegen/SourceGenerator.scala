@@ -73,7 +73,22 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
       case (source, tree, changes) =>
         trace("Creating code for %s. %d tree(s) in changeset.", tree.getClass.getSimpleName, changes.size)
         val f = generate(tree, new ChangeSet {
-          def hasChanged(t: Tree) = changes.contains(t)
+          def hasChanged(t: Tree) = changes.exists { 
+            /*
+             * NameTrees have a position that is calculated from their name's length, because their position
+             * is not part of the AST. So if we rename a NameTree, the end-position changes whenever the 
+             * length of the name changes. To be able to find the original of a renamed tree, we just compare 
+             * names, position start and source.
+             * 
+             * */
+            case o: NameTree if o.pos.isRange => t match {
+              case t: NameTree if t.pos.isRange => 
+                o.nameString == t.nameString && o.pos.source == t.pos.source && o.pos.start == t.pos.start
+              case _ => 
+                false
+            }
+            case o => o samePosAndType t
+          }
         }) 
         trace("Change: %s", f.center.asText)
         (source.file, tree, f)

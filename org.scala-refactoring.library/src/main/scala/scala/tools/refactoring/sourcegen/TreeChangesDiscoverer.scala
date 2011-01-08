@@ -48,7 +48,7 @@ trait TreeChangesDiscoverer {
       case None =>
         Predef.error("should never happen")
       case Some(origChld) =>
-        !(children(t) corresponds origChld) { (t1, t2) => t1.sameTree(t2) }
+        !(children(t) corresponds origChld) { (t1, t2) => t1.samePosAndType(t2) }
     }
     
     def searchChildrenForChanges(parent: Tree): List[Tree] = {
