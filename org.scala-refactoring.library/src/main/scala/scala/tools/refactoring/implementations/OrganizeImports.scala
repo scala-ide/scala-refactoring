@@ -51,9 +51,24 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory {
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     val unit = compilationUnitOfFile(selection.pos.source.file).get
-    lazy val dependencies = unit.depends map (_.name.toString)
-    lazy val dependentPackageObjectNames = unit.depends filter (_.isPackageObjectClass) map (_.tpe.safeToString)
-
+    val dependentPackageObjectNames = unit.depends filter (_.isPackageObjectClass) map (_.tpe.safeToString)
+    val dependentModules = {  
+        // a ForeachTraverser that ignores imports 
+        class ImportsIgnoringTraverser(f: Tree => Unit) extends ForeachTreeTraverser(f) { 
+                override def traverse(tree: Tree): Unit = tree match { 
+                        case Import(_, _) =>  
+                        case _ => super.traverse(tree); 
+                }
+        }
+         
+        val depModules = scala.collection.mutable.Set[Symbol]() 
+        val dependenciesCollector = new ImportsIgnoringTraverser(v =>  
+                if (v.tpe != null && v.tpe != NoType && v.tpe.typeSymbol != NoSymbol)  
+                        depModules += v.tpe.typeSymbol)          
+        dependenciesCollector.traverse(unit.body)  
+        depModules; 
+    }
+    
     val organizeImports = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, existingImports, others) =>
         val sortImports: List[Tree] => List[Tree] = _.sortBy {
@@ -94,10 +109,13 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory {
           
           _ map {
             case imp @ Import(expr, selectors) =>
-              val neededSelectors = selectors.filter {
-                s => importsAll(s) || 
-                     dependencies.contains(s.name.toString) || 
-                     additionallyImportedTypes.contains(s.name.toString) ||
+              val neededSelectors = selectors.filter { 
+                s => (importsAll(s) && (expr.symbol == NoSymbol || dependentModules.exists(m => { 
+                                        val n1 = if (m.isModuleClass) m.fullName else m.owner.fullName
+                                        val n2 = expr.symbol.fullName
+                                        n1 == n2 }))) ||
+                           dependentModules.exists(m => m.name.toString == s.name.toString) ||
+                additionallyImportedTypes.contains(s.name.toString) ||
                      importSelectorImportsFromNeededPackageObject(expr)
               }
               

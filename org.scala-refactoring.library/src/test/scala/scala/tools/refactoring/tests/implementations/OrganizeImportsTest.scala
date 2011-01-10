@@ -76,7 +76,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main {val s: String = ""; var o: Objekt = null}
     """ becomes
     """
-      import java.lang.{Object => Objekt}
+      import java.lang.{Object => Objekt, String => S}
   
       object Main {val s: String = ""; var o: Objekt = null}
     """
@@ -201,6 +201,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
   
       object Main {
         val s: String = ""
+        val s1 = valueOf(2);
       }    """ becomes
     """
       import String._
@@ -208,6 +209,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
   
       object Main {
         val s: String = ""
+        val s1 = valueOf(2);
       }    """
   } applyRefactoring organize
     
@@ -221,7 +223,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
        import scala.collection.mutable.HashMap
 
        object Main {
-         var hm: HashMap = null
+         var hm: HashMap[String, String] = null
        }
       """ becomes """
        package outer
@@ -229,7 +231,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
        import scala.collection.mutable.HashMap
 
        object Main {
-         var hm: HashMap = null
+         var hm: HashMap[String, String] = null
        }
       """
   } applyRefactoring organize
@@ -250,5 +252,20 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
     }
     """
+  } applyRefactoring organize
+  
+  @Test
+  def unusedImportWildcards = new FileSet {
+    """
+      import java.util._
+      import scala.collection._
+ 
+      object Main {
+      }    """ becomes
+    """
+      
+ 
+      object Main {
+      }    """
   } applyRefactoring organize
 }
