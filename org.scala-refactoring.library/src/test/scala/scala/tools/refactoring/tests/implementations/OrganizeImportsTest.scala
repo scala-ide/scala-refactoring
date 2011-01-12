@@ -268,4 +268,21 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main {
       }    """
   } applyRefactoring organize
+  
+  @Test
+  def appliedType = new FileSet {
+    """
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+ 
+      trait SomeTrait {
+        def m: Either[String, ListBuffer[ListBuffer[String]]]
+      }    """ becomes
+    """
+      import scala.collection.mutable.ListBuffer
+ 
+      trait SomeTrait {
+        def m: Either[String, ListBuffer[ListBuffer[String]]]
+      }    """
+  } applyRefactoring organize
 }

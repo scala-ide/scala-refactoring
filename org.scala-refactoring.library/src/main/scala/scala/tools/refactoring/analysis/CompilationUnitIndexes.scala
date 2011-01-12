@@ -17,7 +17,7 @@ import collection.mutable.{HashMap, ListBuffer}
  */
 trait CompilationUnitIndexes {
   
-  this: common.PimpedTrees with common.CompilerAccess =>
+  this: common.PimpedTrees with common.CompilerAccess with common.TreeTraverser =>
   
   import global._
   
@@ -32,99 +32,46 @@ trait CompilationUnitIndexes {
       
       val defs = new HashMap[Symbol, ListBuffer[DefTree]]
       val refs = new HashMap[Symbol, ListBuffer[Tree]]
-      
-      def processTree(tree: Tree): Unit = {
   
-        def addDefinition(t: DefTree) {
-          def add(s: Symbol) = 
-            defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
-          
-          add(t.symbol)
-        }
-  
-        def addReference(s: Symbol, t: Tree) {
-          def add(s: Symbol) = 
-            refs.getOrElseUpdate(s, new ListBuffer[Tree]) += t
+      def addDefinition(t: DefTree) {
+        def add(s: Symbol) = 
+          defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
+        
+        add(t.symbol)
+      }
 
-          add(s)
-          
-          s match {
-            case _: ClassSymbol => ()
-            /*
-             * If we only have a TypeSymbol, we check if it is 
-             * a reference to another symbol and add this to the
-             * index as well.
-             * 
-             * This is needed for example to find the TypeTree
-             * of a DefDef parameter-ValDef
-             * */
-            case ts: TypeSymbol =>
-              ts.info match {
-                case tr: TypeRef if tr.sym != null =>
-                  add(tr.sym)
-                case _ => ()
-              }
-            case _ => ()
-          }
-        }
-  
-        tree foreach {
-          // The standard traverser does not traverse a TypeTree's original:
-          case t: TypeTree if t.original != null =>
-            processTree(t.original)
-  
-            (t.original, t.tpe) match {
-              case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
+      def addReference(s: Symbol, t: Tree) {
+        def add(s: Symbol) = 
+          refs.getOrElseUpdate(s, new ListBuffer[Tree]) += t
 
-                // add a reference for AppliedTypeTrees, e.g. List[T] adds a reference to List
-                //addReference(tref.sym, t)
-
-                // Special treatment for type ascription
-                args1 zip args2 foreach {
-                  case (i: RefTree, tpe: TypeRef) => 
-                    addReference(tpe.sym, i)
-                  case _ => ()
-                }              
+        add(s)
+        
+        s match {
+          case _: ClassSymbol => ()
+          /*
+           * If we only have a TypeSymbol, we check if it is 
+           * a reference to another symbol and add this to the
+           * index as well.
+           * 
+           * This is needed for example to find the TypeTree
+           * of a DefDef parameter-ValDef
+           * */
+          case ts: TypeSymbol =>
+            ts.info match {
+              case tr: TypeRef if tr.sym != null =>
+                add(tr.sym)
               case _ => ()
             }
-            
-          case t: DefTree if t.symbol != NoSymbol =>
-            addDefinition(t)
-          case t: RefTree =>
-            val tree = if(t.pos.isRange) {
-              t setPos fixTreePositionIncludingCarriageReturn(t.pos)
-            } else t 
-            addReference(t.symbol, tree)
-          case t: TypeTree =>
-            
-            def handleType(typ: Type): Unit = typ match {
-              case RefinedType(parents, _) =>
-                parents foreach handleType
-              case TypeRef(_, sym, _) =>
-                addReference(sym, t)
-              case _ => ()
-            }
-            
-            handleType(t.tpe)
-            
-          case t @ Import(expr, _) if expr.tpe != null =>
-            
-            def handleImport(iss: List[ImportSelectorTree], sym: Symbol): Unit = iss match {
-              case Nil => 
-                ()
-              case (t @ ImportSelectorTree(NameTree(name), _)) :: _ if (name.toString == sym.name.toString)=> 
-                addReference(sym, t)
-              case _ :: rest => 
-                handleImport(rest, sym)
-            }
-            
-            expr.tpe.members foreach (handleImport(t.Selectors(), _))
-            
           case _ => ()
         }
       }
-    
-      processTree(tree)
+      
+      def handleSymbol(s: Symbol, t: Tree) = t match {
+        case t: DefTree => addDefinition(t)
+        case _ => addReference(s, t)
+      }      
+      
+      (new TreeWithSymbolTraverser(handleSymbol)).traverse(tree)
       
       new CompilationUnitIndex {
         val definitions = defs.map {case (k, v) => k → v.toList} toMap

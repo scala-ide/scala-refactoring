@@ -14,7 +14,7 @@ import common.PimpedTrees
  * indexed, and all further work is only done on demand.
  * 
  */
-trait GlobalIndexes extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes with common.PimpedTrees with common.InteractiveScalaCompiler {
+trait GlobalIndexes extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes with common.PimpedTrees with common.InteractiveScalaCompiler with common.TreeTraverser {
 
   import global._
   

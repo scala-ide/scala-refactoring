@@ -8,7 +8,7 @@ package implementations
 import common.Change
 import transformation.TreeFactory
 
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory {
+abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with common.TreeTraverser {
   
   import global._
   
@@ -53,20 +53,22 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory {
     val unit = compilationUnitOfFile(selection.pos.source.file).get
     val dependentPackageObjectNames = unit.depends filter (_.isPackageObjectClass) map (_.tpe.safeToString)
     val dependentModules = {  
-        // a ForeachTraverser that ignores imports 
-        class ImportsIgnoringTraverser(f: Tree => Unit) extends ForeachTreeTraverser(f) { 
-                override def traverse(tree: Tree): Unit = tree match { 
-                        case Import(_, _) =>  
-                        case _ => super.traverse(tree); 
-                }
+      
+      def isType(t: Tree) = 
+        t.tpe != null && t.tpe != NoType && t.tpe.typeSymbol != NoSymbol
+      
+      // a Traverser that ignores imports 
+      val importsIgnoringTraverser = new FilterTreeTraverser(isType) {
+        override def traverse(tree: Tree): Unit = tree match { 
+          case Import(_, _) =>  
+          case _ => super.traverse(tree); 
         }
-         
-        val depModules = scala.collection.mutable.Set[Symbol]() 
-        val dependenciesCollector = new ImportsIgnoringTraverser(v =>  
-                if (v.tpe != null && v.tpe != NoType && v.tpe.typeSymbol != NoSymbol)  
-                        depModules += v.tpe.typeSymbol)          
-        dependenciesCollector.traverse(unit.body)  
-        depModules; 
+      }
+      
+      // we also need all the dependencies of the compilation unit
+      val unitDependencies = unit.depends filterNot (s => s.isModuleClass || s == NoSymbol) toList
+    
+      (unitDependencies ::: (filterTree(unit.body)(importsIgnoringTraverser) map (_.tpe.typeSymbol))) distinct
     }
     
     val organizeImports = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
@@ -82,14 +84,14 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory {
             imp :: xs
         }
 
-        def importsAll(i: ImportSelector) = i.name == nme.WILDCARD
+        def wildcardImport(i: ImportSelector) = i.name == nme.WILDCARD
         
         val simplifyWildcards: List[Tree] => List[Tree] = {
           def renames(i: ImportSelector) = i.name != i.rename
           
           _ map {
-            case imp @ Import(_, selectors) if selectors.exists(importsAll) && !selectors.exists(renames) => 
-              imp.copy(selectors = selectors.filter(importsAll)).setPos(imp.pos)
+            case imp @ Import(_, selectors) if selectors.exists(wildcardImport) && !selectors.exists(renames) => 
+              imp.copy(selectors = selectors.filter(wildcardImport)).setPos(imp.pos)
             case imp =>
               imp
           }
@@ -105,18 +107,26 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory {
             }                  
           }
           
+          def isWildcardImportNeeded(expr: Tree, s: ImportSelector) = {
+            
+            def isDependentModule(m: Symbol) = {
+              val moduleName = if (m.isModuleClass) m.fullName else m.owner.fullName                          
+              val importName = expr.symbol.fullName                          
+              moduleName == importName
+            }
+            
+            expr.symbol == NoSymbol || dependentModules.exists(isDependentModule)
+          }
+          
           val additionallyImportedTypes = params.importsToAdd.unzip._2
           
           _ map {
             case imp @ Import(expr, selectors) =>
-              val neededSelectors = selectors.filter { 
-                s => (importsAll(s) && (expr.symbol == NoSymbol || dependentModules.exists(m => { 
-                                        val n1 = if (m.isModuleClass) m.fullName else m.owner.fullName
-                                        val n2 = expr.symbol.fullName
-                                        n1 == n2 }))) ||
-                           dependentModules.exists(m => m.name.toString == s.name.toString) ||
+              val neededSelectors = selectors.filter { s =>
+                (wildcardImport(s) && isWildcardImportNeeded(expr, s)) ||
+                dependentModules.exists(m => m.name.toString == s.name.toString) ||
                 additionallyImportedTypes.contains(s.name.toString) ||
-                     importSelectorImportsFromNeededPackageObject(expr)
+                importSelectorImportsFromNeededPackageObject(expr)
               }
               
               if(neededSelectors.size > 0) {
