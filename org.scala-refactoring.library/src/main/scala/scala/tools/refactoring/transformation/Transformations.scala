@@ -147,6 +147,27 @@ trait Transformations {
   def postorder[X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↑(t)
   
   /**
+   * Do a transformation until it succeeded once, then just fail.
+   *
+   * Note that because of the statefulness of once, you need to
+   * make sure that it isn't accidentally passed as a by-name
+   * parameter to another transformation and instantiated multiple
+   * times.
+   */ 
+  def once [X <: AnyRef <% (X ⇒ X) ⇒ X](t: T[X, X]): T[X, X] = new T[X, X] {
+    var alreadyMatched = false
+    def apply(x: X): Option[X] = {
+      if(alreadyMatched) return None
+      t(x) map { res =>
+        // returning the same reference
+        // does not count as "matched"
+        alreadyMatched = !(x eq res)
+        res       
+      }
+    }
+  }
+  
+  /**
    * Creates a transformation that always returns the value x.
    */ 
   def constant[X, Y](y: Y) = transformation[X, Y] {

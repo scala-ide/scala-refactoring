@@ -125,4 +125,94 @@ class AddImportStatementTest extends TestHelper {
       object Main {}
     """)
   }
+
+  @Test
+  def importWithPackage = {
+    addImport(("collection.mutable", "ListBuffer"), """
+      package just.some.pkg
+
+      object Main {val lb = ListBuffer(1)}
+    """,
+    """
+      package just.some.pkg
+      import collection.mutable.ListBuffer
+
+      object Main {val lb = ListBuffer(1)}
+    """)
+  }
+
+  @Test
+  def importWithMultiplePackages = {
+    addImport(("collection.mutable", "ListBuffer"), """
+      package just
+      package some
+      package pkg
+
+      object Main {val lb = ListBuffer(1)}
+    """,
+    """
+      package just
+      package some
+      package pkg
+      import collection.mutable.ListBuffer
+
+      object Main {val lb = ListBuffer(1)}
+    """)
+  }
+
+  @Test
+  def importWithMultiplePackagesAndBraces = {
+    addImport(("collection.mutable", "ListBuffer"), """
+      package just
+      package some
+      package pkg {
+
+      object Main {val lb = ListBuffer(1)}
+
+      }
+    """,
+    """
+      package just
+      package some
+      package pkg {
+      import collection.mutable.ListBuffer
+
+      object Main {val lb = ListBuffer(1)}
+
+      }
+    """)
+  }
+
+  @Test
+  def importWithNestedImports = {
+    addImport(("collection.mutable", "ListBuffer"), """
+      package just
+      package some
+      package pkg1 {
+
+      object Main {val lb = ListBuffer(1)}
+
+      }
+      package pkg2 {
+
+      object Main { }
+
+      }
+    """,
+    """
+      package just
+      package some
+      import collection.mutable.ListBuffer
+      package pkg1 {
+
+      object Main {val lb = ListBuffer(1)}
+
+      }
+      package pkg2 {
+
+      object Main { }
+
+      }
+    """)
+  }
 }

@@ -23,14 +23,19 @@ abstract class AddImportStatement extends Refactoring with TreeFactory with Inte
 
     import global._
     
-    val addImportStatement = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+    val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, imports, others) =>
         p copy (stats = (imports ::: List(mkImportFromStrings(pkg, name))) ::: others) replaces p
-    }
+    })
     
     val astRoot = abstractFileToTree(selection.file)
-
-    val changes = (addImportStatement |> topdown(matchingChildren(addImportStatement))) apply astRoot
+    
+    val changes = {
+      // first try it at the top level to avoid traversing
+      // the complete AST
+      addImportStatement |>
+      topdown(matchingChildren(addImportStatement))
+    } apply astRoot
 
     refactor(changes.toList)
   }
