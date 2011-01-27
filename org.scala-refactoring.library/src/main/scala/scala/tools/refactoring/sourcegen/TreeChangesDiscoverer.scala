@@ -51,10 +51,18 @@ trait TreeChangesDiscoverer {
         !(children(t) corresponds origChld) { (t1, t2) => t1.samePosAndType(t2) }
     }
     
+    def isSameAsOriginalTree(t: Tree) = {
+      val originalTree = findOriginalTree(t) 
+      originalTree map (_ eq t) getOrElse (false)
+    }
+    
     def searchChildrenForChanges(parent: Tree): List[Tree] = {
       
       def findChildren(t: Tree, parents: List[Tree]): List[Tree] = {
-        if (hasTreeInternallyChanged(t)) {
+        if (isSameAsOriginalTree(t)) {
+          trace("  Tree %s is unchanged.", t.getClass.getSimpleName)
+          Nil
+        } else if (hasTreeInternallyChanged(t)) { 
           trace("  Tree %s has changed internally.", t.getClass.getSimpleName)
           t :: parents ::: searchChildrenForChanges(t)
         } else if (hasChangedChildren(t)) {
@@ -68,7 +76,10 @@ trait TreeChangesDiscoverer {
       children(parent) flatMap (findChildren(_, Nil))
     }
     
-    if (hasTreeInternallyChanged(t)) {
+    if (isSameAsOriginalTree(t)) {
+      trace("Tree %s is unchanged.", t.getClass.getSimpleName)
+      Nil
+    } else if (hasTreeInternallyChanged(t)) {
       trace("Tree %s has changed internally.", t.getClass.getSimpleName)
       List((t, Set(t) ++ searchChildrenForChanges(t)))
     } else if (hasChangedChildren(t)) {
