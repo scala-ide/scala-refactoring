@@ -21,18 +21,21 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
     
-    def getMissingTypeNameForErroneousTree(t: Tree): String = t match {
-      case Apply(Select(n: New, _), args) => 
-        n.tpt.nameString
-      case Apply(fun, args) => 
-        fun.nameString
-      case t: Select => 
-        t.name.toString
-      case t: Ident => 
-        t.name.toString
-      case t => 
-        val n = t.nameString
-        n
+    def getMissingTypeNameForErroneousTree(t: Tree): String = try {
+      t match {
+        case Apply(Select(n: New, _), args) => 
+          n.tpt.nameString
+        case Apply(fun, args) => 
+          fun.nameString
+        case t: Select => 
+          t.name.toString
+        case t: Ident => 
+          t.name.toString
+        case t => 
+          t.nameString
+      }
+    } catch {
+      case _ => "Unhandled tree: "+ t.getClass.getSimpleName +". Please report a bug."
     }
     
     val erroneousTrees = s.root.filter {
