@@ -16,7 +16,7 @@ trait TreeTraverser {
   
   import global._
   
-  class Traverser extends global.Traverser {
+  trait Traverser extends global.Traverser {
     override def traverse(t: Tree) = t match {
       // The standard traverser does not traverse a TypeTree's original:
       case t: TypeTree if t.original != null =>
@@ -26,15 +26,9 @@ trait TreeTraverser {
     }
   }
   
-  class FilterTreeTraverser(p: Tree => Boolean) extends Traverser {
-    val hits = new ListBuffer[Tree]
-    override def traverse(t: Tree) {
-      if (p(t)) hits += t
-      super.traverse(t)
-    }
-  }
-  
-  def filterTree(t: Tree)(traverser: FilterTreeTraverser) = {
+  class FilterTreeTraverser(p: Tree => Boolean) extends global.FilterTreeTraverser(p) with Traverser
+
+  def filterTree(t: Tree, traverser: FilterTreeTraverser) = {
     traverser.traverse(t)
     traverser.hits.toList
   }
@@ -47,10 +41,7 @@ trait TreeTraverser {
     
           (t.original, t.tpe) match {
             case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
-    
-              // add a reference for AppliedTypeTrees, e.g. List[T] adds a reference to List
-              //addReference(tref.sym, t)
-    
+
                 args1 zip args2 foreach {
                   case (i: RefTree, tpe: TypeRef) => 
                     f(tpe.sym, i)

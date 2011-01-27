@@ -4,11 +4,10 @@
 
 package scala.tools.refactoring
 package implementations
-
-import common.Change
+import common.{TreeTraverser, Change}
 import transformation.TreeFactory
 
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with common.TreeTraverser {
+abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder {
   
   import global._
   
@@ -51,25 +50,8 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     val unit = compilationUnitOfFile(selection.pos.source.file).get
-    val dependentPackageObjectNames = unit.depends filter (_.isPackageObjectClass) map (_.tpe.safeToString)
-    val dependentModules = {  
-      
-      def isType(t: Tree) = 
-        t.tpe != null && t.tpe != NoType && t.tpe.typeSymbol != NoSymbol
-      
-      // a Traverser that ignores imports 
-      val importsIgnoringTraverser = new FilterTreeTraverser(isType) {
-        override def traverse(tree: Tree): Unit = tree match { 
-          case Import(_, _) =>  
-          case _ => super.traverse(tree); 
-        }
-      }
-      
-      // we also need all the dependencies of the compilation unit
-      val unitDependencies = unit.depends filterNot (s => s.isModuleClass || s == NoSymbol) toList
-    
-      (unitDependencies ::: (filterTree(unit.body)(importsIgnoringTraverser) map (_.tpe.typeSymbol))) distinct
-    }
+    //val dependentPackageObjectNames = computeDependentPackageObjectNames(unit)
+    //val dependentModules = computeDependentModules(unit)
     
     val organizeImports = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, existingImports, others) =>
@@ -83,8 +65,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           case (imp: Import, xs) => 
             imp :: xs
         }
-
-        def wildcardImport(i: ImportSelector) = i.name == nme.WILDCARD
         
         val simplifyWildcards: List[Tree] => List[Tree] = {
           def renames(i: ImportSelector) = i.name != i.rename
@@ -99,34 +79,13 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         
         val removeUnused: List[Tree] => List[Tree] = {
           
-          def importSelectorImportsFromNeededPackageObject(t: Tree) = {
-            dependentPackageObjectNames.exists {
-              name =>                       
-                val treeString = createText(t)
-                name == "object " + treeString + "package"
-            }                  
-          }
-          
-          def isWildcardImportNeeded(expr: Tree, s: ImportSelector) = {
-            
-            def isDependentModule(m: Symbol) = {
-              val moduleName = if (m.isModuleClass) m.fullName else m.owner.fullName                          
-              val importName = expr.symbol.fullName                          
-              moduleName == importName
-            }
-            
-            expr.symbol == NoSymbol || dependentModules.exists(isDependentModule)
-          }
-          
           val additionallyImportedTypes = params.importsToAdd.unzip._2
           
           _ map {
             case imp @ Import(expr, selectors) =>
               val neededSelectors = selectors.filter { s =>
-                (wildcardImport(s) && isWildcardImportNeeded(expr, s)) ||
-                dependentModules.exists(m => m.name.toString == s.name.toString) ||
-                additionallyImportedTypes.contains(s.name.toString) ||
-                importSelectorImportsFromNeededPackageObject(expr)
+                neededImportSelector(unit, expr, s) ||
+                additionallyImportedTypes.contains(s.name.toString)                 
               }
               
               if(neededSelectors.size > 0) {

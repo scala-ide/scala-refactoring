@@ -52,9 +52,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
       throw new IllegalArgumentException("Top-level trees cannot have a NoPosition because we need to get the source file.")
     
     val changesByFile = ts groupBy (_.pos.source)
-    
-    //global.reloadSources(changesByFile.keys filter { source => !global.unitOfFile.get(source.file).isDefined} toList)
-    
+        
     val topLevelTreesByFile = changesByFile map {
       case (source, ts) => (source, findTopLevelTrees(ts))
     }
