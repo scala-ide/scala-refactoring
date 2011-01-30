@@ -471,7 +471,7 @@ trait PrettyPrinter extends AbstractPrinter {
         Fragment(t.nameString)
         
       case DocDef(DocComment(comment, pos), tree) =>
-         Fragment(comment) ++ p(tree)
+        ind.fixIndentation(comment, "") ++ p(tree)
         
       case t: Tree => 
         Fragment("«?"+ t.getClass.getSimpleName +"?»")

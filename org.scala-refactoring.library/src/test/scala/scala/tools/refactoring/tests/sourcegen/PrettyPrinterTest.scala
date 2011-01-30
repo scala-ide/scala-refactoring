@@ -39,6 +39,34 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
       t.copy(mods = NoMods withPosition (Tokens.VAL, NoPosition)) setPos t.pos
     case t => t
   }
+  
+  @Test
+  def testMethodDocDef() = {
+    
+    val doc = """/**
+ * Bla
+ * 
+ * Bla bla
+ * /
+"""
+    val method = DocDef(DocComment(doc, NoPosition),mkDefDef(name = "meth", body = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree) :: Ident("()") :: Nil))
+        
+    val tree = mkCaseClass(
+        name = "A",
+        body = method :: Nil)
+    
+    tree prettyPrintsTo """case class A {
+  /**
+   * Bla
+   * 
+   * Bla bla
+   * /
+  def meth() = {
+    /** Kuuka */
+    ()
+  }
+}"""
+  }
 
   @Test
   def testCaseClassNoArgList() {
