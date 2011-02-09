@@ -7,6 +7,7 @@ package sourcegen
 
 import tools.nsc.symtab.{Flags, Names, Symbols}
 import Requisite._
+import Predef.{augmentString => _} // for 2.8.0, implicits
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
@@ -475,7 +476,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
     
     override def Super(tree: Super, qual: Name, mix: Name)(implicit ctx: PrintingContext) = {
-      val q = if(qual.toString == "") "" else qual +"."
+      val q = if(qual.toString == "") "" else qual.toString +"."
       val m = if(mix.toString == "") "" else "["+ mix + "]"
       Fragment(q +"super"+ m)      
     }
@@ -515,7 +516,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         val printed = p(firstWithExistingCode)
         if(printed.leading.matches("(?ms).*\\{.*")) {
           
-          val ExtractOpeningBrace = "(?ms)(.*\\{.*)(\n.*)".r
+          val ExtractOpeningBrace = new scala.util.matching.Regex("(?ms)(.*\\{.*)(\n.*)")
           val ExtractOpeningBrace(leading, rest) = printed.leading.asText
           
           val printedStats = stats map { 
@@ -566,7 +567,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
     
     override def This(tree: This, qual: Name)(implicit ctx: PrintingContext) = {
-      Fragment((if(qual.toString == "") "" else qual +".") + "this")
+      Fragment((if(qual.toString == "") "" else qual.toString +".") + "this")
     }
     
     override def Ident(tree: Ident, name: Name)(implicit ctx: PrintingContext) = {
