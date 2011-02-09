@@ -13,6 +13,7 @@ import tools.nsc.interactive.Global
 import tools.nsc.reporters.ConsoleReporter
 import tools.nsc.util.BatchSourceFile
 import tools.nsc.util.SourceFile
+import tools.nsc.interactive.Response
 
 class CompilerInstance {
   
@@ -47,6 +48,10 @@ class CompilerInstance {
 
 trait TreeCreationMethods {
   
+  def isScala29 = isScala("2.9")
+  def isScala28 = isScala("2.8")
+  def isScala(version: String) = scala.util.Properties.versionString.contains(version)
+    
   val global: scala.tools.nsc.interactive.Global
   
   val randomFileName = {
@@ -55,11 +60,39 @@ trait TreeCreationMethods {
   }
     
   def treeFrom(src: String): global.Tree = {
-    global.typedTree(new BatchSourceFile(randomFileName(), src), true)
+    val file = new BatchSourceFile(randomFileName(), src)
+    treeFrom(file, true)
   }
   
-  def treeFrom(source: SourceFile, forceReload: Boolean): global.Tree = 
-    global.typedTree(source, forceReload)
+  def treeFrom(file: SourceFile, forceReload: Boolean): global.Tree = {
+    if(isScala28) {
+      treeFromCompiler28(file, forceReload)
+    } else {
+      treeFromCompiler29(file)
+    }
+  }
+  
+  private def treeFromCompiler28(file: SourceFile, forceReload: Boolean) = {
+    global.typedTree(file, forceReload)
+  }
+  
+  private def treeFromCompiler29(file: SourceFile) = {
+    
+    type Scala29Compiler = {
+      def askParsedEntered(file: SourceFile, keepLoaded: Boolean, response: Response[global.Tree]): Unit
+      def askType(file: SourceFile, forceReload: Boolean, respone: Response[global.Tree]): Unit
+    }
+    
+    val newCompiler = global.asInstanceOf[Scala29Compiler]
+    
+    val r1 = new Response[global.Tree]
+    newCompiler.askParsedEntered(file, true, r1)
+    r1.get // we don't care about the result yet
+    
+    val r2 = new Response[global.Tree]
+    newCompiler.askType(file, false, r2)
+    r2.get.left.get // it's ok to fail
+  }
 
   def treesFrom(sources: List[SourceFile], forceReload: Boolean): List[global.Tree] =
     sources map ( treeFrom(_, forceReload) )
@@ -71,7 +104,7 @@ trait TreeCreationMethods {
    */
   def addToCompiler(name: String, src: String): AbstractFile = {
     val file = new BatchSourceFile(name, src)
-    global.typedTree(file, true)
+    treeFrom(file, true) // use the side effect
     file.file
   } 
 }

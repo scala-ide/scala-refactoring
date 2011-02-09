@@ -99,7 +99,8 @@ class AddImportStatementTest extends TestHelper {
 
   @Test
   def importExistsBetweenPackages = {
-    addImport(("collection.mutable", "ListBuffer"), """
+    
+    val src = """
       package nstd
 
       import collection.mutable.HashMap
@@ -110,8 +111,9 @@ class AddImportStatementTest extends TestHelper {
       import collection.mutable.HashMap
 
       object Main {}
-    """,
     """
+    
+    val exp28 = """
       package nstd
 
       import collection.mutable.HashMap
@@ -123,7 +125,26 @@ class AddImportStatementTest extends TestHelper {
       import collection.mutable.HashMap
 
       object Main {}
-    """)
+    """
+    
+    val exp29 = """
+      package nstd
+
+      import collection.mutable.HashMap
+
+      import collection.mutable.HashMap
+      import collection.mutable.HashMap
+      import collection.mutable.ListBuffer
+
+      package pckg
+
+      object Main {}
+    """
+    
+    if(isScala28)
+      addImport(("collection.mutable", "ListBuffer"), src, exp28)
+    else
+      addImport(("collection.mutable", "ListBuffer"), src, exp29)
   }
 
   @Test

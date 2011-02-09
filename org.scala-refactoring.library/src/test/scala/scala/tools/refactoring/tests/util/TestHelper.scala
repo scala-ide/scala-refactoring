@@ -86,10 +86,6 @@ trait TestHelper extends Refactoring with CompilerProvider with common.Interacti
 
   val emptyAllPositions = topdown(setNoPosition)
   
-  def isScala29 = isScala("2.9")
-  def isScala28 = isScala("2.8")
-  def isScala(version: String) = scala.util.Properties.versionString.contains(version)
-  
   def commentSelectionStart(src: String): Int = {
     src.indexOf(startPattern) + startPattern.length
   }

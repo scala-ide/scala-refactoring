@@ -323,8 +323,9 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
     
   @Test
-  def extractBlockExpression = new FileSet {
-    """
+  def extractBlockExpression = {
+    
+    val src = """
     package extractBlockExpression
     class A {
       def extractFrom(): Int = {
@@ -332,8 +333,9 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
 /*(*/   a + 1    /*)*/
       }
     }
-    """ becomes
     """
+    
+    val exp28 = """
     package extractBlockExpression
     class A {
       def extractFrom(): Int = {
@@ -345,11 +347,33 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring extract("inc")
+      
+    val exp29 = """
+    package extractBlockExpression
+    class A {
+      def extractFrom(): Int = {
+        val a = 1
+        inc(a)
+      }
+      private def inc(a: Int): Int = {
+/*(*/   a + 1    /*)*/
+      }
+    }
+    """
+    
+    val exp = if (isScala28) exp28 else exp29 
+    
+    val fs = new FileSet { 
+      src becomes exp
+    }
+      
+    fs applyRefactoring extract("inc")
+  }
     
   @Test
-  def replaceWholeMethod = new FileSet {
-    """
+  def replaceWholeMethod = {
+    
+    val src = """
     package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
@@ -357,8 +381,9 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         a + 1    /*)*/
       }
     }
-    """ becomes
     """
+      
+    val exp28 = """
     package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
@@ -370,7 +395,28 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring extract("inc")
+      
+    val exp29 = """
+    package replaceWholeMethod
+    class A {
+      def extractFrom(): Int = {
+        inc
+      }
+      private def inc: Int = {
+/*(*/   val a = 1
+        a + 1    /*)*/
+      }
+    }
+    """
+        
+    val exp = if (isScala28) exp28 else exp29 
+    
+    val fs = new FileSet { 
+      src becomes exp
+    }
+      
+    fs applyRefactoring extract("inc")
+  }
     
   @Test
   def extractIfCond = new FileSet {

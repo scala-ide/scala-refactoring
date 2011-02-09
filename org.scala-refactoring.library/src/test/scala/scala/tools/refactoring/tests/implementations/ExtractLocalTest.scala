@@ -353,16 +353,18 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("isOdd"))
   
   @Test
-  def extractFromValBlock = new FileSet {
-    """
+  def extractFromValBlock = {
+    
+    val src = """
       class Extr2 {
         val a = {
           val i = 1
           /*(*/i + 2/*)*/
         }
       }
-    """ becomes
     """
+      
+    val exp28 = """
       class Extr2 {
         val a = {
           val i = 1
@@ -372,7 +374,26 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  } applyRefactoring(extract("addTwo"))
+      
+    val exp29 = """
+      class Extr2 {
+        val a = {
+          val i = 1
+          val addTwo = 
+          /*(*/i + 2/*)*/
+          addTwo
+        }
+      }
+    """
+    
+    val exp = if (isScala28) exp28 else exp29 
+    
+    val fs = new FileSet { 
+      src becomes exp
+    }
+      
+    fs applyRefactoring extract("addTwo")
+  }
   
   @Test
   def extractFromThen = new FileSet {
