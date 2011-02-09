@@ -17,7 +17,7 @@ trait LayoutHelper extends CommentHelpers {
   
   import global._
       
-  def surroundingLayout(t: Tree) = findOriginalTree(t) map { t =>
+  def surroundingLayoutFromParentsAndSiblings(t: Tree) = findOriginalTree(t) map { t =>
   
     def layoutFromParent() = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
       case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
@@ -26,26 +26,37 @@ trait LayoutHelper extends CommentHelpers {
       case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child with parent %s", p.getClass.getSimpleName))
       case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right, parent = p) \\ (_ => trace("enclosed child"))
     }
-    
-    def layoutFromChildren() = children(t) match {
-      case Nil =>
-        NoLayout → NoLayout
-      case c => 
-        splitLayoutBetweenParentAndFirstChild(parent = t, child = c.head)._1 →
-        splitLayoutBetweenLastChildAndParent (parent = t, child = c.last)._2
-    }
-    
+
     val (leadingLayoutFromParent, trailingLayoutFromParent) = layoutFromParent()
-    val (leadingLayoutFromChild, trailingLayoutFromChild) = layoutFromChildren()
     
     trace("parent leading:  %s", leadingLayoutFromParent.toString)
     trace("parent trailing: %s", trailingLayoutFromParent.toString)
-    trace("child leading:   %s", leadingLayoutFromChild.toString)
-    trace("child trailing:  %s", trailingLayoutFromChild.toString)
     
-    (leadingLayoutFromParent, leadingLayoutFromChild, trailingLayoutFromChild, trailingLayoutFromParent)
+    (leadingLayoutFromParent, trailingLayoutFromParent)
     
-  } getOrElse (NoLayout, NoLayout, NoLayout, NoLayout)
+  } getOrElse (NoLayout, NoLayout)
+  
+  def leadingLayoutForTree(t: Tree): Layout = {
+    findOriginalTree(t) map { t => 
+      children(t) match {
+        case Nil =>
+          NoLayout
+        case c => 
+          splitLayoutBetweenParentAndFirstChild(parent = t, child = c.head)._1
+      }
+    } getOrElse NoLayout \\ (l => trace("leading layout for tree:  %s", l.toString))
+  }
+  
+  def trailingLayoutForTree(t: Tree): Layout = {
+    findOriginalTree(t) map { t => 
+      children(t) match {
+        case Nil =>
+          NoLayout
+        case c => 
+          splitLayoutBetweenLastChildAndParent (parent = t, child = c.last)._2
+      }
+    } getOrElse NoLayout \\ (l => trace("trailing layout for tree:  %s", l.toString))
+  }
   
   def layout(start: Int, end: Int)(implicit s: SourceFile) = Layout(s, start, end)
   def between(l: Tree, r: Tree)(implicit s: SourceFile) = layout(l.pos.end, r.pos.start)(s)

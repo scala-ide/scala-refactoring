@@ -282,7 +282,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
         Nil match {
           case Nil =>
             println("huhu")
-          5 + 1
+            5 + 1
         }
       }
     """
@@ -422,7 +422,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         val a = {
           val i = 1
-        /*(*/i + 2
+          /*(*/i + 2
         }
       }
     """

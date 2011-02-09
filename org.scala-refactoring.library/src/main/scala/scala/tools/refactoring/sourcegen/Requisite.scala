@@ -39,11 +39,24 @@ trait Requisite {
 
 object Requisite {
     
-  def allowSurroundingWhitespace(regex: String) = new Requisite {
-    def isRequired(l: Layout, r: Layout) = {
-      !l.matches(".*\\s*"+ regex +"\\s*$") && !r.matches("^\\s*"+ regex + ".*")
+  def allowSurroundingWhitespace(str: String): Requisite = {
+    
+    val regexSafeString = str flatMap {
+      case '(' => "\\("
+      case ')' => "\\)"
+      case '{' => "\\{"
+      case '}' => "\\}"
+      case '[' => "\\["
+      case ']' => "\\]"
+      case c => c.toString
     }
-    def getLayout = Layout(regex.replace("\\", ""))
+    
+    new Requisite {
+      def isRequired(l: Layout, r: Layout) = {
+        !l.matches(".*\\s*"+ regexSafeString +"\\s*$") && !r.matches("^\\s*"+ regexSafeString + ".*")
+      }
+      def getLayout = Layout(regexSafeString.replace("\\", ""))
+    }
   }
   
   def anywhere(s: String) = new Requisite {

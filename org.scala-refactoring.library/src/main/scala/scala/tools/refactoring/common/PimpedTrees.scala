@@ -19,7 +19,7 @@ import scala.tools.nsc.Global
  */
 trait PimpedTrees {
   
-  this: CompilerAccess =>
+  pimpedTrees: CompilerAccess =>
     
   import global._
 
@@ -221,6 +221,7 @@ trait PimpedTrees {
         case t: LabelDef if t.name.toString startsWith "doWhile" => "while"
         case t: DefTree => extractName(t.name)
         case t: RefTree => extractName(t.name)
+        case t: NameTree => t.nameString
         case ImportSelectorTree(NameTree(name), _) => name.toString
         case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
       }

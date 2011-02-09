@@ -169,7 +169,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
           val list = (1 to 10) toList
 
      /*(*/  val largerThree = list filter (_ > 3)/*)*/ 
-          largerThree filter (_ < 6)
+            largerThree filter (_ < 6)
         }
       }
     """
@@ -547,7 +547,7 @@ object ExtractMethod2 {
         List() match {
           case Nil => 
             val isFalse = false
-          true && /*(*/isFalse/*)*/
+            true && /*(*/isFalse/*)*/
         }
       }
     """

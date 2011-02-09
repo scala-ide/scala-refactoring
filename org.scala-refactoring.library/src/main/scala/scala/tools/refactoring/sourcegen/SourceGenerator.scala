@@ -8,7 +8,7 @@ package sourcegen
 import tools.nsc.io.AbstractFile
 import common.{PimpedTrees, Tracing, Change}
 
-trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting  with TreeChangesDiscoverer {
+trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting with TreeChangesDiscoverer {
   
   self: Tracing with common.CompilerAccess =>
   
@@ -38,12 +38,16 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
    */
   def createText(t: Tree): String = generate(t).asText
   
+  object AllTreesHaveChanged extends ChangeSet {
+    def hasChanged(t: Tree) = true
+  }
+  
   private[refactoring] def generate(tree: Tree, changeset: ChangeSet = AllTreesHaveChanged): Fragment = {
 
     val initialIndentation = if(tree.hasExistingCode) indentation(tree) else ""
     val in = new Indentation(defaultIndentationStep, initialIndentation)
 
-    print(tree, in, changeset)
+    print(tree, PrintingContext(in, changeset, tree))
   }
   
   private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(AbstractFile, Tree, Fragment)] = {
@@ -92,8 +96,8 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
         (source.file, tree, f)
     } toList
   }
-  
-  override def print(t: Tree, i: Indentation, changeset: ChangeSet): Fragment = {
+    
+  override def print(t: Tree, ctx: PrintingContext): Fragment = {
     
     def hasOriginalTree = findOriginalTree(t).isDefined
     
@@ -104,14 +108,14 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     
     if(t.hasExistingCode) {
       if(hasOriginalTree)
-        super[ReusingPrinter].print(t, i, changeset)
+        reusingPrinter.dispatchToPrinter(t, ctx)
       else {
         originalTreeNotFound()
         EmptyFragment
       }
     }
     else if(t.hasNoCode)
-      super[PrettyPrinter].print(t, i, changeset)
+      prettyPrinter.dispatchToPrinter(t, ctx)
     else
       EmptyFragment
   }
