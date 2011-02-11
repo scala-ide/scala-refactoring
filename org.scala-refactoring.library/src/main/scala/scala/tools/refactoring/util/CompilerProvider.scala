@@ -13,7 +13,6 @@ import tools.nsc.interactive.Global
 import tools.nsc.reporters.ConsoleReporter
 import tools.nsc.util.BatchSourceFile
 import tools.nsc.util.SourceFile
-import tools.nsc.interactive.Response
 
 class CompilerInstance {
   
@@ -73,10 +72,19 @@ trait TreeCreationMethods {
   }
   
   private def treeFromCompiler28(file: SourceFile, forceReload: Boolean) = {
-    global.typedTree(file, forceReload)
+    
+    type Scala28Compiler = {
+      def typedTree(file: SourceFile, forceReload: Boolean): global.Tree 
+    }
+    
+    val newCompiler = global.asInstanceOf[Scala28Compiler]
+    
+    newCompiler.typedTree(file, forceReload)
   }
   
   private def treeFromCompiler29(file: SourceFile) = {
+    
+    import tools.nsc.interactive.Response
     
     type Scala29Compiler = {
       def askParsedEntered(file: SourceFile, keepLoaded: Boolean, response: Response[global.Tree]): Unit
