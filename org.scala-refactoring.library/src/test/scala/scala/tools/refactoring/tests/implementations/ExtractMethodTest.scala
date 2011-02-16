@@ -844,4 +844,79 @@ object ExtractMethod2 {
 }
     """
   } applyRefactoring extract("certainlyTrue")
+    
+  @Test
+  def localFunctionAsParameter = new FileSet {
+    """
+object ExtractWithLocalFunction { 
+  def method {
+    def add1(x: Int) = x + 1
+    val i = 1
+    /*(*/add1(i)/*)*/
+  }
+}
+    """ becomes
+    """
+object ExtractWithLocalFunction { 
+  def method {
+    def add1(x: Int) = x + 1
+    val i = 1
+    call(add1, i)/*)*/
+  }
+  private def call(add1: Int => Int, i: Int): Unit = {
+    /*(*/add1(i)
+  }
+}
+    """
+  } applyRefactoring extract("call")
+    
+  @Test
+  def localFunctionAsParameter2 = new FileSet {
+    """
+object ExtractWithLocalFunction2 { 
+  def method {
+    def add(x: Int, y: Int) = x + y
+    val i = 1
+    val j = 1
+    /*(*/add(i, j)/*)*/
+  }
+}
+    """ becomes
+    """
+object ExtractWithLocalFunction2 { 
+  def method {
+    def add(x: Int, y: Int) = x + y
+    val i = 1
+    val j = 1
+    call(add, i, j)/*)*/
+  }
+  private def call(add: (Int, Int) => Int, i: Int, j: Int): Unit = {
+    /*(*/add(i, j)
+  }
+}
+    """
+  } applyRefactoring extract("call")
+    
+  @Test
+  def localFunctionAsParameter3 = new FileSet {
+    """
+object ExtractWithLocalFunction3 { 
+  def method {
+    def one() = 1
+    /*(*/one/*)*/
+  }
+}
+    """ becomes
+    """
+object ExtractWithLocalFunction3 { 
+  def method {
+    def one() = 1
+    call(one)/*)*/
+  }
+  private def call(one: () => Int): Unit = {
+    /*(*/one
+  }
+}
+    """
+  } applyRefactoring extract("call")
 }
