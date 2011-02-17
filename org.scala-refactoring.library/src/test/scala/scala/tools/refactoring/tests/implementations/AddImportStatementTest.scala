@@ -6,7 +6,6 @@ package scala.tools.refactoring
 package tests.implementations
 
 import implementations.AddImportStatement
-import tests.util.TestRefactoring
 import tests.util.TestHelper
 import common.Change
 import org.junit.Assert._
@@ -97,10 +96,39 @@ class AddImportStatementTest extends TestHelper {
     """)
   }
 
+  @ScalaVersion(matches="2.8")
+  @Test
+  def importExistsBetweenPackages28 = {
+    addImport(("collection.mutable", "ListBuffer"), """
+      package nstd
+
+      import collection.mutable.HashMap
+
+      package pckg
+
+      import collection.mutable.HashMap
+      import collection.mutable.HashMap
+
+      object Main {}
+    """, """
+      package nstd
+
+      import collection.mutable.HashMap
+      import collection.mutable.ListBuffer
+
+      package pckg
+
+      import collection.mutable.HashMap
+      import collection.mutable.HashMap
+
+      object Main {}
+    """)
+  }
+
+  @ScalaVersion(matches="2.9")
   @Test
   def importExistsBetweenPackages = {
-    
-    val src = """
+    addImport(("collection.mutable", "ListBuffer"), """
       package nstd
 
       import collection.mutable.HashMap
@@ -111,23 +139,7 @@ class AddImportStatementTest extends TestHelper {
       import collection.mutable.HashMap
 
       object Main {}
-    """
-    
-    val exp28 = """
-      package nstd
-
-      import collection.mutable.HashMap
-      import collection.mutable.ListBuffer
-
-      package pckg
-
-      import collection.mutable.HashMap
-      import collection.mutable.HashMap
-
-      object Main {}
-    """
-    
-    val exp29 = """
+    """, """
       package nstd
 
       import collection.mutable.HashMap
@@ -139,12 +151,7 @@ class AddImportStatementTest extends TestHelper {
       package pckg
 
       object Main {}
-    """
-    
-    if(isScala28)
-      addImport(("collection.mutable", "ListBuffer"), src, exp28)
-    else
-      addImport(("collection.mutable", "ListBuffer"), src, exp29)
+    """)
   }
 
   @Test

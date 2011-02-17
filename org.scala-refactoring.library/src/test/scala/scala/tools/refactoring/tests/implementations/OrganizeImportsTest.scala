@@ -194,27 +194,16 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring organize
     
+  @ScalaVersion(matches="2.9")
   @Test
-  def multipleImportsOnOneLine = {
-    
-    val src = """
+  def multipleImportsOnOneLine = new FileSet { 
+      """
       import java.lang.String, String._
   
       object Main {
         val s: String = ""
         val s1 = valueOf(2);
-      }    """
-    
-    val exp28 = """
-      import String._
-      import java.lang.String
-  
-      object Main {
-        val s: String = ""
-        val s1 = valueOf(2);
-      }    """
-    
-    val exp29 = """
+      }    """ becomes """
       import java.lang.String
       import java.lang.String._
   
@@ -222,15 +211,26 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
         val s: String = ""
         val s1 = valueOf(2);
       }    """
-      
-    val exp = if (isScala28) exp28 else exp29 
+  } applyRefactoring organize  
     
-    val fs = new FileSet { 
-      src becomes exp
-    }
-      
-    fs applyRefactoring organize
-  }
+  @ScalaVersion(matches="2.8")
+  @Test
+  def multipleImportsOnOneLine28 = new FileSet { 
+      """
+      import java.lang.String, String._
+  
+      object Main {
+        val s: String = ""
+        val s1 = valueOf(2);
+      }    """ becomes """
+      import String._
+      import java.lang.String
+  
+      object Main {
+        val s: String = ""
+        val s1 = valueOf(2);
+      }    """
+  } applyRefactoring organize  
     
   @Test
   def importsInNestedPackages = new FileSet {

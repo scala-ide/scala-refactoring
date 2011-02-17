@@ -352,19 +352,17 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(extract("isOdd"))
   
+  @ScalaVersion(matches="2.8")
   @Test
-  def extractFromValBlock = {
-    
-    val src = """
+  def extractFromValBlock28 = new FileSet { 
+      """
       class Extr2 {
         val a = {
           val i = 1
           /*(*/i + 2/*)*/
         }
       }
-    """
-      
-    val exp28 = """
+    """ becomes """
       class Extr2 {
         val a = {
           val i = 1
@@ -374,8 +372,19 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         }
       }
     """
-      
-    val exp29 = """
+  } applyRefactoring extract("addTwo")
+  
+  @ScalaVersion(matches="2.9")
+  @Test
+  def extractFromValBlock = new FileSet { 
+      """
+      class Extr2 {
+        val a = {
+          val i = 1
+          /*(*/i + 2/*)*/
+        }
+      }
+    """ becomes """
       class Extr2 {
         val a = {
           val i = 1
@@ -385,15 +394,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         }
       }
     """
-    
-    val exp = if (isScala28) exp28 else exp29 
-    
-    val fs = new FileSet { 
-      src becomes exp
-    }
-      
-    fs applyRefactoring extract("addTwo")
-  }
+  } applyRefactoring extract("addTwo")
   
   @Test
   def extractFromThen = new FileSet {
@@ -592,4 +593,27 @@ object ExtractMethod2 {
       }
     """
   } applyRefactoring(extract("l"))
+  
+  @Test
+  def extractFunctionFromMethodCall = new FileSet {
+    """
+      class Extr2 {
+        def main(args : Array[String]) {
+          def concatenate(ls: List[String]) = ls.mkString(", ")
+
+          println(/*(*/concatenate/*)*/(List("a", "b")))
+        }
+      }
+    """ becomes
+    """
+      class Extr2 {
+        def main(args : Array[String]) {
+          def concatenate(ls: List[String]) = ls.mkString(", ")
+          val cc = concatenate/*)*/_
+
+          println(/*(*/cc(List("a", "b")))
+        }
+      }
+    """
+  } applyRefactoring(extract("cc"))
 }
