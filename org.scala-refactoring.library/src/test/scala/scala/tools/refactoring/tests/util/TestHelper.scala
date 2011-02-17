@@ -12,13 +12,14 @@ import common.Change
 import collection.mutable.ListBuffer
 import util.CompilerProvider
 
-trait TestHelper extends Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
+trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
   type Test = org.junit.Test
   type AbstractFile = tools.nsc.io.AbstractFile
   type ConsoleTracing = common.ConsoleTracing
   type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
+  type ScalaVersion = tests.util.ScalaVersion
     
   /**
    * A project to test multiple compilation units. Add all 

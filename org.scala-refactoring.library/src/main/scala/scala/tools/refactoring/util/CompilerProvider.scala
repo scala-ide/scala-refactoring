@@ -47,9 +47,7 @@ class CompilerInstance {
 
 trait TreeCreationMethods {
   
-  def isScala29 = isScala("2.9")
-  def isScala28 = isScala("2.8")
-  def isScala(version: String) = scala.util.Properties.versionString.contains(version)
+  private def isScala(version: String) = scala.util.Properties.versionString.contains(version)
     
   val global: scala.tools.nsc.interactive.Global
   
@@ -64,7 +62,7 @@ trait TreeCreationMethods {
   }
   
   def treeFrom(file: SourceFile, forceReload: Boolean): global.Tree = {
-    if(isScala28) {
+    if(isScala("2.8")) {
       treeFromCompiler28(file, forceReload)
     } else {
       treeFromCompiler29(file)

@@ -136,9 +136,10 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring extract("prntln")
 
+  @ScalaVersion(matches="2.8")
   @Test
-  def extractRangeParameter = {
-    val src: String = """
+  def extractRangeParameter28 = new FileSet { 
+      """
       object ExtractMethod3 {
       
         def main(args: Array[String]) {
@@ -152,9 +153,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
           println("The sum from 1 to 10 is "+ sum)
         }
       }
-      """
-      
-    val exp28: String = """
+      """ becomes """
       object ExtractMethod3 {
       
         def main(args: Array[String]) {
@@ -173,8 +172,26 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
       """
+  } applyRefactoring extract("prntln")
+
+  @ScalaVersion(matches="2.9")
+  @Test
+  def extractRangeParameter = new FileSet { 
+      """
+      object ExtractMethod3 {
       
-    val exp29: String = """
+        def main(args: Array[String]) {
+      
+          val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
+      
+          val values = 1 to 10
+      
+          /*(*/val sum = sumList(values)/*)*/   // the sum
+      
+          println("The sum from 1 to 10 is "+ sum)
+        }
+      }
+      """ becomes """
       object ExtractMethod3 {
       
         def main(args: Array[String]) {
@@ -193,15 +210,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
       """
-      
-    val exp = if (isScala28) exp28 else exp29 
-    
-    val fs = new FileSet { 
-      src becomes exp
-    }
-      
-    fs applyRefactoring extract("prntln")
-  }
+  } applyRefactoring extract("prntln")
 
   @Test
   def simpleExtractSeveralParameters = new FileSet {
@@ -322,10 +331,10 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring extract("prntln")
     
+  @ScalaVersion(matches="2.8")
   @Test
-  def extractBlockExpression = {
-    
-    val src = """
+  def extractBlockExpression28 = new FileSet { 
+      """
     package extractBlockExpression
     class A {
       def extractFrom(): Int = {
@@ -333,9 +342,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
 /*(*/   a + 1    /*)*/
       }
     }
-    """
-    
-    val exp28 = """
+    """ becomes """
     package extractBlockExpression
     class A {
       def extractFrom(): Int = {
@@ -347,8 +354,20 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     }
     """
-      
-    val exp29 = """
+    }  applyRefactoring extract("inc")
+    
+  @ScalaVersion(matches="2.9")
+  @Test
+  def extractBlockExpression = new FileSet { 
+      """
+    package extractBlockExpression
+    class A {
+      def extractFrom(): Int = {
+        val a = 1
+/*(*/   a + 1    /*)*/
+      }
+    }
+    """ becomes """
     package extractBlockExpression
     class A {
       def extractFrom(): Int = {
@@ -360,20 +379,12 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     }
     """
+  } applyRefactoring extract("inc")
     
-    val exp = if (isScala28) exp28 else exp29 
-    
-    val fs = new FileSet { 
-      src becomes exp
-    }
-      
-    fs applyRefactoring extract("inc")
-  }
-    
+  @ScalaVersion(matches="2.8")
   @Test
-  def replaceWholeMethod = {
-    
-    val src = """
+  def replaceWholeMethod28 = new FileSet { 
+      """
     package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
@@ -381,9 +392,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         a + 1    /*)*/
       }
     }
-    """
-      
-    val exp28 = """
+    """ becomes """
     package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
@@ -395,8 +404,20 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     }
     """
-      
-    val exp29 = """
+  } applyRefactoring extract("inc")
+    
+  @ScalaVersion(matches="2.9")
+  @Test
+  def replaceWholeMethod = new FileSet { 
+    """
+    package replaceWholeMethod
+    class A {
+      def extractFrom(): Int = {
+/*(*/   val a = 1
+        a + 1    /*)*/
+      }
+    }
+    """ becomes """
     package replaceWholeMethod
     class A {
       def extractFrom(): Int = {
@@ -408,15 +429,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     }
     """
-        
-    val exp = if (isScala28) exp28 else exp29 
-    
-    val fs = new FileSet { 
-      src becomes exp
-    }
-      
-    fs applyRefactoring extract("inc")
-  }
+  } applyRefactoring extract("inc")
     
   @Test
   def extractIfCond = new FileSet {
@@ -845,8 +858,9 @@ object ExtractMethod2 {
     """
   } applyRefactoring extract("certainlyTrue")
     
+  @ScalaVersion(matches="2.8")
   @Test
-  def localFunctionAsParameter = new FileSet {
+  def localFunctionAsParameter28 = new FileSet {
     """
 object ExtractWithLocalFunction { 
   def method {
@@ -870,8 +884,9 @@ object ExtractWithLocalFunction {
     """
   } applyRefactoring extract("call")
     
+  @ScalaVersion(matches="2.8")
   @Test
-  def localFunctionAsParameter2 = new FileSet {
+  def localFunctionAsParameter2_28 = new FileSet {
     """
 object ExtractWithLocalFunction2 { 
   def method {
@@ -897,8 +912,9 @@ object ExtractWithLocalFunction2 {
     """
   } applyRefactoring extract("call")
     
+  @ScalaVersion(matches="2.8")
   @Test
-  def localFunctionAsParameter3 = new FileSet {
+  def localFunctionAsParameter3_28 = new FileSet {
     """
 object ExtractWithLocalFunction3 { 
   def method {
@@ -915,6 +931,90 @@ object ExtractWithLocalFunction3 {
   }
   private def call(one: () => Int): Unit = {
     /*(*/one
+  }
+}
+    """
+  } applyRefactoring extract("call")
+  
+  @ScalaVersion(matches="2.9")
+  @Test
+  def localFunctionAsParameter = new FileSet {
+    """
+object ExtractWithLocalFunction { 
+  def method {
+    def add1(x: Int) = x + 1
+    val i = 1
+    /*(*/add1(i)/*)*/
+    ()
+  }
+}
+    """ becomes
+    """
+object ExtractWithLocalFunction { 
+  def method {
+    def add1(x: Int) = x + 1
+    val i = 1
+    call(add1, i)
+    ()
+  }
+  private def call(add1: Int => Int, i: Int): Int = {
+    /*(*/add1(i)/*)*/
+  }
+}
+    """
+  } applyRefactoring extract("call")
+    
+  @ScalaVersion(matches="2.9")
+  @Test
+  def localFunctionAsParameter2 = new FileSet {
+    """
+object ExtractWithLocalFunction2 { 
+  def method {
+    def add(x: Int, y: Int) = x + y
+    val i = 1
+    val j = 1
+    /*(*/add(i, j)/*)*/
+    ()
+  }
+}
+    """ becomes
+    """
+object ExtractWithLocalFunction2 { 
+  def method {
+    def add(x: Int, y: Int) = x + y
+    val i = 1
+    val j = 1
+    call(add, i, j)
+    ()
+  }
+  private def call(add: (Int, Int) => Int, i: Int, j: Int): Int = {
+    /*(*/add(i, j)/*)*/
+  }
+}
+    """
+  } applyRefactoring extract("call")
+    
+  @ScalaVersion(matches="2.9")
+  @Test
+  def localFunctionAsParameter3 = new FileSet {
+    """
+object ExtractWithLocalFunction3 { 
+  def method {
+    def one() = 1
+    /*(*/one/*)*/
+    ()
+  }
+}
+    """ becomes
+    """
+object ExtractWithLocalFunction3 { 
+  def method {
+    def one() = 1
+    call(one)
+    ()
+  }
+  private def call(one: () => Int): Int = {
+    /*(*/one/*)*/
   }
 }
     """

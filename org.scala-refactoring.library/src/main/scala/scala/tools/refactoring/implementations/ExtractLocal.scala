@@ -40,7 +40,17 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
             
     trace("Selected: %s", selectedExpression)
     
-    val newVal = mkValDef(name, selectedExpression)
+    val newVal = {
+      selectedExpression match {
+        /*
+         * In case we extract a method/function call without its arguments
+         * */
+        case t: Ident if t.symbol.isMethod =>
+          mkValDef(name, Apply(selectedExpression, Ident("_") :: Nil))
+        case _ => 
+          mkValDef(name, selectedExpression)          
+      }      
+    }
     val valRef = Ident(name)
     
     def findBlockInsertionPosition(root: Tree, near: Tree) = {

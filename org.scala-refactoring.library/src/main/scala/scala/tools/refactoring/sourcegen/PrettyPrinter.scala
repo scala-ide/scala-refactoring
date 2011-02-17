@@ -202,7 +202,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           p(fun) ++ " = " ++ pp(args, before = "(", after = ")", separator = ", ")
           
         case (fun, (arg @ Ident(name)) :: Nil) if name.toString == "_" =>
-          p(fun) ++ p(arg)
+          p(fun) ++ " " ++ p(arg)
           
         // the empty tree is an implicit parameter, so we mustn't print parenthesis
         case (fun, List(EmptyTree)) =>

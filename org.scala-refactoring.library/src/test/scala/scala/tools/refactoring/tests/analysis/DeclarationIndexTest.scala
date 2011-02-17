@@ -76,9 +76,10 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       """)
   }  
   
+  @ScalaVersion(matches="2.8")
   @Test
-  def findShadowed() = {
-    val src = """
+  def findShadowed28() = {
+    assertDeclarationOfSelection("""val x: java.lang.String = "a"""", """
       object AfindShadowed {
         private[this] val x = 1
         def go  = {
@@ -87,11 +88,22 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
           y
         }
       }
-      """
-    if(isScala28)
-      assertDeclarationOfSelection("""val x: java.lang.String = "a"""", src)
-    else
-      assertDeclarationOfSelection("""val x: java.lang.String("a") = "a"""", src)
+      """)
+  }
+  
+  @ScalaVersion(matches="2.9")
+  @Test
+  def findShadowed() = {
+    assertDeclarationOfSelection("""val x: java.lang.String("a") = "a"""", """
+      object AfindShadowed {
+        private[this] val x = 1
+        def go  = {
+          val x = "a"
+          val y = /*(*/  x  /*)*/
+          y
+        }
+      }
+      """)
   }
 
   @Test
@@ -220,21 +232,30 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     assertDeclarationOfSelection("""type T>: Nothing <: Any""", tree)
   }
 
+  @ScalaVersion(matches="2.8")
   @Test
-  def referencesToTypesInAppliedTypes() = {
-    val tree =  """      
+  def referencesToTypesInAppliedTypes28() = {    
+    assertReferencesOfSelection("""String (54, 60), scala.this.Predef.String (91, 97), String (121, 127)""", """      
       object U {
         def go(t: List[ /*(*/ String /*)*/ ]) = {
           val s: String = ""
           t: List[String]
         }
       }
-      """
-    
-    if(isScala28)        
-      assertReferencesOfSelection("""String (54, 60), scala.this.Predef.String (91, 97), String (121, 127)""", tree)
-    else
-      assertReferencesOfSelection("""scala.this.Predef.String (54, 60), scala.this.Predef.String (91, 97), scala.this.Predef.String (121, 127)""", tree)
+      """)
+  }
+  
+  @ScalaVersion(matches="2.9")
+  @Test
+  def referencesToTypesInAppliedTypes() = {
+    assertReferencesOfSelection("""scala.this.Predef.String (54, 60), scala.this.Predef.String (91, 97), scala.this.Predef.String (121, 127)""", """      
+      object U {
+        def go(t: List[ /*(*/ String /*)*/ ]) = {
+          val s: String = ""
+          t: List[String]
+        }
+      }
+      """)
   }
 }
 
