@@ -21,6 +21,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.7</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>
@@ -77,6 +78,37 @@
             <jvmArg>-Xmx768m</jvmArg>
           </jvmArgs>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+	<artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <phase>test-compile</phase>
+          </execution>
+          <execution>
+          <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+           </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
