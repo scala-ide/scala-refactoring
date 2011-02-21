@@ -49,7 +49,7 @@ trait PimpedTrees {
     def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
     
       val pos = {
-        if(t.pos == NoPosition || t.pos.start < 0 || imp.namePos  < 0) 
+        if(!t.pos.isDefined || imp.namePos  < 0)
           NoPosition
         else 
           new RangePosition(t.pos.source, imp.namePos, imp.namePos, imp.namePos + imp.name.length)
