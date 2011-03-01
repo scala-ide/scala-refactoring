@@ -55,6 +55,13 @@ trait TreeTransformations extends Transformations {
   implicit def replacesTree(t1: Tree) = new {
     def replaces(t2: Tree) = t1 setPos t2.pos
   }
+  
+  implicit def typeFromTree(t1: Tree) = new {
+    def typeFrom(t2: Tree) = {
+      t1.tpe = t2.tpe
+      t1
+    }
+  }
     
   implicit def abstractFileToTree(file: AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
   

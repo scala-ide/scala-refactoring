@@ -77,14 +77,14 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
   
   def elim(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new EliminateMatch with ConsoleTracing {
+    val refactoring = new EliminateMatch with SilentTracing {
       val global = outer.global
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters)
   }.changes
   
   @Test
-  def mapElimination = new FileSet {
+  def mapEliminationSimple = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -98,6 +98,90 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       package elimination
       object EliminateMap {
         (Some("s"): Option[String]) /*(*/map (s => s * 2)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def mapEliminationNoneSome = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/ match /*)*/ {
+          case None => None
+          case Some(s) => Some(s * 2)
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/map (s => s * 2)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def mapEliminationNoCapture = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/ match /*)*/ {
+          case None => None
+          case Some(_) => Some(true)
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/map (_ => true)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def mapEliminationNoNone = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/ match /*)*/ {
+          case Some(x) => Some(x)
+          case _ => None
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/map (x => x)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def mapEliminationWithBlock = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = {
+          x /*(*/ match /*)*/ {
+            case Some(s) =>
+              val x = 5
+              Some(s * x)
+            case None => 
+              None
+          }
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/map (s => {
+          val x = 5
+          s * x
+        })
       }
     """
   } applyRefactoring(elim)

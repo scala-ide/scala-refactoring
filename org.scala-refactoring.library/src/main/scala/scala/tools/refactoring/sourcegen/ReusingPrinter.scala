@@ -538,8 +538,21 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       val modsAndName = pp(mods ::: nameTree :: Nil, separator = Requisite.Blank)
       val parameters     = vparamss.map(vparams => pp(vparams, before = "(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) 
       val typeParameters = pp(tparams, before = "[", separator = ",", after = Requisite.anywhere("]"))
-         
-      l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ p(rhs) ++ r
+      val body = p(rhs)
+            
+      val rhsResultIsUnit = body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
+      
+      if(rhsResultIsUnit) {
+        l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++           body ++ r
+      } else {
+        
+        val equals = new Requisite {
+          def isRequired(l: Layout, r: Layout) = !(l.contains("=") || r.contains("="))
+          def getLayout = Layout(" = ")
+        }
+        
+        l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ equals ++ body ++ r
+      }
     }
   }
 
