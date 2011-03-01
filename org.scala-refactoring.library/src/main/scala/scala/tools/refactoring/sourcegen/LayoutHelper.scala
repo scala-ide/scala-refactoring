@@ -150,6 +150,10 @@ trait LayoutHelper extends CommentHelpers {
       case (p: New, c) =>
         layout(p.pos.start + "new".length, c.pos.start) → NoLayout
          
+      case (p: Match, c) =>
+        // c is the match selector
+        NoLayout → layout(p.pos.start, c.pos.start) 
+         
       case (p, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
     }

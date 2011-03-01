@@ -14,6 +14,12 @@ trait Layout extends CommentHelpers {
   def contains(s: String) = stripComment(asText).contains(s)
   
   def matches(r: String) = stripComment(asText).matches(r)
+  
+  /**
+   * @return Returns this layout as a string but without comments. 
+   *         Comments are replaced by whitespace.
+   */
+  def withoutComments = stripComment(asText)
 
   def asText: String
   

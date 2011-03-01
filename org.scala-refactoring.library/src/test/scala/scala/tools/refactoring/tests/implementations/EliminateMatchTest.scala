@@ -7,8 +7,10 @@ package tests.implementations
 
 import org.junit.Assert._
 import tests.util.{TestHelper, TestRefactoring}
+import scala.tools.refactoring.implementations.EliminateMatch
 
 class EliminateMatchTest extends TestHelper with TestRefactoring {
+  outer =>
   
   val some = Some("s"): Option[String]
   val none = None: Option[String]
@@ -73,4 +75,30 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
     assertEquals(1, x1)
     assertEquals(1, x2)
   }
+  
+  def elim(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new EliminateMatch with ConsoleTracing {
+      val global = outer.global
+    }
+    val changes = performRefactoring(new refactoring.RefactoringParameters)
+  }.changes
+  
+  @Test
+  def mapElimination = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/ match /*)*/ {
+          case Some(s) => Some(s * 2)
+          case None => None
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/map (s => s * 2)
+      }
+    """
+  } applyRefactoring(elim)
 }
