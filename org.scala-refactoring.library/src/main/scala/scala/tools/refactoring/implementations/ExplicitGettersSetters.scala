@@ -82,10 +82,6 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring {
         tpl.copy(body = body) setPos tpl.pos
     }
     
-    val transformedAst = ↓(matchingChildren(insertGetterSettersTransformation)) apply selection.root
-    
-    val changes = refactor(transformedAst.toList)
-    
-    Right(changes)
+    Right(transformFile(selection.file, topdown(matchingChildren(insertGetterSettersTransformation))))
   }
 }

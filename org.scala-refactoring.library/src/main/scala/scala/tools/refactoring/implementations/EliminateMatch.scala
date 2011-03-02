@@ -16,9 +16,7 @@ abstract class EliminateMatch extends MultiStageRefactoring {
   
   type PreparationResult = (Match, Name, Tree)
   
-  type RefactoringParameters = String
-  
-  lazy val none = newTermName("None")
+  class RefactoringParameters
   
   object HasOptionType {
     def unapply(t: Tree): Boolean = t.tpe match {
@@ -58,6 +56,9 @@ abstract class EliminateMatch extends MultiStageRefactoring {
   }
   
   object NoneCase {
+    
+    val none = newTermName("None")
+    
     def unapply(t: Tree): Boolean = t match {
       case CaseDef(_, EmptyTree, Select(_, `none`)) =>
         true
@@ -67,50 +68,42 @@ abstract class EliminateMatch extends MultiStageRefactoring {
   }
   
   def prepare(s: Selection) = {
-        
+    
     s.findSelectedOfType[Match] collect {
       case mtch @ Match(HasOptionType(), SomeCase(name, body) :: NoneCase() :: Nil) => 
         (mtch, name, body)
       case mtch @ Match(HasOptionType(), NoneCase() :: SomeCase(name, body) :: Nil) => 
         (mtch, name, body)
-    } match {
-      case Some(x) => Right(x)
-      case _ => Left(PreparationError("no elimination candidate found"))
-    }
+    } toRight(PreparationError("no elimination candidate found")) 
   }
     
-  def perform(selection: Selection, selectedExpression: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, optionMatch: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
-    val (mtch, name, body) = selectedExpression
+    val (mtch, name, body) = optionMatch
     
-    def mkFunction(body: Tree) = {
+    def mkCallToMap(fun: Tree) = {
       Apply(
         Select(
           mtch.selector, 
           newTermName("map")), 
-        Function(ValDef(Modifiers(Flags.PARAM), name, EmptyTree, EmptyTree) :: Nil, body) :: Nil) typeFrom body
+        Function(ValDef(Modifiers(Flags.PARAM), name, EmptyTree, EmptyTree) :: Nil, fun) :: Nil) typeFrom fun
     }
     
     val eliminatMatch = transform {
+     
       case `mtch` =>
         body match {
           
           case Apply(_, arg :: Nil) =>
-            mkFunction(arg)
+            mkCallToMap(arg)
           
           case Block(stmts, Apply(_, arg :: Nil)) =>
-            mkFunction(global.Block(stmts, arg))  
+            mkCallToMap(global.Block(stmts, arg))  
           
           case _ => return Left(RefactoringError("Unable to eliminate match."))
         }
     }
     
-    val r = topdown(matchingChildren(eliminatMatch)) apply abstractFileToTree(selection.file)
-    
-    Right(refactor(r.toList))
+    Right(transformFile(selection.file, topdown(matchingChildren(eliminatMatch))))
   }
 }
-
-
-
-

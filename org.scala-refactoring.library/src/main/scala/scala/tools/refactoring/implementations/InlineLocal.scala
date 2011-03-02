@@ -69,9 +69,7 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
         case t if references contains t => replacement
       }
     }
-    
-    val inlined = topdown(matchingChildren(removeSelectedValue &> topdown(matchingChildren(replaceReferenceWithRhs)))) apply selection.root
   
-    Right(refactor(inlined.toList))
+    Right(transformFile(selection.file, topdown(matchingChildren(removeSelectedValue &> topdown(matchingChildren(replaceReferenceWithRhs))))))
   }
 }
