@@ -22,12 +22,16 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
   @Test
   def sort = new FileSet {
     """
+      package tests.importing
+
       import scala.collection.mutable.ListBuffer
       import java.lang.Object
   
       object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
     """ becomes
     """
+      package tests.importing
+
       import java.lang.Object
       import scala.collection.mutable.ListBuffer
   
@@ -247,6 +251,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       """ becomes """
        package outer
        package inner
+
        import scala.collection.mutable.HashMap
 
        object Main {
