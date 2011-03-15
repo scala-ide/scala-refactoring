@@ -14,96 +14,140 @@ abstract class EliminateMatch extends MultiStageRefactoring {
   
   import global._
   
-  type PreparationResult = (Match, Name, Tree)
+  type PreparationResult = Transformation[Tree, Tree]
   
   class RefactoringParameters
   
-  object HasOptionType {
-    def unapply(t: Tree): Boolean = t.tpe match {
-      case TypeRef(_, sym, _) if sym.nameString == "Option" => true
-      case _ => false  
+  lazy val HasOptionType = treeHasType("Option")
+  
+  lazy val HasSomeType = treeHasType("Some")
+  
+  lazy val FalseCase = treeMatches {
+    case CaseDef(_, EmptyTree, Literal(Constant(c))) => c == false
+  }
+  
+  lazy val NoneCase = {
+    
+    val none = newTermName("None")
+    
+    treeMatches {
+      case CaseDef(_, EmptyTree, Select(_, `none`)) => true
     }
   }
   
-  object SomeCase {
+  lazy val SomeCase = bindingAndBodyFromCaseDefWhereBodyMatches {
+    case HasSomeType() => true
+  }
+  
+  lazy val BooleanCase = bindingAndBodyFromCaseDefWhereBodyMatches {
+    case body => body.tpe.toString == "Boolean" 
+  }
+
+  
+  def prepare(s: Selection) = {
     
-    object HasSomeType {
-      def unapply(t: Tree): Option[Tree] = {
-        val some = newTermName("Some")
-        
-        t match {
-          case t: TypeTree => t.original match {
-            case Select(_, `some`) => Some(t)
-            case _ => None
+    /**
+     * Creates a function call `replacementFunction` on the selector and passes a function with
+     * a single parameter `param` and the body `body`.
+     */
+    def mkCall(selector: Tree, replacementFunction: String, param: Name, body: Tree) = {
+      Apply(
+        Select(
+          selector,
+          newTermName(replacementFunction)), 
+        List(Function(List(ValDef(Modifiers(Flags.PARAM), param, EmptyTree, EmptyTree)), body))
+      ) typeFrom body
+    }
+    
+    /**
+     * When replacing with `map`, we need to remove the explicit `Some` construction
+     * in the case body. There are two possible kinds of case bodies: a simple Apply
+     * call and a Block that has the Some at its end.
+     */
+    def replaceWithMap(mtch: Match, param: Name, someCaseBody: Tree) = {
+      transform {
+        case `mtch` =>
+          someCaseBody match {
+            
+            case Apply(_, arg :: Nil) =>
+              mkCall(mtch.selector, "map", param, arg)
+            
+            case Block(stmts, Apply(_, arg :: Nil)) =>
+              mkCall(mtch.selector, "map", param, global.Block(stmts, arg))  
+
           }
-          case _ => t.tpe match {
-            case TypeRef(_, sym, _) if sym.nameString == "Some" => Some(t)
-            case _ => None  
-          }
-        }
       }
     }
     
+    def replaceWithExists(mtch: Match, param: Name, body: Tree) = {
+      transform {
+        case `mtch` =>
+          mkCall(mtch.selector, "exists", param, body)
+      }
+    }
+    
+    s.findSelectedOfType[Match] collect {
+      
+      /*
+       * map:
+       * */
+      
+      case mtch @ Match(HasOptionType(), SomeCase(name, body) :: NoneCase() :: Nil) => 
+        replaceWithMap(mtch, name, body)
+      
+      case mtch @ Match(HasOptionType(), NoneCase() :: SomeCase(name, body) :: Nil) => 
+        replaceWithMap(mtch, name, body)
+      
+      /*
+       * exists:
+       * */
+        
+      case mtch @ Match(_, BooleanCase(name, body) :: FalseCase() :: Nil) => 
+        replaceWithExists(mtch, name, body)
+      
+      case mtch @ Match(_, FalseCase() :: BooleanCase(name, body) :: Nil) => 
+        replaceWithExists(mtch, name, body)
+        
+    } toRight(PreparationError("No elimination candidate found.")) 
+  }
+    
+  def perform(selection: Selection, trans: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+
+    Right(transformFile(selection.file, topdown(matchingChildren(trans))))
+  }
+  
+  
+  /*
+   * Some helper functions that abstract commonly used extractors:
+   */
+  
+  def treeMatches(pf: PartialFunction[Tree, Boolean]) = new {
+    def unapply(t: Tree): Boolean = {
+      if(pf.isDefinedAt(t)) {
+        pf(t)
+      } else false
+    }
+  }
+
+  def treeHasType(tpe: String) = new {
+    def unapply(t: Tree): Boolean = t.tpe match {
+      case TypeRef(_, sym, _) if sym.nameString == tpe => true
+      case _ => false  
+    }    
+  }
+  
+  def bindingAndBodyFromCaseDefWhereBodyMatches(pf: PartialFunction[Tree, Boolean]) = new {
+    
     def unapply(t: Tree): Option[(Name, Tree)] = t match {
-      case CaseDef(Apply(HasSomeType(_), bind :: _), EmptyTree, HasSomeType(body)) =>
+      case CaseDef(Apply(_, bind :: _), EmptyTree, body) if pf.isDefinedAt(body) =>
+
         bind match {
           case Bind(name, _) => Some(Pair(name, body))
           case Ident(name)   => Some(Pair(name, body))
         }
+      
       case _ => 
         None
     }
-  }
-  
-  object NoneCase {
-    
-    val none = newTermName("None")
-    
-    def unapply(t: Tree): Boolean = t match {
-      case CaseDef(_, EmptyTree, Select(_, `none`)) =>
-        true
-      case _ => 
-        false
-    }
-  }
-  
-  def prepare(s: Selection) = {
-    
-    s.findSelectedOfType[Match] collect {
-      case mtch @ Match(HasOptionType(), SomeCase(name, body) :: NoneCase() :: Nil) => 
-        (mtch, name, body)
-      case mtch @ Match(HasOptionType(), NoneCase() :: SomeCase(name, body) :: Nil) => 
-        (mtch, name, body)
-    } toRight(PreparationError("no elimination candidate found")) 
-  }
-    
-  def perform(selection: Selection, optionMatch: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    
-    val (mtch, name, body) = optionMatch
-    
-    def mkCallToMap(fun: Tree) = {
-      Apply(
-        Select(
-          mtch.selector, 
-          newTermName("map")), 
-        Function(ValDef(Modifiers(Flags.PARAM), name, EmptyTree, EmptyTree) :: Nil, fun) :: Nil) typeFrom fun
-    }
-    
-    val eliminatMatch = transform {
-     
-      case `mtch` =>
-        body match {
-          
-          case Apply(_, arg :: Nil) =>
-            mkCallToMap(arg)
-          
-          case Block(stmts, Apply(_, arg :: Nil)) =>
-            mkCallToMap(global.Block(stmts, arg))  
-          
-          case _ => return Left(RefactoringError("Unable to eliminate match."))
-        }
-    }
-    
-    Right(transformFile(selection.file, topdown(matchingChildren(eliminatMatch))))
   }
 }

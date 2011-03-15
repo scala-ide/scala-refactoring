@@ -84,6 +84,73 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
+  def existsElimination = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/ match /*)*/ {
+          case Some(s) => s == "s"
+          case None => false
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/exists (s => s == "s")
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def existsEliminationDifferentOrder = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/ match /*)*/ {
+          case None => false
+          case Some(_) => /*yes it's*/ true
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/exists (_ => /*yes it's*/ true)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test // TODO: could be more beautiful
+  def existsEliminationWithBody = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/ match /*)*/ {
+          case Some(s) =>
+            val x = s.toInt
+            if(x % 2 == 0)
+              false
+            else
+              true
+          case None => false
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        (Some("s"): Option[String]) /*(*/exists (s =>
+            val x = s.toInt
+            if(x % 2 == 0)
+              false
+            else
+              true)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
   def mapEliminationSimple = new FileSet {
     """
       package elimination
