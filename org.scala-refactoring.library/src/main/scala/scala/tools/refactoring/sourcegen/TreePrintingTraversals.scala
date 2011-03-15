@@ -112,7 +112,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
     def TypeApply(tree: TypeApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext): Fragment = default(tree)
     def Apply(tree: Apply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext): Fragment = default(tree)
     def ApplyDynamic(tree: ApplyDynamic, qual: Tree, args: List[Tree])(implicit ctx: PrintingContext): Fragment = default(tree)
-    def Super(tree: Super, qual: Name, mix: Name)(implicit ctx: PrintingContext): Fragment = default(tree)
+    def Super(tree: Super, qual: Tree, mix: Name)(implicit ctx: PrintingContext): Fragment = default(tree)
     def This(tree: This, qual: Name)(implicit ctx: PrintingContext): Fragment = default(tree)
     def Select(tree: Select, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext): Fragment = default(tree)
     def Ident(tree: Ident, name: Name)(implicit ctx: PrintingContext): Fragment = default(tree)

@@ -564,10 +564,19 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       l ++ p(clazz) ++ pp(args, separator = ",", before = "(", after = after) ++ r
     }
 
-    override def Super(tree: Super, qual: Name, mix: Name)(implicit ctx: PrintingContext) = {
-      val q = if(qual.toString == "") "" else qual +"."
+    override def Super(tree: Super, qual: Tree, mix: Name)(implicit ctx: PrintingContext) = {
+      
+      // duplicate of pretty printer!
+      val q = qual match {
+        case This(qual: Name) if qual.toString == "" => EmptyFragment
+        case This(qual: Name) => Fragment(qual.toString + ".")
+        case _ => p(qual)
+      }
+      
       val m = if(mix.toString == "") "" else "["+ mix + "]"
-      l ++ Fragment(q+ "super" +m) ++ r
+      
+      l ++ q ++ Fragment("super"+ m) ++ r      
+      
     }
   }
 

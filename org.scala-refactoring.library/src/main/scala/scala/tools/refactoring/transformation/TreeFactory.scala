@@ -23,7 +23,6 @@ trait TreeFactory {
     case b: Bind => b.copy(name = name)
     case s: Select => s.copy(name = name)
     case c: ClassDef => c.copy(name = mkTypeName(name))
-    case s: Super => s.copy(qual = mkTypeName(name))
     case t: This => t.copy(qual = mkTypeName(name))
     case m: ModuleDef => m.copy(name = name)
     case t: TypeDef => t.copy(name = mkTypeName(name))
