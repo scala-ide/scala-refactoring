@@ -29,11 +29,7 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
         case t @ (_: SymTree | _: TermTree) => t.pos sameRange s.pos
         case _ => false
       }
-    }) match {
-      case Some(term) =>
-        Right(term)
-      case None => Left(new PreparationError("no term selected"))
-    }
+    }) toRight (PreparationError("no term selected"))
   }
     
   def perform(selection: Selection, selectedExpression: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
@@ -133,9 +129,7 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
     }
     
     val extractLocal = topdown(matchingChildren(findInsertionPoint &> replaceTree(selectedExpression, valRef) &> insertNewVal))
-    
-    val r = extractLocal apply abstractFileToTree(selection.file)
-    
-    Right(refactor(r toList))
+        
+    Right(transformFile(selection.file, extractLocal))
   }
 }

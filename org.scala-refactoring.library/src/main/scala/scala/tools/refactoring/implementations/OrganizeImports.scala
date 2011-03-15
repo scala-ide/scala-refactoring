@@ -106,8 +106,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         p copy (stats = ((sortImports andThen collapseImports andThen simplifyWildcards andThen removeUnused) apply (newImports ::: existingImports)) ::: others) replaces p
     }
 
-    val changes = (organizeImports |> topdown(matchingChildren(organizeImports))) apply abstractFileToTree(selection.file)
-
-    Right(refactor(changes toList))
+    Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
 }

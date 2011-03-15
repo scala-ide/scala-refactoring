@@ -641,7 +641,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   def testReturn() = {
     val tree = treeFrom("""
     object Functions {
-      def test {
+      def test = {
         return 5
       }
     }
@@ -649,7 +649,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         
     assertEquals("""
     object Functions {
-      def test {
+      def test = {
         return 5
       }
     }

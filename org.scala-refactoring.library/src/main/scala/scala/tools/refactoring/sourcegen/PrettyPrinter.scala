@@ -208,6 +208,16 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun, List(EmptyTree)) =>
           p(fun)
           
+        case (Select(selector, _), arg :: Nil) =>
+          val t = context("ignore") {
+            p(selector).toLayout
+          }
+          
+          if(t.withoutComments.endsWith(" "))
+            p(fun) ++ " (" ++ p(arg) ++ ")"
+          else
+            p(fun) ++ "(" ++ p(arg) ++ ")"
+          
         case _ =>
           p(fun) ++ "(" ++ pp(args, separator = ", ") ++ ")"
       }
@@ -318,7 +328,11 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       vparams match {
         
         case vparam :: Nil if !keepTree(vparam.tpt) =>
-          p(vparam, before = "", after = " => ") ++ p(body)
+          val _body = p(body)
+          if(_body.asText.startsWith("=>"))
+            p(vparam) ++ Fragment(" ") ++ _body
+          else
+            p(vparam, before = "", after = " => ") ++ _body
       
         case _ =>
           pp(vparams, before = "(", separator = ", ", after = ") => ") ++ p(body)

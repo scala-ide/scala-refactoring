@@ -150,6 +150,10 @@ trait LayoutHelper extends CommentHelpers {
       case (p: New, c) =>
         layout(p.pos.start + "new".length, c.pos.start) → NoLayout
          
+      case (p: Match, c) =>
+        // c is the match selector
+        NoLayout → layout(p.pos.start, c.pos.start) 
+         
       case (p, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
     }
@@ -280,14 +284,19 @@ trait LayoutHelper extends CommentHelpers {
     
     (fixValDefPosition(left), fixValDefPosition(right)) match {
       case (_, EmptyTree) | (EmptyTree, _) => NoLayout → NoLayout
-      case (l: Import, r: Import) => NoLayout → NoLayout
+      
+      case (l: Import, r: Import) => 
+        NoLayout → NoLayout
+      
+      case (l, r: Import) => 
+        between(l, r)(l.pos.source) → NoLayout
         
       case (l: ImportSelectorTree, r: ImportSelectorTree) =>
         NoLayout → NoLayout
         
       case (l, r: ImportSelectorTree) if !l.isInstanceOf[ImportSelectorTree] =>
         // All the layout, like '.' and '{' belongs to the selector.
-        layout(l.pos.end, r.pos.start)(l.pos.source) → NoLayout
+        between(l, r)(l.pos.source) → NoLayout
 
       case (l, r) => 
         
