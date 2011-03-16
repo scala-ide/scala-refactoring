@@ -84,12 +84,54 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
-  def existsElimination = new FileSet {
+  def flatMapElimination = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        val x: Option[String] = Some("some")
+        (Some("s"): Option[String]) /*(*/ match /*)*/ {
+          case None => None
+          case Some(s) => x
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        val x: Option[String] = Some("some")
+        (Some("s"): Option[String]) /*(*/flatMap (s => x)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def flatMapElimination2 = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def cont(s: String) = Some(s*2)
+        (Some("s"): Option[String]) /*(*/ match /*)*/ {
+          case Some(s) => cont(s)
+          case _ => None
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def cont(s: String) = Some(s*2)
+        (Some("s"): Option[String]) /*(*/flatMap (s => cont(s))
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def simpleExistsElimination = new FileSet {
     """
       package elimination
       object EliminateMap {
         (Some("s"): Option[String]) /*(*/ match /*)*/ {
-          case Some(s) => s == "s"
+          case Some(s) => true
           case None => false
         }
       }
@@ -97,7 +139,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
     """
       package elimination
       object EliminateMap {
-        (Some("s"): Option[String]) /*(*/exists (s => s == "s")
+        (Some("s"): Option[String]) /*(*/exists (s => true)
       }
     """
   } applyRefactoring(elim)
@@ -109,14 +151,14 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       object EliminateMap {
         (Some("s"): Option[String]) /*(*/ match /*)*/ {
           case None => false
-          case Some(_) => /*yes it's*/ true
+          case Some(_) => /*yes it's*/ 1 + 0 == 1
         }
       }
     """ becomes
     """
       package elimination
       object EliminateMap {
-        (Some("s"): Option[String]) /*(*/exists (_ => /*yes it's*/ true)
+        (Some("s"): Option[String]) /*(*/exists (_ => /*yes it's*/ 1 + 0 == 1)
       }
     """
   } applyRefactoring(elim)
@@ -222,6 +264,25 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       package elimination
       object EliminateMap {
         def m(x: Option[Int]) = x /*(*/map (x => x)
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def mapEliminationWithChainedCall = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = (x /*(*/ match /*)*/ {
+          case Some(x) => Some(x)
+          case _ => None
+        }) isDefined
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = (x /*(*/map (x => x)) isDefined
       }
     """
   } applyRefactoring(elim)

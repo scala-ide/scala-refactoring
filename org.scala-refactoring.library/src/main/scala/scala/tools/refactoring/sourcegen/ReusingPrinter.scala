@@ -181,6 +181,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Select(tree: Select, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext) = {
       
       lazy val nameOrig = nameOf(tree)
+
+      val ll = l
       
       qualifier match {
              
@@ -237,7 +239,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           def endsWithChar   = _n.asText.matches("^[a-zA-Z0-9].*")
           
           def qualifierHasNoDot = qualifier match {
-            case Apply(s @ global.Select(qual, name), _) if qual.pos.isRange => 
+            case Apply(s @ global.Select(qual, name), _) if s.pos.isRange && qual.pos.isRange => 
               
               val sn: global.Name = s.name
               val nt = new NameTree(sn).setPos(s.namePosition)
