@@ -62,11 +62,7 @@ trait TreeCreationMethods {
   }
   
   def treeFrom(file: SourceFile, forceReload: Boolean): global.Tree = {
-    if(isScala("2.8")) {
-      treeFromCompiler28(file, forceReload)
-    } else {
-      treeFromCompiler29(file)
-    }
+    treeFromCompiler28(file, forceReload)
   }
   
   private def treeFromCompiler28(file: SourceFile, forceReload: Boolean) = {
@@ -78,26 +74,6 @@ trait TreeCreationMethods {
     val newCompiler = global.asInstanceOf[Scala28Compiler]
     
     newCompiler.typedTree(file, forceReload)
-  }
-  
-  private def treeFromCompiler29(file: SourceFile) = {
-    
-    import tools.nsc.interactive.Response
-    
-    type Scala29Compiler = {
-      def askParsedEntered(file: SourceFile, keepLoaded: Boolean, response: Response[global.Tree]): Unit
-      def askType(file: SourceFile, forceReload: Boolean, respone: Response[global.Tree]): Unit
-    }
-    
-    val newCompiler = global.asInstanceOf[Scala29Compiler]
-    
-    val r1 = new Response[global.Tree]
-    newCompiler.askParsedEntered(file, true, r1)
-    r1.get // we don't care about the result yet
-    
-    val r2 = new Response[global.Tree]
-    newCompiler.askType(file, false, r2)
-    r2.get.left.get // it's ok to fail
   }
 
   def treesFrom(sources: List[SourceFile], forceReload: Boolean): List[global.Tree] =
