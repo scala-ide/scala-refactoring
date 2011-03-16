@@ -5,6 +5,7 @@
 package scala.tools.refactoring
 package implementations
 
+import PartialFunction.cond
 import common.Change
 import tools.nsc.symtab.Flags
 
@@ -22,6 +23,8 @@ abstract class EliminateMatch extends MultiStageRefactoring {
   
   lazy val HasSomeType = treeHasType("Some")
   
+  lazy val HasNoneType = treeHasType("None")
+  
   lazy val FalseCase = treeMatches {
     case CaseDef(_, EmptyTree, Literal(Constant(c))) => c == false
   }
@@ -35,12 +38,29 @@ abstract class EliminateMatch extends MultiStageRefactoring {
     }
   }
   
-  lazy val SomeCase = bindingAndBodyFromCaseDefWhereBodyMatches {
-    case HasSomeType() => true
+  lazy val SomeCase = {
+        
+    val SomeApplication = {
+      
+      val scala = newTermName("scala")
+      val some  = newTermName("Some")
+    
+      treeMatches {
+        case Apply(TypeApply(Select(Select(Ident(`scala`), `some`), _), _), _ :: Nil) => true   
+      }
+    }
+    
+    bindingAndBodyFromCaseDefWhereBodyMatches {
+      case SomeApplication() | Block(_, SomeApplication()) => true
+    }
+  }
+  
+  lazy val OptionCase = bindingAndBodyFromCaseDefWhereBodyMatches {
+    case HasOptionType() | HasSomeType() | HasNoneType() => true
   }
   
   lazy val BooleanCase = bindingAndBodyFromCaseDefWhereBodyMatches {
-    case body => body.tpe.toString == "Boolean" 
+    case body => body.tpe.toString.startsWith("Boolean") 
   }
 
   
@@ -79,18 +99,19 @@ abstract class EliminateMatch extends MultiStageRefactoring {
       }
     }
     
-    def replaceWithExists(mtch: Match, param: Name, body: Tree) = {
+    def replaceWithCall(fun: String)(mtch: Match, param: Name, body: Tree) = {
       transform {
         case `mtch` =>
-          mkCall(mtch.selector, "exists", param, body)
+          mkCall(mtch.selector, fun, param, body)
       }
     }
     
+    def replaceWithExists  = replaceWithCall("exists") _
+    def replaceWithFlatMap = replaceWithCall("flatMap") _
+    
     s.findSelectedOfType[Match] collect {
       
-      /*
-       * map:
-       * */
+      /* map */
       
       case mtch @ Match(HasOptionType(), SomeCase(name, body) :: NoneCase() :: Nil) => 
         replaceWithMap(mtch, name, body)
@@ -98,9 +119,15 @@ abstract class EliminateMatch extends MultiStageRefactoring {
       case mtch @ Match(HasOptionType(), NoneCase() :: SomeCase(name, body) :: Nil) => 
         replaceWithMap(mtch, name, body)
       
-      /*
-       * exists:
-       * */
+      /* flatMap */
+      
+      case mtch @ Match(HasOptionType(), OptionCase(name, body) :: NoneCase() :: Nil) => 
+        replaceWithFlatMap(mtch, name, body)
+      
+      case mtch @ Match(HasOptionType(), NoneCase() :: OptionCase(name, body) :: Nil) => 
+        replaceWithFlatMap(mtch, name, body)
+      
+      /* exists */
         
       case mtch @ Match(_, BooleanCase(name, body) :: FalseCase() :: Nil) => 
         replaceWithExists(mtch, name, body)
@@ -122,32 +149,26 @@ abstract class EliminateMatch extends MultiStageRefactoring {
    */
   
   def treeMatches(pf: PartialFunction[Tree, Boolean]) = new {
-    def unapply(t: Tree): Boolean = {
-      if(pf.isDefinedAt(t)) {
-        pf(t)
-      } else false
-    }
+    def unapply(t: Tree) = pf.isDefinedAt(t) && pf(t)
   }
 
   def treeHasType(tpe: String) = new {
-    def unapply(t: Tree): Boolean = t.tpe match {
-      case TypeRef(_, sym, _) if sym.nameString == tpe => true
-      case _ => false  
-    }    
+    def unapply(t: Tree) = cond(t.tpe) {
+      case TypeRef(_, sym, _) => sym.nameString == tpe
+    }
   }
   
   def bindingAndBodyFromCaseDefWhereBodyMatches(pf: PartialFunction[Tree, Boolean]) = new {
     
     def unapply(t: Tree): Option[(Name, Tree)] = t match {
-      case CaseDef(Apply(_, bind :: _), EmptyTree, body) if pf.isDefinedAt(body) =>
+      case CaseDef(Apply(_, bind :: _), EmptyTree, body) if pf.isDefinedAt(body) && pf(body) =>
 
         bind match {
           case Bind(name, _) => Some(Pair(name, body))
           case Ident(name)   => Some(Pair(name, body))
         }
       
-      case _ => 
-        None
+      case _ => None
     }
   }
 }

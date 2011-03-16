@@ -305,10 +305,16 @@ trait LayoutHelper extends CommentHelpers {
         
         val (ll, lr, rule) = (l, parent, r) match {
             
+          case (l: Match, _, r) =>
+            layout match {
+              case ClosingBrace(l, r)   => (l, ")"+r, "ClosingBrace after Match")
+              case _ => split(layout)
+            }
+          
           case (l: ValOrDefDef, _, r: ValOrDefDef) => 
             layout match {
-              case Comma(l, r)   => (l, r, "Comma")
-              case NewLine(l, r) => (l, r, "NewLine")
+              case Comma(l, r)   => (l, r, "Comma between ValDefs")
+              case NewLine(l, r) => (l, r, "NewLine between ValDefs")
               case _ => split(layout)
             }
             
@@ -316,8 +322,6 @@ trait LayoutHelper extends CommentHelpers {
             layout match {
               case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace")
             }
-            
-          
             
           case (l, _, r) => split(layout)
         }
