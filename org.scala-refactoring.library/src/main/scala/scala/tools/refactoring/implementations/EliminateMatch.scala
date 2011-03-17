@@ -95,6 +95,7 @@ abstract class EliminateMatch extends MultiStageRefactoring {
             case Block(stmts, Apply(_, arg :: Nil)) =>
               mkCall(mtch.selector, "map", param, global.Block(stmts, arg))  
 
+            case _ => throw new Exception("Please file a bug report.")
           }
       }
     }

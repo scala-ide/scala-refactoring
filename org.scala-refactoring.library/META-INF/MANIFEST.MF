@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Scala Refactoring
 Bundle-SymbolicName: org.scala-refactoring.library
 Bundle-Version: 0.3.0.qualifier
-Require-Bundle: org.junit;bundle-version="4.7.0";optional=true,
+Require-Bundle: org.junit;bundle-version="4.7.0";resolution:=optional,
  org.scala-ide.scala.library
 Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.analysis,
@@ -13,7 +13,6 @@ Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.transformation,
  scala.tools.refactoring.util
 Bundle-ClassPath: .
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Import-Package: scala.tools.nsc, 
  scala.tools.nsc.ast,
  scala.tools.nsc.ast.parser,
@@ -24,3 +23,4 @@ Import-Package: scala.tools.nsc,
  scala.tools.nsc.symtab,
  scala.tools.nsc.typechecker,
  scala.tools.nsc.util
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
