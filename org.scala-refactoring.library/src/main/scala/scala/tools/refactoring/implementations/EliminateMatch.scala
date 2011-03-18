@@ -29,6 +29,12 @@ abstract class EliminateMatch extends MultiStageRefactoring {
     case CaseDef(_, EmptyTree, Literal(Constant(c))) => c == false
   }
   
+  lazy val UnitCase = treeMatches {
+    case CaseDef(_/*none!*/, EmptyTree, Literal(Constant(c))) => 
+      println(c)
+      c == ()
+  }
+  
   lazy val NoneCase = {
     
     val none = newTermName("None")
@@ -62,6 +68,8 @@ abstract class EliminateMatch extends MultiStageRefactoring {
   lazy val BooleanCase = bindingAndBodyFromCaseDefWhereBodyMatches {
     case body => body.tpe.toString.startsWith("Boolean") 
   }
+  
+  lazy val SomePattern = bindingAndBodyFromCaseDefWhereBodyMatches { case _ => true}
 
   
   def prepare(s: Selection) = {
@@ -109,6 +117,7 @@ abstract class EliminateMatch extends MultiStageRefactoring {
     
     def replaceWithExists  = replaceWithCall("exists") _
     def replaceWithFlatMap = replaceWithCall("flatMap") _
+    def replaceWithForeach = replaceWithCall("foreach") _
     
     s.findSelectedOfType[Match] collect {
       
@@ -136,6 +145,14 @@ abstract class EliminateMatch extends MultiStageRefactoring {
       case mtch @ Match(_, FalseCase() :: BooleanCase(name, body) :: Nil) => 
         replaceWithExists(mtch, name, body)
         
+      /* foreach */
+        
+      case mtch @ Match(_, SomePattern(name, body) :: UnitCase() :: Nil) => 
+        replaceWithForeach(mtch, name, body)
+      
+      case mtch @ Match(_, UnitCase() :: SomePattern(name, body) :: Nil) => 
+        replaceWithForeach(mtch, name, body)
+        
     } toRight(PreparationError("No elimination candidate found.")) 
   }
     
@@ -162,7 +179,7 @@ abstract class EliminateMatch extends MultiStageRefactoring {
   def bindingAndBodyFromCaseDefWhereBodyMatches(pf: PartialFunction[Tree, Boolean]) = new {
     
     def unapply(t: Tree): Option[(Name, Tree)] = t match {
-      case CaseDef(Apply(_, bind :: _), EmptyTree, body) if pf.isDefinedAt(body) && pf(body) =>
+      case CaseDef(Apply(_ /*check for some*/, bind :: _), EmptyTree, body) if pf.isDefinedAt(body) && pf(body) =>
 
         bind match {
           case Bind(name, _) => Some(Pair(name, body))

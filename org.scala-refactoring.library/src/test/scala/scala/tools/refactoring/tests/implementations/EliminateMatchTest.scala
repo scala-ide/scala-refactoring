@@ -313,4 +313,59 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
+  
+  @Test
+  def foreachEliminationWithExplicitUnit = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = {
+          x /*(*/ match /*)*/ {
+            case Some(s) => println(s)
+            case None => ()
+          }
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/foreach (s => println(s))
+      }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
+  def foreachEliminationWithUnit = new FileSet {
+    
+    val t = treeFrom("""
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = {
+          x /*(*/ match /*)*/ {
+            case Some(s) => println(s)
+            case None => 
+          }
+        }
+      }
+    """);
+    
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = {
+          x /*(*/ match /*)*/ {
+            case Some(s) => println(s)
+            case None => 
+          }
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = x /*(*/foreach (s => println(s))
+      }
+    """
+  } applyRefactoring(elim)
 }
