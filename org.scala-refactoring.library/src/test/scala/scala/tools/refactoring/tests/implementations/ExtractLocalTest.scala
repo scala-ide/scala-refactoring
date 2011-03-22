@@ -616,4 +616,21 @@ object ExtractMethod2 {
       }
     """
   } applyRefactoring(extract("cc"))
+  
+  @Test
+  def extractLastExpressionInUnitMethod = new FileSet {
+    """
+    object Bar {
+      def foo {
+        /*(*/true/*)*/
+      }
+    }""" becomes
+    """
+    object Bar {
+      def foo {
+        /*(*/  val t = true
+               t/*)*/
+      }
+    }"""
+  } applyRefactoring(extract("t"))
 }

@@ -26,7 +26,8 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
       } lastOption
     } else {
       s.root.find {
-        case t @ (_: SymTree | _: TermTree) => t.pos sameRange s.pos
+        case t @ (_: SymTree | _: TermTree) => 
+          (t.pos sameRange s.pos) && !hasUnitType(t)
         case _ => false
       }
     }) toRight (PreparationError("no term selected"))
