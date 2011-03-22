@@ -1019,4 +1019,29 @@ object ExtractWithLocalFunction3 {
 }
     """
   } applyRefactoring extract("call")
+  
+  @Test
+  def bug18 = new FileSet {
+    """
+object Bar {
+  def foo {
+    val bubu = "abc"
+    bubu.format()
+    /*(*/ 10 * 4 - 1 /*)*/
+  }
+}
+""" becomes
+    """
+object Bar {
+  def foo {
+    val bubu = "abc"
+    bubu.format()
+    calc
+  }
+  private def calc: Unit = {
+    /*(*/ 10 * 4 - 1 /*)*/
+  }
+}
+"""
+  } applyRefactoring extract("calc")
 }

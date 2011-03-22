@@ -192,6 +192,9 @@ trait LayoutHelper extends CommentHelpers {
      
     (fixValDefPosition(child), fixValDefPosition(parent)) match {
        
+      case (c: Block, p: Block) =>
+        layout(c.pos.end, p.pos.end) splitBefore ('\n', '}')
+        
       case (c: Block, p) =>
         layout(c.pos.end, p.pos.end) splitAfter '}'
        

@@ -798,4 +798,9 @@ trait PimpedTrees {
   
   val NoBlock = NotInstanceOf[Block]
   val NoPackageDef = NotInstanceOf[PackageDef]
+  
+  def hasUnitType(t: Tree) = t.tpe match {
+    case TypeRef(_, sym, _) => sym == definitions.UnitClass
+    case _ => false
+  }
 }
