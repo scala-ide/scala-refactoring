@@ -1036,10 +1036,10 @@ object Bar {
   def foo {
     val bubu = "abc"
     bubu.format()
-    calc
+    calc /*)*/
   }
   private def calc: Unit = {
-    /*(*/ 10 * 4 - 1 /*)*/
+    /*(*/ 10 * 4 - 1
   }
 }
 """
