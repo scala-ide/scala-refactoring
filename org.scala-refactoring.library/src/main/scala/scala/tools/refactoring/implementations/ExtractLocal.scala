@@ -7,8 +7,9 @@ package implementations
 
 import common.Change
 import transformation.TreeFactory
+import transformation.TreeExtractors
 
-abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory {
+abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with TreeExtractors {
   
   val global: tools.nsc.interactive.Global
   import global._
