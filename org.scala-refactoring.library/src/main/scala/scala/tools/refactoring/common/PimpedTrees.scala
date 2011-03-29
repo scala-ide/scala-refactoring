@@ -99,93 +99,103 @@ trait PimpedTrees {
      * Returns the position this tree's name has in the source code.
      * Can also return NoPosition if the tree does not have a name.
      */
-    def namePosition(): Position = (t match {
-      case t: ModuleDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-      case t: ClassDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-      case t: TypeDef    => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-      case t if t.pos == NoPosition => NoPosition
-      case t: ValOrDefDef =>
-        
-        val name = if(t.symbol != NoSymbol) t.symbol.nameString else t.name.toString.trim
-        
-        /* In general, the position of the name starts from t.pos.point and is as long as the trimmed name.
-         * But if we have a val in a function: 
-         *   ((parameter: Int) => ..)
-         *     ^^^^^^^^^^^^^^
-         * then the position of the name starts from t.pos.start. To fix this, we extract the source code and
-         * check where the parameter actually starts.
-         */
-        lazy val src = t.pos.source.content.slice(t.pos.start, t.pos.point).mkString("")
-        
-        val pos = if(t.pos.point - t.pos.start == name.length && src == name) 
-          t.pos withEnd t.pos.point
-        else 
-          new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
-        
-        if(t.mods.isSynthetic && t.pos.isTransparent) 
-          pos.makeTransparent
-        else
-          pos
+    def namePosition(): Position = {
+      val pos = try {
+        t match {
+          case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case t if t.pos == NoPosition => NoPosition
+          case t: ValOrDefDef =>
+            
+            val name = if(t.symbol != NoSymbol) t.symbol.nameString else t.name.toString.trim
+            
+            /* In general, the position of the name starts from t.pos.point and is as long as the trimmed name.
+             * But if we have a val in a function: 
+             *   ((parameter: Int) => ..)
+             *     ^^^^^^^^^^^^^^
+             * then the position of the name starts from t.pos.start. To fix this, we extract the source code and
+             * check where the parameter actually starts.
+             */
+            lazy val src = t.pos.source.content.slice(t.pos.start, t.pos.point).mkString("")
+            
+            val pos = if(t.pos.point - t.pos.start == name.length && src == name) 
+              t.pos withEnd t.pos.point
+            else 
+              new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
+            
+            if(t.mods.isSynthetic && t.pos.isTransparent) 
+              pos.makeTransparent
+            else
+              pos
+              
+          case t @ Select(qualifier: New, selector) if selector.toString == "<init>" =>
+            t.pos withEnd t.pos.start
+            
+          case t @ Select(qualifier, selector) => 
           
-      case t @ Select(qualifier: New, selector) if selector.toString == "<init>" =>
-        t.pos withEnd t.pos.start
+            if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
+              t.pos withEnd (t.pos.start + nameString.length)
+            } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') /*`a`*/ {
+              t.pos withStart t.pos.point
+            } else if (qualifier.pos.sameRange(t.pos) && t.name.toString == "apply") {
+              t.pos withEnd t.pos.start
+            } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
+              t.pos withStart (t.pos.end - nameString.length)
+            } else if (qualifier.pos.isRange && (t.pos.point.max(qualifier.pos.end + 1)) <= t.pos.end) {
+              t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
+            } else if (qualifier.pos == NoPosition) {
+              t.pos
+            } else {
+              t.pos withEnd (t.pos.start + nameString.length)
+            }
+            
+          case t @ Bind(name, body) =>
+            t.pos withEnd (t.pos.start + nameString.length)
+          
+          case t @ LabelDef(name, _, _) if name.toString startsWith "while" =>
+            t.pos withEnd (t.pos.start + "while".length)
+            
+          case t @ LabelDef(name, _, Block(stats, cond)) if name.toString startsWith "doWhile" =>
+            val src = stats.last.pos.source.content.slice(stats.last.pos.end, cond.pos.start) mkString
+            val whileStart = stats.last.pos.end + src.indexOf("while")
+            t.pos withStart whileStart withEnd (whileStart + "while".length)
+            
+          case t: SelectFromTypeTree =>
+            t.pos withStart t.pos.point
+            
+          case t: DefTree => t.pos withStart t.pos.point withEnd (t.pos.point + nameString.length)
+          
+          case t: RefTree => t.pos
+          
+          case t: TypeTree => t.pos
+            
+          case t => NoPosition
+        } 
+      } catch {
+        case _: java.lang.AssertionError => 
+          /*we constructed an illegal position..*/
+          NoPosition
+      }
+      
+      pos match {
+        case NoPosition => NoPosition
+        case _ =>
         
-      case t @ Select(qualifier, selector) => 
-      
-        if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
-          t.pos withEnd (t.pos.start + nameString.length)
-        } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') /*`a`*/ {
-          t.pos withStart t.pos.point
-        } else if (qualifier.pos.sameRange(t.pos) && t.name.toString == "apply") {
-          t.pos withEnd t.pos.start
-        } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
-          t.pos withStart (t.pos.end - nameString.length)
-        } else if (qualifier.pos.isRange) {
-          t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
-        } else if (qualifier.pos == NoPosition) {
-          t.pos
-        } else {
-          t.pos withEnd (t.pos.start + nameString.length)
-        }
+          val p1 = fixTreePositionIncludingCarriageReturn(pos)
         
-      case t @ Bind(name, body) =>
-        t.pos withEnd (t.pos.start + nameString.length)
-      
-      case t @ LabelDef(name, _, _) if name.toString startsWith "while" =>
-        t.pos withEnd (t.pos.start + "while".length)
+          // it might be a quoted literal:
+          val p2 = if(p1.start >= 0 && p1.start < p1.source.content.length && p1.source.content(p1.start) == '`') {
+            p1 withEnd (p1.end + 2)
+          } else p1
         
-      case t @ LabelDef(name, _, Block(stats, cond)) if name.toString startsWith "doWhile" =>
-        val src = stats.last.pos.source.content.slice(stats.last.pos.end, cond.pos.start) mkString
-        val whileStart = stats.last.pos.end + src.indexOf("while")
-        t.pos withStart whileStart withEnd (whileStart + "while".length)
-        
-      case t: SelectFromTypeTree =>
-        t.pos withStart t.pos.point
-        
-      case t: DefTree => t.pos withStart t.pos.point withEnd (t.pos.point + nameString.length)
-      
-      case t: RefTree => t.pos
-      
-      case t: TypeTree => t.pos
-        
-      case t => NoPosition //throw new Exception(t.getClass.getSimpleName +" not handled in namePosition")
-    }) match {
-      case NoPosition => NoPosition
-      case p =>
-      
-        val p1 = fixTreePositionIncludingCarriageReturn(p)
-      
-        // it might be a quoted literal:
-        val p2 = if(p1.start >= 0 && p1.start < p1.source.content.length && p1.source.content(p1.start) == '`') {
-          p1 withEnd (p1.end + 2)
-        } else p1
-      
-        // set all points to the start, keeping wrong points
-        // around leads to the calculation of wrong lines
-        if(p2.isTransparent)
-          p2 withPoint p2.start makeTransparent
-        else
-          p2 withPoint p2.start
+          // set all points to the start, keeping wrong points
+          // around leads to the calculation of wrong lines
+          if(p2.isTransparent)
+            p2 withPoint p2.start makeTransparent
+          else
+            p2 withPoint p2.start
+      }
     }
 
     /**
