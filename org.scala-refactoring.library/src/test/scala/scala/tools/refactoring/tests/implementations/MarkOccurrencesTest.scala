@@ -6,7 +6,6 @@ package scala.tools.refactoring
 package tests.implementations
 
 import implementations.MarkOccurrences
-import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
 

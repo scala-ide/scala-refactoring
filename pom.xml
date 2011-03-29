@@ -208,19 +208,6 @@
         <version>2.5</version>
       </plugin>
       <plugin>
-        <groupId>undercover</groupId>
-        <artifactId>undercover-maven-plugin</artifactId>
-        <version>0.8.2</version>
-        <configuration>
-          <sourceEncoding>UTF-8</sourceEncoding>
-          <formats>
-            <format>html</format>
-            <format>emmaxml</format>
-            <format>coberturaxml</format>
-          </formats>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.scala-tools</groupId>
         <artifactId>maven-scala-plugin</artifactId>
 	<version>2.15.0</version>

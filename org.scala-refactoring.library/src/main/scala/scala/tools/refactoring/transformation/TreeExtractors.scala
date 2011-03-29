@@ -12,17 +12,25 @@ trait TreeExtractors {
   this: common.CompilerAccess =>
   
   import global._
-
-  lazy val scala = newTermName("scala")
-  lazy val none  = newTermName("None")
-  lazy val some  = newTermName("Some")
+  
+  object names {
+    lazy val scala = newTermName("scala")
+    lazy val None  = newTermName("None")
+    lazy val Some  = newTermName("Some")
+    lazy val apply  = newTermName("apply")
+    lazy val Nil  = newTermName("Nil")
+    lazy val immutable  = newTypeName("immutable")
+    lazy val ::  = newTermName("$colon$colon")
+    lazy val List  = newTermName("List")
+  }
   
   /**
-   * A boolean extractor for the Some constructor.
+   * An extractor for the Some constructor.
    */
   object SomeExpr {
-    def unapply(t: Tree) = cond(t) {
-      case Apply(TypeApply(Select(Select(Ident(`scala`), `some`), _), _), _ :: Nil) => true
+    def unapply(t: Tree): Option[Tree] = t match {
+      case Apply(TypeApply(Select(Select(Ident(names.scala), names.Some), _), (_: TypeTree) :: Nil), argToSome :: Nil) => Some(argToSome)
+      case _ => None
     }
   }
   
@@ -31,7 +39,32 @@ trait TreeExtractors {
    */
   object NoneExpr {
     def unapply(t: Tree) = cond(t) {
-      case Select(Ident(`scala`), `none`) => true
+      case Select(Ident(names.scala), names.None) => true
+    }
+  }
+  
+  /**
+   * An extractor for the List constructor `List` or ::
+   */
+  object ListExpr {
+    def unapply(t: Tree): Option[Tree] = t match {
+      case Block(
+            (ValDef(_, v1, _, arg)) :: Nil, Apply(TypeApply(Select(Select(This(names.immutable), names.Nil), names.::), (_: TypeTree) :: Nil), 
+            Ident(v2) :: Nil)) if v1 == v2 =>
+        Some(arg) 
+      case Apply(TypeApply(Select(Select(This(names.immutable), names.List), names.apply), (_: TypeTree) :: Nil), arg :: Nil) => 
+        Some(arg)
+      case _ => 
+        None
+    }
+  }
+  
+  /**
+   * A boolean extractor for the Nil object.
+   */
+  object NilExpr {
+    def unapply(t: Tree) = cond(t) {
+      case Select(This(names.immutable), names.Nil) => true
     }
   }
 
@@ -58,7 +91,9 @@ trait TreeExtractors {
       case _ => None
     }
     
-    def unapply(t: Tree) = getTypeName(t.tpe)
+    def unapply(t: Tree) = {
+      getTypeName(t.tpe)
+    }
   }
   
   /**
@@ -84,7 +119,7 @@ trait TreeExtractors {
     object NoneCaseDef {
                 
       def unapply(t: Tree): Option[Tree] = t match {
-        case CaseDef(Select(Ident(`scala`), `none`), EmptyTree, body) => Some(body)
+        case CaseDef(Select(Ident(names.scala), names.None), EmptyTree, body) => Some(body)
         case CaseDef(_, EmptyTree, body @ NoneExpr()) => Some(body)
         case _ => None
       }
@@ -95,7 +130,7 @@ trait TreeExtractors {
         case CaseDef(Apply(tt: TypeTree, bind :: _), EmptyTree, body) =>
     
           tt.original match {
-            case Select(Ident(`scala`), `some`) =>           
+            case Select(Ident(names.scala), names.Some) =>           
               bind match {
                 case Bind(name, _) => Some(Pair(name, body))
                 case Ident(name)   => Some(Pair(name, body))
