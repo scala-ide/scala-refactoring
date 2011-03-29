@@ -159,4 +159,42 @@ trait TreeFactory {
 
     mkClass(mods withPosition (Flags.CASE, NoPosition), name, tparams, argss, body, parents, superArgs)
   }
+  
+  implicit def typeFromTree(t1: Tree) = new {
+    def typeFrom(t2: Tree) = {
+      t1.tpe = t2.tpe
+      t1
+    }
+  }
+  
+  /**
+   * Creates a function call `fun` on the selector and passes a function with
+   * a single parameter `param` and the body `body`.
+   * 
+   * Example:
+   *  
+   *  someExpr becomes someExpr fun (param => body)
+   * 
+   */
+  def mkFunctionCallWithFunctionArgument(selector: Tree, fun: String, param: Name, body: Tree) = {
+    Apply(
+      Select(selector, newTermName(fun)), 
+      List(Function(List(ValDef(Modifiers(Flags.PARAM), param, EmptyTree, EmptyTree)), body))
+    ) typeFrom body
+  }
+  
+  /**
+   * Creates a function call `fun` on the selector and passes a function with
+   * no parameter and the body `body`.
+   * 
+   * Example:
+   *  
+   *  someExpr becomes someExpr fun (body)
+   */
+  def mkFunctionCallWithZeroArgFunctionArgument(selector: Tree, fun: String, body: Tree) = {
+    Apply(
+      Select(selector, newTermName(fun)), 
+      List(Function(Nil, body))
+    ) typeFrom body
+  }
 }

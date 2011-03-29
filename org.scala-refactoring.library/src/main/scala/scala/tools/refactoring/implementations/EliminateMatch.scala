@@ -8,8 +8,9 @@ package implementations
 import common.Change
 import tools.nsc.symtab.Flags
 import transformation.TreeExtractors
+import transformation.TreeFactory
 
-abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors {
+abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors with TreeFactory {
   
   val global: tools.nsc.interactive.Global
   
@@ -22,19 +23,6 @@ abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors 
   def prepare(s: Selection) = {
     
     /**
-     * Creates a function call `replacementFunction` on the selector and passes a function with
-     * a single parameter `param` and the body `body`.
-     */
-    def mkCall(selector: Tree, replacementFunction: String, param: Name, body: Tree) = {
-      Apply(
-        Select(
-          selector,
-          newTermName(replacementFunction)), 
-        List(Function(List(ValDef(Modifiers(Flags.PARAM), param, EmptyTree, EmptyTree)), body))
-      ) typeFrom body
-    }
-    
-    /**
      * When replacing with `map`, we need to remove the explicit `Some` construction
      * in the case body. There are two possible kinds of case bodies: a simple Apply
      * call and a Block that has the Some at its end.
@@ -45,10 +33,10 @@ abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors 
           someCaseBody match {
             
             case Apply(_, arg :: Nil) =>
-              mkCall(mtch.selector, "map", param, arg)
+              mkFunctionCallWithFunctionArgument(mtch.selector, "map", param, arg)
             
             case Block(stmts, Apply(_, arg :: Nil)) =>
-              mkCall(mtch.selector, "map", param, global.Block(stmts, arg))  
+              mkFunctionCallWithFunctionArgument(mtch.selector, "map", param, global.Block(stmts, arg))  
 
             case _ => throw new Exception("Please file a bug report.")
           }
@@ -58,16 +46,27 @@ abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors 
     def replaceWithCall(fun: String, mtch: Match, param: Name, body: Tree) = {
       transform {
         case `mtch` =>
-          mkCall(mtch.selector, fun, param, body)
+          mkFunctionCallWithFunctionArgument(mtch.selector, fun, param, body)
       }
     }
     
-    def replaceWithIsDefined(mtch: Match) = {
+    def replaceWithExpr(fun: String, mtch: Match, body: Tree) = {
       transform {
-          case `mtch` =>
-            Select(mtch.selector, newTermName("isDefined"))            
-        }     
+        case `mtch` =>
+          mkFunctionCallWithZeroArgFunctionArgument(mtch.selector, fun, body)
+      }
     }
+    
+    def replaceWith(fun: String, mtch: Match) = {
+      transform {
+        case `mtch` =>
+          Select(mtch.selector, newTermName(fun))
+      }
+    }
+
+    /*
+     * A huge thanks to Tony Morris for his scala.Option Cheat Sheet
+     */
       
     s.findSelectedOfType[Match] collect {
       
@@ -78,25 +77,55 @@ abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors 
       
       /* map */
       
-      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ (SomeExpr() | Block(_, SomeExpr())), NoneExpr())) => 
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ (SomeExpr(_) | Block(_, SomeExpr(_))), NoneExpr())) =>
          replaceWithMap(m, name, body)
         
       /* flatMap */
         
-      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ (HasType("Option" | "Some" | "None")), NoneExpr())) => 
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ (HasType("Option" | "Some" | "None")), NoneExpr())) =>
         replaceWithCall("flatMap", m, name, body)
           
       /* isDefined */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(_, Literal(Constant(true)), Literal(Constant(false)))) =>
-       replaceWithIsDefined(m)
+       replaceWith("isDefined", m)
+        
+      /* isEmpty */
+      
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, Literal(Constant(false)), Literal(Constant(true)))) =>
+        replaceWith("isEmpty", m)
         
       /* exists */
       
-      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ HasType("Boolean"), Literal(Constant(false)))) =>         
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ HasType("Boolean"), Literal(Constant(false)))) =>
         replaceWithCall("exists", m, name, body)
+        
+      /* forall */
+      
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ HasType("Boolean"), Literal(Constant(true)))) =>
+        replaceWithCall("forall", m, name, body)
+      
+      /* flatten */
+      
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, Ident(i) , NoneExpr())) if name == i =>
+         replaceWith("flatten", m)
+      
+      /* orElse */
+         
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, SomeExpr(Ident(nameInBody)), noneBody @ (HasType("Option" | "Some" | "None")))) if name == nameInBody =>
+         replaceWithExpr("orElse", m, noneBody)
+      
+      /* getOrElse */
+      
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, Ident(nameInBody), noneBody)) if name == nameInBody =>
+         replaceWithExpr("getOrElse", m, noneBody)
+      
+      /* toList */
+      
+      case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, ListExpr(Ident(name2)), NilExpr())) if name == name2 =>
+         replaceWith("toList", m)
 
-    } toRight(PreparationError("No elimination candidate found.")) 
+    } toRight(PreparationError("No elimination candidate found."))
   }
     
   def perform(selection: Selection, trans: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {

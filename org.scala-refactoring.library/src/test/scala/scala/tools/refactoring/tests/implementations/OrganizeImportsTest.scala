@@ -6,8 +6,7 @@ package scala.tools.refactoring
 package tests.implementations
 
 import implementations.OrganizeImports
-import tests.util.TestRefactoring
-import tests.util.TestHelper
+import tests.util.{TestHelper, TestRefactoring}
 
 class OrganizeImportsTest extends TestHelper with TestRefactoring {
   outer =>
