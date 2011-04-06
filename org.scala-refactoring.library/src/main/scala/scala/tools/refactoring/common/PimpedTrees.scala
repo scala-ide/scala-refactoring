@@ -12,6 +12,7 @@ import reflect.ClassManifest.fromClass
 import tools.nsc.io.AbstractFile
 import tools.nsc.symtab.{Flags, Names}
 import scala.tools.nsc.Global
+import util.Memoized
 
 /**
  * A collection of implicit conversions for ASTs and other 
@@ -181,13 +182,11 @@ trait PimpedTrees {
       pos match {
         case NoPosition => NoPosition
         case _ =>
-        
-          val p1 = fixTreePositionIncludingCarriageReturn(pos)
-        
+                
           // it might be a quoted literal:
-          val p2 = if(p1.start >= 0 && p1.start < p1.source.content.length && p1.source.content(p1.start) == '`') {
-            p1 withEnd (p1.end + 2)
-          } else p1
+          val p2 = if(pos.start >= 0 && pos.start < pos.source.content.length && pos.source.content(pos.start) == '`') {
+            pos withEnd (pos.end + 2)
+          } else pos
         
           // set all points to the start, keeping wrong points
           // around leads to the calculation of wrong lines
@@ -237,22 +236,9 @@ trait PimpedTrees {
       }
     }
   }
-   
-  // workaround for https://lampsvn.epfl.ch/trac/scala/ticket/3765
-  def fixTreePositionIncludingCarriageReturn(p: Position): Position = {
-    if(p.end - 1 >= p.source.length || p.end == 0) {
-      return p
-    }
-    
-    if(p.source.content(p.end - 1) == '\r') {
-      p withEnd (p.end - 1)
-    } else {
-      p
-    }
-  }
   
   implicit def additionalTreeMethodsForPositions(t: Tree) = new TreeMethodsForPositions(t)
-
+  
   /**
    * Finds a tree by its position, can be used to find
    * the original tree from a transformed tree.
@@ -260,18 +246,25 @@ trait PimpedTrees {
    * If multiple trees are candidates, then take the last one, 
    * because it is likely more specific.
    */
-  def findOriginalTree(tree: Tree): Option[Tree] = {
-    
-    def find(t: Tree): List[Tree] = {
-      (if(t samePos tree.pos)
-        t :: Nil
-      else 
-        Nil) ::: children(t).map(find).flatten
-    }
-      
-    val candidates = cuRoot(tree.pos) map find flatten
+  def findOriginalTree(tree: Tree) = {
+
+    val candidates = findAllTreesWithTheSamePosition(tree)
     
     candidates find (_ eq tree) orElse (candidates filter (_ samePosAndType tree) lastOption)
+  }
+  
+  val findAllTreesWithTheSamePosition: Tree => Iterable[Tree] = {
+    Memoized.on ((t: Tree) => (t, t.pos)) { tree =>
+  
+      def find(t: Tree): List[Tree] = {
+        (if(t samePos tree.pos)
+          t :: Nil
+        else 
+          Nil) ::: children(t).map(find).flatten
+      }  
+      
+      cuRoot(tree.pos) map find flatten
+    }
   }
 
   class TemplateMethods(t: Template) {
@@ -560,11 +553,9 @@ trait PimpedTrees {
      */
     case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => 
       qualifier
-    
-    case t: RefTree if t.pos.isRange => t setPos fixTreePositionIncludingCarriageReturn(t.pos)
-      
+          
     case t => t
-  } filter keepTree 
+  } filter keepTree
   
   private def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
     body match {
@@ -584,49 +575,28 @@ trait PimpedTrees {
     }
   }
   
-  implicit def additionalValMethods(t: ValDef) = new {
-    def needsKeyword =
-      !t.mods.hasFlag(Flags.PARAM) &&
-      !t.mods.hasFlag(Flags.PARAMACCESSOR) &&
-      !t.mods.hasFlag(Flags.CASEACCESSOR) &&
-      !t.mods.hasFlag(Flags.SYNTHETIC) &&
-      !t.symbol.isSynthetic
-  }
-  
-  /**
-   * Make a Tree aware of its parent and siblings. Note
-   * that these are expensive operations because they
-   * traverse the whole compilation unit.
-   */
-  class TreeMethodsForFamily(t: Tree) {
-    def originalParent = cuRoot(t.pos) flatMap { root =>
+  val originalParentOf: Tree => Option[Tree] = Memoized { tree => 
+    cuRoot(tree.pos) flatMap { root =>
     
-      def find(root: Tree): Option[Tree] = {
-        val cs = children(root)
+      def find(parent: Tree): Option[Tree] = {
+        val cs = children(parent)
         
-        if(cs.exists(_ samePosAndType t))
-          Some(root)
+        if(cs.exists(_ samePosAndType tree))
+          Some(parent)
         else
           cs.flatMap(find).lastOption
       }
+      
       find(root)
     }
-    
-    def originalLeftSibling  = findSibling(originalParent, 1, 0)
-    
-    def originalRightSibling = findSibling(originalParent, 0, 1)
-    
-    private def findSibling(parent: Option[Tree], compareIndex: Int, returnIndex: Int) = parent flatMap 
-      (children(_) filter (_.pos.isRange) sliding 2 find (_ lift compareIndex map (_ samePos t) getOrElse false) flatMap (_ lift returnIndex))
   }
   
-  implicit def additionalTreeMethodsForFamily(t: Tree) = new TreeMethodsForFamily(t)
-  
-  implicit def additionalTreeListMethods(ts: List[Tree]) = new {
-    def allOnSameLine: Boolean = {
-      val poss = ts map (_.pos)
-      poss.forall(_.isRange) && (poss.map(_.line).distinct.length <= 1)
-    }
+  val (originalLeftSibling, originalRightSibling) = {
+    
+    def findSibling(t: Tree, parent: Option[Tree], compareIndex: Int, returnIndex: Int) = parent flatMap 
+      (children(_) filter (_.pos.isRange) sliding 2 find (_ lift compareIndex map (_ samePos t) getOrElse false) flatMap (_ lift returnIndex))
+   
+    ((t: Tree) => findSibling(t, originalParentOf(t), 1, 0)) → ((t: Tree) => findSibling(t, originalParentOf(t), 0, 1))
   }
   
   def keepTree(t: Tree) = !t.isEmpty && (t.pos.isRange || t.pos == NoPosition)
@@ -722,6 +692,7 @@ trait PimpedTrees {
    * removed and named arguments are reordered.
    */
   object BlockExtractor {
+    
     def unapply(t: Block) = {
 
       def fixNamedArgumentCall(block: Block): Tree = block match {
@@ -798,7 +769,7 @@ trait PimpedTrees {
       } else
         Some(t)
     }
-  }
+  }                                              
   
   object NotInstanceOf {
     def apply[T](implicit m: Manifest[T]) = {

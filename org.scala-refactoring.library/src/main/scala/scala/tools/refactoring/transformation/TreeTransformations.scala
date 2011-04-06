@@ -19,7 +19,7 @@ trait TreeTransformations extends Transformations {
      * Hooks into the Scala compiler's Transformer but applies only 
      * one transformation and then returns that result.
      */
-    class TransformOnce extends Transformer {
+    object TransformOnce extends Transformer {
       
       /**
        * Transforms the children of the trees using `f` and creates
@@ -43,7 +43,7 @@ trait TreeTransformations extends Transformations {
       override def transform(t: Tree) = f(t)
     }
     
-    (new TransformOnce).once(tree)
+    TransformOnce.once(tree)
   }
   
   def transform(f: PartialFunction[Tree, Tree]) = transformation(f)

@@ -19,7 +19,7 @@ trait LayoutHelper extends CommentHelpers {
       
   def surroundingLayoutFromParentsAndSiblings(t: Tree) = findOriginalTree(t) map { t =>
   
-    def layoutFromParent() = (t.originalLeftSibling, t.originalParent, t.originalRightSibling) match {
+    def layoutFromParent() = (originalLeftSibling(t), originalParentOf(t), originalRightSibling(t)) match {
       case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
       case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child with parent %s", p.getClass.getSimpleName))
       case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child with parent %s", p.getClass.getSimpleName))
@@ -321,7 +321,7 @@ trait LayoutHelper extends CommentHelpers {
               case _ => split(layout)
             }
             
-          case (l, parent: ValOrDefDef, NoBlock(r)) if r == parent.rhs && layout.contains("{") => 
+          case (l, parent: ValOrDefDef, NoBlock(r)) if r.samePos(parent.rhs) && layout.contains("{") => 
             layout match {
               case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace")
             }

@@ -617,9 +617,15 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
   trait BlockPrinters {
     this: TreePrinting with PrintingUtils =>
-
+    
     override def Block(tree: Block, stats: List[Tree])(implicit ctx: PrintingContext) = {
-      if(stats.size > 1 && stats.allOnSameLine) {
+       
+      def allTreesOnSameLine(ts: List[Tree]): Boolean = {
+        val poss = ts map (_.pos)
+        poss.forall(_.isRange) && (poss.map(_.line).distinct.length <= 1)
+      }
+      
+      if(stats.size > 1 && allTreesOnSameLine(stats)) {
         l ++ pp(stats) ++ r
       } else {
         val rest = ppi(stats, separator = newline) ++ r 
