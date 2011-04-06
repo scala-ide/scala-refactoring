@@ -53,10 +53,7 @@ trait TreeTraverser {
         case t: DefTree if t.symbol != NoSymbol =>
           f(t.symbol, t)
         case t: RefTree =>
-          val tree = if(t.pos.isRange) {
-            t setPos fixTreePositionIncludingCarriageReturn(t.pos)
-          } else t 
-          f(t.symbol, tree)
+          f(t.symbol, t)
         case t: TypeTree =>
           
           def handleType(typ: Type): Unit = typ match {

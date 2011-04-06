@@ -448,11 +448,18 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
     
     override def ValDef(tree: ValDef, mods: List[ModifierTree], name: Name, tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
-            
+         
+      def needsKeyword(t: ValDef) =
+        !t.mods.hasFlag(Flags.PARAM) &&
+        !t.mods.hasFlag(Flags.PARAMACCESSOR) &&
+        !t.mods.hasFlag(Flags.CASEACCESSOR) &&
+        !t.mods.hasFlag(Flags.SYNTHETIC) &&
+        !t.symbol.isSynthetic
+      
       //mods.annotations map traverse
       val mods_ = {
         val existingMods = mods map (m => m.nameString + " ") mkString ""
-        if(!tree.symbol.isMutable && tree.needsKeyword && !existingMods.contains("val")) {
+        if(!tree.symbol.isMutable && needsKeyword(tree) && !existingMods.contains("val")) {
           existingMods + "val "
         } else {
           existingMods 

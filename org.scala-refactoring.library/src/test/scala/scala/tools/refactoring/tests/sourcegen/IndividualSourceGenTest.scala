@@ -33,7 +33,7 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     case _ => Assert.fail(); throw new Exception("unreachable")
   }
   
-  def testDefDefWithNoPositionAndOriginalPosition(src: String, exp1: String, exp2: String) = {
+  def testDefDefWithNoPositionAndOriginalPosition(src: String, exp1: String, exp2: String) {
     
     val originalDefDef = getFirstMethod(src)
     
@@ -208,8 +208,8 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
     
     assertEquals("""
-      def addInterest(accounts: Array[Account1], rate: Float){
-        com.synchronized( {
+      def addInterest(accounts: Array[Account1], rate: Float) {
+        com.synchronized({
         for (a <- accounts) {
           println(a.value)
         }

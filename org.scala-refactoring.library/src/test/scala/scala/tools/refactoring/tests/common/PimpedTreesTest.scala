@@ -32,8 +32,8 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     
     val c = tree.find(_.isInstanceOf[ClassDef]).get
     
-    assertFalse(c.originalRightSibling.isDefined)
-    assertTrue(c.originalLeftSibling.isDefined)
+    assertFalse(originalRightSibling(c).isDefined)
+    assertTrue(originalLeftSibling(c).isDefined)
   }
   
   @Test
@@ -41,8 +41,8 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     
     val c = tree.find(_.isInstanceOf[Template]).get
     
-    assertTrue(c.originalLeftSibling.isDefined)
-    assertFalse(c.originalRightSibling.isDefined)
+    assertTrue(originalLeftSibling(c).isDefined)
+    assertFalse(originalRightSibling(c).isDefined)
   }
     
   @Test
@@ -50,14 +50,14 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     
     val i = tree.find(_.toString == "42").get
     
-    val root = i.originalParent flatMap (_.originalParent flatMap (_.originalParent flatMap (_.originalParent))) get
+    val root = originalParentOf(i) flatMap (originalParentOf(_) flatMap (originalParentOf(_) flatMap originalParentOf)) get
     
     assertTrue(root.isInstanceOf[PackageDef])
   }
   
   @Test
   def rootHasNoParent() {
-    assertEquals(None, tree.originalParent)
+    assertEquals(None, originalParentOf(tree))
   }
   
   
@@ -69,10 +69,10 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     assertEquals("""<empty> with <empty> {
   private[this] val test: Int = 42;
   private[this] val test2: Int = 42
-}""", v.originalParent.get.toString)
+}""", originalParentOf(v).get.toString)
     
-    assertEquals(None, v.originalLeftSibling)
-    assertEquals("private[this] val test2: Int = 42", v.originalRightSibling.get.toString)
+    assertEquals(None, originalLeftSibling(v))
+    assertEquals("private[this] val test2: Int = 42", originalRightSibling(v).get.toString)
   }
 
 }
