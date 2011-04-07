@@ -35,5 +35,6 @@ import util._
     classOf[SourceHelperTest], 
     classOf[TreeChangesDiscovererTest], 
     classOf[NotTest], 
+    classOf[FindShadowedTest], 
     classOf[TreeTransformationsTest]))
 class RefactoringTestSuite {}
