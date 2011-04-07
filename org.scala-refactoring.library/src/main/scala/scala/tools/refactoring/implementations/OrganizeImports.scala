@@ -53,8 +53,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
     val unit = compilationUnitOfFile(selection.pos.source.file).get
-    //val dependentPackageObjectNames = computeDependentPackageObjectNames(unit)
-    //val dependentModules = computeDependentModules(unit)
     
     val organizeImports = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, existingImports, others) =>
@@ -86,18 +84,29 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           
           _ map {
             case imp @ Import(expr, selectors) =>
+              
               val neededSelectors = selectors.filter { s =>
                 neededImportSelector(unit, expr, s) ||
                 additionallyImportedTypes.contains(s.name.toString)                 
               }
               
               if(neededSelectors.size > 0) {
-                val newExpr = (↓(setNoPosition) apply duplicateTree(expr) getOrElse expr)
-                val newImport = imp.copy(selectors = neededSelectors, expr = newExpr)
                 
-                newImport
+                val newExpr = unit.depends.find(_.nameString == expr.nameString) map { importSymbol =>
+                  // expand to the full name, this is only needed for 2.8; on 2.9 the expression 
+                  // contains all the necessary information.
+                  val owners = importSymbol.ownerChain.takeWhile(_.nameString != "<root>")
+                  val fullName = owners.reverse.map(_.nameString).mkString(".")
+                  
+                  Ident(fullName)
+                } getOrElse {
+                  expr
+                }
+                
+                Import(newExpr, neededSelectors)
+              } else {
+                EmptyTree
               }
-              else EmptyTree
           }
         }
         
