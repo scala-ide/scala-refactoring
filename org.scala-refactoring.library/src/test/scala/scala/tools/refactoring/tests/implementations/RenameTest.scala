@@ -532,8 +532,16 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(renameTo("refactoring"))
     
+  @ScalaVersion(matches="2.8.1")
   @Test
-  def renameUnderWindows = new FileSet {
+  def renameUnderWindows28 = new FileSet {
+    "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/loc/*)*/ = 42\r\n    loc * loc\r\n  }\r\n}" becomes
+    "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/fourtytwo/*)*/ = 42\r\n    fourtytwo * fourtytwo\r\n  }\r\n}"
+  } applyRefactoring(renameTo("fourtytwo"))
+    
+  @ScalaVersion(matches="2.9")
+  @Test
+  def renameUnderWindows29 = new FileSet {
     "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/loc/*)*/ = 42\r\n    loc * loc\r\n  }\r\n}" becomes
     "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/fourtytwo/*)*/ = 42\r\n    fourtytwo * fourtytwo\r\n  }\r\n}"
   } applyRefactoring(renameTo("fourtytwo"))
