@@ -26,6 +26,7 @@ import util._
     classOf[InlineLocalTest], 
     classOf[MarkOccurrencesTest], 
     classOf[OrganizeImportsTest], 
+    classOf[UnusedImportsFinderTest], 
     classOf[OrganizeMissingImportsTest], 
     classOf[RenameTest], 
     classOf[IndividualSourceGenTest], 
@@ -35,5 +36,6 @@ import util._
     classOf[SourceHelperTest], 
     classOf[TreeChangesDiscovererTest], 
     classOf[NotTest], 
+    classOf[FindShadowedTest], 
     classOf[TreeTransformationsTest]))
 class RefactoringTestSuite {}
