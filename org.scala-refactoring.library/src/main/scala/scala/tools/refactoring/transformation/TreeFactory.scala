@@ -160,12 +160,14 @@ trait TreeFactory {
     mkClass(mods withPosition (Flags.CASE, NoPosition), name, tparams, argss, body, parents, superArgs)
   }
   
-  implicit def typeFromTree(t1: Tree) = new {
+  class CopyTypeFromOtherTree(t1: Tree) {
     def typeFrom(t2: Tree) = {
       t1.tpe = t2.tpe
       t1
     }
   }
+
+  implicit def typeFromTree(t1: Tree) = new CopyTypeFromOtherTree(t1)
   
   /**
    * Creates a function call `fun` on the selector and passes a function with
