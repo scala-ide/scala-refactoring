@@ -28,14 +28,33 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
     }
 
     // we also need all the dependencies of the compilation unit
-    val unitDependencies = unit.depends filterNot (s => s.isModuleClass || s == NoSymbol) toList
-
-    (unitDependencies ::: (filterTree(unit.body, importsIgnoringTraverser) map (_.tpe.typeSymbol))) distinct
+    val unitDependencies = {
+      unit.depends filterNot { s =>
+        
+        /*
+         * In interactive mode, the compiler contains more information (constants are not inlined) and
+         * we can analyze more correctly.  In non-interactive use, we currently don't have a way to do
+         * this, so we prefer to get false negatives instead of false positives.
+         * 
+         * This way, when this trait is used during organize imports, an import that was previously
+         * not detected by the compiler's code analysis can now be removed.
+         * */
+        
+        if(global.forInteractive)
+          s == NoSymbol || s.isModuleClass
+        else
+          s == NoSymbol
+      } toList
+    }
+    
+    val astDependencies = filterTree(unit.body, importsIgnoringTraverser) map (_.tpe.typeSymbol)
+        
+    (unitDependencies ::: (astDependencies)) distinct
   }
 
   def wildcardImport(i: ImportSelector) = i.name == nme.WILDCARD
 
-  def isWildcardImportNeeded(unit: CompilationUnit, expr: Tree, s: ImportSelector): Boolean = {
+  def isWildcardImportNeeded(unit: CompilationUnit, dependentModules: List[Symbol], expr: Tree, s: ImportSelector): Boolean = {
 
     /*
      * Because we cannot yet detect unused wildcard imports from a value, 
@@ -45,7 +64,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
      *   
      * are never reported as being unused. 
      */
-    if(expr.symbol.isMethod) return true 
+    if(expr.symbol.isValue || expr.symbol.isMethod) return true 
     
     def isDependentModule(m: Symbol) = {
       val moduleName = if (m.isModuleClass) m.fullName else m.owner.fullName
@@ -53,7 +72,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
       moduleName == importName
     }
 
-    expr.symbol == NoSymbol || computeDependentModules(unit).exists(isDependentModule)
+    expr.symbol == NoSymbol || dependentModules.exists(isDependentModule)
   }
 
   def importSelectorImportsFromNeededPackageObject(unit: CompilationUnit, t: Tree) = {
@@ -64,8 +83,11 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
   }
 
   def neededImportSelector(unit: CompilationUnit, expr: Tree, s: ImportSelector) = {
-    (wildcardImport(s) && isWildcardImportNeeded(unit, expr, s)) ||
-      computeDependentModules(unit).exists(m => m.name.toString == s.name.toString) ||
+    
+    val dependentModules = computeDependentModules(unit)
+    
+    (wildcardImport(s) && isWildcardImportNeeded(unit, dependentModules, expr, s)) ||
+      dependentModules.exists(m => m.name.toString == s.name.toString) ||
       importSelectorImportsFromNeededPackageObject(unit, expr)
   }
   
