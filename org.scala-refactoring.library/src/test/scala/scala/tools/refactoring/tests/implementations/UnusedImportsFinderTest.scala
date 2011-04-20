@@ -5,9 +5,8 @@
 package scala.tools.refactoring
 package tests.implementations
 
-import implementations.OrganizeImports
-import tests.util.{TestHelper, TestRefactoring}
 import implementations.UnusedImportsFinder
+import tests.util.TestHelper
 
 class UnusedImportsFinderTest extends TestHelper {
   outer =>
@@ -62,6 +61,49 @@ class UnusedImportsFinderTest extends TestHelper {
         val forest = new Forest
         import forest._
         val x = new Tree
+      }
+    """
+  )
+    
+  @Test
+  def wildcardImports() = findUnusedImports(
+    "", 
+    """
+      import scala.util.control.Exception._
+
+      class UsesTrees {
+        val plugin = ScalaPlugin.plugin
+        import plugin._
+        ()
+      }
+    """
+  )
+    
+  @Test
+  def wildcardImportsFromValsAreIgnored() = findUnusedImports(
+    "", 
+    """
+      object ScalaPlugin {
+        var plugin: String = _
+      }
+
+      class UsesTrees {
+        val plugin = ScalaPlugin.plugin
+        import plugin._
+        ()
+      }
+    """
+  )
+    
+  @Test
+  def importFromJavaClass() = findUnusedImports(
+    "", 
+    """
+      import java.util.Date
+
+      object ScalaPlugin {
+        import Date._
+        val max = parse(null)
       }
     """
   )
