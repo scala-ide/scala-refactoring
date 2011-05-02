@@ -9,9 +9,8 @@ import common.Change
 import transformation.TreeFactory
 import transformation.TreeExtractors
 
-abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with TreeExtractors {
+abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with TreeExtractors with common.InteractiveScalaCompiler {
   
-  val global: tools.nsc.interactive.Global
   import global._
   
   type PreparationResult = Tree

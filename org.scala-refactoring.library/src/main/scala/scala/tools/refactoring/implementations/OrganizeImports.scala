@@ -7,7 +7,7 @@ package implementations
 import common.{TreeTraverser, Change}
 import transformation.TreeFactory
 
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder {
+abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with common.InteractiveScalaCompiler {
   
   import global._
   

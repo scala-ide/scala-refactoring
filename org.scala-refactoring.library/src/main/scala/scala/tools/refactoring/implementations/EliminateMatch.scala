@@ -11,16 +11,37 @@ import transformation.TreeExtractors
 import transformation.TreeFactory
 
 abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors with TreeFactory {
-  
-  val global: tools.nsc.interactive.Global
+    
+  this: common.CompilerAccess =>
   
   import global._
   
-  type PreparationResult = Transformation[Tree, Tree]
+  object Elimination extends Enumeration {
+    val ForEach   = Value("foreach")
+    val Map       = Value("map")
+    val FlatMap   = Value("flatMap")
+    val IsDefined = Value("isDefined")
+    val IsEmpty   = Value("isEmpty")
+    val Exists    = Value("exists")
+    val Forall    = Value("forall")
+    val Flatten   = Value("flatten")
+    val OrElse    = Value("orElse")
+    val GetOrElse = Value("getOrElse")
+    val ToList    = Value("toList")
+  }
+  
+  type PreparationResult = (Elimination.Value, Position, Transformation[Tree, Tree])
   
   class RefactoringParameters
   
-  def prepare(s: Selection) = {
+  def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
+    
+    val res = s.findSelectedOfType[Match] map { t => getMatchElimination(t)}
+    
+    res getOrElse Left(PreparationError("No elimination candidate found."))
+  }
+  
+  def getMatchElimination(t: Tree): Either[PreparationError, PreparationResult] = {
     
     /**
      * When replacing with `map`, we need to remove the explicit `Some` construction
@@ -68,68 +89,70 @@ abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors 
      * A huge thanks to Tony Morris for his scala.Option Cheat Sheet
      */
       
-    s.findSelectedOfType[Match] collect {
+    Option(t) collect {
       
       /* foreach */
         
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body, UnitLit())) =>
-        replaceWithCall("foreach", m, name, body)
+        (Elimination.ForEach, m.pos, replaceWithCall("foreach", m, name, body))
       
       /* map */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ (SomeExpr(_) | Block(_, SomeExpr(_))), NoneExpr())) =>
-         replaceWithMap(m, name, body)
+         (Elimination.Map, m.pos, replaceWithMap(m, name, body))
         
       /* flatMap */
         
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ (HasType("Option" | "Some" | "None")), NoneExpr())) =>
-        replaceWithCall("flatMap", m, name, body)
+        (Elimination.FlatMap, m.pos, replaceWithCall("flatMap", m, name, body))
           
       /* isDefined */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(_, Literal(Constant(true)), Literal(Constant(false)))) =>
-       replaceWith("isDefined", m)
+        (Elimination.IsDefined, m.pos, replaceWith("isDefined", m))
         
       /* isEmpty */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, Literal(Constant(false)), Literal(Constant(true)))) =>
-        replaceWith("isEmpty", m)
+        (Elimination.IsEmpty, m.pos, replaceWith("isEmpty", m))
         
       /* exists */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ HasType("Boolean"), Literal(Constant(false)))) =>
-        replaceWithCall("exists", m, name, body)
+        (Elimination.Exists, m.pos, replaceWithCall("exists", m, name, body))
         
       /* forall */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, body @ HasType("Boolean"), Literal(Constant(true)))) =>
-        replaceWithCall("forall", m, name, body)
+        (Elimination.Forall, m.pos, replaceWithCall("forall", m, name, body))
       
       /* flatten */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, Ident(i) , NoneExpr())) if name == i =>
-         replaceWith("flatten", m)
+         (Elimination.Flatten, m.pos, replaceWith("flatten", m))
       
       /* orElse */
          
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, SomeExpr(Ident(nameInBody)), noneBody @ (HasType("Option" | "Some" | "None")))) if name == nameInBody =>
-         replaceWithExpr("orElse", m, noneBody)
+         (Elimination.OrElse, m.pos, replaceWithExpr("orElse", m, noneBody))
       
       /* getOrElse */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, Ident(nameInBody), noneBody)) if name == nameInBody =>
-         replaceWithExpr("getOrElse", m, noneBody)
+         (Elimination.GetOrElse, m.pos, replaceWithExpr("getOrElse", m, noneBody))
       
       /* toList */
       
       case m @ Match(HasType("Option"), MatchOnSomeAndNone(name, ListExpr(Ident(name2)), NilExpr())) if name == name2 =>
-         replaceWith("toList", m)
+         (Elimination.ToList, m.pos, replaceWith("toList", m))   
 
     } toRight(PreparationError("No elimination candidate found."))
   }
     
-  def perform(selection: Selection, trans: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, preparationResult: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
 
-    Right(transformFile(selection.file, topdown(matchingChildren(trans))))
+    val (_, _, transformation) = preparationResult
+    
+    Right(transformFile(selection.file, topdown(matchingChildren(transformation))))
   }
 }

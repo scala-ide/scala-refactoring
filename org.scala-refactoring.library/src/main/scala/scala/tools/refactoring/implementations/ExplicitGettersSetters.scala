@@ -9,7 +9,7 @@ import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 import common.Change
 
-abstract class ExplicitGettersSetters extends MultiStageRefactoring {
+abstract class ExplicitGettersSetters extends MultiStageRefactoring with common.InteractiveScalaCompiler {
   
   import global._
   

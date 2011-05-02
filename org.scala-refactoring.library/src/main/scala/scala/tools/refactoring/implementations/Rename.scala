@@ -10,9 +10,8 @@ import transformation.TreeFactory
 import analysis.TreeAnalysis
 import tools.nsc.symtab.Flags
 
-abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory {
+abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler  {
     
-  val global: tools.nsc.interactive.Global
   import global._
       
   case class PreparationResult(selectedTree: SymTree, hasLocalScope: Boolean)
