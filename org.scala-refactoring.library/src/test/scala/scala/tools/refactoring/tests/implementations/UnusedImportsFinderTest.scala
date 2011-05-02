@@ -107,6 +107,18 @@ class UnusedImportsFinderTest extends TestHelper {
       }
     """
   )
+    
+  @Test
+  def ignoreImportIsNeverunused() = findUnusedImports(
+    "", 
+    """
+      import java.util.{Date => _, _}
+
+      object NoDate {
+        var x: Stack = null
+      }
+    """
+  )
   
   // more tests are in organize imports
 }

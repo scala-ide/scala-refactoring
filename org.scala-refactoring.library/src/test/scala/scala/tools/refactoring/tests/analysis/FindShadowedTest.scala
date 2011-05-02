@@ -41,8 +41,7 @@ class FindShadowedTest extends TestHelper {
       import TheShadow._
 
       val i = Nil
-    }
-""")
+    }""")
     
     val results = new collection.mutable.ListBuffer[Symbol]
 
@@ -63,11 +62,6 @@ class FindShadowedTest extends TestHelper {
           
           fromEnclosingScopes ++ fromImported
         }
-        
-//        members.find(s => s.name == name && s.pos != v.symbol.pos) foreach {
-//          sym =>  
-//            println(name + " at line "+ v.pos.line +" shadows definition on line "+ sym.pos.line)
-//        }      
         
         results ++= members.find(s => s.name == name && s.pos != v.symbol.pos)
         

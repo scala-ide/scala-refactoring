@@ -9,9 +9,8 @@ import common.Change
 import transformation.TreeFactory
 import analysis.Indexes
 
-abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with Indexes {
+abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with Indexes with common.InteractiveScalaCompiler  {
   
-  val global: tools.nsc.interactive.Global
   import global._
   
   type PreparationResult = ValDef

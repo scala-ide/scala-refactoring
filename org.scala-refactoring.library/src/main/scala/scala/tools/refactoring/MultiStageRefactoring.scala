@@ -11,7 +11,9 @@ import common.{Change, InteractiveScalaCompiler}
  * representing the several phases of the refactoring
  * process.
  */
-abstract class MultiStageRefactoring extends Refactoring with InteractiveScalaCompiler {
+abstract class MultiStageRefactoring extends Refactoring {
+    
+  this: common.CompilerAccess =>
     
   /**
    * Preparing a refactoring can either return a result

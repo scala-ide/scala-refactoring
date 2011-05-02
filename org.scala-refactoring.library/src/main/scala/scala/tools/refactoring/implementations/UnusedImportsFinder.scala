@@ -82,7 +82,26 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
     }
   }
 
-  def neededImportSelector(unit: CompilationUnit, expr: Tree, s: ImportSelector) = {
+  def neededImportSelector(unit: CompilationUnit, expr: Tree, s: ImportSelector): Boolean = {
+    
+    /* Never report an import that is renamed to _ as unused. */
+    if (s.rename == nme.WILDCARD) return true
+    
+    /* 
+     * We cannot (yet) decide whether an import is needed for all the different kinds of imports.
+     * 
+     * For example, a constant that is imported will get inlined in the build compiler, so we need
+     * to skip these. Also, methods that are imported cannot be detected at the moment.
+     * 
+     * */
+    val cannotDecideIfNeeded = expr.symbol.info.members filter (_.name == s.name) map (_.info) exists { 
+      case _: TypeRef =>
+        false
+      case _ =>
+        true
+    }
+    
+    if(cannotDecideIfNeeded) return true
     
     val dependentModules = computeDependentModules(unit)
     

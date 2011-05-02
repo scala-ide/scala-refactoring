@@ -47,7 +47,7 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     }
   }
   
-  def checkNameForCollision(s: String, t: global.Tree, r: global.Tree) = {
+  def nameAlreadyUsed(s: String, t: global.Tree, r: global.Tree) = {
     index = GlobalIndex(r)
     !doesNameCollide(s, t.symbol).isEmpty
   }
@@ -68,16 +68,17 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     
     val valA = tree.find("a").get
     
-    val checkName = checkNameForCollision(_: String, valA, tree)
+    val alreadyUsed = nameAlreadyUsed(_: String, valA, tree)
     
-    assertFalse(checkName("c"))
-    assertFalse(checkName("x"))
-    assertFalse(checkName("A"))
-    assertFalse(checkName("method2"))
+    assertFalse(alreadyUsed("c"))
+    assertFalse(alreadyUsed("Whatever"))
+    assertFalse("x is not visible from a", alreadyUsed("x"))
+    assertFalse(alreadyUsed("A"))
+    assertFalse(alreadyUsed("method2"))
 
-    assertTrue (checkName("b"))
-    assertTrue (checkName("a"))
-    assertTrue (checkName("method1"))
+    assertTrue (alreadyUsed("b"))
+    assertTrue (alreadyUsed("a"))
+    assertTrue (alreadyUsed("method1"))
   }
   
   @Test
@@ -107,17 +108,17 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     class D(val aString: String) extends A
     """)
     
-    val valA = tree.find("method1").get
+    val method1InA = tree.find("method1").get
     
-    val checkName = checkNameForCollision(_: String, valA, tree)
+    val alreadyUsed = nameAlreadyUsed(_: String, method1InA, tree)
     
-    assertFalse(checkName("blabla"))
-    assertFalse(checkName("method4"))
-    assertFalse(checkName("A"))
+    assertFalse(alreadyUsed("blabla"))
+    assertFalse(alreadyUsed("method4"))
     
-    assertTrue(checkName("method2"))
-    assertTrue(checkName("method3"))
-    assertTrue(checkName("aString"))
+    assertTrue(alreadyUsed("aString"))
+    assertTrue(alreadyUsed("method3"))
+    assertTrue(alreadyUsed("method1"))
+    assertTrue(alreadyUsed("method2"))
   }
   
   @Test
@@ -142,16 +143,16 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     
     val valA = tree.find("A").get
     
-    val checkName = checkNameForCollision(_: String, valA, tree) 
+    val alreadyUsed = nameAlreadyUsed(_: String, valA, tree) 
     
-    assertFalse(checkName("Ok1"))
-    assertFalse(checkName("Ok2"))
-    assertFalse(checkName("B"))
+    assertFalse(alreadyUsed("Ok1"))
+    assertFalse(alreadyUsed("Ok2"))
+    assertFalse(alreadyUsed("B"))
 
-    assertTrue(checkName("C1"))
-    assertTrue(checkName("C2"))
-    assertTrue(checkName("C3"))
-    assertTrue(checkName("C4"))
+    assertTrue(alreadyUsed("C1"))
+    assertTrue(alreadyUsed("C2"))
+    assertTrue(alreadyUsed("C3"))
+    assertTrue(alreadyUsed("C4"))
   }
 }
 

@@ -28,7 +28,7 @@ trait TreeTraverser {
   
   class FilterTreeTraverser(p: Tree => Boolean) extends global.FilterTreeTraverser(p) with Traverser
 
-  def filterTree(t: Tree, traverser: FilterTreeTraverser) = {
+  def filterTree(t: Tree, traverser: global.FilterTreeTraverser) = {
     traverser.traverse(t)
     traverser.hits.toList
   }

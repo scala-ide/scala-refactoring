@@ -266,7 +266,8 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main {
       }    """ becomes
     """
-      
+      import java.util._
+      import scala.collection._
  
       object Main {
       }    """
