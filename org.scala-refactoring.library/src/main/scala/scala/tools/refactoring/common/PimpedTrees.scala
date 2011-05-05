@@ -109,7 +109,11 @@ trait PimpedTrees {
           case t if t.pos == NoPosition => NoPosition
           case t: ValOrDefDef =>
             
-            val name = if(t.symbol != NoSymbol) t.symbol.nameString else t.name.toString.trim
+            val name = t.symbol match {
+              case NoSymbol => t.name.toString.trim
+              case ts: TermSymbol if ts.isLazy => ts.lazyAccessor.nameString
+              case _ => t.symbol.nameString
+            }
             
             /* In general, the position of the name starts from t.pos.point and is as long as the trimmed name.
              * But if we have a val in a function: 

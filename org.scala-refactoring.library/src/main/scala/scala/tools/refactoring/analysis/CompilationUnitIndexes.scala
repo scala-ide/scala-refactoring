@@ -37,7 +37,13 @@ trait CompilationUnitIndexes {
         def add(s: Symbol) = 
           defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
         
-        add(t.symbol)
+        t.symbol match {
+          case ts: TermSymbol if ts.isLazy =>
+            add(ts.lazyAccessor)
+          case _ =>
+            add(t.symbol)
+        }
+        
       }
 
       def addReference(s: Symbol, t: Tree) {
