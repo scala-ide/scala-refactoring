@@ -113,14 +113,22 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     }
   }
   
-  case class FileSelection(val file: AbstractFile, from: Int, to: Int) extends Selection {
+  case class FileSelection(file: AbstractFile, root: Tree, from: Int, to: Int) extends Selection {
+    
+    @deprecated("Please use the primary constructor.", "0.4.0")
+    def this(file: AbstractFile, from: Int, to: Int) = {
+      this(file, compilationUnitOfFile(file).get.body, from, to)
+    }
     
     lazy val pos = new RangePosition(root.pos.source, from, from, to)
-    
-    lazy val root = compilationUnitOfFile(file).get.body
   }
   
-  case class TreeSelection(val root: Tree) extends Selection {
+  object FileSelection {
+    @deprecated("Please use the primary constructor.", "0.4.0")
+    def apply(file: AbstractFile, from: Int, to: Int) = new FileSelection(file: AbstractFile, from: Int, to: Int)
+  }
+  
+  case class TreeSelection(root: Tree) extends Selection {
     
     if(!root.pos.isRange)
       error("Position not a range.")

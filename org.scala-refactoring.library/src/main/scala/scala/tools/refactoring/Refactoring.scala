@@ -8,6 +8,7 @@ import common.{Selections, SilentTracing, Change, PimpedTrees}
 import sourcegen.SourceGenerator
 import transformation.TreeTransformations
 import tools.nsc.io.AbstractFile
+import collection.SeqView
 
 /**
  * The Refactoring trait combines the transformation and source generation traits with
@@ -25,7 +26,8 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
    * @return A list of changes that can be applied to the source file.
    */
   def refactor(changed: List[global.Tree]): List[Change] = context("main") {
-    createChanges(changed)
+    val changes = createChanges(changed)
+    changes map minimizeChange
   }
   
   /**
@@ -34,5 +36,25 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
    */
   def transformFile(file: AbstractFile, transformation: Transformation[global.Tree, global.Tree]): List[Change] = {
     refactor(transformation(abstractFileToTree(file)).toList)
+  }
+  
+  /**
+   * Makes a generated change as small as possible by eliminating the 
+   * common pre- and suffix between the change and the source file.
+   */
+  private def minimizeChange(change: Change): Change = change match {
+    case Change(file, from, to, changeText) =>
+
+      def commonPrefixLength(s1: Seq[Char], s2: Seq[Char]) =
+        s1 zip s2 takeWhile Function.tupled(_==_) length
+      
+      val original    = global.getSourceFile(file).content.subSequence(from, to).toString
+      val replacement = changeText
+
+      val commonStart = commonPrefixLength(original, replacement)
+      val commonEnd   = commonPrefixLength(original.substring(commonStart).reverse, replacement.substring(commonStart).reverse)
+
+      val minimizedChangeText = changeText.subSequence(commonStart, changeText.length - commonEnd).toString
+      Change(file, from + commonStart, to - commonEnd, minimizedChangeText)
   }
 }

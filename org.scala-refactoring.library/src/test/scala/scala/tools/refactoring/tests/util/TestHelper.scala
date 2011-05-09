@@ -47,7 +47,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     
     lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
       // not all refactorings need a selection:
-      FileSelection(trees.head.pos.source.file, 0, 0)
+      FileSelection(trees.head.pos.source.file, trees.head, 0, 0)
     }
     
     def apply(f: FileSet => List[String]) = assert(f(this))
@@ -80,7 +80,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     val end   = commentSelectionEnd(src)
     
     if(start >= 0 && end >= 0)
-      Some(FileSelection(tree.pos.source.file, start, end))
+      Some(FileSelection(tree.pos.source.file, tree, start, end))
     else 
       None
   }
