@@ -23,7 +23,7 @@ abstract class MarkOccurrences extends common.Selections with analysis.Indexes w
     def occurrencesForSymbol(s: Symbol) = 
       index occurences s map (_.namePosition) filter (_ != global.NoPosition)
     
-    val selectedTree = (new FileSelection(file, from, to)).findSelectedWithPredicate {
+    val selectedTree = (new FileSelection(file, global.unitOfFile(file).body, from, to)).findSelectedWithPredicate {
       case (_: global.TypeTree) | (_: global.SymTree) | (_: global.Ident) => true
       case _ => false
     }

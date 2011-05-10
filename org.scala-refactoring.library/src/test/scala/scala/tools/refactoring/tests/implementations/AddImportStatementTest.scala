@@ -22,7 +22,7 @@ class AddImportStatementTest extends TestHelper {
         val start = commentSelectionStart(src)
         val end = commentSelectionEnd(src)
         val file = addToCompiler(randomFileName(), src)
-        new FileSelection(file, start, end)
+        new FileSelection(file, global.unitOfFile(file).body, start, end)
       }
       val change = addImport(selection, imp._1 + "." + imp._2)
     }
