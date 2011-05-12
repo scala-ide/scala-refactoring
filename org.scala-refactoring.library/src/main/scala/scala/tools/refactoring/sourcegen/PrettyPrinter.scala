@@ -325,17 +325,27 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
     
     override def Function(tree: Function, vparams: List[ValDef], body: Tree)(implicit ctx: PrintingContext) = {
-      vparams match {
+
+      val (args, bdy) = vparams match {
         
         case vparam :: Nil if !keepTree(vparam.tpt) =>
           val _body = p(body)
-          if(_body.asText.startsWith("=>"))
-            p(vparam) ++ Fragment(" ") ++ _body
-          else
-            p(vparam, before = "", after = " => ") ++ _body
-      
+          
+          if(_body.asText.startsWith("=>")) {
+            (p(vparam) ++ Fragment(" "),  _body)
+          } else {
+            (p(vparam, before = "", after = " => "), _body)
+          }
         case _ =>
-          pp(vparams, before = "(", separator = ", ", after = ") => ") ++ p(body)
+          (pp(vparams, before = "(", separator = ", ", after = ") => "), p(body))
+      }
+      
+      body match {
+        // the body of the function contains more than one statement:
+        case Block(_ :: Nil, _) if !bdy.asText.matches("(?ms)\\s*(=>)?\\s*\\{.*") => 
+          Layout("{") ++ args ++ bdy ++ Layout("\n" + ctx.ind.current + "}")
+        case _ =>
+          args ++ bdy
       }
     }
   }

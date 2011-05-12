@@ -240,7 +240,7 @@ trait LayoutHelper extends CommentHelpers {
   private val Colon = """(.*?:\s+)(.*)""".r
   private val Arrow = """(.*?=>\s?)(.*)""".r
   private val Dot = """(.*)(\..*)""".r
-  private val Equals = """(.*?=\s?)(.*)""".r
+  private val Equals = """(?ms)(.*?=\s?)(.*)""".r
   private val ClosingBrace = """(?ms)(.*?)\)(.*)""".r
   private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\n.*)""".r
   private val Comma = """(.*?),(.*)""".r
@@ -320,10 +320,15 @@ trait LayoutHelper extends CommentHelpers {
               case NewLine(l, r) => (l, r, "NewLine between ValDefs")
               case _ => split(layout)
             }
+          
+          case (l, parent: ValOrDefDef, r) if r.samePos(parent.rhs) && layout.contains("=") =>
+            layout match {
+              case Equals(l, r) => (l, r, "Equals after ValOrDefDef")
+            }            
             
           case (l, parent: ValOrDefDef, NoBlock(r)) if r.samePos(parent.rhs) && layout.contains("{") => 
             layout match {
-              case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace")
+              case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace after ValOrDefDef")
             }
             
           case (l, _, r) => split(layout)
