@@ -89,7 +89,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       package tests.importing
       
       import scala.collection.mutable.{HashMap, ListBuffer}
-      import scala.math.{BigInt, _}
+      import scala.math._
       import scala.xml.{Elem, QNode}
       """ + restOfFile
     } applyRefactoring organize
@@ -417,6 +417,23 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       
  
       object Main {
+      }    """
+  } applyRefactoring organize
+  
+  @Test
+  def simplifyWildcards = new FileSet {
+    """
+      import scala.collection.mutable._
+      import scala.collection.mutable.ListBuffer
+ 
+      object Main {
+        var x: ListBuffer = null
+      }    """ becomes
+    """
+      import scala.collection.mutable._
+ 
+      object Main {
+        var x: ListBuffer = null
       }    """
   } applyRefactoring organize
   
