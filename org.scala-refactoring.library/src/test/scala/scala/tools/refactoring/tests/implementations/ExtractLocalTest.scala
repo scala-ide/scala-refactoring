@@ -23,6 +23,29 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
+  def extracPartOfChainedCalls = new FileSet {
+    """
+      package extractLocal
+      object Demo {
+        def update(platform: String) {
+          val x = new collection.mutable.ListBuffer[String]
+     /*(*/x.toList/*)*/ mkString ","         
+        }
+      }
+    """ becomes
+    """
+      package extractLocal
+      object Demo {
+        def update(platform: String) {
+          val x = new collection.mutable.ListBuffer[String]
+     /*(*/  val asList = x.toList/*)*/ 
+            asList mkString ","         
+        }
+      }
+    """
+  } applyRefactoring(extract("asList"))
+  
+  @Test
   def extractIfCond = new FileSet {
     """
       package extractLocal

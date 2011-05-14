@@ -64,11 +64,19 @@ trait TreeFactory {
       }
   }
 
-  def mkValDef(name: String, rhs: Tree): ValDef = rhs match {
-    case rhs: Select if rhs.symbol.isMethod =>
-      ValDef(NoMods, name, new TypeTree(), Apply(rhs, Ident("_") :: Nil))
-    case _ =>
-      ValDef(NoMods, name, new TypeTree(), rhs)
+  def mkValDef(name: String, rhs: Tree): ValDef = {
+    
+    val valDef = ValDef(NoMods, name, new TypeTree, rhs)
+    def valDefForFunction = ValDef(NoMods, name, new TypeTree, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
+    
+    rhs match {
+      case rhs: Select if rhs.symbol.isMethod =>
+        rhs.symbol.tpe match {
+          case _: NullaryMethodType => valDef
+          case _ => valDefForFunction
+        }
+      case _ => valDef
+    }
   }
 
   def mkCallDefDef(name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {
