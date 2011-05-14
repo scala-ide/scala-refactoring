@@ -134,6 +134,7 @@ trait TreeExtractors {
               bind match {
                 case Bind(name, _) => Some(Pair(name, body))
                 case Ident(name)   => Some(Pair(name, body))
+                case _ => None
               }
             case _ => None
           }

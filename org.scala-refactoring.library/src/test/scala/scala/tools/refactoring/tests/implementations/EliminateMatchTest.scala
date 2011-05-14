@@ -84,6 +84,23 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
+  def eliminateIsDefined = new FileSet {
+    """
+    object EliminiateWithoutSelection {    
+      def f1(x: Option[String]) = x /*(*/ match /*)*/ {
+        case Some(_) => true
+        case None => false
+      }
+    }
+    """ becomes
+    """
+    object EliminiateWithoutSelection {    
+      def f1(x: Option[String]) = x /*(*/isDefined
+    }
+    """
+  } applyRefactoring(elim)
+  
+  @Test
   def flatMapElimination = new FileSet {
     """
       package elimination
@@ -201,12 +218,13 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
     """
       package elimination
       object EliminateMap {
-        (Some("s"): Option[String]) /*(*/exists (s =>
+        (Some("s"): Option[String]) /*(*/exists ({s =>
             val x = s.toInt
             if(x % 2 == 0)
               false
             else
-              true)
+              true
+        })
       }
     """
   } applyRefactoring(elim)
