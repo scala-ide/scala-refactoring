@@ -92,8 +92,8 @@ trait PimpedTrees {
   class TreeMethodsForPositions(t: Tree) {
     def hasExistingCode = t != null && !t.isEmpty && t.pos.isRange
     def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
-    def samePos(p: Position): Boolean = t.pos.sameRange(p) && t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
-    def samePos(o: Tree)    : Boolean = samePos(o.pos)
+    def samePos(p: Position): Boolean = t.pos.sameRange(p) && /*t.pos.point == p.point &&*/ t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
+    def samePos(o: Tree): Boolean = samePos(o.pos)
     def samePosAndType(o: Tree): Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
     
     /**
@@ -261,7 +261,7 @@ trait PimpedTrees {
     Memoized.on ((t: Tree) => (t, t.pos)) { tree =>
   
       def find(t: Tree): List[Tree] = {
-        (if(t samePos tree.pos)
+        (if(t samePos tree)
           t :: Nil
         else 
           Nil) ::: children(t).map(find).flatten
@@ -716,7 +716,7 @@ trait PimpedTrees {
           // were removed during the transformations. Therefore we have
           // to look up the original apply method
           val argumentsFromOriginalTree = compilationUnitOfFile(apply.pos.source.file) map (_.body) flatMap { root =>
-            root.find(_ samePosAndType apply) collect { case Apply(_, args) => args }
+            root.find(_ samePos apply) collect { case Apply(_, args) => args }
           } getOrElse (return block)
           
           val syntheticNamesToRealNames = (argumentsFromOriginalTree map { 

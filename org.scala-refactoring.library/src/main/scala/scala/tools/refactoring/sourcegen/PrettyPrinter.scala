@@ -359,14 +359,17 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       
       val needsBraces = selectors.size > 1 || tree.selectors.exists(renames)
       
-      val ss = (tree.selectors map { s =>
+      def ss = (tree.selectors map { s =>
         if(renames(s))
           s.name.toString + " => " + s.rename.toString  
         else
           s.name.toString
       } mkString ", ")
       
-      Layout("import ") ++ p(expr) ++ "." ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
+      expr match {
+        case EmptyTree => EmptyFragment
+        case _ => Layout("import ") ++ p(expr) ++ "." ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
+      }
     }
   }  
   

@@ -13,11 +13,53 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   class PreparationResult(val missingTypes: List[String] = Nil)
   
+  trait Participant extends (List[Import] => List[Import])
+  
+  object CollapseImports extends Participant {
+    def apply(trees: List[Import]) = {
+      trees.foldRight(Nil: List[Import]) { 
+        case (imp: Import, x :: xs) if imp.expr.toString == x.expr.toString => 
+          x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
+        case (imp: Import, xs) => 
+          imp :: xs
+      }
+    }
+  }
+  
+  object ExpandImports extends Participant {
+    def apply(trees: List[Import]) = {
+      trees flatMap {
+        case imp @ Import(_, selectors) if selectors.exists(wildcardImport) => 
+          List(imp)
+        case imp @ Import(_, selector :: Nil) => 
+          List(imp)
+        case Import(expr, selectors) =>
+          selectors map {
+            selector => Import(expr, selector :: Nil)
+          }
+      }
+    }
+  }
+  
+  object SimplifyWildcards extends Participant {
+    def apply(trees: List[Import]) = {
+      def renames(i: ImportSelector) = i.name != i.rename
+      trees map {
+        case imp @ Import(_, selectors) if selectors.exists(wildcardImport) && !selectors.exists(renames) => 
+          imp.copy(selectors = selectors.filter(wildcardImport)).setPos(imp.pos)
+        case imp =>
+          imp
+      }
+    }
+  }
+  
+  def DefaultOptions = List(CollapseImports, SimplifyWildcards)
+  
   /**
    * Imports that should be added are passed as tuples in the form
    * ("package.declaration", "TypeName")
    */
-  class RefactoringParameters(val importsToAdd: List[(String, String)] = Nil)
+  class RefactoringParameters(val importsToAdd: List[(String, String)] = Nil, val options: List[Participant] = DefaultOptions)
   
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
     
@@ -56,29 +98,19 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     
     val organizeImports = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, existingImports, others) =>
-        val sortImports: List[Tree] => List[Tree] = _.sortBy {
-          case t: Import => t.expr.toString
-        }
-          
-        val collapseImports: List[Tree] => List[Tree] = _.foldRight(Nil: List[Import]) { 
-          case (imp: Import, x :: xs) if imp.expr.toString == x.expr.toString => 
-            x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
-          case (imp: Import, xs) => 
-            imp :: xs
+        
+        val sortImports: List[Import] => List[Import] = _.sortBy {
+          case Import(expr, selector :: Nil) if !wildcardImport(selector) => expr.toString + selector.name.toString
+          case Import(expr, selectors) => expr.toString
         }
         
-        val simplifyWildcards: List[Tree] => List[Tree] = {
-          def renames(i: ImportSelector) = i.name != i.rename
-          
-          _ map {
-            case imp @ Import(_, selectors) if selectors.exists(wildcardImport) && !selectors.exists(renames) => 
-              imp.copy(selectors = selectors.filter(wildcardImport)).setPos(imp.pos)
-            case imp =>
-              imp
-          }
+        val sortImportedExpressions: List[Import] => List[Import] = _.map {
+          case imp @ Import(_, selectors :: Nil) => imp
+          case imp @ Import(_, selectors) if selectors.exists(wildcardImport) => imp
+          case imp @ Import(_, selectors) => imp.copy(selectors = selectors.sortBy(_.name.toString))
         }
         
-        val removeUnused: List[Tree] => List[Tree] = {
+        val removeUnused: List[Import] => List[Import] = {
           
           val additionallyImportedTypes = params.importsToAdd.unzip._2
           
@@ -92,17 +124,21 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
               
               if(neededSelectors.size > 0) {
                 val newExpr = ↓(setNoPosition) apply duplicateTree(expr) getOrElse expr
-                
                 Import(newExpr, neededSelectors)
               } else {
-                EmptyTree
+                Import(EmptyTree, Nil)
               }
           }
         }
         
         val newImports = params.importsToAdd map (mkImportFromStrings _).tupled
 
-        p copy (stats = ((sortImports andThen collapseImports andThen simplifyWildcards andThen removeUnused) apply (newImports ::: existingImports)) ::: others) replaces p
+        val ops = sortImports :: removeUnused :: params.options ::: sortImportedExpressions :: sortImports :: Nil
+        
+        // could we make this more elegant?
+        val finalImports = ops.foldLeft(newImports ::: existingImports)((imports, f) => f(imports))
+        
+        p copy (stats = finalImports ::: others) replaces p
     }
 
     Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))

@@ -114,7 +114,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import java.lang.{String => S, _}
-      import scala.collection.mutable.{ListBuffer, LinkedList}
+      import scala.collection.mutable.{LinkedList, ListBuffer}
 
       object Main {
         val s: String = ""
@@ -135,7 +135,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import java.lang.Object
-      import scala.collection.mutable.{ListBuffer, LinkedList}
+      import scala.collection.mutable.{LinkedList, ListBuffer}
   
       object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1); val ll = new LinkedList}
     """
@@ -168,7 +168,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import java.lang.{Object, String}
-      import scala.collection.mutable.{ListBuffer, LinkedList}
+      import scala.collection.mutable.{LinkedList, ListBuffer}
   
       object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1); val ll = new LinkedList}
     """
@@ -257,7 +257,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """
   
       import java.lang.String
-      import scala.collection.mutable.{ListBuffer, LinkedList}
+      import scala.collection.mutable.{LinkedList, ListBuffer}
   
       object Main { val s: String = ""; val lb = ListBuffer(""); val ll = new LinkedList }
     """
