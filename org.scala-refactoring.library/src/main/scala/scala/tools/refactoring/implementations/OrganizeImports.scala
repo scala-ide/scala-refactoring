@@ -43,7 +43,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   object SimplifyWildcards extends Participant {
     def apply(trees: List[Import]) = {
-      def renames(i: ImportSelector) = i.name != i.rename
+      def renames(i: ImportSelector) = i.rename != null && i.name != i.rename
       trees map {
         case imp @ Import(_, selectors) if selectors.exists(wildcardImport) && !selectors.exists(renames) => 
           imp.copy(selectors = selectors.filter(wildcardImport)).setPos(imp.pos)
