@@ -132,7 +132,7 @@ trait TreeExtractors {
           tt.original match {
             case Select(Ident(names.scala), names.Some) =>           
               bind match {
-                case Bind(name, _) => Some(Pair(name, body))
+                case Bind(name, Ident(nme.WILDCARD)) => Some(Pair(name, body))
                 case Ident(name)   => Some(Pair(name, body))
                 case _ => None
               }
