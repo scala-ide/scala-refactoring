@@ -89,10 +89,10 @@ trait TreeChangesDiscoverer {
       trace("Top tree %s has changed children.", t.getClass.getSimpleName)
 
       lazy val originalChildren = findOriginalTree(t) map children getOrElse Nil
-      lazy val modifiedChildren = t.children
+      lazy val modifiedChildren = children(t)
       
       t match {
-        case _: Block if originalChildren.size == modifiedChildren.size =>
+        case _: Block | _: Template if originalChildren.size == modifiedChildren.size =>
           
           originalChildren zip modifiedChildren filterNot {
             case (t1, t2) => t1.samePosAndType(t2)

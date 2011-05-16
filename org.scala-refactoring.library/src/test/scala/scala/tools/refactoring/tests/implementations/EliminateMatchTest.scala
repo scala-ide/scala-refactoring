@@ -8,7 +8,6 @@ package tests.implementations
 import org.junit.Assert._
 import tests.util.{TestHelper, TestRefactoring}
 import scala.tools.refactoring.implementations.EliminateMatch
-import org.junit.rules.ExpectedException
 
 class EliminateMatchTest extends TestHelper with TestRefactoring {
   outer =>
@@ -214,6 +213,8 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
               true
           case None => false
         }
+        // and:
+        val x = 5
       }
     """ becomes
     """
@@ -225,7 +226,9 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
               false
             else
               true
-        })
+})
+        // and:
+        val x = 5
       }
     """
   } applyRefactoring(elim)

@@ -10,7 +10,7 @@ import org.junit.Assert._
 import common.{SilentTracing, PimpedTrees}
 import sourcegen.TreeChangesDiscoverer
 
-class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with SilentTracing {
+class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with SilentTracing with transformation.TreeFactory {
   
   override def treeForFile(file: AbstractFile) = {
     global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
@@ -24,6 +24,16 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   val doubleAllDefNames = transform {
     case t: DefDef => t.copy(name = t.name.toString + t.name.toString) setPos t.pos
+  }
+  
+  val replaceStmtInBlock = transform {
+    case t @ Block(stmts, expr) => t.copy(stats = stmts.init ::: List(Literal(Constant(42)))) setPos t.pos
+  }
+  
+  val replaceStmtInTemplate = transform {
+    case t @ Template(_, _, body) => 
+      val valDef = mkValDef("x", Literal(Constant(42)))
+      t.copy(body = body.init ::: List(valDef)) setPos t.pos
   }
   
   val incrementIntegers = transform {
@@ -117,6 +127,32 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
      class Test {
        def test = 42
        List(1,2) map (_ + 1)
+     }
+    """))
+  }
+  
+  @Test
+  def replaceOnlySingleStmtInBlock() {
+    assertEquals("Literal: Literal", transformAndFind(↓(matchingChildren(replaceStmtInBlock)), 
+    """
+     class Test {
+       def someMethod {
+         val x = "abcd"
+         val i = 5
+         println(i)
+       }
+     }
+    """))
+  }
+  
+  @Test
+  def replaceOnlySingleStmtInTemplate() {
+    assertEquals("ValDef: ValDef, NameTree, Literal", transformAndFind(↓(matchingChildren(replaceStmtInTemplate)), 
+    """
+     class Test {
+       val x = "abcd"
+       val i = 5
+       println(i)
      }
     """))
   }
