@@ -8,6 +8,7 @@ package tests.implementations
 import org.junit.Assert._
 import tests.util.{TestHelper, TestRefactoring}
 import scala.tools.refactoring.implementations.EliminateMatch
+import org.junit.rules.ExpectedException
 
 class EliminateMatchTest extends TestHelper with TestRefactoring {
   outer =>
@@ -561,5 +562,64 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
         def m(x: Option[Int]) = x /*(*/toList
       }
     """
+  } applyRefactoring(elim)
+  
+  @Test
+  def foreachInBlock = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def someMethod(x: Int) = {
+          val comp = {
+            if(x == 5) {
+              "5"
+            } else {
+              "3"
+            }
+          }
+
+          val somethingElse = Option(42)
+          // a comment
+          somethingElse /*(*/ match /*)*/ {
+            case Some(x) => println(x)
+            case None => 
+          }
+        }
+      }
+    """ becomes
+    """
+      package elimination
+      object EliminateMap {
+        def someMethod(x: Int) = {
+          val comp = {
+            if(x == 5) {
+              "5"
+            } else {
+              "3"
+            }
+          }
+
+          val somethingElse = Option(42)
+          // a comment
+          somethingElse /*(*/foreach (x => println(x))
+        }
+      }
+    """
+  } applyRefactoring(elim)
+    
+  @Test(expected=classOf[RefactoringException])
+  def cannotEliminateWithBinding = new FileSet {
+    """
+      package elimination
+      object EliminateMap {
+        def m(x: Option[Int]) = {
+          x /*(*/ match /*)*/ {
+            case None => Nil
+            case Some(x: Int) => List(x)
+          }
+        }
+      }
+    """ becomes
+    ""
   } applyRefactoring(elim)
 }

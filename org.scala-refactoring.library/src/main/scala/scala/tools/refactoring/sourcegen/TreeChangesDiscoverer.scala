@@ -20,11 +20,11 @@ trait TreeChangesDiscoverer {
   
   /**
    * Starting from a root tree, returns all children that have changed. The format
-   * of the result is a list of pairs, each pair has a top-level tree and a set
-   * of all trees that changed in the context of that top-level tree, including the
-   * top-level tree.
+   * of the result is a tuple of a top-level tree, a position of the range that should 
+   * be replaced and a set of all trees that changed in the context of that top-level 
+   * tree, including the top-level tree.
    */
-  def findAllChangedTrees(t: Tree): List[(Tree, Set[Tree])] = {
+  def findAllChangedTrees(t: Tree): List[(Tree, Position, Set[Tree])] = {
     
     def hasTreeInternallyChanged(t: Tree): Boolean = findOriginalTree(t) map (t → _) getOrElse { 
         trace("original not found for tree %s", t)
@@ -76,15 +76,40 @@ trait TreeChangesDiscoverer {
       children(parent) flatMap (findChildren(_, Nil))
     }
     
+    /*the default result when the tree has changed*/
+    def resultWhenChanged = List((t, t.pos, Set(t) ++ searchChildrenForChanges(t)))
+    
     if (isSameAsOriginalTree(t)) {
-      trace("Tree %s is unchanged.", t.getClass.getSimpleName)
+      trace("Top tree %s is unchanged.", t.getClass.getSimpleName)
       Nil
     } else if (hasTreeInternallyChanged(t)) {
-      trace("Tree %s has changed internally.", t.getClass.getSimpleName)
-      List((t, Set(t) ++ searchChildrenForChanges(t)))
+      trace("Top tree %s has changed internally.", t.getClass.getSimpleName)
+      resultWhenChanged
     } else if (hasChangedChildren(t)) {
-      trace("Tree %s has changed children.", t.getClass.getSimpleName)
-      List((t, Set(t) ++ searchChildrenForChanges(t)))
+      trace("Top tree %s has changed children.", t.getClass.getSimpleName)
+
+      lazy val originalChildren = findOriginalTree(t) map children getOrElse Nil
+      lazy val modifiedChildren = t.children
+      
+      t match {
+        case _: Block if originalChildren.size == modifiedChildren.size =>
+          
+          originalChildren zip modifiedChildren filterNot {
+            case (t1, t2) => t1.samePosAndType(t2)
+          } match {
+            case (orig, changed) :: Nil if changed.pos == NoPosition =>
+              // only one statement in the block has changed, so we can rewrite just this one
+              // because it does not have a position, we return the position of the stmt it
+              // replaced
+              trace("Replace only the single changed statement in the block.")
+              List((changed, orig.pos, Set(changed) ++ searchChildrenForChanges(changed)))
+            case _ =>
+              resultWhenChanged
+          }
+     
+        case _ =>
+          resultWhenChanged          
+      }
     } else {
       children(t) flatMap (c => findAllChangedTrees(c))
     }

@@ -42,7 +42,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
     val transformed = (removeAuxiliaryTrees &> trans)(treeFrom(src)).get
 
     findAllChangedTrees(transformed) map {
-      case (t, c) => describe(t) +": "+ c.map(describe).mkString(", ")
+      case (t, r, c) => describe(t) +": "+ c.map(describe).mkString(", ")
     } mkString " | "
   }
   

@@ -19,7 +19,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
    * trees that have changed.
    */
   def createFragment(t: Tree): Fragment = {
-    generateFragmentsFromTrees(List(t)) map (_._3) head
+    generateFragmentsFromTrees(List(t)) map (_._4) head
   }
   
   /**
@@ -28,8 +28,8 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
    */
   def createChanges(ts: List[Tree]): List[Change] = context("Create changes") {
     generateFragmentsFromTrees(ts) map {
-      case (file, tree, fragment) =>
-        Change(file, tree.pos.start, tree.pos.end, fragment.center.asText)
+      case (file, tree, range, fragment) =>
+        Change(file, range.start, range.end, fragment.center.asText)
     }
   }
   
@@ -50,7 +50,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     print(tree, PrintingContext(in, changeset, tree))
   }
   
-  private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(AbstractFile, Tree, Fragment)] = {
+  private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(AbstractFile, Tree, Position, Fragment)] = {
     
     if(ts.exists(_.pos == NoPosition))
       throw new IllegalArgumentException("Top-level trees cannot have a NoPosition because we need to get the source file.")
@@ -63,7 +63,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     
     val changesPerFile = topLevelTreesByFile flatMap {
       case (source, ts) => ts flatMap findAllChangedTrees map {
-        case (topLevel, changes) => (source, topLevel, changes)
+        case (topLevel, replaceRange, changes) => (source, replaceRange, topLevel, changes)
       }
     }
     
@@ -72,7 +72,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     }
     
     changesPerFile map {
-      case (source, tree, changes) =>
+      case (source, replaceRange, tree, changes) =>
         trace("Creating code for %s. %d tree(s) in changeset.", tree.getClass.getSimpleName, changes.size)
         val f = generate(tree, new ChangeSet {
           def hasChanged(t: Tree) = changes.exists { 
@@ -93,7 +93,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
           }
         }) 
         trace("Change: %s", f.center.asText)
-        (source.file, tree, f)
+        (source.file, tree, replaceRange, f)
     } toList
   }
     
