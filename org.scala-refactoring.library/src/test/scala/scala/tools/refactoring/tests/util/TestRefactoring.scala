@@ -10,7 +10,10 @@ import common.Change
 import org.junit.Assert._
 
 trait TestRefactoring extends TestHelper {
-     
+  
+  class PreparationException(cause: String) extends Exception(cause)
+  class RefactoringException(cause: String) extends Exception(cause)
+  
   abstract class TestRefactoringImpl(project: FileSet) {
       
     val refactoring: MultiStageRefactoring
@@ -23,9 +26,9 @@ trait TestRefactoring extends TestHelper {
         case Right(prepare) =>
           refactoring.perform(selection, prepare, parameters) match {
             case Right(modifications) => modifications
-            case Left(error) => Predef.error(error.cause)
+            case Left(error) => throw new PreparationException(error.cause)
           }
-        case Left(error) => Predef.error(error.cause)
+        case Left(error) => throw new RefactoringException(error.cause)
       }
     }
   }

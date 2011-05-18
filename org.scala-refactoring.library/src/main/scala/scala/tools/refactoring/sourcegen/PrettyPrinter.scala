@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-import tools.nsc.symtab.{Flags, Names, Symbols}
+import tools.nsc.symtab.Flags
 import Requisite._
 import Predef.{augmentString => _} // for 2.8.0, implicits
 

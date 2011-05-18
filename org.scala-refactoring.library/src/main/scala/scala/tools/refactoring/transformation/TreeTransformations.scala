@@ -5,8 +5,6 @@
 package scala.tools.refactoring
 package transformation
 
-import tools.nsc.io.AbstractFile
-
 trait TreeTransformations extends Transformations {
   
   this: common.PimpedTrees with common.CompilerAccess =>
@@ -56,7 +54,7 @@ trait TreeTransformations extends Transformations {
     def replaces(t2: Tree) = t1 setPos t2.pos
   }
     
-  implicit def abstractFileToTree(file: AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
+  implicit def abstractFileToTree(file: tools.nsc.io.AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
   
   /**
    * Replace the first sequence of elements with another sequence.

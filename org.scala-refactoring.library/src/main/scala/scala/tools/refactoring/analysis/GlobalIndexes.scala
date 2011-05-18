@@ -58,7 +58,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     def occurences(s: global.Symbol) = {
       expandSymbol(s) flatMap { sym =>
         declaration(sym).toList ::: cus.flatMap { cu => 
-            cu.references.get(sym).flatten
+            cu.references.get(sym).toList.flatten
           }
       } filter (_.pos.isRange) distinct
     }
