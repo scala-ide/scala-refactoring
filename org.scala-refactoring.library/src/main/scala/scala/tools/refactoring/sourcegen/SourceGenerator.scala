@@ -50,7 +50,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     print(tree, PrintingContext(in, changeset, tree))
   }
   
-  private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(AbstractFile, Tree, Position, Fragment)] = {
+  private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(tools.nsc.io.AbstractFile, Tree, Position, Fragment)] = {
     
     if(ts.exists(_.pos == NoPosition))
       throw new IllegalArgumentException("Top-level trees cannot have a NoPosition because we need to get the source file.")

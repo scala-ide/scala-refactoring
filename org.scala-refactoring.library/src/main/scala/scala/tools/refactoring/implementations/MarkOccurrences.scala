@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package implementations
 
-import tools.nsc.io.AbstractFile
 import tools.nsc.util.RangePosition
 
 abstract class MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.PimpedTrees {
@@ -13,7 +12,7 @@ abstract class MarkOccurrences extends common.Selections with analysis.Indexes w
   val global: tools.nsc.interactive.Global
   import global._
   
-  def occurrencesOf(file: AbstractFile, from: Int, to: Int): (Tree, List[Position]) = {
+  def occurrencesOf(file: tools.nsc.io.AbstractFile, from: Int, to: Int): (Tree, List[Position]) = {
     
     def positionOverlapsSelection(p: Position) = (
           ((new RangePosition(null, from, from, to)) overlaps p) ||

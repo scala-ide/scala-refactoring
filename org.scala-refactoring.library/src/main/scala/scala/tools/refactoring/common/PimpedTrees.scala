@@ -9,8 +9,7 @@ import tools.nsc.symtab.Flags
 import tools.nsc.util.RangePosition
 import tools.nsc.ast.parser.Tokens
 import reflect.ClassManifest.fromClass
-import tools.nsc.io.AbstractFile
-import tools.nsc.symtab.{Flags, Names}
+import tools.nsc.symtab.Flags
 import scala.tools.nsc.Global
 import util.Memoized
 
@@ -29,7 +28,7 @@ trait PimpedTrees {
    * overridden in testing to manipulate the trees (i.e.
    * remove compiler generated trees)
    */
-  def treeForFile(file: AbstractFile): Option[Tree] = compilationUnitOfFile(file) map (_.body)
+  def treeForFile(file: tools.nsc.io.AbstractFile): Option[Tree] = compilationUnitOfFile(file) map (_.body)
     
   /**
    * Returns the compilation unit root for that position.
@@ -267,7 +266,7 @@ trait PimpedTrees {
           Nil) ::: children(t).map(find).flatten
       }  
       
-      cuRoot(tree.pos) map find flatten
+      cuRoot(tree.pos).map(find).toList.flatten
     }
   }
 

@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package common
 
-import tools.nsc.io.AbstractFile
 import collection.mutable.ListBuffer
 import tools.nsc.Global
 import tools.nsc.util.RangePosition
@@ -24,7 +23,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     // a tree that encloses the complete position
     val root: Tree
     
-    def file: AbstractFile
+    def file: tools.nsc.io.AbstractFile
     
     /**
      * Returns all selected trees that are not
@@ -113,10 +112,10 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     }
   }
   
-  case class FileSelection(file: AbstractFile, root: Tree, from: Int, to: Int) extends Selection {
+  case class FileSelection(file: tools.nsc.io.AbstractFile, root: Tree, from: Int, to: Int) extends Selection {
     
     @deprecated("Please use the primary constructor.", "0.4.0")
-    def this(file: AbstractFile, from: Int, to: Int) = {
+    def this(file: tools.nsc.io.AbstractFile, from: Int, to: Int) = {
       this(file, compilationUnitOfFile(file).get.body, from, to)
     }
     
@@ -125,7 +124,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
   
   object FileSelection {
     @deprecated("Please use the primary constructor.", "0.4.0")
-    def apply(file: AbstractFile, from: Int, to: Int) = new FileSelection(file: AbstractFile, from: Int, to: Int)
+    def apply(file: tools.nsc.io.AbstractFile, from: Int, to: Int) = new FileSelection(file: tools.nsc.io.AbstractFile, from: Int, to: Int)
   }
   
   case class TreeSelection(root: Tree) extends Selection {
