@@ -164,6 +164,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (qualifier, name) if name.toString == "<init>" => 
           p(qualifier)
         
+        case (qualifier, name) if name.toString == "package" => 
+          p(qualifier)
+        
         case (qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
           Fragment(tree.symbol.nameString)
           
