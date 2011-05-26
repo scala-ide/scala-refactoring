@@ -20,7 +20,39 @@ trait TreeTraverser {
     override def traverse(t: Tree) = t match {
       // The standard traverser does not traverse a TypeTree's original:
       case t: TypeTree if t.original != null =>
-        traverse(t.original)
+      
+        def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = {
+          parents zip parentTypes foreach {
+            case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
+
+              // we fake our own Select(Ident(..), ..) tree from the type so we
+              // can handle them just like any other select call
+              val select = (tpe.toString.split("\\.")).toList match {
+                case x :: xs =>
+                  xs.foldLeft(Ident(x): Tree) {
+                    case (inner, outer) => Select(inner, outer)
+                  }
+                case Nil => EmptyTree
+              }
+
+              select.setType(tpe).setSymbol(sym).setPos(i.pos)
+              traverse(select)
+
+            case (tree, _) => traverse(tree)
+          }
+        }
+
+        (t.tpe, t.original) match {
+          // in a self type annotation, the first tree is the trait itself, so we skipt that one:
+          case (RefinedType(_ :: RefinedType(parentTypes, _) :: Nil, _), CompoundTypeTree(Template(parents, self, body))) =>
+            handleCompoundTypeTree(parents, parentTypes)
+          // handle regular compound type trees
+          case (RefinedType(parentTypes, _), CompoundTypeTree(Template(parents, self, body))) =>
+            handleCompoundTypeTree(parents, parentTypes)
+          case _ => traverse(t.original)
+        }
+      
+      
       case t => 
         super.traverse(t)
     }
