@@ -26,6 +26,22 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   }
 
   @Test
+  def objectType = assertDependencies(
+    """scala.xml.QNode""",
+    """
+      import scala.xml._
+      class MNO { var no: QNode.type = null }
+      """)
+
+  @Test
+  def objectTypeRequiresImport = assertNeededImports(
+    """scala.xml.QNode""", 
+    """
+      import scala.xml._
+      class MNO { var no: QNode.type = null }
+      """)
+    
+  @Test
   def classAttributeDeps = assertDependencies(
     """scala.collection.mutable.Map
        scala.collection.mutable.Map.apply""",
@@ -42,6 +58,23 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       class UsesMap { val x = Map[Int, String]() }
     """)
 
+  @Test
+  def renamedImport = assertDependencies(
+    """scala.collection.mutable.M.apply
+       scala.collection.mutable.Map""",
+    """
+      import scala.collection.mutable.{Map => M}
+      class UsesMap { val x = M[Int, String]() }
+      """)
+
+  @Test
+  def renamedImportIsNeeded = assertNeededImports(
+    """scala.collection.mutable.Map""", 
+    """
+      import scala.collection.mutable.{Map => M}
+      class UsesMap { val x = M[Int, String]() }
+    """)
+    
   @Test
   def classAttributeWithFullPackage = assertDependencies(
     """scala.collection.mutable.Map

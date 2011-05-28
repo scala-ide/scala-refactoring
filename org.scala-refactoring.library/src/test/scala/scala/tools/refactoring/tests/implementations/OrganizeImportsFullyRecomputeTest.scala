@@ -8,24 +8,24 @@ package tests.implementations
 import implementations.OrganizeImports
 import tests.util.{TestHelper, TestRefactoring}
       
-class OrganizeImportsTest extends TestHelper with TestRefactoring {
+class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring {
   outer =>
     
   def organize(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new OrganizeImports with SilentTracing { val global = outer.global }
-    val changes = performRefactoring(new refactoring.RefactoringParameters())
+    val changes = performRefactoring(new refactoring.RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute))
   }.changes
   
   def organizeWithoutCollapsing(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new OrganizeImports with SilentTracing { val global = outer.global }
     val options = List()
-    val changes = performRefactoring(new refactoring.RefactoringParameters(options = options))
+    val changes = performRefactoring(new refactoring.RefactoringParameters(options = options, deps = refactoring.Dependencies.FullyRecompute))
   }.changes
   
   def organizeExpand(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new OrganizeImports with SilentTracing { val global = outer.global }
     val options = List(refactoring.ExpandImports)
-    val changes = performRefactoring(new refactoring.RefactoringParameters(options = options))
+    val changes = performRefactoring(new refactoring.RefactoringParameters(options = options, deps = refactoring.Dependencies.FullyRecompute))
   }.changes
   
   @Test
@@ -61,8 +61,9 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       """
       package tests.importing
       
-      import scala.collection.mutable.{HashMap, ListBuffer}
-      import scala.math._
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+      import scala.math.BigDecimal
       import scala.math.BigInt
       import scala.xml.Elem
       import scala.xml.QNode
@@ -76,7 +77,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
-      import scala.math._
+      import scala.math.BigDecimal
       import scala.math.BigInt
       import scala.xml.Elem
       import scala.xml.QNode
@@ -89,31 +90,12 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       package tests.importing
       
       import scala.collection.mutable.{HashMap, ListBuffer}
-      import scala.math._
+      import scala.math.{BigDecimal, BigInt}
       import scala.xml.{Elem, QNode}
       """ + restOfFile
     } applyRefactoring organize
   }
-  
-  @Test
-  def expandImports = new FileSet {
-    """
-      package tests.importing
-
-      import scala.collection.mutable.{ListBuffer, HashMap}
-  
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
-    """ becomes
-    """
-      package tests.importing
-
-      import scala.collection.mutable.HashMap
-      import scala.collection.mutable.ListBuffer
-  
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
-    """
-  } applyRefactoring organizeExpand
-  
+    
   @Test
   def expandImportsButNotWildcards = new FileSet {
     """
@@ -126,7 +108,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     """
       package tests.importing
 
-      import scala.collection.mutable.{ListBuffer => LB, _}
+      import scala.collection.mutable.{ListBuffer => LB}
   
       object Main {val lb = LB(1) }
     """
@@ -151,26 +133,6 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """
   } applyRefactoring organizeWithoutCollapsing
-  
-  @Test
-  def sort = new FileSet {
-    """
-      package tests.importing
-
-      import scala.collection.mutable.ListBuffer
-      import java.lang.Object
-  
-      object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
-    """ becomes
-    """
-      package tests.importing
-
-      import java.lang.Object
-      import scala.collection.mutable.ListBuffer
-  
-      object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
-    """
-  } applyRefactoring organize
     
   @Test
   def collapse = new FileSet {
@@ -227,7 +189,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main {val s: String = ""; var o: Objekt = null}
     """ becomes
     """
-      import java.lang.{Object => Objekt, String => S}
+      import java.lang.{Object => Objekt}
   
       object Main {val s: String = ""; var o: Objekt = null}
     """
@@ -256,7 +218,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main
     """ becomes
     """
-      import java.lang._
+      
   
       object Main
     """
@@ -276,7 +238,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package importOnTrait
-      import java.lang._
+      
   
       trait A
   
@@ -312,7 +274,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       object Main { val s: String = "" }
     """ becomes
     """
-      import java.lang.{String => S, _}
+      import java.lang.String
   
       object Main { val s: String = "" }
     """
@@ -334,7 +296,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      import java.lang.{String => S, _}
+      import java.lang.String
       import scala.collection.mutable.ListBuffer
 
       object Main {
@@ -354,7 +316,7 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
         val s: String = ""
         val s1 = valueOf(2);
       }    """ becomes """
-      import java.lang.String._
+      import java.lang.String.valueOf
       import java.lang.String
   
       object Main {
@@ -427,13 +389,12 @@ class OrganizeImportsTest extends TestHelper with TestRefactoring {
       import scala.collection.mutable.ListBuffer
  
       object Main {
-        var x: ListBuffer = null
-      }    """ becomes
-    """
-      import scala.collection.mutable._
+        var x: ListBuffer[Int] = null
+      }    """ becomes """
+      import scala.collection.mutable.ListBuffer
  
       object Main {
-        var x: ListBuffer = null
+        var x: ListBuffer[Int] = null
       }    """
   } applyRefactoring organize
   

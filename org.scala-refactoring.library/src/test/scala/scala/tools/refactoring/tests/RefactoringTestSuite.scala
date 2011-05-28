@@ -26,6 +26,7 @@ import util._
     classOf[InlineLocalTest], 
     classOf[MarkOccurrencesTest], 
     classOf[OrganizeImportsTest], 
+    classOf[OrganizeImportsFullyRecomputeTest], 
     classOf[UnusedImportsFinderTest], 
     classOf[OrganizeMissingImportsTest], 
     classOf[RenameTest], 

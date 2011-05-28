@@ -21,23 +21,26 @@ trait TreeTraverser {
       // The standard traverser does not traverse a TypeTree's original:
       case t: TypeTree if t.original != null =>
       
+        def fakeSelectTreeFromTypeAndSymbol(tpe: Type, sym: Symbol, pos: Position) = {
+            // we fake our own Select(Ident(..), ..) tree from the type so we
+            // can handle them just like any other select call
+          
+            val select = (tpe.trimPrefix(tpe.toString).split("\\.")).toList match {
+              case x :: xs =>
+                xs.foldLeft(Ident(x): Tree) {
+                  case (inner, outer) => Select(inner, outer)
+                }
+              case Nil => EmptyTree
+            }
+            select.setType(tpe).setSymbol(sym).setPos(pos)          
+        }
+        
         def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = {
           parents zip parentTypes foreach {
+            
             case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
-
-              // we fake our own Select(Ident(..), ..) tree from the type so we
-              // can handle them just like any other select call
-              val select = (tpe.toString.split("\\.")).toList match {
-                case x :: xs =>
-                  xs.foldLeft(Ident(x): Tree) {
-                    case (inner, outer) => Select(inner, outer)
-                  }
-                case Nil => EmptyTree
-              }
-
-              select.setType(tpe).setSymbol(sym).setPos(i.pos)
-              traverse(select)
-
+              traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, i.pos))
+              
             case (tree, _) => traverse(tree)
           }
         }
@@ -49,10 +52,17 @@ trait TreeTraverser {
           // handle regular compound type trees
           case (RefinedType(parentTypes, _), CompoundTypeTree(Template(parents, self, body))) =>
             handleCompoundTypeTree(parents, parentTypes)
-          case _ => traverse(t.original)
+            
+          case (tpe, SingletonTypeTree(ident)) if tpe != null => 
+            tpe.widen match {
+              case tpe @ TypeRef(_, sym, _) =>
+                traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, ident.pos))
+              case _ =>
+                traverse(t.original) 
+            }
+          case _ => 
+            traverse(t.original)
         }
-      
-      
       case t => 
         super.traverse(t)
     }
