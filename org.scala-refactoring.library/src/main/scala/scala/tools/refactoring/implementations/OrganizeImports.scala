@@ -4,10 +4,11 @@
 
 package scala.tools.refactoring
 package implementations
+
 import common.{TreeTraverser, Change}
 import transformation.TreeFactory
 
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler {
+abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
   
   import global._
   
@@ -84,7 +85,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       trees.map {
         case imp @ Import(_, selectors :: Nil) => imp
         case imp @ Import(_, selectors) if selectors.exists(wildcardImport) => imp
-        case imp @ Import(_, selectors) => imp.copy(selectors = selectors.sortBy(_.name.toString))
+        case imp @ Import(_, selectors) =>
+          def removeDuplicates(l: List[ImportSelector]) = {
+            l.groupBy(_.name.toString).map(_._2.head).toList
+          }
+          imp.copy(selectors = removeDuplicates(selectors).sortBy(_.name.toString))
       }
     }
   }
@@ -119,7 +124,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         val typeName = select.symbol.nameString
         
         Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else typeName, -1, name, -1)))
-          
       }      
     }
   }

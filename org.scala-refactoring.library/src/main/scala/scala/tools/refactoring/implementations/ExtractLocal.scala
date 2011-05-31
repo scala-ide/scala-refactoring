@@ -7,9 +7,8 @@ package implementations
 
 import common.Change
 import transformation.TreeFactory
-import transformation.TreeExtractors
 
-abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with TreeExtractors with common.InteractiveScalaCompiler {
+abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with common.TreeExtractors with common.InteractiveScalaCompiler {
   
   import global._
   

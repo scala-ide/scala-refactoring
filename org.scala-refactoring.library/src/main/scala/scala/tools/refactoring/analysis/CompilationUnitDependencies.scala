@@ -4,10 +4,11 @@
 
 package scala.tools.refactoring
 package analysis
+import scala.tools.nsc.util.RangePosition
 
 trait CompilationUnitDependencies {
   // we need to interactive compiler because we work with RangePositions
-  this: common.InteractiveScalaCompiler with common.TreeTraverser =>
+  this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors =>
 
   import global._
 
@@ -20,7 +21,8 @@ trait CompilationUnitDependencies {
       case s @ Select(x, name) if s.pos.isRange && !x.pos.isRange =>
         x match {
           // we don't need to import anything that comes from the scala package
-          case Ident(name) if name.toString == "scala" => None
+          case Ident(names.scala) => None
+          case Select(Select(Ident(names.scala), names.pkg), _) => None
           case _ => Some(s)
         }
       case s: Select =>
@@ -55,41 +57,56 @@ trait CompilationUnitDependencies {
         case t: Select => !isSelectFromInvisibleThis(t)
         case _ => false
       } foreach {
-        case t: Select => result += (t.toString -> t)
-        case _ => 
+        case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX=> 
+          ()
+        case t @ Select(qual, _) => 
+          result += (t.toString -> t)
+        case _ =>
+          ()
       }
       
-      override def traverse(t: Tree) = t match {
+      override def traverse(root: Tree) = root match {
 
         case Import(_, _) => ()
 
-        case Select(Ident(name), _) if name.toString == "scala" => ()
+        case Select(Ident(names.scala), _) => ()
         
-        case Select(New(qual), _) => traverse(qual)
+        case Select(Select(Ident(names.scala), names.pkg), _) => ()
         
         case t : ApplyImplicitView =>
           handleSelectFromImplicit(t.fun)
-          t.args foreach super.traverse
+          t.args foreach traverse
           
         case t : ApplyToImplicitArgs =>
-          super.traverse(t.fun)
+          traverse(t.fun)
           t.args foreach handleSelectFromImplicit
-
+        
+        case Select(New(qual), _) =>
+          traverse(qual)
+        
         case t @ Select(qual, _) if t.pos.isRange =>
+            
+          // we don't need to add a dependency for method calls where the receiver
+          // is explicit in the source code.
+          val isMethodCallFromExplicitReceiver = qual.pos.isRange && t.symbol.isMethod
           
-          if (!isSelectFromInvisibleThis(qual)) {
+          if (!isMethodCallFromExplicitReceiver && !isSelectFromInvisibleThis(qual)) {
             result += (t.toString -> t)
           }
 
           super.traverse(t)
 
-        case _ => super.traverse(t)
+        case _ => super.traverse(root)
       }
     }
 
     traverser.traverse(t)
+    
+    val deps = result.values.toList
 
-    result.values.filterNot(s => s.symbol.isPackage).toList
+    deps.filterNot {
+      case t => t.symbol.isPackage || t.symbol.isSynthetic
+    } .toList
   }
 }
 

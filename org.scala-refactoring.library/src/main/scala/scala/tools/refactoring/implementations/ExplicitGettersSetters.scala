@@ -5,9 +5,9 @@
 package scala.tools.refactoring
 package implementations
 
-import tools.nsc.symtab.Flags
-import tools.nsc.ast.parser.Tokens
 import common.Change
+import scala.tools.nsc.ast.parser.Tokens
+import scala.tools.nsc.symtab.Flags
 
 abstract class ExplicitGettersSetters extends MultiStageRefactoring with common.InteractiveScalaCompiler {
   

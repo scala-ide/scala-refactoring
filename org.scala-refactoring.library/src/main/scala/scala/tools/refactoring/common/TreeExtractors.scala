@@ -3,7 +3,7 @@
  */
 
 package scala.tools.refactoring
-package transformation
+package common
 
 import PartialFunction.cond
 
@@ -15,6 +15,7 @@ trait TreeExtractors {
   
   object names {
     lazy val scala = newTermName("scala")
+    lazy val pkg = newTermName("package")
     lazy val None  = newTermName("None")
     lazy val Some  = newTermName("Some")
     lazy val apply  = newTermName("apply")

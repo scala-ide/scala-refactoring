@@ -95,7 +95,31 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       """ + restOfFile
     } applyRefactoring organize
   }
-    
+  
+  @Test
+  def dependencyOnMultipleOverloadedMethods = new FileSet {
+    """
+      import scala.math.BigDecimal._
+
+      class C {
+        def m() {
+          apply("5")
+          apply(5l)
+        }
+      }
+    """ becomes
+    """
+      import scala.math.BigDecimal.apply
+
+      class C {
+        def m() {
+          apply("5")
+          apply(5l)
+        }
+      }
+    """
+  } applyRefactoring organize
+  
   @Test
   def expandImportsButNotWildcards = new FileSet {
     """
@@ -413,5 +437,17 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       trait SomeTrait {
         def m: Either[String, ListBuffer[ListBuffer[String]]]
       }    """
+  } applyRefactoring organize
+  
+  @Test
+  def annotation = new FileSet {
+    """
+      import scala.reflect.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    """ becomes
+    """
+      import scala.reflect.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    """
   } applyRefactoring organize
 }

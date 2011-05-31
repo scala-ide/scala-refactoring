@@ -17,54 +17,73 @@ trait TreeTraverser {
   import global._
   
   trait Traverser extends global.Traverser {
-    override def traverse(t: Tree) = t match {
-      // The standard traverser does not traverse a TypeTree's original:
-      case t: TypeTree if t.original != null =>
-      
-        def fakeSelectTreeFromTypeAndSymbol(tpe: Type, sym: Symbol, pos: Position) = {
-            // we fake our own Select(Ident(..), ..) tree from the type so we
-            // can handle them just like any other select call
-          
-            val select = (tpe.trimPrefix(tpe.toString).split("\\.")).toList match {
-              case x :: xs =>
-                xs.foldLeft(Ident(x): Tree) {
-                  case (inner, outer) => Select(inner, outer)
-                }
-              case Nil => EmptyTree
-            }
-            select.setType(tpe).setSymbol(sym).setPos(pos)          
-        }
-        
-        def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = {
-          parents zip parentTypes foreach {
+    
+    def fakeSelectTreeFromTypeAndSymbol(tpe: Type, sym: Symbol, pos: Position) = {
+      // we fake our own Select(Ident(..), ..) tree from the type so we
+      // can handle them just like any other select call
+    
+      val stringRep = tpe.trimPrefix(tpe.toString)
             
-            case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
-              traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, i.pos))
-              
-            case (tree, _) => traverse(tree)
+      val select = stringRep.split("\\.").toList match {
+        case x :: xs =>
+          xs.foldLeft(Ident(x): Tree) {
+            case (inner, outer) => Select(inner, outer)
           }
-        }
-
-        (t.tpe, t.original) match {
-          // in a self type annotation, the first tree is the trait itself, so we skipt that one:
-          case (RefinedType(_ :: RefinedType(parentTypes, _) :: Nil, _), CompoundTypeTree(Template(parents, self, body))) =>
-            handleCompoundTypeTree(parents, parentTypes)
-          // handle regular compound type trees
-          case (RefinedType(parentTypes, _), CompoundTypeTree(Template(parents, self, body))) =>
-            handleCompoundTypeTree(parents, parentTypes)
-            
-          case (tpe, SingletonTypeTree(ident)) if tpe != null => 
-            tpe.widen match {
-              case tpe @ TypeRef(_, sym, _) =>
-                traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, ident.pos))
-              case _ =>
-                traverse(t.original) 
-            }
+        case Nil => EmptyTree
+      }
+      select.setType(tpe).setSymbol(sym).setPos(pos)          
+    }
+    
+    override def traverse(t: Tree) = {
+      
+      Option(t.symbol).toList flatMap (_.annotations) foreach { annotation =>
+        annotation.atp match {
+          case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
+            val tree = fakeSelectTreeFromTypeAndSymbol(tpe, sym, annotation.pos)
+            traverse(tree)
           case _ => 
-            traverse(t.original)
         }
-      case t => 
-        super.traverse(t)
+      }
+      
+      t match {
+      
+        case v: ValDef =>
+          super.traverse(v)
+        
+        // The standard traverser does not traverse a TypeTree's original:
+        case t: TypeTree if t.original != null =>
+                
+          def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = {
+            parents zip parentTypes foreach {
+              
+              case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
+                traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, i.pos))
+                
+              case (tree, _) => traverse(tree)
+            }
+          }
+  
+          (t.tpe, t.original) match {
+            // in a self type annotation, the first tree is the trait itself, so we skipt that one:
+            case (RefinedType(_ :: RefinedType(parentTypes, _) :: Nil, _), CompoundTypeTree(Template(parents, self, body))) =>
+              handleCompoundTypeTree(parents, parentTypes)
+            // handle regular compound type trees
+            case (RefinedType(parentTypes, _), CompoundTypeTree(Template(parents, self, body))) =>
+              handleCompoundTypeTree(parents, parentTypes)
+              
+            case (tpe, SingletonTypeTree(ident)) if tpe != null => 
+              tpe.widen match {
+                case tpe @ TypeRef(_, sym, _) =>
+                  traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, ident.pos))
+                case _ =>
+                  traverse(t.original) 
+              }
+            case _ => 
+              traverse(t.original)
+          }
+        case t => 
+          super.traverse(t)
+      }
     }
   }
   

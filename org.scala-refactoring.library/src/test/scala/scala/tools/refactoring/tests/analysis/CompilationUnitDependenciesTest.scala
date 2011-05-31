@@ -5,26 +5,94 @@
 package scala.tools.refactoring
 package tests.analysis
 
+import analysis.CompilationUnitDependencies
+import org.junit.Assert.assertEquals
 import tests.util.TestHelper
-import org.junit.Assert._
-import analysis._
 
-class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDependencies {
+class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDependencies with common.TreeExtractors {
 
   import global._
   
-  def assertNeededImports(expected: String, src: String) {
+  private def assertTrees(expected: String, src: String, f: Tree => Seq[Tree]) {
     val tree = treeFrom(src)
-    val imports = neededImports(tree).sortBy(_.toString)
-    assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n"))
+    val imports = f(tree).sortBy(_.toString)
+    assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n")) 
+  }
+  
+  def assertNeededImports(expected: String, src: String) {
+    assertTrees(expected, src, neededImports)
   }
 
   def assertDependencies(expected: String, src: String) {
-    val tree = treeFrom(src)
-    val imports = dependencies(tree).sortBy(_.toString)
-    assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n"))
+    assertTrees(expected, src, dependencies)
   }
 
+  @Test
+  def evidenceNoImport = assertNeededImports(
+    """""",
+    """
+    trait Transformations {
+    
+      abstract class Transformation[X, Y] {
+        def apply(x: X): Option[Y]
+      }
+  
+      def allChildren[X <% (X ⇒ Y) ⇒ Y, Y](t: ⇒ Transformation[X, Y]) = new Transformation[X, Y] {
+        def apply(in: X): Option[Y] = {
+          Some(in(child => t(child) getOrElse (return None)))
+        }
+      }
+    }
+    """)
+  @Test
+  def evidence = assertDependencies(
+    """""",
+    """
+    trait Transformations {
+    
+      abstract class Transformation[X, Y] {
+        def apply(x: X): Option[Y]
+      }
+  
+      def allChildren[X <% (X ⇒ Y) ⇒ Y, Y](t: ⇒ Transformation[X, Y]) = new Transformation[X, Y] {
+        def apply(in: X): Option[Y] = {
+          Some(in(child => t(child) getOrElse (return None)))
+        }
+      }
+    }
+    """)
+    
+  @Test
+  def typeFromScalaPackage = assertDependencies(
+    """""",
+    """
+       object NoRuleApplies extends Exception("No Rule Applies")
+    """)
+    
+  @Test
+  def dependencyOnMultipleOverloadedMethods = assertNeededImports(
+    """scala.math.BigDecimal.apply""",
+    """
+      import scala.math.BigDecimal._
+
+      class C {
+        def m() {
+          apply("5")
+          apply(5l)
+        }
+      }
+    """)
+
+  @Test
+  def typeArgument = assertDependencies(
+    """scala.collection.mutable.ListBuffer""",
+    """
+       import collection.mutable._
+       trait X {
+         def m: Either[Int, Option[List[ListBuffer[ListBuffer[Int]]]]]
+       }
+    """)
+      
   @Test
   def objectType = assertDependencies(
     """scala.xml.QNode""",
@@ -40,11 +108,26 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       import scala.xml._
       class MNO { var no: QNode.type = null }
       """)
-    
+
+  @Test
+  def annotation = assertDependencies(
+    """java.lang.Object
+       scala.reflect.BeanProperty""",
+    """
+      import scala.reflect.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+      """)
+
+  @Test
+  def annotationRequiresImport = assertNeededImports(
+    """scala.reflect.BeanProperty""", 
+    """
+      import scala.reflect.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+      """)    
   @Test
   def classAttributeDeps = assertDependencies(
-    """scala.collection.mutable.Map
-       scala.collection.mutable.Map.apply""",
+    """scala.collection.mutable.Map""",
     """
       import scala.collection.mutable.Map
       class UsesMap { val x = Map[Int, String]() }
@@ -60,8 +143,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def renamedImport = assertDependencies(
-    """scala.collection.mutable.M.apply
-       scala.collection.mutable.Map""",
+    """scala.collection.mutable.Map""",
     """
       import scala.collection.mutable.{Map => M}
       class UsesMap { val x = M[Int, String]() }
@@ -77,8 +159,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     
   @Test
   def classAttributeWithFullPackage = assertDependencies(
-    """scala.collection.mutable.Map
-         scala.collection.mutable.Map.apply""",
+    """scala.collection.mutable.Map""",
     """
       class UsesMap { val x = collection.mutable.Map[Int, String]() }
       """)
@@ -92,8 +173,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def classAttributeWithWildcardImport = assertDependencies(
-    """scala.collection.mutable.HashSet
-         scala.collection.mutable.HashSet.apply""",
+    """scala.collection.mutable.HashSet""",
     """
       import collection._
       class UsesMap { val x = mutable.HashSet[Int]() }

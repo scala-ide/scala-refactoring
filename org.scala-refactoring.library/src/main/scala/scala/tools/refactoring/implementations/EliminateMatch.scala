@@ -7,10 +7,9 @@ package implementations
 
 import common.Change
 import tools.nsc.symtab.Flags
-import transformation.TreeExtractors
 import transformation.TreeFactory
 
-abstract class EliminateMatch extends MultiStageRefactoring with TreeExtractors with TreeFactory {
+abstract class EliminateMatch extends MultiStageRefactoring with common.TreeExtractors with TreeFactory {
     
   this: common.CompilerAccess =>
   
