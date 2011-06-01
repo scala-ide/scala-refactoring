@@ -18,9 +18,9 @@ trait TreeTraverser {
   
   trait Traverser extends global.Traverser {
     
-    def fakeSelectTreeFromTypeAndSymbol(tpe: Type, sym: Symbol, pos: Position) = {
-      // we fake our own Select(Ident(..), ..) tree from the type so we
-      // can handle them just like any other select call
+    def fakeSelectTreeFromType(tpe: Type, sym: Symbol, pos: Position) = {
+      // we fake our own Select(Ident(..), ..) tree from the type
+      // so we can handle them just like any other select call
     
       val stringRep = tpe.trimPrefix(tpe.toString)
             
@@ -34,12 +34,40 @@ trait TreeTraverser {
       select.setType(tpe).setSymbol(sym).setPos(pos)          
     }
     
+    def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree) = {
+    
+      val flattenedExistingTrees = tree.filter(_ => true) map {
+        case t: Ident =>  (t.name.toString, t.pos)
+        case t: Select => (t.name.toString, t.pos)
+      }
+      
+      val treesFromType = tpe.trimPrefix(tpe.toString).split("\\.").toList.reverse zip Stream.continually(NoPosition)
+      
+      val fullPathOfAllTrees = (flattenedExistingTrees ++ treesFromType.drop(flattenedExistingTrees.size)).reverse
+      
+      def symbolAncestors(s: Symbol): Stream[Symbol] = if(s == NoSymbol) Stream.continually(NoSymbol) else Stream.cons(s, symbolAncestors(s.owner))
+      
+      val select = fullPathOfAllTrees zip symbolAncestors(sym).take(fullPathOfAllTrees.length).reverse.toList match {
+        case ((x: String, pos: Position), sym: Symbol) :: xs =>
+          val i = Ident(x).setPos(pos).setSymbol(sym)
+          xs.foldLeft(i: Tree) {
+            case (inner, ((outer, pos), sym)) => 
+              Select(inner, outer).setPos(pos).setSymbol(sym)
+          }
+        case Nil => EmptyTree
+      }
+      
+      select.setType(tpe)
+      
+      select
+    }
+    
     override def traverse(t: Tree) = {
       
       Option(t.symbol).toList flatMap (_.annotations) foreach { annotation =>
         annotation.atp match {
           case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
-            val tree = fakeSelectTreeFromTypeAndSymbol(tpe, sym, annotation.pos)
+            val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
             traverse(tree)
           case _ => 
         }
@@ -57,7 +85,7 @@ trait TreeTraverser {
             parents zip parentTypes foreach {
               
               case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
-                traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, i.pos))
+                traverse(fakeSelectTree(tpe, sym, i))
                 
               case (tree, _) => traverse(tree)
             }
@@ -78,13 +106,16 @@ trait TreeTraverser {
             case (RefinedType(parentTypes, _), CompoundTypeTree(Template(parents, self, body))) =>
               handleCompoundTypeTree(parents, parentTypes)
               
-            case (tpe, SingletonTypeTree(ident)) if tpe != null => 
+            case (tpe, SingletonTypeTree(tree)) if tpe != null => 
               tpe.widen match {
                 case tpe @ TypeRef(_, sym, _) =>
-                  traverse(fakeSelectTreeFromTypeAndSymbol(tpe, sym, ident.pos))
+                  traverse(fakeSelectTree(tpe, sym, tree))
                 case _ =>
                   traverse(t.original) 
               }
+            case (ExistentialType(quantified, TypeRef(_, sym, _)), ExistentialTypeTree(AppliedTypeTree(tpt, _), _)) =>
+              traverse(fakeSelectTree(sym.tpe, sym, tpt))
+              
             case _ => 
               traverse(t.original)
           }

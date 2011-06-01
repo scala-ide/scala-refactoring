@@ -466,4 +466,24 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       }
     """
   } applyRefactoring organize
+  
+  @Test
+  def renamedPackage = new FileSet {
+    """
+      import java.{ lang => jl, util => ju }
+      import ju.{ArrayList => AL}
+      trait Y {
+        def build(ignored : ju.Map[_, _])
+        def build2(ignored : AL[Int])
+      }
+    """ becomes
+    """
+      import java.util.{ArrayList => AL}
+      import java.{util => ju}
+      trait Y {
+        def build(ignored : ju.Map[_, _])
+        def build2(ignored : AL[Int])
+      }
+    """
+  } applyRefactoring organize
 }

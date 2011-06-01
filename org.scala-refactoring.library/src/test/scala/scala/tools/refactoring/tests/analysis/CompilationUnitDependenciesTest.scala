@@ -359,6 +359,47 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
+  def existential = assertDependencies(
+    """java.util.Map""",
+    """
+      import java.util._
+      trait Y {
+        def build(ignored: Map[_, _])
+      }
+      """)
+      
+  @Test
+  def existentialTypeTree = assertNeededImports(
+    """java.util.Map""",
+    """
+      import java.util._
+      trait Y {
+        def build(ignored: Map[_, _])
+      }
+      """)
+      
+  @Test
+  def renamedPackage = assertDependencies(
+    """java.ju.Map
+       java.util""",
+    """
+      import java.{ lang => jl, util => ju }
+      trait Y {
+        def build(ignored : ju.Map[_, _])
+      }
+      """)
+      
+  @Test
+  def renamedPackageImport = assertNeededImports(
+    """java.util""",
+    """
+      import java.{ lang => jl, util => ju }
+      trait Y {
+        def build(ignored : ju.Map[_, _])
+      }
+      """)
+      
+  @Test
   def importFromPackageObject = assertDependencies(
     """scala.collection.`package`.breakOut""",
     """

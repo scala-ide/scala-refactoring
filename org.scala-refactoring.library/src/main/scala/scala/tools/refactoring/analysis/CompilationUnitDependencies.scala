@@ -31,7 +31,9 @@ trait CompilationUnitDependencies {
         None
     }
     
-    dependencies(t).flatMap {
+    val deps = dependencies(t)
+    
+    deps.flatMap {
       case t: Select if !t.pos.isRange => Some(t)
       case t => findLastVisibleSelect(t) 
     }.distinct
