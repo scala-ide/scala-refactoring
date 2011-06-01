@@ -70,6 +70,16 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
     
   @Test
+  def abstractValType = assertDependencies(
+    """java.util.Observable
+       scala.collection.mutable.ListBuffer""",
+    """
+       import collection.mutable._
+       import java.util._
+       trait X {val lb: ListBuffer[Int]; val ob: Observable}
+    """)
+    
+  @Test
   def dependencyOnMultipleOverloadedMethods = assertNeededImports(
     """scala.math.BigDecimal.apply""",
     """
@@ -110,12 +120,26 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def annotation = assertDependencies(
+  def valAnnotation = assertDependencies(
     """java.lang.Object
        scala.reflect.BeanProperty""",
     """
       import scala.reflect.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+      """)
+      
+  @Test
+  def switchAnnotation = assertDependencies(
+    """Integer.parseInt
+       scala.annotation.switch""",
+    """
+      import scala.annotation._
+      object A {
+        val x = (Integer.parseInt("5"): @switch) match {
+          case 5 => true
+          case 6 => false
+        }
+      }
       """)
 
   @Test

@@ -62,9 +62,8 @@ trait TreeTraverser {
       select
     }
     
-    override def traverse(t: Tree) = {
-      
-      Option(t.symbol).toList flatMap (_.annotations) foreach { annotation =>
+    def handleAnnotations(as: List[AnnotationInfo]) {
+      as foreach { annotation =>
         annotation.atp match {
           case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
             val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
@@ -72,6 +71,11 @@ trait TreeTraverser {
           case _ => 
         }
       }
+    }
+    
+    override def traverse(t: Tree) = {
+      
+      Option(t.symbol) foreach (s => handleAnnotations(s.annotations))
       
       t match {
       
@@ -113,10 +117,15 @@ trait TreeTraverser {
                 case _ =>
                   traverse(t.original) 
               }
+             
+            case (AnnotatedType(annotations, underlying, selfsym), _) =>
+              handleAnnotations(annotations)
+              traverse(t.original)
+              
             case (ExistentialType(quantified, TypeRef(_, sym, _)), ExistentialTypeTree(AppliedTypeTree(tpt, _), _)) =>
               traverse(fakeSelectTree(sym.tpe, sym, tpt))
               
-            case _ => 
+            case _ =>
               traverse(t.original)
           }
         case t => 
