@@ -64,9 +64,16 @@ trait TreeTraverser {
           }
   
           (t.tpe, t.original) match {
-            // in a self type annotation, the first tree is the trait itself, so we skipt that one:
+            // in a self type annotation, the first tree is the trait itself, so we skip that one
+            
+            // self type annotation with a single type
+            case (RefinedType(_ :: tpe :: Nil, _), tree: Ident) =>
+              handleCompoundTypeTree(List(tree), List(tpe))
+              
+            // self type annotation with a compound type
             case (RefinedType(_ :: RefinedType(parentTypes, _) :: Nil, _), CompoundTypeTree(Template(parents, self, body))) =>
               handleCompoundTypeTree(parents, parentTypes)
+
             // handle regular compound type trees
             case (RefinedType(parentTypes, _), CompoundTypeTree(Template(parents, self, body))) =>
               handleCompoundTypeTree(parents, parentTypes)

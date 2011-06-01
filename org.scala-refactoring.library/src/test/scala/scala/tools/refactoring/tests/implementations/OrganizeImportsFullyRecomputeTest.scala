@@ -450,4 +450,20 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """
   } applyRefactoring organize
+  
+  @Test
+  def selfTypeAnnotation = new FileSet {
+    """
+      import java.util.Observer
+      trait X {
+        self: Observer =>
+      }
+    """ becomes
+    """
+      import java.util.Observer
+      trait X {
+        self: Observer =>
+      }
+    """
+  } applyRefactoring organize
 }

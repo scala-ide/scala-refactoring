@@ -234,6 +234,26 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  def singleTypeUsedAsSelfTypeAnnotation = assertDependencies(
+    """java.util.Observer""",
+    """
+      import java.util.Observer
+      trait X {
+        this: Observer =>
+      }
+      """)
+      
+  @Test
+  def singleTypeUsedAsSelfTypeAnnotationImport = assertNeededImports(
+    """java.util.Observer""",
+    """
+      import java.util.Observer
+      trait X {
+        self: Observer =>
+      }
+      """)
+      
+  @Test
   def typeUsedAsSelfTypeAnnotation = assertDependencies(
     """java.util.Observable
          java.util.Observer""",
