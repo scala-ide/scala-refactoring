@@ -13,25 +13,135 @@ class OrganizeImportsOptionsTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new RefactoringParameters(options = List(refactoring.ExpandImports), deps = refactoring.Dependencies.FullyRecompute)
-  }.mkChanges  
+  }.mkChanges
+  
+  def organize(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    import refactoring._
+    val options = List(ExpandImports, SortImports, GroupImports(groups))
+    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute)
+  }.mkChanges
+  
+  val source = """
+      import scala.collection.mutable.ListBuffer
+      import java.util.BitSet
+      import scala.xml.Comment
+      import java.util.AbstractList
+      import org.xml.sax.Attributes
+      import scala.collection.mutable.HashMap
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Comment)
+      }
+    """
   
   @Test
-  def renamedPackage = new FileSet {
+  def noGrouping = new FileSet {
+    source becomes
     """
-      import java.{ lang => jl, util => ju }
-      import ju.{ArrayList => AL}
-      trait Y {
-        def build(ignored : ju.Map[_, _])
-        def build2(ignored : AL[Int])
-      }
-    """ becomes
-    """
-      import java.util.{ArrayList => AL}
-      import java.{util => ju}
-      trait Y {
-        def build(ignored : ju.Map[_, _])
-        def build2(ignored : AL[Int])
+      import java.util.AbstractList
+      import java.util.BitSet
+      import org.xml.sax.Attributes
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+      import scala.xml.Comment
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Comment)
       }
     """
   } applyRefactoring organize
+  
+  @Test
+  def oneScalaGroup = new FileSet {
+    source becomes
+    """
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+      import scala.xml.Comment
+
+      import java.util.AbstractList
+      import java.util.BitSet
+      import org.xml.sax.Attributes
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Comment)
+      }
+    """
+  } applyRefactoring organize(List("scala"))
+  
+  @Test
+  def scalaAndJavaGroup = new FileSet {
+    source becomes
+    """
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+      import scala.xml.Comment
+
+      import java.util.AbstractList
+      import java.util.BitSet
+
+      import org.xml.sax.Attributes
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Comment)
+      }
+    """
+  } applyRefactoring organize(List("scala", "java"))
+  
+  @Test
+  def severalScalaGroups = new FileSet {
+    source becomes
+    """
+      import java.util.AbstractList
+      import java.util.BitSet
+
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+
+      import scala.xml.Comment
+
+      import org.xml.sax.Attributes
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Comment)
+      }
+    """
+  } applyRefactoring organize(List("java", "scala.collection", "scala.xml"))
+  
+  @Test
+  def emptyGroups = new FileSet {
+    source becomes
+    """
+      import java.util.AbstractList
+      import java.util.BitSet
+
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+
+      import org.xml.sax.Attributes
+      import scala.xml.Comment
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Comment)
+      }
+    """
+  } applyRefactoring organize(List("java", "scala.collection", "scala.tools"))
 }

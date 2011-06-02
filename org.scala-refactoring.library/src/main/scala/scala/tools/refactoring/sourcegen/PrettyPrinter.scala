@@ -371,7 +371,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       
       expr match {
         case EmptyTree => EmptyFragment
-        case _ => Layout("import ") ++ p(expr) ++ "." ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
+        case _ if selectors.isEmpty => p(expr)
+        case _ => Layout("import ") ++ p(expr) ++ Layout(".") ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
       }
     }
   }  
@@ -639,6 +640,12 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     override def ModifierTree(tree: ModifierTree, flag: Long)(implicit ctx: PrintingContext) = {
       Fragment(tree.nameString)
+    }
+    
+    override def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext) = {
+      tree.kind match {
+        case SourceLayouts.Newline => Fragment("\n\n"+ ctx.ind.current)
+      }
     }
   }
 }

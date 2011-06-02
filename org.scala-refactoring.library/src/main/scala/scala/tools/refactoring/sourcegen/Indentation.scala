@@ -27,10 +27,10 @@ trait Indentations {
     }
     
     def fixIndentation(code: String, oldIndentation: String) = {
-        trace("code is %s", code)
-        trace("desired indentation is %s", current)
-        trace("current indentation is %s", oldIndentation)
-        Layout(code.replace("\n"+ oldIndentation, "\n"+ current))
+      trace("code is %s", code)
+      trace("desired indentation is %s", current)
+      trace("current indentation is %s", oldIndentation)
+      Layout(code.replace("\n"+ oldIndentation, "\n"+ current))
     }
   }
 }

@@ -15,11 +15,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   }.mkChanges
   
   def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters(options = List())
+    val params = new RefactoringParameters(options = List(refactoring.SortImportSelectors))
   }.mkChanges
   
   def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports))
+    val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports, refactoring.SortImports))
   }.mkChanges
   
   @Test

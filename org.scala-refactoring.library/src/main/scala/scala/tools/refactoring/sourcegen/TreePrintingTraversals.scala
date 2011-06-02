@@ -72,6 +72,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         case tree @ MultipleAssignment(values, rhs) => printer.MultipleAssignment(tree, values, rhs)
         case tree @ ImportSelectorTree(name, rename) => printer.ImportSelectorTree(tree, name, rename)
         case tree @ SelfTypeTree(name, types, orig) => printer.SelfTypeTree(tree, name, types, orig)
+        case tree: SourceLayoutTree => printer.SourceLayoutTree(tree)
         case tree: NameTree => printer.NameTree(tree)
       }
 
@@ -132,6 +133,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
     def MultipleAssignment(tree: MultipleAssignment, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def ImportSelectorTree(tree: ImportSelectorTree, name: NameTree, rename: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def SelfTypeTree(tree: SelfTypeTree, name: NameTree, types: List[Tree], orig: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
+    def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def NameTree(tree: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     
     def printIndentedSingleTree(

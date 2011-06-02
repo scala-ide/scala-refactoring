@@ -7,6 +7,8 @@ package implementations
 
 import common.{TreeTraverser, Change}
 import transformation.TreeFactory
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.LinkedHashMap
 
 abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
   
@@ -80,6 +82,34 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     }
   }
   
+  case class GroupImports(groups: List[String]) extends Participant {
+    def apply(trees: List[Import]) = {
+      
+      val grouped = new LinkedHashMap[String, ListBuffer[Import]] {
+        groups.foreach(this += _ → new ListBuffer[Import])
+      }
+      val ungrouped: ListBuffer[Import] = new ListBuffer[Import]
+
+      trees foreach { imp =>
+        
+        val inserts = grouped flatMap {
+          case (key, map) if imp.expr.toString.startsWith(key) => 
+            map += imp
+            Some(key)
+          case _ => None
+        }
+        
+        if(inserts.isEmpty) ungrouped += imp
+      }
+      
+      val spacer = Import(SourceLayoutTree(SourceLayouts.Newline), Nil)
+      
+      (grouped.values.toList.map(_.toList) ::: List(ungrouped.toList)).filterNot(_.isEmpty).reduceLeft {(l1: List[Import], l2: List[Import]) => 
+        l1 ++ List(spacer) ++ l2
+      }
+    }
+  }
+  
   object SortImportSelectors extends Participant {
     def apply(trees: List[Import]) = {
       trees.map {
@@ -135,7 +165,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     }
   }
     
-  def DefaultOptions = List(CollapseImports, SimplifyWildcards)
+  def DefaultOptions = List(CollapseImports, SimplifyWildcards, SortImportSelectors, SortImports)
   
   /**
    * Imports that should be added are passed as tuples in the form
@@ -188,7 +218,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         new AddNewImports(params.importsToAdd) :: SortImports :: new RemoveUnused(unit, params.importsToAdd) :: Nil  
     }
     
-    val participants = importStrategy ::: params.options ::: SortImportSelectors :: SortImports :: Nil
+    val participants = importStrategy ::: params.options
 
     val organizeImports = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, existingImports, others) =>

@@ -540,6 +540,9 @@ trait PimpedTrees {
     case EmptyTree =>
       Nil
       
+    case _: SourceLayoutTree =>
+      Nil
+      
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
   }) map {
@@ -783,4 +786,13 @@ trait PimpedTrees {
   val NoBlock = NotInstanceOf[Block]
   val NoPackageDef = NotInstanceOf[PackageDef]
  
+  /**
+   * A SourceLayoutTree can be used to insert arbitrary text into the code,
+   * for example, blank lines.
+   */
+  case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree
+  object SourceLayouts {
+    sealed trait Kinds
+    object Newline extends Kinds
+  }
 }
