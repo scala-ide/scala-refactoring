@@ -3,7 +3,7 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations
+package tests.implementations.imports
 
 import implementations.AddImportStatement
 import tests.util.TestHelper

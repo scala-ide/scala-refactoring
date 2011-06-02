@@ -3,30 +3,24 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations
+package tests.implementations.imports
 
 import implementations.OrganizeImports
 import tests.util.{TestHelper, TestRefactoring}
       
-class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring {
-  outer =>
-    
-  def organize(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new OrganizeImports with SilentTracing { val global = outer.global }
-    val changes = performRefactoring(new refactoring.RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute))
-  }.changes
+class OrganizeImportsTest extends OrganizeImportsBaseTest {
+
+  def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val params = new RefactoringParameters()
+  }.mkChanges
   
-  def organizeWithoutCollapsing(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new OrganizeImports with SilentTracing { val global = outer.global }
-    val options = List()
-    val changes = performRefactoring(new refactoring.RefactoringParameters(options = options, deps = refactoring.Dependencies.FullyRecompute))
-  }.changes
+  def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val params = new RefactoringParameters(options = List())
+  }.mkChanges
   
-  def organizeExpand(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new OrganizeImports with SilentTracing { val global = outer.global }
-    val options = List(refactoring.ExpandImports)
-    val changes = performRefactoring(new refactoring.RefactoringParameters(options = options, deps = refactoring.Dependencies.FullyRecompute))
-  }.changes
+  def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports))
+  }.mkChanges
   
   @Test
   def testOrganizeOptions() {
@@ -61,9 +55,8 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       """
       package tests.importing
       
-      import scala.collection.mutable.HashMap
-      import scala.collection.mutable.ListBuffer
-      import scala.math.BigDecimal
+      import scala.collection.mutable.{HashMap, ListBuffer}
+      import scala.math._
       import scala.math.BigInt
       import scala.xml.Elem
       import scala.xml.QNode
@@ -77,7 +70,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
-      import scala.math.BigDecimal
+      import scala.math._
       import scala.math.BigInt
       import scala.xml.Elem
       import scala.xml.QNode
@@ -90,35 +83,30 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       package tests.importing
       
       import scala.collection.mutable.{HashMap, ListBuffer}
-      import scala.math.{BigDecimal, BigInt}
+      import scala.math._
       import scala.xml.{Elem, QNode}
       """ + restOfFile
     } applyRefactoring organize
   }
   
   @Test
-  def dependencyOnMultipleOverloadedMethods = new FileSet {
+  def expandImports = new FileSet {
     """
-      import scala.math.BigDecimal._
+      package tests.importing
 
-      class C {
-        def m() {
-          apply("5")
-          apply(5l)
-        }
-      }
+      import scala.collection.mutable.{ListBuffer, HashMap}
+  
+      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """ becomes
     """
-      import scala.math.BigDecimal.apply
+      package tests.importing
 
-      class C {
-        def m() {
-          apply("5")
-          apply(5l)
-        }
-      }
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+  
+      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """
-  } applyRefactoring organize
+  } applyRefactoring organizeExpand
   
   @Test
   def expandImportsButNotWildcards = new FileSet {
@@ -132,7 +120,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
     """
       package tests.importing
 
-      import scala.collection.mutable.{ListBuffer => LB}
+      import scala.collection.mutable.{ListBuffer => LB, _}
   
       object Main {val lb = LB(1) }
     """
@@ -157,6 +145,26 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """
   } applyRefactoring organizeWithoutCollapsing
+  
+  @Test
+  def sort = new FileSet {
+    """
+      package tests.importing
+
+      import scala.collection.mutable.ListBuffer
+      import java.lang.Object
+  
+      object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
+    """ becomes
+    """
+      package tests.importing
+
+      import java.lang.Object
+      import scala.collection.mutable.ListBuffer
+  
+      object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
+    """
+  } applyRefactoring organize
     
   @Test
   def collapse = new FileSet {
@@ -213,7 +221,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       object Main {val s: String = ""; var o: Objekt = null}
     """ becomes
     """
-      import java.lang.{Object => Objekt}
+      import java.lang.{Object => Objekt, String => S}
   
       object Main {val s: String = ""; var o: Objekt = null}
     """
@@ -242,7 +250,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       object Main
     """ becomes
     """
-      
+      import java.lang._
   
       object Main
     """
@@ -262,7 +270,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
     """ becomes
     """
       package importOnTrait
-      
+      import java.lang._
   
       trait A
   
@@ -298,7 +306,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       object Main { val s: String = "" }
     """ becomes
     """
-      import java.lang.String
+      import java.lang.{String => S, _}
   
       object Main { val s: String = "" }
     """
@@ -320,7 +328,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       }
     """ becomes
     """
-      import java.lang.String
+      import java.lang.{String => S, _}
       import scala.collection.mutable.ListBuffer
 
       object Main {
@@ -340,7 +348,7 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
         val s: String = ""
         val s1 = valueOf(2);
       }    """ becomes """
-      import java.lang.String.valueOf
+      import java.lang.String._
       import java.lang.String
   
       object Main {
@@ -413,12 +421,13 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       import scala.collection.mutable.ListBuffer
  
       object Main {
-        var x: ListBuffer[Int] = null
-      }    """ becomes """
-      import scala.collection.mutable.ListBuffer
+        var x: ListBuffer = null
+      }    """ becomes
+    """
+      import scala.collection.mutable._
  
       object Main {
-        var x: ListBuffer[Int] = null
+        var x: ListBuffer = null
       }    """
   } applyRefactoring organize
   
@@ -437,53 +446,5 @@ class OrganizeImportsFullyRecomputeTest extends TestHelper with TestRefactoring 
       trait SomeTrait {
         def m: Either[String, ListBuffer[ListBuffer[String]]]
       }    """
-  } applyRefactoring organize
-  
-  @Test
-  def annotation = new FileSet {
-    """
-      import scala.reflect.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
-    """ becomes
-    """
-      import scala.reflect.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
-    """
-  } applyRefactoring organize
-  
-  @Test
-  def selfTypeAnnotation = new FileSet {
-    """
-      import java.util.Observer
-      trait X {
-        self: Observer =>
-      }
-    """ becomes
-    """
-      import java.util.Observer
-      trait X {
-        self: Observer =>
-      }
-    """
-  } applyRefactoring organize
-  
-  @Test
-  def renamedPackage = new FileSet {
-    """
-      import java.{ lang => jl, util => ju }
-      import ju.{ArrayList => AL}
-      trait Y {
-        def build(ignored : ju.Map[_, _])
-        def build2(ignored : AL[Int])
-      }
-    """ becomes
-    """
-      import java.util.{ArrayList => AL}
-      import java.{util => ju}
-      trait Y {
-        def build(ignored : ju.Map[_, _])
-        def build2(ignored : AL[Int])
-      }
-    """
   } applyRefactoring organize
 }

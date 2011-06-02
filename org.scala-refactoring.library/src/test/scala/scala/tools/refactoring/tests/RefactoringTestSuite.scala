@@ -6,6 +6,7 @@ import org.junit.runners.Suite
 import analysis._
 import common._
 import implementations._
+import implementations.imports._
 import sourcegen._
 import transformation._
 import util._
@@ -26,6 +27,7 @@ import util._
     classOf[InlineLocalTest], 
     classOf[MarkOccurrencesTest], 
     classOf[OrganizeImportsTest], 
+    classOf[OrganizeImportsOptionsTest], 
     classOf[OrganizeImportsFullyRecomputeTest], 
     classOf[UnusedImportsFinderTest], 
     classOf[OrganizeMissingImportsTest], 
