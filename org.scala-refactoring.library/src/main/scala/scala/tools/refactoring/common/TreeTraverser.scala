@@ -16,7 +16,24 @@ trait TreeTraverser {
   
   import global._
   
+  /**
+   *  A traverser that also traverses a TypeTree's original type.
+   */
   trait Traverser extends global.Traverser {
+    override def traverse(t: Tree) = t match {
+      case t: TypeTree if t.original != null => 
+        traverse(t.original)
+      case t => 
+        super.traverse(t)
+     }
+  }
+  
+  /**
+   *  A traverser that creates fake trees for various
+   *  type trees so they can be treated as if they were
+   *  regular trees.
+   */
+  trait TraverserWithFakedTrees extends global.Traverser {
     
     def fakeSelectTreeFromType(tpe: Type, sym: Symbol, pos: Position) = {
       // we fake our own Select(Ident(..), ..) tree from the type
@@ -34,11 +51,12 @@ trait TreeTraverser {
       select.setType(tpe).setSymbol(sym).setPos(pos)          
     }
     
-    def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree) = {
+    def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree): Tree = {
     
       val flattenedExistingTrees = tree.filter(_ => true) map {
         case t: Ident =>  (t.name.toString, t.pos)
         case t: Select => (t.name.toString, t.pos)
+        case _ => return tree
       }
       
       val treesFromType = tpe.trimPrefix(tpe.toString).split("\\.").toList.reverse zip Stream.continually(NoPosition)
@@ -73,15 +91,25 @@ trait TreeTraverser {
       }
     }
     
+    def handleAppliedTypeTree(tree: AppliedTypeTree, tpe: TypeRef): Unit = (tree, tpe) match {
+      case (tree @ AppliedTypeTree(tpt, treeArgs), tpe @ TypeRef(_, sym, tpeArgs)) =>   
+
+        val t = fakeSelectTree(sym.tpe, sym, tpt)
+        traverse(t)
+        
+        tpeArgs zip treeArgs foreach {
+          case (tpe: TypeRef, tree: AppliedTypeTree) =>
+            handleAppliedTypeTree(tree, tpe)
+          case (TypeRef(_, sym, _), tree) =>
+            fakeSelectTree(sym.tpe, sym, tree) foreach traverse
+        }
+    }
+    
     override def traverse(t: Tree) = {
       
       Option(t.symbol) foreach (s => handleAnnotations(s.annotations))
       
       t match {
-      
-        case v: ValDef =>
-          super.traverse(v)
-        
         // The standard traverser does not traverse a TypeTree's original:
         case t: TypeTree if t.original != null =>
                 
@@ -89,7 +117,7 @@ trait TreeTraverser {
             parents zip parentTypes foreach {
               
               case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
-                traverse(fakeSelectTree(tpe, sym, i))
+                fakeSelectTree(tpe, sym, i) foreach traverse
                 
               case (tree, _) => traverse(tree)
             }
@@ -113,17 +141,21 @@ trait TreeTraverser {
             case (tpe, SingletonTypeTree(tree)) if tpe != null => 
               tpe.widen match {
                 case tpe @ TypeRef(_, sym, _) =>
-                  traverse(fakeSelectTree(tpe, sym, tree))
+                  fakeSelectTree(tpe, sym, tree) foreach traverse
                 case _ =>
                   traverse(t.original) 
               }
-             
+              
+            case (tpe: TypeRef, tpt: AppliedTypeTree) if tpe != null => 
+              handleAppliedTypeTree(tpt, tpe)
+              traverse(tpt)
+              
             case (AnnotatedType(annotations, underlying, selfsym), _) =>
               handleAnnotations(annotations)
               traverse(t.original)
               
             case (ExistentialType(quantified, TypeRef(_, sym, _)), ExistentialTypeTree(AppliedTypeTree(tpt, _), _)) =>
-              traverse(fakeSelectTree(sym.tpe, sym, tpt))
+              fakeSelectTree(sym.tpe, sym, tpt) foreach traverse
               
             case _ =>
               traverse(t.original)

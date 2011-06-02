@@ -480,4 +480,26 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       }
     """
   } applyRefactoring organize
+  
+  @Test
+  def abstractVals = new FileSet {
+    """
+import scala.collection.mutable.ListBuffer
+import scala.collection._
+
+trait Temp {
+  // we need some code that use the imports
+  val x: (ListBuffer[Int], mutable.HashMap[String, Int])
+}
+    """ becomes
+    """
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
+
+trait Temp {
+  // we need some code that use the imports
+  val x: (ListBuffer[Int], mutable.HashMap[String, Int])
+}
+    """
+  } applyRefactoring organize
 }

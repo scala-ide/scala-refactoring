@@ -23,6 +23,7 @@ trait CompilationUnitDependencies {
           // we don't need to import anything that comes from the scala package
           case Ident(names.scala) => None
           case Select(Select(Ident(names.scala), names.pkg), _) => None
+          case Select(Ident(names.scala), names.Predef) => None
           case _ => Some(s)
         }
       case s: Select =>
@@ -48,7 +49,7 @@ trait CompilationUnitDependencies {
 
     val result = new collection.mutable.HashMap[String, Select]
 
-    val traverser = new Traverser {
+    val traverser = new TraverserWithFakedTrees {
       
       def isSelectFromInvisibleThis(t: Tree) = t.exists {
         case t: This => !t.pos.isRange
