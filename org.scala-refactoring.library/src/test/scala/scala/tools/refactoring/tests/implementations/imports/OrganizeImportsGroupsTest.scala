@@ -5,16 +5,10 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-import implementations.OrganizeImports
-import tests.util.{TestHelper, TestRefactoring}
+import org.junit.Test
       
-class OrganizeImportsOptionsTest extends OrganizeImportsBaseTest {
-  outer =>
-
-  def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters(options = List(refactoring.ExpandImports), deps = refactoring.Dependencies.FullyRecompute)
-  }.mkChanges
-  
+class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
+    
   def organize(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
     val options = List(ExpandImports, SortImports, GroupImports(groups))
@@ -55,7 +49,7 @@ class OrganizeImportsOptionsTest extends OrganizeImportsBaseTest {
         val z: (Attributes, Comment)
       }
     """
-  } applyRefactoring organize
+  } applyRefactoring organize(List())
   
   @Test
   def oneScalaGroup = new FileSet {

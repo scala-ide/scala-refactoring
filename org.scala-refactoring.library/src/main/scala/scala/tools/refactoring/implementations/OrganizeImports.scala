@@ -60,10 +60,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       }
     }
   }
+
+  private def renames(i: ImportSelector) = i.rename != null && i.name != i.rename
   
   object SimplifyWildcards extends Participant {
     def apply(trees: List[Import]) = {
-      def renames(i: ImportSelector) = i.rename != null && i.name != i.rename
       trees map {
         case imp @ Import(_, selectors) if selectors.exists(wildcardImport) && !selectors.exists(renames) => 
           imp.copy(selectors = selectors.filter(wildcardImport)).setPos(imp.pos)
@@ -76,8 +77,33 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   object SortImports extends Participant {
     def apply(trees: List[Import]) = {
       trees.sortBy {
-        case Import(expr, selector :: Nil) if !wildcardImport(selector) => expr.toString + selector.name.toString
-        case Import(expr, selectors) => expr.toString
+        case Import(expr, selector :: Nil) if !wildcardImport(selector) => 
+          expr.toString + "." + selector.name.toString
+        case Import(expr, selectors) => 
+          expr.toString
+      }
+    }
+  }
+
+  case class AlwaysUseWildcards(imports: Set[String]) extends Participant {
+    def apply(trees: List[Import]) = {
+      val seen = collection.mutable.HashSet[String]()
+      def asString(t: Tree) = {
+        t.filter(_ => true).map {
+          case Ident(name) => name.toString
+          case Select(_, name) => name.toString
+          case _ => ""
+        }.reverse.mkString(".")
+      }
+      trees flatMap {
+        case imp @ Import(qual, selectors) if imports.contains(asString(qual)) && !selectors.exists(renames) =>
+          if(seen.contains(asString(qual))) {
+            None
+          } else {
+            seen += asString(qual)
+            Some(Import(qual, List(ImportSelector(nme.WILDCARD, -1, nme.WILDCARD, -1))).copyAttrs(imp))
+          }
+        case t => Some(t)
       }
     }
   }

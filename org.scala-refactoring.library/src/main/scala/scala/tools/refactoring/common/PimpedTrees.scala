@@ -543,6 +543,9 @@ trait PimpedTrees {
     case _: SourceLayoutTree =>
       Nil
       
+    case _: TypeTreeWithDeferredRefCheck =>
+      Nil
+      
     case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
      
   }) map {

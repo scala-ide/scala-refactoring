@@ -348,8 +348,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         val s: String = ""
         val s1 = valueOf(2);
       }    """ becomes """
-      import java.lang.String._
       import java.lang.String
+      import java.lang.String._
   
       object Main {
         val s: String = ""

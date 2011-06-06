@@ -60,7 +60,7 @@ trait CompilationUnitDependencies {
         case t: Select => !isSelectFromInvisibleThis(t)
         case _ => false
       } foreach {
-        case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX=> 
+        case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX => 
           ()
         case t @ Select(qual, _) => 
           result += (t.toString -> t)
@@ -107,9 +107,7 @@ trait CompilationUnitDependencies {
     
     val deps = result.values.toList
 
-    deps.filterNot {
-      case t => t.symbol.isPackage || t.symbol.isSynthetic
-    } .toList
+    deps.filterNot(_.symbol.isPackage).toList
   }
 }
 

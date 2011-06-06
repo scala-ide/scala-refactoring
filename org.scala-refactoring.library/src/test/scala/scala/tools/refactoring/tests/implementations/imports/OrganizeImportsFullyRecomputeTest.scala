@@ -334,8 +334,8 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
         val s: String = ""
         val s1 = valueOf(2);
       }    """ becomes """
-      import java.lang.String.valueOf
       import java.lang.String
+      import java.lang.String.valueOf
   
       object Main {
         val s: String = ""
@@ -472,8 +472,8 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       }
     """ becomes
     """
-      import java.util.{ArrayList => AL}
       import java.{util => ju}
+      import java.util.{ArrayList => AL}
       trait Y {
         def build(ignored : ju.Map[_, _])
         def build2(ignored : AL[Int])
@@ -493,8 +493,8 @@ trait Temp {
 }
     """ becomes
     """
-import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 trait Temp {
   // we need some code that use the imports
