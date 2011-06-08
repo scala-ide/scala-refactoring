@@ -4,7 +4,7 @@
 
 package scala.tools.refactoring
 
-import common.{Change, InteractiveScalaCompiler}
+import common.Change
 
 /**
  * The super class of all refactoring implementations,

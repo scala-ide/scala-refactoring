@@ -31,13 +31,22 @@ trait CompilationUnitDependencies {
       case _ =>
         None
     }
+    val allDependencies = dependencies(t)
     
-    val deps = dependencies(t)
-    
-    deps.flatMap {
+    val neededDependencies = allDependencies.flatMap {
       case t: Select if !t.pos.isRange => Some(t)
       case t => findLastVisibleSelect(t) 
     }.distinct
+    
+    def asString(t: Tree) = {
+      t.filter(_ => true).map {
+        case Ident(name) => name.toString
+        case Select(_, name) => name.toString
+        case _ => ""
+      }.reverse.mkString(".")
+    }
+    
+    neededDependencies.groupBy(asString).map(_._2.head).toList
   }
 
   /**

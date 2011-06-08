@@ -25,7 +25,7 @@ trait TreeTransformations extends Transformations {
        */
       def once(t: Tree) = t match {
         
-        case t: ImportSelectorTree =>
+        case _: ImportSelectorTree | _: SourceLayoutTree =>
           t
         
         case t: TypeTree if t.original != null =>

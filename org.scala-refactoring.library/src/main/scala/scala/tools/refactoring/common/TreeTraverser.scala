@@ -69,6 +69,8 @@ trait TreeTraverser {
         case ((x: String, pos: Position), sym: Symbol) :: xs =>
           val i = Ident(x).setPos(pos).setSymbol(sym)
           xs.foldLeft(i: Tree) {
+            case (inner: Ident, ((outer, pos), sym)) if outer == "this" => 
+              new This(mkTypeName(inner.name)).setPos(pos).setSymbol(sym)
             case (inner, ((outer, pos), sym)) => 
               Select(inner, outer).setPos(pos).setSymbol(sym)
           }

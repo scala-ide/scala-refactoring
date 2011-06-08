@@ -10,6 +10,11 @@ import transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
 
+/**
+ * A refactoring that recomputes and reorganizes import statements in a file.
+ * 
+ * 
+ */
 abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
   
   import global._
@@ -130,8 +135,12 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       
       val spacer = Import(SourceLayoutTree(SourceLayouts.Newline), Nil)
       
-      (grouped.values.toList.map(_.toList) ::: List(ungrouped.toList)).filterNot(_.isEmpty).reduceLeft {(l1: List[Import], l2: List[Import]) => 
-        l1 ++ List(spacer) ++ l2
+      val allImports = (grouped.values.toList.map(_.toList) ::: List(ungrouped.toList)).filterNot(_.isEmpty)
+      
+      if(allImports.size > 1) {
+        allImports.reduceLeft ((l1: List[Import], l2: List[Import]) => l1 ++ List(spacer) ++ l2)
+      } else {
+        allImports.flatten
       }
     }
   }

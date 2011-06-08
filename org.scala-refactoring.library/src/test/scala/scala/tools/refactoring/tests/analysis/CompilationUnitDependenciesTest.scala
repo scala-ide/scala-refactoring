@@ -432,6 +432,20 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
       }
       """)
+      
+  @Test
+  def selfTypeFromThis = assertDependencies(
+    """""",
+    """
+      trait A {
+        trait A2
+      }
+      class C extends A {
+        trait C2 {
+          this: A2 =>
+        } 
+      }
+      """)
 
   @Test
   def importFromPackageObjectNeeded = assertNeededImports(
