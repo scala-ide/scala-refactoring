@@ -196,6 +196,15 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  def etaExpandedMethod = assertNeededImports(
+    "",
+    """
+      trait A {
+        val x = Set()
+        x filterNot (x ++ x contains)
+      }      """)
+      
+  @Test
   def classAttributeWithWildcardImport = assertDependencies(
     """scala.collection.mutable.HashSet""",
     """
@@ -213,7 +222,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def importIsUsedAsType = assertDependencies(
-    """java.util.ArrayList""",
+    """java.util
+       java.util.ArrayList""",
     """
       import java.util._
       class UsesMap { def x(m: java.util.ArrayList[Int]) = () }
@@ -229,7 +239,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def importIsUsedAsTypeAscription = assertDependencies(
-    """scala.collection.immutable.Set""",
+    """scala.collection.immutable
+       scala.collection.immutable.Set""",
     """
       class UsesSet { val s: collection.immutable.Set[Int] = Map(1 -> 2).toSet }
       """)
@@ -332,6 +343,18 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
       """)
 
+  @Test
+  def qualifiedAndUnqualifiedImports = assertNeededImports(
+    """scala.collection.mutable.HashMap""",
+    """
+      import collection.mutable.HashMap
+
+      trait A {
+        val x = new HashMap[String, String]
+        val y = new collection.mutable.HashMap[String, String]
+      }
+      """)
+      
   @Test
   def importStaticMethodDependency = assertDependencies(
     """java.lang.Integer.parseInt""",
@@ -485,8 +508,10 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       
   @Test
   def importedImplicitConversion = assertDependencies(
-    """java.util.List
+    """java.util
+       java.util.List
        scala.collection.JavaConversions.bufferAsJavaList
+       scala.collection.mutable
        scala.collection.mutable.ListBuffer""",
     """   
       import scala.collection.JavaConversions._

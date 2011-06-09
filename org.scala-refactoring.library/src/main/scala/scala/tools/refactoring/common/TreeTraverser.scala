@@ -71,6 +71,8 @@ trait TreeTraverser {
           xs.foldLeft(i: Tree) {
             case (inner: Ident, ((outer, pos), sym)) if outer == "this" => 
               new This(mkTypeName(inner.name)).setPos(pos).setSymbol(sym)
+            case (inner: Ident, ((outer, pos), sym)) if outer == "package" => 
+              inner
             case (inner, ((outer, pos), sym)) => 
               Select(inner, outer).setPos(pos).setSymbol(sym)
           }
