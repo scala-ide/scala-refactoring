@@ -17,14 +17,14 @@ trait CompilationUnitDependencies {
   def neededImports(t: Tree): List[Select] = {
 
     def findLastVisibleSelect(t: Tree): Option[Select] = t match {
-      case s @ Select(x, name) if s.pos.isRange && !x.pos.isRange =>
-        x match {
+      case s @ Select(qual, name) if s.pos.isRange && !qual.pos.isRange =>
+        qual match {
           // we don't need to import anything that comes from the scala package
           case Ident(names.scala) => None
           case Select(Ident(names.scala), names.pkg) => None
           case Select(Select(Ident(names.scala), names.pkg), _) => None
           case Select(Ident(names.scala), names.Predef) => None
-          case x if x.symbol.isSynthetic && !x.symbol.isModule => None
+          case qual if (qual.symbol.isSynthetic && !qual.symbol.isModule) || (qual.symbol != NoSymbol && qual.symbol.isLocal) => None
           case _ => Some(s)
         }
       case s: Select =>

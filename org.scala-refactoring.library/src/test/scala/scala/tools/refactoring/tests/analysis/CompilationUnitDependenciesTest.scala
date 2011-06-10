@@ -181,7 +181,41 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       class UsesMap { val x = M[Int, String]() }
     """)
     
-    
+  @Test
+  def localImport = assertDependencies(
+    """x.B""",
+    """
+      class A {
+        val B = new {
+          val y = 2
+        }
+      }
+
+      object C {
+        def m(x: A) {
+          import x._
+          println(B.y)
+        }
+      }
+      """)
+      
+  @Test
+  def localImportNotNeeded = assertNeededImports(
+    "",
+    """
+      class A {
+        val B = new {
+          val y = 2
+        }
+      }
+
+      object C {
+        def m(x: A) {
+          import x._
+          println(B.y)
+        }
+      }
+      """)    
     
   @Test
   def classAttributeWithFullPackage = assertDependencies(
