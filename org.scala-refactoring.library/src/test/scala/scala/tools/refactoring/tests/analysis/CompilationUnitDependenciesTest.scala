@@ -181,6 +181,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       class UsesMap { val x = M[Int, String]() }
     """)
     
+    
+    
   @Test
   def classAttributeWithFullPackage = assertDependencies(
     """scala.collection.mutable.Map""",

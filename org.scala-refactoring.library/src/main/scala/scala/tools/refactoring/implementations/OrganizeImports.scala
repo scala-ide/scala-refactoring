@@ -124,7 +124,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       trees foreach { imp =>
         
         val inserts = grouped flatMap {
-          case (key, map) if imp.expr.toString.startsWith(key) => 
+          case (key, map) if imp.expr.toString.startsWith(key +".") || imp.expr.toString == key => 
             map += imp
             Some(key)
           case _ => None

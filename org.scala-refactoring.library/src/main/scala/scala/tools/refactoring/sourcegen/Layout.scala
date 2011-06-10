@@ -5,8 +5,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-import tools.nsc.util.RangePosition
-import tools.nsc.util.SourceFile
+import scala.tools.nsc.util.SourceFile
 
 trait Layout extends CommentHelpers {
   self =>

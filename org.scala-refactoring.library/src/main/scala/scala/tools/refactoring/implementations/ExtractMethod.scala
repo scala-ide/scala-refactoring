@@ -5,11 +5,13 @@
 package scala.tools.refactoring
 package implementations
 
-import common.InteractiveScalaCompiler
-import tools.nsc.symtab.Flags
-import analysis.{Indexes, TreeAnalysis}
-import transformation.TreeFactory
+import scala.tools.nsc.symtab.Flags
+
+import analysis.Indexes
+import analysis.TreeAnalysis
 import common.Change
+import common.InteractiveScalaCompiler
+import transformation.TreeFactory
 
 abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis with Indexes with TreeFactory with InteractiveScalaCompiler {
     

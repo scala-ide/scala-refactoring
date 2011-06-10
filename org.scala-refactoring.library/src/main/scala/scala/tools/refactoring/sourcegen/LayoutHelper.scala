@@ -5,11 +5,9 @@
 package scala.tools.refactoring
 package sourcegen
 
-import tools.nsc.Global
-import tools.nsc.util.RangePosition
-import tools.nsc.util.SourceFile
-import common.Tracing
+import scala.tools.nsc.util.SourceFile
 import common.PimpedTrees
+import common.Tracing
 
 trait LayoutHelper extends CommentHelpers {
   

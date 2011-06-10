@@ -5,9 +5,8 @@
 package scala.tools.refactoring
 package sourcegen
 
-import tools.nsc.symtab.Flags
-import Requisite._
-import Predef.{augmentString => _} // for 2.8.0, implicits
+import scala.tools.nsc.symtab.Flags
+import Requisite.anywhere
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   

@@ -137,5 +137,25 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
         val z: (Attributes, Comment)
       }
     """
-  } applyRefactoring organize(List("java", "scala.collection", "scala.tools"))
+  } applyRefactoring organize(List("java", "scala.collection", "scala.tools")) 
+  
+  @Test
+  def packagesNeedToMatchCompletely = new FileSet {
+    source becomes
+    """
+      import java.util.AbstractList
+      import java.util.BitSet
+      import org.xml.sax.Attributes
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+      import scala.xml.Comment
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Comment)
+      }
+    """
+  } applyRefactoring organize(List("javava", "sca"))
 }
