@@ -4,11 +4,10 @@
 
 package scala.tools.refactoring
 
-import common.{Selections, SilentTracing, Change, PimpedTrees}
-import sourcegen.SourceGenerator
-import transformation.TreeTransformations
-import tools.nsc.io.AbstractFile
-import collection.SeqView
+import scala.tools.nsc.io.AbstractFile
+import scala.tools.refactoring.common.{SilentTracing, Selections, PimpedTrees, Change}
+import scala.tools.refactoring.sourcegen.SourceGenerator
+import scala.tools.refactoring.transformation.TreeTransformations
 
 /**
  * The Refactoring trait combines the transformation and source generation traits with
@@ -48,7 +47,7 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
       def commonPrefixLength(s1: Seq[Char], s2: Seq[Char]) =
         s1 zip s2 takeWhile Function.tupled(_==_) length
       
-      val original    = global.getSourceFile(file).content.subSequence(from, to).toString
+      val original    = getContentForFile(file).subSequence(from, to).toString
       val replacement = changeText
 
       val commonStart = commonPrefixLength(original, replacement)
@@ -57,4 +56,12 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
       val minimizedChangeText = changeText.subSequence(commonStart, changeText.length - commonEnd).toString
       Change(file, from + commonStart, to - commonEnd, minimizedChangeText)
   }
+  
+  /**
+   * Minimizing the changes works with the content of the underlying source code,
+   * but in an IDE where the content hasn't been saved, the changes cannot be
+   * correctly minimized because it will try to use the outdated source code. An 
+   * IDE can override this method to provide the actual content of the file.
+   */
+  protected def getContentForFile(file: AbstractFile): Array[Char] = global.getSourceFile(file).content
 }

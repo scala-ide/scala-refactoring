@@ -5,14 +5,12 @@
 package scala.tools.refactoring
 package util
 
-import java.io.File.pathSeparator
-import tools.nsc.util.Position
-import tools.nsc.io.AbstractFile
-import tools.nsc.Settings
-import tools.nsc.interactive.Global
-import tools.nsc.reporters.ConsoleReporter
-import tools.nsc.util.BatchSourceFile
-import tools.nsc.util.SourceFile
+import java.io.File
+import scala.tools.nsc.interactive.{Response, Global}
+import scala.tools.nsc.io.AbstractFile
+import scala.tools.nsc.util.{SourceFile, Position, BatchSourceFile}
+import scala.tools.nsc.Settings
+import scala.tools.nsc.reporters.ConsoleReporter
 
 class CompilerInstance {
   
@@ -30,7 +28,7 @@ class CompilerInstance {
       val libPath = scalaObjectSource.getLocation          
       val pathList = List(compilerPath,libPath)
       val origBootclasspath = settings.bootclasspath.value
-      settings.bootclasspath.value = ((origBootclasspath :: pathList) ::: additionalClassPathEntry.toList) mkString pathSeparator
+      settings.bootclasspath.value = ((origBootclasspath :: pathList) ::: additionalClassPathEntry.toList) mkString File.pathSeparator
     }
     
     val compiler = new Global(settings, new ConsoleReporter(settings) {
@@ -121,5 +119,3 @@ trait CompilerProvider extends TreeCreationMethods {
 
   val global = CompilerInstance.compiler
 }
-
-

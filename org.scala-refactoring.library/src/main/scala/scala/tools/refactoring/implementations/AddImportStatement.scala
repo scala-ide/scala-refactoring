@@ -5,30 +5,30 @@
 package scala.tools.refactoring
 package implementations
 
-import common.Change
-import common.InteractiveScalaCompiler
+import common.{InteractiveScalaCompiler, Change}
 import transformation.TreeFactory
+import scala.tools.nsc.io.AbstractFile
 
 abstract class AddImportStatement extends Refactoring with TreeFactory with InteractiveScalaCompiler {
 
   val global: tools.nsc.interactive.Global
 
-  def addImport(selection: Selection, fullyQualifiedName: String): List[Change] = {
-    val SplitAtDot = "(.*)\\.(.*?)".r
-    val SplitAtDot(pkg, name) = fullyQualifiedName
-    addImport(selection, pkg, name)
-  }
+  def addImport(file: AbstractFile, fqName: String): List[Change] = addImports(file, List(fqName))
 
-  def addImport(selection: Selection, pkg: String, name: String): List[Change] = {
+  def addImports(file: AbstractFile, importsToAdd: Iterable[String]): List[Change] = {
 
     import global._
     
     val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, imports, others) =>
-        p copy (stats = (imports ::: List(mkImportFromStrings(pkg, name))) ::: others) replaces p
+        val SplitAtDot = "(.*)\\.(.*?)".r
+        val importTrees = importsToAdd.map {
+          case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
+        }.toList
+        p copy (stats = (imports ::: importTrees ::: others)) replaces p
     })
     
-    val astRoot = abstractFileToTree(selection.file)
+    val astRoot = abstractFileToTree(file)
     
     val changes = {
       // first try it at the top level to avoid traversing
@@ -38,5 +38,15 @@ abstract class AddImportStatement extends Refactoring with TreeFactory with Inte
     } apply astRoot
 
     refactor(changes.toList)
+  }
+  
+  @deprecated("Use addImport(file, ..) instead", "0.4.0")
+  def addImport(selection: Selection, fullyQualifiedName: String): List[Change] = {
+    addImport(selection.file, fullyQualifiedName)
+  }
+  
+  @deprecated("Use addImport(file, ..) instead", "0.4.0")
+  def addImport(selection: Selection, pkg: String, name: String): List[Change] = {
+    addImport(selection.file, pkg +"."+ name)
   }
 }
