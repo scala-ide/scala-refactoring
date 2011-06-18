@@ -246,6 +246,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
               case RefinedType(parents, _) => parents mkString " with "
               case t => throw new Exception("Unhandled type "+ t.getClass.getSimpleName)
             } mkString " with "
+          case typeRef @ TypeRef(tpe, sym, arg1 :: ret :: Nil) if definitions.isFunctionType(typeRef) =>
+            typeToString(arg1) +" => "+ typeToString(ret)
           case tpe: TypeRef =>
             tpe.toString
           case MethodType(params, result) =>

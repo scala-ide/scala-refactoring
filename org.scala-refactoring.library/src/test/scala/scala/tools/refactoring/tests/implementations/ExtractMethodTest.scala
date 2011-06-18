@@ -203,7 +203,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       
           println("The sum from 1 to 10 is "+ sum)
         }
-        private def prntln(sumList: (Seq[Int]) => Int, values: scala.collection.immutable.Range.Inclusive): Int = {
+        private def prntln(sumList: Seq[Int] => Int, values: scala.collection.immutable.Range.Inclusive): Int = {
       
           /*(*/val sum = sumList(values)/*)*/   // the sum
           sum
@@ -724,7 +724,7 @@ object ExtractMethod3 {
         val b = certainlyTrue(invert, a)
         b
       }
-      private def certainlyTrue(invert: (Boolean) => Boolean, a: Boolean): Boolean = {
+      private def certainlyTrue(invert: Boolean => Boolean, a: Boolean): Boolean = {
 /*(*/   val b = invert(a)    /*)*/
         b
       }
@@ -759,7 +759,7 @@ object ExtractMethod3 {
     
         println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
       }
-      private def magic(sumList: (Seq[Int]) => Int, prodList: (Seq[Int]) => Int, values: List[Int]): (Int, Int) = {
+      private def magic(sumList: Seq[Int] => Int, prodList: Seq[Int] => Int, values: List[Int]): (Int, Int) = {
     /*(*/    val     sum = sumList(values)   // the sum
         val product = prodList(values) /*)*/ // the product
         (sum, product)
