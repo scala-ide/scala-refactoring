@@ -13,7 +13,8 @@ Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.transformation,
  scala.tools.refactoring.util
 Bundle-ClassPath: .
-Import-Package: scala.tools.nsc, 
+Import-Package: scala.reflect.internal;resolution:=optional,
+ scala.tools.nsc,
  scala.tools.nsc.ast,
  scala.tools.nsc.ast.parser,
  scala.tools.nsc.interactive,
