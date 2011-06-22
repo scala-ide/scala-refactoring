@@ -329,7 +329,12 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         }
         
       } else {
-        l ++ p(tree.original) ++ r
+        tree.tpe match {
+          case typeRef @ TypeRef(tpe, sym, parents) if definitions.isFunctionType(typeRef) && !parents.isEmpty =>
+            l ++ typeToString(tree, typeRef) ++ r
+          case _ => 
+            l ++ p(tree.original) ++ r
+        }
       }
     }
 

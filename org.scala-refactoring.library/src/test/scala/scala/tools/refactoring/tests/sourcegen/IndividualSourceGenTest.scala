@@ -593,5 +593,22 @@ class Test
     
     assertEquals(0, createChanges(List(tree)).size)
   }
+  
+  @Test
+  def testFunctionArg() {
+    val ast = treeFrom(
+"""
+class A {
+def fun[A, B, C](fu: (A, B, C) => A): A = {
+}
+}
+""")
+    assertEquals("""
+class A {
+def fun[A, B, C](fu: (A, B, C) => A): A = {
+}
+}
+""", generateText(ast))
+  }
 }
 

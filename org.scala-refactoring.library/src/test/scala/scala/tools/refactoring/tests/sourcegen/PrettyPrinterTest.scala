@@ -1210,5 +1210,16 @@ class A {
   def h(i: Int, j: Int): (Int, Int) = (i, j)
   def id[A](a: A) = a
 }"""
+    
+  @Test
+  def testFunctionArg = treeFrom("""
+    class A {
+      def fun[A, B, C](fu: (A, B, C) => A): A = {
+      }
+    }
+    """) prettyPrintsTo """class A {
+  def fun[A, B, C](fu: (A, B, C) => A): A = ()
+}"""
 }
+
 
