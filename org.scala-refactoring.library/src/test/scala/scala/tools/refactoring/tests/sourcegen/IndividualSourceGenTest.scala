@@ -610,5 +610,17 @@ def fun[A, B, C](fu: (A, B, C) => A): A = {
 }
 """, generateText(ast))
   }
+  
+  @Test
+  def testClassParameter() {
+    val ast = treeFrom("""
+class A(a: Int) {
+}
+""")
+    assertEquals("""
+class A(a: Int) {
+}
+""", generateText(ast))
+    }
 }
 

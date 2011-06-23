@@ -53,7 +53,9 @@ object Requisite {
     
     new Requisite {
       def isRequired(l: Layout, r: Layout) = {
-        !l.matches(".*\\s*"+ regexSafeString +"\\s*$") && !r.matches("^\\s*"+ regexSafeString + ".*")
+        val isInLeft = l.matches("(?ms).*\\s*"+ regexSafeString +"\\s*$") 
+        val isInRight = r.matches("(?ms)^\\s*"+ regexSafeString + ".*")
+        !isInLeft && !isInRight
       }
       def getLayout = Layout(regexSafeString.replace("\\", ""))
     }
