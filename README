@@ -16,6 +16,7 @@ The examples directory contains two demos:
  - editor is a simple swing editor that integrates the refactorings.
 
 ├── pom.xml
+├── build.sh
 ├── build_p2_repo.sh
 ├── org.scala-refactoring.library
 │   ├── build.properties
@@ -68,10 +69,11 @@ The examples directory contains two demos:
 
 We use Maven (minimum version is 3 because we use Tycho) to build the project:
 
-> mvn package
+> mvn -Dscala.version=2.9.0 package
 
 creates all the artifacts, except for the documentation, which needs to be
-built separately.
+built separately. For different versions of Scala, take a look at the build.sh
+script.
 
 A separate P2 repository can be built using the build_p2_repo.sh script.
 
