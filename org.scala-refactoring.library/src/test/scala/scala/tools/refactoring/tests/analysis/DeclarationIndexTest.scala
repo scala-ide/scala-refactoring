@@ -251,7 +251,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   @ScalaVersion(matches="2.8")
   @Test
   def referencesToTypesInAppliedTypes28() = {    
-    assertReferencesOfSelection("""String (54, 60), scala.this.Predef.String (91, 97), String (121, 127)""", """      
+    assertReferencesOfSelection("""scala.this.Predef.String (54, 60), scala.this.Predef.String (91, 97), scala.this.Predef.String (121, 127)""", """      
       object U {
         def go(t: List[ /*(*/ String /*)*/ ]) = {
           val s: String = ""

@@ -60,11 +60,7 @@ trait TreeCreationMethods {
   }
   
   def treeFrom(file: SourceFile, forceReload: Boolean): global.Tree = {
-    if(isScala("2.8")) {
-      treeFromCompiler28(file, forceReload)
-    } else {
-      treeFromCompiler29(file)
-    }
+    treeFromCompiler29(file)
   }
   
   private def treeFromCompiler28(file: SourceFile, forceReload: Boolean) = {

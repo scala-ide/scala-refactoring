@@ -599,14 +599,12 @@ trait PimpedTrees {
       find(root)
     }
   }
-  
-  val (originalLeftSibling, originalRightSibling) = {
-    
-    def findSibling(t: Tree, parent: Option[Tree], compareIndex: Int, returnIndex: Int) = parent flatMap 
-      (children(_) filter (_.pos.isRange) sliding 2 find (_ lift compareIndex map (_ samePos t) getOrElse false) flatMap (_ lift returnIndex))
-   
-    ((t: Tree) => findSibling(t, originalParentOf(t), 1, 0)) → ((t: Tree) => findSibling(t, originalParentOf(t), 0, 1))
-  }
+ 
+  private def findSibling(t: Tree, parent: Option[Tree], compareIndex: Int, returnIndex: Int) = parent flatMap 
+    (children(_) filter (_.pos.isRange) sliding 2 find (_ lift compareIndex map (_ samePos t) getOrElse false) flatMap (_ lift returnIndex))
+
+  val originalLeftSibling  = ((t: Tree) => findSibling(t, originalParentOf(t), 1, 0))
+  val originalRightSibling = ((t: Tree) => findSibling(t, originalParentOf(t), 0, 1))
   
   def keepTree(t: Tree) = !t.isEmpty && (t.pos.isRange || t.pos == NoPosition)
   

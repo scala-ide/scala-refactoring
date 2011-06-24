@@ -493,17 +493,10 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       p(clazz) ++ pp(args, before = "(", separator = ", ", after = ")")  
     }
     
-    override def Super(tree: Super, qual: Tree, mix: Name)(implicit ctx: PrintingContext) = {
-      
-      val q = qual match {
-        case This(qual: Name) if qual.toString == "" => EmptyFragment
-        case This(qual: Name) => Fragment(qual.toString + ".")
-        case _ => p(qual) // can this actually happen?
-      }
-      
+    override def Super(tree: Super, qual: Name, mix: Name)(implicit ctx: PrintingContext) = {    
+      val q = if(qual.toString == "") "" else qual.toString +"."
       val m = if(mix.toString == "") "" else "["+ mix + "]"
-      
-      q ++ Fragment("super"+ m)      
+      Fragment(q +"super"+ m) 
     }
   }
    

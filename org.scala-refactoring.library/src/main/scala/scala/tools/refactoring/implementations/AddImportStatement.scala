@@ -40,12 +40,12 @@ abstract class AddImportStatement extends Refactoring with TreeFactory with Inte
     refactor(changes.toList)
   }
   
-  @deprecated("Use addImport(file, ..) instead", "0.4.0")
+  @deprecated("Use addImport(file, ..) instead")
   def addImport(selection: Selection, fullyQualifiedName: String): List[Change] = {
     addImport(selection.file, fullyQualifiedName)
   }
   
-  @deprecated("Use addImport(file, ..) instead", "0.4.0")
+  @deprecated("Use addImport(file, ..) instead")
   def addImport(selection: Selection, pkg: String, name: String): List[Change] = {
     addImport(selection.file, pkg +"."+ name)
   }

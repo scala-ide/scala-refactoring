@@ -72,7 +72,7 @@ trait TreeFactory {
     rhs match {
       case rhs: Select if rhs.symbol.isMethod =>
         rhs.symbol.tpe match {
-          case _: NullaryMethodType => valDef
+          case PolyType(Nil, _) => valDef
           case _ => valDefForFunction
         }
       case _ => valDef

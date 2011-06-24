@@ -463,8 +463,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       
   @Test
   def renamedPackage = assertDependencies(
-    """java.ju.Map
-       java.util""",
+    """java.util
+       java.util.Map""",
     """
       import java.{ lang => jl, util => ju }
       trait Y {
@@ -484,7 +484,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       
   @Test
   def importFromPackageObject = assertDependencies(
-    """scala.collection.`package`.breakOut""",
+    """scala.collection.package.breakOut""",
     """
       import scala.collection.breakOut
       object TestbreakOut {
@@ -508,7 +508,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def importFromPackageObjectNeeded = assertNeededImports(
-    """scala.collection.`package`.breakOut""",
+    """scala.collection.package.breakOut""",
     """
       import scala.collection.breakOut
       object TestbreakOut {
@@ -546,7 +546,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   def importedImplicitConversion = assertDependencies(
     """java.util
        java.util.List
-       scala.collection.JavaConversions.bufferAsJavaList
+       scala.collection.JavaConversions.asJavaList
        scala.collection.mutable
        scala.collection.mutable.ListBuffer""",
     """   
@@ -559,7 +559,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       
   @Test
   def importedImplicitConversionNeedsImport = assertNeededImports(
-    """scala.collection.JavaConversions.bufferAsJavaList""",
+    """scala.collection.JavaConversions.asJavaList""",
     """   
       import scala.collection.JavaConversions._
       object Conversions {

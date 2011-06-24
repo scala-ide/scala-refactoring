@@ -408,7 +408,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       object Main {
       }    """ becomes
     """
-      
+      import java.util._
+      import scala.collection._
  
       object Main {
       }    """

@@ -165,7 +165,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       
           println("The sum from 1 to 10 is "+ sum)
         }
-        private def prntln(sumList: (Seq[Int]) => Int, values: scala.collection.immutable.Range.Inclusive with scala.collection.immutable.Range.ByOne): Int = {
+        private def prntln(sumList: Seq[Int] => Int, values: scala.collection.immutable.Range.Inclusive with scala.collection.immutable.Range.ByOne): Int = {
       
           /*(*/val sum = sumList(values)/*)*/   // the sum
           sum
@@ -1036,10 +1036,10 @@ object Bar {
   def foo {
     val bubu = "abc"
     bubu.format()
-    calc
+    calc /*)*/
   }
   private def calc: Unit = {
-    /*(*/ 10 * 4 - 1 /*)*/
+    /*(*/ 10 * 4 - 1
   }
 }
 """

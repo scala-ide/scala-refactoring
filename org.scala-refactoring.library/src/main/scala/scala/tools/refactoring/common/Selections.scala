@@ -114,7 +114,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
   
   case class FileSelection(file: tools.nsc.io.AbstractFile, root: Tree, from: Int, to: Int) extends Selection {
     
-    @deprecated("Please use the primary constructor.", "0.4.0")
+    @deprecated("Please use the primary constructor.")
     def this(file: tools.nsc.io.AbstractFile, from: Int, to: Int) = {
       this(file, compilationUnitOfFile(file).get.body, from, to)
     }
@@ -123,7 +123,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
   }
   
   object FileSelection {
-    @deprecated("Please use the primary constructor.", "0.4.0")
+    @deprecated("Please use the primary constructor.")
     def apply(file: tools.nsc.io.AbstractFile, from: Int, to: Int) = new FileSelection(file: tools.nsc.io.AbstractFile, from: Int, to: Int)
   }
   
