@@ -502,4 +502,20 @@ trait Temp {
 }
     """
   } applyRefactoring organize
+  
+  @Test
+  def fullPaths = new FileSet {
+    """
+trait FullPaths {
+  sys.error("")
+  math.E
+}
+    """ becomes
+    """
+trait FullPaths {
+  sys.error("")
+  math.E
+}
+    """
+  } applyRefactoring organize
 }
