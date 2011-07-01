@@ -16,30 +16,59 @@ trait CompilationUnitDependencies {
    */
   def neededImports(t: Tree): List[Select] = {
 
-    def findLastVisibleSelect(t: Tree): Option[Select] = t match {
+        
+    /**
+     * Helper function to filter out trees that we don't need
+     * to import, for example because they come from Predef.
+     */
+    def isImportReallyNeeded(t: Select) = t.qualifier match {
+      case Ident(names.scala) => false
+      case Select(Ident(names.scala), names.pkg) => false
+      case Select(Ident(names.scala), names.Predef) => false
+      case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
+      case qual if qual.symbol != NoSymbol && qual.symbol.isLocal => false
+      case _ => true
+    }
+    
+    /**
+     * Finds the last "visible" (with a range position) select in some tree selection.
+     * 
+     * Selects are usually only partly written down in source code (except when we write
+     * down the full name to some identifier), so there exists a select at which the tree
+     * turns from being visible to being invisible. We need to find this tree to determine
+     * whether we need do make an import with the minimally required path.
+     * 
+     * This function also already filters trees that we don't need to import, e.g. from the
+     * Predef or the scala package.
+     */
+    def findDeepestNeededSelect(t: Tree): Option[Select] = t match {
+      case selected @ Select(qual @ Select(underlying, _), _) if qual.symbol.isPackageObject && underlying.pos.isRange =>
+        
+        /* When importing from a package object, e.g. scala.sys.`package`.error, the `package` select
+         * doesn't have a position. So we "skip" this package object and continue with the underlying
+         * select, which might again reveal a range position. 
+         * 
+         * If we find out that we need that underlying select, we return the original selected tree on
+         * the package object.
+         * */
+        findDeepestNeededSelect(underlying) map (_ => selected)
+        
       case s @ Select(qual, name) if s.pos.isRange && !qual.pos.isRange =>
-        qual match {
-          // we don't need to import anything that comes from the scala package
-          case Ident(names.scala) => None
-          case Select(Ident(names.scala), names.pkg) => None
-          case Select(Select(Ident(names.scala), names.pkg), _) => None
-          case Select(Ident(names.scala), names.Predef) => None
-          case qual if (qual.symbol.isSynthetic && !qual.symbol.isModule) || (qual.symbol != NoSymbol && qual.symbol.isLocal) => None
-          case _ => Some(s)
-        }
+        Some(s) filter isImportReallyNeeded
       case s: Select =>
-        findLastVisibleSelect(s.qualifier)
+        findDeepestNeededSelect(s.qualifier)
       case _ =>
         None
     }
     
-    val allDependencies = dependencies(t)
-    
-    val neededDependencies = allDependencies.flatMap {
-      case t: Select if !t.pos.isRange => Some(t)
-      case t => findLastVisibleSelect(t) 
+    val neededDependencies = dependencies(t).flatMap {
+      case t: Select if !t.pos.isRange => Some(t) filter isImportReallyNeeded
+      case t => findDeepestNeededSelect(t)
     }.distinct
     
+    /**
+     * Converts a tree containing Idents and Selects to a `.` separated string.
+     */
     def asString(t: Tree) = {
       t.filter(_ => true).map {
         case Ident(name) => name.toString
@@ -48,13 +77,15 @@ trait CompilationUnitDependencies {
       }.reverse.mkString(".")
     }
     
+    // Eliminate duplicates by converting them to strings.
     neededDependencies.groupBy(asString).map(_._2.head).toList
   }
 
   /**
    * Calculates all the external dependencies the given Tree has.
    * Compared to `neededImports`, this function might also return
-   * trees that don't need to be explicitly imported.
+   * trees that don't need to be explicitly imported, for example
+   * because they are defined in the same compilation unit.
    */
   def dependencies(t: Tree): List[Select] = {
 
@@ -121,9 +152,8 @@ trait CompilationUnitDependencies {
           // we don't need to add a dependency for method calls where the receiver
           // is explicit in the source code.
           val isMethodCallFromExplicitReceiver = qual.pos.isRange && t.symbol.isMethod
-          val qualifierIsSynthetic = qual.symbol != null && qual.symbol.isSynthetic
           
-          if (!isMethodCallFromExplicitReceiver && /*!qualifierIsSynthetic &&*/ !isSelectFromInvisibleThis(qual)) {
+          if (!isMethodCallFromExplicitReceiver && !isSelectFromInvisibleThis(qual)) {
             addToResult(t)
           }
 
