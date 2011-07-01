@@ -234,6 +234,7 @@ trait PimpedTrees {
         case t: DefTree => extractName(t.name)
         case t: RefTree => extractName(t.name)
         case t: NameTree => t.nameString
+        case t: TypeTree => t.symbol.nameString // FIXME: use something better
         case ImportSelectorTree(NameTree(name), _) => name.toString
         case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
       }
@@ -346,7 +347,11 @@ trait PimpedTrees {
         val parents = (pimpedTpl.superConstructorParameters match {
           case Nil => tpl.parents
           case params => SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
-        }) filterNot (_.isEmpty)
+        }) filterNot (_.isEmpty) filter {
+          // objects are always serializable, but the Serializable parent's position is NoPosition
+          case t: TypeTree if t.pos == NoPosition && t.nameString == "Serializable" => false
+          case _ => true
+        }
         
         val self = if(tpl.self.isEmpty) EmptyTree else {
           

@@ -559,4 +559,19 @@ class RenameTest extends TestHelper with TestRefactoring {
     "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/loc/*)*/ = 42\r\n    loc * loc\r\n  }\r\n}" becomes
     "package com.test\r\nobject Hello {\r\n  def test = {\r\n    val /*(*/fourtytwo/*)*/ = 42\r\n    fourtytwo * fourtytwo\r\n  }\r\n}"
   } applyRefactoring(renameTo("fourtytwo"))
+  
+      
+  @Test
+  def renameCaseClassAndObject = new FileSet {
+    """
+      object /*(*/TestIde/*)*/ {}
+
+      case class TestIde {}
+    """ becomes
+    """
+      object /*(*/TestIde1/*)*/ {}
+
+      case class TestIde1 {}
+    """
+  } applyRefactoring(renameTo("TestIde1"))
 }
