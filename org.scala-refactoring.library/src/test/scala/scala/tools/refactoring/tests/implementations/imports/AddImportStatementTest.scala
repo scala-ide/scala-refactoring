@@ -25,6 +25,17 @@ class AddImportStatementTest extends TestHelper {
   }
 
   @Test
+  def importPackageContainsKeyword = {
+    addImport(("whatever.type", "Bla"), """
+      object Main
+    """,
+    """
+      import whatever.`type`.Bla
+      object Main
+    """)
+  }
+  
+  @Test
   def importInEmpty = {
     addImport(("collection.mutable", "ListBuffer"), """
       object Main {val lb = ListBuffer(1)}

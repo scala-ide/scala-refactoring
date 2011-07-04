@@ -48,8 +48,17 @@ trait TreeFactory {
     typeTree setPos t.pos
   }
   
-  def mkImportFromStrings(qualifier: String, name: String) = 
-    new Import(Ident(qualifier), new ImportSelector(name, -1, name, -1) :: Nil)
+  def mkImportFromStrings(qualifier: String, name: String) = {
+    def mapPackageNames(qualifier: String) = {
+      qualifier.split("\\.").map(escapeScalaKeywords).mkString(".")
+    }
+    
+    def escapeScalaKeywords(s: String) = {
+      if(global.nme.keywords.contains(mkTermName(s))) "`"+ s +"`" else s
+    }
+    
+    new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(name, -1, name, -1) :: Nil)
+  }
 
   def mkRenamedImportTree(t: ImportSelectorTree, name: String) =
     ImportSelectorTree(NameTree(name) setPos t.name.pos, t.rename) setPos t.pos
