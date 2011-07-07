@@ -54,7 +54,8 @@ trait TreeFactory {
     }
     
     def escapeScalaKeywords(s: String) = {
-      if(global.nme.keywords.contains(mkTermName(s))) "`"+ s +"`" else s
+      //if(global.nme.keywords.contains(mkTermName(s))) "`"+ s +"`" else s
+      s
     }
     
     new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(name, -1, name, -1) :: Nil)
