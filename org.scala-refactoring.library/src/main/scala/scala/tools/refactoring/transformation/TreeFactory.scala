@@ -54,8 +54,10 @@ trait TreeFactory {
     }
     
     def escapeScalaKeywords(s: String) = {
-      //if(global.nme.keywords.contains(mkTermName(s))) "`"+ s +"`" else s
-      s
+      import global.nme._
+      val scalaOnlyKeywords: Set[global.Name] = Set(CASEkw, DEFkw, FORSOMEkw, IMPLICITkw, LAZYkw, MATCHkw, MIXINkw, OBJECTkw, REQUIRESkw, SEALEDkw, TRAITkw, TYPE_, TYPEkw, VALkw, VARkw, WITHkw, YIELDkw)
+      val termName = mkTermName(s)
+      if(scalaOnlyKeywords.contains(termName)) "`"+ s +"`" else s
     }
     
     new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(name, -1, name, -1) :: Nil)
