@@ -114,6 +114,45 @@ trait TreeTraverser {
       Option(t.symbol) foreach (s => handleAnnotations(s.annotations))
       
       t match {
+        
+        case Template(parents, ValDef(_, _, tpeTree: TypeTree, _), body) if tpeTree.original == null =>
+          parents foreach traverse
+          
+          def createAndTraversFakeTree(tpe: Type, sym: Symbol, pos: Position) = {
+            val faked = fakeSelectTreeFromType(tpe, sym, pos)
+            
+            if(!faked.toString.contains(".this.")) {
+              traverse(faked)
+            }      
+          }
+
+          // This is only needed in 2.8 because the tpeTree.original is not available.
+          // It might result in additional unneeded imports if a self type is given with the full path,
+          // but the workaround is already ugly enough as it is.
+          tpeTree.tpe match {
+            // in a self type annotation, the first tree is the trait itself, so we skip that one
+              
+            // self type annotation with a compound type
+            case RefinedType(_ :: RefinedType(parentTypes, _) :: Nil, _) if tpeTree.pos.isRange =>  
+              val start = tpeTree.pos.start
+              val src = tpeTree.pos.source.content.subSequence(start, tpeTree.pos.end).toString
+              val typeParts = src.split(" with ")
+              parentTypes zip typeParts foreach {
+                case (tpe: TypeRef, srcPart) =>
+                  val pos = tpeTree.pos.withStart(start + src.indexOf(srcPart))
+                  createAndTraversFakeTree(tpe, tpe.sym, pos)
+                case _ =>
+              }
+              
+            // self type annotation with a single type
+            case RefinedType(_ :: (tpe: TypeRef) :: Nil, _) =>
+              createAndTraversFakeTree(tpe, tpe.sym, tpeTree.pos)
+  
+            case _ =>
+          }            
+          
+          body foreach traverse
+        
         // The standard traverser does not traverse a TypeTree's original:
         case t: TypeTree if t.original != null =>
                 
