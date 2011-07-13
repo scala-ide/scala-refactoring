@@ -183,12 +183,12 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   def testDefDefWithTypeParams =  {
     
     val arg = ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), "a", 
-                TypeDef(NoMods, mkTypeName("R"), TypeDef(NoMods, mkTypeName("X"), Nil, EmptyTree) :: Nil, EmptyTree), EmptyTree)
+                TypeDef(NoMods, "R".toTypeName, TypeDef(NoMods, "X".toTypeName, Nil, EmptyTree) :: Nil, EmptyTree), EmptyTree)
     
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition) ,
           "m",
-          TypeDef(NoMods, mkTypeName("X"), Nil, EmptyTree) :: Nil,
+          TypeDef(NoMods, "X".toTypeName, Nil, EmptyTree) :: Nil,
           List(List(arg)),
           EmptyTree,
           Literal(Constant(()))
@@ -222,7 +222,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   
   @Test
   def testClassWithTypeParams() = {
-    val c = mkClass(name = "A", tparams = List(TypeDef(NoMods, mkTypeName("T"), Nil, EmptyTree), TypeDef(NoMods, mkTypeName("U"), Nil, EmptyTree)))
+    val c = mkClass(name = "A", tparams = List(TypeDef(NoMods, "T".toTypeName, Nil, EmptyTree), TypeDef(NoMods, "U".toTypeName, Nil, EmptyTree)))
     c prettyPrintsTo """class A[T, U]"""
   }
   
@@ -245,7 +245,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
           "eins",
-          TypeDef( NoMods, mkTypeName("R"), Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, mkTypeName("Rate"), Nil, EmptyTree ))) :: Nil,
+          TypeDef( NoMods, "R".toTypeName, Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, "Rate".toTypeName, Nil, EmptyTree ))) :: Nil,
           Nil,
           EmptyTree,
           Literal(Constant(()))

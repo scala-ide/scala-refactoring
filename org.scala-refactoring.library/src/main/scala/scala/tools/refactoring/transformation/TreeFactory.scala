@@ -22,10 +22,10 @@ trait TreeFactory {
     case d: DefDef => d.copy(name = name)
     case b: Bind => b.copy(name = name)
     case s: Select => s.copy(name = name)
-    case c: ClassDef => c.copy(name = mkTypeName(name))
-    case t: This => t.copy(qual = mkTypeName(name))
+    case c: ClassDef => c.copy(name = name.toTypeName)
+    case t: This => t.copy(qual = name.toTypeName)
     case m: ModuleDef => m.copy(name = name)
-    case t: TypeDef => t.copy(name = mkTypeName(name))
+    case t: TypeDef => t.copy(name = name.toTypeName)
     case t: PackageDef => t.copy(pid = Ident(name) setPos t.pid.pos)
     case t => throw new Exception("Found " + t.getClass.getName)
   }) setPos t.pos
@@ -54,7 +54,7 @@ trait TreeFactory {
     }
     
     def escapeScalaKeywords(s: String) = {
-      if(global.nme.keywords.contains(mkTermName(s))) "`"+ s +"`" else s
+      if(global.nme.keywords.contains(s.toTermName)) "`"+ s +"`" else s
     }
     
     new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(name, -1, name, -1) :: Nil)
@@ -94,9 +94,9 @@ trait TreeFactory {
     val args = arguments.head map (s => Ident(s))
 
     val call = if (args.isEmpty)
-      Select(This(mkTypeName("")) setPos Invisible, name)
+      Select(This(nme.EMPTY.toTypeName) setPos Invisible, name)
     else
-      Apply(Select(This(mkTypeName("")) setPos Invisible, name), args)
+      Apply(Select(This(nme.EMPTY.toTypeName) setPos Invisible, name), args)
 
     returns match {
       case Nil => call
@@ -157,7 +157,7 @@ trait TreeFactory {
 
     ClassDef(
       mods,
-      mkTypeName(name),
+      name.toTypeName,
       tparams,
       Template(
         parents,
