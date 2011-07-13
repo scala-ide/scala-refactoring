@@ -40,9 +40,9 @@ trait TestRefactoring extends TestHelper {
         case Right(prepare) =>
           refactoring.perform(selection, prepare, parameters) match {
             case Right(modifications) => modifications
-            case Left(error) => throw new PreparationException(error.cause)
+            case Left(error) => throw new RefactoringException(error.cause)
           }
-        case Left(error) => throw new RefactoringException(error.cause)
+        case Left(error) => throw new PreparationException(error.cause)
       }
     }
   }
