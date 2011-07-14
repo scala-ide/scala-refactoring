@@ -196,7 +196,6 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
   
   @Test
-  @Ignore // until it is figured out why this test fails in maven when executed with tests from other packages
   def aliasToVal = new FileSet {
     """
       package changeParamOrder.aliasToVal
@@ -217,7 +216,6 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
   
   @Test
-  @Ignore // until it is figured out why this test fails in maven when executed with tests from other packages
   def partiallyAppliedVal = new FileSet {
     """
       package changeParamOrder.partiallyAppliedVal
@@ -238,7 +236,6 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
   
   @Test
-  @Ignore // until it is figured out why this test fails in maven when executed with tests from other packages
   def repeatedlyPartiallyAppliedVal = new FileSet {
     """
       package changeParamOrder.repeatedlyPartiallyAppliedVal

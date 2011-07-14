@@ -195,7 +195,7 @@ class MarkOccurrencesTest extends TestHelper {
       val sep2 = /*(*/#/*)*/.pathSeparator
     }
     """)
-
+    
   @Test
   def backtickedIdentifiers = markOccurrences("""
     trait StrangeIdentifiers {

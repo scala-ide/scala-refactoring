@@ -610,7 +610,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(elim)
     
-  @Test(expected=classOf[PreparationException])
+  @Test(expected=classOf[RefactoringException])
   def cannotEliminateWithBinding = new FileSet {
     """
       package elimination

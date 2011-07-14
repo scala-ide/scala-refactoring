@@ -108,6 +108,21 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       }
       """)
   }
+  
+  @ScalaVersion(matches="2.9.1")
+  @Test
+  def findShadowed291() = {
+    assertDeclarationOfSelection("""val x: java.lang.String = "a"""", """
+      object AfindShadowed {
+        private[this] val x = 1
+        def go  = {
+          val x = "a"
+          val y = /*(*/  x  /*)*/
+          y
+        }
+      }
+      """)
+  }
 
   @Test
   def findShadowedWithThis() = {

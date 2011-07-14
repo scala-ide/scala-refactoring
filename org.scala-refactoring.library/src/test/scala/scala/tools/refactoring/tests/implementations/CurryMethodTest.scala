@@ -255,7 +255,6 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring(curryMethod(List(1::Nil, 2::Nil, 1::Nil, 1::Nil)))
   
   @Test
-  @Ignore // until it is figured out why this test fails in maven when executed with tests from other packages
   def aliasToVal = new FileSet {
     """
       package curryMethod.aliasToVal
@@ -276,7 +275,6 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
   
   @Test
-  @Ignore // until it is figured out why this test fails in maven when executed with tests from other packages
   def repeatedlyPartiallyAppliedVal = new FileSet {
     """
       package curryMethod.repeatedlyPartiallyAppliedVal

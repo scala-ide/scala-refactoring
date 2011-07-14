@@ -111,8 +111,7 @@ trait TreeFactory {
     }
   }
 
-  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree]): DefDef = {
-
+  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree], typeParameters: List[TypeDef] = Nil): DefDef = {
     val formalParameters = {
       if (parameters.isEmpty)
         Nil
@@ -120,7 +119,7 @@ trait TreeFactory {
         parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(s.tpe), EmptyTree)))
     }
 
-    DefDef(mods withPosition (Flags.METHOD, NoPosition), newTermName(name), Nil /*type parameters*/ , formalParameters, TypeTree(body.last.tpe), mkBlock(body))
+    DefDef(mods withPosition (Flags.METHOD, NoPosition), name, typeParameters, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
   }
 
   def mkBlock(trees: List[Tree]): Block = trees match {
