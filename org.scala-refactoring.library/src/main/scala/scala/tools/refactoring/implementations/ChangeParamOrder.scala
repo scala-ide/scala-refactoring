@@ -3,7 +3,7 @@ package implementations
 
 import scala.tools.refactoring.common.Change
 
-abstract class ChangeParamOrder extends MultiStageRefactoring with common.InteractiveScalaCompiler {
+abstract class ChangeParamOrder extends MultiStageRefactoring with common.InteractiveScalaCompiler with analysis.Indexes {
 
   import global._
   
@@ -32,10 +32,6 @@ abstract class ChangeParamOrder extends MultiStageRefactoring with common.Intera
     if(!checkRefactoringParams(selectedValue.vparamss, params)) 
       return Left(RefactoringError("wrong length of permutation(s) of method arguments"))
     
-    val findDef= filter {
-      case d: DefDef => d == selectedValue
-    }
-    
     def reorder[T](origVparams: List[List[T]], permutations: List[Permutation]): List[List[T]] = origVparams match {
       case Nil => Nil
       case x::xs => reorderSingleParamList(x, permutations.head)::reorder(xs, permutations.tail)
@@ -46,6 +42,10 @@ abstract class ChangeParamOrder extends MultiStageRefactoring with common.Intera
       case x::xs => origVparams(x)::reorderSingleParamList(origVparams, xs)
     }
     
+    def findDef(defdef: DefTree)= filter {
+      case d: DefDef => d == defdef
+    }
+    
     val reorderParams = transform {
       case orig @ DefDef(mods, name, tparams, vparams, tpt, rhs) => {
         val reorderedVparams = reorder(vparams, params)
@@ -53,37 +53,47 @@ abstract class ChangeParamOrder extends MultiStageRefactoring with common.Intera
       }
     }
     
-    val changeParamOrderDefDef = topdown {
+    def changeParamOrderDefDef(defdef: DefTree) = topdown {
       matchingChildren {
-        findDef &> reorderParams
+        findDef(defdef) &> reorderParams
       }
     }
     
-    val findApply = filter {
-      case apply: Apply => apply.symbol.fullName == selectedValue.symbol.fullName
+    def findApply(applySymbol: Symbol) = filter {
+      case apply: Apply => apply.symbol.fullName == applySymbol.fullName
     }
     
-    // TODO quite a hack => find a cleaner way to do it
-    var applyPermutations = params.reverse
+    def paramListPos(fun: Option[Tree]): Int = fun match {
+      case Some(Apply(f, _)) => 1 + paramListPos(Some(f))
+      case _ => 0
+    }
+
     val reorderParamsApply = transform {
       case orig @ Apply(fun, args) => {
-        val permutation = applyPermutations.head
-        applyPermutations = applyPermutations.tail match {
-          case Nil => params.reverse
-          case perms => perms
-        }
-        val reorderedArgs = reorderSingleParamList(args, permutation)
+        val pos = paramListPos(findOriginalTree(orig)) - 1
+        val reorderedArgs = reorderSingleParamList(args, params(pos))
         Apply(fun, reorderedArgs) replaces orig
       }
     }
     
-    val changeParamOrderApply = topdown {
+    def changeParamOrderApply(applySymbol: Symbol) = topdown {
       matchingChildren {
-        findApply &> reorderParamsApply
+        findApply(applySymbol) &> reorderParamsApply
       }
     }
     
-    Right(transformFile(selection.file, changeParamOrderDefDef &> changeParamOrderApply))
+    def findUsages(defdef: DefTree)  {
+      println(index.references(defdef.symbol))
+    }
+    
+    def changeParamOrder(defdef: DefDef) = {
+      val allDefDefs = index.overridesInClasses(defdef.symbol)
+      val defs = index.allDefinedSymbols filter(_.isMethod) flatMap (index.declaration)
+      val singleReorderings = allDefDefs map (d => changeParamOrderDefDef(index.declaration(d).get) &> changeParamOrderApply(d))
+      singleReorderings.foldLeft(id[Tree])((t, c) => t &> c)
+    }
+    
+    Right(transformFile(selection.file, changeParamOrder(selectedValue)))
   }
   
 }

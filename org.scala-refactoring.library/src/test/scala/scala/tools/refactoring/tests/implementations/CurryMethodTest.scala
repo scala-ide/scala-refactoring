@@ -27,7 +27,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """
       package simpleCurrying
 	  class A {
-        def /*(*/add/*)*/(first: Int)(second: Int) = first + second
+        def /*(*/add/*)*/(first: Int)( second: Int) = first + second
       }
     """ 
   } applyRefactoring(curryMethod(List(1::Nil)))
@@ -47,6 +47,66 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ 
   } applyRefactoring(curryMethod(List(1::Nil, 1::2::Nil)))
+  
+  @Test
+  def curryingWithMethodCall = new FileSet {
+    """
+      package curryingWithMethodCall
+	  class A {
+        def /*(*/add/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = first + second
+      }
+	  class B {
+        val a = new A
+        val b = a.add(1, 2)("a", "b", "c")
+      }
+    """ becomes
+    """
+      package curryingWithMethodCall
+	  class A {
+        def /*(*/add/*)*/(first: Int)( second: Int)(a: String, b: String)( c: String) = first + second
+      }
+	  class B {
+        val a = new A
+        val b = a.add(1)( 2)("a",  "b")( "c")
+      }
+    """ 
+  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  
+  @Test // TODO
+  def curriedMethodAliased= new FileSet {
+    """
+      package curriedMethodAliased
+      class A {
+        def /*(*/curriedAdd3/*)*/(a: Int)(b: Int, c: Int) = a + b + c
+        def alias = curriedAdd3
+        val six = alias(1)(2, 3)
+      }
+    """ becomes
+    """
+      package curriedMethodAliased
+      class A {
+        def /*(*/curriedAdd3/*)*/(a: Int)(b: Int)( c: Int) = a + b + c
+        def alias = curriedAdd3
+        val six = curriedAdd(1)(2)(3)
+      }
+    """ 
+  } applyRefactoring(curryMethod(List(Nil, 1::Nil)))
+  
+  @Test
+  def alias = {
+    val tree = treeFrom {
+          """
+      package curriedMethodAliased
+      class A {
+        def /*(*/curriedAdd3/*)*/(a: Int)(b: Int)( c: Int) = a + b + c
+        def alias = curriedAdd3 _
+        val six = alias(1)(2)(3)
+      }
+    """
+    }
+    println(57)
+  }
+  
   
   @Test(expected=classOf[RefactoringException])
   def unorderedSplitPositions = new FileSet {
