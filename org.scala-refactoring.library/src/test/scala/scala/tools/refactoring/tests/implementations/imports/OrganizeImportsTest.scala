@@ -447,4 +447,24 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         def m: Either[String, ListBuffer[ListBuffer[String]]]
       }    """
   } applyRefactoring organize
+  
+  @Test
+  def annotateClass = new FileSet {
+    """
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+
+      @annotation.implicitNotFound(msg = "message")
+      trait SomeTraitWithAnAnnotation {
+        def m: Either[String, ListBuffer[ListBuffer[String]]]
+      }    """ becomes
+    """
+      import scala.collection.mutable.ListBuffer
+
+      @annotation.implicitNotFound(msg = "message")
+      trait SomeTraitWithAnAnnotation {
+        def m: Either[String, ListBuffer[ListBuffer[String]]]
+      }    """
+  } applyRefactoring organize
+
 }
