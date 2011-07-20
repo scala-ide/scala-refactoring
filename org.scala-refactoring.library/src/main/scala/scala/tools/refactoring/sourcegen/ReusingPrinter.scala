@@ -310,6 +310,25 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (EmptyTree, args) =>
           l ++ pp(args, separator = ",", before = "(", after = ")")  ++ r 
           
+        /* Workaround for for-comprehensions. Because they are not represented with
+         * their own ASTs, we sometimes need to work around some issues. This is for
+         * the following case:
+         * 
+         *   for(`arg` <- `fun`) yield body
+         * 
+         * We discover this pattern by the transparent function with a position
+         * smaller than the preceding (in the AST) Apply call. */
+        case (generator, (f @ Function(arg :: _, body)) :: Nil) 
+          if f.pos.isTransparent && 
+             arg.pos.startOrPoint < generator.pos.startOrPoint &&
+             between(arg, generator)(tree.pos.source).contains("<-") => 
+               
+          /* We only regenerate the code of the generator and the body, this will fail
+           * to pick up any changes in the `arg`! 
+           * 
+           * Generic layout handling will remove a closing `)`, so we re-add it */
+          l ++ p(generator, after = ")") ++ p(body) ++ r
+           
         case (fun, args) =>
           l ++ p(fun) ++ pp(args, separator = ",", before = "(", after = Requisite.anywhere(")"))  ++ r
       }

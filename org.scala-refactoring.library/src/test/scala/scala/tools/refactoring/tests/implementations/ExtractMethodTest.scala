@@ -1044,4 +1044,34 @@ object Bar {
 }
 """
   } applyRefactoring extract("calc")
+
+    
+  @Test
+  def simpleYield = new FileSet {
+    """
+package simpleExtract
+class A {
+  def extractFrom {
+	for (i <- 0 to 100) yield {
+      /*(*/val j = i * 2;
+      j/*)*/
+	}
+  }
+}
+    """ becomes
+    """
+package simpleExtract
+class A {
+  def extractFrom {
+	for (i <- 0 to 100) yield {
+	  call(i)
+	}
+  }
+  private def call(i: Int): Int = {
+      /*(*/val j = i * 2;
+    j/*)*/
+  }
+}
+    """
+  } applyRefactoring extract("call")
 }
