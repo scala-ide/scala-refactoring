@@ -22,7 +22,7 @@ trait CompilationUnitDependencies {
      * to import, for example because they come from Predef.
      */
     def isImportReallyNeeded(t: Select) = {
-      val Scala = mkTypeName("scala")
+      val Scala = newTypeName("scala")
       t.qualifier match {
         case Ident(names.scala) => false
         case This(Scala) => false
