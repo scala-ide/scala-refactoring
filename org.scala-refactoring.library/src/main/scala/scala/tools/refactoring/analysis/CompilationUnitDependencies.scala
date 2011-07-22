@@ -22,16 +22,28 @@ trait CompilationUnitDependencies {
      * to import, for example because they come from Predef.
      */
     def isImportReallyNeeded(t: Select) = {
-      val Scala = newTypeName("scala")
-      t.qualifier match {
-        case Ident(names.scala) => false
-        case This(Scala) => false
-        case Select(Ident(names.scala), names.pkg) => false
-        case Select(Ident(names.scala), names.Predef) => false
-        case Select(This(Scala), names.Predef) => false
-        case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
-        case qual if qual.symbol != NoSymbol && qual.symbol.isLocal => false
-        case _ => true
+      
+      def checkIfQualifierIsNotDefaultImported = {
+        val Scala = newTypeName("scala")
+        t.qualifier match {
+          case Ident(names.scala) => false
+          case This(Scala) => false
+          case Select(Ident(names.scala), names.pkg) => false
+          case Select(Ident(names.scala), names.Predef) => false
+          case Select(This(Scala), names.Predef) => false
+          case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
+          case _ => true
+        }
+      }
+      
+      val lastSymbol = t.filter(_ => true).last.symbol
+      
+      if(lastSymbol != NoSymbol && lastSymbol.isLocal) {
+        // Our import "chain" starts from a local value,
+        // so we cannot import `t` globally.
+        false
+      } else {
+        checkIfQualifierIsNotDefaultImported
       }
     }
     

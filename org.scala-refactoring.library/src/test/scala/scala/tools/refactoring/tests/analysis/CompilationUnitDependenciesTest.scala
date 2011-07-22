@@ -611,5 +611,37 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
       """)
   }
+  
+  @Test
+  def importFromLocalValueDependency = assertDependencies(
+    """param.global.X""",
+    """ 
+      trait Param {
+        object global { trait X }
+      }
+      trait SomeTrait {
+        def method(param: Param) {
+          import param._
+          import global._
+          var x: X = null
+        }
+      }
+    """)      
+    
+  @Test
+  def importFromLocalValueNoImport = assertNeededImports(
+    """""",
+    """ 
+      trait Param {
+        object global { trait X }
+      }
+      trait SomeTrait {
+        def method(param: Param) {
+          import param._
+          import global._
+          var x: X = null
+        }
+      }
+    """)      
 }
 
