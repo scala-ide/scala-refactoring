@@ -518,4 +518,22 @@ trait FullPaths {
 }
     """
   } applyRefactoring organize
+  
+  @Test
+  def organizeNeededForTypeInClassOf = new FileSet {
+    """
+      import scala.xml.NodeSeq
+
+      object Dummy {
+        val clazz = classOf[NodeSeq]
+      }
+    """ becomes
+    """
+      import scala.xml.NodeSeq
+
+      object Dummy {
+        val clazz = classOf[NodeSeq]
+      }
+    """
+  } applyRefactoring organize
 }

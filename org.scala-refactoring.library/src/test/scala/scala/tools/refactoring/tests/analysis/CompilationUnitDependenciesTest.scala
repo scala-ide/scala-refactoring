@@ -642,6 +642,17 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
           var x: X = null
         }
       }
-    """)      
+    """)  
+    
+  @Test
+  def classOfRequiresImport = assertNeededImports(
+    """scala.xml.NodeSeq""",
+    """ 
+      import scala.xml.NodeSeq
+
+      object Dummy {
+        val clazz = classOf[NodeSeq]
+      }
+    """)
 }
 

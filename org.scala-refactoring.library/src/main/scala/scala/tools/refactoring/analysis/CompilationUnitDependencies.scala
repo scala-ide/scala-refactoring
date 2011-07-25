@@ -193,6 +193,20 @@ trait CompilationUnitDependencies {
           }
 
           super.traverse(t)
+          
+        /*
+         * classOf[some.Type] is represented by a Literal
+         * */  
+        case t @ Literal(Constant(value)) =>
+          
+          value match {
+            case tpe @ TypeRef(_, sym, _) =>
+              fakeSelectTreeFromType(tpe, sym, t.pos) match {
+                case t: Select => addToResult(t)
+                case _ => ()
+              }
+            case _ => ()
+          }
 
         case _ => super.traverse(root)
       }
