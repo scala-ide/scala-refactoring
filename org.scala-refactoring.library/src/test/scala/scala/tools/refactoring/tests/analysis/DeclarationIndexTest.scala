@@ -190,7 +190,17 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       } 
 
       """)
-  }  
+  }
+  
+  @Test
+  def findReferencesToSuperConstructorParameter() = {
+    assertReferencesOfSelection("""a (83, 84)""", """
+  
+      class Base(s: String)
+
+      class Sub(/*(*/a: String/*)*/) extends Base(a)
+      """)
+  }
   
   @Test
   def findReferencesToClass() = {

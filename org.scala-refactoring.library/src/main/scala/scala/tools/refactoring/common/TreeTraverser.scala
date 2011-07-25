@@ -194,6 +194,48 @@ trait TreeTraverser {
               case _ => ()
             }
             
+        case t: ClassDef if t.symbol != NoSymbol => 
+          
+          /* Class parameters passed to super constructors:
+           * 
+           *  class Sub(a: String) extends Base(a) 
+           * 
+           * are actually represented like this:
+           * 
+           *  class Sub extends Base {
+           *    <paramaccessor> private[this] val a: String = _
+           *    def this(a: String) = {
+           *      Sub.super.this(a)
+           *    }
+           *  }
+           *   
+           * So we need to manually create the link between the
+           * paramaccessor and the argument to super: 
+           * */
+          
+          val superConstrArgs = t.impl.superConstructorParameters
+          
+          superConstrArgs foreach { superArg =>
+
+            val constrParamAccessors = t.symbol.constrParamAccessors
+            
+            Option(superArg.symbol) foreach { superArgSymbol =>
+              constrParamAccessors.find(_.name == superArgSymbol.name) foreach { sym =>
+                f(sym, superArg)
+              }
+
+              val constructorParameters = t.impl.constructorParameters
+              
+              constructorParameters.find(_.name == superArgSymbol.name) foreach { t =>
+                // we also add a reference from the super argument's symbol to the 
+                // constructor parameter accessor
+                f(superArgSymbol, t)
+              }
+              
+            }
+          }
+          
+          f(t.symbol, t)
         case t: DefTree if t.symbol != NoSymbol =>
           f(t.symbol, t)
         case t: RefTree =>

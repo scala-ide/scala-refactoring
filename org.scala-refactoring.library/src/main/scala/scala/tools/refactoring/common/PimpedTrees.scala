@@ -301,7 +301,7 @@ trait PimpedTrees {
      */
     def superConstructorParameters = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => stats collect {
-        case Apply(EmptyTree, args) => args
+        case Apply(_, args) => args
       } flatten
     } flatten
   }

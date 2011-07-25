@@ -111,4 +111,14 @@ class MarkOccurrencesTest extends TestHelper {
           val x: ###### = xs.head
       }
     """)
+
+  @Test
+  def superConstructorArguments = markOccurrences("""
+      class Base(s: String)
+      class Sub(a: String) extends Base(/*(*/a/*)*/)
+    """,
+    """
+      class Base(s: String)
+      class Sub(#: String) extends Base(/*(*/#/*)*/)
+    """)
 }
