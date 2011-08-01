@@ -20,7 +20,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
-  // TODO: resolve pretty print issues
+  @Ignore // TODO: resolve pretty print issues
   def exchangeTwoParams = new FileSet {
     """
       package changeParamOrder.exchangeTwoParamsTest
@@ -37,7 +37,6 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   } applyRefactoring(changeParamOrder(List(1::0::Nil)))
   
   @Test
-  // TODO resolve issue with last parameter moving
   def multipleParameterLists = new FileSet {
     """
       package changeParamOrder.multipleParameterLists
@@ -108,6 +107,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::2::0::3::Nil)))
   
   @Test
+  @Ignore // TODO: fix
   def curriedMethodCall = new FileSet {
     """
       package changeParamOrder.curriedMethodCall
@@ -136,7 +136,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::2::0::3::Nil)))
   
   @Test
-  def changeParamOrderSubclass= new FileSet {
+  def changeParamOrderSubclass = new FileSet {
     """
       package changeParamOrder.subclass
       class Parent {
@@ -206,21 +206,5 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil)))
-  
-  @Test
-  def dummy = {
-    val tree = treeFrom {
-    """
-      package changeParamOrder
-      class Parent {
-        def /*(*/method/*)*/(a: Int, b: Int, c: Int)(d: String, e: String) = (a + b + c, d + e)
-        def curried = method(1, 2, 3)(_, _)
-        def curriedUnderline = method(1, 2, 3) _
-        val curriedVal = method(1, 2, 3)(_, _)
-      }
-    """
-    }
-    println("foo")
-  }
   
 }

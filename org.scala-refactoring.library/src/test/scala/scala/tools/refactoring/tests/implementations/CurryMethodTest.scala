@@ -4,19 +4,23 @@ package tests.implementations
 import implementations.CurryMethod
 import tests.util.TestHelper
 import tests.util.TestRefactoring
+import org.junit.Ignore
 
 class CurryMethodTest extends TestHelper with TestRefactoring {
 
   outer => 
     
   def curryMethod(splitPositions: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new CurryMethod with SilentTracing {
+    val refactoring = new CurryMethod with SilentTracing with GlobalIndexes {
       val global = outer.global
+      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
+      val index = GlobalIndex(cuIndexes)
     }
     val changes = performRefactoring(splitPositions)
   }.changes
   
   @Test
+  // TODO resolve pretty print issues
   def simpleCurrying = new FileSet {
     """
       package simpleCurrying
@@ -72,41 +76,75 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """ 
   } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
   
-  @Test // TODO
+  @Test
+  def curryingMethodSubclass = new FileSet {
+    """
+      package curryingMethodSubclass
+      class Parent {
+        def /*(*/method/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = (first + second, a+b+c)
+      }
+
+      class Child extends Parent {
+        override def method(first: Int, second: Int)(a: String, b: String, c: String) = (first, a)
+      }
+    """ becomes
+    """
+      package curryingMethodSubclass
+      class Parent {
+        def /*(*/method/*)*/(first: Int)( second: Int)(a: String, b: String)( c: String) = (first + second, a+b+c)
+      }
+
+      class Child extends Parent {
+        override def method(first: Int)( second: Int)(a: String, b: String)( c: String) = (first, a)
+      }
+    """ 
+  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  
+  @Test
+  def curryingMethodSuperclass = new FileSet {
+    """
+      package curryingMethodSuperclass
+      class Parent {
+        def method(first: Int, second: Int)(a: String, b: String, c: String) = (first + second, a+b+c)
+      }
+
+      class Child extends Parent {
+        override def /*(*/method/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = (first, a)
+      }
+    """ becomes
+    """
+      package curryingMethodSuperclass
+      class Parent {
+        def method(first: Int)( second: Int)(a: String, b: String)( c: String) = (first + second, a+b+c)
+      }
+
+      class Child extends Parent {
+        override def /*(*/method/*)*/(first: Int)( second: Int)(a: String, b: String)( c: String) = (first, a)
+      }
+    """ 
+  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  
+  @Test 
+  @Ignore
+  // TODO implement
   def curriedMethodAliased= new FileSet {
     """
       package curriedMethodAliased
       class A {
-        def /*(*/curriedAdd3/*)*/(a: Int)(b: Int, c: Int) = a + b + c
-        def alias = curriedAdd3
-        val six = alias(1)(2, 3)
+        def /*(*/curriedAdd3/*)*/(a: Int, b: Int, c: Int) = a + b + c
+        def alias = curriedAdd3 _
+        val six = alias(1, 2, 3)
       }
     """ becomes
     """
       package curriedMethodAliased
       class A {
         def /*(*/curriedAdd3/*)*/(a: Int)(b: Int)( c: Int) = a + b + c
-        def alias = curriedAdd3
-        val six = curriedAdd(1)(2)(3)
-      }
-    """ 
-  } applyRefactoring(curryMethod(List(Nil, 1::Nil)))
-  
-  @Test
-  def alias = {
-    val tree = treeFrom {
-          """
-      package curriedMethodAliased
-      class A {
-        def /*(*/curriedAdd3/*)*/(a: Int)(b: Int)( c: Int) = a + b + c
         def alias = curriedAdd3 _
         val six = alias(1)(2)(3)
       }
-    """
-    }
-    println(57)
-  }
-  
+    """ 
+  } applyRefactoring(curryMethod(List(1::2::Nil)))  
   
   @Test(expected=classOf[RefactoringException])
   def unorderedSplitPositions = new FileSet {

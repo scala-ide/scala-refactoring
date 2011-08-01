@@ -4,24 +4,15 @@ package implementations
 import common.Change
 import common.PimpedTrees
 
-abstract class CurryMethod extends MultiStageRefactoring with common.InteractiveScalaCompiler with PimpedTrees {
+abstract class CurryMethod extends MethodSignatureRefactoring {
 
   import global._
-  
-  type PreparationResult = DefDef
   
   type SplitPositions = List[Int]
   type RefactoringParameters = List[SplitPositions]
   
-  def prepare(s: Selection) = {
-    s.findSelectedOfType[DefDef] match {
-      case Some(defdef) => Right(defdef)
-      case None => Left(new PreparationError("no defdef selected"))
-    }
-  }
-  
-  override def perform(selection: Selection, selectedValue: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    def checkRefactoringParams(vparamss: List[List[ValDef]], sectionss: List[SplitPositions]): Boolean = {
+  override def checkRefactoringParams(selectedValue: PreparationResult, params: RefactoringParameters) = {
+    def checkRefactoringParamsHelper(vparamss: List[List[ValDef]], sectionss: List[SplitPositions]): Boolean = {
       val sortedSections = sectionss.map(Set(_: _*).toList.sorted)
       if(sortedSections != sectionss || vparamss.size != sectionss.size) {
         false
@@ -32,63 +23,37 @@ abstract class CurryMethod extends MultiStageRefactoring with common.Interactive
       }
     }
     
-    if(!checkRefactoringParams(selectedValue.vparamss, params))
-      return Left(RefactoringError("invalid split positions argument for selected method"))
-      
-    def currySingleParamList[T](origVparams: List[T], positions: SplitPositions, lastPosition: Int = 0): List[List[T]] = positions match {
-      case Nil => List(origVparams)
-      case pos::poss => {
-        val (start, rest) = origVparams.splitAt(pos - lastPosition)
-        start::currySingleParamList(rest, poss, pos)
-      }
-    }
-    
-    def paramListPos(fun: Option[Tree]): Int = fun match {
-      case Some(Apply(f, _)) => 1 + paramListPos(Some(f))
-      case _ => 0
-    }
-    
-    def makeCurriedApply(baseFun: Tree, vparamss: List[List[Tree]]): Apply = vparamss match {
-      case p::Nil => Apply(baseFun, p)
-      case x::xs => makeCurriedApply(Apply(baseFun, x), xs)
-      case _ => throw new IllegalArgumentException("can't handle empty vparamss")
-    }
-    
-    val findDef = filter {
-      case d: DefDef => d == selectedValue
-    }
-    
-    val curryParamsDefDef = transform {
-      case orig @ DefDef(mods, name, tparams, vparamss, tpt, rhs) => {
-        val curried = (vparamss zip params) flatMap (l => currySingleParamList(l._1, l._2))
-        DefDef(mods, name, tparams, curried, tpt, rhs) replaces orig
-      }
-    }
-    
-    val curryDefinition = topdown {
-      matchingChildren {
-        findDef &> curryParamsDefDef
-      }
-    }
-    
-    val findApply = filter {
-      case apply: Apply => apply.symbol.fullName == selectedValue.symbol.fullName
-    }
-    
-    val curryParamsApply = transform {
-      case orig @ Apply(fun, args) => {
-        val pos = paramListPos(findOriginalTree(orig)) - 1
-        val curriedParamLists = currySingleParamList(orig.args, params(pos))
-        makeCurriedApply(fun, curriedParamLists) replaces orig
-      }
-    }
-    
-    val curryCalls = bottomup {
-      matchingChildren {
-        findApply &> curryParamsApply
-      }
-    }
-    
-    Right(transformFile(selection.file, curryDefinition &> curryCalls))
+    checkRefactoringParamsHelper(selectedValue.vparamss, params)
   }
+  
+  def currySingleParamList[T](origVparams: List[T], positions: SplitPositions, lastPosition: Int = 0): List[List[T]] = positions match {
+    case Nil => List(origVparams)
+    case pos::poss => {
+      val (start, rest) = origVparams.splitAt(pos - lastPosition)
+      start::currySingleParamList(rest, poss, pos)
+    }
+  }
+    
+  def makeCurriedApply(baseFun: Tree, vparamss: List[List[Tree]]): Apply = vparamss match {
+    case p::Nil => Apply(baseFun, p)
+    case x::xs => makeCurriedApply(Apply(baseFun, x), xs)
+    case _ => throw new IllegalArgumentException("can't handle empty vparamss")
+  }
+    
+  override def defdefRefactoring(params: RefactoringParameters) = transform {
+    case orig @ DefDef(mods, name, tparams, vparamss, tpt, rhs) => {
+      val curried = (vparamss zip params) flatMap (l => currySingleParamList(l._1, l._2))
+      DefDef(mods, name, tparams, curried, tpt, rhs) replaces orig
+    }
+  }
+    
+  override def applyRefactoring(params: RefactoringParameters) = transform {
+    case orig @ Apply(fun, args) => {
+      val pos = paramListPos(findOriginalTree(orig)) - 1
+      val curriedParamLists = currySingleParamList(orig.args, params(pos))
+      makeCurriedApply(fun, curriedParamLists) replaces orig
+    }
+  }
+    
+  override def traverseApply[X <% (X ⇒ X) ⇒ X](t: ⇒ Transformation[X, X]) = bottomup(t)
 }
