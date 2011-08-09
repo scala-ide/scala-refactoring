@@ -102,10 +102,10 @@ trait PimpedTrees {
     def namePosition(): Position = {
       val pos = try {
         t match {
+          case t if t.pos == NoPosition => NoPosition
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-          case t if t.pos == NoPosition => NoPosition
           case t: ValOrDefDef =>
             
             val name = t.symbol match {
