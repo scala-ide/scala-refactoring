@@ -107,6 +107,40 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   }
   
   @Test
+  def misprintedFunctionDefinition {
+        
+    val ast = treeFrom("""
+      package generated
+
+      object primitive {
+
+        def member[A](a: A, li: KIVList[A]): Boolean = {
+          if (li.emptyp) false
+          else {
+            (a equals li.car) || member(a, li.cdr)
+          }
+        }
+      }
+    """)
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef => t.copy()
+        }
+      }
+    } apply ast
+
+    val changes = refactor(transformedAst.toList)
+    assertEquals("""def member[A](a: A, li: KIVList[A]): Boolean = {
+if (li.emptyp) false
+else {
+  (a equals li.car) || member(a, li.cdr)
+}
+        }""", changes.head.text)
+  }
+  
+  @Test
   def valDefRhsAlone(): Unit = {
     
     val tree = treeFrom("""

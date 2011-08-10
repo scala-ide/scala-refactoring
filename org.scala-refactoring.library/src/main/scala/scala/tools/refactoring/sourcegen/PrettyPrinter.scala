@@ -48,7 +48,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         
         val layout = Layout(
             vparamss map { vparams => 
-                pp(vparams, before = "(", after = ")", separator = ("," ++ Requisite.Blank))
+                pp(vparams, before = "(", after = anywhere(")"), separator = ("," ++ Requisite.Blank))
             } mkString "" // ?
         )
         
