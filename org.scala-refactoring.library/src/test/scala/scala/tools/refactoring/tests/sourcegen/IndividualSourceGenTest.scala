@@ -107,6 +107,38 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   }
   
   @Test
+  def selfTypeAnnotation {
+    val src = """
+trait tr[A] {
+  self: List[A] => 
+  
+  def asd() {
+  }
+}
+"""
+    val ast = treeFrom(src)    
+    val defdef = mkDefDef(name = "member", body = List(Ident("()")))
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+        }
+      }
+    } apply ast
+    
+    assertEquals("""{
+  self: List[A] => 
+  
+  def asd() {
+  }
+  def member() = {
+    ()
+  }
+}""", refactor(transformedAst.toList).head.text)
+  }
+  
+  @Test
   def misprintedFunctionDefinition {
         
     val ast = treeFrom("""
