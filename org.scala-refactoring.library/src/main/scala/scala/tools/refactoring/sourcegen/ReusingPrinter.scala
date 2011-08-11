@@ -446,7 +446,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           val _parents = pp(parents)
           l ++ _params ++ pp(earlyBody) ++ _parents ++ p(self) ++ r
         
-        case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, _, origBody)) =>
+        case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, origSelf, origBody)) =>
           
           lazy val isExistingBodyAllOnOneLine = {
             val tplStartLine = o.pos.source.offsetToLine(o.pos.start)
@@ -458,7 +458,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           
           val preBody = l ++ params_ ++ pp(earlyBody) ++ pp(parents) ++ p(self)
           
-          if(origBody.isEmpty && !body.isEmpty) {
+          if(origBody.isEmpty && origSelf.isEmpty && !body.isEmpty) {
             val alreadyHasBodyInTheCode = r.matches("(?ms).*\\{.*\\}.*") 
             val trailingLayout = if(alreadyHasBodyInTheCode) NoLayout else r
             

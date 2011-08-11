@@ -139,6 +139,35 @@ trait tr[A] {
   }
   
   @Test
+  def addMethodToEmptyTraitWithSelfTypeAnnotation {
+    val src = """
+trait tr[A] {
+  self: List[A] => 
+
+}
+"""
+    val ast = treeFrom(src)
+    
+    val defdef = mkDefDef(name = "member", body = List(Ident("()")))
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+        }
+      }
+    } apply ast
+    
+    assertEquals("""{
+  self: List[A] => 
+  def member() = {
+    ()
+  }
+
+}""", refactor(transformedAst.toList).head.text)
+  }
+  
+  @Test
   def misprintedFunctionDefinition {
         
     val ast = treeFrom("""
