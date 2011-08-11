@@ -13,7 +13,7 @@ import common.{SilentTracing, ConsoleTracing}
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
-class IndividualSourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
+class IndividualSourceGenTest extends TestHelper with SourceGenerator with SilentTracing with transformation.TreeFactory {
   
   import global._
   
