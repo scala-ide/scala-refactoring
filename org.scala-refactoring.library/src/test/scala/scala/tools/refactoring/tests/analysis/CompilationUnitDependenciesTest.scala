@@ -166,6 +166,22 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
+  def fullAndShortNames = assertNeededImports(
+    """scala.collection.mutable.Map
+       scala.collection.mutable.Set""", 
+    """
+      import scala.collection.mutable.Map
+      import scala.collection.mutable.Set
+      class UsesMap { 
+        val x1 = Map[Int, String]()
+        val x2 = scala.collection.mutable.Map[Int, String]()
+
+        val y2 = scala.collection.mutable.Set[String]()
+        val y1 = Set[String]()
+      }
+    """)
+
+  @Test
   def renamedImport = assertDependencies(
     """scala.collection.mutable.Map""",
     """

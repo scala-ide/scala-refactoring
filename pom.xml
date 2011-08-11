@@ -345,7 +345,7 @@
       <dependencies>
         <dependency>
           <groupId>reaktor</groupId>
-          <artifactId>scct_2.8.0</artifactId>
+	  <artifactId>scct_${scala.version}</artifactId>
           <version>0.1-SNAPSHOT</version>
         </dependency>
       </dependencies>
@@ -371,7 +371,7 @@
               <compilerPlugins>
                 <compilerPlugin>
                   <groupId>reaktor</groupId>
-                  <artifactId>scct_2.8.0</artifactId>
+		  <artifactId>scct_${scala.version}</artifactId>
                   <version>0.1-SNAPSHOT</version>
                 </compilerPlugin>
               </compilerPlugins>
