@@ -13,7 +13,7 @@ import common.{SilentTracing, ConsoleTracing}
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
-class IndividualSourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
+class IndividualSourceGenTest extends TestHelper with SourceGenerator with SilentTracing with transformation.TreeFactory {
   
   import global._
   
@@ -104,6 +104,101 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
 }""", 
     """
       protected def someMethod[T](param1: Int, param2: T)(param3: => T)""")
+  }
+  
+  @Test
+  def selfTypeAnnotation {
+    val src = """
+trait tr[A] {
+  self: List[A] => 
+  
+  def asd() {
+  }
+}
+"""
+    val ast = treeFrom(src)    
+    val defdef = mkDefDef(name = "member", body = List(Ident("()")))
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+        }
+      }
+    } apply ast
+    
+    assertEquals("""{
+  self: List[A] => 
+  
+  def asd() {
+  }
+  def member() = {
+    ()
+  }
+}""", refactor(transformedAst.toList).head.text)
+  }
+  
+  @Test
+  def addMethodToEmptyTraitWithSelfTypeAnnotation {
+    val src = """
+trait tr[A] {
+  self: List[A] => 
+
+}
+"""
+    val ast = treeFrom(src)
+    
+    val defdef = mkDefDef(name = "member", body = List(Ident("()")))
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+        }
+      }
+    } apply ast
+    
+    assertEquals("""{
+  self: List[A] => 
+  def member() = {
+    ()
+  }
+
+}""", refactor(transformedAst.toList).head.text)
+  }
+  
+  @Test
+  def misprintedFunctionDefinition {
+        
+    val ast = treeFrom("""
+      package generated
+
+      object primitive {
+
+        def member[A](a: A, li: KIVList[A]): Boolean = {
+          if (li.emptyp) false
+          else {
+            (a equals li.car) || member(a, li.cdr)
+          }
+        }
+      }
+    """)
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef => t.copy()
+        }
+      }
+    } apply ast
+
+    val changes = refactor(transformedAst.toList)
+    assertEquals("""def member[A](a: A, li: KIVList[A]): Boolean = {
+if (li.emptyp) false
+else {
+  (a equals li.car) || member(a, li.cdr)
+}
+        }""", changes.head.text)
   }
   
   @Test

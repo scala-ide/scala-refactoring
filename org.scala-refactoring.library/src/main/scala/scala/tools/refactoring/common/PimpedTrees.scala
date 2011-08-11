@@ -102,10 +102,10 @@ trait PimpedTrees {
     def namePosition(): Position = {
       val pos = try {
         t match {
+          case t if t.pos == NoPosition => NoPosition
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-          case t if t.pos == NoPosition => NoPosition
           case t: ValOrDefDef =>
             
             val name = t.symbol match {
@@ -301,7 +301,7 @@ trait PimpedTrees {
      */
     def superConstructorParameters = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => stats collect {
-        case Apply(EmptyTree, args) => args
+        case Apply(_, args) => args
       } flatten
     } flatten
   }

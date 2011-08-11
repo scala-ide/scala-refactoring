@@ -91,10 +91,25 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       """)
   }
   
-  @ScalaVersion(matches="2.9")
+  @ScalaVersion(matches="2.9.0")
   @Test
-  def findShadowed() = {
+  def findShadowed290() = {
     assertDeclarationOfSelection("""val x: java.lang.String("a") = "a"""", """
+      object AfindShadowed {
+        private[this] val x = 1
+        def go  = {
+          val x = "a"
+          val y = /*(*/  x  /*)*/
+          y
+        }
+      }
+      """)
+  }
+  
+  @ScalaVersion(matches="2.9.1")
+  @Test
+  def findShadowed291() = {
+    assertDeclarationOfSelection("""val x: java.lang.String = "a"""", """
       object AfindShadowed {
         private[this] val x = 1
         def go  = {
@@ -175,7 +190,17 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       } 
 
       """)
-  }  
+  }
+  
+  @Test
+  def findReferencesToSuperConstructorParameter() = {
+    assertReferencesOfSelection("""a (83, 84)""", """
+  
+      class Base(s: String)
+
+      class Sub(/*(*/a: String/*)*/) extends Base(a)
+      """)
+  }
   
   @Test
   def findReferencesToClass() = {

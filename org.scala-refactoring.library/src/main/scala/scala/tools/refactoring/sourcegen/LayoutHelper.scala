@@ -236,8 +236,8 @@ trait LayoutHelper extends CommentHelpers {
   private val OpeningCurlyBrace = """(?ms)(.*?)\{(.*)""".r
   private val Match = """(?ms)(.*?)\s?match(.*)""".r
   private val Colon = """(.*?:\s+)(.*)""".r
-  private val Arrow = """(.*?=>\s?)(.*)""".r
   private val Dot = """(.*)(\..*)""".r
+  private val Arrow = """(?ms)(.*?=>\s?)(.*)""".r
   private val Equals = """(?ms)(.*?=\s?)(.*)""".r
   private val ClosingBrace = """(?ms)(.*?)\)(.*)""".r
   private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\n.*)""".r
@@ -256,6 +256,9 @@ trait LayoutHelper extends CommentHelpers {
     
     def split(layout: String): (String, String, String) = {
 
+      /* Annotations are not represented by trees, so the annotation code ends
+       * up in the layout. The current workaround is simply to not split some
+       * kinds of layout that contain an @. */
       def layoutDoesNotIncludeAnnotation = !layout.contains("@")
       
       (layout match {
@@ -266,11 +269,11 @@ trait LayoutHelper extends CommentHelpers {
         case Colon(l, r)           => Some(l, r, "Colon")
         case EmptyParens(l, r)     => Some(l, r, "EmptyParens")
         case OpeningBrace(l, r)    => Some(l, r, "OpeningBrace")
-        case Arrow(l, r)           => Some(l, r, "Arrow")
+        case Arrow(l, r)       => Some(l, r, "`=>`")
         case _                     => None
       }) orElse (layout match { // Work around https://lampsvn.epfl.ch/trac/scala/ticket/1133
         case ClosingBrace(l, r) if layoutDoesNotIncludeAnnotation => Some(l, r, "ClosingBrace")
-        case Equals(l, r)          => Some(l, r, "Equals")
+        case Equals(l, r)       if layoutDoesNotIncludeAnnotation => Some(l, r, "Equals")
         case ImportStatementNewline(l, r) => Some(l, r, "ImportStatement Newline")
         case ImportStatement(l, r) => Some(l, r, "ImportStatement")
         case ClosingCurlyBrace(l, r)=> Some(l, r, "ClosingCurlyBrace")

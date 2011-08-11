@@ -276,7 +276,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   @Test
   def importIsUsedAsTypeAscription = assertDependencies(
     """scala.collection.immutable
-       scala.collection.immutable.Set""",
+       scala.collection.immutable.Set
+       scala.this.Predef.any2ArrowAssoc""",
     """
       class UsesSet { val s: collection.immutable.Set[Int] = Map(1 -> 2).toSet }
       """)
@@ -413,7 +414,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       
   @Test
   def typeUsedInNew = assertDependencies(
-    """scala.util.Random""",
+    """scala.this.Predef.intWrapper
+       scala.util.Random""",
     """
       import scala.util._
       class X {
@@ -569,6 +571,17 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
+  def importedImplicitConversionNeedsImport2 = assertNeededImports(
+    """scala.this.collection.JavaConversions.asScalaBuffer""",
+    """ 
+      import collection.JavaConversions._
+      class ListConversion {
+        val l = new java.util.ArrayList[String]
+        l map (_.toInt)
+      }
+    """)      
+      
+  @Test
   def importedImplicitArgument {
     
     addToCompiler("xy.scala", """
@@ -598,5 +611,48 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
       """)
   }
+  
+  @Test
+  def importFromLocalValueDependency = assertDependencies(
+    """param.global.X""",
+    """ 
+      trait Param {
+        object global { trait X }
+      }
+      trait SomeTrait {
+        def method(param: Param) {
+          import param._
+          import global._
+          var x: X = null
+        }
+      }
+    """)      
+    
+  @Test
+  def importFromLocalValueNoImport = assertNeededImports(
+    """""",
+    """ 
+      trait Param {
+        object global { trait X }
+      }
+      trait SomeTrait {
+        def method(param: Param) {
+          import param._
+          import global._
+          var x: X = null
+        }
+      }
+    """)  
+    
+  @Test
+  def classOfRequiresImport = assertNeededImports(
+    """scala.xml.NodeSeq""",
+    """ 
+      import scala.xml.NodeSeq
+
+      object Dummy {
+        val clazz = classOf[NodeSeq]
+      }
+    """)
 }
 

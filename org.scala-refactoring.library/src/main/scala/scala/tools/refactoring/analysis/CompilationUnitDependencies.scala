@@ -21,13 +21,30 @@ trait CompilationUnitDependencies {
      * Helper function to filter out trees that we don't need
      * to import, for example because they come from Predef.
      */
-    def isImportReallyNeeded(t: Select) = t.qualifier match {
-      case Ident(names.scala) => false
-      case Select(Ident(names.scala), names.pkg) => false
-      case Select(Ident(names.scala), names.Predef) => false
-      case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
-      case qual if qual.symbol != NoSymbol && qual.symbol.isLocal => false
-      case _ => true
+    def isImportReallyNeeded(t: Select) = {
+      
+      def checkIfQualifierIsNotDefaultImported = {
+        val Scala = newTypeName("scala")
+        t.qualifier match {
+          case Ident(names.scala) => false
+          case This(Scala) => false
+          case Select(Ident(names.scala), names.pkg) => false
+          case Select(Ident(names.scala), names.Predef) => false
+          case Select(This(Scala), names.Predef) => false
+          case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
+          case _ => true
+        }
+      }
+      
+      val lastSymbol = t.filter(_ => true).last.symbol
+      
+      if(lastSymbol != NoSymbol && lastSymbol.isLocal) {
+        // Our import "chain" starts from a local value,
+        // so we cannot import `t` globally.
+        false
+      } else {
+        checkIfQualifierIsNotDefaultImported
+      }
     }
     
     /**
@@ -116,16 +133,24 @@ trait CompilationUnitDependencies {
         case _ => false
       }
       
-      def handleSelectFromImplicit(t: Tree) = t.find {
-        case t: Select => !isSelectFromInvisibleThis(t)
-        case _ => false
-      } foreach {
-        case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX => 
-          ()
-        case t @ Select(qual, _) => 
-          addToResult(t)
-        case _ =>
-          ()
+      def foundPotentialTree(t: Tree) = {
+        t match {
+          case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX => 
+            ()
+          case t: Select => 
+            addToResult(t)
+          case _ =>
+            ()
+        }
+      }
+      
+      def handleSelectFromImplicit(t: Tree) = {
+        val selects = t.find {
+          case t: Select => 
+            !isSelectFromInvisibleThis(t)
+          case _ => false
+        } 
+        selects foreach foundPotentialTree
       }
       
       override def traverse(root: Tree) = root match {
@@ -137,7 +162,17 @@ trait CompilationUnitDependencies {
         case Select(Select(Ident(names.scala), names.pkg), _) => ()
         
         case t : ApplyImplicitView =>
-          handleSelectFromImplicit(t.fun)
+          
+          // if we find a select, it's a dependency
+          // this is likely not fine-grained enough
+          // and might add too many dependencies
+          t.fun find {
+            case t: Select => true
+            case _ => false
+          } foreach {
+            case t: Select => foundPotentialTree(t)
+          }
+          
           t.args foreach traverse
           
         case t : ApplyToImplicitArgs =>
@@ -158,6 +193,20 @@ trait CompilationUnitDependencies {
           }
 
           super.traverse(t)
+          
+        /*
+         * classOf[some.Type] is represented by a Literal
+         * */  
+        case t @ Literal(Constant(value)) =>
+          
+          value match {
+            case tpe @ TypeRef(_, sym, _) =>
+              fakeSelectTreeFromType(tpe, sym, t.pos) match {
+                case t: Select => addToResult(t)
+                case _ => ()
+              }
+            case _ => ()
+          }
 
         case _ => super.traverse(root)
       }

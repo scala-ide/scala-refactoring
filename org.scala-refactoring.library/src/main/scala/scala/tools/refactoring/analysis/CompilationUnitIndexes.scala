@@ -33,7 +33,7 @@ trait CompilationUnitIndexes {
       val defs = new HashMap[Symbol, ListBuffer[DefTree]]
       val refs = new HashMap[Symbol, ListBuffer[Tree]]
   
-      def addDefinition(t: DefTree) {
+      def addDefinition(s: Symbol, t: DefTree) {
         def add(s: Symbol) = 
           defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
         
@@ -41,9 +41,8 @@ trait CompilationUnitIndexes {
           case ts: TermSymbol if ts.isLazy =>
             add(ts.lazyAccessor)
           case _ =>
-            add(t.symbol)
+            add(s)
         }
-        
       }
 
       def addReference(s: Symbol, t: Tree) {
@@ -73,7 +72,7 @@ trait CompilationUnitIndexes {
       }
       
       def handleSymbol(s: Symbol, t: Tree) = t match {
-        case t: DefTree => addDefinition(t)
+        case t: DefTree => addDefinition(s, t)
         case _ => addReference(s, t)
       }      
       

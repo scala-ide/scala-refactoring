@@ -310,6 +310,25 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (EmptyTree, args) =>
           l ++ pp(args, separator = ",", before = "(", after = ")")  ++ r 
           
+        /* Workaround for for-comprehensions. Because they are not represented with
+         * their own ASTs, we sometimes need to work around some issues. This is for
+         * the following case:
+         * 
+         *   for(`arg` <- `fun`) yield body
+         * 
+         * We discover this pattern by the transparent function with a position
+         * smaller than the preceding (in the AST) Apply call. */
+        case (generator, (f @ Function(arg :: _, body)) :: Nil) 
+          if f.pos.isTransparent && 
+             arg.pos.startOrPoint < generator.pos.startOrPoint &&
+             between(arg, generator)(tree.pos.source).contains("<-") => 
+               
+          /* We only regenerate the code of the generator and the body, this will fail
+           * to pick up any changes in the `arg`! 
+           * 
+           * Generic layout handling will remove a closing `)`, so we re-add it */
+          l ++ p(generator, after = ")") ++ p(body) ++ r
+           
         case (fun, args) =>
           l ++ p(fun) ++ pp(args, separator = ",", before = "(", after = Requisite.anywhere(")"))  ++ r
       }
@@ -427,7 +446,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           val _parents = pp(parents)
           l ++ _params ++ pp(earlyBody) ++ _parents ++ p(self) ++ r
         
-        case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, _, origBody)) =>
+        case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, origSelf, origBody)) =>
           
           lazy val isExistingBodyAllOnOneLine = {
             val tplStartLine = o.pos.source.offsetToLine(o.pos.start)
@@ -439,7 +458,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           
           val preBody = l ++ params_ ++ pp(earlyBody) ++ pp(parents) ++ p(self)
           
-          if(origBody.isEmpty && !body.isEmpty) {
+          if(origBody.isEmpty && origSelf.isEmpty && !body.isEmpty) {
             val alreadyHasBodyInTheCode = r.matches("(?ms).*\\{.*\\}.*") 
             val trailingLayout = if(alreadyHasBodyInTheCode) NoLayout else r
             
