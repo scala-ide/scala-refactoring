@@ -249,9 +249,17 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             case _ => false
           }
           
+          def hasClosingParensBetweenQualifierAndSelector = {
+            qualifier.pos.isRange && nameOrig.pos.isRange && {
+              between(qualifier, nameOrig)(tree.pos.source).contains(")")
+            }
+          }
+          
           if(startsWithChar && endsWithChar && hasNoSeparator) {
             l ++ _q ++ " " ++ _n ++ r
           } else if (qualifierHasNoDot && _n.leading.contains(".")) {
+            l ++ "(" ++ _q ++ ")" ++ _n ++ r
+          } else if (hasClosingParensBetweenQualifierAndSelector) {
             l ++ "(" ++ _q ++ ")" ++ _n ++ r
           } else {
             l ++ _q ++ _n ++ r

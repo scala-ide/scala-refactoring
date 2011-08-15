@@ -50,7 +50,27 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
       t.copy(mods = NoMods withPosition (Tokens.VAL,   NoPosition)) setPos t.pos
     case t => t
   }
-  
+    
+  @Test
+  def testPrintParens() {
+
+    val ast = treeFrom("""
+    trait tr {
+      def member(a: Int, li: List[Int]) = {
+        (a equals li.head) || true
+      }
+    }
+    """)
+
+    assertEquals("""
+    trait tr {
+      def member(a: Int, li: List[Int]) = {
+        (a equals li.head) || true
+      }
+    }
+    """, createText(ast))
+  }
+    
   @Test
   def testPrintSelfType() {
 
