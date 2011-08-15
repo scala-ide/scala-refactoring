@@ -121,4 +121,26 @@ class MarkOccurrencesTest extends TestHelper {
       class Base(s: String)
       class Sub(#: String) extends Base(/*(*/#/*)*/)
     """)
+
+  @Test
+  def importValInInnerObject = markOccurrences("""
+    object Outer {
+      object Inner { 
+        val /*(*/c/*)*/ = 2
+      }
+    }
+    class Foo {
+      import Outer.Inner.c
+    }
+    """,
+    """
+    object Outer {
+      object Inner { 
+        val /*(*/#/*)*/ = 2
+      }
+    }
+    class Foo {
+      import Outer.Inner.#
+    }
+    """)
 }

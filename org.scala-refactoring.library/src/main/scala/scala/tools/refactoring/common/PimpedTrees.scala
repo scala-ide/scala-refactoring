@@ -170,11 +170,7 @@ trait PimpedTrees {
             
           case t: DefTree => t.pos withStart t.pos.point withEnd (t.pos.point + nameString.length)
           
-          case t: RefTree => t.pos
-          
-          case t: TypeTree => t.pos
-            
-          case t => NoPosition
+          case t => t.pos
         } 
       } catch {
         case _: java.lang.AssertionError => 
