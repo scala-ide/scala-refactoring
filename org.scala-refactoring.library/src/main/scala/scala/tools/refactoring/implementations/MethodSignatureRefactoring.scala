@@ -10,12 +10,7 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
   
   type PreparationResult = DefDef
   
-  def prepare(s: Selection) = {
-    s.findSelectedOfType[DefDef] match {
-      case Some(defdef) => Right(defdef)
-      case None => Left(new PreparationError("no defdef selected"))
-    }
-  }
+  def prepare(s: Selection) = s.findSelectedOfType[DefDef] toRight PreparationError("no defdef selected")
   
   override def perform(selection: Selection, selectedValue: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     if(!checkRefactoringParams(selectedValue, params))

@@ -50,8 +50,6 @@ trait TreeChangesDiscoverer {
           t.qual.toString != o.qual.toString
         case (t: Import, o: Import) =>
           t != o
-        case (t: DefDef, o: DefDef) =>
-          t != o
         case _ => 
           false
       }

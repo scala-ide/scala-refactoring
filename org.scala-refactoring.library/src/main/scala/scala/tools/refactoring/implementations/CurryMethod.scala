@@ -17,7 +17,8 @@ abstract class CurryMethod extends MethodSignatureRefactoring {
       if(sortedSections != sectionss || vparamss.size != sectionss.size) {
         false
       } else {
-        val sectionRanges = sectionss.map {case Nil => 1 to 0 ; case s => s.head to s.last}
+        val emptyRange = 1 to 0
+        val sectionRanges = sectionss.map {case Nil => emptyRange ; case s => s.head to s.last}
         val vparamsRanges = vparamss.map(1 until _.size)
         (vparamsRanges zip sectionRanges).foldLeft(true)((b, ranges) => b && (ranges._1 containsSlice ranges._2))
       }
@@ -26,18 +27,17 @@ abstract class CurryMethod extends MethodSignatureRefactoring {
     checkRefactoringParamsHelper(selectedValue.vparamss, params)
   }
   
-  def currySingleParamList[T](origVparams: List[T], positions: SplitPositions, lastPosition: Int = 0): List[List[T]] = positions match {
-    case Nil => List(origVparams)
-    case pos::poss => {
-      val (start, rest) = origVparams.splitAt(pos - lastPosition)
-      start::currySingleParamList(rest, poss, pos)
-    }
+  def currySingleParamList[T](origVparams: List[T], positions: SplitPositions): List[List[T]] = {
+    val nrParamsPerList = (positions:::List(origVparams.length) zip 0::positions) map (t => t._1 - t._2)
+    nrParamsPerList.foldLeft((Nil: List[List[T]] , origVparams))((acc, nrParams) => {
+      val (currentCurriedParamList, remainingOrigParams) = acc._2 splitAt(nrParams)
+      (acc._1:::List(currentCurriedParamList), remainingOrigParams)
+    })._1
   }
     
-  def makeCurriedApply(baseFun: Tree, vparamss: List[List[Tree]]): Apply = vparamss match {
-    case p::Nil => Apply(baseFun, p)
-    case x::xs => makeCurriedApply(Apply(baseFun, x), xs)
-    case _ => throw new IllegalArgumentException("can't handle empty vparamss")
+  def makeCurriedApply(baseFun: Tree, vparamss: List[List[Tree]]): Apply = {
+    val firstApply = Apply(baseFun, vparamss.headOption.getOrElse(throw new IllegalArgumentException("can't handle empty vparamss")))
+    vparamss.tail.foldLeft(firstApply)((fun, vparams) => Apply(fun, vparams))
   }
     
   override def defdefRefactoring(params: RefactoringParameters) = transform {

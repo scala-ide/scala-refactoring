@@ -20,7 +20,6 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
-  // TODO resolve pretty print issues
   def simpleCurrying = new FileSet {
     """
       package simpleCurrying
@@ -31,7 +30,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """
       package simpleCurrying
 	  class A {
-        def /*(*/add/*)*/(first: Int)( second: Int) = first + second
+        def /*(*/add/*)*/(first: Int)(second: Int) = first + second
       }
     """ 
   } applyRefactoring(curryMethod(List(1::Nil)))
@@ -47,7 +46,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """
       package multipleParamListCurrying
 	  class A {
-        def /*(*/add/*)*/(first: Int)( second: Int)(a: String)( b: String)( c: String) = first + second
+        def /*(*/add/*)*/(first: Int)(second: Int)(a: String)(b: String)(c: String) = first + second
       }
     """ 
   } applyRefactoring(curryMethod(List(1::Nil, 1::2::Nil)))
@@ -67,11 +66,11 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """
       package curryingWithMethodCall
 	  class A {
-        def /*(*/add/*)*/(first: Int)( second: Int)(a: String, b: String)( c: String) = first + second
+        def /*(*/add/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = first + second
       }
 	  class B {
         val a = new A
-        val b = a.add(1)( 2)("a",  "b")( "c")
+        val b = a.add(1)(2)("a", "b")("c")
       }
     """ 
   } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
@@ -91,11 +90,11 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """
       package curryingMethodSubclass
       class Parent {
-        def /*(*/method/*)*/(first: Int)( second: Int)(a: String, b: String)( c: String) = (first + second, a+b+c)
+        def /*(*/method/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = (first + second, a+b+c)
       }
 
       class Child extends Parent {
-        override def method(first: Int)( second: Int)(a: String, b: String)( c: String) = (first, a)
+        override def method(first: Int)(second: Int)(a: String, b: String)(c: String) = (first, a)
       }
     """ 
   } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
@@ -115,11 +114,11 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """
       package curryingMethodSuperclass
       class Parent {
-        def method(first: Int)( second: Int)(a: String, b: String)( c: String) = (first + second, a+b+c)
+        def method(first: Int)(second: Int)(a: String, b: String)(c: String) = (first + second, a+b+c)
       }
 
       class Child extends Parent {
-        override def /*(*/method/*)*/(first: Int)( second: Int)(a: String, b: String)( c: String) = (first, a)
+        override def /*(*/method/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = (first, a)
       }
     """ 
   } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
