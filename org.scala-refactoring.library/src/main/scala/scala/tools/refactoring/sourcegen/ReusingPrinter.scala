@@ -596,14 +596,30 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       val typeParameters = pp(tparams, before = "[", separator = ",", after = Requisite.anywhere("]"))
       val body = p(rhs)
             
-      val rhsResultIsUnit = body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
+      def hasEqualInSource = {
+        val originalDefDef = orig(tree)
+        (originalDefDef :: children(originalDefDef)).filter(_.pos.isRange).reverse match {
+          case last :: secondlast :: _ =>
+            between(secondlast, last)(last.pos.source).contains("=")
+          case _ => false
+        }
+      }
       
-      if(rhsResultIsUnit) {
+      //if(rhsResultIsUnit) {
+      //  l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ body ++ r
+
+      val noEqualNeeded = {
+        body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
+      }
+      
+      if(noEqualNeeded && !hasEqualInSource) {
         l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ body ++ r
       } else {
         
         val equals = new Requisite {
-          def isRequired(l: Layout, r: Layout) = !(l.contains("=") || r.contains("="))
+          def isRequired(l: Layout, r: Layout) = {
+            !(l.contains("=") || r.contains("="))
+          }
           def getLayout = Layout(" = ")
         }
         
