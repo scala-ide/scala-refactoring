@@ -354,18 +354,19 @@ trait PimpedTrees {
           if(tpl.pos.isRange) {
             val source = tpl.self.pos.source.content.slice(tpl.self.pos.point, tpl.self.pos.end) mkString // XXX remove comments
             
-            def extractExactPositionsOfAllTypes(typ: Type): List[NameTree] = typ match {
+            def extractExactPositionsOfAllTypes(typ: Type): List[Tree] = typ match {
               case RefinedType(parents, _) =>
                 parents flatMap extractExactPositionsOfAllTypes
-              case TypeRef(_, sym, _) =>
-                val thisName = sym.name.toString
+              case tpe @ TypeRef(_, sym, _) =>
+                val thisName = typ.toString
                 val nameIndex = source.indexOf(thisName)
                 if(nameIndex < 0) 
                   Nil
                 else {
                   val start = tpl.self.pos.point + nameIndex
                   val end = start + thisName.length
-                  List(NameTree(sym.name) setPos (tpl.self.pos withStart start withEnd end))
+                  
+                  List(TypeTree(tpe) setPos (tpl.self.pos withStart start withEnd end))
                 }
               case _ => Nil
             }

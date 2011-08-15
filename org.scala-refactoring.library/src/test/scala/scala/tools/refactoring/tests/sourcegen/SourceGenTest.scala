@@ -52,6 +52,24 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   }
   
   @Test
+  def testPrintSelfType() {
+
+    val ast = treeFrom("""
+    package generated
+    trait tr[A] {
+      self: List[A]=>
+    }
+    """)
+
+    assertEquals("""
+    package generated
+    trait tr[A] {
+      self: List[A]=>
+    }
+    """, createText(ast))
+  }
+  
+  @Test
   def testSimpleIndentation() = {
 
     val tree = treeFrom("""
