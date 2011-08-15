@@ -26,6 +26,10 @@ trait TreeChangesDiscoverer {
    */
   def findAllChangedTrees(t: Tree): List[(Tree, Position, Set[Tree])] = {
     
+    /**
+     * This method determines if a leaf-tree in the AST has been changed. It should not be used
+     * for trees that enclose other ASTs because this would lead to unnecessarily large changes.
+     */
     def hasTreeInternallyChanged(t: Tree): Boolean = findOriginalTree(t) map (t → _) getOrElse { 
         trace("original not found for tree %s", t)
         return true
@@ -44,11 +48,33 @@ trait TreeChangesDiscoverer {
           false
       }
     
-    def hasChangedChildren(t: Tree): Boolean = findOriginalTree(t) map children match {
-      case None =>
-        Predef.error("should never happen")
-      case Some(origChld) =>
-        !(children(t) corresponds origChld) { (t1, t2) => t1.samePosAndType(t2) }
+    /**
+     * Checks whether a tree has any changed children. We don't fully compare 
+     * the children of the original and changed trees but simply check if they
+     * have corresponding types and positions.
+     */
+    def hasChangedChildren(newTree: Tree): Boolean = {
+      
+      def newChildrenHaveSamePosAndTypesAs(oldChildren: List[Tree]) = {
+        val newChildren = children(newTree)
+        (newChildren corresponds oldChildren) { (t1, t2) => t1.samePosAndType(t2) }
+      }
+      
+      findOriginalTree(newTree) map (oldTree => Pair(oldTree, children(oldTree))) match {
+        case None =>
+          Predef.error("should never happen")
+        case Some(Pair(oldTree, oldChildren)) =>
+          
+          /* Comparing a flat list of children of trees won't let us catch a 
+           * change in the number of parameter lists in a method definition */
+          val paramListsHaveSameArities = (oldTree, newTree) match {
+            case (DefDef(_, _, _, args1, _, _), DefDef(_, _, _, args2, _, _)) =>
+              (args1.map(_.size) corresponds args2.map(_.size)) {_ == _}
+            case _ => true
+          }
+          
+          !(paramListsHaveSameArities && newChildrenHaveSamePosAndTypesAs(oldChildren))
+      }
     }
     
     def isSameAsOriginalTree(t: Tree) = {
