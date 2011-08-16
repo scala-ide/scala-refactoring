@@ -247,6 +247,7 @@ trait LayoutHelper extends CommentHelpers {
   private val ClosingBrace = """(?ms)(.*?)\)(.*)""".r
   private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\r?\n.*)""".r
   private val Comma = """(.*?),(.*)""".r
+  private val CommaSpace = """(.*?), (.*)""".r
   private val NewLine = """(?ms)(.*?)(\r?\n.*)""".r
   private val ImportStatementNewline = """(?ms)(.*)(\r?\n.*?import.*)""".r
   private val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
@@ -284,9 +285,10 @@ trait LayoutHelper extends CommentHelpers {
         case ImportStatement(l, r) => Some(l, r, "ImportStatement")
         case ClosingCurlyBrace(l, r)=> Some(l, r, "ClosingCurlyBrace")
         case NewLine(l, r)         => Some(l, r, "NewLine")
-        case Comma(l, r)           => Some(l, r, "Comma")
+        case CommaSpace(l, r)      => Some(l, r, "CommaSpace")
         case _                     => None
       }) orElse (layout match {
+        case Comma(l, r)           => Some(l, r, "Comma")
         case Dot(l, r)             => Some(l, r, "Dot")
         case s                     => Some(s, "", "NoMatch")
       }) get
@@ -321,8 +323,9 @@ trait LayoutHelper extends CommentHelpers {
               case _ => split(layout)
             }
           
-          case (l: ValOrDefDef, _, r: ValOrDefDef) => 
+          case (l: ValOrDefDef, _, r: ValOrDefDef) =>
             layout match {
+              case CommaSpace(l, r)   => (l, r, "CommaSpace between ValDefs")
               case Comma(l, r)   => (l, r, "Comma between ValDefs")
               case NewLine(l, r) => (l, r, "NewLine between ValDefs")
               case _ => split(layout)

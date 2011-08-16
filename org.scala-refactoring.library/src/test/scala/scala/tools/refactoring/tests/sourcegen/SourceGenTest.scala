@@ -664,31 +664,31 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         
     assertEquals("""
     object Functions {
-      List(1,2) match {
+      List(1, 2) match {
         case i => i
       }
 
-      List(1,2) collect {
+      List(1, 2) collect {
         case i if i > 5 => i
       }
       
-      List(1,2) map {
+      List(1, 2) map {
         case i: Int => i
       }
       
-      List(1,2) map {
+      List(1, 2) map {
         case a @ (i: Int) => i
       }
 
-      List(1,2) map {
+      List(1, 2) map {
         case _ => 42
       }
 
-      List(1,2) match {
+      List(1, 2) match {
         case x :: xs => x
       }
 
-      List(1,2) map {
+      List(1, 2) map {
         case 0 | 1 => true
         case _ => false 
       }
