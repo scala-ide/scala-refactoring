@@ -536,4 +536,24 @@ trait FullPaths {
       }
     """
   } applyRefactoring organize
+  
+  @Test
+  def SystemcurrentTimeMillis = new FileSet {
+    """
+      import System.currentTimeMillis
+
+      object Dummy {
+        val x = currentTimeMillis
+      }
+    """ becomes
+    """
+      import java.lang.System.currentTimeMillis
+
+      object Dummy {
+        val x = currentTimeMillis
+      }
+    """
+  } applyRefactoring organize
+  
+  
 }

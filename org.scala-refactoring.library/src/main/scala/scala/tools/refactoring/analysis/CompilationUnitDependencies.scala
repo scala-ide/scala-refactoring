@@ -16,7 +16,6 @@ trait CompilationUnitDependencies {
    */
   def neededImports(t: Tree): List[Select] = {
 
-        
     /**
      * Helper function to filter out trees that we don't need
      * to import, for example because they come from Predef.
@@ -128,9 +127,17 @@ trait CompilationUnitDependencies {
 
     val traverser = new TraverserWithFakedTrees {
       
-      def isSelectFromInvisibleThis(t: Tree) = t.exists {
-        case t: This => !t.pos.isRange
-        case _ => false
+      def isSelectFromInvisibleThis(t: Tree) = {
+        
+        val isInTopLevelPackage = Set("java", "scala").contains _
+        
+        t.exists {
+          case t: This if isInTopLevelPackage(t.qual.toString) =>
+            false
+          case t: This => 
+            !t.pos.isRange
+          case _ => false
+        }
       }
       
       def foundPotentialTree(t: Tree) = {

@@ -184,12 +184,22 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     def apply(trees: List[Import]) = {
       neededImports(root) map {
         case select @ Select(expr, name) =>
+        
+        // we don't want to see imports like "java.this.lang..."
+        val removeThisTrees = {
+          matchingChildren { 
+            transform {
+              case This(qual) => Ident(qual)
+            }
+          }
+        }
+          
         // copy the tree and delete all positions so the full path will be written
-        val newExpr = ↓(setNoPosition) apply duplicateTree(expr) getOrElse expr
+        val newExpr = ↓(setNoPosition &> removeThisTrees) apply duplicateTree(expr) getOrElse expr
         val typeName = select.symbol.nameString
         
         Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else typeName, -1, name, -1)))
-      }      
+      }
     }
   }
   

@@ -122,7 +122,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   @Test
   def valAnnotation = assertDependencies(
     """java.lang.Object
-       scala.reflect.BeanProperty""",
+       scala.reflect.BeanProperty
+       scala.this.Predef.String""",
     """
       import scala.reflect.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
@@ -131,6 +132,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   @Test
   def switchAnnotation = assertDependencies(
     """Integer.parseInt
+       java.this.lang.Integer
        scala.annotation.switch""",
     """
       import scala.annotation._
@@ -151,7 +153,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)    
   @Test
   def classAttributeDeps = assertDependencies(
-    """scala.collection.mutable.Map""",
+    """scala.collection.mutable.Map
+       scala.this.Predef.String""",
     """
       import scala.collection.mutable.Map
       class UsesMap { val x = Map[Int, String]() }
@@ -183,7 +186,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def renamedImport = assertDependencies(
-    """scala.collection.mutable.Map""",
+    """scala.collection.mutable.Map
+       scala.this.Predef.String""",
     """
       import scala.collection.mutable.{Map => M}
       class UsesMap { val x = M[Int, String]() }
@@ -199,7 +203,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     
   @Test
   def localImport = assertDependencies(
-    """x.B""",
+    """scala.this.Predef.println
+       x.B""",
     """
       class A {
         val B = new {
@@ -235,7 +240,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     
   @Test
   def classAttributeWithFullPackage = assertDependencies(
-    """scala.collection.mutable.Map""",
+    """scala.collection.mutable.Map
+       scala.this.Predef.String""",
     """
       class UsesMap { val x = collection.mutable.Map[Int, String]() }
       """)
@@ -293,6 +299,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   def importIsUsedAsTypeAscription = assertDependencies(
     """scala.collection.immutable
        scala.collection.immutable.Set
+       scala.this.Predef.Map
        scala.this.Predef.any2ArrowAssoc""",
     """
       class UsesSet { val s: collection.immutable.Set[Int] = Map(1 -> 2).toSet }
@@ -502,7 +509,9 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       
   @Test
   def importFromPackageObject = assertDependencies(
-    """scala.collection.`package`.breakOut""",
+    """scala.collection.`package`.breakOut
+       scala.this.Predef.Map
+       scala.this.Predef.identity""",
     """
       import scala.collection.breakOut
       object TestbreakOut {
@@ -618,7 +627,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
     
     assertDependencies(
-    """impl.args.Implicits.x""",
+    """impl.args.Implicits.x
+       scala.this.Predef.String""",
     """   
       import impl.args.Implicits._
       object Conversions {
@@ -668,6 +678,28 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
       object Dummy {
         val clazz = classOf[NodeSeq]
+      }
+    """)
+    
+  @Test
+  def SystemcurrentTimeMillis = assertNeededImports(
+    """java.this.lang.System.currentTimeMillis""",
+    """ 
+      import System.currentTimeMillis
+
+      object Dummy {
+        val x = currentTimeMillis
+      }
+    """)
+    
+  @Test
+  def SystemcurrentTimeMillisDeps = assertDependencies(
+    """java.this.lang.System.currentTimeMillis""",
+    """ 
+      import System.currentTimeMillis
+
+      object Dummy {
+        val x = currentTimeMillis
       }
     """)
 }
