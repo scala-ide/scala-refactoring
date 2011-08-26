@@ -8,6 +8,7 @@ package tests.implementations
 import implementations.MarkOccurrences
 import tests.util.TestHelper
 import org.junit.Assert._
+import org.junit.Ignore
 
 class MarkOccurrencesTest extends TestHelper {
   outer =>
@@ -141,6 +142,56 @@ class MarkOccurrencesTest extends TestHelper {
     }
     class Foo {
       import Outer.Inner.#
+    }
+    """)
+
+  @Test
+  def markImportedOccurrences = markOccurrences("""
+    import java.io./*(*/File/*)*/
+    object Whatever {
+      val sep = File.pathSeparator
+    }
+    """,
+    """
+    import java.io./*(*/####/*)*/
+    object Whatever {
+      val sep = ####.pathSeparator
+    }
+    """)
+
+  @Test
+  def markImportedAndRenamedOccurrences = markOccurrences("""
+    import java.io./*(*/File/*)*/
+    import java.io.{File => F}
+    object Whatever {
+      val sep1 = File.pathSeparator
+      val sep2 = F.pathSeparator
+    }
+    """,
+    """
+    import java.io./*(*/####/*)*/
+    import java.io.{#########}
+    object Whatever {
+      val sep1 = ####.pathSeparator
+      val sep2 = #.pathSeparator
+    }
+    """)
+
+  @Test
+  def markImportedAndRenamedOccurrencesRenamedSelected = markOccurrences("""
+    import java.io.File
+    import java.io.{File => F}
+    object Whatever {
+      val sep1 = File.pathSeparator
+      val sep2 = /*(*/F/*)*/.pathSeparator
+    }
+    """,
+    """
+    import java.io.####
+    import java.io.{#########}
+    object Whatever {
+      val sep1 = ####.pathSeparator
+      val sep2 = /*(*/#/*)*/.pathSeparator
     }
     """)
 }

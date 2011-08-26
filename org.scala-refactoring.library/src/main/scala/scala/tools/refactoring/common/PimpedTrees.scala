@@ -80,6 +80,21 @@ trait PimpedTrees {
       }
     }    
   }
+
+  /**
+   * Searches for a Symbol of a name in the type members of a tree.
+   * 
+   * This is mainly used for ImportSelectors, which don't carry any
+   * symbol information with them.
+   * 
+   * @param expr The expr of an Import tree.
+   * @param name The name of an ImportSelector of the import.
+   */
+  def findSymbolForImportSelector(expr: Tree, name: Name): Option[Symbol] = {
+    expr.tpe.members find { sym =>
+      name.toString == sym.name.toString
+    }
+  }
   
   implicit def importToImportSelectorTreeExtractor(t: global.Import) = new ImportSelectorTreeExtractor(t)
   
@@ -150,8 +165,11 @@ trait PimpedTrees {
               t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
             } else if (qualifier.pos == NoPosition) {
               t.pos
-            } else {
+            /*the name contains symbols:*/
+            } else if (t.name.decode != t.name.toString) {
               t.pos withEnd (t.pos.start + nameString.length)
+            } else {
+              t.pos withEnd (t.pos.start + t.name.length)
             }
             
           case t @ Bind(name, body) =>
