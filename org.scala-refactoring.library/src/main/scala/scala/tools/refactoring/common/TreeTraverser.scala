@@ -252,19 +252,14 @@ trait TreeTraverser {
           
           handleType(t.tpe)
           
-        case t @ Import(expr, _) if expr.tpe != null =>
-          
-          def handleImport(iss: List[ImportSelectorTree], sym: Symbol): Unit = iss match {
-            case Nil => 
-              ()
-            case (t @ ImportSelectorTree(NameTree(name), _)) :: _ if (name.toString == sym.name.toString)=> 
-              f(sym, t)
-            case _ :: rest => 
-              handleImport(rest, sym)
+        case t @ Import(expr, selectors) if expr.tpe != null =>
+
+          t.Selectors() foreach { selector =>
+            findSymbolForImportSelector(expr, selector.name.name) foreach { sym =>
+              f(sym, selector)
+            }
           }
-          
-          expr.tpe.members foreach (handleImport(t.Selectors(), _))
-          
+
         case _ => ()  
       }
         
