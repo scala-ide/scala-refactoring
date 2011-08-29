@@ -551,8 +551,8 @@ trait PimpedTrees {
     case AssignOrNamedArg(lhs, rhs) =>
       lhs :: rhs :: Nil
       
-    case MultipleAssignment(values, rhs) =>
-      values ::: rhs :: Nil
+    case MultipleAssignment(extractor, values, rhs) =>
+      extractor :: values ::: rhs :: Nil
       
     case DocDef(_, definition) =>
       definition :: Nil
@@ -587,17 +587,28 @@ trait PimpedTrees {
   } filter keepTree
   
   private def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
-    body match {
-      case (v @ ValDef(_, _, _, Match(rhs: Typed, c @ CaseDef(_: Apply, EmptyTree, body) :: Nil))) :: xs 
-          if v.symbol.isSynthetic && c.forall(_.pos.isTransparent) =>
+    
+    def mkMultipleAssignment(extractor: Tree, tpe: Type, pos: Position, rhs: Tree, trailingTrees: List[Tree]) = {
+      val numberOfAssignments = tpe match {
+        case tpe: TypeRef => tpe.args.size
+        case _ => 0
+      }
       
-        val numberOfAssignments = body.tpe match {case tpe: TypeRef => tpe.args.size case _ => 0}
-        
-        val (values, rest) = xs splitAt numberOfAssignments
-        
-        val valDefs = values collect {case v: ValDef => v copy (mods = NoMods) setPos v.pos}
-                
-        MultipleAssignment(valDefs, rhs).setPos(v.pos) :: removeCompilerTreesForMultipleAssignment(rest)
+      val (values, rest) = trailingTrees splitAt numberOfAssignments
+      
+      val valDefs = values collect {case v: ValDef => v copy (mods = Modifiers(Flags.SYNTHETIC)) setPos v.pos}
+              
+      MultipleAssignment(extractor, valDefs, rhs).setPos(pos) :: removeCompilerTreesForMultipleAssignment(rest)
+    }
+    
+    body match {
+       case (v @ ValDef(_, _, _, Match(rhs: Typed, (c @ CaseDef(_: Apply, EmptyTree, body)) :: Nil))) :: xs 
+          if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
+        mkMultipleAssignment(EmptyTree, body.tpe, v.pos, rhs, xs)
+      
+      case (v @ ValDef(_, _, _, Match(rhs: Typed, (c @ CaseDef(extractor: UnApply, EmptyTree, body)) :: Nil))) :: xs 
+          if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
+        mkMultipleAssignment(extractor, body.tpe, v.pos, rhs, xs)
         
       case x :: xs => x :: removeCompilerTreesForMultipleAssignment(xs)
       case x => x
@@ -789,7 +800,7 @@ trait PimpedTrees {
     }
   }
   
-  case class MultipleAssignment(names: List[ValDef], rhs: Tree) extends global.Tree
+  case class MultipleAssignment(extractor: Tree, names: List[ValDef], rhs: Tree) extends global.Tree
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {

@@ -606,6 +606,16 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       Fragment(tree.nameString)
     }
     
+    override def MultipleAssignment(tree: MultipleAssignment, extractor: Tree, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext): Fragment = {
+      extractor match {
+        case EmptyTree =>
+          Layout("val (") ++ pp(values, separator = ", ") ++ ") = " ++ p(rhs)
+        case _ =>
+          Layout("val ") ++ p(extractor) ++ " = " ++ p(rhs)
+      }
+    }
+ 
+    
     override def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext) = {
       tree.kind match {
         case SourceLayouts.Newline => Fragment("\n\n"+ ctx.ind.current)

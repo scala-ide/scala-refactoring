@@ -676,8 +676,13 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       l ++ p(lhs, after = "=") ++ p(rhs) ++ r
     }
     
-    override def MultipleAssignment(tree: MultipleAssignment, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext) = {
-      l ++ pp(values, separator = ",") ++ ")" ++ p(rhs) ++ r
+    override def MultipleAssignment(tree: MultipleAssignment, extractor: Tree, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext) = {
+      extractor match {
+        case EmptyTree =>
+          l ++ pp(values, separator = ",") ++ ")" ++ p(rhs) ++ r
+        case _ =>
+          l ++ p(extractor) ++ " = " ++ p(rhs) ++ r
+      }
     }
 
     override def New(tree: New, tpt: Tree)(implicit ctx: PrintingContext) = {
