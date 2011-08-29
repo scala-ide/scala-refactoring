@@ -335,14 +335,45 @@ class ATest {
   val x = true.&&(true.&&(false).!)
 }"""
   }
+  
+  @Test
+  def multipleAssignmentWithTuple() = {
+    treeFrom("""
+    class Test {
+      val (a, b) = (1, 2)
+    }
+    """) prettyPrintsTo """class Test {
+  val (a, b) = (1, 2)
+}"""
+  }
+  
+  @Test
+  def multipleAssignmentWithPimpedTuple() = {
+    treeFrom("""
+    class Test {
+      val (a, b) = 1 -> 2
+    }
+    """) prettyPrintsTo """class Test {
+  val (a, b) = (1).->(2)
+}"""
+  }
 
   @Test
-  def multipleAssignmentWithAnnotatedTree() = {
+  def multipleAssignmentWith4Tuple() = {
+    treeFrom("""
+    class Test {
+      val (c, d, e, f) = (1, 2, 3, 4)
+    }
+    """) prettyPrintsTo """class Test {
+  val (c, d, e, f) = (1, 2, 3, 4)
+}"""
+  }
+
+  @Test
+  def multipleAssignmentFromMethodResult() = {
 
     val tree = treeFrom("""
     class Test {
-      val (a, b) = 1 → 2
-      val (c, d, e, f) = (1, 2, 3, 4)
       val (g, h, i) = inMethod()
 
       def inMethod() = {
@@ -354,7 +385,29 @@ class ATest {
     }
     """)
 
-    //XXX tree prettyPrintsTo """"""
+    tree prettyPrintsTo """class Test {
+  val (g, h, i) = inMethod()
+  def inMethod() = {
+    println("in method")
+    val (a, b, c) = (1, 2, 3)
+    println("in method")
+    (a, b, c)
+  }
+}"""
+  }
+
+  @Test
+  def patternMatchInAssignment() = {
+
+    val tree = treeFrom("""
+    class Test {
+      val List(one, three, eight) = List(1,3,8)
+    }
+    """)
+
+    tree prettyPrintsTo """class Test {
+  val List(one, three, eight) = List(1, 3, 8)
+}"""
   }
 
   @Test

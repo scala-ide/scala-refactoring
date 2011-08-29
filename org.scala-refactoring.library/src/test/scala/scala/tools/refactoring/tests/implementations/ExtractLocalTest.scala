@@ -656,4 +656,29 @@ object ExtractMethod2 {
       }
     }"""
   } applyRefactoring(extract("t"))
+  
+  @Test
+  def extractFromUpdateMethod = new FileSet {
+    """
+    object ExtractLocalBugTest extends App{ 
+      val List(one, three, eight) = List(1,3,8);
+      printf("%d %d %d\n", one, three, eight)
+  
+      val strings = Array("One", "Second")
+      strings(1) = /*(*/"Two"/*)*/
+      for( str <- strings) println(str)
+    }
+    """ becomes
+    """
+    object ExtractLocalBugTest extends App{ 
+      val List(one, three, eight) = List(1,3,8);
+      printf("%d %d %d\n", one, three, eight)
+  
+      val strings = Array("One", "Second")
+      val two = /*(*/"Two"
+      strings(1) = two/*)*/
+      for( str <- strings) println(str)
+    }
+    """
+  } applyRefactoring(extract("two"))
 }

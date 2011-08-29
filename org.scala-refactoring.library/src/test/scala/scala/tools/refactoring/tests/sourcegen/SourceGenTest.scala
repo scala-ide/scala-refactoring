@@ -562,6 +562,27 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   }
   
   @Test
+  def updateMethod() = {
+    val tree = treeFrom("""
+      class Updateable { def update(args: Int*) = 0 }
+      trait Demo1 {
+        val up = new Updateable
+        up() = 1
+        up(1) = 2
+        up(1, 2) = 3
+      }""")
+      
+    assertEquals("""
+      class Updateable { def update(args: Int*) = 0 }
+      trait Demo1 {
+        val up = new Updateable
+        up() = 1
+        up(1) = 2
+        up(1, 2) = 3
+      }""", generateText(tree))
+  }
+  
+  @Test
   def testSetters() = {
     val tree = treeFrom("""
       package oneFromMany

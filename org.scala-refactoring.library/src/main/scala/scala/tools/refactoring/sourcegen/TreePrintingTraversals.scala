@@ -69,7 +69,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         // own trees
         case tree @ SuperConstructorCall(clazz, args) => printer.SuperConstructorCall(tree, clazz, args)
         case tree : ModifierTree => printer.ModifierTree(tree, tree.flag)
-        case tree @ MultipleAssignment(values, rhs) => printer.MultipleAssignment(tree, values, rhs)
+        case tree @ MultipleAssignment(extractor, values, rhs) => printer.MultipleAssignment(tree, extractor, values, rhs)
         case tree @ ImportSelectorTree(name, rename) => printer.ImportSelectorTree(tree, name, rename)
         case tree @ SelfTypeTree(name, types, orig) => printer.SelfTypeTree(tree, name, types, orig)
         case tree: SourceLayoutTree => printer.SourceLayoutTree(tree)
@@ -130,7 +130,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
     // own trees
     def SuperConstructorCall(tree: SuperConstructorCall, clazz: global.Tree, args: List[global.Tree])(implicit ctx: PrintingContext): Fragment = default(tree)
     def ModifierTree(tree: ModifierTree, flag: Long)(implicit ctx: PrintingContext): Fragment = default(tree)
-    def MultipleAssignment(tree: MultipleAssignment, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
+    def MultipleAssignment(tree: MultipleAssignment, extractor: Tree, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def ImportSelectorTree(tree: ImportSelectorTree, name: NameTree, rename: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def SelfTypeTree(tree: SelfTypeTree, name: NameTree, types: List[Tree], orig: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext): Fragment = default(tree)
