@@ -281,7 +281,20 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Apply(tree: Apply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
       
       (fun, args) match {
+        
+        case (global.Select(select: Select, nme.update), args) if fun.pos == select.pos && args.size > 0 =>
+          
+          args match {
+            case arg :: Nil =>
+              l ++ p(select) ++ p(arg) ++ r
               
+            case _ =>
+              val updateArgs = args.init
+              val rhs = args.last
+              l ++ p(select) ++ "(" ++ pp(updateArgs, separator = ",") ++ ")" ++ " = " ++ p(rhs) ++ r  
+          }
+
+          
         // handle e.g. a += 1 which is a = (a + 1)
         case (_: Select, ((arg1: Apply) :: _)) if tree.pos.sameRange(arg1.pos) && arg1.pos.isTransparent =>
           l ++ p(fun) ++ between(fun, arg1.args.head)(tree.pos.source) ++ pp(arg1.args) ++ r
