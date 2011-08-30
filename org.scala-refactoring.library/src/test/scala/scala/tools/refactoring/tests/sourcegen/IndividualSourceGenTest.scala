@@ -717,5 +717,63 @@ class A(a: Int) {
 }
 """, generateText(ast))
     }
+  
+  @Test
+  def testPrintParentheses() {
+
+    val ast = treeFrom("""
+    trait tr {
+      def foo() {
+        bar("ASD")
+      }
+    }
+    """)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a: Apply =>
+            a.copy(args = List[Tree]()) setPos a.pos
+        }
+      }
+    } apply (ast)
+
+    assertEquals("""
+    trait tr {
+      def foo() {
+        bar()
+      }
+    }
+    """, createText(result.get))
+  }
+  
+  @Test
+  def testPrintNoParentheses() {
+
+    val ast = treeFrom("""
+    trait tr {
+      def foo() {
+        bar("ASD")
+      }
+    }
+    """)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a: Apply => 
+            Block(Nil, a.fun)
+        }
+      }
+    } apply (ast)
+
+    assertEquals("""
+    trait tr {
+      def foo() {
+        bar
+      }
+    }
+    """, createText(result.get))
+  }
 }
 
