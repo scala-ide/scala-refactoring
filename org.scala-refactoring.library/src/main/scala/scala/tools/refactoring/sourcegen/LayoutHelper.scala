@@ -85,7 +85,7 @@ trait LayoutHelper extends CommentHelpers {
     
     implicit val currentFile = child.pos.source
     
-    (fixValDefPosition(parent), fixValDefPosition(child)) match {
+    val (left, right) = (fixValDefPosition(parent), fixValDefPosition(child)) match {
       
       case (p: PackageDef, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
@@ -155,6 +155,10 @@ trait LayoutHelper extends CommentHelpers {
       case (p, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
     }
+    
+    trace("  results in «%s» and «%s»", left, right)
+    
+    (left, right)
   }
            
   private def fixValDefPosition(t: Tree): Tree = {
@@ -188,7 +192,7 @@ trait LayoutHelper extends CommentHelpers {
      
     implicit val currentFile = child.pos.source
      
-    (fixValDefPosition(child), fixValDefPosition(parent)) match {
+    val (left, right) = (fixValDefPosition(child), fixValDefPosition(parent)) match {
        
       case (c: Block, p: Block) =>
         layout(c.pos.end, p.pos.end) splitBefore ('\n', '}')
@@ -226,6 +230,10 @@ trait LayoutHelper extends CommentHelpers {
        case (c, p) =>
          NoLayout → layout(c.pos.end, p.pos.end)
      }
+    
+     trace("  results in «%s» and «%s»", left, right)
+     
+     (left, right)
    }
    
   private val Else = """(?ms)(.*?)(?:\n\s*\}\s*)?\n?\s*else\s*(?:[\s\{]*\n\s*)?(.*)""".r

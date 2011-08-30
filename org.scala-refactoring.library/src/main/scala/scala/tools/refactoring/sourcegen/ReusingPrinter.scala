@@ -294,7 +294,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
               l ++ p(select) ++ "(" ++ pp(updateArgs, separator = ",") ++ ")" ++ " = " ++ p(rhs) ++ r  
           }
 
-          
         // handle e.g. a += 1 which is a = (a + 1)
         case (_: Select, ((arg1: Apply) :: _)) if tree.pos.sameRange(arg1.pos) && arg1.pos.isTransparent =>
           l ++ p(fun) ++ between(fun, arg1.args.head)(tree.pos.source) ++ pp(arg1.args) ++ r
@@ -350,6 +349,15 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
            * Generic layout handling will remove a closing `)`, so we re-add it */
           l ++ p(generator, after = ")") ++ p(body) ++ r
            
+        case (fun, Nil) =>
+          
+          // Calls to methods without `()` are represented by a select and no apply. 
+          if(r.matches("""^\s*\)""")) {
+            l ++ p(fun) ++ "(" ++ r
+          } else {            
+            l ++ p(fun) ++ r
+          }
+          
         case (fun, args) =>
           l ++ p(fun) ++ pp(args, separator = ",", before = "(", after = Requisite.anywhere(")"))  ++ r
       }
@@ -537,7 +545,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
                 case elsep: Block =>
                   outer.print(elsep, ctx) ifNotEmpty (_ ++ (NoRequisite, l))
   
-                /* If it's a single statemens, we print it indented: */
+                /* If it's a single statements, we print it indented: */
                 case _ => 
                   pi(elsep, before = Requisite.anywhere(layout))
               }
@@ -590,7 +598,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       val rhsResultIsUnit = body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
       
       if(rhsResultIsUnit) {
-        l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++           body ++ r
+        l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ body ++ r
       } else {
         
         val equals = new Requisite {
