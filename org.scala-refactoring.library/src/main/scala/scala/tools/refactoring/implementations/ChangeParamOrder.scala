@@ -10,8 +10,8 @@ abstract class ChangeParamOrder extends MethodSignatureRefactoring {
   type Permutation = List[Int]
   type RefactoringParameters = List[Permutation]
   
-  override def checkRefactoringParams(selectedValue: PreparationResult, params: RefactoringParameters) = 
-    (selectedValue.vparamss corresponds params) (_.length == _.length)
+  override def checkRefactoringParams(prep: PreparationResult, params: RefactoringParameters) = 
+    (prep._1.vparamss corresponds params) (_.length == _.length)
   
   def reorder[T](origVparamss: List[List[T]], permutations: List[Permutation]): List[List[T]] =
     (origVparamss zip permutations) map {
@@ -34,6 +34,11 @@ abstract class ChangeParamOrder extends MethodSignatureRefactoring {
       val reorderedArgs = reorderSingleParamList(args, params(pos))
       Apply(fun, reorderedArgs) replaces orig
     }
+  }
+  
+  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, nrParamLists: Int): RefactoringParameters = {
+    val toDrop = originalParams.size - nrParamLists
+    originalParams.drop(toDrop)
   }
     
 }

@@ -105,8 +105,47 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::2::0::3::Nil)))
   
+  @Test 
+  def partialMethod = new FileSet {
+    """
+      package changeParamOrder.partialMethod
+      class A {
+        def /*(*/add/*)*/(a: Int, b: Int) = a + b
+        def partial = add _
+        val three = partial(1, 2)
+      }
+    """ becomes
+    """
+      package changeParamOrder.partialMethod
+      class A {
+        def /*(*/add/*)*/(b: Int, a: Int) = a + b
+        def partial = add _
+        val three = partial(2, 1)
+      }
+    """ 
+  } applyRefactoring(changeParamOrder(List(1::0::Nil)))
+  
   @Test
-  @Ignore // TODO: fix
+  def curriedPartialMethod = new FileSet {
+    """
+      package changeParamOrder.curriedPartialMethod
+      class A {
+        def /*(*/add5/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d + e
+        def partial = add5(1, 2) _
+        val ten = partial(3, 4, 5)
+      }
+    """ becomes
+    """
+      package changeParamOrder.curriedPartialMethod
+      class A {
+        def /*(*/add5/*)*/(b: Int), a: Int)(c: Int, e: Int, d: Int) = a + b + c + d + e
+        def partial = add5(2, 1) _
+        val ten = partial(3, 5, 4)
+      }
+    """ 
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
+  
+  @Test
   def curriedMethodCall = new FileSet {
     """
       package changeParamOrder.curriedMethodCall
@@ -127,12 +166,34 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
       class Currying {
         val defining = new Defining
-        def curried = defining.method( "asdf",5, 3) _
-        def curriedWithArgs(a: Int, b: String, c: Int, d: Int) = defining.method( "a",1, 2)( b, c,a, d)
-        def fullyApplied = curried( "asdf", 2,1, 3)
+        def curried = defining.method("asdf", 5, 3) _
+        def curriedWithArgs(a: Int, b: String, c: Int, d: Int) = defining.method("a", 1, 2)(b, c, a, d)
+        def fullyApplied = curried("asdf", 2, 1, 3)
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::2::0::3::Nil)))
+  
+  @Test
+  def repeatedlyPartiallyApplied = new FileSet {
+    """
+      package changeParamOrder.repeatedlyPartiallyApplied
+      class A {
+        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int) = a + b + c + d + e
+        def firstPartial = add(1, 2) _
+        def secondPartial = firstPartial(3, 4, 5)
+        val result = secondPartial(6, 7, 8)
+      }
+    """ becomes
+    """
+      package changeParamOrder.repeatedlyPartiallyApplied
+      class A {
+        def /*(*/add/*)*/(b: Int), a: Int)(c: Int, e: Int), d: Int)(h: Int, g: Int, f: Int) = a + b + c + d + e
+        def firstPartial = addaddaddaddaddaddadd(2, 1) _
+        def secondPartial = firstPartial(3, 5, 4)
+        val result = secondPartial(8, 7, 6)
+      }
+    """ 
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
   
   @Test
   def changeParamOrderSubclass = new FileSet {

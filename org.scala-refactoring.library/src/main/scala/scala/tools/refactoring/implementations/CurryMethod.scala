@@ -1,8 +1,7 @@
 package scala.tools.refactoring
 package implementations
 
-import common.Change
-import common.PimpedTrees
+
 
 abstract class CurryMethod extends MethodSignatureRefactoring {
 
@@ -11,7 +10,7 @@ abstract class CurryMethod extends MethodSignatureRefactoring {
   type SplitPositions = List[Int]
   type RefactoringParameters = List[SplitPositions]
   
-  override def checkRefactoringParams(selectedValue: PreparationResult, params: RefactoringParameters) = {
+  override def checkRefactoringParams(prep: PreparationResult, params: RefactoringParameters) = {
     def checkRefactoringParamsHelper(vparamss: List[List[ValDef]], sectionss: List[SplitPositions]): Boolean = {
       val sortedSections = sectionss.map(Set(_: _*).toList.sorted)
       if(sortedSections != sectionss || vparamss.size != sectionss.size) {
@@ -24,7 +23,7 @@ abstract class CurryMethod extends MethodSignatureRefactoring {
       }
     }
     
-    checkRefactoringParamsHelper(selectedValue.vparamss, params)
+    checkRefactoringParamsHelper(prep._1.vparamss, params)
   }
   
   def currySingleParamList[T](origVparams: List[T], positions: SplitPositions): List[List[T]] = {
@@ -48,12 +47,20 @@ abstract class CurryMethod extends MethodSignatureRefactoring {
   }
     
   override def applyRefactoring(params: RefactoringParameters) = transform {
-    case orig @ Apply(fun, args) => {
-      val pos = paramListPos(findOriginalTree(orig)) - 1
-      val curriedParamLists = currySingleParamList(orig.args, params(pos))
-      makeCurriedApply(fun, curriedParamLists) replaces orig
+    case apply @ Apply(fun, args) => {
+      val originalTree = findOriginalTree(apply)
+      val pos = paramListPos(originalTree) - 1
+      val curriedParamLists = currySingleParamList(apply.args, params(pos))
+      val curriedApply = makeCurriedApply(fun, curriedParamLists)
+      curriedApply replaces apply
     }
   }
     
   override def traverseApply[X <% (X ⇒ X) ⇒ X](t: ⇒ Transformation[X, X]) = bottomup(t)
+  
+  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, nrParamLists: Int): RefactoringParameters = {
+    val toDrop = originalParams.size - nrParamLists
+    originalParams.drop(toDrop)
+  }
+  
 }
