@@ -81,6 +81,9 @@ trait LayoutHelper extends CommentHelpers {
 
   def splitLayoutBetweenParentAndFirstChild(child: Tree, parent: Tree): (Layout, Layout) = {
     
+    if(child.pos.isTransparent && parent.pos.isTransparent) 
+      return NoLayout → NoLayout
+    
     trace("splitting layout between parent %s and first child %s", parent.getClass.getSimpleName, child.getClass.getSimpleName)
     
     implicit val currentFile = child.pos.source
@@ -324,10 +327,12 @@ trait LayoutHelper extends CommentHelpers {
             }
           
           case (l: ValOrDefDef, _, r: ValOrDefDef) =>
+            val ClosingAndOpening = """(?ms)(.*?)\)(.*)\((.*)""".r
             layout match {
               case CommaSpace(l, r)   => (l, r, "CommaSpace between ValDefs")
               case Comma(l, r)   => (l, r, "Comma between ValDefs")
               case NewLine(l, r) => (l, r, "NewLine between ValDefs")
+              case ClosingAndOpening(l, m, r) => (l, r, "Closing And Opening (")
               case _ => split(layout)
             }
           
