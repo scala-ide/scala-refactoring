@@ -200,7 +200,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       package curryMethod.partiallyCurried
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
-        def partial = /*FIXME*/addaddaddaddaddaddadd(1)(2) _
+        def partial = /*FIXME*/add(1)(2) _
         val result = partial(3, 4)(5)(6)(7, 8)
       }
     """ 
@@ -245,8 +245,8 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
     """
       package curryMethod.repeatedlyPartiallyApplied
       class A {
-        def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int)(i: Int)(j: Int) = a + b + c + d + e
-        def firstPartial = addaddaddaddaddaddaddaddadd(1)(2) _
+        def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
+        def firstPartial = add(1)(2) _
         def secondPartial = firstPartial(3, 4)(5)
         def thirdPartial = secondPartial(6)(7, 8)
         val result = thirdPartial(9)(10)

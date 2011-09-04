@@ -138,7 +138,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
       package changeParamOrder.curriedPartialMethod
       class A {
-        def /*(*/add5/*)*/(b: Int), a: Int)(c: Int, e: Int, d: Int) = a + b + c + d + e
+        def /*(*/add5/*)*/(b: Int, a: Int)(c: Int, e: Int, d: Int) = a + b + c + d + e
         def partial = add5(2, 1) _
         val ten = partial(3, 5, 4)
       }
@@ -191,6 +191,62 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         def firstPartial = addaddaddaddaddaddadd(2, 1) _
         def secondPartial = firstPartial(3, 5, 4)
         val result = secondPartial(8, 7, 6)
+      }
+    """ 
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
+  
+  @Test
+  def aliasToVal = new FileSet {
+    """
+      package changeParamOrder.aliasToVal
+      class A {
+        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d + e
+        val alias = add _
+        val result = alias(1, 2)(3, 4, 5)
+      }
+    """ becomes
+    """
+      package changeParamOrder.aliasToVal
+      class A {
+        def /*(*/add/*)*/(b: Int), a: Int)(c: Int, e: Int, d: Int) = a + b + c + d + e
+        val alias = add _
+        val result = alias(2, 1)(3, 5, 4)
+      }
+    """ 
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
+  
+  @Test
+  def dummy = {
+    val tree = treeFrom{
+      """
+      package changeParamOrder.aliasToVal
+      class A {
+        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d + e
+        val alias = add _
+        val result = alias(1, 2)(3, 4, 5)
+      }
+      """
+    }
+    println("dummy")
+  }
+  
+  @Test
+  @Ignore
+  def partiallyAppliedVal = new FileSet {
+    """
+      package changeParamOrder.partiallyAppliedVal
+      class A {
+        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int) = a + b + c + d + e
+        val partial = add(1, 2) _
+        val result = partial(3, 4, 5)(6, 7, 8)
+      }
+    """ becomes
+    """
+      package changeParamOrder.partiallyAppliedVal
+      class A {
+        def /*(*/add/*)*/(b: Int), a: Int)(c: Int, e: Int), d: Int)(h: Int, g: Int, f: Int) = a + b + c + d + e
+        val partial = addaddaddaddaddaddadd(2, 1) _
+        val result = partial(3, 5, 4)(8, 7, 6)
       }
     """ 
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
