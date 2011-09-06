@@ -775,5 +775,60 @@ class A(a: Int) {
     }
     """, createText(result.get))
   }
+
+  @Test
+  def replaceWithThis() {
+
+    val str = """
+    class MyList[T] {
+      //transformation works correctly when parentheses are missing here 
+      def emptyp() = false
+    }        
+    trait tr[A] {
+      self: KIVList[A] =>
+      def every[A1](p: (A1) => Boolean, li: MyList[A]): Boolean = {
+        li.emptyp || li.emptyp
+      }
+    }
+    """
+    val ast = treeFrom(str)
+    
+    var valDef: ValDef = null
+    topdown {
+      matchingChildren {
+        transform {
+          case t: ValDef =>
+            valDef = t
+            t
+        }
+      }
+    } apply (ast)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case d: DefDef if (d.name.toString() == "every") => d.copy() replaces d
+          case t: Ident if (t.symbol == valDef.symbol) =>
+            Ident(newTypeName("this")) setPos t.pos
+        }
+      }
+    } apply (ast)
+
+
+    val changes = refactor(result.toList)
+    val res = common.Change.applyChanges(changes, str)
+    assertEquals("""
+    class MyList[T] {
+      //transformation works correctly when parentheses are missing here 
+      def emptyp() = false
+    }        
+    trait tr[A] {
+      self: KIVList[A] =>
+      def every[A1](p: (A1) => Boolean, li: MyList[A]): Boolean = {
+        this.emptyp || this.emptyp
+      }
+    }
+    """, res)
+  }
 }
 

@@ -318,7 +318,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         def m {
           println(5 toString)
-           (5 toString) + "a"
+          (5 toString) + "a"
         }
       }
     """

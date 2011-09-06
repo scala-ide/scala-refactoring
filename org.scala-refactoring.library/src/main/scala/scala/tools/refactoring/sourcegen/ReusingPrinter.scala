@@ -215,11 +215,11 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case Apply(s @ global.Select(qual, name), Nil) =>
           
           val sName = nameOf(s)
-          val l = between(qual, sName)(s.pos.source)
+          val ll = between(qual, sName)(s.pos.source)
           
           val _qualifier = p(qualifier)
           
-          if(!_qualifier.asText.matches("^\\s*\\(.*\\)\\s*") && l.contains(" ")) {
+          if(!_qualifier.asText.matches("^\\s*\\(.*\\)\\s*") && ll.contains(" ")) {
             l ++ "(" ++ _qualifier ++ ")" ++ " " ++ p(nameOrig) ++ r
           } else {
             l ++ _qualifier ++ p(nameOrig) ++ r
