@@ -64,8 +64,9 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
     val replaceBlockOfStatements = topdown {
       matchingChildren {
         transform {
-          case block @ BlockExtractor(stats) => {
-            mkBlock(stats.replaceSequence(selection.selectedTopLevelTrees, call :: Nil)) replaces block
+          case block @ BlockExtractor(stats) if stats.size > 0 => {
+            val newStats = stats.replaceSequence(selection.selectedTopLevelTrees, call :: Nil) 
+            mkBlock(newStats) replaces block
           }
         }
       }

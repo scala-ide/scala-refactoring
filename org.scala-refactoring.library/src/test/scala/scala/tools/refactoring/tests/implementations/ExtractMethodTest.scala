@@ -1045,7 +1045,6 @@ object Bar {
 """
   } applyRefactoring extract("calc")
 
-    
   @Test
   def simpleYield = new FileSet {
     """
@@ -1074,4 +1073,41 @@ class A {
 }
     """
   } applyRefactoring extract("call")
+
+  @Test
+  def extractFromMethodWithObject = new FileSet {
+    """
+package simpleExtract
+class PathSeparator {
+  def main() {
+
+    /*(*/5 -> 10/*)*/
+
+    import java.io.{ File => F }
+
+    object Whatever {
+      val sep = F.pathSeparator
+    }
+  }
+}
+    """ becomes
+    """
+package simpleExtract
+class PathSeparator {
+  def main() {
+    mkTuple
+    import java.io.{ File => F }
+
+    object Whatever {
+      val sep = F.pathSeparator
+    }
+  }
+  private def mkTuple: (Int, Int) = {
+
+    /*(*/5 -> 10/*)*/
+
+    }
+}
+    """
+  } applyRefactoring extract("mkTuple")
 }
