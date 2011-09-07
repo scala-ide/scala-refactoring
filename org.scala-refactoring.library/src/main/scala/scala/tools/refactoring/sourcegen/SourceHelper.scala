@@ -103,7 +103,7 @@ trait SourceCodeHelpers extends CommentHelpers {
   }
   
   def indentation(start: Int, source: SourceFile): String = {
-    var i = if(start == source.length || source.content(start) == '\n') start - 1 else start
+    var i = if(start == source.length || source.content(start) == '\n' || source.content(start) == '\r') start - 1 else start
     val contentWithoutComment = stripCommentFromSourceFile(source)
         
     while(i >= 0 && contentWithoutComment(i) != '\n')

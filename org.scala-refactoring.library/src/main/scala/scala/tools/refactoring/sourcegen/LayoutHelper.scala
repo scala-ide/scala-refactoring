@@ -131,7 +131,7 @@ trait LayoutHelper extends CommentHelpers {
         if(l contains "{")
           l splitAfter '{'
         else
-          l splitBefore '\n'
+          l splitBefore('\r', '\n')
          
       case (p: Try, c: Block) =>
         layout(p.pos.start, c.pos.start) splitBefore ('{')
@@ -195,7 +195,7 @@ trait LayoutHelper extends CommentHelpers {
     val (left, right) = (fixValDefPosition(child), fixValDefPosition(parent)) match {
        
       case (c: Block, p: Block) =>
-        layout(c.pos.end, p.pos.end) splitBefore ('\n', '}')
+        layout(c.pos.end, p.pos.end) splitBefore ('\r', '\n', '}')
         
       case (c: Block, p) =>
         layout(c.pos.end, p.pos.end) splitAfter '}'
@@ -210,7 +210,7 @@ trait LayoutHelper extends CommentHelpers {
          layout(c.pos.end, p.pos.end) splitAtAndExclude ')'
          
        case (c, p: Template) =>
-         layout(c.pos.end, p.pos.end) splitBefore (')', '\n')
+         layout(c.pos.end, p.pos.end) splitBefore (')', '\r', '\n')
          
        case (c, p: If) =>
          layout(c.pos.end, p.pos.end) splitBefore (')')
@@ -222,10 +222,10 @@ trait LayoutHelper extends CommentHelpers {
          NoLayout → NoLayout
         
        case (c, p: Block) =>
-         layout(c.pos.end, p.pos.end) splitBefore '\n'
+         layout(c.pos.end, p.pos.end) splitBefore ('\r', '\n')
          
        case (c, p: Match) =>
-         layout(c.pos.end, p.pos.end) splitBefore ('\n')
+         layout(c.pos.end, p.pos.end) splitBefore ('\r', '\n')
          
        case (c, p) =>
          NoLayout → layout(c.pos.end, p.pos.end)
@@ -236,7 +236,7 @@ trait LayoutHelper extends CommentHelpers {
      (left, right)
    }
    
-  private val Else = """(?ms)(.*?)(?:\n\s*\}\s*)?\n?\s*else\s*(?:[\s\{]*\n\s*)?(.*)""".r
+  private val Else = """(?ms)(.*?)(?:\r?\n\s*\}\s*)?\r?\n?\s*else\s*(?:[\s\{]*\r?\n\s*)?(.*)""".r
   private val StartComment = """(.*?)(/\*.*)""".r
   private val Class = """(.*?)(class.*)""".r
   private val EmptyParens = """(?ms)(.*?\(\s*\)\s*)(.*)""".r
@@ -245,13 +245,13 @@ trait LayoutHelper extends CommentHelpers {
   private val Match = """(?ms)(.*?)\s?match(.*)""".r
   private val Colon = """(.*?:\s+)(.*)""".r
   private val Dot = """(.*)(\..*)""".r
-  private val Arrow = """(?ms)(.*?=>\s?)(.*)""".r
+  private val Arrow = """(?ms)(.*?=>[ ]?)(\r?\n?.*)""".r
   private val Equals = """(?ms)(.*?=\s?)(.*)""".r
   private val ClosingBrace = """(?ms)(.*?)\)(.*)""".r
-  private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\n.*)""".r
+  private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\r?\n.*)""".r
   private val Comma = """(.*?),(.*)""".r
-  private val NewLine = """(?ms)(.*?)(\n.*)""".r
-  private val ImportStatementNewline = """(?ms)(.*)(\n.*?import.*)""".r
+  private val NewLine = """(?ms)(.*?)(\r?\n.*)""".r
+  private val ImportStatementNewline = """(?ms)(.*)(\r?\n.*?import.*)""".r
   private val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
  
   def splitLayoutBetweenSiblings(parent: Tree, left: Tree, right: Tree): (Layout, Layout) = {
