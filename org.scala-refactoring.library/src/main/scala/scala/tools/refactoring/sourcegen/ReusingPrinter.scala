@@ -74,7 +74,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
     
-    def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current)
+    def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
     
     def indentation(implicit ctx: PrintingContext) = ctx.ind.current
 
@@ -138,7 +138,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       body match {
        
         case b @ BlockExtractor(body) if !b.hasExistingCode =>
-          l ++ p(pat) ++ p(guard) ++ "=>" ++ "\n" ++ Fragment("") ++ indentation ++ ppi(body, separator = newline) ++ r
+          val x = (l ++ p(pat) ++ p(guard)) ++ "=>"
+          x ++ Fragment(NL + indentation) ++ ppi(body, separator = newline) ++ r
           
         case _ =>
           printChildren(tree)
@@ -407,7 +408,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       body match {
       
         case b @ BlockExtractor(body) if !b.hasExistingCode =>
-          l ++ pp(vparams) ++ indentation ++ ppi(body, separator = newline) ++ r
+          l ++ pp(vparams) ++ (NL + indentation) ++ ppi(body, separator = newline) ++ r
           
         case _ =>
           printChildren(tree)
@@ -491,8 +492,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             val alreadyHasBodyInTheCode = r.matches("(?ms).*\\{.*\\}.*") 
             val trailingLayout = if(alreadyHasBodyInTheCode) NoLayout else r
             
-            val openingBrace = " {\n" + indentation
-            val closingBrace = "\n" + indentation +"}"
+            val openingBrace = " {"+ NL + indentation
+            val closingBrace = NL + indentation +"}"
             val bodyResult = ppi(body, separator = newline)
             
             preBody ++ trailingLayout ++ openingBrace ++ bodyResult ++ closingBrace
@@ -523,7 +524,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             if(elseBranchAlreadyExisted) {
               
               val layout = between(o.thenp, o.elsep)(o.pos.source).asText
-              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\n\\s*$", "else "))
+              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\r?\n\\s*$", "else "))
               
               val curlyBracesAlreadyExist = layout.contains("{")
               val originalElseHasNoBlock = !o.elsep.isInstanceOf[Block]
@@ -535,7 +536,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
                  * statement.
                  * */
                 case BlockExtractor(body) if originalElseHasNoBlock && curlyBracesAlreadyExist =>
-                  pp(body, before = l, separator = Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement))
+                  pp(body, before = l, separator = Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL))
                 
                 /*
                  * If there was no block before and also no curly braces, we have to write
@@ -551,7 +552,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
               }
   
             } else {
-              val l = newline ++ "else" ++ Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement)
+              val l = newline ++ "else" ++ Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL)
               pi(elsep, before = l)
             }
           }
@@ -683,7 +684,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       } else {
         val rest = ppi(stats, separator = newline) ++ r 
         if(l.contains("{") && !stats.head.hasExistingCode)
-          l ++ Requisite.newline(ctx.ind.current, force = true) ++ rest
+          l ++ Requisite.newline(ctx.ind.current, NL, force = true) ++ rest
         else 
           l ++ rest
       }

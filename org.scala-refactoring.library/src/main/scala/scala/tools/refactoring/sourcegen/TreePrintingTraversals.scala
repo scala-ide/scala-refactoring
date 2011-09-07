@@ -202,8 +202,11 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         case (l, r) =>
   
           val fixedIndentationSeparator = {
-            if (parent.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
-              Requisite.newline(ind.current + ind.defaultIncrement)
+            if (parent.hasExistingCode && (
+                separator.getLayout.asText.startsWith("\n") ||
+                separator.getLayout.asText.startsWith("\r")
+                )) {
+              Requisite.newline(ind.current + ind.defaultIncrement, NL)
             } else {
               separator
             }
@@ -214,7 +217,10 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
           val mid: Layout = (lr ++ fixedIndentationSeparator ++ rr).toLayout
           Fragment(l.leading, mid, r.trailing) ++ (r.post, l.pre)
       } ifNotEmpty { f =>
-        if (parent.hasExistingCode && !trees.head.hasExistingCode && separator.getLayout.asText.startsWith("\n")) {
+        if (parent.hasExistingCode && !trees.head.hasExistingCode && (
+                separator.getLayout.asText.startsWith("\n") ||
+                separator.getLayout.asText.startsWith("\r")
+                )) {
           (Layout(ind.defaultIncrement) ++ f) ++ (after, before)
         } else {
           f ++ (after, before)

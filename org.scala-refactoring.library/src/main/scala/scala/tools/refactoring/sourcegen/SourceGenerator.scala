@@ -48,7 +48,9 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     val initialIndentation = if(tree.hasExistingCode) indentation(tree) else ""
     val in = new Indentation(defaultIndentationStep, initialIndentation)
 
-    print(tree, PrintingContext(in, changeset, tree))
+    val file = if(tree.pos.isRange) Some(tree.pos.source) else None
+    
+    print(tree, PrintingContext(in, changeset, tree, file))
   }
   
   private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(tools.nsc.io.AbstractFile, Tree, Position, Fragment)] = {

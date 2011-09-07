@@ -10,6 +10,13 @@ trait CommonPrintUtils {
   this: common.CompilerAccess with AbstractPrinter =>
 
   import global._
+  
+  def NL(implicit ctx: PrintingContext): String = {
+    if(ctx.file.exists(_.content.containsSlice("\r\n")))
+      "\r\n"
+    else
+      "\n"
+  }
 
   def typeToString(tree: TypeTree, t: Type)(implicit ctx: PrintingContext): String = {
     t match {

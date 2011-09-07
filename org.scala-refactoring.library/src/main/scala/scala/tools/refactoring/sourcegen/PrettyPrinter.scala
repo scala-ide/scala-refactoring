@@ -36,9 +36,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
     
-    def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current)
+    def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
     
-    def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current)
+    def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, NL)
     
     def printParameterList(vparamss: List[List[ValDef]], alreadyHasParensInLayout: => Boolean)(implicit ctx: PrintingContext) = vparamss match {
       // no parameter list, not even an empty one
@@ -310,7 +310,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       body match {
         // the body of the function contains more than one statement:
         case Block(_ :: Nil, _) if !bdy.asText.matches("(?ms)\\s*(=>)?\\s*\\{.*") => 
-          Layout("{") ++ args ++ bdy ++ Layout("\n" + ctx.ind.current + "}")
+          Layout("{") ++ args ++ bdy ++ Layout(NL + ctx.ind.current + "}")
         case _ =>
           args ++ bdy
       }
@@ -477,7 +477,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       val params = printParameterList(vparamss, tparams_.asText.matches(".*\\(.*\\).*"))
       
       val rhs = if(tree.rhs == EmptyTree && !tree.symbol.isDeferred) {
-        Fragment(" {\n"+ ctx.ind.current +"}")
+        Fragment(" {"+ NL + ctx.ind.current +"}")
       } else {
         p(tree.rhs, before = " = ")
       } 
@@ -541,7 +541,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         val printed = p(firstWithExistingCode)
         if(printed.leading.matches("(?ms).*\\{.*")) {
           
-          val ExtractOpeningBrace = new scala.util.matching.Regex("(?ms)(.*\\{.*)(\n.*)")
+          val ExtractOpeningBrace = new scala.util.matching.Regex("(?ms)(.*\\{.*?)(\r?\n.*)")
           val ExtractOpeningBrace(leading, rest) = printed.leading.asText
           
           val printedStats = stats map { 
@@ -618,7 +618,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     override def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext) = {
       tree.kind match {
-        case SourceLayouts.Newline => Fragment("\n\n"+ ctx.ind.current)
+        case SourceLayouts.Newline => Fragment(NL + NL + ctx.ind.current)
       }
     }
   }
