@@ -38,7 +38,9 @@ trait PimpedTrees {
   /**
    * Represent an import selector as a tree, including both names as trees.
    */
-  case class ImportSelectorTree(name: NameTree, rename: global.Tree) extends global.Tree
+  case class ImportSelectorTree(name: NameTree, rename: global.Tree) extends global.Tree {
+    protected val initErrorCheck = ()
+  }
   
   /**
    * Import selectors are not trees, but we can provide an extractor
@@ -557,16 +559,7 @@ trait PimpedTrees {
     case DocDef(_, definition) =>
       definition :: Nil
       
-    case EmptyTree =>
-      Nil
-      
-    case _: SourceLayoutTree =>
-      Nil
-      
-    case _: TypeTreeWithDeferredRefCheck =>
-      Nil
-      
-    case _ => throw new Exception("Unhandled tree: "+ t.getClass.getSimpleName)
+    case _ => Nil
      
   }) map {
                  
@@ -660,6 +653,7 @@ trait PimpedTrees {
       }
       super.setPos(p)
     }
+    protected val initErrorCheck = ()
   }
   
   /**
@@ -691,6 +685,8 @@ trait PimpedTrees {
       case Tokens.DEF   => "def"
       case _            => "<unknown>: " + flagsToString(flag)
     }
+    
+    protected val initErrorCheck = ()
   } 
     
   /**
@@ -715,6 +711,8 @@ trait PimpedTrees {
    */
   case class SuperConstructorCall(clazz: global.Tree, args: List[global.Tree]) extends global.Tree {
     if(clazz.pos != global.NoPosition) setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
+
+    protected val initErrorCheck = ()
   }
   
   /**
@@ -722,7 +720,9 @@ trait PimpedTrees {
    *   self: A with B =>
    *   ^^^^^^^^^^^^^^
    */
-  case class SelfTypeTree(name: NameTree, types: List[global.Tree], orig: Tree) extends global.Tree
+  case class SelfTypeTree(name: NameTree, types: List[global.Tree], orig: Tree) extends global.Tree {
+    protected val initErrorCheck = ()
+  }
     
   /**
    * Unify the children of a Block tree and sort them 
@@ -800,7 +800,9 @@ trait PimpedTrees {
     }
   }
   
-  case class MultipleAssignment(extractor: Tree, names: List[ValDef], rhs: Tree) extends global.Tree
+  case class MultipleAssignment(extractor: Tree, names: List[ValDef], rhs: Tree) extends global.Tree {
+    protected val initErrorCheck = ()
+  }
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
@@ -824,7 +826,9 @@ trait PimpedTrees {
    * A SourceLayoutTree can be used to insert arbitrary text into the code,
    * for example, blank lines.
    */
-  case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree
+  case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree {
+    protected val initErrorCheck = ()
+  }
   object SourceLayouts {
     sealed trait Kinds
     object Newline extends Kinds
