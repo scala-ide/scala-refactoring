@@ -67,10 +67,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     val v = tree.find(_.isInstanceOf[ValDef]).get
     val actual = originalParentOf(v).get.toString.replaceAll("\r\n", "\n")
     
-    assertEquals("""<empty> with <empty> {
-  private[this] val test: Int = 42;
-  private[this] val test2: Int = 42
-}""", actual)
+    assertEquals("<empty> with <empty> {\n  private[this] val test: Int = 42;\n  private[this] val test2: Int = 42\n}", actual)
     
     assertEquals(None, originalLeftSibling(v))
     assertEquals("private[this] val test2: Int = 42", originalRightSibling(v).get.toString)

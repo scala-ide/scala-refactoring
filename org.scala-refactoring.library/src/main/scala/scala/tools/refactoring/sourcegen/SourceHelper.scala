@@ -46,6 +46,11 @@ trait CommentHelpers {
           add('/', ' ')
           '/'
         
+        case ('\r', _2) =>
+          lineComment = false
+          add('\r', '\r')
+          _2
+          
         case ('\n', _2) =>
           lineComment = false
           add('\n', '\n')

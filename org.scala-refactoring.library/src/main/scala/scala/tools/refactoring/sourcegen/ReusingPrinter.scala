@@ -524,7 +524,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             if(elseBranchAlreadyExisted) {
               
               val layout = between(o.thenp, o.elsep)(o.pos.source).asText
-              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*\r?\n\\s*$", "else "))
+              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*?\r?\n\\s*$", "else "))
               
               val curlyBracesAlreadyExist = layout.contains("{")
               val originalElseHasNoBlock = !o.elsep.isInstanceOf[Block]

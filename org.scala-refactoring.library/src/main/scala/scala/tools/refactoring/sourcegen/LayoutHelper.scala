@@ -260,6 +260,7 @@ trait LayoutHelper extends CommentHelpers {
       case (' ', _1) => _1
       case (_1, ' ') => _1
       case ('\n', '\n') => '\n'
+      case ('\r', '\r') => '\r'
     } mkString
     
     def split(layout: String): (String, String, String) = {

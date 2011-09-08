@@ -16,12 +16,15 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   var index: IndexLookup = null
 
   def mapAndCompareSelectedTrees(expected: String, src: String)(m: PartialFunction[Tree, String]) = {
-      
-    val tree = treeFrom(src)
+    
+    // because we assert one file offsets, we don't want to have any windows newlines in the code
+    val testSource = src.replaceAll("\r\n", "\n")
+    
+    val tree = treeFrom(testSource)
     
     index = GlobalIndex(List(CompilationUnitIndex(tree)))
     
-    val firstSelected = findMarkedNodes(src, tree).get.selectedTopLevelTrees.head
+    val firstSelected = findMarkedNodes(testSource, tree).get.selectedTopLevelTrees.head
   
     if(m.isDefinedAt(firstSelected)) {
       val result = m(firstSelected)

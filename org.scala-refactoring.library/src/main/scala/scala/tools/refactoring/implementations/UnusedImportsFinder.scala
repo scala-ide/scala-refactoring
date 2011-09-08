@@ -76,7 +76,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
 
   def importSelectorImportsFromNeededPackageObject(unit: CompilationUnit, t: Tree) = {
     computeDependentPackageObjectNames(unit).exists { name =>
-      val treeString = createText(t)
+      val treeString = createText(t, None)
       name == "object " + treeString + "package"
     }
   }
