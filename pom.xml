@@ -364,8 +364,8 @@
           <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-2.9.2-SNAPSHOT</url>
         </repository>
       </repositories>
-     </profile>
-     <profile>
+    </profile>
+    <profile>
       <id>scala-trunk</id>
       <activation>
         <property>

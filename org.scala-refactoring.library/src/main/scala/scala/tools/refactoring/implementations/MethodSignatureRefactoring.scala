@@ -10,62 +10,158 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
 
   import global._
   
-  case class AffectedDefDef(defdef: Symbol, nrParamLists: Int)
-  case class AffectedDefDefs(originals: List[AffectedDefDef], partials: List[AffectedDefDef])
+  case class AffectedDef(defSymbol: Symbol, nrParamLists: Int)
+  case class AffectedDefs(originals: List[AffectedDef], partials: List[AffectedDef])
   
-  type PreparationResult = (DefDef, AffectedDefDefs)
+  type PreparationResult = (DefDef, AffectedDefs)
   
   def prepare(s: Selection) = {
-    def findPartials(defdefs: List[Symbol]) = {
+    
+    def accessor(v: ValDef) = {
+      val root = cuRoot(v.pos)
+      val p: Tree => Boolean = (tree: Tree) => tree match {
+        case defdef: DefDef => v.nameString equals defdef.nameString
+        case _ => false
+      }
+      val traverser = new global.FilterTreeTraverser(p)
+      traverser.traverse(root.get)
+      traverser.hits.toList match {
+        case Nil => None
+        case x::Nil => Some(x.symbol)
+        case _ => None
+      }
+    }
+    
+    trait GenericPartialsFinder[RHS] {
+      trait Extractable[In, Out] {
+        def unapply(i: In): Option[Out]
+      }
       
-      def containsCall(f: Function, symbol: Symbol): Boolean = f match {
-        case Function(_, Apply(fun, args)) if symbol == fun.symbol => true
-        case Function(_, g: Function) => containsCall(g, symbol)
+      val ContainedSymbol: Extractable[RHS, Symbol]
+      val Nested: Extractable[RHS, RHS]
+    
+      def containsCall(r: RHS, symbol: Symbol): Boolean = r match {
+        case ContainedSymbol(s) => symbol == s
+        case Nested(n) => containsCall(n, symbol)
         case _ => false
       }
       
-      def nrParamLists(f: Function): Int = f match {
-        case Function(_, g: Function) => 1 + nrParamLists(g)
-        case _ => 1
-      }
+      def nrParamLists(r: RHS, origNrParamLists: Int): Int
+      
+      def isPartial(defSymbol: Symbol)(tree: Tree): Boolean
+      
+      val PartialDefDef: Extractable[Tree, (DefDef, RHS)]
+      val PartialValDef: Extractable[Tree, (ValDef, RHS)]
       
       def matchForPartial[T](
           candidate: Tree, 
-          defdefSymbol: Symbol, 
-          handleMatch: (DefDef, Function) => T, 
+          defSymbol: Symbol, 
+          handleDefDefMatch: (DefDef, RHS) => T, 
+          handleValDefMatch: (ValDef, RHS) => T,
           handleNonMatch: => T): T = candidate match {
-        case defdef @ DefDef(_, _, _, _, _, Block(Nil, fun: Function)) if containsCall(fun, defdefSymbol) => handleMatch(defdef, fun)
+        case PartialDefDef(defdef, rhs) if containsCall(rhs, defSymbol) => handleDefDefMatch(defdef, rhs)
+        case PartialValDef(valdef, rhs) if containsCall(rhs, defSymbol) => handleValDefMatch(valdef, rhs)
         case _ => handleNonMatch
       }
-      
-      def isPartial(defdefSymbol: Symbol)(tree: Tree) = 
-        matchForPartial(tree, defdefSymbol, (d: DefDef, f: Function) => true, false)
-      
-      def findPartialsForDefDef(defdef: Symbol) = {
-        val allOccurences = index.occurences(defdef)
+             
+      def findPartialsForDef(defAndNrParamLists: (Symbol, Int)) = {
+        val defSymbol = defAndNrParamLists._1
+        val origNrParamLists = defAndNrParamLists._2
+        val allOccurences = index.occurences(defSymbol)
         val cuRoots = (allOccurences flatMap (occ => cuRoot(occ.pos))).distinct
         val hits = cuRoots flatMap {
           cuRoot =>
-            val traverser = new global.FilterTreeTraverser(isPartial(defdef))
+            val traverser = new global.FilterTreeTraverser(isPartial(defSymbol))
             traverser.traverse(cuRoot)
             traverser.hits.toList
-        } 
+        }
+        
+        val handleDefDef = (d: DefDef, f: RHS) => {
+          Some(d.symbol, nrParamLists(f, origNrParamLists))
+        }
+        
+        val handleValDef = (v: ValDef, f: RHS) => {
+          accessor(v) map ((_, nrParamLists(f, origNrParamLists)))
+        }
+        
         hits flatMap {
-          matchForPartial(_, defdef, (d: DefDef, f: Function) => Some(d, nrParamLists(f)), None)
+          matchForPartial(_, defSymbol, handleDefDef, handleValDef, None)
         }
       }
       
-      defdefs flatMap findPartialsForDefDef
+      val needsRecursion = false
+      
+      def findPartials(defs: List[(Symbol, Int)], acc: List[(Symbol, Int)] = Nil): List[(Symbol, Int)] = {
+        val partials = defs flatMap findPartialsForDef
+        if(needsRecursion) {
+          partials match {
+            case Nil => acc
+            case ps => findPartials(partials, acc:::partials)
+          }
+        } else {
+          partials
+        }
+      }
+      
     }
     
-    def findPartialPartials(
-        partials: List[(DefDef, Int)], 
-        acc: List[(DefDef, Int)] = Nil): List[(DefDef, Int)] = {
-      def containsPartialCall(apply: Apply, partialSymbol: Symbol): Boolean = apply match {
-        case Apply(Select(s: Select, _), _) => partialSymbol == s.symbol
-        case Apply(Select(a: Apply, _), _) => containsPartialCall(a, partialSymbol)
-        case _ => false
+    object PartialsFinder extends GenericPartialsFinder[Function] {
+
+      override val ContainedSymbol = new Extractable[Function, Symbol] {
+        override def unapply(f: Function) = f match {
+          case Function(_, a: Apply) => Some(a.symbol)
+          case _ => None
+        }
       }
+      
+      override val Nested = new Extractable[Function, Function]{
+        def unapply(f: Function): Option[Function] = f match {
+          case Function(_, g: Function) => Some(g)
+          case _ => None
+        }
+      }
+      
+      override def nrParamLists(f: Function, origNrParamLists: Int): Int = f match {
+        case Function(_, g: Function) => 1 + nrParamLists(g, origNrParamLists)
+        case _ => 1
+      }
+      
+      override def isPartial(defSymbol: Symbol)(tree: Tree) = 
+        matchForPartial(tree, defSymbol, (d, f) => true, (v, f) => true, false)
+      
+      override val PartialDefDef =  new Extractable[Tree, (DefDef, Function)] {
+        def unapply(tree: Tree) = tree match {
+          case defdef @ DefDef(_, _, _, _, _, Block(Nil, fun: Function)) => Some(defdef, fun)
+          case _ => None
+        }
+      }
+      
+      override val PartialValDef = new Extractable[Tree, (ValDef, Function)] {
+        def unapply(tree: Tree) = tree match {
+          case valdef @ ValDef(_, _, _, Block(Nil, fun: Function)) => Some(valdef, fun)
+          case _ => None
+        }
+      }
+    }
+    
+    object PartialPartialsFinder extends GenericPartialsFinder[Apply] {
+      
+      override val ContainedSymbol = new Extractable[Apply, Symbol] {
+        def unapply(a: Apply) = a match {
+          case Apply(Select(s: Select, _), _) => Some(s.symbol)
+          case _ => None
+        }
+      }
+      
+      override val Nested = new Extractable[Apply, Apply] {
+        def unapply(apply: Apply) = apply match {
+          case Apply(Select(a: Apply, _), _) => Some(a)
+          case _ => None
+        }
+      }
+      
+      override def nrParamLists(apply: Apply, origNrParamLists: Int): Int = 
+        origNrParamLists - nrAppliesInPartial(apply)
       
       def nrAppliesInPartial(apply: Apply): Int = apply match {
         case Apply(Select(qualifier: Apply, _), _) => 1 + nrAppliesInPartial(qualifier)
@@ -73,56 +169,38 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
         case _ => 0
       }
       
-      def matchForPartialPartial[T](
-          candidate: Tree,
-          partialDefDefSymbol: Symbol,
-          handleMatch: (DefDef, Apply) => T,
-          handleNonMatch: => T): T = candidate match {
-        case defdef @ DefDef(_, _, _, _, _, a: Apply) if containsPartialCall(a, partialDefDefSymbol) => handleMatch(defdef, a)
-        case _ => handleNonMatch
+      override def isPartial(defSymbol: Symbol)(tree: Tree) = {
+        matchForPartial(tree, defSymbol, (d, a) => true, (v, a) => true, false)
       }
       
-      def isPartialPartial(partialDefDefSymbol: Symbol)(tree: Tree) = {
-        matchForPartialPartial(tree, partialDefDefSymbol, (d: DefDef, a: Apply) => true, false)
+      override val PartialDefDef = new Extractable[Tree, (DefDef, Apply)] {
+        def unapply(tree: Tree) = tree match {
+          case defdef @ DefDef(_, _, _, _, _, a: Apply) => Some(defdef, a)
+          case _ => None
+        }
       }
       
-      def findPartialPartialsForDefDef(partialDefDef: (Symbol, Int)) = {
-        def findPartials(defdef: Symbol) = {
-          val allOccurences = index.occurences(defdef)
-          val cuRoots = (allOccurences flatMap (occ => cuRoot(occ.pos))).distinct
-          cuRoots flatMap {
-            cuRoot =>
-              val traverser = new global.FilterTreeTraverser(isPartialPartial(defdef))
-              traverser.traverse(cuRoot)
-              traverser.hits.toList
-          }
-        }
-        
-        val hits = findPartials(partialDefDef._1)
-        hits flatMap {
-          matchForPartialPartial(_, partialDefDef._1, (d: DefDef, a: Apply) => Some(d, partialDefDef._2 - nrAppliesInPartial(a)), None)
+      override val PartialValDef = new Extractable[Tree, (ValDef, Apply)] {
+        def unapply(tree: Tree) = tree match {
+          case valdef @ ValDef(_, _, _, a: Apply) => Some(valdef, a)
+          case _ => None
         }
       }
-      val partialSymbols = partials map (t => (t._1.symbol, t._2))
-      val partialPartials = partialSymbols flatMap (findPartialPartialsForDefDef)
-      partialPartials match {
-        case Nil => acc
-        case ps => findPartialPartials(partialPartials, acc:::partialPartials)
-      }
+      
+      override val needsRecursion = true
     }
     
     s.findSelectedOfType[DefDef] match {
       case None => Left(PreparationError("no defdef selected"))
-      case Some(d) => {
-        val selectedDefDef = d
+      case Some(selectedDefDef) => {
         val originalSymbols = index.overridesInClasses(selectedDefDef.symbol)
-        val originals = originalSymbols map (defdef => AffectedDefDef(defdef, selectedDefDef.vparamss.size))
-        val partialDefDefs = findPartials(originalSymbols)
-        val partials = partialDefDefs flatMap (t => index.overridesInClasses(t._1.symbol) map (AffectedDefDef(_, t._2)))
-        val partialPartialDefDefs = findPartialPartials(partialDefDefs)
-        val partialPartials = partialPartialDefDefs flatMap (t => index.overridesInClasses(t._1.symbol) map (AffectedDefDef(_, t._2)))
+        val originals = originalSymbols map (AffectedDef(_, selectedDefDef.vparamss.size))
+        val partialDefs = PartialsFinder.findPartials(originalSymbols map ((_, selectedDefDef.vparamss.size)))
+        val partials = partialDefs flatMap (t => index.overridesInClasses(t._1) map (AffectedDef(_, t._2)))
+        val partialPartialDefs = PartialPartialsFinder.findPartials(partialDefs)
+        val partialPartials = partialPartialDefs flatMap (t => index.overridesInClasses(t._1) map (AffectedDef(_, t._2)))
         
-        Right((selectedDefDef, AffectedDefDefs(originals, partials:::partialPartials)))
+        Right((selectedDefDef, AffectedDefs(originals, partials:::partialPartials)))
       }
     }
   }
@@ -173,10 +251,10 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
       val allDefDefSymbols = affectedDefDefs.originals
       val allPartialSymbols = affectedDefDefs.partials
       val singleRefactorings = allDefDefSymbols map (d => 
-        refactorDefDef(index.declaration(d.defdef).get, originalParams) &> 
-        refactorOrdinaryCalls(d.defdef, prepareParamsForSingleRefactoring(originalParams, d.nrParamLists)))
+        refactorDefDef(index.declaration(d.defSymbol).get, originalParams) &> 
+        refactorOrdinaryCalls(d.defSymbol, prepareParamsForSingleRefactoring(originalParams, d.nrParamLists)))
       val singlePartialRefactorings = allPartialSymbols map 
-        (p => refactorPartialCalls(p.defdef, prepareParamsForSingleRefactoring(originalParams, p.nrParamLists)))
+        (p => refactorPartialCalls(p.defSymbol, prepareParamsForSingleRefactoring(originalParams, p.nrParamLists)))
       val refactoring = (singleRefactorings:::singlePartialRefactorings).foldLeft(id[Tree])((t, c) => t &> c)
       refactoring
     }

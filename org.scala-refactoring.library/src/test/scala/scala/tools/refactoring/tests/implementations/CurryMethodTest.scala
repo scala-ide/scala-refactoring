@@ -192,7 +192,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       package curryMethod.partiallyCurried
       class A {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int) = a + b + c + d + e
-        def partial = /*FIXME*/add(1, 2) _
+        def partial = add(1, 2) _
         val result = partial(3, 4, 5)(6, 7, 8)
       }
     """ becomes
@@ -200,7 +200,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       package curryMethod.partiallyCurried
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
-        def partial = /*FIXME*/add(1)(2) _
+        def partial = add(1)(2) _
         val result = partial(3, 4)(5)(6)(7, 8)
       }
     """ 
@@ -255,20 +255,73 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring(curryMethod(List(1::Nil, 2::Nil, 1::Nil, 1::Nil)))
   
   @Test
-  def dummy = {
-    val tree = treeFrom {
-      """
-      package curryMethod.partiallyCurried
+  @Ignore // until it is figured out why this test fails in maven when executed with tests from other packages
+  def aliasToVal = new FileSet {
+    """
+      package curryMethod.aliasToVal
       class A {
-        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
-        def partial = add(1, 2) _
-        def partial2 = partial(3, 4, 5)
-        val result = partial2(6)(7, 8)
+        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d + e
+        val alias = add _
+        val result = alias(1, 2)(3, 4, 5)
       }
-      """
-    }
-    println("foo")
-  }
+    """ becomes
+    """
+      package curryMethod.aliasToVal
+      class A {
+        def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int) = a + b + c + d + e
+        val alias = add _
+        val result = alias(1)(2)(3, 4)(5)
+      }
+    """ 
+  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  
+  @Test
+  @Ignore // until it is figured out why this test fails in maven when executed with tests from other packages
+  def repeatedlyPartiallyAppliedVal = new FileSet {
+    """
+      package curryMethod.repeatedlyPartiallyAppliedVal
+      class A {
+        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int) = a + b + c + d + e + f + g
+        val firstPartial = add(1, 2) _
+        val secondPartial = firstPartial(3, 4, 5)
+        val result = secondPartial(6, 7)
+      }
+    """ becomes
+    """
+      package curryMethod.repeatedlyPartiallyAppliedVal
+      class A {
+        def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int) = a + b + c + d + e + f + g
+        val firstPartial = add(1)(2) _
+        val secondPartial = firstPartial(3, 4)(5)
+        val result = secondPartial(6)(7)
+      }
+    """ 
+  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil, 1::Nil)))
+  
+  @Test
+  @Ignore // TODO: implement
+  def partialOverride = new FileSet {
+    """
+      package curryMethod.partialOverride
+      class Parent {
+        def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int) = a + b + c + d
+        def partial = add(1, 2) _
+      }
+      class Child {
+        override def partial = (a, b) => a*b
+      }
+    """ becomes
+    """
+      package curryMethod.partialOverride
+      class Parent {
+        def /*(*/add/*)*/(a: Int)(b: Int)(c: Int)(d: Int) = a + b + c + d
+        def partial = add(1)(2) _
+      }
+      class Child {
+        override def partial = a => b => a*b
+      }
+    """
+  } applyRefactoring(curryMethod(List(1::Nil, 1::Nil)))
   
   @Test(expected=classOf[RefactoringException])
   def unorderedSplitPositions = new FileSet {
