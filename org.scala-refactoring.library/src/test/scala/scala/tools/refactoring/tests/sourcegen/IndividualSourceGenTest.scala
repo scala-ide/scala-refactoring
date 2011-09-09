@@ -723,6 +723,7 @@ class A(a: Int) {
 
     val ast = treeFrom("""
     trait tr {
+      def bar(s: String) = s
       def foo() {
         bar("ASD")
       }
@@ -740,6 +741,7 @@ class A(a: Int) {
 
     assertEquals("""
     trait tr {
+      def bar(s: String) = s
       def foo() {
         bar()
       }
@@ -751,7 +753,8 @@ class A(a: Int) {
   def testPrintNoParentheses() {
 
     val ast = treeFrom("""
-    trait tr {
+    trait tr {      
+      def bar(s: String) = s
       def foo() {
         bar("ASD")
       }
@@ -761,14 +764,14 @@ class A(a: Int) {
     val result = topdown {
       matchingChildren {
         transform {
-          case a: Apply => 
-            Block(Nil, a.fun)
+          case a: Apply => a.fun
         }
       }
     } apply (ast)
 
     assertEquals("""
-    trait tr {
+    trait tr {      
+      def bar(s: String) = s
       def foo() {
         bar
       }

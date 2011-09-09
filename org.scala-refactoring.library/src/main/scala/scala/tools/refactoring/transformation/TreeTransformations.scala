@@ -36,6 +36,8 @@ trait TreeTransformations extends Transformations {
           // super does not transform t.fun
           treeCopy.UnApply(tree, transform(t.fun), transformTrees(t.args))
           
+        case t if t.tpe != null && t.tpe.isError => t
+          
         case t => super.transform(t)
       }
       override def transform(t: Tree) = f(t)
