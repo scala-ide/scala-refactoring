@@ -8,6 +8,7 @@ package sourcegen
 import common.Tracing
 import common.Change
 import common.PimpedTrees
+import scala.tools.nsc.util.SourceFile
 
 trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting with TreeChangesDiscoverer {
   
@@ -36,21 +37,23 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   
   /**
    * Creates a string from a tree, regenerating all trees.
+   * 
+   * If the sourceFile parameter is passed, it will be used to figure out
+   * what kinds of newline seperators we should generate. If None is passed,
+   * '\n' is used.
    */
-  def createText(t: Tree): String = generate(t).asText
+  def createText(t: Tree, sourceFile: Option[SourceFile] = None): String = generate(tree = t, sourceFile = sourceFile).asText
   
   object AllTreesHaveChanged extends ChangeSet {
     def hasChanged(t: Tree) = true
   }
   
-  private[refactoring] def generate(tree: Tree, changeset: ChangeSet = AllTreesHaveChanged): Fragment = {
+  private[refactoring] def generate(tree: Tree, changeset: ChangeSet = AllTreesHaveChanged, sourceFile: Option[SourceFile]): Fragment = {
 
     val initialIndentation = if(tree.hasExistingCode) indentation(tree) else ""
     val in = new Indentation(defaultIndentationStep, initialIndentation)
-
-    val file = if(tree.pos.isRange) Some(tree.pos.source) else None
     
-    print(tree, PrintingContext(in, changeset, tree, file))
+    print(tree, PrintingContext(in, changeset, tree, sourceFile))
   }
   
   private[sourcegen] def generateFragmentsFromTrees(ts: List[Tree]): List[(tools.nsc.io.AbstractFile, Tree, Position, Fragment)] = {
@@ -95,7 +98,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
             }
             case o => o samePosAndType t
           }
-        }) 
+        }, Some(source)) 
         trace("Change: %s", f.center.asText)
         (source.file, tree, replaceRange, f)
     } toList

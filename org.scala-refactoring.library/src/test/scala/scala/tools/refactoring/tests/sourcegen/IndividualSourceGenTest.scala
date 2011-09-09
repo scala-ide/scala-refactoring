@@ -21,7 +21,7 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     unitOfFile get file map (_.body) flatMap removeAuxiliaryTrees
   }
     
-  def generateText(t: Tree): String = generate(t).asText
+  def generateText(t: Tree): String = generate(t, sourceFile = Some(t.pos.source)).asText
   
   implicit def treeToPrettyPrint(original: Tree) = new {
     def cleanTree(t: Tree) = (removeAuxiliaryTrees &> emptyAllPositions)(t).get
@@ -39,11 +39,11 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     
     val newDefDef = originalDefDef.copy()
         
-    assertEquals(exp1, generateText(removeAuxiliaryTrees apply newDefDef get))
+    assertEquals(exp1, generate(removeAuxiliaryTrees apply newDefDef get, sourceFile = Some(originalDefDef.pos.source)).asText)
 
     newDefDef.setPos(originalDefDef.pos)
     
-    assertEquals(exp2, generateText(removeAuxiliaryTrees apply newDefDef get))    
+    assertEquals(exp2, generate(removeAuxiliaryTrees apply newDefDef get, sourceFile = Some(originalDefDef.pos.source)).asText)    
   }
   
   @Test
@@ -215,9 +215,9 @@ else {
       case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
     }
         
-    assertEquals("""val a = {4 + 3  }""", generate(removeAuxiliaryTrees apply valDef get).center.asText)
+    assertEquals("""val a = {4 + 3  }""", generate(removeAuxiliaryTrees apply valDef get, sourceFile = Some(tree.pos.source)).center.asText)
           
-    assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get).asText)
+    assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get, sourceFile = Some(tree.pos.source)).asText)
           
     assertEquals(0, createChanges(List(valDef)).size)
   }
@@ -249,7 +249,7 @@ else {
     
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
         
-    assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", generate(removeAuxiliaryTrees apply newDefDef1 get).center.asText)
+    assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", generate(removeAuxiliaryTrees apply newDefDef1 get, sourceFile = Some(originalDefDef.pos.source)).center.asText)
    
     assertEquals("""
        def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", createFragment(removeAuxiliaryTrees apply newDefDef1 get).asText)
@@ -260,7 +260,7 @@ else {
         
     assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
-       })""", generate(removeAuxiliaryTrees apply newDefDef2 get).center.asText)
+       })""", generate(removeAuxiliaryTrees apply newDefDef2 get, sourceFile = Some(originalDefDef.pos.source)).center.asText)
           
     assertEquals("""
        def amethod(v: Int, a: Account): Unit = com.synchronized({
@@ -723,6 +723,7 @@ class A(a: Int) {
 
     val ast = treeFrom("""
     trait tr {
+      def bar(s: String) = s
       def foo() {
         bar("ASD")
       }
@@ -740,18 +741,20 @@ class A(a: Int) {
 
     assertEquals("""
     trait tr {
+      def bar(s: String) = s
       def foo() {
         bar()
       }
     }
-    """, createText(result.get))
+    """, createText(result.get, Some(ast.pos.source)))
   }
   
   @Test
   def testPrintNoParentheses() {
 
     val ast = treeFrom("""
-    trait tr {
+    trait tr {      
+      def bar(s: String) = s
       def foo() {
         bar("ASD")
       }
@@ -761,19 +764,19 @@ class A(a: Int) {
     val result = topdown {
       matchingChildren {
         transform {
-          case a: Apply => 
-            Block(Nil, a.fun)
+          case a: Apply => a.fun
         }
       }
     } apply (ast)
 
     assertEquals("""
-    trait tr {
+    trait tr {      
+      def bar(s: String) = s
       def foo() {
         bar
       }
     }
-    """, createText(result.get))
+    """, createText(result.get, Some(ast.pos.source)))
   }
 
   @Test

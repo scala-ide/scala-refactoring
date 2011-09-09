@@ -12,6 +12,7 @@ import sourcegen.SourceGenerator
 import common.{ SilentTracing, ConsoleTracing }
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
+import scala.tools.nsc.util.BatchSourceFile
 
 class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTracing with transformation.TreeFactory {
 
@@ -26,8 +27,14 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     def cleanTree(t: Tree) =
       (removeAuxiliaryTrees &> emptyAllPositions)(t).get
 
-    def prettyPrintsTo(expected: String) =
-      assertEquals(expected, generate(cleanTree(original)).asText)
+    def prettyPrintsTo(expected: String) = {
+      val sourceFile = {
+        // we only need the source file to see what kinds of newline we need to generate,
+        // so we just pass the expected output :-)
+        new BatchSourceFile("noname", expected)
+      }
+      assertEquals(expected, generate(cleanTree(original), sourceFile = Some(sourceFile)).asText)
+    }
   }
 
   val changeSomeModifiers = transform {
