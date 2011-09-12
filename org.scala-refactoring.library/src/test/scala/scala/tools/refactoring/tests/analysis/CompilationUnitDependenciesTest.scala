@@ -136,7 +136,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
        scala.annotation.switch""",
     """
       import scala.annotation._
-      object A {
+      object ASwitch {
         val x = (Integer.parseInt("5"): @switch) match {
           case 5 => true
           case 6 => false
@@ -212,7 +212,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         }
       }
 
-      object C {
+      object CLocalImport {
         def m(x: A) {
           import x._
           println(B.y)
@@ -230,7 +230,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         }
       }
 
-      object C {
+      object ClocalImportNotNeeded {
         def m(x: A) {
           import x._
           println(B.y)
@@ -302,14 +302,14 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
        scala.this.Predef.Map
        scala.this.Predef.any2ArrowAssoc""",
     """
-      class UsesSet { val s: collection.immutable.Set[Int] = Map(1 -> 2).toSet }
+      class UsesSet { val s: collection.immutable.Set[Any] = Map(1 -> 2).toSet }
       """)
       
   @Test
   def importIsUsedAsTypeAscriptionNeeded = assertNeededImports(
     "",
     """
-      class UsesSet { val s: collection.immutable.Set[Int] = Map(1 -> 2).toSet }
+      class UsesSet { val s: collection.immutable.Set[Any] = Map(1 -> 2).toSet }
       """)
 
   @Test
@@ -463,7 +463,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """scala.collection.mutable.ListBuffer""",
     """
       import scala.collection.mutable.ListBuffer
-      object A {val x: ListBuffer[Int]; val y: ListBuffer[Int]}
+      trait DependenciesAreUnique {val x: ListBuffer[Int]; val y: ListBuffer[Int]}
       """)
       
   @Test

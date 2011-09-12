@@ -115,7 +115,7 @@ class UnusedImportsFinderTest extends TestHelper {
       import java.util.{Date => _, _}
 
       object NoDate {
-        var x: Stack = null
+        var x: Stack[Int] = null
       }
     """
   )

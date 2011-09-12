@@ -694,14 +694,12 @@ class Test
     val ast = treeFrom(
 """
 class A {
-def fun[A, B, C](fu: (A, B, C) => A): A = {
-}
+def fun[A, B, C](fu: (A, B, C) => A): A
 }
 """)
     assertEquals("""
 class A {
-def fun[A, B, C](fu: (A, B, C) => A): A = {
-}
+def fun[A, B, C](fu: (A, B, C) => A): A
 }
 """, generateText(ast))
   }
