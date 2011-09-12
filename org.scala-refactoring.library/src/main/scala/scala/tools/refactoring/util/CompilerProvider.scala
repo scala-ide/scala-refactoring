@@ -95,7 +95,10 @@ trait TreeCreationMethods {
     
     val r2 = new Response[global.Tree]
     newCompiler.askType(file, false, r2)
-    r2.get.left.get // it's ok to fail
+    r2.get match {
+      case Left(tree) => tree
+      case Right(ex) => throw ex
+    }
   }
 
   def treesFrom(sources: List[SourceFile], forceReload: Boolean): List[global.Tree] =

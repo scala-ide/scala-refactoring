@@ -752,16 +752,14 @@ class Demo2(a: String, b: Int)"""
   def testReturn() = {
     val tree = treeFrom("""
     object Functions {
-      def test {
+      def test: Int = {
         return 5
       }
     }
     """)
 
     tree prettyPrintsTo """object Functions {
-  def test = return {
-    5
-  }
+  def test: Int = return 5
 }"""
   }
 
@@ -1274,11 +1272,10 @@ class A {
   @Test
   def testFunctionArg = treeFrom("""
     class A {
-      def fun[A, B, C](fu: (A, B, C) => A): A = {
-      }
+      def fun[A, B, C](fu: (A, B, C) => A): A
     }
     """) prettyPrintsTo """class A {
-  def fun[A, B, C](fu: (A, B, C) => A): A = ()
+  def fun[A, B, C](fu: (A, B, C) => A): A
 }"""
 }
 
