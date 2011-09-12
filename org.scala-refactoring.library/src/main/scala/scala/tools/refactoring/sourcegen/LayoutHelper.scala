@@ -334,7 +334,7 @@ trait LayoutHelper extends CommentHelpers {
           case (l, parent: ValOrDefDef, r) if r.samePos(parent.rhs) && layout.contains("=") =>
             layout match {
               case Equals(l, r) => (l, r, "Equals after ValOrDefDef")
-            }            
+            }
             
           case (l, parent: ValOrDefDef, NoBlock(r)) if r.samePos(parent.rhs) && layout.contains("{") => 
             layout match {
@@ -344,8 +344,21 @@ trait LayoutHelper extends CommentHelpers {
           case (l, _, r) => split(layout)
         }
         
+        /**
+         * We remove all leading or trailing commas, they always need to be re-introduced by the printers.
+         */
+        def removeLeadingOrTrailingComma(s: String) = {
+          val CommaAtStart = ",\\s?(.*)".r
+          val CommaAtEnd   = "(.*),\\s?".r
+          s match {
+            case CommaAtStart(rest) => rest
+            case CommaAtEnd(rest) => rest
+            case _ => s
+          }
+        }
+        
         trace("Rule %s splits (%s, %s) layout %s into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, layout, ll, lr)
-        Layout(mergeLayoutWithComment(ll, comments)) → Layout(mergeLayoutWithComment(lr reverse, comments reverse) reverse)
+        Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(ll), comments)) → Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(lr) reverse, comments reverse) reverse)
     }
   }
 }

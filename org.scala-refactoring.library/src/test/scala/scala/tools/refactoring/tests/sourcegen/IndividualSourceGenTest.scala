@@ -833,5 +833,49 @@ class A(a: Int) {
     }
     """, res)
   }
+  
+    @Test
+  def changeMethodInvocation() {
+
+    val str = """
+    package abc
+    object primitive {
+      def mapcar[A, B](fu: (A) => B, li: List[A]): List[B] = {
+        
+      }
+      def asd() = {
+        mapcar(((x: String) => x.isEmpty()), List(""))
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a: Apply if (a.args.length > 1) =>
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = a.args.last)
+            a.copy(args = a.args.init, fun = fun1) replaces a
+        }
+      }
+    } apply (ast)
+
+    val changes = refactor(result.toList)
+    val res = common.Change.applyChanges(changes, str)
+    assertEquals("""
+    package abc
+    object primitive {
+      def mapcar[A, B](fu: (A) => B, li: List[A]): List[B] = {
+        
+      }
+      def asd() = {
+        List("").mapcar((x: String) => x.isEmpty())
+      }
+    }
+    """, res)
+  }
+
 }
 
