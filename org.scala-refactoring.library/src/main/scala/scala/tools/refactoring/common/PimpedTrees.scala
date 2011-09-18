@@ -39,7 +39,7 @@ trait PimpedTrees {
    * Represent an import selector as a tree, including both names as trees.
    */
   case class ImportSelectorTree(name: NameTree, rename: global.Tree) extends global.Tree {
-    protected val initErrorCheck = ()
+    def errorSubtrees = Nil
   }
   
   /**
@@ -653,7 +653,7 @@ trait PimpedTrees {
       }
       super.setPos(p)
     }
-    protected val initErrorCheck = ()
+    def errorSubtrees = Nil
   }
   
   /**
@@ -686,7 +686,7 @@ trait PimpedTrees {
       case _            => "<unknown>: " + flagsToString(flag)
     }
     
-    protected val initErrorCheck = ()
+    def errorSubtrees = Nil
   } 
     
   /**
@@ -712,7 +712,7 @@ trait PimpedTrees {
   case class SuperConstructorCall(clazz: global.Tree, args: List[global.Tree]) extends global.Tree {
     if(clazz.pos != global.NoPosition) setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
 
-    protected val initErrorCheck = ()
+    def errorSubtrees = Nil
   }
   
   /**
@@ -721,7 +721,7 @@ trait PimpedTrees {
    *   ^^^^^^^^^^^^^^
    */
   case class SelfTypeTree(name: NameTree, types: List[global.Tree], orig: Tree) extends global.Tree {
-    protected val initErrorCheck = ()
+    def errorSubtrees = Nil
   }
     
   /**
@@ -801,7 +801,7 @@ trait PimpedTrees {
   }
   
   case class MultipleAssignment(extractor: Tree, names: List[ValDef], rhs: Tree) extends global.Tree {
-    protected val initErrorCheck = ()
+    def errorSubtrees = Nil
   }
    
   class NotInstanceOf[T](m: Manifest[T]) {
@@ -827,7 +827,7 @@ trait PimpedTrees {
    * for example, blank lines.
    */
   case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree {
-    protected val initErrorCheck = ()
+    def errorSubtrees = Nil
   }
   object SourceLayouts {
     sealed trait Kinds
