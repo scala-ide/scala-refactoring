@@ -197,9 +197,6 @@ trait LayoutHelper extends CommentHelpers {
       case (c: Block, p: Block) =>
         layout(c.pos.end, p.pos.end) splitBefore ('\r', '\n', '}')
         
-      case (c: Block, p) =>
-        layout(c.pos.end, p.pos.end) splitAfter '}'
-       
       case (c, p: PackageDef) =>
         layout(c.pos.end, p.pos.end) splitAfter '\n'
          
