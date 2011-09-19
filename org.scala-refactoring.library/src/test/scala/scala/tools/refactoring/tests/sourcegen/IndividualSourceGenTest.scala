@@ -875,5 +875,48 @@ class A(a: Int) {
     """, res)
   }
 
+  @Test
+  def changeMethodInvocation2() {
+
+    val src = """
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+  
+      append(List("asd"), {
+          val x = 1
+          List("Def")
+      })
+      
+    }
+    """
+    
+    val ast = treeFrom(src)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a: Apply if (a.args.length > 1) =>
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = a.args.last)
+            a.copy(args = a.args.init, fun = fun1) replaces a
+        }
+      }
+    } apply (ast)
+    
+    assertEquals("""
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+  
+       {
+          val x = 1
+          List("Def")
+      }.append(List("asd"))
+      
+    }
+    """, createText(result.get, Some(ast.pos.source)))
+  }   
 }
 
