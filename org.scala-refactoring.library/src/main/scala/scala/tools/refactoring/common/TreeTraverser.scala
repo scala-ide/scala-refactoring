@@ -92,6 +92,7 @@ trait TreeTraverser {
             traverse(tree)
           case _ => 
         }
+        annotation.args foreach traverse
       }
     }
     
@@ -111,7 +112,7 @@ trait TreeTraverser {
     
     override def traverse(t: Tree) = {
       
-      Option(t.symbol) foreach (s => handleAnnotations(s.annotations))
+      Option(t.symbol) filter (_.pos.isRange) foreach (s => handleAnnotations(s.annotations))
       
       t match {
         // The standard traverser does not traverse a TypeTree's original:

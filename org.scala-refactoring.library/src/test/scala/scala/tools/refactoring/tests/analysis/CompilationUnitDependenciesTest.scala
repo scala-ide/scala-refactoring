@@ -702,5 +702,52 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         val x = currentTimeMillis
       }
     """)
+    
+  @Test
+  def ClassInAnnotationAttrArg = assertNeededImports(
+    """java.util.Calendar""",
+    """ 
+      import java.util.Calendar
+
+      class DeprecatedAnnotation {
+        @deprecated(message = "", since = ""+ Calendar.YEAR)
+       def read() = ()
+      }
+    """)
+    
+  @Test
+  def ClassInAnnotationImports = assertNeededImports(
+    """java.io.BufferedReader
+       java.io.FileReader
+       java.io.IOException""",
+    """ 
+      package examples
+
+      import java.io._
+
+      class Reader(fname: String) {
+        private val in = new BufferedReader(new FileReader(fname))
+        @throws(classOf[IOException])
+        def read() = in.read()
+      }
+    """)
+    
+  @Test
+  def ClassInAnnotationDeps = assertDependencies(
+    """java.io.BufferedReader
+       java.io.FileReader
+       java.io.IOException
+       scala.this.Predef.String""",
+    """ 
+      package examples
+
+      import java.io._
+
+      class Reader(fname: String) {
+        private val in = new BufferedReader(new FileReader(fname))
+        @throws(classOf[IOException])
+        def read() = in.read()
+      }
+    """)
 }
 
