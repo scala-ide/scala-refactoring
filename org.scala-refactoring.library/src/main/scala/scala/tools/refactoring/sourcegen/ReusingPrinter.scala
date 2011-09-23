@@ -454,7 +454,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
   trait ClassModulePrinters {
     this: TreePrinting with PrintingUtils =>
 
-    override def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Tree)(implicit ctx: PrintingContext) = {
+    override def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Template)(implicit ctx: PrintingContext) = {
       val className = if(tree.symbol.isAnonymousClass) 
         EmptyFragment 
       else 
@@ -463,9 +463,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       l ++ pp(mods) ++ (className) ++ pp(tparams) ++ p(impl) ++ r
     }
 
-    override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Tree)(implicit ctx: PrintingContext) = {
-      val nameTree = nameOf(tree)
-      l ++ pp(mods) ++ p(nameTree) ++ p(impl) ++ r
+    override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext) = {
+      val nameTree = p(nameOf(tree))
+      val impl_ = p(impl)
+      if(nameTree.asText.endsWith(" ") && impl_.asText.startsWith(" ")) {
+        l ++ pp(mods) ++ Layout(nameTree.asText.init) ++ impl_ ++ r
+      } else {      
+        l ++ pp(mods) ++ nameTree ++ impl_ ++ r
+      }
     }
 
     override def Template(tree: Template, parents: List[Tree], self: Tree, body: List[Tree])(implicit ctx: PrintingContext) = {

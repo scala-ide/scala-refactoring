@@ -83,9 +83,9 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
 
     def default(t: Tree)(implicit ctx: PrintingContext): Fragment = Predef.error("Not implemented! "+ t.getClass.getSimpleName)
 
-    def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
+    def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Template)(implicit ctx: PrintingContext): Fragment = default(tree)
     def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext): Fragment = default(tree)
-    def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
+    def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext): Fragment = default(tree)
     def ValDef(tree: ValDef, mods: List[ModifierTree], name: Name, tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def DefDef(tree: DefDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def TypeDef(tree: TypeDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)

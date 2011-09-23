@@ -90,7 +90,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
               ppi(body, before = indentedNewline, separator = indentedNewline, after = newline ++ "}")
           }
           
-          val params_ = printParameterList(params, false)
+          val params_ = printParameterList(params, true)
   
           params_ ++ sup ++ self_
       }
@@ -386,7 +386,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   trait ClassModulePrinters {
     this: TreePrinting with PrintingUtils =>
   
-    override def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Tree)(implicit ctx: PrintingContext) = {
+    override def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Template)(implicit ctx: PrintingContext) = {
       
       //mods.annotations map traverse
       val mods_ = mods map (m => m.nameString + " ") mkString ""
@@ -395,11 +395,18 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         "" // "trait" is a modifier
       else
         "class "
+        
+      val body = impl match {
+        case TemplateExtractor(Nil :: Nil, _, _, _, _) if mods exists (_.nameString == "case") =>
+          Layout("()") ++ p(impl)
+        case _ => 
+          p(impl)
+      }
       
-      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = ", ", after = "]") ++ p(impl)
+      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = ", ", after = "]") ++ body
     }
     
-    override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Tree)(implicit ctx: PrintingContext) = {
+    override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext) = {
       //        mods.annotations map traverse
             
       val mods_ = mods map (m => m.nameString + " ") mkString ""
