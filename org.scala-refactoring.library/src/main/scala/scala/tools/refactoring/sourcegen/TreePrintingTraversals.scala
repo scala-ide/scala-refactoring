@@ -196,21 +196,47 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
   
       import ctx._
       
-      trees.map(t => printIndentedSingleTree(t, NoRequisite, NoRequisite)).foldRight(EmptyFragment: Fragment) {
+      val fixedIndentationSeparator = {
+        if (parent.hasExistingCode && (
+            separator.getLayout.asText.startsWith("\n") ||
+            separator.getLayout.asText.startsWith("\r")
+            )) {
+          Requisite.newline(ind.current + ind.defaultIncrement, NL)
+        } else {
+          separator
+        }
+      }
+      
+      trees.map { t => 
+        t -> printIndentedSingleTree(t, NoRequisite, NoRequisite)
+      }.filter(_._2.asText != "").zipWithIndex.map {
+ 
+        case ((tree, fragment), 0) 
+            if tree.pos == NoPosition && separator.getLayout.contains("\n") && parent.isInstanceOf[Template] =>
+          
+          if(trees.size > 1 && trees(trees.indexOf(tree) + 1).pos.isRange ) {
+            fragment ++ Layout(fixedIndentationSeparator.getLayout.asText)
+          } else {
+            fragment
+          }
+          
+        case ((_, fragment), 0) => 
+          fragment
+        
+        case ((tree, fragment), _) if tree.pos.isRange => 
+          fragment
+          
+        case ((_, fragment), _) 
+            if separator.getLayout.contains("\n") && parent.isInstanceOf[Template] =>
+          Layout(fixedIndentationSeparator.getLayout.asText + fixedIndentationSeparator.getLayout.asText) ++ fragment 
+          
+        case ((_, fragment), _) =>
+          fragment
+           
+      }.foldRight(EmptyFragment: Fragment) {
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
-  
-          val fixedIndentationSeparator = {
-            if (parent.hasExistingCode && (
-                separator.getLayout.asText.startsWith("\n") ||
-                separator.getLayout.asText.startsWith("\r")
-                )) {
-              Requisite.newline(ind.current + ind.defaultIncrement, NL)
-            } else {
-              separator
-            }
-          }
   
           val lr = l.post(l.center ++ l.trailing, NoLayout)
           val rr = r.pre(NoLayout, r.leading ++ r.center)
@@ -234,7 +260,26 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
       before: Requisite,
       after: Requisite)(implicit ctx: PrintingContext): Fragment = {
       
-      trees.map(printSingleTree(_, NoRequisite, NoRequisite)).foldRight(EmptyFragment: Fragment) { 
+      trees.map { t => 
+        t -> printSingleTree(t, NoRequisite, NoRequisite)
+      }.filter(_._2.asText != "").zipWithIndex.map {
+        
+        case ((_, fragment), 0) => 
+          fragment
+        
+        case ((tree, fragment), _) if tree.pos.isRange => 
+          fragment
+          
+        case ((_: Import | _: PackageDef, fragment), _) =>
+          fragment
+        
+        case ((_, fragment), _) if separator.getLayout.contains("\n") =>
+          Layout(separator.getLayout.asText + separator.getLayout.asText) ++ fragment
+          
+        case ((_, fragment), _) =>
+          fragment
+           
+      }.foldRight(EmptyFragment: Fragment) { 
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
@@ -244,6 +289,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
           val mid: Layout = (lr ++ separator ++ rr).toLayout
           Fragment(l.leading, mid, r.trailing) ++ (r.post, l.pre)
       } ifNotEmpty (_ ++ (after, before))
+
     }
   
     def getChildrenIndentation(parent: Tree, t: Tree): Option[String] = {

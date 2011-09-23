@@ -42,6 +42,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = prntln
         a * a
       }
+      
       private def prntln: Int = {
 /*(*/   val a = {
           val b = 1
@@ -71,6 +72,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         myOwnPrint
         ()
       }
+      
       private def myOwnPrint: Unit = {
 /*(*/   println("hello")/*)*/
       }
@@ -99,6 +101,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln
         ()
       }
+      
       private def prntln: Unit = {
 /*(*/   println("hello")/*)*/
       }
@@ -129,6 +132,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln(a)
         ()
       }
+      
       private def prntln(a: Int): Unit = {
 /*(*/   println(a)  /*)*/
       }
@@ -203,6 +207,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       
           println("The sum from 1 to 10 is "+ sum)
         }
+        
         private def prntln(sumList: Seq[Int] => Int, values: scala.collection.immutable.Range.Inclusive): Int = {
       
           /*(*/val sum = sumList(values)/*)*/   // the sum
@@ -236,6 +241,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         prntln(d, a, b, c)
         ()
       }
+      
       private def prntln(d: Int, a: Int, b: Int, c: Int): Unit = {
 /*(*/   println(a + b + c + d)  /*)*/
       }
@@ -261,6 +267,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = prntln
         a
       }
+      
       private def prntln: Int = {
 /*(*/   val a = 1  /*)*/
         a
@@ -288,6 +295,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val (a, b) = prntln
         a + b
       }
+      
       private def prntln: (Int, Int) = {
 /*(*/   val a = 1
         val b = 1  /*)*/
@@ -322,6 +330,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val (d, e) = prntln(a, c)
         a+b+c+d+e
       }
+      
       private def prntln(a: Int, c: Int): (Int, Int) = {
 /*(*/   val d = a + c
         val e = d + a  /*)*/
@@ -374,6 +383,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         val a = 1
         inc(a)
       }
+      
       private def inc(a: Int): Int = {
 /*(*/   a + 1    /*)*/
       }
@@ -423,6 +433,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       def extractFrom(): Int = {
         inc
       }
+      
       private def inc: Int = {
 /*(*/   val a = 1
         a + 1    /*)*/
@@ -453,6 +464,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         else
           false 
       }
+      
       private def test: Boolean = {
          /*(*/ true == true /*)*/ 
       }
@@ -481,6 +493,7 @@ object ExtractMethod3 {
     val (end, sum) = test(start)
     println("The sum from %d to %d is %d".format(start, end, sum))
   }
+  
   private def test(start: Int): (Int, Int) = {
     /*(*/val end   = 10
     val sum = start to end reduceLeft ((x, y) => x + y)/*)*/
@@ -511,6 +524,7 @@ object ExtractMethod3 {
     val (end, sum) = test(start)
     println("The sum from %d to %d is %d".format(start, end, sum))
   }
+  
   private def test(start: Int): (Int, Int) = {
     /*(*/val end   = 10
     val sum = start to end reduceLeft (_ + _)/*)*/
@@ -542,6 +556,7 @@ object ExtractMethod3 {
     val sum = test
     println("The sum is %d".format(sum))
   }
+  
   private def test: Int = {
     /*(*/val sum = 0 to 10 reduceLeft add/*)*/
     sum
@@ -571,6 +586,7 @@ object ExtractMethod3 {
         else
           false 
       }
+      
       private def test: Boolean = {
  /*(*/    true
       }
@@ -602,6 +618,7 @@ object ExtractMethod3 {
  /*(*/    test /*)*/
         }
       }
+      
       private def test: Boolean = {
         false
       }
@@ -625,6 +642,7 @@ object ExtractMethod3 {
       def extractFrom(): Boolean = {
         if(true == true) true else /*(*/ test /*)*/
       }
+      
       private def test: Boolean = {
         false
       }
@@ -666,6 +684,7 @@ object ExtractMethod3 {
           }
         }
       }
+      
       private def test: Boolean = {
          /*(*/  true
       }
@@ -695,6 +714,7 @@ object ExtractMethod3 {
           else
             println("It's true")
         }
+        
         private def isFalse(check: Boolean): Boolean = {
           /*(*/check == false/*)*/ /*hi*/
         }
@@ -724,6 +744,7 @@ object ExtractMethod3 {
         val b = certainlyTrue(invert, a)
         b
       }
+      
       private def certainlyTrue(invert: Boolean => Boolean, a: Boolean): Boolean = {
 /*(*/   val b = invert(a)    /*)*/
         b
@@ -759,6 +780,7 @@ object ExtractMethod3 {
     
         println("The sum from 1 to 10 is "+ sum +"; the product is "+ product)
       }
+      
       private def magic(sumList: Seq[Int] => Int, prodList: Seq[Int] => Int, values: List[Int]): (Int, Int) = {
     /*(*/    val     sum = sumList(values)   // the sum
         val product = prodList(values) /*)*/ // the product
@@ -820,6 +842,7 @@ object ExtractMethod3 {
       def unrelated3 {
         println("unrelated3")
       }
+      
       private def isFalse(check: Boolean): Boolean = {
         /*(*/check == false/*)*/ /*hi*/
       }
@@ -851,6 +874,7 @@ object ExtractMethod2 {
       /*(*/certainlyTrue/*)*/
     }
   }
+  
   private def certainlyTrue: Unit =  {
       /*(*/println("true")
   }
@@ -957,6 +981,7 @@ object ExtractWithLocalFunction {
     call(add1, i)
     ()
   }
+  
   private def call(add1: Int => Int, i: Int): Int = {
     /*(*/add1(i)/*)*/
   }
@@ -987,6 +1012,7 @@ object ExtractWithLocalFunction2 {
     call(add, i, j)
     ()
   }
+  
   private def call(add: (Int, Int) => Int, i: Int, j: Int): Int = {
     /*(*/add(i, j)/*)*/
   }
@@ -1013,6 +1039,7 @@ object ExtractWithLocalFunction3 {
     call(one)
     ()
   }
+  
   private def call(one: () => Int): Int = {
     /*(*/one/*)*/
   }
@@ -1038,6 +1065,7 @@ object Bar {
     bubu.format()
     calc
   }
+  
   private def calc: Unit = {
     /*(*/ 10 * 4 - 1 /*)*/
   }
@@ -1066,6 +1094,7 @@ class A {
 	  call(i)
 	}
   }
+  
   private def call(i: Int): Int = {
       /*(*/val j = i * 2;
     j/*)*/
@@ -1102,6 +1131,7 @@ class PathSeparator {
       val sep = F.pathSeparator
     }
   }
+  
   private def mkTuple: (Int, Int) = {
 
     /*(*/5 -> 10/*)*/

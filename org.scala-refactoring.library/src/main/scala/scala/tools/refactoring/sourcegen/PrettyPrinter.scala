@@ -349,7 +349,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       if(pid.name.toString == "<empty>") {
         pp(stats, separator = newline)
       } else {
-         p(pid, before = "package ", after = newline) ++ pp(stats, separator = newline)
+        pp(pid :: stats, before = "package ", separator = newline)
       }    
     }
   }

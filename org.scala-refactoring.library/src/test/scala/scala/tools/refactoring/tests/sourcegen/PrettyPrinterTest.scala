@@ -276,6 +276,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     // terrible, but don't know how to do better :/
     tree prettyPrintsTo """object Functions {
   val a = new String("hello")
+  
   def createNew = {
     class $anon {
       println("hello from an anonymous class")
@@ -303,9 +304,12 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     tree prettyPrintsTo """class Throw1 {
   throw new Exception("hu!")
 }
+
 class Throw2 {
   var msg = "   "
+  
   val e = new Exception(msg)
+  
   throw e
 }"""
   }
@@ -324,6 +328,7 @@ class Throw2 {
 
     // XXX annotation is missing
     tree prettyPrintsTo """import scala.reflect.BeanProperty
+
 class ATest {
   var status = ""
 }"""
@@ -394,6 +399,7 @@ class ATest {
 
     tree prettyPrintsTo """class Test {
   val (g, h, i) = inMethod()
+  
   def inMethod() = {
     println("in method")
     val (a, b, c) = (1, 2, 3)
@@ -427,6 +433,7 @@ class ATest {
     """)
 
     tree prettyPrintsTo """class A(l: List[_])
+
 class B(l: List[T] forSome {type T})"""
   }
 
@@ -454,15 +461,19 @@ class B(l: List[T] forSome {type T})"""
     }""")
 
     tree prettyPrintsTo """package com.somedomain.test
+
 object Transaction {
   object Kind {
     val ReadOnly = true
   }
+  
   def run[T](readOnyl: Boolean) = ()
 }
+
 object Test44 {
   def doNothing = ()
 }
+
 class Test44 {
   def bar() = Transaction.run[Unit](Transaction.Kind.ReadOnly)
 }"""
@@ -480,7 +491,9 @@ class Test44 {
     """)
 
     tree prettyPrintsTo """trait A
+
 trait B
+
 abstract class C(val a: A with B) {
   def method(x: A with B with C {
     val x: Int
@@ -516,6 +529,7 @@ abstract class C(val a: A with B) {
     tree prettyPrintsTo """trait A {
   type T
 }
+
 class B(t: A#T)"""
   }
 
@@ -535,8 +549,11 @@ class B(t: A#T)"""
 
     // XXX wrong!
     tree prettyPrintsTo """package common
+
 trait Tracing
+
 trait PimpedTrees
+
 trait AbstractPrinter {
   this: common.Tracing with common.PimpedTrees =>
 }"""
@@ -573,13 +590,16 @@ trait AbstractPrinter {
   while(true.!=(false)){
     println("The world is still ok!")
   }
+  
   while(true.!=(false)){
     println("The world is still ok!")
   }
+  
   while(true){
     println("The world is still ok!")
     println("The world is still ok!")
   }
+  
   while(true){
     println("The world is still ok!")
     println("The world is still ok!")
@@ -611,7 +631,9 @@ trait AbstractPrinter {
 
     tree prettyPrintsTo """trait WhileLoop {
   do println("The world is still ok!") while(true)
+  
   do println("The world is still ok!") while(true.!=(false))
+  
   do {
     println("The world is still ok!")
     println("The world is still ok!")
@@ -659,6 +681,7 @@ trait AbstractPrinter {
       }""")
 
     tree prettyPrintsTo """package oneFromMany
+
 class Demo(val a: String, private var _i: Int) {
   def i_=(i: Int) = _i = i
 }"""
@@ -684,6 +707,7 @@ class Demo(val a: String, private var _i: Int) {
     """)
 
     tree prettyPrintsTo """class Demo1(a: String, b: Int)
+
 class Demo2(a: String, b: Int)"""
   }
 
@@ -726,21 +750,27 @@ class Demo2(a: String, b: Int)"""
   List(1, 2) match {
     case i => i
   }
+  
   List(1, 2).collect {
     case i if i.>(5) => i
   }
+  
   List(1, 2).map {
     case i: Int => i
   }
+  
   List(1, 2).map {
     case a @ (i: Int) => i
   }
+  
   List(1, 2).map {
     case _ => 42
   }
+  
   List(1, 2) match {
     case (x, xs) => x
   }
+  
   List(1, 2).map {
     case 0 | 1 => true
     case _ => false
@@ -814,14 +844,18 @@ class Demo2(a: String, b: Int)"""
     tree prettyPrintsTo """trait Root {
   def x = "Root"
 }
+
 class A extends Root {
   def superA = super.x
 }
+
 class B extends A with Root {
   class Inner {
     val myX = B.super.x
   }
+  
   def fromA = super[A].x
+  
   def fromRoot = super[Root].x
 }"""
   }
@@ -840,6 +874,7 @@ class B extends A with Root {
   class Inner {
     val outer = Root.this
   }
+  
   val self = this
 }"""
   }
@@ -860,13 +895,16 @@ class B extends A with Root {
     tree prettyPrintsTo """object Extractor {
   def unapply(i: Int) = Some.apply(i)
 }
+
 object User {
   5 match {
     case Extractor(i) => i
   }
+  
   5 match {
     case a @ Extractor(i) => i
   }
+  
   5 match {
     case a @ Extractor(i: Int) => i
   }
@@ -890,6 +928,7 @@ object User {
 package b.c
 package d
 package e.f
+
 object A"""
   }
 
@@ -919,7 +958,9 @@ object A"""
 
     tree prettyPrintsTo """object Functions {
   val x = if (true) false else true
+  
   val y = if (true.==(false)) true else if (true.==(true)) false else true
+  
   val z = if (true.==(false)) true else if (true.==(true)) false else {
     println("hello!")
     true
@@ -940,8 +981,11 @@ object A"""
 
     tree prettyPrintsTo """object Functions {
   List(1, 2).map((i: Int) => i.+(1))
+  
   val sum: Seq[Int] => Int = _.reduceLeft(_.+(_))
+  
   List(1, 2).map(_.+(1))
+  
   List(1, 2).map(i => i.+(1))
 }"""
   }
@@ -960,9 +1004,13 @@ object A"""
 
     tree prettyPrintsTo """trait Types {
   type A = Int
+  
   type B >: Nothing <: AnyRef
+  
   def id[C](c: C) = c
+  
   protected type C >: Nothing 
+  
   type D <: AnyRef
 }"""
   }
@@ -982,7 +1030,9 @@ object A"""
 
     tree prettyPrintsTo """object Rename1 {
   case class Person(name: String)
+  
   def printName(ppp: Rename1.Person) = println(ppp.name)
+  
   def main(args: Array[String]) = {
     val people: List[Rename1.Person] = List(Person.apply("Mirko"), Person.apply("Christina"))
     people.foreach({
@@ -1019,7 +1069,9 @@ object A"""
 
     tree prettyPrintsTo """class A {
   private def test() = 5
+  
   lazy val i = 5
+  
   final protected def a() = i
 }"""
   }
@@ -1038,15 +1090,23 @@ object A"""
     val modTree = (removeAuxiliaryTrees &> ↓(changeSomeModifiers)) apply tree get
 
     tree prettyPrintsTo """package xy
+
 abstract class Aaa
+
 sealed class Bbbb
+
 final class Cccc
+
 protected sealed class Dddd"""
 
     modTree prettyPrintsTo """package xy
+
 class Aaa
+
 class Bbbb
+
 class Cccc
+
 class Dddd"""
   }
 
@@ -1068,9 +1128,11 @@ class Dddd"""
     tree prettyPrintsTo """trait ATrait {
   self =>
 }
+
 trait BTrait {
   self: ATrait =>
 }
+
 trait CTrait {
   self: BTrait with ATrait =>
 }"""
@@ -1090,7 +1152,9 @@ trait CTrait {
     """)
 
     tree prettyPrintsTo """trait ATrait
+
 class ASuperClass(x: Int, val d: String)
+
 class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
   self_type_annotation =>
   def someMethod() = ()
@@ -1107,6 +1171,7 @@ class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, 
     """)
 
     tree prettyPrintsTo """class ASuperClass(x: Int, val d: String)
+
 class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
   }
 
@@ -1115,6 +1180,7 @@ class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
 
     val tree = treeFrom("""
     import java.io._
+
     object Aua {
       var file: PrintStream = null
       try { 
@@ -1142,8 +1208,10 @@ class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
     """)
 
     tree prettyPrintsTo """import java.io._
+
 object Aua {
   var file: java.io.PrintStream = null
+  
   try {
     val out = new FileOutputStream("myfile.txt")
     file = new PrintStream(out)
@@ -1153,11 +1221,13 @@ object Aua {
   } finally {
     println("finally!")
   }
+  
   try {
     file = new PrintStream(new FileOutputStream("myfile.txt"))
   } catch {
     case e: Exception => println("e")
   }
+  
   try {
     file = new PrintStream(new FileOutputStream("myfile.txt"))
   } finally {
@@ -1184,8 +1254,10 @@ object Aua {
 
     tree prettyPrintsTo """trait Greeting {
   val name: String
+  
   val msg = "How are you, ".+(name)
 }
+
 class C(i: Int) extends {
   val name = "Bob"
 } with Greeting {
@@ -1226,10 +1298,13 @@ import scala.collection.mutable._"""
     """)
 
     tree prettyPrintsTo """package xyz
+
 trait A {
   val a: Int = 5
+  
   val b = "huhu"
 }
+
 trait B {
   val a: Int
 }"""
@@ -1254,18 +1329,27 @@ trait B {
       def id[A](a: A) = a
     }
     """) prettyPrintsTo """package xy
+
 class A {
   def a(): Int
+  
   def b: Int = 5
+  
   def c() = 5
+  
   def d = {
     val a = 5
     a
   }
+  
   def e(i: Int) = i
+  
   def f(i: Int)(j: Int) = i.+(j)
+  
   def g(i: Int, j: Int) = i.+(j)
+  
   def h(i: Int, j: Int): (Int, Int) = (i, j)
+  
   def id[A](a: A) = a
 }"""
     

@@ -132,6 +132,7 @@ trait tr[A] {
   
   def asd() {
   }
+  
   def member() = {
     ()
   }

@@ -279,6 +279,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         val six = 5 + 1/*)*/ 
+        
         /*(*/six toString
       }
     """
@@ -334,6 +335,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         val filterList = List(1,2,3) filter/*)*/ _
+        
         /*(*/filterList(_> 2) mkString ", "
       }
     """
@@ -610,6 +612,7 @@ object ExtractMethod2 {
     """
       class Extr2 {
         val l = List(1,2,3)/*)*/
+        
         /*(*/l match {
           case Nil => true
         }
@@ -675,6 +678,7 @@ object ExtractMethod2 {
       printf("%d %d %d\n", one, three, eight)
   
       val strings = Array("One", "Second")
+      
       val two = /*(*/"Two"
       strings(1) = two/*)*/
       for( str <- strings) println(str)

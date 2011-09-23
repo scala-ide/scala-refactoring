@@ -610,9 +610,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         }
       }
       
-      //if(rhsResultIsUnit) {
-      //  l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ body ++ r
-
       val noEqualNeeded = {
         body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
       }
