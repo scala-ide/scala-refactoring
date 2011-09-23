@@ -27,6 +27,13 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
    */
   abstract class FileSet(val name: String) {
     
+    global.unitOfFile.values.foreach { cu =>
+      global.removeUnitOf(cu.source)
+      global.getUnitOf(cu.source)
+    }
+    
+    global.askReset
+    
     def this() = this(randomFileName())
       
     private val srcs = ListBuffer[(String, String)]()

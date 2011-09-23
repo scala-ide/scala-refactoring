@@ -56,53 +56,25 @@ trait TreeCreationMethods {
     
   def treeFrom(src: String): global.Tree = {
     val file = new BatchSourceFile(randomFileName(), src)
-    treeFrom(file, true)
+    treeFrom(file)
   }
   
-  def treeFrom(file: SourceFile, forceReload: Boolean): global.Tree = {
-    if(isScala("2.8")) {
-      treeFromCompiler28(file, forceReload)
-    } else {
-      treeFromCompiler29(file)
-    }
-  }
-  
-  private def treeFromCompiler28(file: SourceFile, forceReload: Boolean) = {
-    
-    type Scala28Compiler = {
-      def typedTree(file: SourceFile, forceReload: Boolean): global.Tree 
-    }
-    
-    val newCompiler = global.asInstanceOf[Scala28Compiler]
-    
-    newCompiler.typedTree(file, forceReload)
-  }
-  
-  private def treeFromCompiler29(file: SourceFile) = {
-    
-    import tools.nsc.interactive.Response
-    
-    type Scala29Compiler = {
-      def askParsedEntered(file: SourceFile, keepLoaded: Boolean, response: Response[global.Tree]): Unit
-      def askType(file: SourceFile, forceReload: Boolean, respone: Response[global.Tree]): Unit
-    }
-    
-    val newCompiler = global.asInstanceOf[Scala29Compiler]
-    
+  def treeFrom(file: SourceFile): global.Tree = {
+        
     val r1 = new Response[global.Tree]
-    newCompiler.askParsedEntered(file, true, r1)
+    global.askParsedEntered(file, true, r1)
     r1.get // we don't care about the result yet
     
     val r2 = new Response[global.Tree]
-    newCompiler.askType(file, false, r2)
+    global.askType(file, false, r2)
     r2.get match {
       case Left(tree) => tree
       case Right(ex) => throw ex
     }
   }
 
-  def treesFrom(sources: List[SourceFile], forceReload: Boolean): List[global.Tree] =
-    sources map ( treeFrom(_, forceReload) )
+  def treesFrom(sources: List[SourceFile]): List[global.Tree] =
+    sources map treeFrom
   
   /**
    * Add a source file with the given name and content to this compiler instance.
@@ -111,7 +83,7 @@ trait TreeCreationMethods {
    */
   def addToCompiler(name: String, src: String): AbstractFile = {
     val file = new BatchSourceFile(name, src)
-    treeFrom(file, true) // use the side effect
+    treeFrom(file) // use the side effect
     file.file
   } 
 }
