@@ -910,7 +910,7 @@ class A(a: Int) {
     object primitive {
       def append[A](li1: List[A], li2: List[A]) = Nil
   
-       {
+      {
           val x = 1
           List("Def")
       }.append(List("asd"))

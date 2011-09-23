@@ -292,7 +292,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             case _ =>
               val updateArgs = args.init
               val rhs = args.last
-              l ++ p(select) ++ "(" ++ pp(updateArgs, separator = ",") ++ ")" ++ " = " ++ p(rhs) ++ r  
+              l ++ p(select) ++ "(" ++ pp(updateArgs, separator = ", ") ++ ")" ++ " = " ++ p(rhs) ++ r  
           }
 
         // handle e.g. a += 1 which is a = (a + 1)
@@ -719,7 +719,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case EmptyTree =>
           l ++ pp(values, separator = ", ") ++ ")" ++ p(rhs) ++ r
         case _ =>
-          l ++ p(extractor) ++ " = " ++ p(rhs) ++ r
+          l ++ "val " ++ p(extractor) ++ " = " ++ p(rhs) ++ r
       }
     }
 

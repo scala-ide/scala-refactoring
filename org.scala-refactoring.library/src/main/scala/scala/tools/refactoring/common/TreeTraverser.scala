@@ -162,6 +162,10 @@ trait TreeTraverser {
             case (ExistentialType(quantified, TypeRef(_, sym, _)), ExistentialTypeTree(AppliedTypeTree(tpt, _), _)) =>
               fakeSelectTree(sym.tpe, sym, tpt) foreach traverse
               
+            case (tpe: TypeRef, ident: Ident) 
+                if tpe.sym.pos == NoPosition || (tpe.sym.pos != NoPosition && tpe.sym.pos.source != t.pos.source) => 
+              fakeSelectTreeFromType(tpe, tpe.sym, ident.pos) foreach traverse
+              
             case _ =>
               traverse(t.original)
           }
