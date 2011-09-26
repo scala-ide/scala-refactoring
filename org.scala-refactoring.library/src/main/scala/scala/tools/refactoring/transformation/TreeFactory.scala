@@ -112,7 +112,7 @@ trait TreeFactory {
     }
   }
 
-  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree] = Nil): DefDef = {
+  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree]): DefDef = {
 
     val formalParameters = {
       if (parameters.isEmpty)
