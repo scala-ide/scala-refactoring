@@ -596,4 +596,20 @@ class RenameTest extends TestHelper with TestRefactoring {
       case class TestIde1 {}
     """
   } applyRefactoring(renameTo("TestIde1"))
+  
+  @Test
+  def renameNestedType = new FileSet {
+    """
+    trait /*(*/Thing/*)*/ {
+      val otherThings: Set[Thing] = Set()
+      val myThing: Thing
+    }
+    """ becomes
+    """
+    trait /*(*/X/*)*/ {
+      val otherThings: Set[X] = Set()
+      val myThing: X
+    }
+    """
+  } applyRefactoring(renameTo("X"))
 }

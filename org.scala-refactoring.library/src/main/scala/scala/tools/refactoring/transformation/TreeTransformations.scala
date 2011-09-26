@@ -29,9 +29,17 @@ trait TreeTransformations extends Transformations {
           t
         
         case t: TypeTree if t.original != null =>
-          val typeTree = super.transform(t).asInstanceOf[TypeTree]
-          typeTree setOriginal f(t.original)
-        
+          val transformedTypeTree = super.transform(t).asInstanceOf[TypeTree]
+          val transformedOriginal = f(t.original)
+          
+          // if only the original tree has been transformed, we have to create
+          // a new TypeTree instance so the old and new ones are not `eq`.
+          if(transformedTypeTree.eq(t) && !transformedOriginal.eq(t.original)) {
+            new TypeTree().copyAttrs(t).setOriginal(transformedOriginal)
+          } else {
+            transformedTypeTree.setOriginal(transformedOriginal)
+          }
+          
         case t: UnApply =>
           // super does not transform t.fun
           treeCopy.UnApply(tree, transform(t.fun), transformTrees(t.args))
