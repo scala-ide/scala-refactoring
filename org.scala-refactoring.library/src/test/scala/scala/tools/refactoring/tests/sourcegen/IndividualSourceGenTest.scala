@@ -919,5 +919,34 @@ class A(a: Int) {
     }
     """, createText(result.get, Some(ast.pos.source)))
   }   
+  
+  @Test
+  def testRemoveAnArgument() {
+
+    val ast = treeFrom("""
+    trait tr {
+      def remove[A](elem: A, li: List[A]): List[A] = {
+        li.remove_if((x: A) => (elem equals x))
+      }
+    }
+    """)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef if (t.vparamss(0).size > 0) =>
+            val vparamss = List(List(t.vparamss(0).head))
+            t.copy(vparamss = vparamss) setPos t.pos
+        }
+      }
+    } apply (ast)
+
+    val changes = refactor(result.toList)
+    val res =
+      assertEquals(
+        """def remove[A](elem: A): List[A] = {
+        li.remove_if((x: A) => (elem equals x))
+      }""", changes.head.text)
+  }
 }
 
