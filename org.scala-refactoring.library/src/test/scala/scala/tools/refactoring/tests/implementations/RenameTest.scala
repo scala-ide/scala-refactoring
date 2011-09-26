@@ -628,4 +628,26 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("`my strange identifier again`"))
+
+  @Test
+  def renameTypeParamInSecondConstructor = new FileSet {
+    """
+    trait /*(*/X/*)*/
+
+    class StrangeIdentifiers () {
+      def this(comparator: java.util.Comparator[X]) = {
+        this()
+      }
+    }
+    """ becomes
+    """
+    trait /*(*/Comp/*)*/
+
+    class StrangeIdentifiers () {
+      def this(comparator: java.util.Comparator[Comp]) = {
+        this()
+      }
+    }
+    """
+  } applyRefactoring(renameTo("Comp"))
 }

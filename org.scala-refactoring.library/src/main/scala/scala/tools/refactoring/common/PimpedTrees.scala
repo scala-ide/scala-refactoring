@@ -300,7 +300,8 @@ trait PimpedTrees {
      * Returns the primary constructor of the template.
      */
     def primaryConstructor = t.body.filter {
-      case t: DefDef => t.symbol.isPrimaryConstructor || t.name.toString == nme.CONSTRUCTOR.toString
+      case t: DefDef => 
+        t.symbol.isPrimaryConstructor || (t.symbol == NoSymbol && t.name.toString == nme.CONSTRUCTOR.toString)
       case _ => false
     }
        
@@ -358,7 +359,11 @@ trait PimpedTrees {
           }
         }
         
-        val body = removeCompilerTreesForMultipleAssignment((tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains)) filter keepTree)
+        val body = {
+          val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains) 
+          val removeGeneratedTrees = bodyWithoutPrimaryConstructorAndArgs filter keepTree
+          removeCompilerTreesForMultipleAssignment(removeGeneratedTrees)
+        }
         
         val parents = (pimpedTpl.superConstructorParameters match {
           case Nil => tpl.parents
