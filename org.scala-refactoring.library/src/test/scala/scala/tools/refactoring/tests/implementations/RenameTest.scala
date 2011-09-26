@@ -468,6 +468,7 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("n"))
     
   @Test
+  @ScalaVersion(matches="2.9")
   def renameSelfType = new FileSet {
     """
     trait /*(*/T1/*)*/
@@ -486,6 +487,7 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring renameTo("Trait")
     
   @Test
+  @ScalaVersion(matches="2.9")
   def renameSelfType2 = new FileSet {
     """
     trait /*(*/T1/*)*/
@@ -596,4 +598,58 @@ class RenameTest extends TestHelper with TestRefactoring {
       case class TestIde1 {}
     """
   } applyRefactoring(renameTo("TestIde1"))
+  
+  @Test
+  def renameNestedType = new FileSet {
+    """
+    trait /*(*/Thing/*)*/ {
+      val otherThings: Set[Thing] = Set()
+      val myThing: Thing
+    }
+    """ becomes
+    """
+    trait /*(*/X/*)*/ {
+      val otherThings: Set[X] = Set()
+      val myThing: X
+    }
+    """
+  } applyRefactoring(renameTo("X"))
+  
+  @Test
+  def renameIdentifierWithBackticks = new FileSet {
+    """
+    trait StrangeIdentifiers {
+      val /*(*/`my strange identifier`/*)*/ = "foo"
+      val `my strange identifier 2` = `my strange identifier`
+    }
+    """ becomes
+    """
+    trait StrangeIdentifiers {
+      val /*(*/`my strange identifier again`/*)*/ = "foo"
+      val `my strange identifier 2` = `my strange identifier again`
+    }
+    """
+  } applyRefactoring(renameTo("`my strange identifier again`"))
+
+  @Test
+  def renameTypeParamInSecondConstructor = new FileSet {
+    """
+    trait /*(*/X/*)*/
+
+    class StrangeIdentifiers () {
+      def this(comparator: java.util.Comparator[X]) = {
+        this()
+      }
+    }
+    """ becomes
+    """
+    trait /*(*/Comp/*)*/
+
+    class StrangeIdentifiers () {
+      def this(comparator: java.util.Comparator[Comp]) = {
+        this()
+      }
+    }
+    """
+  } applyRefactoring(renameTo("Comp"))
 }

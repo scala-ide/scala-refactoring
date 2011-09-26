@@ -164,7 +164,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
 
     override def UnApply(tree: UnApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
-      l ++ p(fun) ++ pp(args, separator = ",", before = "(", after = ")") ++ r
+      l ++ p(fun) ++ pp(args, separator = ", ", before = "(", after = ")") ++ r
     }
 
     override def Match(tree: Match, selector: Tree, cases: List[Tree])(implicit ctx: PrintingContext) = {
@@ -292,7 +292,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             case _ =>
               val updateArgs = args.init
               val rhs = args.last
-              l ++ p(select) ++ "(" ++ pp(updateArgs, separator = ",") ++ ")" ++ " = " ++ p(rhs) ++ r  
+              l ++ p(select) ++ "(" ++ pp(updateArgs, separator = ", ") ++ ")" ++ " = " ++ p(rhs) ++ r  
           }
 
         // handle e.g. a += 1 which is a = (a + 1)
@@ -304,7 +304,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ pp(args) ++ r
           
         case (_, ((_: Bind) :: ( _: Bind) :: _)) =>
-          l ++ p(fun) ++ pp(args, before = if(l contains "(") NoRequisite else "(", separator = ",", after = ")") ++ r
+          l ++ p(fun) ++ pp(args, before = if(l contains "(") NoRequisite else "(", separator = ", ", after = ")") ++ r
           
         case (fun: Select, arg :: Nil) if 
             (fun.qualifier != EmptyTree && keepTree(fun.qualifier)) /*has receiver*/
@@ -329,7 +329,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ p(arg) ++ r
           
         case (EmptyTree, args) =>
-          l ++ pp(args, separator = ",", before = "(", after = ")")  ++ r 
+          l ++ pp(args, separator = ", ", before = "(", after = ")")  ++ r 
           
         /* Workaround for for-comprehensions. Because they are not represented with
          * their own ASTs, we sometimes need to work around some issues. This is for
@@ -360,7 +360,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           }
           
         case (fun, args) =>
-          l ++ p(fun) ++ pp(args, separator = ",", before = "(", after = Requisite.anywhere(")"))  ++ r
+          l ++ p(fun) ++ pp(args, separator = ("," ++ Requisite.Blank), before = "(", after = Requisite.anywhere(")"))  ++ r
       }
     }
   }
@@ -411,7 +411,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ pp(vparams) ++ (NL + indentation) ++ ppi(body, separator = newline) ++ r
           
         case _ =>
-          printChildren(tree)
+          val params = pp(vparams)
+          val bdy = p(body)
+          
+          if(r.contains(")")) {
+            l ++ pp(vparams) ++ "(" ++ p(body) ++ r
+          } else {
+            l ++ pp(vparams) ++ p(body) ++ r
+          }
       }
     }
   }
@@ -454,7 +461,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
   trait ClassModulePrinters {
     this: TreePrinting with PrintingUtils =>
 
-    override def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Tree)(implicit ctx: PrintingContext) = {
+    override def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Template)(implicit ctx: PrintingContext) = {
       val className = if(tree.symbol.isAnonymousClass) 
         EmptyFragment 
       else 
@@ -463,16 +470,21 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       l ++ pp(mods) ++ (className) ++ pp(tparams) ++ p(impl) ++ r
     }
 
-    override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Tree)(implicit ctx: PrintingContext) = {
-      val nameTree = nameOf(tree)
-      l ++ pp(mods) ++ p(nameTree) ++ p(impl) ++ r
+    override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext) = {
+      val nameTree = p(nameOf(tree))
+      val impl_ = p(impl)
+      if(nameTree.asText.endsWith(" ") && impl_.asText.startsWith(" ")) {
+        l ++ pp(mods) ++ Layout(nameTree.asText.init) ++ impl_ ++ r
+      } else {      
+        l ++ pp(mods) ++ nameTree ++ impl_ ++ r
+      }
     }
 
     override def Template(tree: Template, parents: List[Tree], self: Tree, body: List[Tree])(implicit ctx: PrintingContext) = {
       (tree, orig(tree)) match {
     
         case (t @ TemplateExtractor(params, earlyBody, parents, self, Nil), _) =>
-          val _params = params.headOption map (pms => pp(pms, separator = ",", before = "(", after = ")")) getOrElse EmptyFragment
+          val _params = params.headOption map (pms => pp(pms, separator = ", ", before = "(", after = ")")) getOrElse EmptyFragment
           val _parents = pp(parents)
           l ++ _params ++ pp(earlyBody) ++ _parents ++ p(self) ++ r
         
@@ -484,7 +496,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             tplStartLine == tplEndLine
           }
           
-          val params_ = params.headOption map (pms => pp(pms, separator = ",", after = Requisite.anywhere(")"))) getOrElse EmptyFragment
+          val params_ = params.headOption map (pms => pp(pms, separator = ", ", after = Requisite.anywhere(")"))) getOrElse EmptyFragment
           
           val preBody = l ++ params_ ++ pp(earlyBody) ++ pp(parents) ++ p(self)
           
@@ -592,22 +604,45 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def DefDef(tree: DefDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
       val nameTree = nameOf(tree)
       val modsAndName = pp(mods ::: nameTree :: Nil, separator = Requisite.Blank)
-      val parameters     = vparamss.map(vparams => pp(vparams, before = "(", separator = ",", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) 
-      val typeParameters = pp(tparams, before = "[", separator = ",", after = Requisite.anywhere("]"))
+      val parameters     = vparamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) 
+      val typeParameters = pp(tparams, before = "[", separator = ", ", after = Requisite.anywhere("]"))
       val body = p(rhs)
-            
-      val rhsResultIsUnit = body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
       
-      if(rhsResultIsUnit) {
-        l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ body ++ r
+      val resultType = {
+        val colon = new Requisite {
+          def isRequired(l: Layout, r: Layout) = {
+            !(l.contains(":") || r.contains(":"))
+          }
+          def getLayout = Layout(": ")
+        }
+        p(tpt, before = colon)
+      }
+            
+      def hasEqualInSource = {
+        val originalDefDef = orig(tree)
+        (originalDefDef :: children(originalDefDef)).filter(_.pos.isRange).reverse match {
+          case last :: secondlast :: _ =>
+            between(secondlast, last)(last.pos.source).contains("=")
+          case _ => false
+        }
+      }
+      
+      val noEqualNeeded = {
+        body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
+      }
+      
+      if(noEqualNeeded && !hasEqualInSource) {
+        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ body ++ r
       } else {
         
         val equals = new Requisite {
-          def isRequired(l: Layout, r: Layout) = !(l.contains("=") || r.contains("="))
+          def isRequired(l: Layout, r: Layout) = {
+            !(l.contains("=") || r.contains("="))
+          }
           def getLayout = Layout(" = ")
         }
         
-        l ++ modsAndName ++ typeParameters ++ parameters ++ p(tpt) ++ equals ++ body ++ r
+        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ equals ++ body ++ r
       }
     }
   }
@@ -617,7 +652,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def SuperConstructorCall(tree: SuperConstructorCall, clazz: global.Tree, args: List[global.Tree])(implicit ctx: PrintingContext) = {
       val after: Requisite = if(r.contains(")")) NoRequisite else ")"
-      l ++ p(clazz) ++ pp(args, separator = ",", before = "(", after = after) ++ r
+      l ++ p(clazz) ++ pp(args, separator = ", ", before = "(", after = after) ++ r
     }
 
     override def Super(tree: Super, qual: Name, mix: Name)(implicit ctx: PrintingContext) = {
@@ -693,9 +728,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def MultipleAssignment(tree: MultipleAssignment, extractor: Tree, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext) = {
       extractor match {
         case EmptyTree =>
-          l ++ pp(values, separator = ",") ++ ")" ++ p(rhs) ++ r
+          l ++ pp(values, separator = ", ") ++ ")" ++ p(rhs) ++ r
         case _ =>
-          l ++ p(extractor) ++ " = " ++ p(rhs) ++ r
+          l ++ "val " ++ p(extractor) ++ " = " ++ p(rhs) ++ r
       }
     }
 

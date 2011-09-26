@@ -34,6 +34,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
         def i = {
           _i
         }
+        
         def i_=(i: Int) = {
           _i = i
         }
@@ -56,6 +57,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
         def i = {
           _i
         }
+        
         def doNothing = () 
       }
     """

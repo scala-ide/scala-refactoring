@@ -145,17 +145,22 @@ trait PimpedTrees {
             else 
               new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
             
+            // it might be a quoted literal:
+            val pos2 = if(pos.start >= 0 && pos.start < pos.source.content.length && pos.source.content(pos.start) == '`') {
+              pos withEnd (pos.end + 2)
+            } else pos
+            
             if(t.mods.isSynthetic && t.pos.isTransparent) 
-              pos.makeTransparent
+              pos2.makeTransparent
             else
-              pos
+              pos2
               
           case t @ Select(qualifier: New, selector) if selector.toString == "<init>" =>
             t.pos withEnd t.pos.start
             
           case t @ Select(qualifier, selector) => 
-          
-            if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
+                      
+            if (selector.decode startsWith "unary_") /* e.g. !true */ {
               t.pos withEnd (t.pos.start + nameString.length)
             } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') /*`a`*/ {
               t.pos withStart t.pos.point
@@ -201,18 +206,13 @@ trait PimpedTrees {
       pos match {
         case NoPosition => NoPosition
         case _ =>
-                
-          // it might be a quoted literal:
-          val p2 = if(pos.start >= 0 && pos.start < pos.source.content.length && pos.source.content(pos.start) == '`') {
-            pos withEnd (pos.end + 2)
-          } else pos
-        
+                        
           // set all points to the start, keeping wrong points
           // around leads to the calculation of wrong lines
-          if(p2.isTransparent)
-            p2 withPoint p2.start makeTransparent
+          if(pos.isTransparent)
+            pos withPoint pos.start makeTransparent
           else
-            p2 withPoint p2.start
+            pos withPoint pos.start
       }
     }
 
@@ -300,7 +300,8 @@ trait PimpedTrees {
      * Returns the primary constructor of the template.
      */
     def primaryConstructor = t.body.filter {
-      case t: DefDef => t.symbol.isPrimaryConstructor || t.name.toString == nme.CONSTRUCTOR.toString
+      case t: DefDef => 
+        t.symbol.isPrimaryConstructor || (t.symbol == NoSymbol && t.name.toString == nme.CONSTRUCTOR.toString)
       case _ => false
     }
        
@@ -358,7 +359,11 @@ trait PimpedTrees {
           }
         }
         
-        val body = removeCompilerTreesForMultipleAssignment((tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains)) filter keepTree)
+        val body = {
+          val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains) 
+          val removeGeneratedTrees = bodyWithoutPrimaryConstructorAndArgs filter keepTree
+          removeCompilerTreesForMultipleAssignment(removeGeneratedTrees)
+        }
         
         val parents = (pimpedTpl.superConstructorParameters match {
           case Nil => tpl.parents
@@ -638,7 +643,7 @@ trait PimpedTrees {
   case class NameTree(name: global.Name) extends global.Tree {
     if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
     def nameString = {
-      if(pos.isRange && pos.source.content(pos.start) == '`') {
+      if(pos.isRange && pos.source.content(pos.start) == '`' && !name.toString.startsWith("`")) {
         "`"+ name.toString.trim +"`"
       } else {
         name.toString.trim 

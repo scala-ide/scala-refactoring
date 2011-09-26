@@ -555,5 +555,19 @@ trait FullPaths {
     """
   } applyRefactoring organize
   
+  @Test
+  def dontImportSystem = new FileSet {
+    """
+    class SystemTypeDef {
+      type S = System
+    }
+    """ becomes
+    """
+    class SystemTypeDef {
+      type S = System
+    }
+    """
+  } applyRefactoring organize
+  
   
 }

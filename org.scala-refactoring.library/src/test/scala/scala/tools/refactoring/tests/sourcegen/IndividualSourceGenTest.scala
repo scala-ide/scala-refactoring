@@ -132,6 +132,7 @@ trait tr[A] {
   
   def asd() {
   }
+  
   def member() = {
     ()
   }
@@ -911,7 +912,7 @@ class A(a: Int) {
     object primitive {
       def append[A](li1: List[A], li2: List[A]) = Nil
   
-       {
+      {
           val x = 1
           List("Def")
       }.append(List("asd"))
@@ -919,5 +920,106 @@ class A(a: Int) {
     }
     """, createText(result.get, Some(ast.pos.source)))
   }   
+  
+  @Test
+  def testRemoveAnArgument() {
+
+    val ast = treeFrom("""
+    trait tr {
+      def remove[A](elem: A, li: List[A]): List[A] = {
+        li.remove_if((x: A) => (elem equals x))
+      }
+    }
+    """)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef if (t.vparamss(0).size > 0) =>
+            val vparamss = List(List(t.vparamss(0).head))
+            t.copy(vparamss = vparamss) setPos t.pos
+        }
+      }
+    } apply (ast)
+
+    val changes = refactor(result.toList)
+    val res =
+      assertEquals(
+        """def remove[A](elem: A): List[A] = {
+        li.remove_if((x: A) => (elem equals x))
+      }""", changes.head.text)
+  }
+  
+   @Test
+  def testParentheses() {
+    val ast = treeFrom("""
+    package abc
+    trait tr[T] {
+      def remove[A](elem: A, li: List[A]): List[A] = {
+        li.remove((x: A) => (elem equals x))
+      }
+    }
+    """)
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef if (t.name == newTermName("remove")) =>
+            t.copy() replaces t
+        }
+      }
+    } apply (ast)
+
+    assertEquals("""
+    package abc
+    trait tr[T] {
+      def remove[A](elem: A, li: List[A]): List[A] = {
+        li.remove((x: A) => (elem equals x))
+      }
+    }
+    """, createText(result.get, Some(ast.pos.source)))
+  }
+   
+   @Test
+  def testFullQualifiedName() {
+    val str = """
+    package asd
+    object primitive {
+      def member[A](a:A, li:List[A]):Boolean = true
+      def has_no_duplicates[A](li: List[A]): Boolean = {
+        li.isEmpty || ((!member(li.head, li.tail)) && has_no_duplicates(li.tail))
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: Template =>
+            t.copy(body = t.body ::: List(t.body.last)) setPos t.pos
+          case t @ TypeApply(Select(name, qualifier), args) if (t.symbol.name == newTermName("member")) =>
+            val s = t.symbol.fullName
+            val qual = s.substring(0, s.lastIndexOf("."))
+            Select(
+              qualifier = Ident(name = newTypeName(qual)),
+              name = t.fun.asInstanceOf[Select].name)
+        }
+      }
+    } apply ast
+    val changes = refactor(result.toList)
+    val res1 = common.Change.applyChanges(changes, str)
+    assertEquals("""
+    package asd
+    object primitive {
+      def member[A](a:A, li:List[A]):Boolean = true
+      def has_no_duplicates[A](li: List[A]): Boolean = {
+        li.isEmpty || ((!(asd.primitive.member(li.head, li.tail))) && has_no_duplicates(li.tail))
+      }
+      def has_no_duplicates[A](li: List[A]): Boolean = {
+        li.isEmpty || ((!(asd.primitive.member(li.head, li.tail))) && has_no_duplicates(li.tail))
+      }
+    }
+    """, res1)
+  }
 }
 

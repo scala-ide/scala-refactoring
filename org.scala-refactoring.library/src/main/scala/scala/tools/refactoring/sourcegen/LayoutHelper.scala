@@ -81,6 +81,9 @@ trait LayoutHelper extends CommentHelpers {
 
   def splitLayoutBetweenParentAndFirstChild(child: Tree, parent: Tree): (Layout, Layout) = {
     
+    if(child.pos.isTransparent && parent.pos.isTransparent) 
+      return NoLayout → NoLayout
+    
     trace("splitting layout between parent %s and first child %s", parent.getClass.getSimpleName, child.getClass.getSimpleName)
     
     implicit val currentFile = child.pos.source
@@ -138,6 +141,9 @@ trait LayoutHelper extends CommentHelpers {
          
       case (p: Try, c) =>
         layout(p.pos.start, c.pos.start) splitAfter ('\n', '{')
+         
+      case (p: Function, c) =>
+        layout(p.pos.start, c.pos.start) splitBefore '('
          
       case (p: Import, c) =>
         layout(p.pos.start, p.pos.point) → NoLayout
@@ -247,6 +253,7 @@ trait LayoutHelper extends CommentHelpers {
   private val ClosingBrace = """(?ms)(.*?)\)(.*)""".r
   private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\r?\n.*)""".r
   private val Comma = """(.*?),(.*)""".r
+  private val CommaSpace = """(.*?), (.*)""".r
   private val NewLine = """(?ms)(.*?)(\r?\n.*)""".r
   private val ImportStatementNewline = """(?ms)(.*)(\r?\n.*?import.*)""".r
   private val ImportStatement = """(?ms)(.*)(.*?import.*)""".r
@@ -284,9 +291,10 @@ trait LayoutHelper extends CommentHelpers {
         case ImportStatement(l, r) => Some(l, r, "ImportStatement")
         case ClosingCurlyBrace(l, r)=> Some(l, r, "ClosingCurlyBrace")
         case NewLine(l, r)         => Some(l, r, "NewLine")
-        case Comma(l, r)           => Some(l, r, "Comma")
+        case CommaSpace(l, r)      => Some(l, r, "CommaSpace")
         case _                     => None
       }) orElse (layout match {
+        case Comma(l, r)           => Some(l, r, "Comma")
         case Dot(l, r)             => Some(l, r, "Dot")
         case s                     => Some(s, "", "NoMatch")
       }) get
@@ -321,15 +329,20 @@ trait LayoutHelper extends CommentHelpers {
               case _ => split(layout)
             }
           
-          case (l: ValOrDefDef, _, r: ValOrDefDef) => 
+          case (l: ValOrDefDef, _, r: ValOrDefDef) =>
+            val ClosingAndOpening = """(?ms)(.*?)\)(.*)\((.*)""".r
             layout match {
+              case CommaSpace(l, r)   => (l, r, "CommaSpace between ValDefs")
               case Comma(l, r)   => (l, r, "Comma between ValDefs")
               case NewLine(l, r) => (l, r, "NewLine between ValDefs")
+              case ClosingAndOpening(l, m, r) => (l, r, "Closing And Opening (")
               case _ => split(layout)
             }
           
           case (l, parent: ValOrDefDef, r) if r.samePos(parent.rhs) && layout.contains("=") =>
+            val EndOfParameterList = """(?ms)(.*?)(\)\s*=.*)""".r
             layout match {
+              case EndOfParameterList(l, r) => (l, r, "EndOfParameterList after ValOrDefDef")
               case Equals(l, r) => (l, r, "Equals after ValOrDefDef")
             }
             
