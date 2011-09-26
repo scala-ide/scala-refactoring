@@ -154,8 +154,8 @@ trait PimpedTrees {
             t.pos withEnd t.pos.start
             
           case t @ Select(qualifier, selector) => 
-          
-            if (qualifier.pos.isRange && qualifier.pos.start > t.pos.start && qualifier.pos.start >= t.pos.end) /* e.g. !true */ {
+                      
+            if (selector.decode startsWith "unary_") /* e.g. !true */ {
               t.pos withEnd (t.pos.start + nameString.length)
             } else if (t.pos.isRange && t.pos.source.content(t.pos.point) == '`') /*`a`*/ {
               t.pos withStart t.pos.point
