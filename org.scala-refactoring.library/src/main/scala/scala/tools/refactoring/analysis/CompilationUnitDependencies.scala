@@ -24,9 +24,12 @@ trait CompilationUnitDependencies {
       
       def checkIfQualifierIsNotDefaultImported = {
         val Scala = newTypeName("scala")
+        val Java = newTypeName("java")
+        val `lang` = newTermName("lang")
         t.qualifier match {
           case Ident(names.scala) => false
           case This(Scala) => false
+          case Select(This(Java), `lang`) => false
           case Select(Ident(names.scala), names.pkg) => false
           case Select(Ident(names.scala), names.Predef) => false
           case Select(This(Scala), names.Predef) => false
