@@ -627,5 +627,5 @@ class RenameTest extends TestHelper with TestRefactoring {
       val `my strange identifier 2` = `my strange identifier again`
     }
     """
-  } applyRefactoring(renameTo("my strange identifier again"))
+  } applyRefactoring(renameTo("`my strange identifier again`"))
 }

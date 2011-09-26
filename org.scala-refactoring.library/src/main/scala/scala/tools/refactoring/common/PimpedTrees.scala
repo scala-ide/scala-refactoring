@@ -640,7 +640,7 @@ trait PimpedTrees {
   case class NameTree(name: global.Name) extends global.Tree {
     if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
     def nameString = {
-      if(pos.isRange && pos.source.content(pos.start) == '`') {
+      if(pos.isRange && pos.source.content(pos.start) == '`' && !name.toString.startsWith("`")) {
         "`"+ name.toString.trim +"`"
       } else {
         name.toString.trim 
