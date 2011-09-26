@@ -123,6 +123,9 @@ trait LayoutHelper extends CommentHelpers {
       case (p: ValOrDefDef, c) =>
         layout(p.pos.start, p.namePosition.start) → NoLayout
         
+      case (p: Apply, c @ Select(n: New, _)) =>
+        (layout(p.pos.start, n.pos.point)) → NoLayout
+        
       case (p: Apply, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
         

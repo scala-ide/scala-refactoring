@@ -744,7 +744,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def New(tree: New, tpt: Tree)(implicit ctx: PrintingContext) = {
       if (tree.pos.start > tree.pos.point) {
-        l ++ p(tpt) ++ r
+        Fragment("new ") ++ l ++ p(tpt) ++ r
       } else {
         Fragment("new") ++ l ++ p(tpt) ++ r
       }
