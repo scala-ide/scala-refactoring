@@ -612,4 +612,20 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("X"))
+  
+  @Test
+  def renameIdentifierWithBackticks = new FileSet {
+    """
+    trait StrangeIdentifiers {
+      val /*(*/`my strange identifier`/*)*/ = "foo"
+      val `my strange identifier 2` = `my strange identifier`
+    }
+    """ becomes
+    """
+    trait StrangeIdentifiers {
+      val /*(*/`my strange identifier again`/*)*/ = "foo"
+      val `my strange identifier 2` = `my strange identifier again`
+    }
+    """
+  } applyRefactoring(renameTo("my strange identifier again"))
 }
