@@ -948,5 +948,34 @@ class A(a: Int) {
         li.remove_if((x: A) => (elem equals x))
       }""", changes.head.text)
   }
+  
+   @Test
+  def testParentheses() {
+    val ast = treeFrom("""
+    package abc
+    trait tr[T] {
+      def remove[A](elem: A, li: List[A]): List[A] = {
+        li.remove((x: A) => (elem equals x))
+      }
+    }
+    """)
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef if (t.name == newTermName("remove")) =>
+            t.copy() replaces t
+        }
+      }
+    } apply (ast)
+
+    assertEquals("""
+    package abc
+    trait tr[T] {
+      def remove[A](elem: A, li: List[A]): List[A] = {
+        li.remove((x: A) => (elem equals x))
+      }
+    }
+    """, createText(result.get, Some(ast.pos.source)))
+  }
 }
 

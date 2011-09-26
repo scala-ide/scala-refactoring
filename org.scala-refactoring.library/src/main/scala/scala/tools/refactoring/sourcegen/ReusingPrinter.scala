@@ -411,7 +411,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ pp(vparams) ++ (NL + indentation) ++ ppi(body, separator = newline) ++ r
           
         case _ =>
-          printChildren(tree)
+          val params = pp(vparams)
+          val bdy = p(body)
+          
+          if(r.contains(")")) {
+            l ++ pp(vparams) ++ "(" ++ p(body) ++ r
+          } else {
+            l ++ pp(vparams) ++ p(body) ++ r
+          }
       }
     }
   }
