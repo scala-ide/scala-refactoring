@@ -39,9 +39,9 @@ trait Requisite {
 
 object Requisite {
     
-  def allowSurroundingWhitespace(str: String): Requisite = {
+  def allowSurroundingWhitespace(req: String, toPrint: String): Requisite = {
     
-    val regexSafeString = str flatMap {
+    val regexSafeString = req flatMap {
       case '(' => "\\("
       case ')' => "\\)"
       case '{' => "\\{"
@@ -57,15 +57,21 @@ object Requisite {
         val isInRight = r.matches("(?ms)^\\s*"+ regexSafeString + ".*")
         !isInLeft && !isInRight
       }
-      def getLayout = Layout(regexSafeString.replace("\\", ""))
-    }
+      def getLayout = Layout(toPrint)
+    }    
   }
   
-  def anywhere(s: String) = new Requisite {
+  def allowSurroundingWhitespace(str: String): Requisite = {
+    allowSurroundingWhitespace(str, str)
+  }
+  
+  def anywhere(s: String): Requisite = anywhere(s, s)
+  
+  def anywhere(req: String, print: String): Requisite = new Requisite {
     def isRequired(l: Layout, r: Layout) = {
-      !(l.contains(s) || r.contains(s))
+      !(l.contains(req) || r.contains(req))
     }
-    def getLayout = Layout(s)
+    def getLayout = Layout(print)
   }
   
   val Blank = new Requisite {

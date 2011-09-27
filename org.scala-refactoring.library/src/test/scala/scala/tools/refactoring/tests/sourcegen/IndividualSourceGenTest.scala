@@ -1020,5 +1020,81 @@ class A(a: Int) {
     }
     """, res1)
   }
+   
+    @Test
+  def changeMethodInvocation3() {
+
+    val ast = treeFrom("""
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+      append(List("asd")
+          , List("Def"))
+    }
+    """)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+
+          case a: Apply if (a.args.length > 1) =>
+            val buf = a.args.toBuffer
+            val arg = buf(1)
+            buf.remove(1)
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = arg)
+            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+        }
+      }
+    } apply (ast)
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+      
+      List("Def").append(List("asd"))
+    }
+    """, createText(result.get, Some(ast.pos.source)))
+  }
+  
+  @Test
+  def testCopy() {
+    val str = """
+    object primitive {
+      def member[A](a:A, li:List[A]):Boolean = {
+        def f[B](li: List[B]) = {
+          true
+        }
+        f[A](li)
+        true
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef => t.copy()
+        }
+      }
+    } apply ast
+
+    val changes = refactor(result.toList)
+    val res1 = common.Change.applyChanges(changes, str)
+    assertEquals("""
+    object primitive {
+      def member[A](a:A, li:List[A]):Boolean = {
+        def f[B](li: List[B]) = {
+        true
+        }
+        f[A](li)
+        true
+      }
+    }
+    """, res1)
+  }
 }
 

@@ -343,7 +343,7 @@ trait LayoutHelper extends CommentHelpers {
             }
           
           case (l, parent: ValOrDefDef, r) if r.samePos(parent.rhs) && layout.contains("=") =>
-            val EndOfParameterList = """(?ms)(.*?)(\)\s*=.*)""".r
+            val EndOfParameterList = """(?ms)(.*?)\)(\s*=.*)""".r
             layout match {
               case EndOfParameterList(l, r) => (l, r, "EndOfParameterList after ValOrDefDef")
               case Equals(l, r) => (l, r, "Equals after ValOrDefDef")
@@ -361,8 +361,8 @@ trait LayoutHelper extends CommentHelpers {
          * We remove all leading or trailing commas, they always need to be re-introduced by the printers.
          */
         def removeLeadingOrTrailingComma(s: String) = {
-          val CommaAtStart = ",\\s?(.*)".r
-          val CommaAtEnd   = "(.*),\\s?".r
+          val CommaAtStart = "(?ms),\\s?(.*)".r
+          val CommaAtEnd   = "(?ms)(.*),\\s?".r
           s match {
             case CommaAtStart(rest) => rest
             case CommaAtEnd(rest) => rest

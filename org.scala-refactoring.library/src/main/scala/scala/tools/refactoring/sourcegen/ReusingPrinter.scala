@@ -604,19 +604,20 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def DefDef(tree: DefDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
       val nameTree = nameOf(tree)
       val modsAndName = pp(mods ::: nameTree :: Nil, separator = Requisite.Blank)
-      val parameters     = vparamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _) 
+      
+      val parameters = {
+        // The `)` is always removed from the layout, so if we have an empty
+        // parameter list and `()` in the source, we need to insert it here.
+        if(vparamss == List(List()) && modsAndName.asText.endsWith("(")) {
+          Fragment(")")
+        } else {
+          vparamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _)
+        }
+      }
+      
       val typeParameters = pp(tparams, before = "[", separator = ", ", after = Requisite.anywhere("]"))
       val body = p(rhs)
-      
-      val resultType = {
-        val colon = new Requisite {
-          def isRequired(l: Layout, r: Layout) = {
-            !(l.contains(":") || r.contains(":"))
-          }
-          def getLayout = Layout(": ")
-        }
-        p(tpt, before = colon)
-      }
+      val resultType = p(tpt, before = Requisite.anywhere(":", ": "))
             
       def hasEqualInSource = {
         val originalDefDef = orig(tree)
@@ -634,15 +635,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       if(noEqualNeeded && !hasEqualInSource) {
         l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ body ++ r
       } else {
-        
-        val equals = new Requisite {
-          def isRequired(l: Layout, r: Layout) = {
-            !(l.contains("=") || r.contains("="))
-          }
-          def getLayout = Layout(" = ")
-        }
-        
-        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ equals ++ body ++ r
+        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ Requisite.anywhere("=", " = ") ++ body ++ r
       }
     }
   }
