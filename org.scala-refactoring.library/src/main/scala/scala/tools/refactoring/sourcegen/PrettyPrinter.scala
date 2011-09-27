@@ -474,22 +474,38 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
       
       val tparams_ = {
-        pp(tparams, before = "[", after = anywhere("]"), separator = ", ").toLayout 
-        // toLayout this fragment so that the anywhere-requisite gets applied here
+        // Finalize this fragment so that the anywhere-requisite gets applied here
         // and does not match on ] that might come later (see testNewDefDefWithOriginalContent3
         // and testDefDefWithTypeParams).
+          pp(tparams, before = "[", after = anywhere("]"), separator = ", ").toLayout 
       }
       
       // if there's existing layout, the type parameter's layout might already contain "()"
-      val params = printParameterList(vparamss, tparams_.asText.matches(".*\\(.*\\).*"))
+      val params_ = printParameterList(vparamss, tparams_.asText.matches(".*\\(.*\\).*"))
       
       val rhs = if(tree.rhs == EmptyTree && !tree.symbol.isDeferred) {
         Fragment(" {"+ NL + ctx.ind.current +"}")
       } else {
-        p(tree.rhs, before = " = ")
+        p(tree.rhs, before = Requisite.allowSurroundingWhitespace("=", " = "))
       } 
       
-      Fragment(mods_ + tree.nameString) ++ tparams_ ++ params ++ p(tpt, before = ": ") ++ rhs         
+      val resultType = {
+        // The `:` has many places where it can hide, not just the adjoining layout,
+        // so we have to check several places: if the parameter list is empty, it could
+        // even be part of the tparams.
+        val colon = new Requisite {
+          def isRequired(l: Layout, r: Layout) = {
+            !(l.contains(":") || r.contains(":") || {
+              (tparams_.withoutComments + params_.withoutComments).matches(".*:\\s*")
+            })
+          }
+          def getLayout = Layout(": ")
+        }
+        // Finalize the layout so the `:` won't be searched in the rhs.
+        p(tpt, before = colon).toLayout
+      }
+      
+      Fragment(mods_ + tree.nameString) ++ tparams_ ++ params_ ++ resultType ++ rhs         
     }
   }
    
