@@ -1096,5 +1096,59 @@ class A(a: Int) {
     }
     """, res1)
   }
+  
+  @Test
+  def testCopy2() {
+    val str = """
+    package abc
+    case class Pair[A, B](a: A, b: B)
+    object primitive {
+      def divide[A](testpred: (A) => Boolean): Pair[List[A], List[A]] = {
+        null
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+    }
+    """
+    val ast = treeFrom(str)
+    var defdef: Tree = null
+
+    topdown(matchingChildren(
+      transform {
+        case t: DefDef if (t.name == newTermName("divide")) =>
+          defdef = t; t
+      })) apply ast
+
+    val res = topdown(matchingChildren(
+      transform {
+        case t: TypeTree if (t.nameString == "A") =>
+          mkRenamedTypeTree(t, "A1", t.symbol)
+      })) apply defdef
+
+    val result = topdown(matchingChildren(
+      transform {
+        case c: ClassDef if (c.name == newTypeName("tr")) =>
+          val t = c.impl
+          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+          c.copy(impl = templ) setPos c.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    case class Pair[A, B](a: A, b: B)
+    object primitive {
+      def divide[A](testpred: (A) => Boolean): Pair[List[A], List[A]] = {
+        null
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+      def divide[A](testpred: A => Boolean): Pair[List[A1], List[A1]] = {
+        null
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
 }
 

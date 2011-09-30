@@ -399,6 +399,17 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def SelfTypeTree(tree: SelfTypeTree, name: NameTree, types: List[Tree], orig: Tree)(implicit ctx: PrintingContext) = {
       l ++ p(name) ++ pp(types) ++ r
     }
+        
+    override def AppliedTypeTree(tree: AppliedTypeTree, tpt: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
+      tpt match {
+        case Select(_, name) if name.toString == "<repeated>" => 
+          l ++ p(args.head) ++ r
+        case _ if tpt.isEmpty && args.size == 1 =>
+          l ++ p(args.head) ++ r
+        case _ =>
+         l ++ p(tpt) ++ pp(args, before = "[", separator = ", ", after = "]") ++ r 
+      }
+    }
   }
 
   trait FunctionPrinters {
