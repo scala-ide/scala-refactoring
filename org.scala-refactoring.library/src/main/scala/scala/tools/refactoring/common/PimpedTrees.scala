@@ -123,6 +123,9 @@ trait PimpedTrees {
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case ValDef(_, _, _, Match(_, CaseDef(UnApply(_, (b: Bind) :: _), _, _) :: Nil)) if b.pos.isTransparent => 
+            // modify the position to remove the transparency..
+            b.pos withStart b.pos.start
           case t: ValOrDefDef =>
             
             val name = t.symbol match {
