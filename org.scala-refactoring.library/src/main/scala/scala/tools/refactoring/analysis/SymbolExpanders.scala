@@ -80,7 +80,6 @@ trait DependentSymbolExpanders {
     this: IndexLookup =>
     
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
-      
       case s @ (_: global.TypeSymbol | _: global.TermSymbol) if s.owner.isClass =>
       
         def allSubClasses(clazz: Symbol) = allDefinedSymbols.filter {

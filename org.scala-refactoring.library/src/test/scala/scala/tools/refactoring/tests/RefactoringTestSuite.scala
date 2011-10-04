@@ -18,6 +18,7 @@ import scala.tools.refactoring.implementations.MergeParameterLists
     classOf[ChangeParamOrderTest], 
     classOf[MergeParameterListsTest], 
     classOf[SplitParameterListsTest], 
+    classOf[MoveClassTest],
     classOf[DeclarationIndexTest], 
     classOf[MultipleFilesIndexTest], 
     classOf[NameValidationTest], 

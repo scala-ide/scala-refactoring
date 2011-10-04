@@ -77,18 +77,17 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   def withoutExistingCompanion = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanion
-
+      
       class /*(*/Foo/*)*/(val p: Int)
     """ becomes
     """
       package moveConstructorToCompanion.withoutExistingCompanion
-      
       object Foo {
         def apply(p: Int) = {
           new Foo(p)
         }
       }
-
+      
       class /*(*/Foo/*)*/(val p: Int)
     """
   } applyRefactoring(moveConstructorToCompanion)
@@ -265,7 +264,6 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """ becomes
     """
       package moveConstructorToCompanion.replaceConstructorCallsWithoutExistingCompanion
-      
       object Foo {
         def apply(p: Int) = {
           new Foo(p)

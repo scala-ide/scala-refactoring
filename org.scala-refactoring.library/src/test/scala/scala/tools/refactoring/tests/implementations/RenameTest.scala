@@ -1015,7 +1015,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("babar"))
-
+  
   @Test
   def renameClassWithThisConstuctorCall = new FileSet {
     """
@@ -1033,7 +1033,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("ConfigX"))
-
+  
   @Test
   def renameAbstractTypesInHierarchy = new FileSet {
     """

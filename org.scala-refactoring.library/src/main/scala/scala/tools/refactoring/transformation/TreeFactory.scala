@@ -119,7 +119,7 @@ trait TreeFactory {
         parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(s.tpe), EmptyTree)))
     }
 
-    DefDef(mods withPosition (Flags.METHOD, NoPosition), name, typeParameters, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
+    DefDef(mods withPosition (Flags.METHOD, NoPosition), newTermName(name), typeParameters, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
   }
 
   def mkBlock(trees: List[Tree]): Block = trees match {
