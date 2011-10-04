@@ -126,6 +126,9 @@ trait PimpedTrees {
           case ValDef(_, _, _, Match(_, CaseDef(UnApply(_, (b: Bind) :: _), _, _) :: Nil)) if b.pos.isTransparent => 
             // modify the position to remove the transparency..
             b.pos withStart b.pos.start
+          case ValDef(_, _, _, Match(_, CaseDef(Apply(_, (b: Bind) :: _), _, _) :: Nil)) if b.pos.isTransparent => 
+            // modify the position to remove the transparency..
+            b.pos withStart b.pos.start
           case t: ValOrDefDef =>
             
             val name = t.symbol match {
