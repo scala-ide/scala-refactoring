@@ -120,12 +120,24 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def valAnnotation = assertDependencies(
+  @ScalaVersion(matches="2.9")
+  def valAnnotation29 = assertDependencies(
     """java.lang.Object
        scala.reflect.BeanProperty
        scala.this.Predef.String""",
     """
       import scala.reflect.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.10")
+  def valAnnotation = assertDependencies(
+    """java.lang.Object
+       scala.beans.BeanProperty
+       scala.this.Predef.String""",
+    """
+      import scala.beans.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
       """)
       
@@ -145,12 +157,23 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def annotationRequiresImport = assertNeededImports(
+  @ScalaVersion(matches="2.9")
+  def annotationRequiresImport29 = assertNeededImports(
     """scala.reflect.BeanProperty""", 
     """
       import scala.reflect.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
-      """)    
+      """)
+
+  @Test
+  @ScalaVersion(matches="2.10")
+  def annotationRequiresImport = assertNeededImports(
+    """scala.beans.BeanProperty""", 
+    """
+      import scala.beans.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+      """)
+      
   @Test
   def classAttributeDeps = assertDependencies(
     """scala.collection.mutable.Map

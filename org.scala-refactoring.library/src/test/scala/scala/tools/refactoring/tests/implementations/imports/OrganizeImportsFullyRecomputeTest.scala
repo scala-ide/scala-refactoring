@@ -434,13 +434,27 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
   
   @Test
-  def annotation = new FileSet {
+  @ScalaVersion(matches="2.9")
+  def annotation29 = new FileSet {
     """
       import scala.reflect.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """ becomes
     """
       import scala.reflect.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    """
+  } applyRefactoring organize
+  
+  @Test
+  @ScalaVersion(matches="2.10")
+  def annotation = new FileSet {
+    """
+      import scala.beans.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    """ becomes
+    """
+      import scala.beans.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """
   } applyRefactoring organize
