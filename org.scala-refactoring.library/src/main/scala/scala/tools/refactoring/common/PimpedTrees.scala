@@ -117,17 +117,28 @@ trait PimpedTrees {
      * Can also return NoPosition if the tree does not have a name.
      */
     def namePosition(): Position = {
+      
+      // TODO convert to an extractor, but there seems to be a strange problem with 2.10
+      def hasSingleBindWithTransparentPosition(ts: List[Tree]) = ts.collect {
+        case b: Bind => b
+      } match {
+        case x :: Nil => x.pos.isTransparent
+        case _ => false
+      }
+      
       val pos = try {
         t match {
           case t if t.pos == NoPosition => NoPosition
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-          case ValDef(_, _, _, Match(_, CaseDef(UnApply(_, (b: Bind) :: _), _, _) :: Nil)) if b.pos.isTransparent => 
+          case ValDef(_, _, _, Match(_, CaseDef(UnApply(_, args), _, _) :: Nil)) if hasSingleBindWithTransparentPosition(args) => 
             // modify the position to remove the transparency..
+            val b = args.collect{case t: Bind => t}.head 
             b.pos withStart b.pos.start
-          case ValDef(_, _, _, Match(_, CaseDef(Apply(_, (b: Bind) :: _), _, _) :: Nil)) if b.pos.isTransparent => 
+          case ValDef(_, _, _, Match(_, CaseDef(Apply(_, args), _, _) :: Nil)) if hasSingleBindWithTransparentPosition(args) => 
             // modify the position to remove the transparency..
+            val b = args.collect{case t: Bind => t}.head
             b.pos withStart b.pos.start
           case t: ValOrDefDef =>
             
