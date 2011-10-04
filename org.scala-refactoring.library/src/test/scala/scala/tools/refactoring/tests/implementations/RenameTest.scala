@@ -628,6 +628,18 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("`my strange identifier again`"))
+  
+  @Test
+  def renameClassWithBackTicks = new FileSet {
+    """
+    package renameClassWithBackTicks
+    /*(*/  class `A` { new `A` } /*)*/
+    """ becomes
+    """
+    package renameClassWithBackTicks
+    /*(*/  class `X Y` { new `X Y` } /*)*/
+    """
+  } applyRefactoring(renameTo("`X Y`"))
 
   @Test
   def renameTypeParamInSecondConstructor = new FileSet {

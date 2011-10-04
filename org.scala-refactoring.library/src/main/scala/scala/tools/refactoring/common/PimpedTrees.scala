@@ -161,16 +161,11 @@ trait PimpedTrees {
               t.pos withEnd t.pos.point
             else 
               new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
-            
-            // it might be a quoted literal:
-            val pos2 = if(pos.start >= 0 && pos.start < pos.source.content.length && pos.source.content(pos.start) == '`') {
-              pos withEnd (pos.end + 2)
-            } else pos
-            
+
             if(t.mods.isSynthetic && t.pos.isTransparent) 
-              pos2.makeTransparent
+              pos.makeTransparent
             else
-              pos2
+              pos
               
           case t @ Select(qualifier: New, selector) if selector.toString == "<init>" =>
             t.pos withEnd t.pos.start
@@ -223,13 +218,23 @@ trait PimpedTrees {
       pos match {
         case NoPosition => NoPosition
         case _ =>
+          
+          // it might be a quoted literal:
+          val pos2 = {
+            val src = pos.source.content
+            if(pos.start >= 0 && pos.start < src.length && src(pos.start) == '`') {
+              val startSearchForClosingTick = pos.start + 1
+              val literalLength = src.slice(startSearchForClosingTick, src.length).takeWhile(_ != '`').length
+              pos withEnd (pos.start + literalLength + "``".length)
+            } else pos
+          }
                         
           // set all points to the start, keeping wrong points
           // around leads to the calculation of wrong lines
-          if(pos.isTransparent)
-            pos withPoint pos.start makeTransparent
+          if(pos2.isTransparent)
+            pos2 withPoint pos2.start makeTransparent
           else
-            pos withPoint pos.start
+            pos2 withPoint pos2.start
       }
     }
 
