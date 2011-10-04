@@ -1124,6 +1124,8 @@ class A(a: Int) {
       transform {
         case t: TypeTree if (t.nameString == "A") =>
           mkRenamedTypeTree(t, "A1", t.symbol)
+        case t: TypeDef if (t.nameString == "A") =>
+          mkRenamedSymTree(t, "A1")
       })) apply defdef
 
     val result = topdown(matchingChildren(
@@ -1144,11 +1146,66 @@ class A(a: Int) {
     }
     trait tr[A] {
       self: List[A] =>
-      def divide[A](testpred: A => Boolean): Pair[List[A1], List[A1]] = {
+      def divide[A1](testpred: (A1) => Boolean): Pair[List[A1], List[A1]] = {
         null
       }
     }
     """, common.Change.applyChanges(refactor(result.toList), str))
   }
-}
+  
+  @Test
+  def testCopy3() {
+    val str = """
+    package abc
+    object primitive {
+      def reduce1[A1, A](fu: (A1, A) => A1, li: List[A], init: A1) = init
+      def member_test[A1, B](x: A1, li: List[B], testp: (A1, B) => Boolean): Boolean = {
+        reduce1((b: Boolean, xli: B) => b, li, false)
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+    }
+    """
+    val ast = treeFrom(str)
+    var defdef: Tree = null
 
+    topdown(matchingChildren(
+      transform {
+        case t: DefDef if (t.name == newTermName("member_test")) =>
+          defdef = t; t
+      })) apply ast
+
+    val res = topdown(matchingChildren(
+      transform {
+        case t: TypeTree if (t.nameString == "B") =>
+          mkRenamedTypeTree(t, "B1", t.symbol)
+        case t: TypeDef if (t.nameString == "B") =>
+          mkRenamedSymTree(t, "B1")
+      })) apply defdef
+
+    val result = topdown(matchingChildren(
+      transform {
+        case c: ClassDef if (c.name == newTypeName("tr")) =>
+          val t = c.impl
+          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+          c.copy(impl = templ) setPos c.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def reduce1[A1, A](fu: (A1, A) => A1, li: List[A], init: A1) = init
+      def member_test[A1, B](x: A1, li: List[B], testp: (A1, B) => Boolean): Boolean = {
+        reduce1((b: Boolean, xli: B) => b, li, false)
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+      def member_test[A1, B1](x: A1, li: List[B1], testp: (A1, B1) => Boolean): Boolean = {
+        reduce1((b: Boolean, xli: B1) => b, li, false)
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
+}

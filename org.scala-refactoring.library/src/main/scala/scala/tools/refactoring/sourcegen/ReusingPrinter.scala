@@ -379,7 +379,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         
       } else {
         tree.tpe match {
-          case typeRef @ TypeRef(tpe, sym, parents) if definitions.isFunctionType(typeRef) && !parents.isEmpty =>
+          case typeRef @ TypeRef(tpe, sym, parents) if tree.original == null && definitions.isFunctionType(typeRef) && !parents.isEmpty =>
             l ++ typeToString(tree, typeRef) ++ r
           case _ => 
             l ++ p(tree.original) ++ r
@@ -401,11 +401,29 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
         
     override def AppliedTypeTree(tree: AppliedTypeTree, tpt: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
+      
+      def printFunctionType() = {
+        if(args.size == 1) {
+          l ++ "() => " ++ p(args.head) ++ r
+        } else if(args.size == 2) {
+          val x = p(args.head)
+          l ++ p(args.head) ++ p(args.last) ++ r
+        } else  {
+          val arguments = args.init
+          val ret = args.last
+          l ++ pp(arguments, before = "(", separator = ", ", after = Requisite.anywhere(")")) ++ p(ret) ++ r
+        }        
+      }
+      
       tpt match {
         case Select(_, name) if name.toString == "<repeated>" => 
           l ++ p(args.head) ++ r
         case _ if tpt.isEmpty && args.size == 1 =>
           l ++ p(args.head) ++ r
+        case Select(_, name) if name.toString.matches("Function\\d+") =>
+          printFunctionType()
+        case EmptyTree =>
+          printFunctionType()
         case _ =>
          l ++ p(tpt) ++ pp(args, before = "[", separator = ", ", after = "]") ++ r 
       }
@@ -422,13 +440,13 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ pp(vparams) ++ (NL + indentation) ++ ppi(body, separator = newline) ++ r
           
         case _ =>
-          val params = pp(vparams)
+          val params = pp(vparams, separator = ", ")
           val bdy = p(body)
           
           if(r.contains(")")) {
-            l ++ pp(vparams) ++ "(" ++ p(body) ++ r
+            l ++ params ++ "(" ++ p(body) ++ r
           } else {
-            l ++ pp(vparams) ++ p(body) ++ r
+            l ++ params ++ p(body) ++ r
           }
       }
     }
