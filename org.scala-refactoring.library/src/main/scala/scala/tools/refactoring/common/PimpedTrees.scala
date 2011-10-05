@@ -118,13 +118,22 @@ trait PimpedTrees {
      * Can also return NoPosition if the tree does not have a name.
      */
     def namePosition(): Position = {
-      
+
       // TODO convert to an extractor, but there seems to be a strange problem with 2.10
-      def hasSingleBindWithTransparentPosition(ts: List[Tree]) = ts.collect {
-        case b: Bind => b
-      } match {
-        case x :: Nil => x.pos.isTransparent
-        case _ => false
+      def findAllBinds(ts: List[Tree]): List[Tree] = {
+        ts.collect {
+          case b: Bind => List(b)
+          case UnApply(_, args) => findAllBinds(args)
+          case Apply(_, args) => findAllBinds(args)
+          case _ => Nil
+        }.flatten
+      }
+      
+      def hasSingleBindWithTransparentPosition(ts: List[Tree]) = {
+        findAllBinds(ts) match {
+          case x :: Nil => x.pos.isTransparent
+          case _ => false
+        }
       }
       
       val pos = try {
@@ -135,11 +144,11 @@ trait PimpedTrees {
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case ValDef(_, _, _, Match(_, CaseDef(UnApply(_, args), _, _) :: Nil)) if hasSingleBindWithTransparentPosition(args) => 
             // modify the position to remove the transparency..
-            val b = args.collect{case t: Bind => t}.head 
+            val b = findAllBinds(args).head 
             b.pos withStart b.pos.start
           case ValDef(_, _, _, Match(_, CaseDef(Apply(_, args), _, _) :: Nil)) if hasSingleBindWithTransparentPosition(args) => 
             // modify the position to remove the transparency..
-            val b = args.collect{case t: Bind => t}.head
+            val b = findAllBinds(args).head
             b.pos withStart b.pos.start
           case t: ValOrDefDef =>
             
