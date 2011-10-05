@@ -591,7 +591,7 @@ trait FullPaths {
     package a.b.c
     object TestImplicits {
       implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
-    }""")
+    }""");
     
     """
     package a.b.c
