@@ -584,4 +584,31 @@ trait FullPaths {
   } applyRefactoring organize
   
   
+  @Test
+  def importFromSamePackage = new FileSet {
+    
+    addToCompiler("testimplicits", """
+    package a.b.c
+    object TestImplicits {
+      implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
+    }""")
+    
+    """
+    package a.b.c
+    import TestImplicits._
+
+    object Tester {
+      "":Array[Byte]
+    }
+    """ becomes
+    """
+    package a.b.c
+    import a.b.c.TestImplicits.stringToBytes
+
+    object Tester {
+      "":Array[Byte]
+    }
+    """
+  } applyRefactoring organize
+  
 }

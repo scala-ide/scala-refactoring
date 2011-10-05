@@ -772,5 +772,18 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         def read() = in.read()
       }
     """)
+    
+  @Test
+  def implicitDef = assertDependencies(
+    "scala.this.Predef.byteArrayOps",
+    """class ImplicitDef {
+
+      val readBuffer = Array.ofDim[Byte](1024)
+      val dataId: (Byte, Byte) = readBuffer.slice(0, 2)
+
+      implicit def arrayTo2Tuple[T](a: Array[T]): (T, T) = {
+        (a(0), a(1))
+      }
+    }""")
 }
 

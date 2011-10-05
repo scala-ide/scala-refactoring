@@ -180,7 +180,11 @@ trait CompilationUnitDependencies {
             case t: Select => true
             case _ => false
           } foreach {
-            case t: Select => foundPotentialTree(t)
+            case Select(This(_), _) =>
+              // the implicit conversion is available from `X.this`, so
+              // we don't need to import it.
+            case t: Select => 
+              foundPotentialTree(t)
           }
           
           t.args foreach traverse
