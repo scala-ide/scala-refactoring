@@ -775,4 +775,26 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(renameTo("c"))
 
+  @Test
+  def renameSingleVariableDeconstructingAssignment6 = new FileSet {
+    """
+    package renameSingleVariableDeconstructingAssignment6
+    class A {
+      def print {
+        val List(/*(*/a/*)*/: Int) = List(42)
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameSingleVariableDeconstructingAssignment6
+    class A {
+      def print {
+        val List(/*(*/c/*)*/: Int) = List(42)
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+
 }

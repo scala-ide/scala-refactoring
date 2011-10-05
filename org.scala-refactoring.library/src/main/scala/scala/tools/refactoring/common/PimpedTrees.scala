@@ -142,14 +142,13 @@ trait PimpedTrees {
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-          case ValDef(_, _, _, Match(_, CaseDef(UnApply(_, args), _, _) :: Nil)) if hasSingleBindWithTransparentPosition(args) => 
+          case ValDef(_, _, _, Match(_, CaseDef(unapply: UnApply , _, _) :: Nil)) if hasSingleBindWithTransparentPosition(unapply.args) => 
             // modify the position to remove the transparency..
-            val b = findAllBinds(args).head 
-            b.pos withStart b.pos.start
-          case ValDef(_, _, _, Match(_, CaseDef(Apply(_, args), _, _) :: Nil)) if hasSingleBindWithTransparentPosition(args) => 
-            // modify the position to remove the transparency..
-            val b = findAllBinds(args).head
-            b.pos withStart b.pos.start
+            val b = findAllBinds(unapply.args).head 
+            b.pos withEnd b.namePosition.end
+          case ValDef(_, _, _, Match(_, CaseDef(apply: Apply, _, _) :: Nil)) if hasSingleBindWithTransparentPosition(apply.args) =>
+            val b = findAllBinds(apply.args).head
+            b.pos withEnd b.namePosition.end
           case t: ValOrDefDef =>
             
             val name = t.symbol match {
