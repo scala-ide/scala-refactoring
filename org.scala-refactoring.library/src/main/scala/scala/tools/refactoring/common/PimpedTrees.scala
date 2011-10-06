@@ -93,10 +93,14 @@ trait PimpedTrees {
    * @param name The name of an ImportSelector of the import.
    */
   def findSymbolForImportSelector(expr: Tree, name: Name): Option[Symbol] = {
-    val candidates = expr.tpe.members find { sym =>
+    val candidates = expr.tpe.members filter { sym =>
       name.toString == sym.name.toString
     }
-    candidates find { s => s.isClass || s.isTrait } orElse candidates.headOption
+    // There are sometimes multiple candidate symbols with the correct name; e.g. a class and an object symbol.
+    // This picks one which is most useful for semantic highlighting:
+    (candidates find { _.isCase }) orElse
+      (candidates find { s => s.isClass || s.isTrait }) orElse
+      candidates.headOption
   }
   
   implicit def importToImportSelectorTreeExtractor(t: global.Import) = new ImportSelectorTreeExtractor(t)
