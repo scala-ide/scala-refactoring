@@ -82,6 +82,13 @@ trait PimpedTrees {
       }
     }    
   }
+    
+  /**
+   * Takes a name and wraps it in `` if the name corresponds to a Scala keyword.
+   */
+  def escapeScalaKeywordsForImport(n: Name) = {
+    if(global.nme.keywords.contains(n) && n != nme.USCOREkw) "`"+ n.toString +"`" else n.toString
+  }
 
   /**
    * Searches for a Symbol of a name in the type members of a tree.

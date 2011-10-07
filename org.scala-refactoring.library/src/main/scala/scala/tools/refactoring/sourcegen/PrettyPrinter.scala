@@ -167,13 +167,13 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           p(qualifier)
         
         case (qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
-          Fragment(tree.symbol.nameString)
+          Fragment(escapeScalaKeywordsForImport(tree.symbol.nameString))
           
         case (qualifier, selector) if (selector.toString == "unapply" || selector.toString == "unapplySeq") =>
           p(qualifier)
           
         case _ =>
-          p(qualifier, after = ".") ++ Fragment(tree.nameString)   
+          p(qualifier, after = ".") ++ Fragment(escapeScalaKeywordsForImport(tree.nameString))   
       }    
     }
     
@@ -327,10 +327,11 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       val needsBraces = selectors.size > 1 || tree.selectors.exists(renames)
       
       def ss = (tree.selectors map { s =>
-        if(renames(s))
-          s.name.toString + " => " + s.rename.toString  
-        else
-          s.name.toString
+        escapeScalaKeywordsForImport(s.name) + {
+          if(renames(s))
+            " => " + escapeScalaKeywordsForImport(s.rename)  
+          else ""
+        }
       } mkString ", ")
       
       expr match {

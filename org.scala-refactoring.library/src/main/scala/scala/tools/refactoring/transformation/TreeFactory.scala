@@ -50,11 +50,7 @@ trait TreeFactory {
   
   def mkImportFromStrings(qualifier: String, name: String) = {
     def mapPackageNames(qualifier: String) = {
-      qualifier.split("\\.").map(escapeScalaKeywords).mkString(".")
-    }
-    
-    def escapeScalaKeywords(s: String) = {
-      if(global.nme.keywords.contains(s.toTermName)) "`"+ s +"`" else s
+      qualifier.split("\\.").map(s => escapeScalaKeywordsForImport(s.toTermName)).mkString(".")
     }
     
     new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(name, -1, name, -1) :: Nil)

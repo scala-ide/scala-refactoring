@@ -583,7 +583,6 @@ trait FullPaths {
     """
   } applyRefactoring organize
   
-  
   @Test
   def importFromSamePackage = new FileSet {
     
@@ -611,4 +610,32 @@ trait FullPaths {
     """
   } applyRefactoring organize
   
+  
+  @Test
+  def importedPackageHasKeywordName = new FileSet {
+    
+    addToCompiler("testkeyword", """
+    package other
+    package `type`
+    object `implicit` {
+      val x = 42
+    }""");
+    
+    """
+    package a.b.c
+    import other.`type`.`implicit`
+
+    object Tester {
+      val x = `implicit`.x
+    }
+    """ becomes
+    """
+    package a.b.c
+    import other.`type`.`implicit`
+
+    object Tester {
+      val x = `implicit`.x
+    }
+    """
+  } applyRefactoring organize
 }
