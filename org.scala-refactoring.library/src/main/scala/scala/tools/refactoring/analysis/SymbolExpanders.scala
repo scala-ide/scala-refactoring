@@ -61,7 +61,18 @@ trait DependentSymbolExpanders {
   }
   
   trait Companion extends SymbolExpander {    
-    abstract override def expand(s: Symbol) = super.expand(s) ++ List(s.companionSymbol)
+    abstract override def expand(s: Symbol) = {
+      s.companionSymbol :: super.expand(s)
+    }
+  }
+  
+  trait LazyValAccessor extends SymbolExpander {    
+    abstract override def expand(s: Symbol) = s match {
+      case ts: TermSymbol if ts.isLazy =>
+        ts.lazyAccessor :: super.expand(s)
+      case _ => 
+        super.expand(s)
+    }
   }
   
   trait OverridesInClassHierarchy extends SymbolExpander {

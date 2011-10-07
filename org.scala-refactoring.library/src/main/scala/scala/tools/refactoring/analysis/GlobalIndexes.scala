@@ -26,6 +26,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           SuperConstructorParameters with
           Companion with
           SameSymbolPosition with
+          LazyValAccessor with
           OverridesInClassHierarchy {
         val cus = compilationUnits
       }

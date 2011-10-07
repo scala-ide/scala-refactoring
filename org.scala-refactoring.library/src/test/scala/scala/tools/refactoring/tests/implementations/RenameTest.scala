@@ -91,6 +91,28 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("b"))
+  
+  @Test
+  def renameLazyValFromDefinition = new FileSet {
+    """
+    package renameLazyVals
+    class A {
+      def print {
+        lazy val /*(*/a/*)*/ = 42
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameLazyVals
+    class A {
+      def print {
+        lazy val /*(*/c/*)*/ = 42
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
         
   @Test
   def renameParameter = new FileSet {
