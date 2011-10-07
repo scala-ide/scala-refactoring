@@ -831,4 +831,17 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(renameTo("b"))
 
+  
+  @Test
+  @Ignore
+  def renameSuperclassAtEndOfFile = new FileSet {
+    """
+    class /*(*/Bar/*)*/
+    class Foo extends Bar""" becomes
+    """
+    class /*(*/Baz/*)*/
+    class Foo extends Baz"""   
+  } applyRefactoring(renameTo("Baz"))
+
+  
 }
