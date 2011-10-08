@@ -831,7 +831,6 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("b"))
 
   @Test
-  @Ignore
   def renameClassParameterPassedIntoSuperClassWithExpression2 = new FileSet {
     """
     package renameClassParameterPassedIntoSuperClassWithExpression2

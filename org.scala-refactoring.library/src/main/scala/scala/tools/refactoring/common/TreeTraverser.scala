@@ -229,7 +229,12 @@ trait TreeTraverser {
               case _ => false
             } foreach { superArg =>
 
-              constrParamAccessors.find(_.name == superArg.symbol.name) foreach { sym =>
+              constrParamAccessors.find { param =>
+                // trim because the name might have a trailing ' ' when it's a val or var
+                val n1 = param.name.toString.trim
+                val n2 = superArg.symbol.name.toString
+                n1 == n2
+              } foreach { sym =>
                 f(sym, superArg)
               }
 
