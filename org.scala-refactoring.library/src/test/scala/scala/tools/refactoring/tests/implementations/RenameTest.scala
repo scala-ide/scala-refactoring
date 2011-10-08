@@ -833,12 +833,13 @@ class RenameTest extends TestHelper with TestRefactoring {
 
   
   @Test
-  @Ignore
   def renameSuperclassAtEndOfFile = new FileSet {
     """
+    package renameSuperclassAtEndOfFile
     class /*(*/Bar/*)*/
     class Foo extends Bar""" becomes
     """
+    package renameSuperclassAtEndOfFile
     class /*(*/Baz/*)*/
     class Foo extends Baz"""   
   } applyRefactoring(renameTo("Baz"))
