@@ -554,71 +554,94 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       
       val o = orig(tree).asInstanceOf[If]
       
-          val _else = {
+      val _else = {
+        
+        /*
+         * Printing the else branch is tricky because of how {} are handled in the AST,
+         * but only if the else branch already existed:
+         */
+        val elseBranchAlreadyExisted = keepTree(o.elsep) && o.elsep.pos.isRange
+        
+        if(elseBranchAlreadyExisted) {
+          
+          val layout = between(o.thenp, o.elsep)(o.pos.source).asText
+          val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*?\r?\n\\s*$", "else "))
+          
+          val curlyBracesAlreadyExist = layout.contains("{")
+          val originalElseHasNoBlock = !o.elsep.isInstanceOf[Block]
+          
+          elsep match {
             
             /*
-             * Printing the else branch is tricky because of how {} are handled in the AST,
-             * but only if the else branch already existed:
-             */
-            val elseBranchAlreadyExisted = keepTree(o.elsep) && o.elsep.pos.isRange
+             * The existing else branch was enclosed by {} but contained only a single
+             * statement.
+             * */
+            case BlockExtractor(body) if originalElseHasNoBlock && curlyBracesAlreadyExist =>
+              pp(body, before = l, separator = Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL))
             
-            if(elseBranchAlreadyExisted) {
-              
-              val layout = between(o.thenp, o.elsep)(o.pos.source).asText
-              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*?\r?\n\\s*$", "else "))
-              
-              val curlyBracesAlreadyExist = layout.contains("{")
-              val originalElseHasNoBlock = !o.elsep.isInstanceOf[Block]
-              
-              elsep match {
-                
-                /*
-                 * The existing else branch was enclosed by {} but contained only a single
-                 * statement.
-                 * */
-                case BlockExtractor(body) if originalElseHasNoBlock && curlyBracesAlreadyExist =>
-                  pp(body, before = l, separator = Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL))
-                
-                /*
-                 * If there was no block before and also no curly braces, we have to write
-                 * them now (indirectly through the Block), but we don't want to add any
-                 * indentation.
-                 * */
-                case elsep: Block =>
-                  outer.print(elsep, ctx) ifNotEmpty (_ ++ (NoRequisite, l))
-  
-                /* If it's a single statements, we print it indented: */
-                case _ => 
-                  pi(elsep, before = Requisite.anywhere(layout))
-              }
-  
-            } else {
-              val l = newline ++ "else" ++ Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL)
-              pi(elsep, before = l)
-            }
-          }
-          
-          val _cond = p(cond, before = "(", after = Requisite.anywhere(")"))
-          
-          val _then = thenp match {
-            case block: Block =>
-              p(block)
-            case _ if keepTree(o.thenp) && o.thenp.pos.isRange =>
-              val layout = between(o.cond, o.thenp)(o.pos.source).asText
-              val printedThen = pi(thenp)
-              
-              if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
-                val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
-                pi(thenp, before = Requisite.anywhere(right))
-              } else {
-                pi(thenp)
-              }
-              
+            /*
+             * If there was no block before and also no curly braces, we have to write
+             * them now (indirectly through the Block), but we don't want to add any
+             * indentation.
+             * */
+            case elsep: Block =>
+              outer.print(elsep, ctx) ifNotEmpty (_ ++ (NoRequisite, l))
+
+            /* If it's a single statements, we print it indented: */
             case _ => 
-              pi(thenp)
+              pi(elsep, before = Requisite.anywhere(layout))
+          }
+
+        } else {
+          val l = newline ++ "else" ++ Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL)
+          pi(elsep, before = l)
+        }
+      }
+      
+      def balanceParens(f: Fragment) = Fragment {
+        val txt = f.toLayout.withoutComments // TODO also without strings, etc.
+        val opening = txt.count(_ == '(')
+        val closing = txt.count(_ == ')')
+        if(opening > closing) {
+          f.asText + (")" * (opening - closing))
+        } else if(opening < closing) {
+          ("(" * (closing - opening)) + f.asText
+        } else {
+          f.asText
+        }
+      }
+      
+      val _cond = balanceParens {
+        l ++ p(cond, before = "(", after = Requisite.anywhere(")"))
+      }
+      
+      val _then = thenp match {
+        case block: Block =>
+          p(block)
+        case _ if keepTree(o.thenp) && o.thenp.pos.isRange =>
+          val layout = between(o.cond, o.thenp)(o.pos.source).asText
+          val printedThen = pi(thenp)
+          
+          def condAndThenOnSameLine = (cond.pos, thenp.pos) match {
+            case (NoPosition, _) => false
+            case (_, NoPosition) => true // if there's a block, it will get caught earlier
+            case (p1, p2) => p1.line == p2.line
           }
           
-          l ++ _cond ++ _then ++ _else ++ r
+          if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
+            val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
+            pi(thenp, before = Requisite.anywhere(right))
+          } else if (condAndThenOnSameLine) {
+            p(thenp, before = " ")
+          } else {
+            pi(thenp)
+          }
+          
+        case _ => 
+          pi(thenp)
+      }
+      
+      _cond ++ _then ++ _else ++ r
     }
   }
 

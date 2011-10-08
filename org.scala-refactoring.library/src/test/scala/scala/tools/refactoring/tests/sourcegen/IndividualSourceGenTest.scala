@@ -1208,4 +1208,35 @@ class A(a: Int) {
     }
     """, common.Change.applyChanges(refactor(result.toList), str))
   }
+   
+  @Test
+  def testCopy4() {
+    val str = """
+    package abc
+    object primitive {
+      def fail() = {}
+      def foo(f: Int): Boolean = {
+        if((f == 0)) fail
+        else false
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown(matchingChildren(
+      transform {
+        case t: Apply if (t.fun.nameString == "fail") => t.copy()
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def fail() = {}
+      def foo(f: Int): Boolean = {
+        if((f == 0)) fail()
+        else false
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
 }
