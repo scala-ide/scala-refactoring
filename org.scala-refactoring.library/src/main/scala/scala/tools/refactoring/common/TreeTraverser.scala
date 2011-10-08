@@ -224,17 +224,21 @@ trait TreeTraverser {
 
             val constrParamAccessors = t.symbol.constrParamAccessors
             
-            Option(superArg.symbol) foreach { superArgSymbol =>
-              constrParamAccessors.find(_.name == superArgSymbol.name) foreach { sym =>
+            superArg filter {
+              case i: Ident => true
+              case _ => false
+            } foreach { superArg =>
+
+              constrParamAccessors.find(_.name == superArg.symbol.name) foreach { sym =>
                 f(sym, superArg)
               }
 
               val constructorParameters = t.impl.constructorParameters
               
-              constructorParameters.find(_.name == superArgSymbol.name) foreach { t =>
+              constructorParameters.find(_.name == superArg.symbol.name) foreach { t =>
                 // we also add a reference from the super argument's symbol to the 
                 // constructor parameter accessor
-                f(superArgSymbol, t)
+                f(superArg.symbol, t)
               }
               
             }

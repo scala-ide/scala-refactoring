@@ -359,9 +359,11 @@ trait PimpedTrees {
      * Returns the trees that are passed to a super constructor call.
      */
     def superConstructorParameters = t.body.collect {
-      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => stats collect {
-        case Apply(_, args) => args
-      } flatten
+      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => 
+        stats collect {
+          case Apply(_, args) => 
+            args
+        } flatten
     } flatten
   }
   
@@ -408,8 +410,10 @@ trait PimpedTrees {
         }
         
         val parents = (pimpedTpl.superConstructorParameters match {
-          case Nil => tpl.parents
-          case params => SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
+          case Nil => 
+            tpl.parents
+          case params => 
+            SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
         }) filterNot (_.isEmpty) filter {
           // objects are always serializable, but the Serializable parent's position is NoPosition
           case t: TypeTree if t.pos == NoPosition && t.nameString == "Serializable" => false

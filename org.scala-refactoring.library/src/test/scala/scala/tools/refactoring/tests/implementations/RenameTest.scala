@@ -821,13 +821,12 @@ class RenameTest extends TestHelper with TestRefactoring {
 
 
   @Test
-  @Ignore
   def renameClassParameterPassedIntoSuperClassWithExpression = new FileSet {
     """
-    class Class(/*(*/a/*)*/) extends RuntimeException(a + "")
+    class Class(/*(*/a/*)*/: String) extends RuntimeException(a + "")
     """ becomes
     """
-    class Class(/*(*/b/*)*/) extends RuntimeException(b + "")
+    class Class(/*(*/b/*)*/: String) extends RuntimeException(b + "")
     """
   } applyRefactoring(renameTo("b"))
 
