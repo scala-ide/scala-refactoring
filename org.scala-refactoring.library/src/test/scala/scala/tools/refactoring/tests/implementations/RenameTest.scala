@@ -830,6 +830,18 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(renameTo("b"))
 
+  @Test
+  @Ignore
+  def renameClassParameterPassedIntoSuperClassWithExpression2 = new FileSet {
+    """
+    package renameClassParameterPassedIntoSuperClassWithExpression2
+    class Class(val /*(*/a/*)*/: String) extends RuntimeException(a + "")
+    """ becomes
+    """
+    package renameClassParameterPassedIntoSuperClassWithExpression2
+    class Class(val /*(*/b/*)*/: String) extends RuntimeException(b + "")
+    """
+  } applyRefactoring(renameTo("b"))
   
   @Test
   def renameSuperclassAtEndOfFile = new FileSet {
@@ -842,6 +854,5 @@ class RenameTest extends TestHelper with TestRefactoring {
     class /*(*/Baz/*)*/
     class Foo extends Baz"""   
   } applyRefactoring(renameTo("Baz"))
-
   
 }
