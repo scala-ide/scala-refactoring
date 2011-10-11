@@ -2,19 +2,19 @@ package scala.tools.refactoring
 package tests.implementations
 
 
-import implementations.CurryMethod
+import implementations.SplitParameterLists
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 import org.junit.Ignore
 
-class CurryMethodTest extends TestHelper with TestRefactoring {
+class SplitParameterListsTest extends TestHelper with TestRefactoring {
 
   outer => 
 
   import outer.global._
     
-  def curryMethod(splitPositions: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new CurryMethod with SilentTracing with GlobalIndexes {
+  def splitParameterLists(splitPositions: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new SplitParameterLists with SilentTracing with GlobalIndexes {
       val global = outer.global
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes)
@@ -25,39 +25,39 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
   @Test
   def simpleCurrying = new FileSet {
     """
-      package curryMethod.simpleCurrying
+      package splitParameterLists.simpleCurrying
 	  class A {
         def /*(*/add/*)*/(first: Int, second: Int) = first + second
       }
     """ becomes
     """
-      package curryMethod.simpleCurrying
+      package splitParameterLists.simpleCurrying
 	  class A {
         def /*(*/add/*)*/(first: Int)(second: Int) = first + second
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil)))
   
   @Test
   def multipleParamListCurrying = new FileSet {
     """
-      package curryMethod.multipleParamListCurrying
+      package splitParameterLists.multipleParamListCurrying
 	  class A {
         def /*(*/add/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = first + second
       }
     """ becomes
     """
-      package curryMethod.multipleParamListCurrying
+      package splitParameterLists.multipleParamListCurrying
 	  class A {
         def /*(*/add/*)*/(first: Int)(second: Int)(a: String)(b: String)(c: String) = first + second
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 1::2::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 1::2::Nil)))
   
   @Test
   def curryingWithMethodCall = new FileSet {
     """
-      package curryMethod.curryingWithMethodCall
+      package splitParameterLists.curryingWithMethodCall
 	  class A {
         def /*(*/add/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = first + second
       }
@@ -67,7 +67,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.curryingWithMethodCall
+      package splitParameterLists.curryingWithMethodCall
 	  class A {
         def /*(*/add/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = first + second
       }
@@ -76,12 +76,12 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
         val b = a.add(1)(2)("a", "b")("c")
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil)))
   
   @Test
   def curryingMethodSubclass = new FileSet {
     """
-      package curryMethod.curryingMethodSubclass
+      package splitParameterLists.curryingMethodSubclass
       class Parent {
         def /*(*/method/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = (first + second, a+b+c)
       }
@@ -91,7 +91,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.curryingMethodSubclass
+      package splitParameterLists.curryingMethodSubclass
       class Parent {
         def /*(*/method/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = (first + second, a+b+c)
       }
@@ -100,12 +100,12 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
         override def method(first: Int)(second: Int)(a: String, b: String)(c: String) = (first, a)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil)))
   
   @Test
   def curryingMethodSuperclass = new FileSet {
     """
-      package curryMethod.curryingMethodSuperclass
+      package splitParameterLists.curryingMethodSuperclass
       class Parent {
         def method(first: Int, second: Int)(a: String, b: String, c: String) = (first + second, a+b+c)
       }
@@ -115,7 +115,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.curryingMethodSuperclass
+      package splitParameterLists.curryingMethodSuperclass
       class Parent {
         def method(first: Int)(second: Int)(a: String, b: String)(c: String) = (first + second, a+b+c)
       }
@@ -124,12 +124,12 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
         override def /*(*/method/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = (first, a)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil)))
   
   @Test
   def curriedMethodAliased = new FileSet {
     """
-      package curryMethod.curriedMethodAliased
+      package splitParameterLists.curriedMethodAliased
       class A {
         def /*(*/curriedAdd3/*)*/(a: Int, b: Int, c: Int) = a + b + c
         def alias = curriedAdd3 _
@@ -137,19 +137,19 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.curriedMethodAliased
+      package splitParameterLists.curriedMethodAliased
       class A {
         def /*(*/curriedAdd3/*)*/(a: Int)(b: Int)(c: Int) = a + b + c
         def alias = curriedAdd3 _
         val six = alias(1)(2)(3)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::2::Nil)))  
+  } applyRefactoring(splitParameterLists(List(1::2::Nil)))  
   
   @Test
   def curriedMethodAliasedTwoParamLists = new FileSet {
     """
-      package curryMethod.curriedMethodAliasedTwoParamLists
+      package splitParameterLists.curriedMethodAliasedTwoParamLists
       class A {
         def /*(*/curriedAdd4/*)*/(a: Int, b: Int)(c: Int, d: Int) = a + b + c + d
         def alias = curriedAdd4 _
@@ -157,19 +157,19 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.curriedMethodAliasedTwoParamLists
+      package splitParameterLists.curriedMethodAliasedTwoParamLists
       class A {
         def /*(*/curriedAdd4/*)*/(a: Int)(b: Int)(c: Int)(d: Int) = a + b + c + d
         def alias = curriedAdd4 _
         val ten = alias(1)(2)(3)(4)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 1::Nil)))
   
   @Test
   def curriedMethodPartiallyApplied = new FileSet {
     """
-      package curryMethod.curriedMethodPartiallyApplied
+      package splitParameterLists.curriedMethodPartiallyApplied
       class A {
         def /*(*/curriedAdd5/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d + e
         def partial = curriedAdd5(1, 2) _
@@ -177,19 +177,19 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.curriedMethodPartiallyApplied
+      package splitParameterLists.curriedMethodPartiallyApplied
       class A {
         def /*(*/curriedAdd5/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int) = a + b + c + d + e
         def partial = curriedAdd5(1)(2) _
         val fifteen = partial(3, 4)(5)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil)))
   
   @Test
   def partiallyCurried = new FileSet {
     """
-      package curryMethod.partiallyCurried
+      package splitParameterLists.partiallyCurried
       class A {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int) = a + b + c + d + e
         def partial = add(1, 2) _
@@ -197,19 +197,19 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.partiallyCurried
+      package splitParameterLists.partiallyCurried
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
         def partial = add(1)(2) _
         val result = partial(3, 4)(5)(6)(7, 8)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil, 1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil, 1::Nil)))
   
   @Test
   def twoPartiallyCurriedMethods = new FileSet {
     """
-      package curryMethod.twoPartiallyCurriedMethods
+      package splitParameterLists.twoPartiallyCurriedMethods
       class A {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int) = a + b + c + d + e
         def first = add(1, 2) _
@@ -219,7 +219,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.twoPartiallyCurriedMethods
+      package splitParameterLists.twoPartiallyCurriedMethods
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
         def first = addaddaddaddaddaddadd(1)(2) _
@@ -228,12 +228,12 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
         val result2 = second(6)(7, 8)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil, 1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil, 1::Nil)))
   
   @Test
   def repeatedlyPartiallyApplied = new FileSet {
     """
-      package curryMethod.repeatedlyPartiallyApplied
+      package splitParameterLists.repeatedlyPartiallyApplied
       class A {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int)(i: Int, j: Int) = a + b + c + d + e
         def firstPartial = add(1, 2) _
@@ -243,7 +243,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.repeatedlyPartiallyApplied
+      package splitParameterLists.repeatedlyPartiallyApplied
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
         def firstPartial = add(1)(2) _
@@ -252,12 +252,12 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
         val result = thirdPartial(9)(10)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil, 1::Nil, 1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil, 1::Nil, 1::Nil)))
   
   @Test
   def aliasToVal = new FileSet {
     """
-      package curryMethod.aliasToVal
+      package splitParameterLists.aliasToVal
       class A {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d + e
         val alias = add _
@@ -265,19 +265,19 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.aliasToVal
+      package splitParameterLists.aliasToVal
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int) = a + b + c + d + e
         val alias = add _
         val result = alias(1)(2)(3, 4)(5)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil)))
   
   @Test
   def repeatedlyPartiallyAppliedVal = new FileSet {
     """
-      package curryMethod.repeatedlyPartiallyAppliedVal
+      package splitParameterLists.repeatedlyPartiallyAppliedVal
       class A {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int) = a + b + c + d + e + f + g
         val firstPartial = add(1, 2) _
@@ -286,7 +286,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.repeatedlyPartiallyAppliedVal
+      package splitParameterLists.repeatedlyPartiallyAppliedVal
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int) = a + b + c + d + e + f + g
         val firstPartial = add(1)(2) _
@@ -294,13 +294,13 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
         val result = secondPartial(6)(7)
       }
     """ 
-  } applyRefactoring(curryMethod(List(1::Nil, 2::Nil, 1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil, 1::Nil)))
   
   @Test
   @Ignore // TODO: implement
   def partialOverride = new FileSet {
     """
-      package curryMethod.partialOverride
+      package splitParameterLists.partialOverride
       class Parent {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int) = a + b + c + d
         def partial = add(1, 2) _
@@ -310,7 +310,7 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package curryMethod.partialOverride
+      package splitParameterLists.partialOverride
       class Parent {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int)(d: Int) = a + b + c + d
         def partial = add(1)(2) _
@@ -319,86 +319,86 @@ class CurryMethodTest extends TestHelper with TestRefactoring {
         override def partial = a => b => a*b
       }
     """
-  } applyRefactoring(curryMethod(List(1::Nil, 1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 1::Nil)))
   
   @Test(expected=classOf[RefactoringException])
   def unorderedSplitPositions = new FileSet {
     """
-      package curryMethod.unorderedSplitPositions
+      package splitParameterLists.unorderedSplitPositions
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """ becomes
     """
-      package curryMethod.unorderedSplitPositions
+      package splitParameterLists.unorderedSplitPositions
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """
-  } applyRefactoring(curryMethod(List(2::1::Nil)))
+  } applyRefactoring(splitParameterLists(List(2::1::Nil)))
   
   @Test(expected=classOf[RefactoringException])
   def aboveBoundsSplitPosition = new FileSet {
     """
-      package curryMethod.aboveBoundsSplitPosition
+      package splitParameterLists.aboveBoundsSplitPosition
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """ becomes
     """
-      package curryMethod.aboveBoundsSplitPosition
+      package splitParameterLists.aboveBoundsSplitPosition
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """
-  } applyRefactoring(curryMethod(List(3::Nil)))
+  } applyRefactoring(splitParameterLists(List(3::Nil)))
   
   @Test(expected=classOf[RefactoringException])
   def belowBoundsSplitPosition = new FileSet {
     """
-      package curryMethod.belowBoundsSplitPosition
+      package splitParameterLists.belowBoundsSplitPosition
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """ becomes
     """
-      package curryMethod.belowBoundsSplitPosition
+      package splitParameterLists.belowBoundsSplitPosition
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """
-  } applyRefactoring(curryMethod(List(0::Nil)))
+  } applyRefactoring(splitParameterLists(List(0::Nil)))
   
   @Test(expected=classOf[RefactoringException])
   def duplicatedSplitPosition = new FileSet {
     """
-      package curryMethod.duplicatedSplitPosition
+      package splitParameterLists.duplicatedSplitPosition
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """ becomes
     """
-      package curryMethod.duplicatedSplitPosition
+      package splitParameterLists.duplicatedSplitPosition
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """
-  } applyRefactoring(curryMethod(List(1::1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::1::Nil)))
   
   @Test(expected=classOf[RefactoringException])
   def tooManySplitPositions = new FileSet {
     """
-      package curryMethod.tooManySplitPositions
+      package splitParameterLists.tooManySplitPositions
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """ becomes
     """
-      package curryMethod.tooManySplitPositions
+      package splitParameterLists.tooManySplitPositions
       class Foo {
         def /*(*/add/*)*/(first: Int, second: Int, third: Int) = first + second + third
       }
     """
-  } applyRefactoring(curryMethod(List(1::Nil, 1::Nil)))
+  } applyRefactoring(splitParameterLists(List(1::Nil, 1::Nil)))
   
 }

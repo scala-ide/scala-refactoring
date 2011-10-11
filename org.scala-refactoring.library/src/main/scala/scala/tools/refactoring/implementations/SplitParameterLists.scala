@@ -3,7 +3,7 @@ package implementations
 
 
 
-abstract class CurryMethod extends MethodSignatureRefactoring {
+abstract class SplitParameterLists extends MethodSignatureRefactoring {
 
   import global._
   

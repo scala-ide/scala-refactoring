@@ -16,7 +16,7 @@ import util._
     classOf[MoveClassTest],
     classOf[MoveConstructorToCompanionObjectTest],
     classOf[ChangeParamOrderTest], 
-    classOf[CurryMethodTest], 
+    classOf[SplitParameterListsTest], 
     classOf[DeclarationIndexTest], 
     classOf[MultipleFilesIndexTest], 
     classOf[NameValidationTest], 
