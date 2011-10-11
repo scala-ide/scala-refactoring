@@ -10,12 +10,13 @@ import implementations.imports._
 import sourcegen._
 import transformation._
 import util._
-
+import scala.tools.refactoring.implementations.MergeParameterLists
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
     classOf[MoveClassTest],
     classOf[MoveConstructorToCompanionObjectTest],
     classOf[ChangeParamOrderTest], 
+    classOf[MergeParameterListsTest], 
     classOf[SplitParameterListsTest], 
     classOf[DeclarationIndexTest], 
     classOf[MultipleFilesIndexTest], 

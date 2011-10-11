@@ -1,8 +1,6 @@
 package scala.tools.refactoring
 package implementations
 
-
-
 abstract class SplitParameterLists extends MethodSignatureRefactoring {
 
   import global._
@@ -58,8 +56,8 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
     
   override def traverseApply[X <% (X ⇒ X) ⇒ X](t: ⇒ Transformation[X, X]) = bottomup(t)
   
-  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, nrParamLists: Int): RefactoringParameters = {
-    val toDrop = originalParams.size - nrParamLists
+  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: AffectedDef): RefactoringParameters = {
+    val toDrop = originalParams.size - toRefactor.nrParamLists
     originalParams.drop(toDrop)
   }
   

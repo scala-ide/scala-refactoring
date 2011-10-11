@@ -252,9 +252,9 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
       val allPartialSymbols = affectedDefDefs.partials
       val singleRefactorings = allDefDefSymbols map (d => 
         refactorDefDef(index.declaration(d.defSymbol).get, originalParams) &> 
-        refactorOrdinaryCalls(d.defSymbol, prepareParamsForSingleRefactoring(originalParams, d.nrParamLists)))
+        refactorOrdinaryCalls(d.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep._1, d)))
       val singlePartialRefactorings = allPartialSymbols map 
-        (p => refactorPartialCalls(p.defSymbol, prepareParamsForSingleRefactoring(originalParams, p.nrParamLists)))
+        (p => refactorPartialCalls(p.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep._1, p)))
       val refactoring = (singleRefactorings:::singlePartialRefactorings).foldLeft(id[Tree])((t, c) => t &> c)
       refactoring
     }
@@ -276,6 +276,6 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
     
   def traverseApply[X <% (X ⇒ X) ⇒ X](t: => Transformation[X, X]) = topdown(t)
   
-  def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, nrParamLists: Int): RefactoringParameters = originalParams
+  def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: AffectedDef): RefactoringParameters = originalParams
   
 }

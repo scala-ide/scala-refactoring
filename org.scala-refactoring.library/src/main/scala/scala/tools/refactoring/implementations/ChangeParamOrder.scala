@@ -36,8 +36,8 @@ abstract class ChangeParamOrder extends MethodSignatureRefactoring {
     }
   }
   
-  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, nrParamLists: Int): RefactoringParameters = {
-    val toDrop = originalParams.size - nrParamLists
+  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: AffectedDef): RefactoringParameters = {
+    val toDrop = originalParams.size - toRefactor.nrParamLists
     originalParams.drop(toDrop)
   }
     

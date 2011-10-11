@@ -1,7 +1,6 @@
 package scala.tools.refactoring
 package tests.implementations
 
-
 import implementations.SplitParameterLists
 import tests.util.TestHelper
 import tests.util.TestRefactoring
@@ -23,15 +22,15 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
-  def simpleCurrying = new FileSet {
+  def simpleSplitting= new FileSet {
     """
-      package splitParameterLists.simpleCurrying
+      package splitParameterLists.simpleSplitting
 	  class A {
         def /*(*/add/*)*/(first: Int, second: Int) = first + second
       }
     """ becomes
     """
-      package splitParameterLists.simpleCurrying
+      package splitParameterLists.simpleSplitting
 	  class A {
         def /*(*/add/*)*/(first: Int)(second: Int) = first + second
       }
@@ -39,15 +38,15 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(splitParameterLists(List(1::Nil)))
   
   @Test
-  def multipleParamListCurrying = new FileSet {
+  def multipleParamListSplitting = new FileSet {
     """
-      package splitParameterLists.multipleParamListCurrying
+      package splitParameterLists.multipleParamListSplitting
 	  class A {
         def /*(*/add/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = first + second
       }
     """ becomes
     """
-      package splitParameterLists.multipleParamListCurrying
+      package splitParameterLists.multipleParamListSplitting
 	  class A {
         def /*(*/add/*)*/(first: Int)(second: Int)(a: String)(b: String)(c: String) = first + second
       }
@@ -55,9 +54,9 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(splitParameterLists(List(1::Nil, 1::2::Nil)))
   
   @Test
-  def curryingWithMethodCall = new FileSet {
+  def splittingWithMethodCall = new FileSet {
     """
-      package splitParameterLists.curryingWithMethodCall
+      package splitParameterLists.splittingWithMethodCall
 	  class A {
         def /*(*/add/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = first + second
       }
@@ -67,7 +66,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package splitParameterLists.curryingWithMethodCall
+      package splitParameterLists.splittingWithMethodCall
 	  class A {
         def /*(*/add/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = first + second
       }
@@ -79,9 +78,9 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil)))
   
   @Test
-  def curryingMethodSubclass = new FileSet {
+  def splittingMethodSubclass = new FileSet {
     """
-      package splitParameterLists.curryingMethodSubclass
+      package splitParameterLists.splittingMethodSubclass
       class Parent {
         def /*(*/method/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = (first + second, a+b+c)
       }
@@ -91,7 +90,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package splitParameterLists.curryingMethodSubclass
+      package splitParameterLists.splittingMethodSubclass
       class Parent {
         def /*(*/method/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = (first + second, a+b+c)
       }
@@ -103,9 +102,9 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil)))
   
   @Test
-  def curryingMethodSuperclass = new FileSet {
+  def splittingMethodSuperclass = new FileSet {
     """
-      package splitParameterLists.curryingMethodSuperclass
+      package splitParameterLists.splittingMethodSuperclass
       class Parent {
         def method(first: Int, second: Int)(a: String, b: String, c: String) = (first + second, a+b+c)
       }
@@ -115,7 +114,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
       }
     """ becomes
     """
-      package splitParameterLists.curryingMethodSuperclass
+      package splitParameterLists.splittingMethodSuperclass
       class Parent {
         def method(first: Int)(second: Int)(a: String, b: String)(c: String) = (first + second, a+b+c)
       }
