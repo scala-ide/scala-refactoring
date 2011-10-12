@@ -275,7 +275,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ p(fun) ++ pp(args) ++ r
           
         case _ => 
-          l ++ p(fun) ++ pp(args, separator = ", ") ++ r    
+          l ++ p(fun) ++ pp(args, separator = ", ", before = "[", after = "]") ++ r    
       }
     }
 

@@ -1239,4 +1239,71 @@ class A(a: Int) {
     }
     """, common.Change.applyChanges(refactor(result.toList), str))
   }
+  
+  @Test
+  def testCopy5() {
+    val str = """
+    package abc
+    object primitive {
+      def length[A](li:List[A]):Int = 0
+      def enumerate[A](li:List[A]):List[Int] = {
+        length[A](li)
+      Nil
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+    }
+    """
+    val ast = treeFrom(str)
+    var defdef: Tree = null
+
+    topdown(matchingChildren(
+      transform {
+        case t: DefDef if (t.name == newTermName("enumerate")) =>
+          defdef = t; t
+      })) apply ast
+
+    val names = Map("A" -> "A1")
+    val res = topdown(matchingChildren(
+      transform {
+        case t @ TypeApply(Select(name, qualifier), args) =>
+          val s = t.symbol.fullName
+          val qual = s.substring(0, s.lastIndexOf("."))
+          val select = Select(
+            qualifier = Ident(name = newTypeName(qual)),
+            name = t.fun.asInstanceOf[Select].name)
+          t.copy(fun = select, args = args) setPos t.pos
+        case t: TypeTree if (names.contains(t.nameString)) =>
+          mkRenamedTypeTree(t, names(t.nameString).toString(), t.symbol)
+        case t: TypeDef if (names.contains(t.name.toString)) =>
+          mkRenamedSymTree(t, names(t.name.toString))
+      })) apply defdef
+
+    val result = topdown(matchingChildren(
+      transform {
+        case c: ClassDef if (c.name == newTypeName("tr")) =>
+          val t = c.impl
+          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+          c.copy(impl = templ) setPos c.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def length[A](li:List[A]):Int = 0
+      def enumerate[A](li:List[A]):List[Int] = {
+        length[A](li)
+      Nil
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+      def enumerate[A1](li:List[A1]):List[Int] = {
+        abc.primitive.length[A1](li)
+      Nil
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
 }
