@@ -1306,4 +1306,40 @@ class A(a: Int) {
     }
     """, common.Change.applyChanges(refactor(result.toList), str))
   }
+  
+  @Test
+  def changeMethodInvocation4() {
+
+    val ast = treeFrom("""
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+      append(List("asd"), if(true) List("A") else List("B"))
+    }
+    """)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+
+          case a: Apply if (a.args.length > 1) =>
+            val buf = a.args.toBuffer
+            val arg = buf(1)
+            buf.remove(1)
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = arg)
+            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+        }
+      }
+    } apply (ast)
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+      (if(true) List("A") else List("B")).append(List("asd"))
+    }
+    """, createText(result.get, Some(ast.pos.source)))
+  }
 }
