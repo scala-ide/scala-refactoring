@@ -35,9 +35,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     
     occurences foreach (s => trace("Symbol is referenced at %s (%s:%s, %s:%s)", 
         s, s.pos.source.file.name, s.pos.line, s.pos.start, s.pos.end))
-    
-    val namePositions = occurences map (_.namePosition)
-    
+        
     val isInTheIndex = filter {
       case t: Tree => occurences contains t 
     }
@@ -49,6 +47,17 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
         mkRenamedSymTree(s, newName)
       case t: TypeTree => 
         mkRenamedTypeTree(t, newName, prepared.selectedTree.symbol)
+      case t @ Literal(Constant(value: TypeRef)) if t.value.tag == ClassTag =>
+        val OriginalSymbol = prepared.selectedTree.symbol
+        val newType = value map {
+          case TypeRef(pre, OriginalSymbol, args) =>
+            // Uh..
+            new Type {
+              override def safeToString: String = newName
+            }
+          case t => t
+        }
+        Literal(Constant(newType)) replaces t
     }
     
     val rename = topdown(isInTheIndex &> renameTree |> id)

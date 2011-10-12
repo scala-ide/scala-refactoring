@@ -109,15 +109,5 @@ trait DependentSymbolExpanders {
         overrides
       case _ => Nil
     })
-  } 
-  
-  trait SameSymbolPosition extends SymbolExpander {
-    
-    this: IndexLookup =>
-    
-    abstract override def expand(s: Symbol) = super.expand(s) ++ (allSymbols collect {
-      case sym if sym.pos.sameRange(s.pos) && sym.pos.source.file.name == s.pos.source.file.name && !sym.pos.isTransparent =>
-        sym
-    })
   }
 }

@@ -911,7 +911,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameClassWithSelfTypeAnnotation
     class /*(*/Bar/*)*/ {
-     self =>
+      self =>
     }
     """
   } applyRefactoring(renameTo("Bar"))
