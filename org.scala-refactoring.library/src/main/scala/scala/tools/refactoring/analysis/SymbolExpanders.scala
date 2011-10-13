@@ -83,13 +83,19 @@ trait DependentSymbolExpanders {
       case s: global.TermSymbol if s.owner.isClass =>
       
         def allSubClasses(clazz: Symbol) = allDefinedSymbols.filter {
-          case decl if decl.isClass => 
+          case decl if decl.isClass || decl.isModule => 
+            val ancestors = decl.ancestors
             // it seems like I can't compare these symbols with ==?
-            decl.ancestors.exists(t => t.pos.sameRange(clazz.pos) && t.pos.source == clazz.pos.source)
+            val hasClazzInAncestors = ancestors.exists { t => 
+              t.pos.sameRange(clazz.pos) && t.pos.source == clazz.pos.source
+            }
+            hasClazzInAncestors
           case _ => false
         }
+        
+        val subClasses = allSubClasses(s.owner) 
                 
-        val overrides = allSubClasses(s.owner) map {
+        val overrides = subClasses map {
           case otherClassDecl =>
             try {
               s overriddenSymbol otherClassDecl
@@ -102,16 +108,6 @@ trait DependentSymbolExpanders {
 
         overrides
       case _ => Nil
-    })
-  } 
-  
-  trait SameSymbolPosition extends SymbolExpander {
-    
-    this: IndexLookup =>
-    
-    abstract override def expand(s: Symbol) = super.expand(s) ++ (allSymbols collect {
-      case sym if sym.pos.sameRange(s.pos) && sym.pos.source.file.name == s.pos.source.file.name && !sym.pos.isTransparent =>
-        sym
     })
   }
 }

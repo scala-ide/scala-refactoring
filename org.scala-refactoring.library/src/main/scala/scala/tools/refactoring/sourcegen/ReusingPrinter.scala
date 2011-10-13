@@ -275,7 +275,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ p(fun) ++ pp(args) ++ r
           
         case _ => 
-          l ++ p(fun) ++ pp(args, separator = ", ") ++ r    
+          l ++ p(fun) ++ pp(args, separator = ", ", before = "[", after = "]") ++ r    
       }
     }
 
@@ -733,6 +733,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          * */
         trace("Literal tree is empty { }")
         Fragment((l ++ layout(tree.pos.start, tree.pos.end)(tree.pos.source) ++ r).asText)
+      } else if(value.tag == ClassTag) {
+        val tpe = value.tpe match {
+          case TypeRef(_, _, arg :: Nil) =>
+            arg
+          case tpe =>
+            tpe.toString
+        }
+        l ++ Fragment("classOf["+ tpe.toString + "]") ++ r
       } else { 
         l ++ Fragment(value.stringValue) ++ r
       }

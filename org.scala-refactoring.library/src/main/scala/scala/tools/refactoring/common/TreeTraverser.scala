@@ -273,6 +273,17 @@ trait TreeTraverser {
               f(sym, selector)
             }
           }
+               
+        /*
+         * classOf[some.Type] is represented by a Literal
+         * */  
+        case t @ Literal(Constant(value)) =>
+          
+          value match {
+            case TypeRef(_, sym, _) =>
+              f(sym, t)
+            case _ => ()
+          }
 
         case _ => ()  
       }

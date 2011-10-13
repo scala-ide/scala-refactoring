@@ -9,6 +9,7 @@ import implementations.Rename
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
+import org.junit.Ignore
 
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
@@ -854,4 +855,64 @@ class RenameTest extends TestHelper with TestRefactoring {
     class Foo extends Baz"""   
   } applyRefactoring(renameTo("Baz"))
   
+  
+  @Test
+  def renameMethodInCaseObject = new FileSet {
+    """
+  abstract class Base {
+    def /*(*/foo/*)*/ = false
+  }
+
+  case object Obj extends Base {
+    override def foo = true
+  }
+
+  case class Claz extends Base {
+    override def foo = true
+  } """ becomes
+    """
+  abstract class Base {
+    def /*(*/babar/*)*/ = false
+  }
+
+  case object Obj extends Base {
+    override def babar = true
+  }
+
+  case class Claz extends Base {
+    override def babar = true
+  } """   
+  } applyRefactoring(renameTo("babar"))
+  
+  @Test
+  def renameClassWithClassOfUsage = new FileSet {
+    """
+    package renameClassWithClassOfUsage
+    class /*(*/Foo/*)*/ {
+      val clazz = classOf[Foo]
+    }
+    """ becomes 
+    """
+    package renameClassWithClassOfUsage
+    class /*(*/Bar/*)*/ {
+      val clazz = classOf[Bar]
+    }
+    """
+  } applyRefactoring(renameTo("Bar"))
+  
+  @Test
+  def renameClassSelfTypeAnnotation= new FileSet {
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Foo/*)*/ {
+      self =>
+    }
+    """ becomes 
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Bar/*)*/ {
+      self =>
+    }
+    """
+  } applyRefactoring(renameTo("Bar"))
 }

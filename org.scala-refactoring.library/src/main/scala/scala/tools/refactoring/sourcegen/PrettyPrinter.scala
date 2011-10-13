@@ -172,8 +172,11 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (qualifier, selector) if (selector.toString == "unapply" || selector.toString == "unapplySeq") =>
           p(qualifier)
           
+        case (_: Select | _: Ident | _: Block | _: Literal | _: Apply | _: This | _: Super, _) =>
+          p(qualifier, after = ".") ++ Fragment(escapeScalaKeywordsForImport(tree.nameString))
+          
         case _ =>
-          p(qualifier, after = ".") ++ Fragment(escapeScalaKeywordsForImport(tree.nameString))   
+          p(qualifier, before = "(", after = ").") ++ Fragment(tree.nameString)   
       }    
     }
     
