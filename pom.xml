@@ -156,11 +156,6 @@
       <url>http://download.eclipse.org/releases/helios</url>
     </repository>
     <repository>
-      <id>galileo</id>
-      <layout>p2</layout>
-      <url>http://download.eclipse.org/releases/galileo</url>
-    </repository>
-    <repository>
       <id>codehaus-snapshots</id>
       <name>Maven Codehaus snapshot repository</name>
       <url>http://snapshots.repository.codehaus.org/</url>
