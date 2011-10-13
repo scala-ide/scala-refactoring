@@ -259,7 +259,18 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
       refactoring
     }
     
-    Right(transformFile(selection.file, refactorMethodSignature))
+    val affectedCus = {
+      val affectedDefs = prep._2
+      val originalsSymbols = affectedDefs.originals.map(_.defSymbol)
+      val partialsSymbols = affectedDefs.partials.map(_.defSymbol)
+      val allSymbols: List[Symbol] = prep._1.symbol::originalsSymbols:::partialsSymbols
+      val occurences = allSymbols.map(index.occurences)
+      occurences.flatten.flatMap(t => cuRoot(t.pos)).distinct
+    }
+    
+    val changedTrees = affectedCus flatMap (refactorMethodSignature(_))
+    
+    Right(refactor(changedTrees))
   }
   
   def checkRefactoringParams(selectedValue: PreparationResult, params: RefactoringParameters): Boolean

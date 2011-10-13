@@ -12,7 +12,7 @@ abstract class MergeParameterLists extends MethodSignatureRefactoring {
     val selectedDefDef = prep._1
     val allowedMergeIndexesRange = 1 until selectedDefDef.vparamss.size
     val isNotEmpty = (p: RefactoringParameters) => !p.isEmpty
-    val isSorted = (p: RefactoringParameters) => (p sort (_ < _)) == p
+    val isSorted = (p: RefactoringParameters) => (p sortWith (_ < _)) == p
     val uniqueIndexes = (p: RefactoringParameters) => p.distinct == p
     val indexesInRange = (p: RefactoringParameters) => allowedMergeIndexesRange containsSlice (p.head to p.last)
     val mergeable = (p: RefactoringParameters) => {
