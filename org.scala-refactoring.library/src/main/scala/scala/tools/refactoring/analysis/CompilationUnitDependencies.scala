@@ -7,7 +7,7 @@ package analysis
 
 trait CompilationUnitDependencies {
   // we need to interactive compiler because we work with RangePositions
-  this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors =>
+  this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors with common.PimpedTrees =>
 
   import global._
 
@@ -170,6 +170,16 @@ trait CompilationUnitDependencies {
         case Select(Ident(names.scala), _) => ()
         
         case Select(Select(Ident(names.scala), names.pkg), _) => ()
+        
+        case t: Template =>
+          // The primary constructor can have visible annotations even
+          // if its DefDef has an OffsetPosition.
+          t.primaryConstructor foreach {
+            case primaryConstructor: DefDef =>
+              handleAnnotations(primaryConstructor.symbol.annotations)
+          }
+          
+          super.traverse(root)
         
         case t : ApplyImplicitView =>
           

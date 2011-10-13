@@ -785,5 +785,14 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         (a(0), a(1))
       }
     }""")
+    
+  @Test
+  def annotationOnPrimaryConstructor = assertDependencies(
+    "java.lang.annotation.Documented",
+    """
+      import java.lang.annotation.Documented
+
+      class Foo @Documented() (i: Int)
+    """)
 }
 
