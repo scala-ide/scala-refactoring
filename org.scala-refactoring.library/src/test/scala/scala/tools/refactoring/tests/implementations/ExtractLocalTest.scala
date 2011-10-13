@@ -685,4 +685,25 @@ object ExtractMethod2 {
     }
     """
   } applyRefactoring(extract("two"))
+
+  @Test
+  def extractWithoutSelection = new FileSet {
+    """
+    object ExtractLocal { 
+      def x() {
+        1/*(*//*)*/ + 1
+        val test = "hello" 
+      }
+    }
+    """ becomes
+    """
+    object ExtractLocal { 
+      def x() {
+        val one = 1
+        1/*(*//*)*/ + one
+        val test = "hello" 
+      }
+    }
+    """
+  } applyRefactoring(extract("one"))
 }
