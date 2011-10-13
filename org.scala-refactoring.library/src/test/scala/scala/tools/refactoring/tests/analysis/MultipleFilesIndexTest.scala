@@ -331,7 +331,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     "class B, class Object, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, trait ScalaObject, type AnyRef, type String, value s, value s"
   } apply(allSymbols)
   
-  //@Test FIXME fails when run with Maven
+  @Test
   def allDeclarationsMethods = new FileSet {
     """
     trait Abc {
@@ -356,7 +356,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     "$init$ on line 2, C on line 2, a on line 5, a on line 5, m on line 4, someMethod on line 3"
   } apply(allDeclarations)
   
-  //@Test FIXME fails when run with Maven
+  @Test
   def overriddenMethods = new FileSet {
     """
     trait Abc2 {
@@ -376,7 +376,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     "someMethod on line 3"
   } apply(findOverrides)
   
-  //@Test FIXME fails when run with Maven
+  @Test
   def overriddenMethods2 = new FileSet {
     """
     class Abc {

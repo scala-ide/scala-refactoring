@@ -479,8 +479,9 @@ class RenameTest extends TestHelper with TestRefactoring {
     }"""
   } applyRefactoring(renameTo("P"))
     
-  //@Test FIXME renameByNameParameters
-  def renameByNameParameters = new FileSet {
+  @Ignore
+  @Test
+  def renameNamedParameter = new FileSet {
     """
     object ByNameParap {
       def withParam(param1: Int,/*(*/name/*)*/: String) = println(name)

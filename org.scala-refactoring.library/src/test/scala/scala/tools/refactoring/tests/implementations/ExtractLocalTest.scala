@@ -570,7 +570,8 @@ object ExtractMethod2 {
     """
   } applyRefactoring(extract("ab"))
   
-  //@Test FIXME not yet implemented
+  @Test
+  @Ignore
   def extractFromFunction2 = new FileSet {
     """
       class Extr2 {
