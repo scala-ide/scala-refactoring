@@ -467,4 +467,42 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }    """
   } applyRefactoring organize
 
+  @Test
+  @Ignore
+  def importSymbolicName = new FileSet {
+    """
+      import collection.immutable.Nil.++
+
+      object YYY {
+  
+        ++(Nil)
+
+      }
+    """ becomes
+    """
+      import collection.immutable.Nil.++
+
+      object YYY {
+  
+        ++(Nil)
+
+      }
+    """
+  } applyRefactoring organize
+
+  @Test
+  @Ignore
+  def finalBraceShouldNotBeRemoved = new FileSet {
+    """
+      import java.io.Serializable
+      object A extends Serializable {
+
+      }""" becomes
+      """
+      import java.io.Serializable
+      object A extends Serializable {
+
+      }"""
+  } applyRefactoring organize
+
 }
