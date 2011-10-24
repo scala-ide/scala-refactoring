@@ -450,7 +450,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        if(true){
+        if(true) {
           val ab = "a" + "b"/*)*/ 
           /*(*/ab+ "c"
         }

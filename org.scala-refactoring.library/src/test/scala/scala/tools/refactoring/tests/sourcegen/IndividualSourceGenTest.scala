@@ -1241,6 +1241,45 @@ class A(a: Int) {
   }
   
   @Test
+  def testCopy4Variation() {
+    val str = """
+    package abc
+    object primitive {
+      def fail() = {}
+      def foo(f: Int): Boolean = {
+        if((f == 0)) fail()
+        else false
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown(matchingChildren(
+      transform {
+        case t: DefDef => t.copy()
+        case t: Apply if (t.fun.nameString == "fail") =>
+          val s = t.symbol.fullName
+          val qual = s.substring(0, s.lastIndexOf("."))
+          val select = Select(
+            qualifier = Ident(name = newTypeName(qual)),
+            name = t.fun.asInstanceOf[Select].name)
+          t.copy(fun = select) setPos t.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def fail() = {}
+      
+      def foo(f: Int): Boolean = {
+      if((f == 0)) abc.primitive.fail()
+      else false
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
+  
+  @Test
   def testCopy5() {
     val str = """
     package abc

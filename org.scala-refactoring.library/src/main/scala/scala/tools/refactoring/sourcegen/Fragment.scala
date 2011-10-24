@@ -16,6 +16,14 @@ trait Fragment {
   
   override def toString() = asText
   
+  def dropLeadingLayout: Fragment = new Fragment {
+    val leading  = NoLayout
+    val center   = self.center
+    val trailing = self.trailing
+    override val pre  = self.pre
+    override val post = self.post    
+  }
+  
   def ifNotEmpty(f: Fragment => Fragment): Fragment = this match {
     case EmptyFragment => EmptyFragment
     case _ => f(this)

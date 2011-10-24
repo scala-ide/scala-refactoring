@@ -602,7 +602,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         val txt = f.toLayout.withoutComments // TODO also without strings, etc.
         val opening = txt.count(_ == '(')
         val closing = txt.count(_ == ')')
-        if(opening > closing) {
+        if(opening > closing && closing > 0) {
+          f.asText.reverse.replaceFirst("\\)", ")" * (opening - closing + 1)).reverse
+        } else if(opening > closing) {
           f.asText + (")" * (opening - closing))
         } else if(opening < closing) {
           ("(" * (closing - opening)) + f.asText
@@ -610,38 +612,49 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           f.asText
         }
       }
+          
+      val (_thenLeadingLayout, _then) = {
+        thenp match {
+          case block: Block =>
+            p(block)
+          case _ if keepTree(o.thenp) && o.thenp.pos.isRange =>
+            val layout = between(o.cond, o.thenp)(o.pos.source).asText
+            val printedThen = pi(thenp)
+  
+            if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
+              val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
+              pi(thenp, before = Requisite.anywhere(right))
+            } else {
+              pi(thenp)
+            }
+            
+          case _ => 
+            pi(thenp)
+        }
+      } match {
+        case f => (f.leading, f.dropLeadingLayout)
+      }
       
       val _cond = balanceParens {
-        l ++ p(cond, before = "(", after = Requisite.anywhere(")"))
+        // we want to balance the parens around the condition and all adjacent layout
+        l ++ p(cond, before = "(", after = Requisite.anywhere(")")) ++ _thenLeadingLayout
+      }
+                      
+      val condAndThenOnSameLine = (cond.pos, thenp.pos) match {
+        case (NoPosition, _) => false
+        case (_, NoPosition) => true
+        case (p1, p2) => p1.line == p2.line
+      }
+                  
+      val hasSeparatorBetweenCondAndThen = {
+        _then.asText.startsWith(" ") || _cond.asText.endsWith(" ")
       }
       
-      val _then = thenp match {
-        case block: Block =>
-          p(block)
-        case _ if keepTree(o.thenp) && o.thenp.pos.isRange =>
-          val layout = between(o.cond, o.thenp)(o.pos.source).asText
-          val printedThen = pi(thenp)
-          
-          def condAndThenOnSameLine = (cond.pos, thenp.pos) match {
-            case (NoPosition, _) => false
-            case (_, NoPosition) => true // if there's a block, it will get caught earlier
-            case (p1, p2) => p1.line == p2.line
-          }
-          
-          if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
-            val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
-            pi(thenp, before = Requisite.anywhere(right))
-          } else if (condAndThenOnSameLine) {
-            p(thenp, before = " ")
-          } else {
-            pi(thenp)
-          }
-          
-        case _ => 
-          pi(thenp)
+      if(condAndThenOnSameLine && !hasSeparatorBetweenCondAndThen) {
+        _cond ++ " " ++ _then ++ _else ++ r
+      } else {
+        _cond ++ _then ++ _else ++ r
       }
-      
-      _cond ++ _then ++ _else ++ r
     }
   }
 
