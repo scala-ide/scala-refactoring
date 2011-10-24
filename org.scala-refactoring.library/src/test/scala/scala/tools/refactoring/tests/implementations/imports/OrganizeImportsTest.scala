@@ -491,7 +491,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  @Ignore
   def finalBraceShouldNotBeRemoved = new FileSet {
     """
       import java.io.Serializable

@@ -34,7 +34,9 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
         val end = {
           // Trees that reach the end of the file don't have the correct end position,
           // except if there's a newline at the end..
-          if(range.source.length -1 == range.end && range.source.content(range.end) != '\n')
+          if(range.source.length -1 == range.end 
+              && range.source.content(range.end) != '\n'
+              && range.source.content(range.end) != '}')
             range.end + 1
           else
             range.end
