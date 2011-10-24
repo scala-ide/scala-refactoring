@@ -309,11 +309,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun: Select, arg :: Nil) if 
             (fun.qualifier != EmptyTree && keepTree(fun.qualifier)) /*has receiver*/
              || fun.name.toString.endsWith("$eq") /*assigns*/ =>
-          if(r.contains(")")) {
-            l ++ p(fun) ++ "(" ++ p(arg) ++ r
-          } else {
-            l ++ p(fun) ++ p(arg) ++ r
+          val _arg = balanceParens {
+            p(arg) ++ r
           }
+          l ++ p(fun) ++ _arg
           
         case (TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil) =>
           l ++ p(fun) ++ p(arg) ++ r
@@ -595,21 +594,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         } else {
           val l = newline ++ "else" ++ Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL)
           pi(elsep, before = l)
-        }
-      }
-      
-      def balanceParens(f: Fragment) = Fragment {
-        val txt = f.toLayout.withoutComments // TODO also without strings, etc.
-        val opening = txt.count(_ == '(')
-        val closing = txt.count(_ == ')')
-        if(opening > closing && closing > 0) {
-          f.asText.reverse.replaceFirst("\\)", ")" * (opening - closing + 1)).reverse
-        } else if(opening > closing) {
-          f.asText + (")" * (opening - closing))
-        } else if(opening < closing) {
-          ("(" * (closing - opening)) + f.asText
-        } else {
-          f.asText
         }
       }
           

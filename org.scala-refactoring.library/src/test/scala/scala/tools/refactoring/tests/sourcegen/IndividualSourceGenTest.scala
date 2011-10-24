@@ -1381,4 +1381,53 @@ class A(a: Int) {
     }
     """, createText(result.get, Some(ast.pos.source)))
   }
+  
+  @Test
+  def changeMethodInvocation5() {
+
+   val str = """
+    package abc
+    object primitive {
+      def remove_if_not[A](fun:(A) => Boolean, li0:List[A]):List[A] = Nil
+      val opentries = remove_if_not((_:List[Int]).isEmpty, List(Nil))
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a: Apply if (a.args.length > 1) =>
+            val buf = a.args.toBuffer
+            val arg = buf(1)
+            buf.remove(1)
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = arg)
+            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+        case a: Function =>
+          val res = topdown {
+            matchingChildren {
+              transform {
+                case a: Apply =>
+                  a.symbol = NoSymbol
+                  a
+              }
+            }
+          } apply a
+          res.get
+        }
+      }
+    } apply (ast)
+    
+    val changes = refactor(result.toList)
+    val res = common.Change.applyChanges(changes, str)
+    assertEquals("""
+    package abc
+    object primitive {
+      def remove_if_not[A](fun:(A) => Boolean, li0:List[A]):List[A] = Nil
+      val opentries = List(Nil).remove_if_not((_:List[Int]).isEmpty)
+    }
+    """, res)
+  }
 }
