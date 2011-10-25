@@ -89,7 +89,10 @@ trait PimpedTrees {
   def escapeScalaKeywordsForImport(n: Name) = {
     if(global.nme.keywords.contains(n) && n != nme.USCOREkw) "`"+ n.toString +"`" else n.toString
   }
-
+  
+  def escapeScalaKeywordsForImport(n: String) = {
+    if(global.nme.keywords.contains(n.toTermName) && n.toTermName != nme.USCOREkw) "`"+ n +"`" else n
+  }
   /**
    * Searches for a Symbol of a name in the type members of a tree.
    * 

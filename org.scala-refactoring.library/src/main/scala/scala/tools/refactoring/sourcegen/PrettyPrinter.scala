@@ -7,6 +7,7 @@ package sourcegen
 
 import scala.tools.nsc.symtab.Flags
 import Requisite.anywhere
+import scala.reflect.NameTransformer
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
@@ -330,9 +331,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       val needsBraces = selectors.size > 1 || tree.selectors.exists(renames)
       
       def ss = (tree.selectors map { s =>
-        escapeScalaKeywordsForImport(s.name) + {
+        escapeScalaKeywordsForImport(NameTransformer.decode(s.name.toString)) + {
           if(renames(s))
-            " => " + escapeScalaKeywordsForImport(s.rename)  
+            " => " + escapeScalaKeywordsForImport(NameTransformer.decode(s.rename.toString))  
           else ""
         }
       } mkString ", ")

@@ -468,7 +468,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  @Ignore
   def importSymbolicName = new FileSet {
     """
       import collection.immutable.Nil.++
@@ -480,7 +479,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     """ becomes
     """
-      import collection.immutable.Nil.++
+      import scala.collection.immutable.Nil.++
 
       object YYY {
   
