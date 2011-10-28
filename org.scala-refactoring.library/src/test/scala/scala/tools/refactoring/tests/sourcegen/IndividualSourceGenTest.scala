@@ -246,7 +246,7 @@ else {
               mkClass(
                 name = "$anon", 
                 parents = Ident("A") :: Ident("B") :: Nil,
-                superArgs = Literal(5) :: Nil
+                superArgs = Literal(Constant(5)) :: Nil
               ), 
               Apply(Select(New(Ident("$anon")), nme.CONSTRUCTOR), Nil)
             )
