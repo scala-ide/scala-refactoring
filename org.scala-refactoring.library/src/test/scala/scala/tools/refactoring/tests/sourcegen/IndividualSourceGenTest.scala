@@ -127,7 +127,8 @@ trait tr[A] {
       }
     } apply ast
     
-    assertEquals("""{
+    assertEquals("""
+trait tr[A] {
   self: List[A] => 
   
   def asd() {
@@ -136,7 +137,8 @@ trait tr[A] {
   def member() = {
     ()
   }
-}""", refactor(transformedAst.toList).head.text)
+}
+""", common.Change.applyChanges(refactor(transformedAst.toList), src))
   }
   
   @Test
@@ -159,13 +161,15 @@ trait tr[A] {
       }
     } apply ast
     
-    assertEquals("""{
+    assertEquals("""
+trait tr[A] {
   self: List[A] => 
   def member() = {
     ()
   }
 
-}""", refactor(transformedAst.toList).head.text)
+}
+""", common.Change.applyChanges(refactor(transformedAst.toList), src))
   }
   
   @Test
@@ -194,12 +198,10 @@ trait tr[A] {
     } apply ast
 
     val changes = refactor(transformedAst.toList)
-    assertEquals("""def member[A](a: A, li: KIVList[A]): Boolean = {
-if (li.emptyp) false
+    assertEquals("""if (li.emptyp) false
 else {
   (a equals li.car) || member(a, li.cdr)
-}
-        }""", changes.head.text)
+""", changes.head.text)
   }
   
   @Test
@@ -221,6 +223,46 @@ else {
     assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get, sourceFile = Some(tree.pos.source)).asText)
           
     assertEquals(0, createChanges(List(valDef)).size)
+  }
+  
+  @Test
+  @Ignore
+  def newWith(): Unit = {
+    
+    val ast = treeFrom("""
+    class A(x: Int)
+    trait B
+    object AWithB {
+      val ab = new A(10)
+    }
+    """)
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: ValDef if t.name.toString == "ab " => 
+
+            val newRhs = Block(
+              mkClass(
+                name = "$anon", 
+                parents = Ident("A") :: Ident("B") :: Nil,
+                superArgs = Literal(5) :: Nil
+              ), 
+              Apply(Select(New(Ident("$anon")), nme.CONSTRUCTOR), Nil)
+            )
+            
+            t.copy(rhs = newRhs)
+        }
+      }
+    } apply ast
+    
+    assertEquals("""
+    class A(x: Int)
+    trait B
+    object AWithB {
+      val ab = new A(5) with B
+    }
+    """, generateText(transformedAst.get))
   }
   
   @Test
@@ -923,13 +965,15 @@ class A(a: Int) {
   @Test
   def testRemoveAnArgument() {
 
-    val ast = treeFrom("""
+    val src = """
     trait tr {
       def remove[A](elem: A, li: List[A]): List[A] = {
         li.remove_if((x: A) => (elem equals x))
       }
     }
-    """)
+    """
+      
+    val ast = treeFrom(src)
 
     val result = topdown {
       matchingChildren {
@@ -942,11 +986,14 @@ class A(a: Int) {
     } apply (ast)
 
     val changes = refactor(result.toList)
-    val res =
-      assertEquals(
-        """def remove[A](elem: A): List[A] = {
+
+    assertEquals("""
+    trait tr {
+      def remove[A](elem: A): List[A] = {
         li.remove_if((x: A) => (elem equals x))
-      }""", changes.head.text)
+      }
+    }
+    """, common.Change.applyChanges(changes, src))
   }
   
    @Test
