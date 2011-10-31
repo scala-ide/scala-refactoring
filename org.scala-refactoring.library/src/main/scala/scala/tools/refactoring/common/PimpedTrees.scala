@@ -331,6 +331,32 @@ trait PimpedTrees {
       cuRoot(tree.pos).map(find).toList.flatten
     }
   }
+  
+  class DefDefMethods(defdef: DefDef) {
+    
+    def contextBounds: List[Tree] = {
+      defdef.vparamss.lastOption.flatten collect {
+        case ValDef(mods, name, tpt: TypeTree, _)
+          if mods.hasFlag(Flags.IMPLICIT) 
+          && name.toString.startsWith(nme.EVIDENCE_PARAM_PREFIX)
+          && tpt.original.isInstanceOf[AppliedTypeTree] =>
+            tpt.original.asInstanceOf[AppliedTypeTree].tpt
+      } toList
+    }
+    
+    def tparamsWithContextBounds: List[Tree] = {
+      defdef.tparams ++ contextBounds sortBy (_.pos.startOrPoint)
+    }
+    
+    def explicitVParamss: List[List[Tree]] = {
+      if(contextBounds.isEmpty)
+        defdef.vparamss
+      else
+        defdef.vparamss.init  
+    }
+  }
+
+  implicit def additionalDefDefMethods(t: DefDef) = new DefDefMethods(t)
 
   class TemplateMethods(t: Template) {
     
@@ -492,8 +518,8 @@ trait PimpedTrees {
     case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
       mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
      
-    case t @ DefDef(ModifierTree(mods), name, tparams, vparamss, tpt, rhs) =>
-      mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: vparamss.flatten ::: tpt :: rhs :: Nil
+    case t @ DefDef(ModifierTree(mods), name, _, _, tpt, rhs) =>
+      mods ::: (NameTree(name) setPos t.namePosition) :: t.tparamsWithContextBounds ::: t.explicitVParamss.flatten ::: tpt :: rhs :: Nil
      
     case t: TypeTree =>
       if(t.original != null) t.original :: Nil else Nil

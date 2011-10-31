@@ -916,4 +916,38 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("Bar"))
+  
+  @Test
+  def renameMethodWithContextBound = new FileSet {
+    """
+object RenameWithContextBound {
+  val blubb = new Blubb
+  
+  def /*(*/work/*)*/[A: Foo](f: Blubb => A): A = f(blubb) ensuring { 
+    implicitly[Foo[A]].foo(_) >= 42
+  }
+}
+
+trait Foo[A] {
+  def foo(a: A): Int
+}
+
+class Blubb
+    """ becomes 
+    """
+object RenameWithContextBound {
+  val blubb = new Blubb
+  
+  def /*(*/abc/*)*/[A: Foo](f: Blubb => A): A = f(blubb) ensuring { 
+    implicitly[Foo[A]].foo(_) >= 42
+  }
+}
+
+trait Foo[A] {
+  def foo(a: A): Int
+}
+
+class Blubb
+    """
+  } applyRefactoring(renameTo("abc"))
 }

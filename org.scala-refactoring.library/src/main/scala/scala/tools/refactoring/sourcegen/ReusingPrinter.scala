@@ -660,11 +660,32 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         if(vparamss == List(List()) && modsAndName.asText.endsWith("(")) {
           Fragment(")")
         } else {
-          vparamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _)
+          tree.explicitVParamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _)
         }
       }
       
-      val typeParameters = pp(tparams, before = "[", separator = ", ", after = Requisite.anywhere("]"))
+      val typeParameters = {
+
+        def mergeTypeParameters(ts: List[Tree]): Fragment = ts match {
+          case (x: TypeDef) :: (y: Ident) :: Nil =>
+            p(x) ++ ": " ++ p(y)
+          case (x: TypeDef) :: (y: Ident) :: rest =>
+            p(x) ++ ": " ++ p(y) ++ ", " ++ mergeTypeParameters(rest)
+          
+          case (x: TypeDef) :: Nil =>
+            p(x)
+          case (x: TypeDef) :: rest =>
+            p(x) ++ ", " ++ mergeTypeParameters(rest)
+          
+          case Nil =>
+            EmptyFragment
+        }
+        
+        mergeTypeParameters(tree.tparamsWithContextBounds) ifNotEmpty {
+          _ ++ (before = "[", after = Requisite.anywhere("]"))
+        }
+      }
+      
       val body = p(rhs)
       val resultType = p(tpt, before = Requisite.anywhere(":", ": "))
             
