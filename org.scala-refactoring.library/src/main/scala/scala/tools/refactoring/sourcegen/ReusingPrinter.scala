@@ -467,7 +467,18 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
 
     override def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext) = {
-      l ++ pp(pid :: stats, separator = newline) ++ r
+      
+      val isPackageObjectWithNoTopLevelImports = findOriginalTree(tree) exists {
+        case global.PackageDef(_, ModuleDef(_, nme.PACKAGEkw, _) :: Nil) => true
+        case _ => false
+      }
+      
+      if(isPackageObjectWithNoTopLevelImports) {
+        val (imports, restStats) = stats.span(_.isInstanceOf[Import])
+        pp(imports, separator = newline, after = newline) ++ l ++ pp(pid :: restStats, separator = newline) ++ r
+      } else {
+        l ++ pp(pid :: stats, separator = newline) ++ r        
+      }
     }
   }
 

@@ -36,6 +36,40 @@ class AddImportStatementTest extends TestHelper {
   }
   
   @Test
+  def importWithPackageObject = {
+    addImport(("java.util", "ArrayList"), """
+      // Copyright blabla
+      package object foo {
+        def foo(xs: ArrayList[String]): ArrayList[String] = xs
+      }
+    """,
+    """
+      // Copyright blabla
+      import java.util.ArrayList
+      package object foo {
+        def foo(xs: ArrayList[String]): ArrayList[String] = xs
+      }
+    """)
+  }
+  
+  @Test
+  def importWithPackageObjectAndExistingImport = {
+    addImport(("java.util", "ArrayList"), """
+      import java.util.Arrays
+      package object foo {
+        def foo(xs: ArrayList[String]): ArrayList[String] = xs
+      }
+    """,
+    """
+      import java.util.Arrays
+      import java.util.ArrayList
+      package object foo {
+        def foo(xs: ArrayList[String]): ArrayList[String] = xs
+      }
+    """)
+  }
+  
+  @Test
   def importInEmpty = {
     addImport(("collection.mutable", "ListBuffer"), """
       object Main {val lb = ListBuffer(1)}
