@@ -335,7 +335,7 @@ trait PimpedTrees {
   class DefDefMethods(defdef: DefDef) {
     
     def contextBounds: List[Tree] = {
-      defdef.vparamss.lastOption.flatten collect {
+      defdef.vparamss.lastOption.toList.flatten collect {
         case ValDef(mods, name, tpt: TypeTree, _)
           if mods.hasFlag(Flags.IMPLICIT) 
           && name.toString.startsWith(nme.EVIDENCE_PARAM_PREFIX)
