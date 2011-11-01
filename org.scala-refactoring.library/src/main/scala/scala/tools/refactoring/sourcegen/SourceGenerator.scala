@@ -31,7 +31,20 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   def createChanges(ts: List[Tree]): List[Change] = context("Create changes") {
     generateFragmentsFromTrees(ts) map {
       case (file, tree, range, fragment) =>
-        Change(file, range.start, range.end, fragment.center.asText)
+        val end = {
+          // Trees that reach the end of the file don't have the correct end position,
+          // except if there's a newline at the end..
+          if(range.source.length -1 == range.end 
+              && range.source.content(range.end) != '\n'
+              && range.source.content(range.end) != '}')
+            range.end + 1
+          else
+            range.end
+        }
+        
+        new Change(file, range.start, end, fragment.center.asText) {
+          override val underlyingSource = Some(range.source)
+        }
     }
   }
   
@@ -70,7 +83,8 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     
     val changesPerFile = topLevelTreesByFile flatMap {
       case (source, ts) => ts flatMap findAllChangedTrees map {
-        case (topLevel, replaceRange, changes) => (source, replaceRange, topLevel, changes)
+        case (topLevel, replaceRange, changes) => 
+          (source, replaceRange, topLevel, changes)
       }
     }
     

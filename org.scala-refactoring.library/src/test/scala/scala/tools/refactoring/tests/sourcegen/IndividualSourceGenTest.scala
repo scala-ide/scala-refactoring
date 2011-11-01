@@ -127,7 +127,8 @@ trait tr[A] {
       }
     } apply ast
     
-    assertEquals("""{
+    assertEquals("""
+trait tr[A] {
   self: List[A] => 
   
   def asd() {
@@ -136,7 +137,8 @@ trait tr[A] {
   def member() = {
     ()
   }
-}""", refactor(transformedAst.toList).head.text)
+}
+""", common.Change.applyChanges(refactor(transformedAst.toList), src))
   }
   
   @Test
@@ -159,13 +161,15 @@ trait tr[A] {
       }
     } apply ast
     
-    assertEquals("""{
+    assertEquals("""
+trait tr[A] {
   self: List[A] => 
   def member() = {
     ()
   }
 
-}""", refactor(transformedAst.toList).head.text)
+}
+""", common.Change.applyChanges(refactor(transformedAst.toList), src))
   }
   
   @Test
@@ -194,12 +198,10 @@ trait tr[A] {
     } apply ast
 
     val changes = refactor(transformedAst.toList)
-    assertEquals("""def member[A](a: A, li: KIVList[A]): Boolean = {
-if (li.emptyp) false
+    assertEquals("""if (li.emptyp) false
 else {
   (a equals li.car) || member(a, li.cdr)
-}
-        }""", changes.head.text)
+""", changes.head.text)
   }
   
   @Test
@@ -221,6 +223,46 @@ else {
     assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get, sourceFile = Some(tree.pos.source)).asText)
           
     assertEquals(0, createChanges(List(valDef)).size)
+  }
+  
+  @Test
+  @Ignore
+  def newWith(): Unit = {
+    
+    val ast = treeFrom("""
+    class A(x: Int)
+    trait B
+    object AWithB {
+      val ab = new A(10)
+    }
+    """)
+    
+    val transformedAst = topdown {
+      matchingChildren {
+        transform {
+          case t: ValDef if t.name.toString == "ab " => 
+
+            val newRhs = Block(
+              mkClass(
+                name = "$anon", 
+                parents = Ident("A") :: Ident("B") :: Nil,
+                superArgs = Literal(Constant(5)) :: Nil
+              ), 
+              Apply(Select(New(Ident("$anon")), nme.CONSTRUCTOR), Nil)
+            )
+            
+            t.copy(rhs = newRhs)
+        }
+      }
+    } apply ast
+    
+    assertEquals("""
+    class A(x: Int)
+    trait B
+    object AWithB {
+      val ab = new A(5) with B
+    }
+    """, generateText(transformedAst.get))
   }
   
   @Test
@@ -924,13 +966,15 @@ class A(a: Int) {
   @Test
   def testRemoveAnArgument() {
 
-    val ast = treeFrom("""
+    val src = """
     trait tr {
       def remove[A](elem: A, li: List[A]): List[A] = {
         li.remove_if((x: A) => (elem equals x))
       }
     }
-    """)
+    """
+      
+    val ast = treeFrom(src)
 
     val result = topdown {
       matchingChildren {
@@ -943,11 +987,14 @@ class A(a: Int) {
     } apply (ast)
 
     val changes = refactor(result.toList)
-    val res =
-      assertEquals(
-        """def remove[A](elem: A): List[A] = {
+
+    assertEquals("""
+    trait tr {
+      def remove[A](elem: A): List[A] = {
         li.remove_if((x: A) => (elem equals x))
-      }""", changes.head.text)
+      }
+    }
+    """, common.Change.applyChanges(changes, src))
   }
   
    @Test
@@ -1097,5 +1144,337 @@ class A(a: Int) {
     }
     """, res1)
   }
-}
+  
+  @Test
+  def testCopy2() {
+    val str = """
+    package abc
+    case class Pair[A, B](a: A, b: B)
+    object primitive {
+      def divide[A](testpred: (A) => Boolean): Pair[List[A], List[A]] = {
+        null
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+    }
+    """
+    val ast = treeFrom(str)
+    var defdef: Tree = null
 
+    topdown(matchingChildren(
+      transform {
+        case t: DefDef if (t.name == newTermName("divide")) =>
+          defdef = t; t
+      })) apply ast
+
+    val res = topdown(matchingChildren(
+      transform {
+        case t: TypeTree if (t.nameString == "A") =>
+          mkRenamedTypeTree(t, "A1", t.symbol)
+        case t: TypeDef if (t.nameString == "A") =>
+          mkRenamedSymTree(t, "A1")
+      })) apply defdef
+
+    val result = topdown(matchingChildren(
+      transform {
+        case c: ClassDef if (c.name == newTypeName("tr")) =>
+          val t = c.impl
+          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+          c.copy(impl = templ) setPos c.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    case class Pair[A, B](a: A, b: B)
+    object primitive {
+      def divide[A](testpred: (A) => Boolean): Pair[List[A], List[A]] = {
+        null
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+      def divide[A1](testpred: (A1) => Boolean): Pair[List[A1], List[A1]] = {
+        null
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
+  
+  @Test
+  def testCopy3() {
+    val str = """
+    package abc
+    object primitive {
+      def reduce1[A1, A](fu: (A1, A) => A1, li: List[A], init: A1) = init
+      def member_test[A1, B](x: A1, li: List[B], testp: (A1, B) => Boolean): Boolean = {
+        reduce1((b: Boolean, xli: B) => b, li, false)
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+    }
+    """
+    val ast = treeFrom(str)
+    var defdef: Tree = null
+
+    topdown(matchingChildren(
+      transform {
+        case t: DefDef if (t.name == newTermName("member_test")) =>
+          defdef = t; t
+      })) apply ast
+
+    val res = topdown(matchingChildren(
+      transform {
+        case t: TypeTree if (t.nameString == "B") =>
+          mkRenamedTypeTree(t, "B1", t.symbol)
+        case t: TypeDef if (t.nameString == "B") =>
+          mkRenamedSymTree(t, "B1")
+      })) apply defdef
+
+    val result = topdown(matchingChildren(
+      transform {
+        case c: ClassDef if (c.name == newTypeName("tr")) =>
+          val t = c.impl
+          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+          c.copy(impl = templ) setPos c.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def reduce1[A1, A](fu: (A1, A) => A1, li: List[A], init: A1) = init
+      def member_test[A1, B](x: A1, li: List[B], testp: (A1, B) => Boolean): Boolean = {
+        reduce1((b: Boolean, xli: B) => b, li, false)
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+      def member_test[A1, B1](x: A1, li: List[B1], testp: (A1, B1) => Boolean): Boolean = {
+        reduce1((b: Boolean, xli: B1) => b, li, false)
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
+   
+  @Test
+  def testCopy4() {
+    val str = """
+    package abc
+    object primitive {
+      def fail() = {}
+      def foo(f: Int): Boolean = {
+        if((f == 0)) fail
+        else false
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown(matchingChildren(
+      transform {
+        case t: Apply if (t.fun.nameString == "fail") => t.copy()
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def fail() = {}
+      def foo(f: Int): Boolean = {
+        if((f == 0)) fail()
+        else false
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
+  
+  @Test
+  def testCopy4Variation() {
+    val str = """
+    package abc
+    object primitive {
+      def fail() = {}
+      def foo(f: Int): Boolean = {
+        if((f == 0)) fail()
+        else false
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown(matchingChildren(
+      transform {
+        case t: DefDef => t.copy() replaces t
+        case t: Apply if (t.fun.nameString == "fail") =>
+          val s = t.symbol.fullName
+          val qual = s.substring(0, s.lastIndexOf("."))
+          val select = Select(
+            qualifier = Ident(name = newTypeName(qual)),
+            name = t.fun.asInstanceOf[Select].name)
+          t.copy(fun = select) setPos t.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def fail() = {}
+      def foo(f: Int): Boolean = {
+        if((f == 0)) abc.primitive.fail()
+        else false
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
+  
+  @Test
+  def testCopy5() {
+    val str = """
+    package abc
+    object primitive {
+      def length[A](li:List[A]):Int = 0
+      def enumerate[A](li:List[A]):List[Int] = {
+        length[A](li)
+      Nil
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+    }
+    """
+    val ast = treeFrom(str)
+    var defdef: Tree = null
+
+    topdown(matchingChildren(
+      transform {
+        case t: DefDef if (t.name == newTermName("enumerate")) =>
+          defdef = t; t
+      })) apply ast
+
+    val names = Map("A" -> "A1")
+    val res = topdown(matchingChildren(
+      transform {
+        case t @ TypeApply(Select(name, qualifier), args) =>
+          val s = t.symbol.fullName
+          val qual = s.substring(0, s.lastIndexOf("."))
+          val select = Select(
+            qualifier = Ident(name = newTypeName(qual)),
+            name = t.fun.asInstanceOf[Select].name)
+          t.copy(fun = select, args = args) setPos t.pos
+        case t: TypeTree if (names.contains(t.nameString)) =>
+          mkRenamedTypeTree(t, names(t.nameString).toString(), t.symbol)
+        case t: TypeDef if (names.contains(t.name.toString)) =>
+          mkRenamedSymTree(t, names(t.name.toString))
+      })) apply defdef
+
+    val result = topdown(matchingChildren(
+      transform {
+        case c: ClassDef if (c.name == newTypeName("tr")) =>
+          val t = c.impl
+          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+          c.copy(impl = templ) setPos c.pos
+      })) apply ast
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def length[A](li:List[A]):Int = 0
+      def enumerate[A](li:List[A]):List[Int] = {
+        length[A](li)
+      Nil
+      }
+    }
+    trait tr[A] {
+      self: List[A] =>
+      def enumerate[A1](li:List[A1]):List[Int] = {
+        abc.primitive.length[A1](li)
+      Nil
+      }
+    }
+    """, common.Change.applyChanges(refactor(result.toList), str))
+  }
+  
+  @Test
+  def changeMethodInvocation4() {
+
+    val ast = treeFrom("""
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+      append(List("asd"), if(true) List("A") else List("B"))
+    }
+    """)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+
+          case a: Apply if (a.args.length > 1) =>
+            val buf = a.args.toBuffer
+            val arg = buf(1)
+            buf.remove(1)
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = arg)
+            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+        }
+      }
+    } apply (ast)
+
+    assertEquals("""
+    package abc
+    object primitive {
+      def append[A](li1: List[A], li2: List[A]) = Nil
+      (if(true) List("A") else List("B")).append(List("asd"))
+    }
+    """, createText(result.get, Some(ast.pos.source)))
+  }
+  
+  @Test
+  def changeMethodInvocation5() {
+
+   val str = """
+    package abc
+    object primitive {
+      def remove_if_not[A](fun:(A) => Boolean, li0:List[A]):List[A] = Nil
+      val opentries = remove_if_not((_:List[Int]).isEmpty, List(Nil))
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a: Apply if (a.args.length > 1) =>
+            val buf = a.args.toBuffer
+            val arg = buf(1)
+            buf.remove(1)
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = arg)
+            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+        case a: Function =>
+          val res = topdown {
+            matchingChildren {
+              transform {
+                case a: Apply =>
+                  a.symbol = NoSymbol
+                  a
+              }
+            }
+          } apply a
+          res.get
+        }
+      }
+    } apply (ast)
+    
+    val changes = refactor(result.toList)
+    val res = common.Change.applyChanges(changes, str)
+    assertEquals("""
+    package abc
+    object primitive {
+      def remove_if_not[A](fun:(A) => Boolean, li0:List[A]):List[A] = Nil
+      val opentries = List(Nil).remove_if_not((_:List[Int]).isEmpty)
+    }
+    """, res)
+  }
+}

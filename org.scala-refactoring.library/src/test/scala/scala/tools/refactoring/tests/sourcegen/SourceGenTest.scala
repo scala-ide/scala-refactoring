@@ -1295,5 +1295,40 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     }
     """, generateText(removeAuxiliaryTrees &> ↓(matchingChildren(reverseBody)) apply tree get))
   }
+    
+  @Test
+  def testContextBounds() = {
+    val tree = treeFrom("""
+      object RenameWithContextBound {
+        val blubb = new Blubb
+        
+        def bcd[A: Foo](f: Blubb => A)(implicit x: String): A = f(blubb)
+        def abc[A: Foo](f: Blubb => A): A = f(blubb)
+        def ghi[X, A: Foo](f: Blubb => A): A = f(blubb)
+        def jkl[A: Foo, X](f: Blubb => A): A = f(blubb)
+        def mno[A: Foo, T, X: Bar, Y: Foo](f: Blubb => A): A = f(blubb)
+      }
+      
+      trait Foo[A]
+      trait Bar[A]
+      class Blubb
+    """)
+
+    assertEquals("""
+      object RenameWithContextBound {
+        val blubb = new Blubb
+        
+        def bcd[A: Foo](f: Blubb => A)(implicit x: String): A = f(blubb)
+        def abc[A: Foo](f: Blubb => A): A = f(blubb)
+        def ghi[X, A: Foo](f: Blubb => A): A = f(blubb)
+        def jkl[A: Foo, X](f: Blubb => A): A = f(blubb)
+        def mno[A: Foo, T, X: Bar, Y: Foo](f: Blubb => A): A = f(blubb)
+      }
+      
+      trait Foo[A]
+      trait Bar[A]
+      class Blubb
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
 }
 

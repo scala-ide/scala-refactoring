@@ -189,7 +189,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         val removeThisTrees = {
           matchingChildren { 
             transform {
-              case This(qual) => Ident(qual)
+              case t: This => 
+                // expand to the full package name
+                val parents = t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
+                Ident(parents map (_.nameString) mkString ".")
             }
           }
         }

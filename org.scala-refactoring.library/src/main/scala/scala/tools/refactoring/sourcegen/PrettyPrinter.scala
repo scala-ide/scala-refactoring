@@ -7,6 +7,7 @@ package sourcegen
 
 import scala.tools.nsc.symtab.Flags
 import Requisite.anywhere
+import scala.reflect.NameTransformer
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
@@ -167,13 +168,16 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           p(qualifier)
         
         case (qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
-          Fragment(tree.symbol.nameString)
+          Fragment(escapeScalaKeywordsForImport(tree.symbol.nameString))
           
         case (qualifier, selector) if (selector.toString == "unapply" || selector.toString == "unapplySeq") =>
           p(qualifier)
           
+        case (_: Select | _: Ident | _: Block | _: Literal | _: Apply | _: This | _: Super, _) =>
+          p(qualifier, after = ".") ++ Fragment(escapeScalaKeywordsForImport(tree.nameString))
+          
         case _ =>
-          p(qualifier, after = ".") ++ Fragment(tree.nameString)   
+          p(qualifier, before = "(", after = ").") ++ Fragment(tree.nameString)   
       }    
     }
     
@@ -327,10 +331,11 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       val needsBraces = selectors.size > 1 || tree.selectors.exists(renames)
       
       def ss = (tree.selectors map { s =>
-        if(renames(s))
-          s.name.toString + " => " + s.rename.toString  
-        else
-          s.name.toString
+        escapeScalaKeywordsForImport(NameTransformer.decode(s.name.toString)) + {
+          if(renames(s))
+            " => " + escapeScalaKeywordsForImport(NameTransformer.decode(s.rename.toString))  
+          else ""
+        }
       } mkString ", ")
       
       expr match {

@@ -20,9 +20,9 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
     
     (if(s.pos.start == s.pos.end) {
       s.root.filter {
-        case t @ (_: SymTree | _: TermTree) => t.pos.start > s.pos.start
+        case t @ (_: SymTree | _: TermTree) if t.pos.isRange => t.pos.start > s.pos.start
         case _ => false
-      } lastOption
+      } headOption
     } else {
       s.root.find {
         case t @ (_: SymTree | _: TermTree) => 

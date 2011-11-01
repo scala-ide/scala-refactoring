@@ -42,12 +42,12 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
    * common pre- and suffix between the change and the source file.
    */
   private def minimizeChange(change: Change): Change = change match {
-    case Change(file, from, to, changeText) =>
+    case Change(file, from, to, changeText) if change.underlyingSource.isDefined =>
 
       def commonPrefixLength(s1: Seq[Char], s2: Seq[Char]) =
         s1 zip s2 takeWhile Function.tupled(_==_) length
       
-      val original    = getContentForFile(file).subSequence(from, to).toString
+      val original    = change.underlyingSource.get.content.subSequence(from, to).toString
       val replacement = changeText
 
       val commonStart = commonPrefixLength(original, replacement)
@@ -55,6 +55,7 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
 
       val minimizedChangeText = changeText.subSequence(commonStart, changeText.length - commonEnd).toString
       Change(file, from + commonStart, to - commonEnd, minimizedChangeText)
+    case _ => change
   }
   
   /**
@@ -63,5 +64,8 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
    * correctly minimized because it will try to use the outdated source code. An 
    * IDE can override this method to provide the actual content of the file.
    */
-  protected def getContentForFile(file: AbstractFile): Array[Char] = global.getSourceFile(file).content
+  protected def getContentForFile(file: AbstractFile): Array[Char] = {
+    // TODO remove overrides in IDE and then remove this method.
+    error("not needed anymore")
+  }
 }

@@ -82,7 +82,21 @@ trait PimpedTrees {
       }
     }    
   }
-
+    
+  /**
+   * Takes a name and wraps it in `` if the name corresponds to a Scala keyword.
+   */
+  def escapeScalaKeywordsForImport(n: Name): String = {
+    import global.nme._
+    val scalaOnlyKeywords: Set[global.Name] = Set(CASEkw, DEFkw, FORSOMEkw,
+        IMPLICITkw, LAZYkw, MATCHkw, MIXINkw, OBJECTkw, REQUIRESkw, SEALEDkw,
+        TRAITkw, TYPE_, TYPEkw, VALkw, VARkw, WITHkw, YIELDkw)
+    if(scalaOnlyKeywords.contains(n) && n != nme.USCOREkw) "`"+ n.toString +"`" else n.toString
+  }
+  
+  def escapeScalaKeywordsForImport(n: String): String = {
+    escapeScalaKeywordsForImport(n.toTermName)
+  }
   /**
    * Searches for a Symbol of a name in the type members of a tree.
    * 
@@ -93,9 +107,14 @@ trait PimpedTrees {
    * @param name The name of an ImportSelector of the import.
    */
   def findSymbolForImportSelector(expr: Tree, name: Name): Option[Symbol] = {
-    expr.tpe.members find { sym =>
+    val candidates = Option(expr.tpe).toList flatMap (_.members) filter { sym =>
       name.toString == sym.name.toString
     }
+    // There are sometimes multiple candidate symbols with the correct name; e.g. a class and an object symbol.
+    // This picks one which is most useful for semantic highlighting:
+    (candidates find { _.isCase }) orElse
+      (candidates find { s => s.isClass || s.isTrait }) orElse
+      candidates.headOption
   }
   
   implicit def importToImportSelectorTreeExtractor(t: global.Import) = new ImportSelectorTreeExtractor(t)
@@ -117,12 +136,37 @@ trait PimpedTrees {
      * Can also return NoPosition if the tree does not have a name.
      */
     def namePosition(): Position = {
+
+      // TODO convert to an extractor, but there seems to be a strange problem with 2.10
+      def findAllBinds(ts: List[Tree]): List[Tree] = {
+        ts.collect {
+          case b: Bind => List(b)
+          case UnApply(_, args) => findAllBinds(args)
+          case Apply(_, args) => findAllBinds(args)
+          case _ => Nil
+        }.flatten
+      }
+      
+      def hasSingleBindWithTransparentPosition(ts: List[Tree]) = {
+        findAllBinds(ts) match {
+          case x :: Nil => x.pos.isTransparent
+          case _ => false
+        }
+      }
+      
       val pos = try {
         t match {
           case t if t.pos == NoPosition => NoPosition
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case ValDef(_, _, _, Match(_, CaseDef(unapply: UnApply , _, _) :: Nil)) if hasSingleBindWithTransparentPosition(unapply.args) => 
+            // modify the position to remove the transparency..
+            val b = findAllBinds(unapply.args).head 
+            b.pos withEnd b.namePosition.end
+          case ValDef(_, _, _, Match(_, CaseDef(apply: Apply, _, _) :: Nil)) if hasSingleBindWithTransparentPosition(apply.args) =>
+            val b = findAllBinds(apply.args).head
+            b.pos withEnd b.namePosition.end
           case t: ValOrDefDef =>
             
             val name = t.symbol match {
@@ -144,16 +188,11 @@ trait PimpedTrees {
               t.pos withEnd t.pos.point
             else 
               new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
-            
-            // it might be a quoted literal:
-            val pos2 = if(pos.start >= 0 && pos.start < pos.source.content.length && pos.source.content(pos.start) == '`') {
-              pos withEnd (pos.end + 2)
-            } else pos
-            
+
             if(t.mods.isSynthetic && t.pos.isTransparent) 
-              pos2.makeTransparent
+              pos.makeTransparent
             else
-              pos2
+              pos
               
           case t @ Select(qualifier: New, selector) if selector.toString == "<init>" =>
             t.pos withEnd t.pos.start
@@ -206,13 +245,23 @@ trait PimpedTrees {
       pos match {
         case NoPosition => NoPosition
         case _ =>
+          
+          // it might be a quoted literal:
+          val pos2 = {
+            val src = pos.source.content
+            if(pos.start >= 0 && pos.start < src.length && src(pos.start) == '`') {
+              val startSearchForClosingTick = pos.start + 1
+              val literalLength = src.slice(startSearchForClosingTick, src.length).takeWhile(_ != '`').length
+              pos withEnd (pos.start + literalLength + "``".length)
+            } else pos
+          }
                         
           // set all points to the start, keeping wrong points
           // around leads to the calculation of wrong lines
-          if(pos.isTransparent)
-            pos withPoint pos.start makeTransparent
+          if(pos2.isTransparent)
+            pos2 withPoint pos2.start makeTransparent
           else
-            pos withPoint pos.start
+            pos2 withPoint pos2.start
       }
     }
 
@@ -286,6 +335,32 @@ trait PimpedTrees {
       cuRoot(tree.pos).map(find).toList.flatten
     }
   }
+  
+  class DefDefMethods(defdef: DefDef) {
+    
+    def contextBounds: List[Tree] = {
+      defdef.vparamss.lastOption.flatten collect {
+        case ValDef(mods, name, tpt: TypeTree, _)
+          if mods.hasFlag(Flags.IMPLICIT) 
+          && name.toString.startsWith(nme.EVIDENCE_PARAM_PREFIX)
+          && tpt.original.isInstanceOf[AppliedTypeTree] =>
+            tpt.original.asInstanceOf[AppliedTypeTree].tpt
+      } toList
+    }
+    
+    def tparamsWithContextBounds: List[Tree] = {
+      defdef.tparams ++ contextBounds sortBy (_.pos.startOrPoint)
+    }
+    
+    def explicitVParamss: List[List[Tree]] = {
+      if(contextBounds.isEmpty)
+        defdef.vparamss
+      else
+        defdef.vparamss.init  
+    }
+  }
+
+  implicit def additionalDefDefMethods(t: DefDef) = new DefDefMethods(t)
 
   class TemplateMethods(t: Template) {
     
@@ -317,9 +392,11 @@ trait PimpedTrees {
      * Returns the trees that are passed to a super constructor call.
      */
     def superConstructorParameters = t.body.collect {
-      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => stats collect {
-        case Apply(_, args) => args
-      } flatten
+      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => 
+        stats collect {
+          case Apply(_, args) => 
+            args
+        } flatten
     } flatten
   }
   
@@ -366,8 +443,10 @@ trait PimpedTrees {
         }
         
         val parents = (pimpedTpl.superConstructorParameters match {
-          case Nil => tpl.parents
-          case params => SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
+          case Nil => 
+            tpl.parents
+          case params => 
+            SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
         }) filterNot (_.isEmpty) filter {
           // objects are always serializable, but the Serializable parent's position is NoPosition
           case t: TypeTree if t.pos == NoPosition && t.nameString == "Serializable" => false
@@ -443,8 +522,8 @@ trait PimpedTrees {
     case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
       mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
      
-    case t @ DefDef(ModifierTree(mods), name, tparams, vparamss, tpt, rhs) =>
-      mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: vparamss.flatten ::: tpt :: rhs :: Nil
+    case t @ DefDef(ModifierTree(mods), name, _, _, tpt, rhs) =>
+      mods ::: (NameTree(name) setPos t.namePosition) :: t.tparamsWithContextBounds ::: t.explicitVParamss.flatten ::: tpt :: rhs :: Nil
      
     case t: TypeTree =>
       if(t.original != null) t.original :: Nil else Nil

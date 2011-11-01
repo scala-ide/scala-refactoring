@@ -6,8 +6,12 @@ package scala.tools.refactoring
 package common
 
 import tools.nsc.io.AbstractFile
+import scala.tools.nsc.util.SourceFile
 
-case class Change(file: AbstractFile, from: Int, to: Int, text: String)
+case class Change(file: AbstractFile, from: Int, to: Int, text: String) {
+  // replace the `file` with this one in the next version
+  val underlyingSource = None: Option[SourceFile]
+}
 
 object Change {
   

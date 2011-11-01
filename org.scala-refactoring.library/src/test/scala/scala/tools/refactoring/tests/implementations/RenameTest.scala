@@ -9,6 +9,7 @@ import implementations.Rename
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
+import org.junit.Ignore
 
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
@@ -91,6 +92,28 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("b"))
+  
+  @Test
+  def renameLazyValFromDefinition = new FileSet {
+    """
+    package renameLazyVals
+    class A {
+      def print {
+        lazy val /*(*/a/*)*/ = 42
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameLazyVals
+    class A {
+      def print {
+        lazy val /*(*/c/*)*/ = 42
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
         
   @Test
   def renameParameter = new FileSet {
@@ -456,8 +479,9 @@ class RenameTest extends TestHelper with TestRefactoring {
     }"""
   } applyRefactoring(renameTo("P"))
     
-  //@Test FIXME renameByNameParameters
-  def renameByNameParameters = new FileSet {
+  @Ignore
+  @Test
+  def renameNamedParameter = new FileSet {
     """
     object ByNameParap {
       def withParam(param1: Int,/*(*/name/*)*/: String) = println(name)
@@ -630,6 +654,18 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("`my strange identifier again`"))
+  
+  @Test
+  def renameClassWithBackTicks = new FileSet {
+    """
+    package renameClassWithBackTicks
+    /*(*/  class `A` { new `A` } /*)*/
+    """ becomes
+    """
+    package renameClassWithBackTicks
+    /*(*/  class `X Y` { new `X Y` } /*)*/
+    """
+  } applyRefactoring(renameTo("`X Y`"))
 
   @Test
   def renameTypeParamInSecondConstructor = new FileSet {
@@ -652,4 +688,268 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("Comp"))
+  
+  @Test
+  def renameSingleVariableDeconstructingAssignment = new FileSet {
+    """
+    package renameSingleVariableDeconstructingAssignment
+    class A {
+      def print {
+        val List(/*(*/a/*)*/, _) = List(5, 6)
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameSingleVariableDeconstructingAssignment
+    class A {
+      def print {
+        val List(/*(*/c/*)*/, _) = List(5, 6)
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+  
+  @Test
+  def renameSingleVariableDeconstructingAssignment2 = new FileSet {
+    """
+    package renameSingleVariableDeconstructingAssignment2
+    class A {
+      def print {
+        val Some(/*(*/a/*)*/) = Some(6)
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameSingleVariableDeconstructingAssignment2
+    class A {
+      def print {
+        val Some(/*(*/c/*)*/) = Some(6)
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+  
+  @Test
+  def renameSingleVariableDeconstructingAssignment3 = new FileSet {
+    """
+    package renameSingleVariableDeconstructingAssignment2
+    class A {
+      def print {
+        val Reg = "(\\w)".r
+        val Reg(/*(*/a/*)*/) = "x"
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameSingleVariableDeconstructingAssignment2
+    class A {
+      def print {
+        val Reg = "(\\w)".r
+        val Reg(/*(*/c/*)*/) = "x"
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+  
+  @Test
+  def renameSingleVariableDeconstructingAssignment4 = new FileSet {
+    """
+    package renameSingleVariableDeconstructingAssignment4
+    class A {
+      def print {
+        val List(_, /*(*/a/*)*/) = List(1, 2)
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameSingleVariableDeconstructingAssignment4
+    class A {
+      def print {
+        val List(_, /*(*/c/*)*/) = List(1, 2)
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+
+  @Test
+  def renameSingleVariableDeconstructingAssignment5 = new FileSet {
+    """
+    package renameSingleVariableDeconstructingAssignment5
+    class A {
+      def print {
+        val List(_, Some(List(_, Some(/*(*/a/*)*/), _))) = List(None, Some(List(1, Some(2), 3)))
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameSingleVariableDeconstructingAssignment5
+    class A {
+      def print {
+        val List(_, Some(List(_, Some(/*(*/c/*)*/), _))) = List(None, Some(List(1, Some(2), 3)))
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+
+  @Test
+  def renameSingleVariableDeconstructingAssignment6 = new FileSet {
+    """
+    package renameSingleVariableDeconstructingAssignment6
+    class A {
+      def print {
+        val List(/*(*/a/*)*/: Int) = List(42)
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameSingleVariableDeconstructingAssignment6
+    class A {
+      def print {
+        val List(/*(*/c/*)*/: Int) = List(42)
+        println(c)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+
+
+  @Test
+  def renameClassParameterPassedIntoSuperClassWithExpression = new FileSet {
+    """
+    class Class(/*(*/a/*)*/: String) extends RuntimeException(a + "")
+    """ becomes
+    """
+    class Class(/*(*/b/*)*/: String) extends RuntimeException(b + "")
+    """
+  } applyRefactoring(renameTo("b"))
+
+  @Test
+  def renameClassParameterPassedIntoSuperClassWithExpression2 = new FileSet {
+    """
+    package renameClassParameterPassedIntoSuperClassWithExpression2
+    class Class(val /*(*/a/*)*/: String) extends RuntimeException(a + "")
+    """ becomes
+    """
+    package renameClassParameterPassedIntoSuperClassWithExpression2
+    class Class(val /*(*/b/*)*/: String) extends RuntimeException(b + "")
+    """
+  } applyRefactoring(renameTo("b"))
+  
+  @Test
+  def renameSuperclassAtEndOfFile = new FileSet {
+    """
+    package renameSuperclassAtEndOfFile
+    class /*(*/Bar/*)*/
+    class Foo extends Bar""" becomes
+    """
+    package renameSuperclassAtEndOfFile
+    class /*(*/Baz/*)*/
+    class Foo extends Baz"""   
+  } applyRefactoring(renameTo("Baz"))
+  
+  
+  @Test
+  def renameMethodInCaseObject = new FileSet {
+    """
+  abstract class Base {
+    def /*(*/foo/*)*/ = false
+  }
+
+  case object Obj extends Base {
+    override def foo = true
+  }
+
+  case class Claz extends Base {
+    override def foo = true
+  } """ becomes
+    """
+  abstract class Base {
+    def /*(*/babar/*)*/ = false
+  }
+
+  case object Obj extends Base {
+    override def babar = true
+  }
+
+  case class Claz extends Base {
+    override def babar = true
+  } """   
+  } applyRefactoring(renameTo("babar"))
+  
+  @Test
+  def renameClassWithClassOfUsage = new FileSet {
+    """
+    package renameClassWithClassOfUsage
+    class /*(*/Foo/*)*/ {
+      val clazz = classOf[Foo]
+    }
+    """ becomes 
+    """
+    package renameClassWithClassOfUsage
+    class /*(*/Bar/*)*/ {
+      val clazz = classOf[Bar]
+    }
+    """
+  } applyRefactoring(renameTo("Bar"))
+  
+  @Test
+  def renameClassSelfTypeAnnotation= new FileSet {
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Foo/*)*/ {
+      self =>
+    }
+    """ becomes 
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Bar/*)*/ {
+      self =>
+    }
+    """
+  } applyRefactoring(renameTo("Bar"))
+  
+  @Test
+  def renameMethodWithContextBound = new FileSet {
+    """
+object RenameWithContextBound {
+  val blubb = new Blubb
+  
+  def /*(*/work/*)*/[A: Foo](f: Blubb => A): A = f(blubb) ensuring { 
+    implicitly[Foo[A]].foo(_) >= 42
+  }
+}
+
+trait Foo[A] {
+  def foo(a: A): Int
+}
+
+class Blubb
+    """ becomes 
+    """
+object RenameWithContextBound {
+  val blubb = new Blubb
+  
+  def /*(*/abc/*)*/[A: Foo](f: Blubb => A): A = f(blubb) ensuring { 
+    implicitly[Foo[A]].foo(_) >= 42
+  }
+}
+
+trait Foo[A] {
+  def foo(a: A): Int
+}
+
+class Blubb
+    """
+  } applyRefactoring(renameTo("abc"))
 }

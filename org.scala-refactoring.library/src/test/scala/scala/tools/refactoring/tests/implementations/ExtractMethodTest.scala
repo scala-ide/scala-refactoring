@@ -585,7 +585,7 @@ object ExtractMethod3 {
     package extractIfThen
     class A {
       def extractFrom(): Boolean = {
-        if(true == true)test /*)*/
+        if(true == true) test /*)*/
         else
           false 
       }
@@ -676,7 +676,7 @@ object ExtractMethod3 {
     package extractIfElseTry
     class A {
       def extractFrom(): Boolean = {
-        if(true == true)test  /*)*/
+        if(true == true) test  /*)*/
         else {
           try {
             println("hello world")

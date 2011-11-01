@@ -434,13 +434,27 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
   
   @Test
-  def annotation = new FileSet {
+  @ScalaVersion(matches="2.9")
+  def annotation29 = new FileSet {
     """
       import scala.reflect.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """ becomes
     """
       import scala.reflect.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    """
+  } applyRefactoring organize
+  
+  @Test
+  @ScalaVersion(matches="2.10")
+  def annotation = new FileSet {
+    """
+      import scala.beans.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    """ becomes
+    """
+      import scala.beans.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """
   } applyRefactoring organize
@@ -569,5 +583,59 @@ trait FullPaths {
     """
   } applyRefactoring organize
   
+  @Test
+  def importFromSamePackage = new FileSet {
+    
+    addToCompiler("testimplicits", """
+    package a.b.c
+    object TestImplicits {
+      implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
+    }""");
+    
+    """
+    package a.b.c
+    import TestImplicits._
+
+    object Tester {
+      "":Array[Byte]
+    }
+    """ becomes
+    """
+    package a.b.c
+    import a.b.c.TestImplicits.stringToBytes
+
+    object Tester {
+      "":Array[Byte]
+    }
+    """
+  } applyRefactoring organize
   
+  
+  @Test
+  def importedPackageHasKeywordName = new FileSet {
+    
+    addToCompiler("testkeyword", """
+    package other
+    package `type`
+    object `implicit` {
+      val x = 42
+    }""");
+    
+    """
+    package a.b.c
+    import other.`type`.`implicit`
+
+    object Tester {
+      val x = `implicit`.x
+    }
+    """ becomes
+    """
+    package a.b.c
+    import other.`type`.`implicit`
+
+    object Tester {
+      val x = `implicit`.x
+    }
+    """
+  } applyRefactoring organize
 }

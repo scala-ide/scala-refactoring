@@ -275,7 +275,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ p(fun) ++ pp(args) ++ r
           
         case _ => 
-          l ++ p(fun) ++ pp(args, separator = ", ") ++ r    
+          l ++ p(fun) ++ pp(args, separator = ", ", before = "[", after = "]") ++ r    
       }
     }
 
@@ -309,11 +309,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun: Select, arg :: Nil) if 
             (fun.qualifier != EmptyTree && keepTree(fun.qualifier)) /*has receiver*/
              || fun.name.toString.endsWith("$eq") /*assigns*/ =>
-          if(r.contains(")")) {
-            l ++ p(fun) ++ "(" ++ p(arg) ++ r
-          } else {
-            l ++ p(fun) ++ p(arg) ++ r
+          val _arg = balanceParens {
+            p(arg) ++ r
           }
+          l ++ p(fun) ++ _arg
           
         case (TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil) =>
           l ++ p(fun) ++ p(arg) ++ r
@@ -379,7 +378,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         
       } else {
         tree.tpe match {
-          case typeRef @ TypeRef(tpe, sym, parents) if definitions.isFunctionType(typeRef) && !parents.isEmpty =>
+          case typeRef @ TypeRef(tpe, sym, parents) if tree.original == null && definitions.isFunctionType(typeRef) && !parents.isEmpty =>
             l ++ typeToString(tree, typeRef) ++ r
           case _ => 
             l ++ p(tree.original) ++ r
@@ -399,6 +398,35 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def SelfTypeTree(tree: SelfTypeTree, name: NameTree, types: List[Tree], orig: Tree)(implicit ctx: PrintingContext) = {
       l ++ p(name) ++ pp(types) ++ r
     }
+        
+    override def AppliedTypeTree(tree: AppliedTypeTree, tpt: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
+      
+      def printFunctionType() = {
+        if(args.size == 1) {
+          l ++ "() => " ++ p(args.head) ++ r
+        } else if(args.size == 2) {
+          val x = p(args.head)
+          l ++ p(args.head) ++ p(args.last) ++ r
+        } else  {
+          val arguments = args.init
+          val ret = args.last
+          l ++ pp(arguments, before = "(", separator = ", ", after = Requisite.anywhere(")")) ++ p(ret) ++ r
+        }        
+      }
+      
+      tpt match {
+        case Select(_, name) if name.toString == "<repeated>" => 
+          l ++ p(args.head) ++ r
+        case _ if tpt.isEmpty && args.size == 1 =>
+          l ++ p(args.head) ++ r
+        case Select(_, name) if name.toString.matches("Function\\d+") =>
+          printFunctionType()
+        case EmptyTree =>
+          printFunctionType()
+        case _ =>
+         l ++ p(tpt) ++ pp(args, before = "[", separator = ", ", after = "]") ++ r 
+      }
+    }
   }
 
   trait FunctionPrinters {
@@ -411,13 +439,13 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ pp(vparams) ++ (NL + indentation) ++ ppi(body, separator = newline) ++ r
           
         case _ =>
-          val params = pp(vparams)
+          val params = pp(vparams, separator = ", ")
           val bdy = p(body)
           
           if(r.contains(")")) {
-            l ++ pp(vparams) ++ "(" ++ p(body) ++ r
+            l ++ params ++ "(" ++ p(body) ++ r
           } else {
-            l ++ pp(vparams) ++ p(body) ++ r
+            l ++ params ++ p(body) ++ r
           }
       }
     }
@@ -439,7 +467,18 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
 
     override def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext) = {
-      l ++ pp(pid :: stats, separator = newline) ++ r
+      
+      val isPackageObjectWithNoTopLevelImports = findOriginalTree(tree) exists {
+        case global.PackageDef(_, ModuleDef(_, nme.PACKAGEkw, _) :: Nil) => true
+        case _ => false
+      }
+      
+      if(isPackageObjectWithNoTopLevelImports) {
+        val (imports, restStats) = stats.span(_.isInstanceOf[Import])
+        pp(imports, separator = newline, after = newline) ++ l ++ pp(pid :: restStats, separator = newline) ++ r
+      } else {
+        l ++ pp(pid :: stats, separator = newline) ++ r        
+      }
     }
   }
 
@@ -525,71 +564,92 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       
       val o = orig(tree).asInstanceOf[If]
       
-          val _else = {
+      val _else = {
+        
+        /*
+         * Printing the else branch is tricky because of how {} are handled in the AST,
+         * but only if the else branch already existed:
+         */
+        val elseBranchAlreadyExisted = keepTree(o.elsep) && o.elsep.pos.isRange
+        
+        if(elseBranchAlreadyExisted) {
+          
+          val layout = between(o.thenp, o.elsep)(o.pos.source).asText
+          val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*?\r?\n\\s*$", "else "))
+          
+          val curlyBracesAlreadyExist = layout.contains("{")
+          val originalElseHasNoBlock = !o.elsep.isInstanceOf[Block]
+          
+          elsep match {
             
             /*
-             * Printing the else branch is tricky because of how {} are handled in the AST,
-             * but only if the else branch already existed:
-             */
-            val elseBranchAlreadyExisted = keepTree(o.elsep) && o.elsep.pos.isRange
+             * The existing else branch was enclosed by {} but contained only a single
+             * statement.
+             * */
+            case BlockExtractor(body) if originalElseHasNoBlock && curlyBracesAlreadyExist =>
+              pp(body, before = l, separator = Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL))
             
-            if(elseBranchAlreadyExisted) {
-              
-              val layout = between(o.thenp, o.elsep)(o.pos.source).asText
-              val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*?\r?\n\\s*$", "else "))
-              
-              val curlyBracesAlreadyExist = layout.contains("{")
-              val originalElseHasNoBlock = !o.elsep.isInstanceOf[Block]
-              
-              elsep match {
-                
-                /*
-                 * The existing else branch was enclosed by {} but contained only a single
-                 * statement.
-                 * */
-                case BlockExtractor(body) if originalElseHasNoBlock && curlyBracesAlreadyExist =>
-                  pp(body, before = l, separator = Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL))
-                
-                /*
-                 * If there was no block before and also no curly braces, we have to write
-                 * them now (indirectly through the Block), but we don't want to add any
-                 * indentation.
-                 * */
-                case elsep: Block =>
-                  outer.print(elsep, ctx) ifNotEmpty (_ ++ (NoRequisite, l))
-  
-                /* If it's a single statements, we print it indented: */
-                case _ => 
-                  pi(elsep, before = Requisite.anywhere(layout))
-              }
-  
-            } else {
-              val l = newline ++ "else" ++ Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL)
-              pi(elsep, before = l)
-            }
-          }
-          
-          val _cond = p(cond, before = "(", after = Requisite.anywhere(")"))
-          
-          val _then = thenp match {
-            case block: Block =>
-              p(block)
-            case _ if keepTree(o.thenp) && o.thenp.pos.isRange =>
-              val layout = between(o.cond, o.thenp)(o.pos.source).asText
-              val printedThen = pi(thenp)
-              
-              if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
-                val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
-                pi(thenp, before = Requisite.anywhere(right))
-              } else {
-                pi(thenp)
-              }
-              
+            /*
+             * If there was no block before and also no curly braces, we have to write
+             * them now (indirectly through the Block), but we don't want to add any
+             * indentation.
+             * */
+            case elsep: Block =>
+              outer.print(elsep, ctx) ifNotEmpty (_ ++ (NoRequisite, l))
+
+            /* If it's a single statements, we print it indented: */
             case _ => 
-              pi(thenp)
+              pi(elsep, before = Requisite.anywhere(layout))
           }
+
+        } else {
+          val l = newline ++ "else" ++ Requisite.newline(ctx.ind.current + ctx.ind.defaultIncrement, NL)
+          pi(elsep, before = l)
+        }
+      }
           
-          l ++ _cond ++ _then ++ _else ++ r
+      val (_thenLeadingLayout, _then) = {
+        thenp match {
+          case block: Block =>
+            p(block)
+          case _ if keepTree(o.thenp) && o.thenp.pos.isRange =>
+            val layout = between(o.cond, o.thenp)(o.pos.source).asText
+            val printedThen = pi(thenp)
+  
+            if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
+              val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
+              pi(thenp, before = Requisite.anywhere(right))
+            } else {
+              pi(thenp)
+            }
+            
+          case _ => 
+            pi(thenp)
+        }
+      } match {
+        case f => (f.leading, f.dropLeadingLayout)
+      }
+      
+      val _cond = balanceParens {
+        // we want to balance the parens around the condition and all adjacent layout
+        l ++ p(cond, before = "(", after = Requisite.anywhere(")")) ++ _thenLeadingLayout
+      }
+                      
+      val condAndThenOnSameLine = (cond.pos, thenp.pos) match {
+        case (NoPosition, _) => false
+        case (_, NoPosition) => true
+        case (p1, p2) => p1.line == p2.line
+      }
+                  
+      val hasSeparatorBetweenCondAndThen = {
+        _then.asText.startsWith(" ") || _cond.asText.endsWith(" ")
+      }
+      
+      if(condAndThenOnSameLine && !hasSeparatorBetweenCondAndThen) {
+        _cond ++ " " ++ _then ++ _else ++ r
+      } else {
+        _cond ++ _then ++ _else ++ r
+      }
     }
   }
 
@@ -611,11 +671,32 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         if(vparamss == List(List()) && modsAndName.asText.endsWith("(")) {
           Fragment(")")
         } else {
-          vparamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _)
+          tree.explicitVParamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _)
         }
       }
       
-      val typeParameters = pp(tparams, before = "[", separator = ", ", after = Requisite.anywhere("]"))
+      val typeParameters = {
+
+        def mergeTypeParameters(ts: List[Tree]): Fragment = ts match {
+          case (x: TypeDef) :: (y: Ident) :: Nil =>
+            p(x) ++ ": " ++ p(y)
+          case (x: TypeDef) :: (y: Ident) :: rest =>
+            p(x) ++ ": " ++ p(y) ++ ", " ++ mergeTypeParameters(rest)
+          
+          case (x: TypeDef) :: Nil =>
+            p(x)
+          case (x: TypeDef) :: rest =>
+            p(x) ++ ", " ++ mergeTypeParameters(rest)
+          
+          case Nil =>
+            EmptyFragment
+        }
+        
+        mergeTypeParameters(tree.tparamsWithContextBounds) ifNotEmpty {
+          _ ++ (before = "[", after = Requisite.anywhere("]"))
+        }
+      }
+      
       val body = p(rhs)
       val resultType = p(tpt, before = Requisite.anywhere(":", ": "))
             
@@ -673,6 +754,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          * */
         trace("Literal tree is empty { }")
         Fragment((l ++ layout(tree.pos.start, tree.pos.end)(tree.pos.source) ++ r).asText)
+      } else if(value.tag == ClassTag) {
+        val tpe = value.tpe match {
+          case TypeRef(_, _, arg :: Nil) =>
+            arg
+          case tpe =>
+            tpe.toString
+        }
+        l ++ Fragment("classOf["+ tpe.toString + "]") ++ r
       } else { 
         l ++ Fragment(value.stringValue) ++ r
       }

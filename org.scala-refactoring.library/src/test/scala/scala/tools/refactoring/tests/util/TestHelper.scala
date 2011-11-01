@@ -15,6 +15,7 @@ import util.CompilerProvider
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
   type Test = org.junit.Test
+  type Ignore = org.junit.Ignore
   type AbstractFile = tools.nsc.io.AbstractFile
   type ConsoleTracing = common.ConsoleTracing
   type SilentTracing = common.SilentTracing

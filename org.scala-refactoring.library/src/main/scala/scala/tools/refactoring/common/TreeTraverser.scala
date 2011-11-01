@@ -263,17 +263,26 @@ trait TreeTraverser {
 
             val constrParamAccessors = t.symbol.constrParamAccessors
             
-            Option(superArg.symbol) foreach { superArgSymbol =>
-              constrParamAccessors.find(_.name == superArgSymbol.name) foreach { sym =>
+            superArg filter {
+              case i: Ident => true
+              case _ => false
+            } foreach { superArg =>
+
+              constrParamAccessors.find { param =>
+                // trim because the name might have a trailing ' ' when it's a val or var
+                val n1 = param.name.toString.trim
+                val n2 = superArg.symbol.name.toString
+                n1 == n2
+              } foreach { sym =>
                 f(sym, superArg)
               }
 
               val constructorParameters = t.impl.constructorParameters
               
-              constructorParameters.find(_.name == superArgSymbol.name) foreach { t =>
+              constructorParameters.find(_.name == superArg.symbol.name) foreach { t =>
                 // we also add a reference from the super argument's symbol to the 
                 // constructor parameter accessor
-                f(superArgSymbol, t)
+                f(superArg.symbol, t)
               }
               
             }
@@ -302,6 +311,17 @@ trait TreeTraverser {
             findSymbolForImportSelector(expr, selector.name.name) foreach { sym =>
               f(sym, selector)
             }
+          }
+               
+        /*
+         * classOf[some.Type] is represented by a Literal
+         * */  
+        case t @ Literal(Constant(value)) =>
+          
+          value match {
+            case TypeRef(_, sym, _) =>
+              f(sym, t)
+            case _ => ()
           }
 
         case _ => ()  
