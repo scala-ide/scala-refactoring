@@ -9,7 +9,7 @@ import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
 import sourcegen.SourceGenerator
-import common.{SilentTracing, ConsoleTracing}
+import common.{SilentTracing, ConsoleTracing, Change}
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
@@ -1476,5 +1476,131 @@ class A(a: Int) {
       val opentries = List(Nil).remove_if_not((_:List[Int]).isEmpty)
     }
     """, res)
+  }
+
+  @Test
+  def patternMatchTest() {
+    val src = """
+  object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def toInline() = if((null equals null)) true
+      else fail
+    def acmatch_expr(x: Any) = x match {
+      case t: List[_] => toInline()
+      case false => fail
+    }
+  }
+    """
+    val ast = treeFrom(src).asInstanceOf[PackageDef]
+    val toInline = ast.stats(0).asInstanceOf[ModuleDef]
+      .impl.body(2).asInstanceOf[DefDef]
+    
+    def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
+      CaseDef(Bind("t",
+        if (className != "") Typed(Ident(""), Ident(className))
+        else EmptyTree),
+        guard, rhs)
+    }
+    
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: Match =>
+            val rhs = toInline.rhs.asInstanceOf[If]
+            val caseDef = mkPattern("", "ASD", EmptyTree, rhs.copy())
+            t.copy(cases = t.cases ::: List(caseDef))
+          }
+      }
+    } apply ast
+    assertEquals("""
+  object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def toInline() = if((null equals null)) true
+      else fail
+    def acmatch_expr(x: Any) = x match {
+      case t: List[_] => toInline()
+      case false => fail
+      case t: ASD => if ((null equals null)) true else fail
+    }
+  }
+    """, Change.applyChanges(refactor(result.toList), src))
+  }
+  
+  @Test
+  def patternMatchTest2() {
+    val src = """
+  object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def method() {
+    }
+    class ASD
+    def toInline() = {
+      if (true && true) {
+        if (!true) {
+          fail
+        } else {
+          println("asd")
+          if (true && true) true
+          else false
+        }
+      } else method()
+    }
+    def acmatch_expr(x: Any) = x match {
+      case false => fail
+    }
+  }
+  """
+    val ast = treeFrom(src).asInstanceOf[PackageDef]
+    val toInline = ast.stats(0).asInstanceOf[ModuleDef]
+      .impl.body(4).asInstanceOf[DefDef]
+
+    def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
+      CaseDef(Bind("t",
+        if (className != "") Typed(Ident(""), Ident(className))
+        else EmptyTree),
+        guard, rhs)
+    }
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef if(t.name.toString() == "acmatch_expr")=>
+            val rhs = toInline.rhs.asInstanceOf[If]
+            val caseDef = mkPattern("", "ASD", EmptyTree, rhs.copy())
+            val matchx = Match(Ident("x"), List(caseDef))
+            t.copy(rhs = matchx) replaces t
+        }
+      }
+    } apply ast
+    assertEquals("""
+  object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def method() {
+    }
+    class ASD
+    def toInline() = {
+      if (true && true) {
+        if (!true) {
+          fail
+        } else {
+          println("asd")
+          if (true && true) true
+          else false
+        }
+      } else method()
+    }
+    def acmatch_expr(x: Any) = x match {
+      case t: ASD => if (true && true) {
+        if (!true) {
+          fail
+        } else {
+          println("asd")
+          if (true && true) true
+          else false
+        }
+      } else method()
+    }
+  }
+  """, Change.applyChanges(refactor(result.toList), src))
   }
 }
