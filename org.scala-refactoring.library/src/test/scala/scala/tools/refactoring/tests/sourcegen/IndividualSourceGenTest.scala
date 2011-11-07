@@ -1603,4 +1603,145 @@ class A(a: Int) {
   }
   """, Change.applyChanges(refactor(result.toList), src))
   }
+  
+  @Test
+  def patternMatchTest3() {
+    val src = """
+object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def subst_tlop2(obj: Expr, selfun1: (Expr) => Expr, selfun2: (Expr) => Expr): Expr = {
+      null
+    }
+    def subst_until(obj: Expr): Expr = {
+      subst_tlop2(obj, ((_: Expr).fma1), ((_: Expr).fma2))
+    }
+
+    def subst_expr(obj: Expr): Expr = {
+      if (obj.untilp) subst_until(obj)
+      else fail
+    }
+    abstract class Expr(val fma1: Expr, val fma2: Expr) {
+      def untilp = false
+    }
+    abstract class Until(fma1: Expr, fma2: Expr) extends Expr(fma1, fma2) {
+      override def untilp = true
+    }
+  }
+  """
+    val ast = treeFrom(src).asInstanceOf[PackageDef]
+    val toInline = ast.stats(0).asInstanceOf[ModuleDef]
+      .impl.body(3).asInstanceOf[DefDef]
+
+    def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
+      CaseDef(Bind("t",
+        if (className != "") Typed(Ident(""), Ident(className))
+        else EmptyTree),
+        guard, rhs)
+    }
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef if (t.name.toString() == "subst_expr") =>
+            val rhs = toInline.rhs.asInstanceOf[Apply]
+            val caseDef = mkPattern("", "Until", EmptyTree, rhs.copy())
+            val matchx = Match(Ident("obj"), List(caseDef))
+            t.copy(rhs = matchx) setPos t.pos
+        }
+      }
+    } apply ast
+    assertEquals("""
+object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def subst_tlop2(obj: Expr, selfun1: (Expr) => Expr, selfun2: (Expr) => Expr): Expr = {
+      null
+    }
+    def subst_until(obj: Expr): Expr = {
+      subst_tlop2(obj, ((_: Expr).fma1), ((_: Expr).fma2))
+    }
+
+    def subst_expr(obj: Expr): Expr = obj match {
+      case t: Until => subst_tlop2(obj, ((_: Expr).fma1), ((_: Expr).fma2))
+    }
+    abstract class Expr(val fma1: Expr, val fma2: Expr) {
+      def untilp = false
+    }
+    abstract class Until(fma1: Expr, fma2: Expr) extends Expr(fma1, fma2) {
+      override def untilp = true
+    }
+  }
+  """, Change.applyChanges(refactor(result.toList), src))
+  }
+  
+  @Test
+  def patternMatchTest4() {
+    val src = """
+object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def find[A](f: A => Boolean, li: List[A]) = li.head
+    def compile_apply_substitution_on_abstractionmv(obj: Abstraction): (List[Mvmatch]) => Abstraction = {
+      (subst: List[Mvmatch]) =>
+        find((mvmatch: Mvmatch) => true, subst).abstractionmatchabstraction
+    }
+    def subst_expr(obj: Abstraction): (List[Mvmatch]) => Abstraction = {
+      if (obj.abstractionmvp) compile_apply_substitution_on_abstractionmv(obj)
+      else fail 
+    }
+    abstract class Abstraction {
+      def abstractionmvp = false
+    }
+    class Abstractionmv extends Abstraction {
+      override def abstractionmvp = true
+    }
+    class Mvmatch(val abstractionmatchmv: Abstraction, val abstractionmatchabstraction: Abstraction) {
+      def abstractionmatchp = true
+    }
+  }
+  """
+    val ast = treeFrom(src).asInstanceOf[PackageDef]
+    val toInline = ast.stats(0).asInstanceOf[ModuleDef]
+      .impl.body(3).asInstanceOf[DefDef]
+
+    def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
+      CaseDef(Bind("t",
+        if (className != "") Typed(Ident(""), Ident(className))
+        else EmptyTree),
+        guard, rhs)
+    }
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case t: DefDef if (t.name.toString() == "subst_expr") =>
+            val rhs = toInline.rhs.asInstanceOf[Function]
+            val caseDef = mkPattern("", "Abstractionmv", EmptyTree, rhs.copy())
+            val matchx = Match(Ident("obj"), List(caseDef))
+            t.copy(rhs = matchx) setPos t.pos
+        }
+      }
+    } apply ast
+    assertEquals("""
+object acmatch {
+    def fail = throw new UnsupportedOperationException("unsupported")
+    def find[A](f: A => Boolean, li: List[A]) = li.head
+    def compile_apply_substitution_on_abstractionmv(obj: Abstraction): (List[Mvmatch]) => Abstraction = {
+      (subst: List[Mvmatch]) =>
+        find((mvmatch: Mvmatch) => true, subst).abstractionmatchabstraction
+    }
+    def subst_expr(obj: Abstraction): (List[Mvmatch]) => Abstraction = obj match {
+      case t: Abstractionmv => (subst: List[Mvmatch]) =>
+      find((mvmatch: Mvmatch) => true, subst).abstractionmatchabstraction
+    }
+    abstract class Abstraction {
+      def abstractionmvp = false
+    }
+    class Abstractionmv extends Abstraction {
+      override def abstractionmvp = true
+    }
+    class Mvmatch(val abstractionmatchmv: Abstraction, val abstractionmatchabstraction: Abstraction) {
+      def abstractionmatchp = true
+    }
+  }
+  """, Change.applyChanges(refactor(result.toList), src))
+  }
 }

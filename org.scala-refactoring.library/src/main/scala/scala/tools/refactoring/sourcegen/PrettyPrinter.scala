@@ -248,7 +248,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             p(fun) ++ "(" ++ p(arg) ++ ")"
           
         case _ =>
-          p(fun) ++ "(" ++ pp(args, separator = ", ") ++ ")"
+          p(fun) ++ balanceParens {
+            EmptyFragment ++ "(" ++ pp(args, separator = ", ") ++ ")"
+          }
       }
     }    
   }
@@ -331,7 +333,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             (p(vparam, before = "", after = " => "), _body)
           }
         case _ =>
-          (pp(vparams, before = "(", separator = ", ", after = ") => "), p(body))
+          (pp(vparams, before = "(", separator = ", ", after = ") =>" ++ Requisite.Blank), p(body))
       }
       
       body match {
