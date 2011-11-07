@@ -11,7 +11,7 @@ import scala.reflect.NameTransformer
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
-  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations =>
+  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper =>
   
   import global._
   
