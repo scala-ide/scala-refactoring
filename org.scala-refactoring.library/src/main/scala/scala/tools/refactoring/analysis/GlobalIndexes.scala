@@ -26,7 +26,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           SuperConstructorParameters with
           Companion with
           LazyValAccessor with
-          OverridesInClassHierarchy {
+          OverridesInClassHierarchy with
+          SameSymbolPosition {
         val cus = compilationUnits
       }
     
@@ -58,8 +59,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     def occurences(s: global.Symbol) = {
       expandSymbol(s) flatMap { sym =>
         declaration(sym).toList ::: cus.flatMap { cu => 
-            cu.references.get(sym).toList.flatten
-          }
+          cu.references.get(sym).toList.flatten
+        }
       } filter (_.pos.isRange) distinct
     }
     
