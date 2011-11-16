@@ -354,6 +354,13 @@ trait LayoutHelper extends CommentHelpers {
               case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace after ValOrDefDef")
             }
             
+          case (l, parent: Apply, r) if parent.args.contains(l) =>
+            val Comma = """(.*?),\s?(.*)""".r
+            layout match {
+              case Comma(l, r) => (l, r, "Apply Arguments")
+              case _ => split(layout)
+            }
+            
           case (l, _, r) => split(layout)
         }
         

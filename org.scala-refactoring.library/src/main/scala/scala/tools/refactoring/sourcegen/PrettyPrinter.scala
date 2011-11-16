@@ -11,7 +11,7 @@ import scala.reflect.NameTransformer
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
-  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations =>
+  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper =>
   
   import global._
   
@@ -149,9 +149,32 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
     
     override def Match(tree: Match, selector: Tree, cases: List[Tree])(implicit ctx: PrintingContext) = {
-      val matchee = p(selector, after = " match ") 
       
-      matchee ++ ppi(cases, before = "{" ++ indentedNewline, separator = indentedNewline, after = newline ++ "}")
+      val leadingLayoutForFirstClause = cases match {
+        case first :: _ if first.hasExistingCode =>
+          surroundingLayoutFromParentsAndSiblings(cases.head)._1
+        case _ => 
+          NoLayout
+      }
+      
+      val afterSelector = {
+        if(leadingLayoutForFirstClause.asText.startsWith(" "))
+          " match"
+        else
+          " match "
+      }
+      
+      val selector_ = p(selector, after = afterSelector)
+      
+      val beforeClauses = {
+        if(leadingLayoutForFirstClause.contains("{")) {
+          NoRequisite
+        } else {
+          "{" ++ indentedNewline
+        }
+      }
+      
+      selector_ ++ ppi(cases, before = beforeClauses, separator = indentedNewline, after = newline ++ "}")
     }
   }
   
@@ -225,7 +248,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             p(fun) ++ "(" ++ p(arg) ++ ")"
           
         case _ =>
-          p(fun) ++ "(" ++ pp(args, separator = ", ") ++ ")"
+          p(fun) ++ balanceParens {
+            EmptyFragment ++ "(" ++ pp(args, separator = ", ") ++ ")"
+          }
       }
     }    
   }
@@ -308,7 +333,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             (p(vparam, before = "", after = " => "), _body)
           }
         case _ =>
-          (pp(vparams, before = "(", separator = ", ", after = ") => "), p(body))
+          (pp(vparams, before = "(", separator = ", ", after = ") =>" ++ Requisite.Blank), p(body))
       }
       
       body match {
@@ -427,11 +452,25 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
   
     override def If(tree: If, cond: Tree, thenp: Tree, elsep: Tree)(implicit ctx: PrintingContext) = {
-      val cond_ = p(cond, before = "if (", after = ")")
       
-      val then_ = pi(thenp, before = " ")
+      val (thenLeadingLayout_, then_) = {
+        pi(thenp) match {
+          case f => (f.leading, f.dropLeadingLayout)
+        }
+      }
+
+      val cond_ = balanceParens {
+        p(cond, before = "if (", after = ")") ++ thenLeadingLayout_ ++ Requisite.Blank
+      }
       
-      val else_ = p(elsep, before = " else ")
+      val beforeElse = {
+        if(thenLeadingLayout_.contains("{"))
+          newline ++ "} else "
+        else
+          allowSurroundingWhitespace(" else ")
+      }
+      
+      val else_ = p(elsep, before = beforeElse)
       
       cond_ ++ then_ ++ else_ 
     }

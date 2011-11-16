@@ -610,7 +610,6 @@ trait FullPaths {
     """
   } applyRefactoring organize
   
-  
   @Test
   def importedPackageHasKeywordName = new FileSet {
     
@@ -637,5 +636,25 @@ trait FullPaths {
       val x = `implicit`.x
     }
     """
+  } applyRefactoring organize
+  
+  @Test
+  def fileWithoutNewline = new FileSet {
+    """
+    import java.util.Date
+    class MyClass[T]""" becomes
+    """
+    
+    class MyClass[T]"""
+  } applyRefactoring organize
+  
+  @Test
+  def parensAtEndOfFile = new FileSet {
+    """
+    import java.util.Date
+    class MyClass(i: Int)""" becomes
+    """
+    
+    class MyClass(i: Int)"""
   } applyRefactoring organize
 }
