@@ -1744,4 +1744,48 @@ object acmatch {
   }
   """, Change.applyChanges(refactor(result.toList), src))
   }
+  
+  @Test
+  def changeMethodInvocation7() {
+
+    val str = """
+    package abc
+    object primitive {
+      def length[A](li: List[A]) = 0
+      def reduce[A, B](li: List[B], fu: (A, B) => A, init: A): A = throw new Exception("ASD")
+      def foo[A](li: List[Int], li2: List[Int]) = {  
+        reduce(li, (a: Int, b: Int) => {
+        length(li2) + b}, 0)
+      }
+    }
+    """
+    val ast = treeFrom(str)
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a @ Apply(fun: TypeApply, _) =>
+            val buf = a.args.toBuffer
+            val arg = buf(0)
+            buf.remove(0)
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = arg)
+            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+        }
+      }
+    } apply (ast)
+    val changes = refactor(result.toList)
+    val res = Change.applyChanges(changes, str)
+    assertEquals("""
+    package abc
+    object primitive {
+      def length[A](li: List[A]) = 0
+      def reduce[A, B](li: List[B], fu: (A, B) => A, init: A): A = throw new Exception("ASD")
+      def foo[A](li: List[Int], li2: List[Int]) = {  
+        li.reduce((a: Int, b: Int) => {
+        li2.length() + b}, 0)
+      }
+    }
+    """, res)
+  }
 }

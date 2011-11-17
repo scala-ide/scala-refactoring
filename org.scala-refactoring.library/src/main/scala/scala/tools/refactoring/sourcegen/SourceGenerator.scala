@@ -31,21 +31,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   def createChanges(ts: List[Tree]): List[Change] = context("Create changes") {
     generateFragmentsFromTrees(ts) map {
       case (file, tree, range, fragment) =>
-        val end = {
-          // Trees that reach the end of the file don't have the correct end position,
-          // except if there's a newline, }, ), or ] at the end..
-          // TODO: properly investigate this for a scalac bug report
-          val lastCharInFile = range.source.content(range.end)
-          if(range.source.length -1 == range.end 
-              && lastCharInFile != '\n'
-              && lastCharInFile != '}'
-              && lastCharInFile != ')'
-              && lastCharInFile != ']')
-            range.end + 1
-          else
-            range.end
-        }
-        
+        val end = endPositionAtEndOfSourceFile(range)
         new Change(file, range.start, end, fragment.center.asText) {
           override val underlyingSource = Some(range.source)
         }

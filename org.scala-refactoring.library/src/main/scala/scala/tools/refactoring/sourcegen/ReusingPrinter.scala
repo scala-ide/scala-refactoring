@@ -53,7 +53,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         super.dispatchToPrinter(t, newCtx)
       } else {
         trace("Not in change set, keep original code.")
-        Fragment(t.pos.source.content.slice(t.pos.start, t.pos.end).mkString)
+        val end = endPositionAtEndOfSourceFile(t.pos)
+        Fragment(t.pos.source.content.slice(t.pos.start, end).mkString)
       }
         
       val indentedFragment = {
@@ -213,14 +214,18 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ if selector.toString.startsWith("unary_") =>
           l ++ p(nameOrig) ++ p(qualifier) ++ r
           
-        case Apply(s @ global.Select(qual, name), Nil) =>
-          
-          val sName = nameOf(s)
-          val ll = between(qual, sName)(s.pos.source)
+        case Apply(s @ global.Select(qual, _), Nil) =>
+                    
+          val betweenQualifierAndName = {
+            val name = nameOf(s)
+            if(qual.pos.isRange && name.pos.isRange)
+              between(qual, name)(tree.pos.source)
+            else NoLayout
+          }
           
           val _qualifier = p(qualifier)
           
-          if(!_qualifier.asText.matches("^\\s*\\(.*\\)\\s*") && ll.contains(" ")) {
+          if(!_qualifier.asText.matches("^\\s*\\(.*\\)\\s*") && betweenQualifierAndName.contains(" ")) {
             l ++ "(" ++ _qualifier ++ ")" ++ " " ++ p(nameOrig) ++ r
           } else {
             l ++ _qualifier ++ p(nameOrig) ++ r
