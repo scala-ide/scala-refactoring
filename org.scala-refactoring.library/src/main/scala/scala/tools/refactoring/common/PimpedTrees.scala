@@ -126,7 +126,7 @@ trait PimpedTrees {
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && /*t.pos.point == p.point &&*/ t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
     def samePos(o: Tree): Boolean = samePos(o.pos)
     def samePosAndType(o: Tree): Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
-    
+        
     /**
      * Returns the position this tree's name has in the source code.
      * Can also return NoPosition if the tree does not have a name.
@@ -303,6 +303,23 @@ trait PimpedTrees {
   }
   
   implicit def additionalTreeMethodsForPositions(t: Tree) = new TreeMethodsForPositions(t)
+  
+  /**
+   * Trees that reach the end of the file don't seem to have the correct end position, 
+   * except if there's a newline, }, ), or ] at the end.
+   */
+  def endPositionAtEndOfSourceFile(pos: Position) = {
+    // TODO: properly investigate this for a scalac bug report
+    val lastCharInFile = pos.source.content(pos.end)
+    if(pos.source.length -1 == pos.end 
+        && lastCharInFile != '\n'
+        && lastCharInFile != '}'
+        && lastCharInFile != ')'
+        && lastCharInFile != ']')
+      pos.end + 1
+    else
+      pos.end
+  }
   
   /**
    * Finds a tree by its position, can be used to find
