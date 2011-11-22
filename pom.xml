@@ -35,7 +35,6 @@
   </developers>
   <properties>
     <scala.version>2.9.2</scala.version>
-    <scct.version>2.9.0-1</scct.version>
     <tycho.version>0.12.0</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
@@ -314,13 +313,24 @@
       </repositories>
     </profile>
     <profile>
-      <id>scala-trunk</id>
+      <id>scala-2.10.x</id>
       <repositories>
         <repository>
-          <id>scala-toolchain-trunk</id>
+          <id>scala-toolchain-2.10.x</id>
           <name>Scala Toolchain trunk p2 repository</name>
           <layout>p2</layout>
-          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-trunk</url>
+          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-210x</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>scala-2.11.x</id>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-2.11.x</id>
+          <name>Scala Toolchain trunk p2 repository</name>
+          <layout>p2</layout>
+          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-211x</url>
         </repository>
       </repositories>
     </profile>
