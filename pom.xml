@@ -35,7 +35,7 @@
   </developers>
   <properties>
     <scala.version>2.9.2</scala.version>
-    <tycho.version>0.10.0</tycho.version>
+    <tycho.version>0.12.0</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
   </properties>
@@ -74,17 +74,28 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.tycho</groupId>
+        <groupId>org.eclipse.tycho</groupId>
         <artifactId>tycho-maven-plugin</artifactId>
         <version>${tycho.version}</version>
         <extensions>true</extensions>
       </plugin>
       <plugin>
-        <groupId>org.sonatype.tycho</groupId>
+        <groupId>org.eclipse.tycho</groupId>
         <artifactId>target-platform-configuration</artifactId>
         <version>${tycho.version}</version>
         <configuration>
           <resolver>p2</resolver>
+          <pomDependencies>consider</pomDependencies>
+        </configuration>
+      </plugin>
+      <!-- for setting a better qualifier -->
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-packaging-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <configuration>
+          <format>yyyyMMddHHmm'-${git.hash}'</format>
+          <archiveSite>true</archiveSite>
         </configuration>
       </plugin>
       <plugin>
@@ -199,12 +210,41 @@
       <name>Maven Codehaus snapshot repository</name>
       <url>http://snapshots.repository.codehaus.org/</url>
     </repository>
+    <repository>
+      <id>sonatype.release</id>
+      <name>Sonatype maven release repository</name>
+      <url>https://oss.sonatype.org/content/repositories/releases/</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+    <repository>
+      <id>sonatype.snapshot</id>
+      <name>Sonatype maven snapshot repository</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
-      <id>org.sonatype.tycho</id>
+      <id>org.eclipse.tycho</id>
       <name>Tycho snapshot repository</name>
       <url>https://repository.sonatype.org/content/repositories/snapshots</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>undercover-snaphost</id>
+      <url>http://undercover.googlecode.com/svn/maven/snapshot-repository</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <id>sonatype.release</id>
+      <name>Sonatype maven release repository</name>
+      <url>https://oss.sonatype.org/content/repositories/releases/</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </pluginRepository>
+    <pluginRepository>
+      <id>sonatype.snapshot</id>
+      <name>Sonatype maven snapshot repository</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </pluginRepository>
   </pluginRepositories>
   <reporting>
@@ -223,6 +263,42 @@
   </reporting>
   <profiles>
     <profile>
+      <id>release-ide-29</id>
+      <properties>
+        <scalac.options>-Ydependent-method-types</scalac.options>
+      </properties>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-scalaide-2.0</id>
+          <name>Scala Toolchain for Scala IDE p2 repository</name>
+          <layout>p2</layout>
+          <url>http://download.scala-ide.org/incoming-release-29/dependencies/osgi-toolchain</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>release-ide-210</id>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-scalaide-2.0</id>
+          <name>Scala Toolchain for Scala IDE p2 repository</name>
+          <layout>p2</layout>
+          <url>http://download.scala-ide.org/incoming-release-210/dependencies/osgi-toolchain</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>release-ide-211</id>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-scalaide-2.0</id>
+          <name>Scala Toolchain for Scala IDE p2 repository</name>
+          <layout>p2</layout>
+          <url>http://download.scala-ide.org/incoming-release-211/dependencies/osgi-toolchain</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
       <id>scala-2.9.x</id>
       <properties>
         <scalac.options>-Ydependent-method-types</scalac.options>
@@ -237,13 +313,24 @@
       </repositories>
     </profile>
     <profile>
-      <id>scala-trunk</id>
+      <id>scala-2.10.x</id>
       <repositories>
         <repository>
-          <id>scala-toolchain-trunk</id>
+          <id>scala-toolchain-2.10.x</id>
           <name>Scala Toolchain trunk p2 repository</name>
           <layout>p2</layout>
-          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-trunk</url>
+          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-210x</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>scala-2.11.x</id>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-2.11.x</id>
+          <name>Scala Toolchain trunk p2 repository</name>
+          <layout>p2</layout>
+          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-211x</url>
         </repository>
       </repositories>
     </profile>
