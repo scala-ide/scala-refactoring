@@ -328,7 +328,7 @@ trait PimpedTrees {
    * If multiple trees are candidates, then take the last one, 
    * because it is likely more specific.
    */
-  def findOriginalTree(tree: Tree) = {
+  def findOriginalTree: Tree => Option[Tree] = Memoized { tree =>
 
     val candidates = findAllTreesWithTheSamePosition(tree)
     
@@ -518,163 +518,166 @@ trait PimpedTrees {
    * This includes Name and Modifier trees and excludes everything that
    * has no Position or is an EmptyTree.
    */
-  def children(t: Tree): List[Tree] = (t match {
-    
-    case PackageDef(pid, stats) => 
-      pid :: stats
-    
-    case t @ ClassDef(ModifierTree(mods), name, tparams, impl) =>
-      mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: impl :: Nil
+  def children: Tree => List[Tree] = Memoized { t => 
+    val ch = t match {
       
-    case t @ ModuleDef(ModifierTree(mods), name, impl) =>
-      mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
+      case PackageDef(pid, stats) => 
+        pid :: stats
       
-    case TemplateExtractor(params, earlyBody, parents, self, body) =>
-      params.flatten ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
-
-    case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
-      mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
-     
-    case t @ DefDef(ModifierTree(mods), name, _, _, tpt, rhs) =>
-      mods ::: (NameTree(name) setPos t.namePosition) :: t.tparamsWithContextBounds ::: t.explicitVParamss.flatten ::: tpt :: rhs :: Nil
-     
-    case t: TypeTree =>
-      if(t.original != null) t.original :: Nil else Nil
-      
-    case AppliedTypeTree(tpt, args) =>
-      tpt :: args
-      
-    case TypeDef(ModifierTree(mods), name, tparams, rhs) =>
-      mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: rhs :: Nil
-      
-    case Bind(name, body) =>
-      (NameTree(name) setPos t.namePosition) :: body :: Nil
-    
-    case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This | _: Super => Nil
-    
-    case Apply(fun, args) =>
-      fun :: args
+      case t @ ClassDef(ModifierTree(mods), name, tparams, impl) =>
+        mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: impl :: Nil
+        
+      case t @ ModuleDef(ModifierTree(mods), name, impl) =>
+        mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
+        
+      case TemplateExtractor(params, earlyBody, parents, self, body) =>
+        params.flatten ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
+  
+      case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
+        mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
        
-    case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_")=>
-      (NameTree(t.nameString) setPos t.namePosition) :: qualifier :: Nil
+      case t @ DefDef(ModifierTree(mods), name, _, _, tpt, rhs) =>
+        mods ::: (NameTree(name) setPos t.namePosition) :: t.tparamsWithContextBounds ::: t.explicitVParamss.flatten ::: tpt :: rhs :: Nil
+       
+      case t: TypeTree =>
+        if(t.original != null) t.original :: Nil else Nil
+        
+      case AppliedTypeTree(tpt, args) =>
+        tpt :: args
+        
+      case TypeDef(ModifierTree(mods), name, tparams, rhs) =>
+        mods ::: (NameTree(name) setPos t.namePosition) :: tparams ::: rhs :: Nil
+        
+      case Bind(name, body) =>
+        (NameTree(name) setPos t.namePosition) :: body :: Nil
       
-    case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.isRange && t.pos.start == t.pos.point =>
-      (NameTree(selector) setPos t.namePosition) :: Nil
+      case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This | _: Super => Nil
       
-    case t @ Select(qualifier, selector) =>
-      qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
+      case Apply(fun, args) =>
+        fun :: args
+         
+      case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_")=>
+        (NameTree(t.nameString) setPos t.namePosition) :: qualifier :: Nil
+        
+      case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.isRange && t.pos.start == t.pos.point =>
+        (NameTree(selector) setPos t.namePosition) :: Nil
+        
+      case t @ Select(qualifier, selector) =>
+        qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
+        
+      case BlockExtractor(stats) =>
+        stats
+        
+      case Return(expr) =>
+        expr :: Nil
+        
+      case New(tpt) =>
+        tpt :: Nil
+        
+      case Match(selector, cases) =>
+        selector :: cases
+        
+      case CaseDef(pat, guard, body) =>
+        pat :: guard :: body :: Nil
+        
+      case t @ Import(expr, _) =>
+        expr :: t.Selectors()
+        
+      case ImportSelectorTree(name, rename) =>
+        name :: rename :: Nil
+        
+      case SuperConstructorCall(clazz, args) =>
+        clazz :: args
+        
+      case SelfTypeTree(name, types, orig) =>
+        name :: types ::: orig :: Nil
+        
+      case TypeApply(fun, args) =>
+        fun :: args
+        
+      case Function(vparams, body) =>
+        vparams ::: body :: Nil
+        
+      case If(cond, thenp, elsep) =>
+        cond :: thenp :: elsep :: Nil
+        
+      case TypeBoundsTree(lo, hi) =>
+        lo :: hi :: Nil
+        
+      case Typed(expr, tpt) =>
+        expr :: tpt :: Nil
+        
+      case Assign(lhs, rhs) =>
+        lhs :: rhs :: Nil
+        
+      case Alternative(trees) =>
+        trees
+        
+      case UnApply(fun, args) =>
+        fun :: args
+        
+      case Star(elem) =>
+        elem :: Nil
+        
+      case Try(block, catches, finalizer) =>
+        block :: catches ::: finalizer  :: Nil
       
-    case BlockExtractor(stats) =>
-      stats
-      
-    case Return(expr) =>
-      expr :: Nil
-      
-    case New(tpt) =>
-      tpt :: Nil
-      
-    case Match(selector, cases) =>
-      selector :: cases
-      
-    case CaseDef(pat, guard, body) =>
-      pat :: guard :: body :: Nil
-      
-    case t @ Import(expr, _) =>
-      expr :: t.Selectors()
-      
-    case ImportSelectorTree(name, rename) =>
-      name :: rename :: Nil
-      
-    case SuperConstructorCall(clazz, args) =>
-      clazz :: args
-      
-    case SelfTypeTree(name, types, orig) =>
-      name :: types ::: orig :: Nil
-      
-    case TypeApply(fun, args) =>
-      fun :: args
-      
-    case Function(vparams, body) =>
-      vparams ::: body :: Nil
-      
-    case If(cond, thenp, elsep) =>
-      cond :: thenp :: elsep :: Nil
-      
-    case TypeBoundsTree(lo, hi) =>
-      lo :: hi :: Nil
-      
-    case Typed(expr, tpt) =>
-      expr :: tpt :: Nil
-      
-    case Assign(lhs, rhs) =>
-      lhs :: rhs :: Nil
-      
-    case Alternative(trees) =>
-      trees
-      
-    case UnApply(fun, args) =>
-      fun :: args
-      
-    case Star(elem) =>
-      elem :: Nil
-      
-    case Try(block, catches, finalizer) =>
-      block :: catches ::: finalizer  :: Nil
-    
-    case Throw(expr) =>
-      expr :: Nil
-      
-    case Annotated(annot, arg) =>
-      annot :: arg :: Nil
-      
-    case CompoundTypeTree(templ) =>
-      templ :: Nil
-      
-    // while loop  
-    case LabelDef(name, params, If(cond, then, _)) =>
-      (NameTree(name) setPos t.namePosition) :: params ::: cond :: then :: Nil
-      
-    // do .. while loop  
-    case LabelDef(name, params, Block(stats, If(cond, _, _))) =>
-      stats ::: (NameTree(name) setPos t.namePosition) :: cond :: Nil
-   
-    case ExistentialTypeTree(tpt, whereClauses) =>
-      tpt :: whereClauses
-      
-    case t @ SelectFromTypeTree(qualifier, _) =>
-      qualifier :: (NameTree(t.nameString) setPos t.namePosition) :: Nil
-      
-    case SingletonTypeTree(ref) =>
-      ref :: Nil
-      
-    case AssignOrNamedArg(lhs, rhs) =>
-      lhs :: rhs :: Nil
-      
-    case MultipleAssignment(extractor, values, rhs) =>
-      extractor :: values ::: rhs :: Nil
-      
-    case DocDef(_, definition) =>
-      definition :: Nil
-      
-    case _ => Nil
+      case Throw(expr) =>
+        expr :: Nil
+        
+      case Annotated(annot, arg) =>
+        annot :: arg :: Nil
+        
+      case CompoundTypeTree(templ) =>
+        templ :: Nil
+        
+      // while loop  
+      case LabelDef(name, params, If(cond, then, _)) =>
+        (NameTree(name) setPos t.namePosition) :: params ::: cond :: then :: Nil
+        
+      // do .. while loop  
+      case LabelDef(name, params, Block(stats, If(cond, _, _))) =>
+        stats ::: (NameTree(name) setPos t.namePosition) :: cond :: Nil
      
-  }) map {
-                 
-     /**
-     * An empty RHS that is implemented as '.. { }' creates a Literal 
-     * tree with a range length of 1, remove that tree.
-     */
-    case t: Literal if t.pos.isRange && t.pos.end - t.pos.start == 1 && t.toString == "()" => 
-      EmptyTree
-      
-    /**
-     * hide the implicit "apply" call
-     */
-    case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => 
-      qualifier
-          
-    case t => t
-  } filter keepTree
+      case ExistentialTypeTree(tpt, whereClauses) =>
+        tpt :: whereClauses
+        
+      case t @ SelectFromTypeTree(qualifier, _) =>
+        qualifier :: (NameTree(t.nameString) setPos t.namePosition) :: Nil
+        
+      case SingletonTypeTree(ref) =>
+        ref :: Nil
+        
+      case AssignOrNamedArg(lhs, rhs) =>
+        lhs :: rhs :: Nil
+        
+      case MultipleAssignment(extractor, values, rhs) =>
+        extractor :: values ::: rhs :: Nil
+        
+      case DocDef(_, definition) =>
+        definition :: Nil
+        
+      case _ => Nil
+       
+    }
+    
+    ch map {
+       /**
+       * An empty RHS that is implemented as '.. { }' creates a Literal 
+       * tree with a range length of 1, remove that tree.
+       */
+      case t: Literal if t.pos.isRange && t.pos.end - t.pos.start == 1 && t.toString == "()" => 
+        EmptyTree
+        
+      /**
+       * hide the implicit "apply" call
+       */
+      case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => 
+        qualifier
+            
+      case t => t
+    } filter keepTree
+  }
   
   private def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
     
