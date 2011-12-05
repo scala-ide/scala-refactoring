@@ -1828,14 +1828,6 @@ object acmatch {
     }
     """, res)
   }
-  
-
-    object primitive {
-      def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
-      def asd(li: List[Int]) = {
-        li.reduce((_:Int) + (_:Int)) 
-      }
-    }
     
   @Test
   def testAddSealed() {
