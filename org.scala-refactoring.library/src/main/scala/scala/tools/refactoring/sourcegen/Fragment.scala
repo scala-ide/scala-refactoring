@@ -26,6 +26,7 @@ trait Fragment {
   
   def ifNotEmpty(f: Fragment => Fragment): Fragment = this match {
     case EmptyFragment => EmptyFragment
+    case _ if asText == "" => EmptyFragment
     case _ => f(this)
   } 
   

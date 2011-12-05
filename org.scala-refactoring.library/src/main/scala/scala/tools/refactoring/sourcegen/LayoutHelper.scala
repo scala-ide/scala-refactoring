@@ -94,13 +94,13 @@ trait LayoutHelper extends CommentHelpers {
         layout(p.pos.start, c.pos.start) → NoLayout
         
       case (p @ ClassDef(ModifierTree(Nil), _, _, _), c) =>
-        layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
+        NoLayout → layout(p.pos.start, c.pos.start)
         
       case (p @ ClassDef(ModifierTree(mods), _, _, _), c) =>
         layout(p.pos.start, mods.head.pos.start) → NoLayout
         
       case (p @ ModuleDef(ModifierTree(Nil), _, _), c) =>
-        layout(p.pos.start,       p.pos.point) → layout(p.pos.point + p.name.length, c.pos.start)
+        NoLayout → layout(p.pos.start, c.pos.start)
         
       case (p @ ModuleDef(ModifierTree(mods), _, _), c) =>
         layout(p.pos.start, mods.head.pos.start) → NoLayout

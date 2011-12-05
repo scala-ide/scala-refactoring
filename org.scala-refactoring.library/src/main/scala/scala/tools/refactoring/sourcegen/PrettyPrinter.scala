@@ -433,7 +433,12 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           p(impl)
       }
       
-      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = ", ", after = "]") ++ body
+      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = ", ", after = "]") ++ body.ifNotEmpty {
+        case body if body.asText.startsWith("{") => 
+          Layout(" ") ++ body
+        case body => 
+          body
+      }
     }
     
     override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext) = {

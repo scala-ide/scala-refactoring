@@ -1788,4 +1788,152 @@ object acmatch {
     }
     """, res)
   }
+  
+  @Test
+  def changeMethodInvocation8() {
+
+    val str = """
+    object primitive {
+      def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
+      def asd(li: List[Int]) = {
+        reduce(((_:Int) + (_:Int)),li, 0) 
+      }
+    }
+    """
+    val ast = treeFrom(str)
+
+    val result = topdown {
+      matchingChildren {
+        transform {
+          case a: Apply if (a.args.length > 1) =>
+            val buf = a.args.toBuffer
+            val arg = buf(1)
+            buf.remove(1)
+            val fun1 = Select(
+              name = a.fun.symbol.nameString,
+              qualifier = arg)
+            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+        }
+      }
+    } apply (ast)
+
+    val changes = refactor(result.toList)
+    val res = Change.applyChanges(changes, str)
+    assertEquals("""
+    object primitive {
+      def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
+      def asd(li: List[Int]) = {
+        li.reduce((_:Int) + (_:Int), 0) 
+      }
+    }
+    """, res)
+  }
+  
+
+    object primitive {
+      def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
+      def asd(li: List[Int]) = {
+        li.reduce((_:Int) + (_:Int)) 
+      }
+    }
+    
+  @Test
+  def testAddSealed() {
+    val str = """
+    abstract class asd {
+    }
+    class XY
+    """
+    val ast = treeFrom(str)
+    val res = once {
+      transform {
+        case t: PackageDef =>
+          val st = t.stats.map(a => a match {
+            case x: ClassDef =>
+              x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition)) setPos x.pos
+            case x => x
+          })
+          t.copy(stats = st) setPos t.pos
+      }} apply ast
+
+    assertEquals("""
+    abstract sealed class asd {
+    }
+    sealed class XY
+    """, Change.applyChanges(refactor(res.toList), str))
+  }
+  
+  @Test
+  def testRemoveSealed() {
+    val str = """
+    abstract sealed class asd {
+    }
+    sealed class XY
+    """
+    val ast = treeFrom(str)
+    val res = topdown {
+      matchingChildren {
+        transform {
+          case x: ClassDef => x.copy(mods = NoMods) replaces x
+        }
+      }
+     } apply ast
+
+    assertEquals("""
+    class asd {
+    }
+    class XY
+    """, Change.applyChanges(refactor(res.toList), str))
+  }
+      
+  @Test
+  def testAddSealedPP() {
+    val str = """
+    abstract class asd {
+    }
+    class XY
+    """
+    val ast = treeFrom(str)
+    val res = once {
+      transform {
+        case t: PackageDef =>
+          val st = t.stats.map(a => a match {
+            case x: ClassDef =>
+              x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition))
+            case x => x
+          })
+          t.copy(stats = st) setPos t.pos
+      }} apply ast
+
+    assertEquals("""
+    abstract sealed class asd {
+    }
+    
+    sealed class XY
+    """, Change.applyChanges(refactor(res.toList), str))
+  }
+  
+  @Test
+  def testRemoveSealedPP() {
+    val str = """
+    abstract sealed class asd {
+    }
+    sealed class XY
+    """
+    val ast = treeFrom(str)
+    val res = topdown {
+      matchingChildren {
+        transform {
+          case x: ClassDef => x.copy(mods = NoMods)
+        }
+      }
+     } apply ast
+
+    assertEquals("""
+    class asd {
+    }
+    
+    class XY
+    """, Change.applyChanges(refactor(res.toList), str))
+  }
 }
