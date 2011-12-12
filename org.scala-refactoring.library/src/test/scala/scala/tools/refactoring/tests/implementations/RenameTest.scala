@@ -158,7 +158,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("c"))
-    
+  
   @Test
   def renameMultiAssignment = new FileSet {
     """
@@ -175,6 +175,28 @@ class RenameTest extends TestHelper with TestRefactoring {
     class A {
       def print {
         val (/*(*/c/*)*/, b) = (5, 6)
+        println(c + b)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+
+  @Test  
+  def renameMultiAssignmentWithTA = new FileSet {
+    """
+    package renameMultiAssignment
+    class A {
+      def print {
+        val (/*(*/a: Int/*)*/, b) = (5, 6)
+        println(a + b)
+      }
+    }
+    """ becomes
+    """
+    package renameMultiAssignment
+    class A {
+      def print {
+        val (/*(*/c: Int/*)*/, b) = (5, 6)
         println(c + b)
       }
     }

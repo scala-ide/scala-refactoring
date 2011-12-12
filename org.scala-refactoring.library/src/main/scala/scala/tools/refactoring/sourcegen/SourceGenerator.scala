@@ -109,22 +109,8 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   }
     
   override def print(t: Tree, ctx: PrintingContext): Fragment = {
-    
-    def hasOriginalTree = findOriginalTree(t).isDefined
-    
-    def originalTreeNotFound() = {
-      if(!compilationUnitOfFile(t.pos.source.file).isDefined)
-        throw new common.TreeNotFound(t.pos.source.file.name)  
-    }
-    
-    if(t.hasExistingCode) {
-      if(hasOriginalTree)
-        reusingPrinter.dispatchToPrinter(t, ctx)
-      else {
-        originalTreeNotFound()
-        EmptyFragment
-      }
-    }
+    if(t.hasExistingCode)
+      reusingPrinter.dispatchToPrinter(t, ctx)
     else if(t.hasNoCode)
       prettyPrinter.dispatchToPrinter(t, ctx)
     else

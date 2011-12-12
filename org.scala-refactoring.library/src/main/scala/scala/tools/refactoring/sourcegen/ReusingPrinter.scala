@@ -663,7 +663,17 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def ValDef(tree: ValDef, mods: List[ModifierTree], name: Name, tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
       val nameTree = nameOf(tree)
-      l ++ pp(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r
+      
+      val modsAndName = rhs match {
+        // It looks like we're in a "multiple assignment", then we don't print
+        // the modifiers to avoid getting val (val x, val y) = ...
+        case Select(qual, _) if qual.symbol.isSynthetic =>
+          nameTree :: Nil    
+        case _ =>
+          mods ::: nameTree :: Nil
+      }
+      
+      l ++ pp(modsAndName, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r    
     }
 
     override def DefDef(tree: DefDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
