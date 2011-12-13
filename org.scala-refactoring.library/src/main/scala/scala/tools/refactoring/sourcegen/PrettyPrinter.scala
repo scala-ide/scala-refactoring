@@ -681,7 +681,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def MultipleAssignment(tree: MultipleAssignment, extractor: Tree, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext): Fragment = {
       extractor match {
         case EmptyTree =>
-          Layout("val (") ++ pp(values, separator = ", ") ++ ") = " ++ p(rhs)
+          Layout("val (") ++ pp(values, separator = ", ", after = ")") ++ " = " ++ p(rhs)
         case _ =>
           Layout("val ") ++ p(extractor) ++ " = " ++ p(rhs)
       }

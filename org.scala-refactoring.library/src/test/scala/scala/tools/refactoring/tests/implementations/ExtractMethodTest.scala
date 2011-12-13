@@ -1140,4 +1140,34 @@ class PathSeparator {
 }
     """
   } applyRefactoring extract("mkTuple")
+
+  @Test
+  def extractFromMethodWithMultipleAssignment = new FileSet {
+    """
+package simpleExtract
+class PathSeparator {
+  def main() {
+    val (x, y) = {
+      /*(*/println("hello")/*)*/  
+      (1,2)
+    }
+  }
+}
+    """ becomes
+    """
+package simpleExtract
+class PathSeparator {
+  def main() {
+    val (x, y) = {
+      sayHello
+      (1,2)
+    }
+  }
+  
+  private def sayHello: Unit = {
+      /*(*/println("hello")/*)*/  
+  }
+}
+    """
+  } applyRefactoring extract("sayHello")
 }

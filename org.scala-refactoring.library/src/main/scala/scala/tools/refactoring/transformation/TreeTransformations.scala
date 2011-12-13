@@ -27,7 +27,13 @@ trait TreeTransformations extends Transformations {
         
         case _: ImportSelectorTree | _: SourceLayoutTree =>
           t
-        
+          
+        case MultipleAssignment(extractor, vals, rhs) =>
+          (transform(extractor), transformTrees(vals), transform(rhs)) match {
+            case (`extractor`, `vals`, `rhs`) => t
+            case (e, v, r) => MultipleAssignment(e, v.asInstanceOf[List[ValDef]], r)
+          }
+            
         case t: TypeTree if t.original != null =>
           val transformedTypeTree = super.transform(t).asInstanceOf[TypeTree]
           val transformedOriginal = f(t.original)

@@ -31,7 +31,12 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      */
     lazy val selectedTopLevelTrees: List[Tree] = {
       val hits = new ListBuffer[Tree]
-      new Traverser {
+      // Use the global.Traverser because we don't want to
+      // get inside TypeTree's original tree. The problem is
+      // that if the original is an Annotated tree with a Block,
+      // we might get duplicate trees. For an example, see the
+      // extractFromMethodWithMultipleAssignment TestCase.
+      new global.Traverser {
         override def traverse(t: Tree) {
           if (t.pos.isRange && pos.includes(t.pos)) {
             hits += t

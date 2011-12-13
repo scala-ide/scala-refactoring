@@ -566,7 +566,7 @@ trait PimpedTrees {
         qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
         
       case BlockExtractor(stats) =>
-        stats
+        removeCompilerTreesForMultipleAssignment(stats)
         
       case Return(expr) =>
         expr :: Nil
@@ -695,11 +695,11 @@ trait PimpedTrees {
     }
     
     body match {
-       case (v @ ValDef(_, _, _, Match(rhs: Typed, (c @ CaseDef(_: Apply, EmptyTree, body)) :: Nil))) :: xs 
+       case (v @ ValDef(_, _, _, Match(Typed(rhs, _), (c @ CaseDef(_: Apply, EmptyTree, body)) :: Nil))) :: xs 
           if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
         mkMultipleAssignment(EmptyTree, body.tpe, v.pos, rhs, xs)
       
-      case (v @ ValDef(_, _, _, Match(rhs: Typed, (c @ CaseDef(extractor: UnApply, EmptyTree, body)) :: Nil))) :: xs 
+      case (v @ ValDef(_, _, _, Match(Typed(rhs, _), (c @ CaseDef(extractor: UnApply, EmptyTree, body)) :: Nil))) :: xs 
           if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
         mkMultipleAssignment(extractor, body.tpe, v.pos, rhs, xs)
         

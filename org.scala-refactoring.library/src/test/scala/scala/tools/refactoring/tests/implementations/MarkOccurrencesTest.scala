@@ -194,7 +194,6 @@ class MarkOccurrencesTest extends TestHelper {
       val sep2 = /*(*/#/*)*/.pathSeparator
     }
     """)
-    
 
   @Test
   def backtickedIdentifiers = markOccurrences("""
@@ -210,4 +209,21 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """)
   
+  @Test
+  def annotatedType = markOccurrences("""
+      object U {
+        def go(t: List[ /*(*/String/*)*/ ]) = {
+          val s: String = ""
+          t: List[String]
+        }
+      }
+    """,
+    """
+      object U {
+        def go(t: List[ /*(*/######/*)*/ ]) = {
+          val s: ###### = ""
+          t: List[######]
+        }
+      }
+    """)
 }
