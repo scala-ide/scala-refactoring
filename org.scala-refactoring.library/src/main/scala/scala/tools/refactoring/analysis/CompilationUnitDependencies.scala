@@ -85,19 +85,8 @@ trait CompilationUnitDependencies {
       case t => findDeepestNeededSelect(t)
     }.distinct
     
-    /**
-     * Converts a tree containing Idents and Selects to a `.` separated string.
-     */
-    def asString(t: Tree) = {
-      t.filter(_ => true).map {
-        case Ident(name) => name.toString
-        case Select(_, name) => name.toString
-        case _ => ""
-      }.reverse.mkString(".")
-    }
-    
     // Eliminate duplicates by converting them to strings.
-    neededDependencies.groupBy(asString).map(_._2.head).toList
+    neededDependencies.groupBy(asSelectorString).map(_._2.head).toList
   }
 
   /**

@@ -182,26 +182,40 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   class FindNeededImports(root: Tree) extends Participant {
     def apply(trees: List[Import]) = {
-      neededImports(root) map {
+      
+      val rootPackage = root match {
+        case root: PackageDef => 
+          val rootPackage = topPackageDef(root)
+          ancestorSymbolsDesc(rootPackage).map(_.nameString).mkString(".")
+        case _ => ""
+      }
+      
+      def importsFromSamePackage(t: Tree) = {
+        asSelectorString(t) == rootPackage
+      }
+      
+      neededImports(root) flatMap {
+        // warning if binding is never used! and quickfix to replace with `_`!
+        case Select(selector, _) if importsFromSamePackage(selector) =>
+          None
         case select @ Select(expr, name) =>
-        
-        // we don't want to see imports like "java.this.lang..."
-        val removeThisTrees = {
-          matchingChildren { 
-            transform {
-              case t: This => 
-                // expand to the full package name
-                val parents = t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
-                Ident(parents map (_.nameString) mkString ".")
+
+          // we don't want to see imports like "java.this.lang..."
+          val removeThisTrees = {
+            matchingChildren { 
+              transform {
+                case t: This => 
+                  // expand to the full package name
+                  val parents = t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
+                  Ident(parents map (_.nameString) mkString ".")
+              }
             }
           }
-        }
-          
-        // copy the tree and delete all positions so the full path will be written
-        val newExpr = ↓(setNoPosition &> removeThisTrees) apply duplicateTree(expr) getOrElse expr
-        val typeName = select.symbol.nameString
-        
-        Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else typeName, -1, name, -1)))
+            
+          // copy the tree and delete all positions so the full path will be written
+          val newExpr = ↓(setNoPosition &> removeThisTrees) apply duplicateTree(expr) getOrElse expr
+          val typeName = select.symbol.nameString
+          Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else typeName, -1, name, -1))))
       }
     }
   }
@@ -257,12 +271,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
-    val unit = compilationUnitOfFile(selection.pos.source.file).get
-    
     val importStrategy = params.deps match {
       case Dependencies.FullyRecompute =>
-        new FindNeededImports(unit.body) :: SortImports :: Nil
+        new FindNeededImports(selection.root) :: SortImports :: Nil
       case Dependencies.RemoveUnneeded =>
+        val unit = compilationUnitOfFile(selection.pos.source.file).get
         new AddNewImports(params.importsToAdd) :: SortImports :: new RemoveUnused(unit, params.importsToAdd) :: Nil  
     }
     

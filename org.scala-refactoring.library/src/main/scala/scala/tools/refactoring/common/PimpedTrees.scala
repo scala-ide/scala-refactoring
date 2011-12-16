@@ -903,6 +903,49 @@ trait PimpedTrees {
   case class MultipleAssignment(extractor: Tree, names: List[ValDef], rhs: Tree) extends global.Tree {
     def errorSubtrees = Nil
   }
+  
+  /**
+   * Converts a tree containing Idents and Selects to a `.` separated string.
+   */
+  def asSelectorString(t: Tree) = {
+    t.filter(_ => true).map {
+      case Ident(name) => name.toString
+      case Select(_, name) => name.toString
+      case _ => ""
+    }.reverse.mkString(".")
+  }
+  
+  /**
+   * @return Returns the (symbol) ancestors of the tree excluding the ROOT
+   * in descending order.
+   */
+  def ancestorSymbolsDesc(t: Tree) = {
+    t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
+  }
+  
+  /**
+   * @return Returns the most specific package declaration in the compilation
+   * unit. For example, given the following declaration:
+   *   
+   *   package a
+   *   package b
+   *   
+   *   class C
+   *   
+   * it returns `b`. If there are further nested packages, they are ignored:
+   * 
+   *   package a
+   *   class C
+   *   package b
+   *   
+   * returns `a`.
+   */
+  def topPackageDef(t: PackageDef) = {
+    t find {
+      case PackageDef(_, NoPackageDef(_) :: _) => true
+      case _ => false
+    } getOrElse t
+  }
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {

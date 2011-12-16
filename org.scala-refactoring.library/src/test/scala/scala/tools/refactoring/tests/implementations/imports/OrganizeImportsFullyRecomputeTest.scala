@@ -584,7 +584,7 @@ trait FullPaths {
   } applyRefactoring organize
   
   @Test
-  def importFromSamePackage = new FileSet {
+  def importMethodFromSamePackage = new FileSet {
     
     addToCompiler("testimplicits", """
     package a.b.c
@@ -656,5 +656,62 @@ trait FullPaths {
     """
     
     class MyClass(i: Int)"""
+  } applyRefactoring organize
+  
+  @Test
+  def importFromSamePackage = new FileSet {
+    
+    addToCompiler("first", """
+    package mypackage
+
+    class First
+    """);
+    
+    """
+    package mypackage
+
+    class Second {
+      println(new First)
+      println(classOf[First])
+    }
+    """ becomes
+    """
+    package mypackage
+
+    class Second {
+      println(new First)
+      println(classOf[First])
+    }
+    """
+  } applyRefactoring organize
+  
+  @Test
+  def importFromSameNestedPackage = new FileSet {
+    
+    addToCompiler("first", """
+    package mypackage
+    package sub
+
+    class First
+    """);
+    
+    """
+    package mypackage
+    package sub
+
+    class Second {
+      println(new First)
+      println(classOf[First])
+    }
+    """ becomes
+    """
+    package mypackage
+    package sub
+
+    class Second {
+      println(new First)
+      println(classOf[First])
+    }
+    """
   } applyRefactoring organize
 }
