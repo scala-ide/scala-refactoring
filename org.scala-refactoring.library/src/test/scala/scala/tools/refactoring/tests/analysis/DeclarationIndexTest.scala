@@ -301,5 +301,14 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       }
       """)
   }
+  
+  @Test
+  def referencesToValueInForComprehensionFilter() = {
+    assertReferencesOfSelection("""foo (80, 83), foo (107, 110)""", """      
+      object U {
+        for (/*(*/foo/*)*/ <- List("santa", "claus") if foo.startsWith("s")) yield foo
+      }
+      """)
+  }
 }
 

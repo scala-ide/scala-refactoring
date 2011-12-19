@@ -226,4 +226,76 @@ class MarkOccurrencesTest extends TestHelper {
         }
       }
     """)
+  
+  @Test
+  def filterInForComprehension1 = markOccurrences("""
+      object U {
+        for (/*(*/foo/*)*/ <- List("santa", "claus") if foo.startsWith("s")) yield foo
+      }
+    """,
+    """
+      object U {
+        for (/*(*/###/*)*/ <- List("santa", "claus") if ###.startsWith("s")) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehension2 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "claus") if /*(*/foo/*)*/.startsWith("s")) yield foo
+      }
+    """,
+    """
+      object U {
+        for (### <- List("santa", "claus") if /*(*/###/*)*/.startsWith("s")) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehension3 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "claus") if foo.startsWith("s")) yield /*(*/foo/*)*/
+      }
+    """,
+    """
+      object U {
+        for (### <- List("santa", "claus") if ###.startsWith("s")) yield /*(*/###/*)*/
+      }
+    """)
+  
+  @Test
+  def filterInForComprehension4 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "claus") if "".startsWith(/*(*/foo/*)*/)) yield foo
+      }
+    """,
+    """
+      object U {
+        for (### <- List("santa", "claus") if "".startsWith(/*(*/###/*)*/)) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehensions = markOccurrences("""
+      object U {
+        for (/*(*/foo/*)*/ <- List("santa", "2claus"); bar <- List(1,2) if foo.startsWith(""+ bar)) yield foo
+      }
+    """,
+    """
+      object U {
+        for (/*(*/###/*)*/ <- List("santa", "2claus"); bar <- List(1,2) if ###.startsWith(""+ bar)) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehensions2 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "2claus"); /*(*/bar/*)*/ <- List(1,2) if foo.startsWith(""+ bar)) yield foo
+      }
+    """,
+    """
+      object U {
+        for (foo <- List("santa", "2claus"); /*(*/###/*)*/ <- List(1,2) if foo.startsWith(""+ ###)) yield foo
+      }
+    """)
 }

@@ -12,6 +12,7 @@ import reflect.ClassManifest.fromClass
 import tools.nsc.symtab.Flags
 import scala.tools.nsc.Global
 import util.Memoized
+import scala.collection.mutable.ListBuffer
 
 /**
  * A collection of implicit conversions for ASTs and other 
@@ -127,6 +128,18 @@ trait PimpedTrees {
     def samePos(o: Tree): Boolean = samePos(o.pos)
     def samePosAndType(o: Tree): Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
         
+    def collect[T](f: PartialFunction[Tree, T]) = { 
+      val hits = new ListBuffer[T]
+      object collectTreeTraverser extends Traverser {
+        override def traverse(t: Tree) {
+          if (f.isDefinedAt(t)) hits += f(t)
+          super.traverse(t)
+        }
+      }
+      collectTreeTraverser.traverse(t)
+      hits.toList 
+    }
+    
     /**
      * Returns the position this tree's name has in the source code.
      * Can also return NoPosition if the tree does not have a name.
