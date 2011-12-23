@@ -11,6 +11,12 @@ trait CommonPrintUtils {
 
   import global._
   
+  def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
+    
+  def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, NL)
+    
+  def indentation(implicit ctx: PrintingContext) = ctx.ind.current
+  
   def NL(implicit ctx: PrintingContext): String = {
     if(ctx.file.exists(_.content.containsSlice("\r\n")))
       "\r\n"

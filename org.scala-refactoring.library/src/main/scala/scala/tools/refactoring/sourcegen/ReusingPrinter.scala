@@ -74,10 +74,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting =>
     
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
-    
-    def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
-    
-    def indentation(implicit ctx: PrintingContext) = ctx.ind.current
 
     def l(implicit ctx: PrintingContext) = leadingLayoutForTree(ctx.parent)
     
@@ -184,8 +180,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       
       lazy val nameOrig = nameOf(tree)
 
-      val ll = l
-      
       qualifier match {
              
         case _ if selector.toString == "<init>" => 
@@ -234,7 +228,13 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ =>
 
           val _q = p(qualifier)
-          val _n = p(nameOrig)
+          val _n = {
+            // the selector isn't visible in the source,
+            // that's the case e.g. in for expressions.
+            if(tree.samePos(qualifier) && qualifier.pos.isRange)
+              EmptyFragment
+            else p(nameOrig)
+          }
   
           def hasNoSeparator = {
             val between = (_q.trailing ++ _n.leading).asText
@@ -352,7 +352,16 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
            * to pick up any changes in the `arg`! 
            * 
            * Generic layout handling will remove a closing `)`, so we re-add it */
-          l ++ p(generator, after = ")") ++ p(body) ++ r
+          val gen = p(generator, after = ")")
+          if(between(generator, body)(tree.pos.source).matches("""(?ms).*\{\s*$""")) {
+            val nextLine = if(body.pos.line > generator.pos.line) {
+              NL + ctx.ind.incrementDefault.current
+            } else " "
+            
+            l ++ gen ++ p(body, before = " yield {"+nextLine) ++ r   
+          } else {
+            l ++ gen ++ p(body, before = " yield ") ++ r
+          }
            
         case (fun, Nil) =>
           

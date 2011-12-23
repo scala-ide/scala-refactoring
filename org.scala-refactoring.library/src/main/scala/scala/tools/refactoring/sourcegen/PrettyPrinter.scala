@@ -37,10 +37,6 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
     
-    def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
-    
-    def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, NL)
-    
     def printParameterList(vparamss: List[List[ValDef]], alreadyHasParensInLayout: => Boolean)(implicit ctx: PrintingContext) = vparamss match {
       // no parameter list, not even an empty one
       case Nil => 

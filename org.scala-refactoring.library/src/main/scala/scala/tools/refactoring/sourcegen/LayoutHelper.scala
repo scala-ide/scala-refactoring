@@ -325,6 +325,10 @@ trait LayoutHelper extends CommentHelpers {
         val (layout, comments) = splitComment(source)
         
         val (ll, lr, rule) = (l, parent, r) match {
+          
+          // triggered by the `yield` in for expressions
+          case (_: ValDef, parent: Function, _) if parent.pos.isTransparent =>
+            ("", "", "no layout, parent has transparent position")
             
           case (l: Match, _, r) =>
             layout match {

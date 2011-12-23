@@ -51,15 +51,17 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
     
     def findBlockInsertionPosition(root: Tree, near: Tree) = {
       
-      def isCandidateForInsertion(t: Tree) = t.pos.includes(near.pos) && PartialFunction.cond(t) {
-        case If(_, thenp, _    ) if thenp.pos.includes(near.pos) => true
-        case If(_, _    , elsep) if elsep.pos.includes(near.pos) => true
-        case _: Block => true
-        case _: Template => true
-        case _: Try => true
-        case _: Function => true
-        case _: DefDef => true
-        case CaseDef(_, _, body) if body.pos.includes(near.pos) => true
+      def isCandidateForInsertion(t: Tree) = {
+        t.pos.includes(near.pos) && !t.pos.isTransparent && PartialFunction.cond(t) {
+          case If(_, thenp, _    ) if thenp.pos.includes(near.pos) => true
+          case If(_, _    , elsep) if elsep.pos.includes(near.pos) => true
+          case _: Block => true
+          case _: Template => true
+          case _: Try => true
+          case Function(vals, _) => vals.forall(_.pos.isRange) /* for (_:Int)+1 */
+          case _: DefDef => true
+          case CaseDef(_, _, body) if body.pos.includes(near.pos) => true
+        }
       }
       
       val insertionPoint = root.find {

@@ -707,4 +707,140 @@ object ExtractMethod2 {
     }
     """
   } applyRefactoring(extract("one"))
+
+  @Test
+  def extractFromFor = new FileSet {
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+
+      for (i <- 0 until /*(*/l.length/*)*/) yield i
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+      
+      val len = l.length
+
+      for (i <- 0 until /*(*/len) yield i
+    }
+    """
+  } applyRefactoring(extract("len"))
+
+  @Test
+  def extractFromForFilter = new FileSet {
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+
+      for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield i
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+      
+      val len = "abc".length
+
+      for (i <- List(1,2) if i == /*(*/len) yield i
+    }
+    """
+  } applyRefactoring(extract("len"))
+
+  @Test
+  def extractFromForFilterYieldWithBody = new FileSet {
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+
+      for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield {
+        i * i
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+      
+      val len = "abc".length
+
+      for (i <- List(1,2) if i == /*(*/len) yield {
+        i * i
+      }
+    }
+    """
+  } applyRefactoring(extract("len"))
+
+  @Test
+  def extractFromForFilterYieldWithSameLineBody = new FileSet {
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+
+      for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield { i * i }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+      
+      val len = "abc".length
+
+      for (i <- List(1,2) if i == /*(*/len) yield { i * i }
+    }
+    """
+  } applyRefactoring(extract("len"))
+
+  @Test
+  def extractFromForFilterYieldWithBlockBody = new FileSet {
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+
+      for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield {
+        val m = 2
+        i * 2
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+  
+      val l = List(1,2)
+      
+      val len = "abc".length
+
+      for (i <- List(1,2) if i == /*(*/len) yield {
+        val m = 2
+        i * 2
+      }
+    }
+    """
+  } applyRefactoring(extract("len"))
+
+  @Test
+  def extractAnonFunction = new FileSet {
+    """
+    object ExtractFromFor {
+      val inc = /*(*/(_:Int)+1/*)*/
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      val plusOne = /*(*/(_:Int)+1
+      
+      val inc = plusOne/*)*/
+    }
+    """
+  } applyRefactoring(extract("plusOne"))
 }
