@@ -487,11 +487,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ => false
       }
       
+      val (imports, restStats) = stats.span(_.isInstanceOf[Import])
+      
       if(isPackageObjectWithNoTopLevelImports) {
-        val (imports, restStats) = stats.span(_.isInstanceOf[Import])
         pp(imports, separator = newline, after = newline) ++ l ++ pp(pid :: restStats, separator = newline) ++ r
+      } else if(!imports.isEmpty && !imports.exists(_.pos.isRange)) {
+        l ++ pp(pid :: imports, separator = newline) ++ newline ++ newline ++ pp(restStats, separator = newline) ++ r        
       } else {
-        l ++ pp(pid :: stats, separator = newline) ++ r        
+        l ++ pp(pid :: stats, separator = newline) ++ r
       }
     }
   }

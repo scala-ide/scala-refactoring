@@ -31,6 +31,7 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       import whatever.`type`.Bla
+      
       object Main
     """)
   }
@@ -76,6 +77,7 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       import collection.mutable.ListBuffer
+      
       object Main {val lb = ListBuffer(1)}
     """)
   }
