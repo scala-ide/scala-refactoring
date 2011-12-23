@@ -492,7 +492,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       if(isPackageObjectWithNoTopLevelImports) {
         pp(imports, separator = newline, after = newline) ++ l ++ pp(pid :: restStats, separator = newline) ++ r
       } else if(!imports.isEmpty && !imports.exists(_.pos.isRange)) {
-        l ++ pp(pid :: imports, separator = newline) ++ newline ++ newline ++ pp(restStats, separator = newline) ++ r        
+        l ++ p(pid, after = newline ++ newline) ++ pp(imports, separator = newline) ++ newline ++ newline ++ pp(restStats, separator = newline) ++ r        
       } else {
         l ++ pp(pid :: stats, separator = newline) ++ r
       }

@@ -81,6 +81,22 @@ class AddImportStatementTest extends TestHelper {
       object Main {val lb = ListBuffer(1)}
     """)
   }
+  
+  @Test
+  def importInEmptyWithPackage = {
+    addImport(("collection.mutable", "ListBuffer"), """
+      package xy
+      
+      object Main {val lb = ListBuffer(1)}
+    """,
+    """
+      package xy
+      
+      import collection.mutable.ListBuffer
+      
+      object Main {val lb = ListBuffer(1)}
+    """)
+  }
 
   @Test
   def importAlreadyExisting = {
@@ -205,6 +221,7 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       package just.some.pkg
+      
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -224,6 +241,7 @@ class AddImportStatementTest extends TestHelper {
       package just
       package some
       package pkg
+      
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -245,6 +263,7 @@ class AddImportStatementTest extends TestHelper {
       package just
       package some
       package pkg {
+      
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -272,6 +291,7 @@ class AddImportStatementTest extends TestHelper {
     """
       package just
       package some
+      
       import collection.mutable.ListBuffer
       package pkg1 {
 
