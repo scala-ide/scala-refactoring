@@ -932,7 +932,7 @@ trait PimpedTrees {
    * @return Returns the (symbol) ancestors of the tree excluding the ROOT
    * in descending order.
    */
-  def ancestorSymbolsDesc(t: Tree) = {
+  def ancestorSymbolsDesc(t: Tree): List[Symbol] = {
     t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
   }
   

@@ -16,6 +16,19 @@ trait TestRefactoring extends TestHelper {
   
   abstract class TestRefactoringImpl(project: FileSet) {
       
+    trait TestProjectIndex extends GlobalIndexes {
+      this: Refactoring =>
+      
+      val global = TestRefactoring.this.global
+        
+      val index = {
+        val cuIndexes = project.trees map (_.pos.source.file) map { file => 
+          global.unitOfFile(file).body
+        } map CompilationUnitIndex.apply
+        GlobalIndex(cuIndexes)
+      }      
+    }
+    
     val refactoring: MultiStageRefactoring
 
     def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = {

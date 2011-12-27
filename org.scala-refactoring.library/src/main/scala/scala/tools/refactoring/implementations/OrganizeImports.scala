@@ -206,7 +206,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
               transform {
                 case t: This => 
                   // expand to the full package name
-                  val parents = t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
+                  val parents = ancestorSymbolsDesc(t)
                   Ident(parents map (_.nameString) mkString ".")
               }
             }

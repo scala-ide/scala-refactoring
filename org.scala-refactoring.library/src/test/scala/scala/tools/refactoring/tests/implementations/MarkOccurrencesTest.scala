@@ -12,6 +12,7 @@ import org.junit.Ignore
 
 class MarkOccurrencesTest extends TestHelper {
   outer =>
+    
   def markOccurrences(original: String, expected: String) {
     
     val tree = treeFrom(original)

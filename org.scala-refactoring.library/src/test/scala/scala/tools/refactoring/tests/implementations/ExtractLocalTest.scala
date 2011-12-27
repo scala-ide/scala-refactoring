@@ -12,15 +12,13 @@ import org.junit.Assert._
 
 class ExtractLocalTest extends TestHelper with TestRefactoring {
   outer =>
-  
-  def extract(valName: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractLocal with SilentTracing with GlobalIndexes {
-      val global = outer.global
-      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
-      val index = GlobalIndex(cuIndexes)      
+    
+  def extract(param: ExtractLocal#RefactoringParameters)(pro: FileSet) = {
+    val testRefactoring = new TestRefactoringImpl(pro) {
+      val refactoring = new ExtractLocal with SilentTracing with TestProjectIndex
     }
-    val changes = performRefactoring(valName)
-  }.changes
+    testRefactoring.performRefactoring(param)
+  }
   
   @Test
   def extracPartOfChainedCalls = new FileSet {
