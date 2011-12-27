@@ -26,6 +26,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import collection.mutable.ListBuffer
+      
       object Main {val lb = ListBuffer(1)}
     """
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
@@ -37,6 +38,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import collection.mutable.ListBuffer
+      
       object Main { def method(l: ListBuffer) = "" }
     """
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
@@ -48,6 +50,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import collection.mutable.ListBuffer
+      
       object Main { def method(): ListBuffer = new collection.mutable.ListBuffer() }
     """
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
@@ -59,6 +62,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import collection.mutable.ListBuffer
+      
       object Main { def method() = new ListBuffer() }
     """
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
@@ -70,6 +74,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import collection.mutable.ListBuffer
+      
       object Main { def method() = new mutable.ListBuffer() }
     """
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
@@ -81,6 +86,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import collection.mutable.ListBuffer
+      
       object Main { import ListBuffer._ }
     """
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
@@ -92,6 +98,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       import collection.mutable.LinkedList
+      
       class Subclass extends LinkedList
     """
   } applyRefactoring organize("collection.mutable" -> "LinkedList" :: Nil)
