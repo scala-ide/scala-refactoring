@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package transformation
 
-trait TreeTransformations extends Transformations {
+trait TreeTransformations extends Transformations with TreeFactory {
   
   this: common.PimpedTrees with common.CompilerAccess =>
   
@@ -127,5 +127,22 @@ trait TreeTransformations extends Transformations {
   
   val setNoPosition = transform {
     case t: global.Tree => t.pos = global.NoPosition; t
+  }
+
+  def addImportTransformation(importsToAdd: Iterable[String]): Transformation[Tree, Tree] = {
+
+    import global._
+
+      val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+        case (p, imports, others) =>
+          val SplitAtDot = "(.*)\\.(.*?)".r
+          val importTrees = importsToAdd.map {
+            case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
+          }.toList
+          p copy (stats = (imports ::: importTrees ::: others)) replaces p
+      })
+
+      // first try it at the top level to avoid traversing the complete AST
+      addImportStatement |> topdown(matchingChildren(addImportStatement))
   }
 }

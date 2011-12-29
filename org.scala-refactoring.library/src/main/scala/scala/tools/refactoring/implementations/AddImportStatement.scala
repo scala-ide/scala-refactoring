@@ -9,7 +9,7 @@ import common.{InteractiveScalaCompiler, Change}
 import transformation.TreeFactory
 import scala.tools.nsc.io.AbstractFile
 
-abstract class AddImportStatement extends Refactoring with TreeFactory with InteractiveScalaCompiler {
+abstract class AddImportStatement extends Refactoring with InteractiveScalaCompiler {
 
   val global: tools.nsc.interactive.Global
 
@@ -17,27 +17,9 @@ abstract class AddImportStatement extends Refactoring with TreeFactory with Inte
 
   def addImports(file: AbstractFile, importsToAdd: Iterable[String]): List[Change] = {
 
-    import global._
-    
-    val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
-      case (p, imports, others) =>
-        val SplitAtDot = "(.*)\\.(.*?)".r
-        val importTrees = importsToAdd.map {
-          case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
-        }.toList
-        p copy (stats = (imports ::: importTrees ::: others)) replaces p
-    })
-    
     val astRoot = abstractFileToTree(file)
-    
-    val changes = {
-      // first try it at the top level to avoid traversing
-      // the complete AST
-      addImportStatement |>
-      topdown(matchingChildren(addImportStatement))
-    } apply astRoot
 
-    refactor(changes.toList)
+    refactor((addImportTransformation(importsToAdd) apply astRoot).toList)
   }
   
   @deprecated("Use addImport(file, ..) instead", "0.4.0")

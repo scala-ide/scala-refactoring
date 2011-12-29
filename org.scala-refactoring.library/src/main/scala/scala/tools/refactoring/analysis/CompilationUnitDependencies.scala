@@ -221,7 +221,18 @@ trait CompilationUnitDependencies {
             case _ => ()
           }
 
-        case _ => super.traverse(root)
+        case t: Ident if t.tpe != null && t.name != nme.EMPTY_PACKAGE_NAME =>
+          fakeSelectTree(t.tpe, t.symbol, t) match {
+            // only repeat if it's a Select, if it's an Ident,
+            // otherwise we risk to loop endlessly
+            case select: Select =>
+              traverse(select)
+            case _ =>
+              super.traverse(root)
+          }
+
+        case _ =>
+          super.traverse(root)
       }
     }
 

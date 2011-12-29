@@ -183,40 +183,14 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   class FindNeededImports(root: Tree) extends Participant {
     def apply(trees: List[Import]) = {
       
-      val rootPackage = root match {
+      val enclosingPackage = root match {
         case root: PackageDef => 
           val rootPackage = topPackageDef(root)
-          ancestorSymbolsDesc(rootPackage).map(_.nameString).mkString(".")
+          ancestorSymbols(rootPackage).map(_.nameString).mkString(".")
         case _ => ""
       }
       
-      def importsFromSamePackage(t: Tree) = {
-        asSelectorString(t) == rootPackage
-      }
-      
-      neededImports(root) flatMap {
-        // warning if binding is never used! and quickfix to replace with `_`!
-        case Select(selector, _) if importsFromSamePackage(selector) =>
-          None
-        case select @ Select(expr, name) =>
-
-          // we don't want to see imports like "java.this.lang..."
-          val removeThisTrees = {
-            matchingChildren { 
-              transform {
-                case t: This => 
-                  // expand to the full package name
-                  val parents = ancestorSymbolsDesc(t)
-                  Ident(parents map (_.nameString) mkString ".")
-              }
-            }
-          }
-            
-          // copy the tree and delete all positions so the full path will be written
-          val newExpr = ↓(setNoPosition &> removeThisTrees) apply duplicateTree(expr) getOrElse expr
-          val typeName = select.symbol.nameString
-          Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else typeName, -1, name, -1))))
-      }
+      mkImportTrees(neededImports(root), enclosingPackage)
     }
   }
   

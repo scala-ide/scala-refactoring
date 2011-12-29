@@ -11,6 +11,7 @@ import org.junit.Assert._
 import common.Change
 import collection.mutable.ListBuffer
 import util.CompilerProvider
+import scala.tools.refactoring.common.NewFileChange
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
@@ -38,7 +39,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     def this() = this(randomFileName())
       
     private val srcs = ListBuffer[(String, String)]()
-        
+
     implicit def addRefactoringFile(src: String) = new {
       def becomes(expected: String) {
         srcs += src → expected
@@ -64,11 +65,15 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
       
       val changes = createChanges(this)
       
-      val res = sources zip (sources map fileName) map {
+      val res = sources zip (sources map fileName) flatMap {
         case (src, name) => 
-          val changeSet = changes filter (_.file.name == name)
-          Change.applyChanges(changeSet, src)
-      }
+          val (newFileContent, changeSet) = changes filter (_.file.name == name) partition (_.isInstanceOf[NewFileChange])
+          if(newFileContent.isEmpty) {
+            Change.applyChanges(changeSet, src) :: Nil
+          } else {
+            Change.applyChanges(changeSet, src) :: Change.applyChanges(newFileContent, src) :: Nil
+          }
+      } filterNot (_.isEmpty)
       
       assert(res)
     }

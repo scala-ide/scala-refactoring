@@ -466,9 +466,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def Import(tree: Import, expr: Tree, selectors: List[ImportSelectorTree])(implicit ctx: PrintingContext) = {
       if(selectors.size > 1) {
-        l ++ "import " ++ p(expr) ++ "{" ++ pp(selectors, separator = ", ") ++ "}" ++ r
+        l ++ "import " ++ p(expr, after = ".") ++ "{" ++ pp(selectors, separator = ", ") ++ "}" ++ r
       } else {
-        l ++ "import " ++ p(expr) ++ pp(selectors, separator = ", ") ++ r
+        l ++ "import " ++ p(expr, after = ".") ++ pp(selectors, separator = ", ") ++ r
       }    
     }
   }

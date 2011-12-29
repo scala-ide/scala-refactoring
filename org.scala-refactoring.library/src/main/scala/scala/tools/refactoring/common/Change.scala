@@ -13,6 +13,11 @@ case class Change(file: AbstractFile, from: Int, to: Int, text: String) {
   val underlyingSource = None: Option[SourceFile]
 }
 
+class NewFileChange(val newFileName: String, file: AbstractFile, from: Int, to: Int, text: String)
+  extends Change(file, from, to, text) {
+
+}
+
 object Change {
   
   /**

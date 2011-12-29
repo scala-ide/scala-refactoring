@@ -167,6 +167,8 @@ trait Transformations {
     }
   }
   
+  def traverseAndTransformAll [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]): T[X, X] = t |> topdown(matchingChildren(t))
+
   /**
    * Creates a transformation that always returns the value x.
    */ 

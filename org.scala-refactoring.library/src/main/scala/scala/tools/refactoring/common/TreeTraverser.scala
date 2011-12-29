@@ -52,6 +52,11 @@ trait TreeTraverser {
     }
     
     def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree): Tree = {
+
+      if(tpe.isInstanceOf[SingletonType]) {
+        // Abort early because the current implementation won't work for singleton types
+        return tree
+      }
     
       val flattenedExistingTrees = tree.filter(_ => true) map {
         case t: Ident =>  (t.name.toString, t.pos)
