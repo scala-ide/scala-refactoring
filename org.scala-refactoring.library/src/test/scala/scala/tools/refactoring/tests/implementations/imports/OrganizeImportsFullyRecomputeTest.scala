@@ -256,7 +256,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package importOnTrait
-      
   
       trait A
   
@@ -602,6 +601,7 @@ trait FullPaths {
     """ becomes
     """
     package a.b.c
+
     import a.b.c.TestImplicits.stringToBytes
 
     object Tester {
@@ -630,6 +630,7 @@ trait FullPaths {
     """ becomes
     """
     package a.b.c
+
     import other.`type`.`implicit`
 
     object Tester {

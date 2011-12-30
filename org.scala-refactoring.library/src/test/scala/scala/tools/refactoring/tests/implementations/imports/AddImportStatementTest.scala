@@ -200,13 +200,12 @@ class AddImportStatementTest extends TestHelper {
       package nstd
 
       import collection.mutable.HashMap
+
       import collection.mutable.HashMap
       import collection.mutable.HashMap
       import collection.mutable.ListBuffer
 
       package pckg
-
-      
 
       object Main {}
     """)

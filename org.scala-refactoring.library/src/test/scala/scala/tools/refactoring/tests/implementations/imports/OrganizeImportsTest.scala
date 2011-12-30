@@ -270,6 +270,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package importOnTrait
+
       import java.lang._
   
       trait A

@@ -66,9 +66,13 @@ trait TreeTransformations extends Transformations with TreeFactory {
   
   def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(predicate((t: Tree) => t == from) &> constant(to)))
       
-  implicit def replacesTree(t1: Tree) = new {
-    def replaces(t2: Tree) = t1 setPos t2.pos
+  class TreeReplacesOtherTreeViaPosition[T <: Tree](t1: T) {
+    def replaces[T2 >: T <: Tree](t2: T2): T = {
+      t1 setPos t2.pos
+    }
   }
+
+  implicit def replacesTree[T <: Tree](t1: T) = new TreeReplacesOtherTreeViaPosition(t1)
     
   implicit def abstractFileToTree(file: tools.nsc.io.AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
   

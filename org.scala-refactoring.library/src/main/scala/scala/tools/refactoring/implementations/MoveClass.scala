@@ -31,8 +31,11 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       s.root match {
         case root: PackageDef => 
           topPackageDef(root) match {
-            case PackageDef(_, (impl: ImplDef) :: Nil) =>
-              Some(impl)
+            case PackageDef(_, stats) =>
+              stats.filter((_.isInstanceOf[ImplDef])) match {
+                case (impl: ImplDef) :: Nil => Some(impl)
+                case _ => None
+              }
             case _ => None
           }
         case _ => None
@@ -50,7 +53,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
     trace("Selected ImplDef: %s, in package %s, move to %s", toMove.nameString, ancestors map (_.nameString) mkString ("."), parameters)
 
-    def renamePackage(name: String) = {
+    def renamePackage(name: String, moveAllStats: Boolean) = {
       val targetPackages = name.split("\\.").toList
 
       val findFirstPackageToRename = filter {
@@ -64,7 +67,11 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       val changePackageDeclaration = transform {
         case pkg @ PackageDef(pid, stats) =>
 
-          val surroundingPackages = ancestorSymbols(pkg).init map (_.nameString)
+          val surroundingPackages = originalParentOf(pkg) match {
+            case Some(parentPkg: PackageDef) =>
+              ancestorSymbols(parentPkg) map (_.nameString)
+            case _ => Nil
+          }
 
           val newPid = if(targetPackages.startsWith(surroundingPackages)) {
             (targetPackages.drop(surroundingPackages.size))
@@ -75,7 +82,9 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
           if(newPid.isEmpty) {
             toMove
           } else {
-            pkg copy (pid = Ident(newPid mkString "."), stats = List(toMove)) replaces pkg
+            pkg copy (pid = Ident(newPid mkString ".") replaces pid,
+                // TODO ..
+                stats = if(moveAllStats) (stats.filterNot(_ == toMove) ::: List(toMove)).filterNot(_.isInstanceOf[PackageDef]) else List(toMove)) replaces pkg
           }
       }
 
@@ -183,18 +192,20 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
     parameters match {
 
       case KeepFile(newFullName) =>
+        val renamedPackage = transformFile(selection.file, renamePackage(newFullName, true))
+        val otherFiles = adaptDependentFiles(newFullName)
 
-        Right(transformFile(selection.file, renamePackage(newFullName)) ++ adaptDependentFiles(newFullName))
-        
+        Right(renamedPackage ++ otherFiles)
+
       case NewFile(newFullName) =>
-        
+
         val insertImports = transform {
           case pkg @ PackageDef(_, stats) if stats contains toMove =>
             val requiredImports = mkImportTrees(neededImports(toMove), newFullName)
             pkg copy (stats = requiredImports ++ stats) replaces pkg
         }
-        
-        val moveClass = renamePackage(newFullName) &> traverseAndTransformAll(insertImports)
+
+        val moveClass = renamePackage(newFullName, false) &> traverseAndTransformAll(insertImports)
 
         val newFileChanges = transformFile(selection.file, moveClass) map {
           case Change(file, from, to, src) => new NewFileChange(newFullName, file, from, to, src)

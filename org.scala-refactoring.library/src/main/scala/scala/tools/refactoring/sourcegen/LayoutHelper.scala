@@ -308,9 +308,6 @@ trait LayoutHelper extends CommentHelpers {
       
       case (l: Import, r: Import) => 
         NoLayout → NoLayout
-      
-      case (l, r: Import) => 
-        between(l, r)(l.pos.source) → NoLayout
         
       case (l: ImportSelectorTree, r: ImportSelectorTree) =>
         NoLayout → NoLayout

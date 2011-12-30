@@ -1121,6 +1121,7 @@ package simpleExtract
 class PathSeparator {
   def main() {
     mkTuple
+
     import java.io.{ File => F }
 
     object Whatever {
@@ -1131,8 +1132,7 @@ class PathSeparator {
   private def mkTuple: (Int, Int) = {
 
     /*(*/5 -> 10/*)*/
-
-    }
+  }
 }
     """
   } applyRefactoring extract("mkTuple")
