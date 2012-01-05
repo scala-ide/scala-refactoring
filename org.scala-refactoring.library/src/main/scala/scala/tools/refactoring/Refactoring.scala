@@ -54,7 +54,9 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
       val commonEnd   = commonPrefixLength(original.substring(commonStart).reverse, replacement.substring(commonStart).reverse)
 
       val minimizedChangeText = changeText.subSequence(commonStart, changeText.length - commonEnd).toString
-      Change(file, from + commonStart, to - commonEnd, minimizedChangeText)
+      new Change(file, from + commonStart, to - commonEnd, minimizedChangeText) {
+        override val underlyingSource = change.underlyingSource
+      }
     case _ => change
   }
   

@@ -21,7 +21,7 @@ class NewFileChange(val newFileName: String, file: AbstractFile, from: Int, to: 
 object Change {
   
   /**
-   * Applies the list of changes to the source string.
+   * Applies the list of changes to the source string. Primarily used for testing / debugging.
    */
   def applyChanges(ch: List[Change], source: String): String = {
     (source /: ch.sortBy(-_.to)) { (src, change) =>

@@ -61,7 +61,7 @@ trait LayoutHelper extends CommentHelpers {
 
   def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = 
     Layout(t.pos.source, 0, t.pos.start) → 
-    Layout(t.pos.source, t.pos.end, t.pos.source.length)
+    Layout(t.pos.source, t.pos.end, endPositionAtEndOfSourceFile(t.pos, Some(t.pos.source.length)))
     
   def layoutForSingleChild(t: Tree, p: Tree): (Layout, Layout) = 
     splitLayoutBetweenParentAndFirstChild(child = t, parent = p)._2 →     

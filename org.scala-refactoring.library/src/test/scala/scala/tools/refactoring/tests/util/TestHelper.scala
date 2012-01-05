@@ -71,7 +71,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
           if(newFileContent.isEmpty) {
             Change.applyChanges(changeSet, src) :: Nil
           } else {
-            Change.applyChanges(changeSet, src) :: Change.applyChanges(newFileContent, src) :: Nil
+            Change.applyChanges(changeSet, src) :: newFileContent.map(_.text)
           }
       } filterNot (_.isEmpty)
       

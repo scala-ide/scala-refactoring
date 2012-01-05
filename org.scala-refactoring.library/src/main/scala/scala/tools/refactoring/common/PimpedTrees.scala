@@ -319,19 +319,14 @@ trait PimpedTrees {
   
   /**
    * Trees that reach the end of the file don't seem to have the correct end position, 
-   * except if there's a newline, }, ), or ] at the end.
+   * except if there's a newline at the end.
    */
-  def endPositionAtEndOfSourceFile(pos: Position) = {
+  def endPositionAtEndOfSourceFile(pos: Position, otherWise: Option[Int] = None) = {
     // TODO: properly investigate this for a scalac bug report
-    val lastCharInFile = pos.source.content(pos.end)
-    if(pos.source.length -1 == pos.end 
-        && lastCharInFile != '\n'
-        && lastCharInFile != '}'
-        && lastCharInFile != ')'
-        && lastCharInFile != ']')
+    if(pos.source.length -1 == pos.end && pos.source.content(pos.end) != '\n')
       pos.end + 1
     else
-      pos.end
+      otherWise getOrElse pos.end
   }
   
   /**
@@ -933,11 +928,15 @@ trait PimpedTrees {
    *   
    * returns `a`.
    */
-  def topPackageDef(t: PackageDef) = {
+  def topPackageDef(t: PackageDef): PackageDef = {
     t find {
       case PackageDef(_, NoPackageDef(_) :: _) => true
       case _ => false
-    } getOrElse t
+    } collect {
+      case pkg: PackageDef => pkg
+    } getOrElse {
+      t
+    }
   }
    
   class NotInstanceOf[T](m: Manifest[T]) {

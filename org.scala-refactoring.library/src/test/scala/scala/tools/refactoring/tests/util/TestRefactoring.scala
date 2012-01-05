@@ -31,11 +31,12 @@ trait TestRefactoring extends TestHelper {
     
     val refactoring: MultiStageRefactoring
 
-    def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = {
+    lazy val selection = refactoring.FileSelection(project.selection.file, project.selection.pos.start, project.selection.pos.end)
 
-      val selection = refactoring.FileSelection(project.selection.file, project.selection.pos.start, project.selection.pos.end)
-      
-      refactoring.prepare(selection) match {
+    lazy val preparationResult = refactoring.prepare(selection)
+
+    def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = {
+      preparationResult match {
         case Right(prepare) =>
           refactoring.perform(selection, prepare, parameters) match {
             case Right(modifications) => modifications

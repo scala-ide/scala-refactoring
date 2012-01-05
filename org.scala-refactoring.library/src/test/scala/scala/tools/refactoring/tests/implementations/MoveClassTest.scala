@@ -14,16 +14,12 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
   }
 
-  private def moveFileTo(target: String)(pro: FileSet) = {
+  private def moveTo(target: String)(pro: FileSet) = {
     val testRefactoring = createRefactoring(pro)
-    testRefactoring.performRefactoring(testRefactoring.refactoring.KeepFile(target))
+    import testRefactoring._
+    performRefactoring(refactoring.RefactoringParameters(target, preparationResult.right.get))
   }
 
-  private def moveToNewFile(target: String)(pro: FileSet) = {
-    val testRefactoring = createRefactoring(pro)
-    testRefactoring.performRefactoring(testRefactoring.refactoring.NewFile(target))
-  }
-  
   @Test
   def moveBetweenPackages = new FileSet {
     """
@@ -34,7 +30,27 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package x.y
       class ToMove
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
+
+  @Test
+  def moveWithoutEmptyLineAtEOF = new FileSet {
+    """
+      package a.b.c
+
+      class X
+
+      class /*(*/ToMove/*)*/ {
+   }""" becomes
+    """
+      package a.b.c
+
+      class X"""
+    "" becomes """
+      package hehe
+
+      class /*(*/ToMove/*)*/ {
+   }"""
+  } applyRefactoring(moveTo("hehe"))
   
   @Test
   def moveToParent = new FileSet {
@@ -52,7 +68,21 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class ToMove
     """
-  } applyRefactoring(moveFileTo("a.b"))
+  } applyRefactoring(moveTo("a.b"))
+
+  @Test
+  def moveToSubpackage = new FileSet {
+    """
+      package a
+
+      class ToMove
+    """ becomes
+    """
+      package a.b.c
+
+      class ToMove
+    """
+  } applyRefactoring(moveTo("a.b.c"))
 
   @Test
   def moveObjectBetweenPackages = new FileSet {
@@ -66,7 +96,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       import java.util.ArrayList
       object ObjectToMove
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
   
   @Test
   def moveBetweenNestedPackages = new FileSet {
@@ -80,7 +110,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package x.y
       class ToMove
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
   
   @Test
   def moveBetweenSubPackage = new FileSet {
@@ -94,7 +124,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package other
       class ToMove
     """
-  } applyRefactoring(moveFileTo("org.com.other"))
+  } applyRefactoring(moveTo("org.com.other"))
   
   @Test
   def moveToSuperPackage = new FileSet {
@@ -107,7 +137,35 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package org.com
       class ToMove
     """
-  } applyRefactoring(moveFileTo("org.com"))
+  } applyRefactoring(moveTo("org.com"))
+
+  @Test
+  def moveOneFromManyWithSelfReference = new FileSet {
+    """
+      package org.com
+      package pkg
+
+      class /*(*/ToMove/*)*/ {
+        var x: ToMove = _
+      }
+
+      class SomeOtherClass
+    """ becomes
+    """
+      package org.com
+      package pkg
+
+      class SomeOtherClass
+    """
+    ;
+    "" becomes """
+      package org.com
+
+      class /*(*/ToMove/*)*/ {
+        var x: ToMove = _
+      }
+    """
+  } applyRefactoring(moveTo("org.com"))
 
   @Test
   def moveOneFromMany = new FileSet {
@@ -131,7 +189,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class /*(*/ToMove/*)*/
     """
-  } applyRefactoring(moveToNewFile("org.com"))
+  } applyRefactoring(moveTo("org.com"))
 
   @Test
   def moveOneFromManyWithDoc = new FileSet {
@@ -168,7 +226,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
        **/
       class /*(*/ToMove/*)*/
     """
-  } applyRefactoring(moveToNewFile("org.com.whatever"))
+  } applyRefactoring(moveTo("org.com.whatever"))
 
   @Test
   def moveClassWithImplementation = new FileSet {
@@ -205,7 +263,38 @@ class MoveClassTest extends TestHelper with TestRefactoring {
         def someMethod = 42
       }
     """
-  } applyRefactoring(moveToNewFile("ch.misto"))
+  } applyRefactoring(moveTo("ch.misto"))
+
+  @Test
+  def moveClassesWithImports = new FileSet {
+    """
+      package org.com
+      package pkg
+
+      import scala.collection.mutable.ListBuffer
+
+      class ToMove {
+        var lb: ListBuffer[Int] = _
+      }
+
+      object SomeObj {
+        var lb: ListBuffer[Int] = _
+      }
+    """ becomes
+    """
+      package ch.misto
+
+      import scala.collection.mutable.ListBuffer
+
+      class ToMove {
+        var lb: ListBuffer[Int] = _
+      }
+
+      object SomeObj {
+        var lb: ListBuffer[Int] = _
+      }
+    """
+  } applyRefactoring(moveTo("ch.misto"))
   
   @Test
   def moveClassWithImports = new FileSet {
@@ -243,7 +332,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
         var lb: ListBuffer[Int] = _
       }
     """
-  } applyRefactoring(moveToNewFile("ch.misto"))
+  } applyRefactoring(moveTo("ch.misto"))
   
   @Test
   def moveClassThatExtendsFromRequiredImport = new FileSet {
@@ -283,7 +372,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
         def compare(i1: Int, i2: Int) = 0
       }
     """
-  } applyRefactoring(moveToNewFile("ch.misto"))
+  } applyRefactoring(moveTo("ch.misto"))
   
   @Test
   def moveClassWithDepOnCurrentPackage = new FileSet {
@@ -310,8 +399,8 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       trait /*(*/B/*)*/ extends A
     """
-  } applyRefactoring(moveToNewFile("org.com.other"))
-  
+  } applyRefactoring(moveTo("org.com.other"))
+
   @Test
   def copyrightHeaderIsMovedAlong = new FileSet {
     """
@@ -339,7 +428,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class /*(*/B/*)*/(a: A)
     """
-  } applyRefactoring(moveToNewFile("ch.hsr"))
+  } applyRefactoring(moveTo("ch.hsr"))
 
   @Test
   def moveWithAdaptedImport = new FileSet {
@@ -368,7 +457,40 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class User extends MoveIt
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
+
+  @Test
+  def moveMulipleClassesWithAdaptedImport = new FileSet {
+    """
+      package a.b.c
+
+      class MoveIt
+      trait MoveAlso
+    """ becomes
+    """
+      package x.y
+
+      class MoveIt
+      trait MoveAlso
+    """
+    ;
+    """
+      package m.n
+
+      import a.b.c.MoveIt
+      import a.b.c.MoveAlso
+
+      class User extends MoveIt with MoveAlso
+    """ becomes
+    """
+      package m.n
+
+      import x.y.MoveIt
+      import x.y.MoveAlso
+
+      class User extends MoveIt with MoveAlso
+    """
+  } applyRefactoring(moveTo("x.y"))
 
   @Test
   def moveWithAdaptedImportWithManySelectors = new FileSet {
@@ -404,7 +526,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class User extends ToMove
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
 
   @Test
   def adaptFQN = new FileSet {
@@ -425,7 +547,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package m.n
       class User extends x.y.ToMove
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
 
   @Test
   def adaptReferenceFromSamePackage = new FileSet {
@@ -450,7 +572,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class User extends ToMove
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
 
   @Test
   def adaptReferenceInValDefWithoutImport = new FileSet {
@@ -478,7 +600,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class User(x: ToMove)
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
 
   @Test
   def adaptReferenceInValDefWithImport = new FileSet {
@@ -501,7 +623,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       import x.y.ToMove
       class User(x: ToMove)
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
 
   @Test
   def adaptReferenceFromSubPackage = new FileSet {
@@ -525,7 +647,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package d
       class User extends x.y.ToMove
     """
-  } applyRefactoring(moveFileTo("x.y"))
+  } applyRefactoring(moveTo("x.y"))
 
   @Test
   def adaptLotsOfReferences = new FileSet {
@@ -574,5 +696,53 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       class User(what: ToMove) extends ToMove
     """
-  } applyRefactoring(moveToNewFile("x.y"))
+  } applyRefactoring(moveTo("x.y"))
+
+  @Test
+  def moveManyClassesAdaptReferences = new FileSet {
+    """
+      package a.b.c
+      trait A
+      trait B
+      trait C
+    """ becomes
+    """
+      package x.y
+      trait A
+      trait B
+      trait C
+    """
+    ;
+    """
+      package different
+
+      import a.b.c._
+
+      class User(what: ToMove) extends A with B
+    """ becomes
+    """
+      package different
+
+      import a.b.c._
+      import x.y.A
+      import x.y.B
+
+      class User(what: ToMove) extends A with B
+    """
+    ;
+    """
+      package third
+
+      import a.b.c.C
+
+      class X extends C with a.b.c.B
+    """ becomes
+    """
+      package third
+
+      import x.y.C
+
+      class X extends C with x.y.B
+    """
+  } applyRefactoring(moveTo("x.y"))
 }
