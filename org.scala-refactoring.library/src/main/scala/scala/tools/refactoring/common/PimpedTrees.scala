@@ -375,7 +375,7 @@ trait PimpedTrees {
     }
     
     def tparamsWithContextBounds: List[Tree] = {
-      defdef.tparams ++ contextBounds sortBy (_.pos.startOrPoint)
+      (defdef.tparams ++ contextBounds) sortBy (_.pos.startOrPoint)
     }
     
     def explicitVParamss: List[List[Tree]] = {
