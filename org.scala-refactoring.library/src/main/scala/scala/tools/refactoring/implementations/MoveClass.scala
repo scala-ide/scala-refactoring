@@ -45,10 +45,21 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       case _ => false
     }
 
+    val topLevelImpls = topLevelImplDefs(s)
+
     s.findSelectedOfType[ImplDef] match {
-      case Some(singleImplDef) => Right(Some(singleImplDef))
-      case None if hasSinglePackageDeclaration => Right(None) // Move all ImplDefs
-      case _ => Left(PreparationError("Files with multiple packages cannot be moved."))
+      // If there is only one ImplDef in the file, we simply move
+      // all impls. This doesn't matter from the refactoring's
+      // perspective, but is used in the IDE to determine if it's
+      // possible to split a class from a multiple-definition file.
+      case Some(singleImplDef) if topLevelImpls.size == 1 =>
+        Right(None)
+      case Some(singleImplDef) =>
+        Right(Some(singleImplDef))
+      case None if hasSinglePackageDeclaration =>
+        Right(None) // Move all ImplDefs
+      case _ =>
+        Left(PreparationError("Files with multiple packages cannot be moved."))
     }
   }
 
@@ -108,8 +119,9 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
   private def addRequiredImportsForExtractedClass(toMove: ImplDef, targetPackageName: String) = traverseAndTransformAll {
     transform {
       case pkg @ PackageDef(_, stats) if stats contains toMove=>
-        val dependencies = neededImports(toMove) filterNot (_.symbol == toMove.symbol)
-        val requiredImports = mkImportTrees(dependencies, targetPackageName)
+        val dependencies = neededImports(toMove)
+        val dependenciesWithoutSelf = dependencies filterNot (_.symbol == toMove.symbol)
+        val requiredImports = mkImportTrees(dependenciesWithoutSelf, targetPackageName)
         pkg copy (stats = requiredImports ++ stats) replaces pkg
     }
   }

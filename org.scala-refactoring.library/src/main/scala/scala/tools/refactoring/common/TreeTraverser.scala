@@ -50,24 +50,25 @@ trait TreeTraverser {
       }
       select.setType(tpe).setSymbol(sym).setPos(pos)          
     }
-    
+
     def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree): Tree = {
 
-      if(tpe.isInstanceOf[SingletonType]) {
-        // Abort early because the current implementation won't work for singleton types
-        return tree
-      }
-    
       val flattenedExistingTrees = tree.filter(_ => true) map {
         case t: Ident =>  (t.name.toString, t.pos)
         case t: Select => (t.name.toString, t.pos)
         case _ => return tree
       }
-      
-      val treesFromType = tpe.trimPrefix(tpe.toString).split("\\.").toList.reverse zip Stream.continually(NoPosition)
-      
+
+      val treesFromType = {
+        val tpeWithoutPrefix = tpe.trimPrefix(tpe.toString).split("\\.") match {
+          case tpes if tpe.isInstanceOf[SingletonType] => tpes.init // drop the `.type`
+          case tpes => tpes
+        }
+        tpeWithoutPrefix.toList.reverse zip Stream.continually(NoPosition)
+      }
+
       val fullPathOfAllTrees = (flattenedExistingTrees ++ treesFromType.drop(flattenedExistingTrees.size)).reverse
-      
+
       def symbolAncestors(s: Symbol): Stream[Symbol] = if(s == NoSymbol) Stream.continually(NoSymbol) else Stream.cons(s, symbolAncestors(s.owner))
       
       val select = fullPathOfAllTrees zip symbolAncestors(sym).take(fullPathOfAllTrees.length).reverse.toList match {

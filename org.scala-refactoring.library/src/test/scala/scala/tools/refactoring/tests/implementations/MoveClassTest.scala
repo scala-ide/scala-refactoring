@@ -529,6 +529,40 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   } applyRefactoring(moveTo("x.y"))
 
   @Test
+  def moveClassWithMultipleDependenciesOnCurrentFile = new FileSet {
+    """
+    package arith
+
+    sealed abstract class Term
+    case object TmZero extends Term
+
+    class /*(*/ArithParser/*)*/ {
+      def x {
+        TmZero
+      }
+    }
+    """ becomes
+    """
+    package arith
+
+    sealed abstract class Term
+    case object TmZero extends Term
+    """
+    ;
+    "" becomes """
+    package a.b.c.d
+
+    import arith.TmZero
+
+    class /*(*/ArithParser/*)*/ {
+      def x {
+        TmZero
+      }
+    }
+    """
+  } applyRefactoring(moveTo("a.b.c.d"))
+
+  @Test
   def adaptFQN = new FileSet {
     """
       package a.b.c
