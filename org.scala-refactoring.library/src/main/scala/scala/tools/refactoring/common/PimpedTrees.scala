@@ -482,27 +482,7 @@ trait PimpedTrees {
         val self = if(tpl.self.isEmpty) EmptyTree else {
           
           if(tpl.pos.isRange) {
-            val source = tpl.self.pos.source.content.slice(tpl.self.pos.point, tpl.self.pos.end) mkString // XXX remove comments
-            
-            def extractExactPositionsOfAllTypes(typ: Type): List[Tree] = typ match {
-              case RefinedType(parents, _) =>
-                parents flatMap extractExactPositionsOfAllTypes
-              case tpe @ TypeRef(_, sym, _) =>
-                val thisName = typ.toString
-                val nameIndex = source.indexOf(thisName)
-                if(nameIndex < 0) 
-                  Nil
-                else {
-                  val start = tpl.self.pos.point + nameIndex
-                  val end = start + thisName.length
-                  
-                  List(TypeTree(tpe) setPos (tpl.self.pos withStart start withEnd end))
-                }
-              case _ => Nil
-            }
-            
-            val selfTypes = extractExactPositionsOfAllTypes(tpl.self.tpt.tpe)
-            
+
             val selfNameTree = if(tpl.self.name.toString == "_") {
               NameTree("this") setPos (tpl.self.pos withEnd (tpl.self.pos.start + "this".length))
             } else {
@@ -512,7 +492,7 @@ trait PimpedTrees {
               }
             }
             
-            SelfTypeTree(selfNameTree, selfTypes, tpl.self.tpt) setPos tpl.self.pos
+            SelfTypeTree(selfNameTree, tpl.self.tpt) setPos tpl.self.pos
           } else {
             tpl.self
           }
@@ -602,8 +582,8 @@ trait PimpedTrees {
       case SuperConstructorCall(clazz, args) =>
         clazz :: args
         
-      case SelfTypeTree(name, types, orig) =>
-        name :: types ::: orig :: Nil
+      case SelfTypeTree(name, tpt) =>
+        name :: tpt :: Nil
         
       case TypeApply(fun, args) =>
         fun :: args
@@ -833,7 +813,7 @@ trait PimpedTrees {
    *   self: A with B =>
    *   ^^^^^^^^^^^^^^
    */
-  case class SelfTypeTree(name: NameTree, types: List[global.Tree], orig: Tree) extends global.Tree {
+  case class SelfTypeTree(name: NameTree, tpt: Tree) extends global.Tree {
     def errorSubtrees = Nil
   }
     

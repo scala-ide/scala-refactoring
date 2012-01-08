@@ -931,7 +931,23 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("Bar"))
   
   @Test
-  def renameClassSelfTypeAnnotation= new FileSet {
+  def renameClassExplicitSelfTypeAnnotation= new FileSet {
+    """
+    trait A
+    class /*(*/Foo/*)*/ {
+      self: Foo with A=>
+    }
+    """ becomes 
+    """
+    trait A
+    class /*(*/Babar/*)*/ {
+      self: Babar with A=>
+    }
+    """
+  } applyRefactoring(renameTo("Babar"))
+  
+  @Test
+  def renameClassSelfTypeAnnotation = new FileSet {
     """
     package renameClassWithSelfTypeAnnotation
     class /*(*/Foo/*)*/ {
@@ -945,6 +961,22 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("Bar"))
+  
+  @Test
+  def renameClassSelfTypeAnnotation2 = new FileSet {
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Foo/*)*/ {
+      self: Foo =>
+    }
+    """ becomes 
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Babar/*)*/ {
+      self: Babar =>
+    }
+    """
+  } applyRefactoring(renameTo("Babar"))
   
   @Test
   def renameMethodWithContextBound = new FileSet {

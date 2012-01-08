@@ -408,10 +408,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def SelectFromTypeTree(tree: SelectFromTypeTree, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext) = {
       l ++ p(qualifier) ++ p(nameOf(tree)) ++ r      
     }
-    
-    override def SelfTypeTree(tree: SelfTypeTree, name: NameTree, types: List[Tree], orig: Tree)(implicit ctx: PrintingContext) = {
-      l ++ p(name) ++ pp(types) ++ r
-    }
         
     override def AppliedTypeTree(tree: AppliedTypeTree, tpt: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
       
