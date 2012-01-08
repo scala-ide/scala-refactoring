@@ -947,6 +947,22 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("Babar"))
   
   @Test
+  def renameWithMultipleContextBounds = new FileSet {
+    """
+    package test
+    class Foo[T] {
+      def /*(*/bar/*)*/[A: Numeric: Foo] = ""
+    }
+    """ becomes
+    """
+    package test
+    class Foo[T] {
+      def /*(*/babar/*)*/[A: Numeric: Foo] = ""
+    }
+    """
+  } applyRefactoring(renameTo("babar"))
+
+  @Test
   def renameClassSelfTypeAnnotation = new FileSet {
     """
     package renameClassWithSelfTypeAnnotation
