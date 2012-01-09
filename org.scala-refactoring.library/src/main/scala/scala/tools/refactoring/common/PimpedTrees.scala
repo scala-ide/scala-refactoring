@@ -243,6 +243,9 @@ trait PimpedTrees {
             
           case t: DefTree => t.pos withStart t.pos.point withEnd (t.pos.point + nameString.length)
           
+          case t: This =>
+            t.pos withEnd (t.pos.start + t.qual.length)
+
           case t => t.pos
         } 
       } catch {

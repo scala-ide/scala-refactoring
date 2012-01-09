@@ -339,6 +339,9 @@ trait TreeTraverser {
             case _ => ()
           }
 
+        case t: This if t.pos.isRange =>
+          f(t.symbol, t)
+
         case _ => ()  
       }
         
