@@ -534,7 +534,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       else 
         p(nameOf(tree))
       
-      l ++ pp(mods, separator = Requisite.Blank, after = Requisite.Blank) ++ className ++ pp(tparams) ++ p(impl) ++ r
+      l ++ pp(mods, separator = Requisite.Blank, after = Requisite.Blank) ++ className ++ pp(tparams, separator="," ++ Requisite.Blank) ++ p(impl) ++ r
     }
 
     override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext) = {

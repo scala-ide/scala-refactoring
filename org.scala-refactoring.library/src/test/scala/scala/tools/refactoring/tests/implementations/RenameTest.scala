@@ -200,6 +200,16 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("c"))
 
   @Test
+  def renameClassWithTypeParameters = new FileSet {
+    """
+    case class /*(*/Test/*)*/[A, B](a:A,b:B)
+    """ becomes
+    """
+    case class /*(*/Test1/*)*/[A, B](a:A,b:B)
+    """
+  } applyRefactoring(renameTo("Test1"))
+
+  @Test
   def renameReferenceToOuterclass = new FileSet {
     """
     class /*(*/Foo/*)*/ {
