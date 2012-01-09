@@ -210,6 +210,24 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("Test1"))
 
   @Test
+  def renameAbstractType = new FileSet {
+    """
+    trait O {
+      trait Property[+T]
+      type /*(*/Prop_Tp/*)*/[+Vl_Tpe] <: Property[Vl_Tpe]
+      def properties: Set[Prop_Tp[_]] = null.asInstanceOf[Set[Prop_Tp[_]]]
+    }
+    """ becomes
+    """
+    trait O {
+      trait Property[+T]
+      type /*(*/Prop_Tpe/*)*/[+Vl_Tpe] <: Property[Vl_Tpe]
+      def properties: Set[Prop_Tpe[_]] = null.asInstanceOf[Set[Prop_Tpe[_]]]
+    }
+    """
+  } applyRefactoring(renameTo("Prop_Tpe"))
+
+  @Test
   def renameReferenceToOuterclass = new FileSet {
     """
     class /*(*/Foo/*)*/ {

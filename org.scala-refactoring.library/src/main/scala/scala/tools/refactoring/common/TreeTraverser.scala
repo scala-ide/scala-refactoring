@@ -260,14 +260,15 @@ trait TreeTraverser {
     
           (t.original, t.tpe) match {
             case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
-
-                args1 zip args2 foreach {
-                  case (i: RefTree, tpe: TypeRef) => 
-                    f(tpe.sym, i)
-                  case _ => ()
-                }
-              case _ => ()
-            }
+              args1 zip args2 foreach {
+                case (i: RefTree, tpe: TypeRef) =>
+                  f(tpe.sym, i)
+                case _ => ()
+              }
+            case (ExistentialTypeTree(AppliedTypeTree(tpt, _), _), ExistentialType(_, underlying: TypeRef)) =>
+              f(underlying.sym, tpt)
+            case _ => ()
+          }
             
         case t: ClassDef if t.symbol != NoSymbol => 
           
