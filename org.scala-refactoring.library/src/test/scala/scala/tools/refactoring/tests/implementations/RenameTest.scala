@@ -198,6 +198,22 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("c"))
+
+  @Test  
+  def renameReferenceToOuterclass = new FileSet {
+    """
+    class /*(*/Foo/*)*/ {
+      class Bar {
+        def foo = Foo.this
+      }
+    }""" becomes
+    """
+    class /*(*/Blubb/*)*/ {
+      class Bar {
+        def foo = Blubb.this
+      }
+    }"""
+  } applyRefactoring(renameTo("Blubb"))
     
   @Test
   def renameDeconstructingAssignment = new FileSet {

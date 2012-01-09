@@ -299,4 +299,20 @@ class MarkOccurrencesTest extends TestHelper {
         for (foo <- List("santa", "2claus"); /*(*/###/*)*/ <- List(1,2) if foo.startsWith(""+ ###)) yield foo
       }
     """)
+  
+  @Test
+  def referenceFromInside = markOccurrences("""
+    class /*(*/Foo/*)*/ {
+      class Bar {
+        def foo = Foo.this
+      }
+    }
+    """,
+    """
+    class /*(*/###/*)*/ {
+      class Bar {
+        def foo = ###.this
+      }
+    }
+    """)
 }
