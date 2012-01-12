@@ -1114,6 +1114,21 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
+  @Test
+  def thisConstructorCall() = {
+
+    val tree = treeFrom("""
+    class Config(sourcePaths: Set[String], outputDir: String = null) {
+      def this() = this(Set())
+    }
+    """)
+
+    assertEquals("""
+    class Config(sourcePaths: Set[String], outputDir: String = null) {
+      def this() = this(Set())
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
+  }
   
   @Test
   def testTry() = {

@@ -1007,6 +1007,24 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("babar"))
 
   @Test
+  def renameClassWithThisConstuctorCall = new FileSet {
+    """
+    package renameClassWithThisConstuctorCall
+
+    class /*(*/Config/*)*/(sourcePaths: Set[String], outputDir: String = null) {
+     def this() = this(Set())
+    }
+    """ becomes
+    """
+    package renameClassWithThisConstuctorCall
+
+    class /*(*/ConfigX/*)*/(sourcePaths: Set[String], outputDir: String = null) {
+     def this() = this(Set())
+    }
+    """
+  } applyRefactoring(renameTo("ConfigX"))
+
+  @Test
   def renameClassSelfTypeAnnotation = new FileSet {
     """
     package renameClassWithSelfTypeAnnotation
