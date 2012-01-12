@@ -421,9 +421,10 @@ trait PimpedTrees {
      * Returns the trees that are passed to a super constructor call.
      */
     def superConstructorParameters = t.body.collect {
-      case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor || t.name.toString == nme.CONSTRUCTOR.toString => 
+      case d @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if d.symbol.isConstructor || d.name.toString == nme.CONSTRUCTOR.toString => 
         stats collect {
-          case Apply(_, args) => 
+          // we need to exclude calls to this class' constructors, this seems to catch them:
+          case a @ Apply(_, args) if a.tpe != t.tpe || (a.tpe == null && t.tpe == null) => 
             args
         } flatten
     } flatten
