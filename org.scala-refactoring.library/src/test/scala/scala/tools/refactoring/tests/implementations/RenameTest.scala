@@ -1025,6 +1025,32 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("ConfigX"))
   
   @Test
+  def renameAbstractTypesInHierarchy = new FileSet {
+    """
+    abstract class A {
+      type /*(*/Foo/*)*/
+      abstract class B extends A {
+        type Foo
+        class C extends B {
+          type Foo = Unit
+        }
+      }
+    }
+    """ becomes 
+    """
+    abstract class A {
+      type /*(*/ConfigX/*)*/
+      abstract class B extends A {
+        type ConfigX
+        class C extends B {
+          type ConfigX = Unit
+        }
+      }
+    }
+    """
+  } applyRefactoring(renameTo("ConfigX"))
+  
+  @Test
   def renameClassSelfTypeAnnotation = new FileSet {
     """
     package renameClassWithSelfTypeAnnotation

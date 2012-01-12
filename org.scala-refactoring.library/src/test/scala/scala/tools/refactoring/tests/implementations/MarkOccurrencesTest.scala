@@ -315,4 +315,40 @@ class MarkOccurrencesTest extends TestHelper {
       }
     }
     """)
+  
+  @Test
+  def referenceToOverridenTypesInSubclasses = markOccurrences("""
+    abstract class A {
+    
+      type /*(*/Foo/*)*/
+    
+      abstract class B extends A {
+    
+        type Foo
+    
+        class C extends B {
+    
+          type Foo = Unit
+    
+        }
+      }
+    }
+    """,
+    """
+    abstract class A {
+    
+      type /*(*/###/*)*/
+    
+      abstract class B extends A {
+    
+        type ###
+    
+        class C extends B {
+    
+          type ### = Unit
+    
+        }
+      }
+    }
+    """)
 }
