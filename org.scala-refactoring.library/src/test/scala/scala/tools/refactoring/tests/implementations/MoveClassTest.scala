@@ -64,8 +64,6 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
       package a.b
 
-      import java.util.ArrayList
-
       class ToMove
     """
   } applyRefactoring(moveTo("a.b"))
@@ -93,7 +91,6 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package x.y
-      import java.util.ArrayList
       object ObjectToMove
     """
   } applyRefactoring(moveTo("x.y"))
@@ -489,6 +486,32 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       import x.y.MoveAlso
 
       class User extends MoveIt with MoveAlso
+    """
+  } applyRefactoring(moveTo("x.y"))
+
+  @Test
+  def needImportToOriginatingPackage = new FileSet {
+    addToCompiler("X", """
+      package a.b.c
+
+      trait X
+    """)
+    ;
+    """
+      package a.b.c
+
+      trait /*(*/ToMove/*)*/ {
+        self: X =>
+      }
+    """ becomes
+    """
+      package x.y
+
+      import a.b.c.X
+
+      trait /*(*/ToMove/*)*/ {
+        self: X =>
+      }
     """
   } applyRefactoring(moveTo("x.y"))
 

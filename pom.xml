@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.scala-refactoring</groupId>
   <artifactId>org.scala-refactoring</artifactId>
-  <version>0.3.0-SNAPSHOT</version>
+  <version>0.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <properties>
     <scala.version>2.8.0</scala.version>

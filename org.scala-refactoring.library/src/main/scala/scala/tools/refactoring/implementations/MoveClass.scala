@@ -72,8 +72,6 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
     trace("Selected ImplDef: %s, in package %s, move to %s", toMove map(_.nameString) getOrElse "ALL", ancestors map (_.nameString) mkString ("."), parameters)
 
-    val targetPackageName = parameters.packageName
-
     /*
      * We need to handle two different cases:
      *
@@ -87,24 +85,18 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
       val newFileChanges = {
         val moveClass = {
-          val insertImports = addRequiredImportsForExtractedClass(toMove.get, targetPackageName)
           val statsToMove = parameters.moveSingleImpl.toList
-          createRenamedTargetPackageTransformation(parameters, statsToMove) &> insertImports
+          createRenamedTargetPackageTransformation(parameters, statsToMove, toMove.get)
         }
         val changes = transformFile(selection.file, moveClass)
-        changes map {
-          case change @ TextChange(file, from, to, src) =>
-            // TODO: Apply change so we get the complete source file
-            val src2 = Change.applyChanges(List(change), new String(file.content))
-            NewFileChange(targetPackageName, src2)
-        }
+        changes map (_.toNewFile(parameters.packageName))
       }
 
       newFileChanges ++ removeClassFromOldFileAndAddImportToNewIfNecessary(selection, parameters)
 
     } else {
       val statsToMove = topLevelStats(selection)
-      val transformation = createRenamedTargetPackageTransformation(parameters, statsToMove)
+      val transformation = createRenamedTargetPackageTransformation(parameters, statsToMove, selection.root)
       transformFile(selection.file, transformation)
     }
 
@@ -112,25 +104,26 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
      * We need to adapt the imports of all the files that reference one of the moved classes.
      * This include imports to the moved classes and fully qualified names.
      * */
-    val otherFiles = adaptDependentFiles(selection, toMove, targetPackageName)
+    val otherFiles = adaptDependentFiles(selection, toMove, parameters.packageName)
 
     Right(movedClassChanges ++ otherFiles)
   }
 
-  private def addRequiredImportsForExtractedClass(toMove: ImplDef, targetPackageName: String) = traverseAndTransformAll {
+  private def addRequiredImportsForExtractedClass(toMove: Tree, targetPackageName: String) = traverseAndTransformAll {
     transform {
-      case pkg @ PackageDef(_, stats) if stats contains toMove=>
+      case pkg @ PackageDef(_, stats) if stats.contains(toMove) || pkg.pos == toMove.pos /*if it's the renamed package*/ =>
+        // TODO Should we do an organize imports instead?
         val dependencies = neededImports(toMove)
         val dependenciesWithoutSelf = dependencies filterNot (_.symbol == toMove.symbol)
         val requiredImports = mkImportTrees(dependenciesWithoutSelf, targetPackageName)
-        pkg copy (stats = requiredImports ++ stats) replaces pkg
+        pkg copy (stats = requiredImports ++ (stats filterNot (_.isInstanceOf[Import]))) replaces pkg
     }
   }
 
   /**
    * Returns a transformation that creates the contents of the target file.
    * */
-  private def createRenamedTargetPackageTransformation(parameters: RefactoringParameters, implsToMove: List[Tree]) = {
+  private def createRenamedTargetPackageTransformation(parameters: RefactoringParameters, implsToMove: List[Tree], importsFor: Tree) = {
 
     val targetPackages = parameters.packageName.split("\\.").toList
 
@@ -165,7 +158,9 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
         }
     }
 
-    traverseAndTransformAll(findFirstPackageToRename &> changePackageDeclaration)
+    val insertImports = addRequiredImportsForExtractedClass(importsFor, parameters.packageName)
+
+    traverseAndTransformAll(findFirstPackageToRename &> changePackageDeclaration) &> insertImports
   }
 
   /**
@@ -195,10 +190,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       removeClassFromOldFile
     }
 
-    //val changes = createChanges(trans(abstractFileToTree(selection.file)).toList)
-
-    val t = transformFile(selection.file, trans)
-    t
+    transformFile(selection.file, trans)
   }
 
   private def topLevelStats(selection: Selection): List[Tree] = {

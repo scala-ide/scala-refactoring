@@ -201,7 +201,9 @@ trait CompilationUnitDependencies {
           // is explicit in the source code.
           val isMethodCallFromExplicitReceiver = qual.pos.isRange && t.symbol.isMethod
           
-          if (!isMethodCallFromExplicitReceiver && !isSelectFromInvisibleThis(qual)) {
+          if (!isMethodCallFromExplicitReceiver
+              && !isSelectFromInvisibleThis(qual)
+              && t.name != nme.WILDCARD) {
             addToResult(t)
           }
 

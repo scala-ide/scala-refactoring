@@ -26,10 +26,10 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   }
   
   /**
-   * Creates a list of changes from a list of trees, regenerating only those
+   * Creates a list of TextChanges from a list of trees, regenerating only those
    * trees that have changed.
    */
-  def createChanges(ts: List[Tree]): List[Change] = context("Create changes") {
+  def createChanges(ts: List[Tree]): List[TextChange] = context("Create changes") {
     generateFragmentsFromTrees(ts) map {
       case (file, tree, range, fragment) =>
         val end = endPositionAtEndOfSourceFile(range)

@@ -63,7 +63,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     def apply(f: FileSet => List[String]) = assert(f(this))
     
     val NewFile = ""
-    
+
     def applyRefactoring(createChanges: FileSet => List[Change]) {
       
       val changes = createChanges(this)
@@ -73,13 +73,13 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
           changes collect {
             case nfc: NewFileChange => nfc.text
           }
-          
+
         case (src, name) => 
           val textFileChanges = changes collect {
             case tfc: TextChange if tfc.file.file.name == name => tfc
           }
           Change.applyChanges(textFileChanges, src) :: Nil
-          
+
       } filterNot (_.isEmpty)
       
       assert(res)
