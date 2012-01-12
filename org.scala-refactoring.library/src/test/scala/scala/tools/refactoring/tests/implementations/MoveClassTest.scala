@@ -45,7 +45,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package a.b.c
 
       class X"""
-    "" becomes """
+    NewFile becomes """
       package hehe
 
       class /*(*/ToMove/*)*/ {
@@ -158,7 +158,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class SomeOtherClass
     """
     ;
-    "" becomes """
+    NewFile becomes """
       package org.com
 
       class /*(*/ToMove/*)*/ {
@@ -184,7 +184,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class SomeOtherClass
     """
     ;
-    "" becomes """
+    NewFile becomes """
       package org.com
 
       class /*(*/ToMove/*)*/
@@ -217,7 +217,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class SomeOtherClass
     """
     ;
-    "" becomes """
+    NewFile becomes """
       package org.com
       package whatever
 
@@ -256,7 +256,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
     ;
-    "" becomes """
+    NewFile becomes """
       package ch.misto
 
       trait /*(*/ToMove/*)*/ {
@@ -323,9 +323,9 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
     ;
-    "" becomes """
+    NewFile becomes """
       package ch.misto
-
+      
       import scala.collection.mutable.ListBuffer
 
       class /*(*/ToMove/*)*/ {
@@ -339,7 +339,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
       package org.com
       package pkg
-
+      
       import scala.collection.mutable.ListBuffer
       import java.util.Comparator
 
@@ -354,7 +354,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
       package org.com
       package pkg
-
+      
       import scala.collection.mutable.ListBuffer
       import java.util.Comparator
 
@@ -363,9 +363,9 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
     ;
-    "" becomes """
+    NewFile becomes """
       package ch.misto
-
+      
       import java.util.Comparator
 
       class /*(*/AlwaysEquals/*)*/ extends Comparator[Int] {
@@ -391,10 +391,10 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       trait A
     """
     ;
-    "" becomes """
+    NewFile becomes """
       package org.com
       package other
-
+      
       import org.com.pkg.A
 
       trait /*(*/B/*)*/ extends A
@@ -420,10 +420,10 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       trait A
     """
     ;
-    "" becomes """
+    NewFile becomes """
       // Copyright 2012 ..
       package ch.hsr
-
+      
       import org.com.pkg.A
 
       class /*(*/B/*)*/(a: A)
@@ -549,9 +549,9 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     case object TmZero extends Term
     """
     ;
-    "" becomes """
+    NewFile becomes """
     package a.b.c.d
-
+    
     import arith.TmZero
 
     class /*(*/ArithParser/*)*/ {
@@ -601,7 +601,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package a.b.c
-
+      
       import x.y.ToMove
 
       class User extends ToMove
@@ -699,7 +699,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
       package a.b
       package c
-
+      
       import x.y.ToMove
 
       trait Xy {
@@ -707,7 +707,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
     ;
-    "" becomes
+    NewFile becomes
     """
       package x.y
 

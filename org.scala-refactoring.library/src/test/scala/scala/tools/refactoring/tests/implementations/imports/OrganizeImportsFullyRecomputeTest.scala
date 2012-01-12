@@ -125,7 +125,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package tests.importing
-
+      
       import scala.collection.mutable.{ListBuffer => LB}
   
       object Main {val lb = LB(1) }
@@ -144,7 +144,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package tests.importing
-
+      
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
   
@@ -357,7 +357,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       """ becomes """
        package outer
        package inner
-
+       
        import scala.collection.mutable.HashMap
 
        object Main {
@@ -601,7 +601,7 @@ trait FullPaths {
     """ becomes
     """
     package a.b.c
-
+    
     import a.b.c.TestImplicits.stringToBytes
 
     object Tester {
@@ -630,7 +630,7 @@ trait FullPaths {
     """ becomes
     """
     package a.b.c
-
+    
     import other.`type`.`implicit`
 
     object Tester {

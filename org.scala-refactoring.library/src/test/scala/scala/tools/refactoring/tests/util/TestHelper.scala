@@ -12,6 +12,7 @@ import common.Change
 import collection.mutable.ListBuffer
 import util.CompilerProvider
 import scala.tools.refactoring.common.NewFileChange
+import scala.tools.refactoring.common.TextChange
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
@@ -61,18 +62,24 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     
     def apply(f: FileSet => List[String]) = assert(f(this))
     
+    val NewFile = ""
+    
     def applyRefactoring(createChanges: FileSet => List[Change]) {
       
       val changes = createChanges(this)
       
       val res = sources zip (sources map fileName) flatMap {
-        case (src, name) => 
-          val (newFileContent, changeSet) = changes filter (_.file.name == name) partition (_.isInstanceOf[NewFileChange])
-          if(newFileContent.isEmpty) {
-            Change.applyChanges(changeSet, src) :: Nil
-          } else {
-            Change.applyChanges(changeSet, src) :: newFileContent.map(_.text)
+        case (NewFile, name) =>
+          changes collect {
+            case nfc: NewFileChange => nfc.text
           }
+          
+        case (src, name) => 
+          val textFileChanges = changes collect {
+            case tfc: TextChange if tfc.file.file.name == name => tfc
+          }
+          Change.applyChanges(textFileChanges, src) :: Nil
+          
       } filterNot (_.isEmpty)
       
       assert(res)

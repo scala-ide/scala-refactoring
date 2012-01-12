@@ -8,6 +8,7 @@ import scala.tools.nsc.io.AbstractFile
 import scala.tools.refactoring.common.{SilentTracing, Selections, PimpedTrees, Change}
 import scala.tools.refactoring.sourcegen.SourceGenerator
 import scala.tools.refactoring.transformation.TreeTransformations
+import scala.tools.refactoring.common.TextChange
 
 /**
  * The Refactoring trait combines the transformation and source generation traits with
@@ -42,21 +43,19 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
    * common pre- and suffix between the change and the source file.
    */
   private def minimizeChange(change: Change): Change = change match {
-    case Change(file, from, to, changeText) if change.underlyingSource.isDefined =>
+    case TextChange(file, from, to, changeText) =>
 
       def commonPrefixLength(s1: Seq[Char], s2: Seq[Char]) =
         s1 zip s2 takeWhile Function.tupled(_==_) length
       
-      val original    = change.underlyingSource.get.content.subSequence(from, to).toString
+      val original    = file.content.subSequence(from, to).toString
       val replacement = changeText
 
       val commonStart = commonPrefixLength(original, replacement)
       val commonEnd   = commonPrefixLength(original.substring(commonStart).reverse, replacement.substring(commonStart).reverse)
 
       val minimizedChangeText = changeText.subSequence(commonStart, changeText.length - commonEnd).toString
-      new Change(file, from + commonStart, to - commonEnd, minimizedChangeText) {
-        override val underlyingSource = change.underlyingSource
-      }
+      TextChange(file, from + commonStart, to - commonEnd, minimizedChangeText)
     case _ => change
   }
   

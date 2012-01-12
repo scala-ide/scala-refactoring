@@ -242,7 +242,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package importOnTrait
-
+      
       import java.lang._
       import scala.collection.mutable.LinkedList
   

@@ -6,6 +6,7 @@ import scala.tools.refactoring.analysis.CompilationUnitDependencies
 import scala.tools.refactoring.common.{TreeExtractors, NewFileChange, InteractiveScalaCompiler, Change}
 import scala.tools.refactoring.transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
+import scala.tools.refactoring.common.TextChange
 
 abstract class MoveClass extends MultiStageRefactoring with TreeFactory with analysis.Indexes with TreeExtractors with InteractiveScalaCompiler with CompilationUnitDependencies {
 
@@ -92,10 +93,10 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
         }
         val changes = transformFile(selection.file, moveClass)
         changes map {
-          case change @ Change(file, from, to, src) =>
+          case change @ TextChange(file, from, to, src) =>
             // TODO: Apply change so we get the complete source file
-            val src2 = Change.applyChanges(List(change), new String(change.underlyingSource.get.content))
-            new NewFileChange(targetPackageName, file, from, to, src2)
+            val src2 = Change.applyChanges(List(change), new String(file.content))
+            NewFileChange(targetPackageName, src2)
         }
       }
 

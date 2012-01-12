@@ -100,7 +100,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package tests.importing
-
+      
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
   
@@ -119,7 +119,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package tests.importing
-
+      
       import scala.collection.mutable.{ListBuffer => LB, _}
   
       object Main {val lb = LB(1) }
@@ -138,7 +138,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package tests.importing
-
+      
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
   
@@ -158,7 +158,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package tests.importing
-
+      
       import java.lang.Object
       import scala.collection.mutable.ListBuffer
   
@@ -270,7 +270,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes
     """
       package importOnTrait
-
+      
       import java.lang._
   
       trait A
@@ -373,7 +373,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       """ becomes """
        package outer
        package inner
-
+       
        import scala.collection.mutable.HashMap
 
        object Main {

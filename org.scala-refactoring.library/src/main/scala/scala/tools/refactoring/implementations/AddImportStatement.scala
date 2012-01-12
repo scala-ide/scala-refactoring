@@ -8,18 +8,21 @@ package implementations
 import common.{InteractiveScalaCompiler, Change}
 import transformation.TreeFactory
 import scala.tools.nsc.io.AbstractFile
+import scala.tools.refactoring.common.TextChange
 
 abstract class AddImportStatement extends Refactoring with InteractiveScalaCompiler {
 
   val global: tools.nsc.interactive.Global
 
-  def addImport(file: AbstractFile, fqName: String): List[Change] = addImports(file, List(fqName))
+  def addImport(file: AbstractFile, fqName: String): List[TextChange] = addImports(file, List(fqName))
 
-  def addImports(file: AbstractFile, importsToAdd: Iterable[String]): List[Change] = {
+  def addImports(file: AbstractFile, importsToAdd: Iterable[String]): List[TextChange] = {
 
     val astRoot = abstractFileToTree(file)
 
-    refactor((addImportTransformation(importsToAdd) apply astRoot).toList)
+    refactor((addImportTransformation(importsToAdd) apply astRoot).toList) collect {
+      case tc: TextChange => tc
+    }
   }
   
   @deprecated("Use addImport(file, ..) instead", "0.4.0")
