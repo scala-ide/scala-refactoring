@@ -110,16 +110,18 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
   }
 
   private def addRequiredImportsForExtractedClass(toMove: Tree, targetPackageName: String) = traverseAndTransformAll {
-    transform {
-      case pkg @ PackageDef(_, stats) if stats.contains(toMove) || pkg.pos == toMove.pos /*if it's the renamed package*/ =>
-        // TODO Should we do an organize imports instead?
-        val dependencies = neededImports(toMove)
-        val dependenciesWithoutSelf = dependencies filterNot (_.symbol == toMove.symbol)
-        val requiredImports = mkImportTrees(dependenciesWithoutSelf, targetPackageName)
-        pkg copy (stats = requiredImports ++ (stats filterNot (_.isInstanceOf[Import]))) replaces pkg
+    locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+      case (p, existingImports, others) =>
+            
+        val oi = new OrganizeImports {
+          val global: MoveClass.this.global.type = MoveClass.this.global
+        }
+        
+        val imports = scala.Function.chain(new oi.FindNeededImports(toMove, targetPackageName) :: oi.SortImports :: Nil)(existingImports)         
+        p copy (stats = imports ::: others) replaces p
     }
   }
-
+  
   /**
    * Returns a transformation that creates the contents of the target file.
    * */

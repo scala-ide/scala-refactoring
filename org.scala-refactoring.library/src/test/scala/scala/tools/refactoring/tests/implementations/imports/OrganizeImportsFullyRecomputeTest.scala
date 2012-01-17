@@ -735,7 +735,7 @@ trait FullPaths {
     """ becomes
     """
       package importWithSelfType
-
+      
       import java.util.Observable
 
       trait Coccccc {

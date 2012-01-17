@@ -30,7 +30,7 @@ trait Fragment {
     case _ => f(this)
   } 
   
-  def toLayout = new Layout {
+  def toLayout: Layout = new Layout {
     def asText = self.asText
   }
   

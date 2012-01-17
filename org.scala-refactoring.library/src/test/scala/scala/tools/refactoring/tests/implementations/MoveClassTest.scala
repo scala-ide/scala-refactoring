@@ -10,7 +10,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     
   private def createRefactoring(pro: FileSet) = {
     new TestRefactoringImpl(pro) {
-      val refactoring = new MoveClass with ConsoleTracing with TestProjectIndex
+      val refactoring = new MoveClass with SilentTracing with TestProjectIndex
     }
   }
 
@@ -280,7 +280,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package ch.misto
-
+      
       import scala.collection.mutable.ListBuffer
 
       class ToMove {
@@ -506,7 +506,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package x.y
-
+      
       import a.b.c.X
 
       trait /*(*/ToMove/*)*/ {
@@ -705,6 +705,37 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class User extends x.y.ToMove
     """
   } applyRefactoring(moveTo("x.y"))
+
+  @Test
+  def nestedPackageAndImports = new FileSet {
+    """
+    package x
+    package y
+
+    import scala.collection.mutable.ListBuffer
+
+    class ToMove extends Dependency {
+      val l = ListBuffer[String]()
+    }""" becomes
+    """
+    package x
+    package z
+    
+    import scala.collection.mutable.ListBuffer
+
+    class ToMove extends Dependency {
+      val l = ListBuffer[String]()
+    }"""
+    ;
+    """
+      package x.y
+      class Dependency
+    """ becomes
+    """
+      package x.y
+      class Dependency
+    """
+  } applyRefactoring(moveTo("x.z"))
 
   @Test
   def adaptLotsOfReferences = new FileSet {

@@ -86,7 +86,7 @@ trait CompilationUnitDependencies {
     }.distinct
     
     // Eliminate duplicates by converting them to strings.
-    neededDependencies.groupBy(asSelectorString).map(_._2.head).toList
+    neededDependencies.groupBy(asSelectorString).map(_._2.head).toList filterNot (_.symbol == t.symbol)
   }
 
   /**
@@ -203,7 +203,8 @@ trait CompilationUnitDependencies {
           
           if (!isMethodCallFromExplicitReceiver
               && !isSelectFromInvisibleThis(qual)
-              && t.name != nme.WILDCARD) {
+              && t.name != nme.WILDCARD 
+              && (!qual.symbol.isTerm || qual.symbol.isStable)) {
             addToResult(t)
           }
 

@@ -180,15 +180,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     }
   }
   
-  class FindNeededImports(root: Tree) extends Participant {
+  class FindNeededImports(root: Tree, enclosingPackage: String) extends Participant {
     def apply(trees: List[Import]) = {
-      
-      val enclosingPackage = root match {
-        case root: PackageDef => 
-          val rootPackage = topPackageDef(root)
-          ancestorSymbols(rootPackage).map(_.nameString).mkString(".")
-        case _ => ""
-      }
+
       
       mkImportTrees(neededImports(root), enclosingPackage)
     }
@@ -247,7 +241,15 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     
     val importStrategy = params.deps match {
       case Dependencies.FullyRecompute =>
-        new FindNeededImports(selection.root) :: SortImports :: Nil
+        
+        val enclosingPackage = selection.root match {
+          case root: PackageDef => 
+            val rootPackage = topPackageDef(root)
+            ancestorSymbols(rootPackage).map(_.nameString).mkString(".")
+          case _ => ""
+        }
+        
+        new FindNeededImports(selection.root, enclosingPackage) :: SortImports :: Nil
       case Dependencies.RemoveUnneeded =>
         val unit = compilationUnitOfFile(selection.pos.source.file).get
         new AddNewImports(params.importsToAdd) :: SortImports :: new RemoveUnused(unit, params.importsToAdd) :: Nil  
