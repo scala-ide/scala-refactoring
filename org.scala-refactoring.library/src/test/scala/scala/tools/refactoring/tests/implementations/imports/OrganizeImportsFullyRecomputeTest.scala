@@ -714,4 +714,59 @@ trait FullPaths {
     }
     """
   } applyRefactoring organize
+
+  @Test
+  def importWithSelfType = new FileSet {
+    """
+      package importWithSelfType
+
+      import java.util.Observable
+
+      trait Coccccc {
+        this: Observable =>
+
+        def eval(ctx: String, t: Int): Int = try {
+          42
+        } catch {
+          case _ => t
+        }
+      }
+    """ becomes
+    """
+      package importWithSelfType
+
+      import java.util.Observable
+
+      trait Coccccc {
+        this: Observable =>
+
+        def eval(ctx: String, t: Int): Int = try {
+          42
+        } catch {
+          case _ => t
+        }
+      }
+    """
+  } applyRefactoring organize
+
+  @Test
+  def collapseTypes = new FileSet {
+    """
+    import scala.util.DynamicVariable
+    import scala.util.Random
+
+    trait Bogus {
+      def a: Random
+      def b: DynamicVariable[_]
+    }
+    """ becomes
+    """
+    import scala.util.{DynamicVariable, Random}
+
+    trait Bogus {
+      def a: Random
+      def b: DynamicVariable[_]
+    }
+    """
+  } applyRefactoring organize
 }
