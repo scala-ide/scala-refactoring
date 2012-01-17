@@ -714,7 +714,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
       
       val typeParameters = {
-
+        
         def mergeTypeParameters(ts: List[Tree]): Fragment = ts match {
           case Nil =>
             EmptyFragment

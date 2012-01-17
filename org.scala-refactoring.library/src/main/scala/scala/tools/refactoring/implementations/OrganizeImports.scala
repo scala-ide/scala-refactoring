@@ -43,7 +43,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   object CollapseImports extends Participant {
     def apply(trees: List[Import]) = {
       trees.foldRight(Nil: List[Import]) { 
-        case (imp: Import, x :: xs) if imp.expr.toString == x.expr.toString => 
+        case (imp: Import, x :: xs) if asSelectorString(imp.expr) == asSelectorString(x.expr) => 
           x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
         case (imp: Import, xs) => 
           imp :: xs

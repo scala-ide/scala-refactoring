@@ -54,7 +54,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       (src + restOfFile) becomes
       """
       package tests.importing
-      
+
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
       import scala.math.BigDecimal
@@ -63,12 +63,12 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       import scala.xml.QNode
       """ + restOfFile
     } applyRefactoring organizeWithoutCollapsing
-    
+
     new FileSet {
       (src + restOfFile) becomes
       """
       package tests.importing
-      
+
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
       import scala.math.BigDecimal
@@ -77,295 +77,295 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       import scala.xml.QNode
       """ + restOfFile
     } applyRefactoring organizeExpand
-    
+
     new FileSet {
       (src + restOfFile) becomes
       """
       package tests.importing
-      
+
       import scala.collection.mutable.{HashMap, ListBuffer}
       import scala.math.{BigDecimal, BigInt}
       import scala.xml.{Elem, QNode}
       """ + restOfFile
     } applyRefactoring organize
   }
-  
+
   @Test
   def dependencyOnMultipleOverloadedMethods = new FileSet {
     """
-      import scala.math.BigDecimal._
+    import scala.math.BigDecimal._
 
-      class C {
-        def m() {
-          apply("5")
-          apply(5l)
-        }
+    class C {
+      def m() {
+        apply("5")
+        apply(5l)
       }
+    }
     """ becomes
     """
-      import scala.math.BigDecimal.apply
+    import scala.math.BigDecimal.apply
 
-      class C {
-        def m() {
-          apply("5")
-          apply(5l)
-        }
+    class C {
+      def m() {
+        apply("5")
+        apply(5l)
       }
+    }
     """
   } applyRefactoring organize
-  
+
   @Test
   def expandImportsButNotWildcards = new FileSet {
     """
-      package tests.importing
+    package tests.importing
 
-      import scala.collection.mutable.{ListBuffer => LB, _}
-  
-      object Main {val lb = LB(1) }
+    import scala.collection.mutable.{ListBuffer => LB, _}
+
+    object Main {val lb = LB(1) }
     """ becomes
     """
-      package tests.importing
-      
-      import scala.collection.mutable.{ListBuffer => LB}
-  
-      object Main {val lb = LB(1) }
+    package tests.importing
+
+    import scala.collection.mutable.{ListBuffer => LB}
+
+    object Main {val lb = LB(1) }
     """
   } applyRefactoring organizeExpand
 
   @Test
   def dontCollapseImports = new FileSet {
     """
-      package tests.importing
+    package tests.importing
 
-      import scala.collection.mutable.ListBuffer
-      import scala.collection.mutable.HashMap
-  
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+    import scala.collection.mutable.ListBuffer
+    import scala.collection.mutable.HashMap
+
+    object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """ becomes
     """
-      package tests.importing
-      
-      import scala.collection.mutable.HashMap
-      import scala.collection.mutable.ListBuffer
-  
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+    package tests.importing
+
+    import scala.collection.mutable.HashMap
+    import scala.collection.mutable.ListBuffer
+
+    object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """
   } applyRefactoring organizeWithoutCollapsing
-    
+
   @Test
   def collapse = new FileSet {
     """
-      import java.lang.String
-      import java.lang.Object
-  
-      object Main {val s: String = ""; var o: Object = null}
+    import java.lang.String
+    import java.lang.Object
+
+    object Main {val s: String = ""; var o: Object = null}
     """ becomes
     """
-      import java.lang.{Object, String}
-  
-      object Main {val s: String = ""; var o: Object = null}
+    import java.lang.{Object, String}
+
+    object Main {val s: String = ""; var o: Object = null}
     """
   } applyRefactoring organize
-    
+
   @Test
   def sortSelectors = new FileSet {
     """
-      import java.lang.{String, Object}
-  
-      object Main {val s: String = ""; var o: Object = null}
+    import java.lang.{String, Object}
+
+    object Main {val s: String = ""; var o: Object = null}
     """ becomes
     """
-      import java.lang.{Object, String}
-  
-      object Main {val s: String = ""; var o: Object = null}
+    import java.lang.{Object, String}
+
+    object Main {val s: String = ""; var o: Object = null}
     """
   } applyRefactoring organize
-    
+
   @Test
   def sortAndCollapse = new FileSet {
     """
-      import scala.collection.mutable.ListBuffer
-      import java.lang.String
-      import java.lang.Object
-  
-      object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
+    import scala.collection.mutable.ListBuffer
+    import java.lang.String
+    import java.lang.Object
+
+    object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
     """ becomes
     """
-      import java.lang.{Object, String}
-      import scala.collection.mutable.ListBuffer
-  
-      object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
+    import java.lang.{Object, String}
+    import scala.collection.mutable.ListBuffer
+
+    object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
     """
   } applyRefactoring organize
-    
+
   @Test
   def collapseWithRename = new FileSet {
     """
-      import java.lang.{String => S}
-      import java.lang.{Object => Objekt}
-  
-      object Main {val s: String = ""; var o: Objekt = null}
+    import java.lang.{String => S}
+    import java.lang.{Object => Objekt}
+
+    object Main {val s: String = ""; var o: Objekt = null}
     """ becomes
     """
-      import java.lang.{Object => Objekt}
-  
-      object Main {val s: String = ""; var o: Objekt = null}
+    import java.lang.{Object => Objekt}
+
+    object Main {val s: String = ""; var o: Objekt = null}
     """
   } applyRefactoring organize
-    
+
   @Test
   def removeOneFromMany = new FileSet {
     """
-      import java.lang.{String, Math}
-  
-      object Main {val s: String = ""}
+    import java.lang.{String, Math}
+
+    object Main {val s: String = ""}
     """ becomes
     """
-      import java.lang.String
-  
-      object Main {val s: String = ""}
+    import java.lang.String
+
+    object Main {val s: String = ""}
     """
   } applyRefactoring organize
-    
+
   @Test
   def importAll = new FileSet {
     """
-      import java.lang._
-      import java.lang.String
-  
-      object Main
+    import java.lang._
+    import java.lang.String
+
+    object Main
     """ becomes
     """
-      
-  
-      object Main
+
+
+    object Main
     """
   } applyRefactoring organize
-    
+
   @Test
   def importOnTrait = new FileSet {
     """
-      package importOnTrait
-      import java.lang._
-      import java.lang.String
-  
-      trait A
-  
-      trait Main extends A {
-      }
+    package importOnTrait
+    import java.lang._
+    import java.lang.String
+
+    trait A
+
+    trait Main extends A {
+    }
     """ becomes
     """
-      package importOnTrait
-  
-      trait A
-  
-      trait Main extends A {
-      }
+    package importOnTrait
+
+    trait A
+
+    trait Main extends A {
+    }
     """
   } applyRefactoring organize
-    
+
   @Test
   def importWithSpace = new FileSet {
     """
-  
-      import scala.collection.mutable.ListBuffer
-      import java.lang.String
-  
-      object Main { val s: String = ""; val lb = ListBuffer("") }
-    """ becomes
-    """
-  
-      import java.lang.String
-      import scala.collection.mutable.ListBuffer
-  
-      object Main { val s: String = ""; val lb = ListBuffer("") }
-    """
+
+    import scala.collection.mutable.ListBuffer
+    import java.lang.String
+
+    object Main { val s: String = ""; val lb = ListBuffer("") }
+  """ becomes
+  """
+
+  import java.lang.String
+  import scala.collection.mutable.ListBuffer
+
+  object Main { val s: String = ""; val lb = ListBuffer("") }
+"""
   } applyRefactoring organize
-    
+
   @Test
   def importAllWithRename = new FileSet {
     """
-      import java.lang._
-      import java.lang.{String => S}
-  
-      object Main { val s: String = "" }
+    import java.lang._
+    import java.lang.{String => S}
+
+    object Main { val s: String = "" }
     """ becomes
     """
-      import java.lang.String
-  
-      object Main { val s: String = "" }
+    import java.lang.String
+
+    object Main { val s: String = "" }
     """
   } applyRefactoring organize
-    
+
   @Test
   def importRemovesUnneeded = new FileSet {
     """
-      import java.lang._
-      import java.lang.{String => S}
-      import java.util.Map
-      import scala.io.Source
-      import scala.collection.mutable.ListBuffer
+    import java.lang._
+    import java.lang.{String => S}
+    import java.util.Map
+    import scala.io.Source
+    import scala.collection.mutable.ListBuffer
 
-      object Main {
-        val s: String = ""
-        val l = ListBuffer(1,2,3)
+    object Main {
+      val s: String = ""
+      val l = ListBuffer(1,2,3)
         val l2 = List(1,2,3)
       }
     """ becomes
     """
-      import java.lang.String
-      import scala.collection.mutable.ListBuffer
+    import java.lang.String
+    import scala.collection.mutable.ListBuffer
 
-      object Main {
-        val s: String = ""
-        val l = ListBuffer(1,2,3)
+    object Main {
+      val s: String = ""
+      val l = ListBuffer(1,2,3)
         val l2 = List(1,2,3)
       }
     """
   } applyRefactoring organize
-    
+
   @Test
   def multipleImportsOnOneLine = new FileSet { 
-      """
-      import java.lang.String, String._
-  
-      object Main {
-        val s: String = ""
-        val s1 = valueOf(2);
-      }    """ becomes """
-      import java.lang.String
-      import java.lang.String.valueOf
-  
-      object Main {
-        val s: String = ""
-        val s1 = valueOf(2);
-      }    """
+    """
+    import java.lang.String, String._
+
+    object Main {
+      val s: String = ""
+      val s1 = valueOf(2);
+    }    """ becomes """
+    import java.lang.String
+    import java.lang.String.valueOf
+
+    object Main {
+      val s: String = ""
+      val s1 = valueOf(2);
+    }    """
   } applyRefactoring organize
-    
+
   @Test
   def importsInNestedPackages = new FileSet {
     """
-       package outer
-       package inner
+    package outer
+    package inner
 
-       import scala.collection.mutable.ListBuffer
-       import scala.collection.mutable.HashMap
+    import scala.collection.mutable.ListBuffer
+    import scala.collection.mutable.HashMap
 
-       object Main {
-         var hm: HashMap[String, String] = null
-       }
-      """ becomes """
-       package outer
-       package inner
-       
-       import scala.collection.mutable.HashMap
+    object Main {
+      var hm: HashMap[String, String] = null
+    }
+    """ becomes """
+    package outer
+    package inner
 
-       object Main {
-         var hm: HashMap[String, String] = null
-       }
-      """
+    import scala.collection.mutable.HashMap
+
+    object Main {
+      var hm: HashMap[String, String] = null
+    }
+    """
   } applyRefactoring organize
-    
+
   @Test
   def importFromPackageObject = new FileSet {
     """
@@ -374,200 +374,200 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
     object TestbreakOut {
       val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
-    }
+      }
     """ becomes """
     import scala.collection.breakOut
 
     object TestbreakOut {
       val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
-    }
+      }
     """
   } applyRefactoring organize
-  
+
   @Test
   def unusedImportWildcards = new FileSet {
     """
-      import java.util._
-      import scala.collection._
- 
-      object Main {
-      }    """ becomes
+    import java.util._
+    import scala.collection._
+
+    object Main {
+    }    """ becomes
     """
-      
- 
-      object Main {
-      }    """
+
+
+    object Main {
+    }    """
   } applyRefactoring organize
-  
+
   @Test
   def simplifyWildcards = new FileSet {
     """
-      import scala.collection.mutable._
-      import scala.collection.mutable.ListBuffer
- 
-      object Main {
-        var x: ListBuffer[Int] = null
-      }    """ becomes """
-      import scala.collection.mutable.ListBuffer
- 
-      object Main {
-        var x: ListBuffer[Int] = null
-      }    """
+    import scala.collection.mutable._
+    import scala.collection.mutable.ListBuffer
+
+    object Main {
+      var x: ListBuffer[Int] = null
+    }    """ becomes """
+    import scala.collection.mutable.ListBuffer
+
+    object Main {
+      var x: ListBuffer[Int] = null
+    }    """
   } applyRefactoring organize
-  
+
   @Test
   def appliedType = new FileSet {
     """
-      import scala.collection.mutable.HashMap
-      import scala.collection.mutable.ListBuffer
- 
-      trait SomeTrait {
-        def m: Either[String, ListBuffer[ListBuffer[String]]]
-      }    """ becomes
+    import scala.collection.mutable.HashMap
+    import scala.collection.mutable.ListBuffer
+
+    trait SomeTrait {
+      def m: Either[String, ListBuffer[ListBuffer[String]]]
+    }    """ becomes
     """
-      import scala.collection.mutable.ListBuffer
- 
-      trait SomeTrait {
-        def m: Either[String, ListBuffer[ListBuffer[String]]]
-      }    """
+    import scala.collection.mutable.ListBuffer
+
+    trait SomeTrait {
+      def m: Either[String, ListBuffer[ListBuffer[String]]]
+    }    """
   } applyRefactoring organize
-  
+
   @Test
   @ScalaVersion(matches="2.9")
   def annotation29 = new FileSet {
     """
-      import scala.reflect.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    import scala.reflect.BeanProperty
+    case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """ becomes
     """
-      import scala.reflect.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    import scala.reflect.BeanProperty
+    case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """
   } applyRefactoring organize
-  
+
   @Test
   @ScalaVersion(matches="2.10")
   def annotation = new FileSet {
     """
-      import scala.beans.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    import scala.beans.BeanProperty
+    case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """ becomes
     """
-      import scala.beans.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+    import scala.beans.BeanProperty
+    case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """
   } applyRefactoring organize
-  
+
   @Test
   def selfTypeAnnotation = new FileSet {
     """
-      import java.util.Observer
-      trait X {
-        self: Observer =>
-      }
+    import java.util.Observer
+    trait X {
+      self: Observer =>
+    }
     """ becomes
     """
-      import java.util.Observer
-      trait X {
-        self: Observer =>
-      }
+    import java.util.Observer
+    trait X {
+      self: Observer =>
+    }
     """
   } applyRefactoring organize
-  
+
   @Test
   def renamedPackage = new FileSet {
     """
-      import java.{ lang => jl, util => ju }
-      import ju.{ArrayList => AL}
-      trait Y {
-        def build(ignored : ju.Map[_, _])
+    import java.{ lang => jl, util => ju }
+    import ju.{ArrayList => AL}
+    trait Y {
+      def build(ignored : ju.Map[_, _])
         def build2(ignored : AL[Int])
       }
     """ becomes
     """
-      import java.{util => ju}
-      import java.util.{ArrayList => AL}
-      trait Y {
-        def build(ignored : ju.Map[_, _])
+    import java.{util => ju}
+    import java.util.{ArrayList => AL}
+    trait Y {
+      def build(ignored : ju.Map[_, _])
         def build2(ignored : AL[Int])
       }
     """
   } applyRefactoring organize
-  
+
   @Test
   def abstractVals = new FileSet {
     """
-import scala.collection.mutable.ListBuffer
-import scala.collection._
+    import scala.collection.mutable.ListBuffer
+    import scala.collection._
 
-trait Temp {
-  // we need some code that use the imports
-  val x: (ListBuffer[Int], mutable.HashMap[String, Int])
-}
+    trait Temp {
+      // we need some code that use the imports
+      val x: (ListBuffer[Int], mutable.HashMap[String, Int])
+      }
     """ becomes
     """
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+    import scala.collection.mutable
+    import scala.collection.mutable.ListBuffer
 
-trait Temp {
-  // we need some code that use the imports
-  val x: (ListBuffer[Int], mutable.HashMap[String, Int])
-}
+    trait Temp {
+      // we need some code that use the imports
+      val x: (ListBuffer[Int], mutable.HashMap[String, Int])
+      }
     """
   } applyRefactoring organize
-  
+
   @Test
   def fullPaths = new FileSet {
     """
-trait FullPaths {
-  sys.error("")
-  math.E
-}
+    trait FullPaths {
+      sys.error("")
+      math.E
+    }
     """ becomes
     """
-trait FullPaths {
-  sys.error("")
-  math.E
-}
+    trait FullPaths {
+      sys.error("")
+      math.E
+    }
     """
   } applyRefactoring organize
-  
+
   @Test
   def organizeNeededForTypeInClassOf = new FileSet {
     """
-      import scala.xml.NodeSeq
+    import scala.xml.NodeSeq
 
-      object Dummy {
-        val clazz = classOf[NodeSeq]
-      }
+    object Dummy {
+      val clazz = classOf[NodeSeq]
+    }
     """ becomes
     """
-      import scala.xml.NodeSeq
+    import scala.xml.NodeSeq
 
-      object Dummy {
-        val clazz = classOf[NodeSeq]
-      }
+    object Dummy {
+      val clazz = classOf[NodeSeq]
+    }
     """
   } applyRefactoring organize
-  
+
   @Test
   def SystemcurrentTimeMillis = new FileSet {
     """
-      import System.currentTimeMillis
+    import System.currentTimeMillis
 
-      object Dummy {
-        val x = currentTimeMillis
-      }
+    object Dummy {
+      val x = currentTimeMillis
+    }
     """ becomes
     """
-      import java.lang.System.currentTimeMillis
+    import java.lang.System.currentTimeMillis
 
-      object Dummy {
-        val x = currentTimeMillis
-      }
+    object Dummy {
+      val x = currentTimeMillis
+    }
     """
   } applyRefactoring organize
-  
+
   @Test
   def dontImportSystem = new FileSet {
     """
@@ -581,16 +581,16 @@ trait FullPaths {
     }
     """
   } applyRefactoring organize
-  
+
   @Test
   def importMethodFromSamePackage = new FileSet {
-    
+
     addToCompiler("testimplicits", """
-    package a.b.c
-    object TestImplicits {
-      implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
-    }""");
-    
+      package a.b.c
+      object TestImplicits {
+        implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
+      }""");
+
     """
     package a.b.c
     import TestImplicits._
@@ -601,7 +601,7 @@ trait FullPaths {
     """ becomes
     """
     package a.b.c
-    
+
     import a.b.c.TestImplicits.stringToBytes
 
     object Tester {
@@ -609,17 +609,17 @@ trait FullPaths {
     }
     """
   } applyRefactoring organize
-  
+
   @Test
   def importedPackageHasKeywordName = new FileSet {
-    
+
     addToCompiler("testkeyword", """
-    package other
-    package `type`
-    object `implicit` {
-      val x = 42
-    }""");
-    
+      package other
+      package `type`
+      object `implicit` {
+        val x = 42
+      }""");
+
     """
     package a.b.c
     import other.`type`.`implicit`
@@ -630,7 +630,7 @@ trait FullPaths {
     """ becomes
     """
     package a.b.c
-    
+
     import other.`type`.`implicit`
 
     object Tester {
@@ -638,36 +638,36 @@ trait FullPaths {
     }
     """
   } applyRefactoring organize
-  
+
   @Test
   def fileWithoutNewline = new FileSet {
     """
     import java.util.Date
     class MyClass[T]""" becomes
     """
-    
+
     class MyClass[T]"""
   } applyRefactoring organize
-  
+
   @Test
   def parensAtEndOfFile = new FileSet {
     """
     import java.util.Date
     class MyClass(i: Int)""" becomes
     """
-    
+
     class MyClass(i: Int)"""
   } applyRefactoring organize
-  
+
   @Test
   def importFromSamePackage = new FileSet {
-    
-    addToCompiler("first", """
-    package mypackage
 
-    class First
-    """);
-    
+    addToCompiler("first", """
+      package mypackage
+
+      class First
+      """);
+
     """
     package mypackage
 
@@ -685,17 +685,17 @@ trait FullPaths {
     }
     """
   } applyRefactoring organize
-  
+
   @Test
   def importFromSameNestedPackage = new FileSet {
-    
-    addToCompiler("first", """
-    package mypackage
-    package sub
 
-    class First
-    """);
-    
+    addToCompiler("first", """
+      package mypackage
+      package sub
+
+      class First
+      """);
+
     """
     package mypackage
     package sub
@@ -719,23 +719,23 @@ trait FullPaths {
   @Test
   def importWithSelfType = new FileSet {
     """
-      package importWithSelfType
+    package importWithSelfType
 
-      import java.util.Observable
+    import java.util.Observable
 
-      trait Coccccc {
-        this: Observable =>
+    trait Coccccc {
+      this: Observable =>
 
-        def eval(ctx: String, t: Int): Int = try {
-          42
-        } catch {
-          case _ => t
-        }
+      def eval(ctx: String, t: Int): Int = try {
+        42
+      } catch {
+        case _ => t
       }
+    }
     """ becomes
     """
-      package importWithSelfType
-      
+    package importWithSelfType
+
       import java.util.Observable
 
       trait Coccccc {
@@ -747,6 +747,27 @@ trait FullPaths {
           case _ => t
         }
       }
+    """
+  } applyRefactoring organize
+
+  @Test
+  def collapseTypes = new FileSet {
+    """
+    import scala.util.DynamicVariable
+    import scala.util.Random
+
+    trait Bogus {
+      def a: Random
+      def b: DynamicVariable[_]
+    }
+    """ becomes
+    """
+    import scala.util.{DynamicVariable, Random}
+
+    trait Bogus {
+      def a: Random
+      def b: DynamicVariable[_]
+    }
     """
   } applyRefactoring organize
 }
