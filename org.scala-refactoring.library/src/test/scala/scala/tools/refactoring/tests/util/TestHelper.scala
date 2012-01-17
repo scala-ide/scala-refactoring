@@ -76,7 +76,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
 
         case (src, name) => 
           val textFileChanges = changes collect {
-            case tfc: TextChange if tfc.file.file.name == name => tfc
+            case tfc: TextChange if tfc.sourceFile.file.name == name => tfc
           }
           Change.applyChanges(textFileChanges, src) :: Nil
 

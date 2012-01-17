@@ -34,4 +34,7 @@ abstract class AddImportStatement extends Refactoring with InteractiveScalaCompi
   def addImport(selection: Selection, pkg: String, name: String): List[Change] = {
     addImport(selection.file, pkg +"."+ name)
   }
+  
+  @deprecated("Not needed anymore, don't override.", "0.4.0")
+  def getContentForFile(file: AbstractFile): Array[Char] = throw new UnsupportedOperationException
 }

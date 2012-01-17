@@ -6,6 +6,7 @@ package scala.tools.refactoring
 package common
 
 import scala.tools.nsc.util.SourceFile
+import scala.tools.nsc.io.AbstractFile
 
 /**
  * The common interface for all changes.
@@ -20,10 +21,21 @@ import scala.tools.nsc.util.SourceFile
  */
 sealed trait Change {
   val text: String
+  
+  @deprecated("Pattern-match on the subclasses.", "0.4.0")
+  def file: AbstractFile
+  
+  @deprecated("Pattern-match on the subclasses.", "0.4.0")
+  def from: Int
+  
+  @deprecated("Pattern-match on the subclasses.", "0.4.0")
+  def to: Int
 }
 
-case class TextChange(file: SourceFile, from: Int, to: Int, text: String) extends Change {
+case class TextChange(sourceFile: SourceFile, from: Int, to: Int, text: String) extends Change {
 
+  def file = sourceFile.file
+  
   /**
    * Instead of a change to an existing file, return a change that creates a new file
    * with the change applied to the original file.
@@ -31,7 +43,7 @@ case class TextChange(file: SourceFile, from: Int, to: Int, text: String) extend
    * @param fullNewName The fully qualified package name of the target.
    */
   def toNewFile(fullNewName: String) = {
-    val src = Change.applyChanges(List(this), new String(file.content))
+    val src = Change.applyChanges(List(this), new String(sourceFile.content))
     NewFileChange(fullNewName, src)
   }
 }
@@ -40,7 +52,12 @@ case class TextChange(file: SourceFile, from: Int, to: Int, text: String) extend
  * The changes creates a new source file, indicated by the `fullName` parameter. It is of
  * the form "some.package.FileName".
  */
-case class NewFileChange(fullName: String, text: String) extends Change
+case class NewFileChange(fullName: String, text: String) extends Change {
+    
+  def file = throw new UnsupportedOperationException
+  def from = throw new UnsupportedOperationException
+  def to   = throw new UnsupportedOperationException
+}
 
 object Change {
   /**
