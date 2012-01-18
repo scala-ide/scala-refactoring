@@ -79,8 +79,8 @@ trait CompilationUnitIndexes {
       (new TreeWithSymbolTraverser(handleSymbol)).traverse(tree)
       
       new CompilationUnitIndex {
-        val definitions = defs.map {case (k, v) => k → v.toList} toMap
-        val references = refs.map {case (k, v) => k → v.toList} toMap
+        val definitions = defs.map {case (sym, v) => sym.initialize → v.toList} toMap
+        val references  = refs.map {case (sym, v) => sym.initialize → v.toList} toMap
       }
     }
   }
