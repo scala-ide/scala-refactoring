@@ -199,7 +199,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(renameTo("c"))
 
-  @Test  
+  @Test
   def renameClassWithTypeParameters = new FileSet {
     """
     case class /*(*/Test/*)*/[A, B](a:A,b:B)
@@ -209,7 +209,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(renameTo("Test1"))
 
-  @Test  
+  @Test
   def renameAbstractType = new FileSet {
     """
     trait O {
@@ -227,7 +227,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(renameTo("Prop_Tpe"))
 
-  @Test  
+  @Test
   def renameReferenceToOuterclass = new FileSet {
     """
     class /*(*/Foo/*)*/ {
@@ -997,7 +997,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     class Foo[T] {
       def /*(*/bar/*)*/[A: Numeric: Foo] = ""
     }
-    """ becomes 
+    """ becomes
     """
     package test
     class Foo[T] {
@@ -1005,7 +1005,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("babar"))
-  
+
   @Test
   def renameClassWithThisConstuctorCall = new FileSet {
     """
@@ -1014,7 +1014,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     class /*(*/Config/*)*/(sourcePaths: Set[String], outputDir: String = null) {
      def this() = this(Set())
     }
-    """ becomes 
+    """ becomes
     """
     package renameClassWithThisConstuctorCall
 
@@ -1023,7 +1023,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("ConfigX"))
-  
+
   @Test
   def renameAbstractTypesInHierarchy = new FileSet {
     """
@@ -1036,7 +1036,7 @@ class RenameTest extends TestHelper with TestRefactoring {
         }
       }
     }
-    """ becomes 
+    """ becomes
     """
     abstract class A {
       type /*(*/ConfigX/*)*/
@@ -1049,7 +1049,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("ConfigX"))
-  
+
   @Test
   def renameClassSelfTypeAnnotation = new FileSet {
     """

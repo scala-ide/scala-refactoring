@@ -243,9 +243,9 @@ trait PimpedTrees {
             
           case t: DefTree => t.pos withStart t.pos.point withEnd (t.pos.point + nameString.length)
           
-          case t: This => 
+          case t: This =>
             t.pos withEnd (t.pos.start + t.qual.length)
-          
+
           case t => t.pos
         } 
       } catch {
@@ -322,9 +322,9 @@ trait PimpedTrees {
   
   /**
    * Trees that reach the end of the file don't seem to have the correct end position, 
-   * except if there's a newline, }, ), or ] at the end.
+   * except if there's a newline at the end.
    */
-  def endPositionAtEndOfSourceFile(pos: Position) = {
+  def endPositionAtEndOfSourceFile(pos: Position, otherWise: Option[Int] = None) = {
     // TODO: properly investigate this for a scalac bug report
     val lastCharInFile = pos.source.content(pos.end)
     if(pos.source.length -1 == pos.end 
@@ -332,9 +332,9 @@ trait PimpedTrees {
         && lastCharInFile != '}'
         && lastCharInFile != ')'
         && lastCharInFile != ']')
-      pos.end + 1
-    else
-      pos.end
+       pos.end + 1
+     else
+       otherWise getOrElse pos.end
   }
   
   /**
@@ -421,10 +421,10 @@ trait PimpedTrees {
      * Returns the trees that are passed to a super constructor call.
      */
     def superConstructorParameters = t.body.collect {
-      case d @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if d.symbol.isConstructor || d.name.toString == nme.CONSTRUCTOR.toString => 
+      case d @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if d.symbol.isConstructor || d.name.toString == nme.CONSTRUCTOR.toString =>
         stats collect {
           // we need to exclude calls to this class' constructors, this seems to catch them:
-          case a @ Apply(_, args) if a.tpe != t.tpe || (a.tpe == null && t.tpe == null) => 
+          case a @ Apply(_, args) if a.tpe != t.tpe || (a.tpe == null && t.tpe == null) =>
             args
         } flatten
     } flatten
@@ -916,7 +916,7 @@ trait PimpedTrees {
    * @return Returns the (symbol) ancestors of the tree excluding the ROOT
    * in descending order.
    */
-  def ancestorSymbolsDesc(t: Tree): List[Symbol] = {
+  def ancestorSymbols(t: Tree): List[Symbol] = {
     t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
   }
   
@@ -937,11 +937,15 @@ trait PimpedTrees {
    *   
    * returns `a`.
    */
-  def topPackageDef(t: PackageDef) = {
+  def topPackageDef(t: PackageDef): PackageDef = {
     t find {
       case PackageDef(_, NoPackageDef(_) :: _) => true
       case _ => false
-    } getOrElse t
+    } collect {
+      case pkg: PackageDef => pkg
+    } getOrElse {
+      t
+    }
   }
    
   class NotInstanceOf[T](m: Manifest[T]) {

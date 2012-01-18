@@ -13,6 +13,7 @@ import util._
 
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
+    classOf[MoveClassTest],
     classOf[DeclarationIndexTest], 
     classOf[MultipleFilesIndexTest], 
     classOf[NameValidationTest], 

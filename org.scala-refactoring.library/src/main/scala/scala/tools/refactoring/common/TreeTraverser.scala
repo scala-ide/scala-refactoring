@@ -50,19 +50,25 @@ trait TreeTraverser {
       }
       select.setType(tpe).setSymbol(sym).setPos(pos)          
     }
-    
+
     def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree): Tree = {
-    
+
       val flattenedExistingTrees = tree.filter(_ => true) map {
         case t: Ident =>  (t.name.toString, t.pos)
         case t: Select => (t.name.toString, t.pos)
         case _ => return tree
       }
-      
-      val treesFromType = tpe.trimPrefix(tpe.toString).split("\\.").toList.reverse zip Stream.continually(NoPosition)
-      
+
+      val treesFromType = {
+        val tpeWithoutPrefix = tpe.trimPrefix(tpe.toString).split("\\.") match {
+          case tpes if tpe.isInstanceOf[SingletonType] => tpes.init // drop the `.type`
+          case tpes => tpes
+        }
+        tpeWithoutPrefix.toList.reverse zip Stream.continually(NoPosition)
+      }
+
       val fullPathOfAllTrees = (flattenedExistingTrees ++ treesFromType.drop(flattenedExistingTrees.size)).reverse
-      
+
       def symbolAncestors(s: Symbol): Stream[Symbol] = if(s == NoSymbol) Stream.continually(NoSymbol) else Stream.cons(s, symbolAncestors(s.owner))
       
       val select = fullPathOfAllTrees zip symbolAncestors(sym).take(fullPathOfAllTrees.length).reverse.toList match {
@@ -86,14 +92,14 @@ trait TreeTraverser {
     
     def handleAnnotations(as: List[AnnotationInfo]) {
       as foreach { annotation =>
-        
+
         annotation.atp match {
           case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
             val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
             traverse(tree)
           case _ =>
         }
-        
+
         // Annotations with parameters defined in Java need this:
         annotation.assocs.unzip._2 collect {
           case LiteralAnnotArg(Constant(value)) => value
@@ -255,7 +261,7 @@ trait TreeTraverser {
           (t.original, t.tpe) match {
             case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
               args1 zip args2 foreach {
-                case (i: RefTree, tpe: TypeRef) => 
+                case (i: RefTree, tpe: TypeRef) =>
                   f(tpe.sym, i)
                 case _ => ()
               }
@@ -350,6 +356,9 @@ trait TreeTraverser {
             case _ => ()
           }
           
+        case t: This if t.pos.isRange =>
+          f(t.symbol, t)
+
         case t: This if t.pos.isRange =>
           f(t.symbol, t)
 

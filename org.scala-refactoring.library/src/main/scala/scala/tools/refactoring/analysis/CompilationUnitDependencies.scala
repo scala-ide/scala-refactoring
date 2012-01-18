@@ -86,7 +86,7 @@ trait CompilationUnitDependencies {
     }.distinct
     
     // Eliminate duplicates by converting them to strings.
-    neededDependencies.groupBy(asSelectorString).map(_._2.head).toList
+    neededDependencies.groupBy(asSelectorString).map(_._2.head).toList filterNot (_.symbol == t.symbol)
   }
 
   /**
@@ -201,7 +201,10 @@ trait CompilationUnitDependencies {
           // is explicit in the source code.
           val isMethodCallFromExplicitReceiver = qual.pos.isRange && t.symbol.isMethod
           
-          if (!isMethodCallFromExplicitReceiver && !isSelectFromInvisibleThis(qual)) {
+          if (!isMethodCallFromExplicitReceiver
+              && !isSelectFromInvisibleThis(qual)
+              && t.name != nme.WILDCARD 
+              && (!qual.symbol.isTerm || qual.symbol.isStable)) {
             addToResult(t)
           }
 
@@ -221,7 +224,18 @@ trait CompilationUnitDependencies {
             case _ => ()
           }
 
-        case _ => super.traverse(root)
+        case t: Ident if t.tpe != null && t.name != nme.EMPTY_PACKAGE_NAME =>
+          fakeSelectTree(t.tpe, t.symbol, t) match {
+            // only repeat if it's a Select, if it's an Ident,
+            // otherwise we risk to loop endlessly
+            case select: Select =>
+              traverse(select)
+            case _ =>
+              super.traverse(root)
+          }
+
+        case _ =>
+          super.traverse(root)
       }
     }
 

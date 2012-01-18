@@ -372,7 +372,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     override def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext) = {
         
-      if(pid.name.toString == "<empty>") {
+      if(pid.name == nme.EMPTY_PACKAGE_NAME) {
         pp(stats, separator = newline)
       } else {
         pp(pid :: stats, before = "package ", separator = newline)

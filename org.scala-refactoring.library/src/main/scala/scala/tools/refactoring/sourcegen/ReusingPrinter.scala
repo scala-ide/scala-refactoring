@@ -466,9 +466,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def Import(tree: Import, expr: Tree, selectors: List[ImportSelectorTree])(implicit ctx: PrintingContext) = {
       if(selectors.size > 1) {
-        l ++ "import " ++ p(expr) ++ "{" ++ pp(selectors, separator = ", ") ++ "}" ++ r
+        l ++ "import " ++ p(expr, after = ".") ++ "{" ++ pp(selectors, separator = ", ") ++ "}" ++ r
       } else {
-        l ++ "import " ++ p(expr) ++ pp(selectors, separator = ", ") ++ r
+        l ++ "import " ++ p(expr, after = ".") ++ pp(selectors, separator = ", ") ++ r
       }    
     }
   }
@@ -478,19 +478,34 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext) = {
       
-      val isPackageObjectWithNoTopLevelImports = findOriginalTree(tree) exists {
+      def isPackageObjectWithNoTopLevelImports = findOriginalTree(tree) exists {
         case global.PackageDef(_, ModuleDef(_, nme.PACKAGEkw, _) :: Nil) => true
         case _ => false
       }
-      
+
       val (imports, restStats) = stats.span(_.isInstanceOf[Import])
       
+      def hasOnlyNewImports = !imports.isEmpty && !imports.exists(_.pos.isRange)
+
+      val pid_ = l ++ {
+
+        val isNextStmtEmptyPackage = restStats.headOption collect {
+          case global.PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _) => true
+        } isDefined
+
+        if(isNextStmtEmptyPackage) {
+          p(pid)
+        } else {
+          p(pid, after = newline)
+        }
+      }
+
       if(isPackageObjectWithNoTopLevelImports) {
-        pp(imports, separator = newline, after = newline) ++ l ++ pp(pid :: restStats, separator = newline) ++ r
-      } else if(!imports.isEmpty && !imports.exists(_.pos.isRange)) {
-        l ++ p(pid, after = newline ++ newline) ++ pp(imports, separator = newline) ++ newline ++ newline ++ pp(restStats, separator = newline) ++ r        
+        pp(imports, separator = newline, after = newline) ++ pid_ ++ pp(restStats, separator = newline) ++ r
+      } else if(hasOnlyNewImports) {
+        pid_.ifNotEmpty(_ ++ newline) ++ pp(imports, separator = newline) ++ newline ++ newline ++ pp(restStats, separator = newline) ++ r
       } else {
-        l ++ pp(pid :: stats, separator = newline) ++ r
+        pid_ ++ pp(stats, separator = newline) ++ r
       }
     }
   }
@@ -709,7 +724,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             p(x) ++ ", " ++ mergeTypeParameters(y :: rest)
           case (x: TypeDef) :: rest =>
             val (bounds, next) = rest.span(!_.isInstanceOf[TypeDef])
-            val current = pp(x :: bounds, separator = ": ")  
+            val current = pp(x :: bounds, separator = ": ")
             if(next.isEmpty) {
               current
             } else {

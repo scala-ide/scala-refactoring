@@ -9,6 +9,7 @@ import common.Tracing
 import common.Change
 import common.PimpedTrees
 import scala.tools.nsc.util.SourceFile
+import scala.tools.refactoring.common.TextChange
 
 trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting with TreeChangesDiscoverer {
   
@@ -25,16 +26,14 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   }
   
   /**
-   * Creates a list of changes from a list of trees, regenerating only those
+   * Creates a list of TextChanges from a list of trees, regenerating only those
    * trees that have changed.
    */
-  def createChanges(ts: List[Tree]): List[Change] = context("Create changes") {
+  def createChanges(ts: List[Tree]): List[TextChange] = context("Create changes") {
     generateFragmentsFromTrees(ts) map {
       case (file, tree, range, fragment) =>
         val end = endPositionAtEndOfSourceFile(range)
-        new Change(file, range.start, end, fragment.center.asText) {
-          override val underlyingSource = Some(range.source)
-        }
+        TextChange(range.source, range.start, end, fragment.center.asText)
     }
   }
   

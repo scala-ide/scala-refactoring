@@ -299,7 +299,7 @@ class MarkOccurrencesTest extends TestHelper {
         for (foo <- List("santa", "2claus"); /*(*/###/*)*/ <- List(1,2) if foo.startsWith(""+ ###)) yield foo
       }
     """)
-  
+
   @Test
   def referenceFromInside = markOccurrences("""
     class /*(*/Foo/*)*/ {
@@ -315,38 +315,38 @@ class MarkOccurrencesTest extends TestHelper {
       }
     }
     """)
-  
+
   @Test
   def referenceToOverridenTypesInSubclasses = markOccurrences("""
     abstract class A {
-    
+
       type /*(*/Foo/*)*/
-    
+
       abstract class B extends A {
-    
+
         type Foo
-    
+
         class C extends B {
-    
+
           type Foo = Unit
-    
+
         }
       }
     }
     """,
     """
     abstract class A {
-    
+
       type /*(*/###/*)*/
-    
+
       abstract class B extends A {
-    
+
         type ###
-    
+
         class C extends B {
-    
+
           type ### = Unit
-    
+
         }
       }
     }

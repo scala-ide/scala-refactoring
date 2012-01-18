@@ -61,7 +61,7 @@ trait LayoutHelper extends CommentHelpers {
 
   def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = 
     Layout(t.pos.source, 0, t.pos.start) → 
-    Layout(t.pos.source, t.pos.end, t.pos.source.length)
+    Layout(t.pos.source, t.pos.end, endPositionAtEndOfSourceFile(t.pos, Some(t.pos.source.length)))
     
   def layoutForSingleChild(t: Tree, p: Tree): (Layout, Layout) = 
     splitLayoutBetweenParentAndFirstChild(child = t, parent = p)._2 →     
@@ -209,7 +209,7 @@ trait LayoutHelper extends CommentHelpers {
       case (c, p: PackageDef) =>
         layout(c.pos.end, p.pos.end) splitAfter '\n'
          
-      case (c, p @ (_: ClassDef | _: ModuleDef)) =>
+      case (c, p: ImplDef) =>
         layout(c.pos.end, p.pos.end) splitAfter '}'
          
        case (c: SuperConstructorCall, p: Template) =>
@@ -308,9 +308,6 @@ trait LayoutHelper extends CommentHelpers {
       
       case (l: Import, r: Import) => 
         NoLayout → NoLayout
-      
-      case (l, r: Import) => 
-        between(l, r)(l.pos.source) → NoLayout
         
       case (l: ImportSelectorTree, r: ImportSelectorTree) =>
         NoLayout → NoLayout

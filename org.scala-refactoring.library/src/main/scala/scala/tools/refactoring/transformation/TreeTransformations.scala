@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package transformation
 
-trait TreeTransformations extends Transformations {
+trait TreeTransformations extends Transformations with TreeFactory {
   
   this: common.PimpedTrees with common.CompilerAccess =>
   
@@ -66,9 +66,13 @@ trait TreeTransformations extends Transformations {
   
   def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(predicate((t: Tree) => t == from) &> constant(to)))
       
-  implicit def replacesTree(t1: Tree) = new {
-    def replaces(t2: Tree) = t1 setPos t2.pos
+  class TreeReplacesOtherTreeViaPosition[T <: Tree](t1: T) {
+    def replaces[T2 >: T <: Tree](t2: T2): T = {
+      t1 setPos t2.pos
+    }
   }
+
+  implicit def replacesTree[T <: Tree](t1: T) = new TreeReplacesOtherTreeViaPosition(t1)
     
   implicit def abstractFileToTree(file: tools.nsc.io.AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
   
@@ -127,5 +131,22 @@ trait TreeTransformations extends Transformations {
   
   val setNoPosition = transform {
     case t: global.Tree => t.pos = global.NoPosition; t
+  }
+
+  def addImportTransformation(importsToAdd: Iterable[String]): Transformation[Tree, Tree] = {
+
+    import global._
+
+      val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+        case (p, imports, others) =>
+          val SplitAtDot = "(.*)\\.(.*?)".r
+          val importTrees = importsToAdd.map {
+            case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
+          }.toList
+          p copy (stats = (imports ::: importTrees ::: others)) replaces p
+      })
+
+      // first try it at the top level to avoid traversing the complete AST
+      addImportStatement |> topdown(matchingChildren(addImportStatement))
   }
 }

@@ -10,7 +10,7 @@ import common.PimpedTrees
 
 trait TreeFactory {
 
-  this: PimpedTrees with common.CompilerAccess =>
+  this: PimpedTrees with common.CompilerAccess with TreeTransformations =>
 
   import global._
 
@@ -211,5 +211,36 @@ trait TreeFactory {
       Select(selector, newTermName(fun)), 
       List(Function(Nil, body))
     ) typeFrom body
+  }
+
+  def mkImportTrees(trees: List[Select], enclosingPackage: String) = {
+
+    def importsFromSamePackage(t: Tree) = {
+      asSelectorString(t) == enclosingPackage
+    }
+
+    trees flatMap {
+      // warning if binding is never used! and quickfix to replace with `_`!
+      case Select(selector, _) if importsFromSamePackage(selector) =>
+        None
+      case select @ Select(expr, name) =>
+
+        // we don't want to see imports like "java.this.lang..."
+        val removeThisTrees = {
+          matchingChildren {
+            transform {
+              case t: This =>
+                // expand to the full package name
+                val parents = ancestorSymbols(t)
+                Ident(parents map (_.nameString) mkString ".")
+            }
+          }
+        }
+
+        // copy the tree and delete all positions so the full path will be written
+        val newExpr = topdown(setNoPosition &> removeThisTrees) apply duplicateTree(expr) getOrElse expr
+        val typeName = select.symbol.nameString
+        Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else typeName, -1, name, -1))))
+    }
   }
 }
