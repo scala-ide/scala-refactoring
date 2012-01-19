@@ -709,7 +709,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   @Test
   def moveMultipleClassesWithInterdependencies = new FileSet {
     """
-    package xyz
+    package org.scala-refactoring-library
     
     class A {
       val B = new {
