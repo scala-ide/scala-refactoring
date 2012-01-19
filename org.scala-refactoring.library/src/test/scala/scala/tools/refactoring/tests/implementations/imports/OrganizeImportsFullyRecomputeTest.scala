@@ -770,4 +770,24 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
+
+  @Test
+  def typeConstructors = new FileSet {
+    """
+    trait Property[+T]
+    
+    class A {
+      type Prop_Tp[+Vl_Tpe] <: Property[Vl_Tpe]
+      def properties: Set[Prop_Tp[_]] = null.asInstanceOf[Set[Prop_Tp[_]]]
+    }
+    """ becomes
+    """
+    trait Property[+T]
+    
+    class A {
+      type Prop_Tp[+Vl_Tpe] <: Property[Vl_Tpe]
+      def properties: Set[Prop_Tp[_]] = null.asInstanceOf[Set[Prop_Tp[_]]]
+    }
+    """
+  } applyRefactoring organize
 }

@@ -182,8 +182,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   class FindNeededImports(root: Tree, enclosingPackage: String) extends Participant {
     def apply(trees: List[Import]) = {
-
-      
       mkImportTrees(neededImports(root), enclosingPackage)
     }
   }

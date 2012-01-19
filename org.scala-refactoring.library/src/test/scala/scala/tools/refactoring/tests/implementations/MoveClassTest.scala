@@ -707,6 +707,42 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   } applyRefactoring(moveTo("x.y"))
 
   @Test
+  def moveMultipleClassesWithInterdependencies = new FileSet {
+    """
+    package xyz
+    
+    class A {
+      val B = new {
+        val y = 2
+      }
+    }
+    
+    object C {
+      def m(x: A) {
+        import x._
+        println(B.y)
+      }
+    }
+    """ becomes
+    """
+    package org.scala-refactoring
+    
+    class A {
+      val B = new {
+        val y = 2
+      }
+    }
+    
+    object C {
+      def m(x: A) {
+        import x._
+        println(B.y)
+      }
+    }
+    """
+  } applyRefactoring(moveTo("org.scala-refactoring"))
+
+  @Test
   def nestedPackageAndImports = new FileSet {
     """
     package x

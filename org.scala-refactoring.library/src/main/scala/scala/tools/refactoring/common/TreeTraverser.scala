@@ -129,6 +129,8 @@ trait TreeTraverser {
             handleAppliedTypeTree(tree, tpe)
           case (TypeRef(_, sym, _), tree) =>
             fakeSelectTree(sym.tpe, sym, tree) foreach traverse
+          case (tpe, tree) =>
+            // TODO ?
         }
     }
     
