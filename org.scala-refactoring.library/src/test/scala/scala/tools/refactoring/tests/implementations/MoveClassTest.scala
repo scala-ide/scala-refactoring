@@ -826,15 +826,15 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   def moveManyClassesAdaptReferences = new FileSet {
     """
       package a.b.c
-      trait A
-      trait B
-      trait C
+      trait Aa
+      trait Bb
+      trait Cc
     """ becomes
     """
       package x.y
-      trait A
-      trait B
-      trait C
+      trait Aa
+      trait Bb
+      trait Cc
     """
     ;
     """
@@ -842,31 +842,31 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
       import a.b.c._
 
-      class User(what: ToMove) extends A with B
+      class User(what: ToMove) extends Aa with Bb
     """ becomes
     """
       package different
 
       import a.b.c._
-      import x.y.A
-      import x.y.B
+      import x.y.Aa
+      import x.y.Bb
 
-      class User(what: ToMove) extends A with B
+      class User(what: ToMove) extends Aa with Bb
     """
     ;
     """
       package third
 
-      import a.b.c.C
+      import a.b.c.Cc
 
-      class X extends C with a.b.c.B
+      class X extends Cc with a.b.c.Bb
     """ becomes
     """
       package third
 
-      import x.y.C
+      import x.y.Cc
 
-      class X extends C with x.y.B
+      class X extends Cc with x.y.Bb
     """
   } applyRefactoring(moveTo("x.y"))
 }

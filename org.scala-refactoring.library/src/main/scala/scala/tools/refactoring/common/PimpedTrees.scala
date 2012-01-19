@@ -92,7 +92,8 @@ trait PimpedTrees {
   }
   
   def escapeScalaKeywordsForImport(n: String) = {
-    if(global.nme.keywords.contains(n.toTermName) && n.toTermName != nme.USCOREkw) "`"+ n +"`" else n
+    val name = newTermName(n)
+    if(global.nme.keywords.contains(name) && name != nme.USCOREkw) "`"+ n +"`" else n
   }
   /**
    * Searches for a Symbol of a name in the type members of a tree.
@@ -752,7 +753,9 @@ trait PimpedTrees {
     }
     def errorSubtrees = Nil
   }
-  
+  object NameTree {
+    def apply(name: String) = new NameTree(newTermName(name))
+  }
   /**
    * Represent a modifier as a tree, including its position.
    */

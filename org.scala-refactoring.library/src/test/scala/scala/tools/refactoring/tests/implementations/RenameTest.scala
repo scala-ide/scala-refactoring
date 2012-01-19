@@ -230,12 +230,14 @@ class RenameTest extends TestHelper with TestRefactoring {
   @Test
   def renameReferenceToOuterclass = new FileSet {
     """
+    package renameReferenceToOuterclass
     class /*(*/Foo/*)*/ {
       class Bar {
         def foo = Foo.this
       }
     }""" becomes
     """
+    package renameReferenceToOuterclass
     class /*(*/Blubb/*)*/ {
       class Bar {
         def foo = Blubb.this
@@ -977,12 +979,14 @@ class RenameTest extends TestHelper with TestRefactoring {
   @Test
   def renameClassExplicitSelfTypeAnnotation= new FileSet {
     """
+    package renameClassExplicitSelfTypeAnnotation
     trait A
     class /*(*/Foo/*)*/ {
       self: Foo with A=>
     }
     """ becomes 
     """
+    package renameClassExplicitSelfTypeAnnotation
     trait A
     class /*(*/Babar/*)*/ {
       self: Babar with A=>

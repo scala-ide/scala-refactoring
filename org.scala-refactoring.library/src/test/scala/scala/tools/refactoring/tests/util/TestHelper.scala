@@ -23,6 +23,8 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
+
+  implicit def stringToName(name: String): global.Name = global.newTermName(name)
     
   /**
    * A project to test multiple compilation units. Add all 

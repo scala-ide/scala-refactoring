@@ -56,7 +56,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
  * Bla bla
  * /
 """
-    val method = DocDef(DocComment(doc, NoPosition),mkDefDef(name = "meth", body = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree) :: Ident("()") :: Nil))
+    val method = DocDef(DocComment(doc, NoPosition),mkDefDef(name = "meth", body = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree) :: Ident(newTermName("()")) :: Nil))
         
     val tree = mkCaseClass(
         name = "A",
@@ -82,8 +82,8 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   
   @Test
   def testCaseClassTwoArgLists() {
-    val argsList1 = (NoMods, "r1", Ident("Rate")) :: Nil
-    val argsList2 = (NoMods, "r2", Ident("Rate")) :: (NoMods, "r3", Ident("Rate")) :: Nil
+    val argsList1 = (NoMods, "r1", Ident(newTermName("Rate"))) :: Nil
+    val argsList2 = (NoMods, "r2", Ident(newTermName("Rate"))) :: (NoMods, "r3", Ident(newTermName("Rate"))) :: Nil
         
     mkCaseClass(name = "A", argss = List(argsList1, argsList2)) prettyPrintsTo "case class A(r1: Rate)(r2: Rate, r3: Rate)"
   }
@@ -97,28 +97,28 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   def testCaseClassOneArg() = {
     mkCaseClass(
         name = "A", 
-        argss = ((NoMods, "rate", Ident("Rate")) :: Nil) :: Nil) prettyPrintsTo "case class A(rate: Rate)"
+        argss = ((NoMods, "rate", Ident(newTermName("Rate"))) :: Nil) :: Nil) prettyPrintsTo "case class A(rate: Rate)"
   }
 
   @Test
   def testCaseClassTwoArgs() = {
     mkCaseClass(
         name = "A", 
-        argss = List(List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String"))))) prettyPrintsTo "case class A(x: Int, y: String)"
+        argss = List(List((NoMods, "x", Ident(newTermName("Int"))), (NoMods, "y", Ident(newTermName("String")))))) prettyPrintsTo "case class A(x: Int, y: String)"
   }
 
   @Test
   def testClassTwoArgs() = {
     mkClass(
         name = "A", 
-        argss = List(List((NoMods, "x", Ident("Int")), (NoMods, "y", Ident("String"))))) prettyPrintsTo "class A(x: Int, y: String)"
+        argss = List(List((NoMods, "x", Ident(newTermName("Int"))), (NoMods, "y", Ident(newTermName("String")))))) prettyPrintsTo "class A(x: Int, y: String)"
   }
 
   @Test
   def testClassTwoValVarArgs() = {
     mkClass(
         name = "A", 
-        argss = List(List((NoMods withPosition (Tokens.VAL, NoPosition), "x", Ident("Int")), (NoMods withPosition (Tokens.VAR, NoPosition), "y", Ident("String"))))) prettyPrintsTo "class A(val x: Int, var y: String)"
+        argss = List(List((NoMods withPosition (Tokens.VAL, NoPosition), "x", Ident(newTermName("Int"))), (NoMods withPosition (Tokens.VAR, NoPosition), "y", Ident(newTermName("String")))))) prettyPrintsTo "class A(val x: Int, var y: String)"
   }
   
   @Test
@@ -126,8 +126,8 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = mkCaseClass(
         name = "A", 
-        argss = ((NoMods, "x", Ident("Int")) :: Nil) :: Nil, 
-        parents = Ident("X") :: Ident("Y") :: Nil)
+        argss = ((NoMods, "x", Ident(newTermName("Int"))) :: Nil) :: Nil, 
+        parents = Ident(newTermName("X")) :: Ident(newTermName("Y")) :: Nil)
     
     tree prettyPrintsTo "case class A(x: Int) extends X with Y"
   }
@@ -137,9 +137,9 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = mkCaseClass(
         name = "A", 
-        argss = ((NoMods, "x", Ident("Int")) :: Nil) :: Nil, 
-        parents = Ident("X") :: Nil,
-        superArgs = Ident("x") :: Nil)
+        argss = ((NoMods, "x", Ident(newTermName("Int"))) :: Nil) :: Nil, 
+        parents = Ident(newTermName("X")) :: Nil,
+        superArgs = Ident(newTermName("x")) :: Nil)
     
     tree prettyPrintsTo "case class A(x: Int) extends X(x)"
   }
@@ -178,7 +178,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
           NoMods withPosition (Flags.IMPLICIT, NoPosition) withPosition (Flags.METHOD, NoPosition) ,
           "eins",
           Nil,
-          List(List(ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), "a", EmptyTree, EmptyTree))),
+          List(List(ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), newTermName("a"), EmptyTree, EmptyTree))),
           EmptyTree,
           Literal(Constant(()))
         )
@@ -189,13 +189,13 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   @Test
   def testDefDefWithTypeParams =  {
     
-    val arg = ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), "a", 
-                TypeDef(NoMods, "R".toTypeName, TypeDef(NoMods, "X".toTypeName, Nil, EmptyTree) :: Nil, EmptyTree), EmptyTree)
+    val arg = ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), newTermName("a"), 
+                TypeDef(NoMods, newTypeName("R"), TypeDef(NoMods, newTypeName("X"), Nil, EmptyTree) :: Nil, EmptyTree), EmptyTree)
     
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition) ,
           "m",
-          TypeDef(NoMods, "X".toTypeName, Nil, EmptyTree) :: Nil,
+          TypeDef(NoMods, newTypeName("X"), Nil, EmptyTree) :: Nil,
           List(List(arg)),
           EmptyTree,
           Literal(Constant(()))
@@ -209,7 +209,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
 
     val doc = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree)
     
-    val tree = mkDefDef(name = "meth", body = doc :: Ident("()") :: Nil)
+    val tree = mkDefDef(name = "meth", body = doc :: Ident(newTermName("()")) :: Nil)
     
     tree prettyPrintsTo """def meth() = {
   /** Kuuka */
@@ -219,23 +219,23 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   
   @Test
   def testApplyHasParens() = {
-    Apply(Ident( "aa" ), Nil) prettyPrintsTo """aa()"""
+    Apply(Ident(newTermName("aa")), Nil) prettyPrintsTo """aa()"""
   }
   
   @Test
   def testApplyTypesToClass() = {
-    TypeApply(Ident("MyClass"), Ident("A") :: Ident("B") :: Nil) prettyPrintsTo """MyClass[A, B]"""
+    TypeApply(Ident(newTermName("MyClass")), Ident(newTermName("A")) :: Ident(newTermName("B")) :: Nil) prettyPrintsTo """MyClass[A, B]"""
   }
   
   @Test
   def testClassWithTypeParams() = {
-    val c = mkClass(name = "A", tparams = List(TypeDef(NoMods, "T".toTypeName, Nil, EmptyTree), TypeDef(NoMods, "U".toTypeName, Nil, EmptyTree)))
+    val c = mkClass(name = "A", tparams = List(TypeDef(NoMods, newTypeName("T"), Nil, EmptyTree), TypeDef(NoMods, newTypeName("U"), Nil, EmptyTree)))
     c prettyPrintsTo """class A[T, U]"""
   }
   
   @Test
   def testFloatLiteralFromIdent() = {
-   Ident( "33.3f") prettyPrintsTo """33.3f"""
+   Ident(newTermName("33.3f")) prettyPrintsTo """33.3f"""
   }
   
   @Test
@@ -252,7 +252,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
           "eins",
-          TypeDef( NoMods, "R".toTypeName, Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, "Rate".toTypeName, Nil, EmptyTree ))) :: Nil,
+          TypeDef( NoMods, newTypeName("R"), Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, newTypeName("Rate"), Nil, EmptyTree ))) :: Nil,
           Nil,
           EmptyTree,
           Literal(Constant(()))

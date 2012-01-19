@@ -117,7 +117,7 @@ trait tr[A] {
 }
 """
     val ast = treeFrom(src)    
-    val defdef = mkDefDef(name = "member", body = List(Ident("()")))
+    val defdef = mkDefDef(name = "member", body = List(Ident(newTermName("()"))))
     
     val transformedAst = topdown {
       matchingChildren {
@@ -151,7 +151,7 @@ trait tr[A] {
 """
     val ast = treeFrom(src)
     
-    val defdef = mkDefDef(name = "member", body = List(Ident("()")))
+    val defdef = mkDefDef(name = "member", body = List(Ident(newTermName("()"))))
     
     val transformedAst = topdown {
       matchingChildren {
@@ -245,10 +245,10 @@ else {
             val newRhs = Block(
               mkClass(
                 name = "$anon", 
-                parents = Ident("A") :: Ident("B") :: Nil,
+                parents = Ident(newTermName("A")) :: Ident(newTermName("B")) :: Nil,
                 superArgs = Literal(Constant(5)) :: Nil
               ), 
-              Apply(Select(New(Ident("$anon")), nme.CONSTRUCTOR), Nil)
+              Apply(Select(New(Ident(newTermName("$anon"))), nme.CONSTRUCTOR), Nil)
             )
             
             t.copy(rhs = newRhs)
@@ -288,7 +288,7 @@ else {
       case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
     }
     
-    val newRHS1 = Apply(Select(Ident("com"),"synchronized"), List(shallowDuplicate(originalDefDef.rhs) setPos NoPosition))
+    val newRHS1 = Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(shallowDuplicate(originalDefDef.rhs) setPos NoPosition))
     
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
         
@@ -297,7 +297,7 @@ else {
     assertEquals("""
        def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", createFragment(removeAuxiliaryTrees apply newDefDef1 get).asText)
    
-    val newRHS2 = Apply(Select(Ident("com"),"synchronized"), List(originalDefDef.rhs))
+    val newRHS2 = Apply(Select(Ident(newTermName("com")), newTermName("synchronized")), List(originalDefDef.rhs))
     
     val newDefDef2 = originalDefDef copy (rhs = newRHS2) setPos originalDefDef.pos
         
@@ -341,7 +341,7 @@ else {
       case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
     }
     
-    val newRHS1 = new Block(List(Apply(Select(Ident("com"),"synchronized"), List(originalDefDef.rhs))), EmptyTree)
+    val newRHS1 = new Block(List(Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(originalDefDef.rhs))), EmptyTree)
     
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
     
@@ -896,7 +896,7 @@ class A(a: Int) {
         transform {
           case a: Apply if (a.args.length > 1) =>
             val fun1 = Select(
-              name = a.fun.symbol.nameString,
+              name = newTermName(a.fun.symbol.nameString),
               qualifier = a.args.last)
             a.copy(args = a.args.init, fun = fun1) replaces a
         }
@@ -941,7 +941,7 @@ class A(a: Int) {
         transform {
           case a: Apply if (a.args.length > 1) =>
             val fun1 = Select(
-              name = a.fun.symbol.nameString,
+              name = newTermName(a.fun.symbol.nameString),
               qualifier = a.args.last)
             a.copy(args = a.args.init, fun = fun1) replaces a
         }
@@ -1089,7 +1089,7 @@ class A(a: Int) {
             val arg = buf(1)
             buf.remove(1)
             val fun1 = Select(
-              name = a.fun.symbol.nameString,
+              name = newTermName(a.fun.symbol.nameString),
               qualifier = arg)
             a.copy(args = buf.toList, fun = fun1) setPos a.pos
         }
@@ -1413,7 +1413,7 @@ class A(a: Int) {
             val arg = buf(1)
             buf.remove(1)
             val fun1 = Select(
-              name = a.fun.symbol.nameString,
+              name = newTermName(a.fun.symbol.nameString),
               qualifier = arg)
             a.copy(args = buf.toList, fun = fun1) setPos a.pos
         }
@@ -1449,7 +1449,7 @@ class A(a: Int) {
             val arg = buf(1)
             buf.remove(1)
             val fun1 = Select(
-              name = a.fun.symbol.nameString,
+              name = newTermName(a.fun.symbol.nameString),
               qualifier = arg)
             a.copy(args = buf.toList, fun = fun1) setPos a.pos
         case a: Function =>
@@ -1496,8 +1496,8 @@ class A(a: Int) {
       .impl.body(2).asInstanceOf[DefDef]
     
     def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
-      CaseDef(Bind("t",
-        if (className != "") Typed(Ident(""), Ident(className))
+      CaseDef(Bind(newTermName("t"),
+        if (className != "") Typed(Ident(newTermName("")), Ident(newTermName(className)))
         else EmptyTree),
         guard, rhs)
     }
@@ -1555,8 +1555,8 @@ class A(a: Int) {
       .impl.body(4).asInstanceOf[DefDef]
 
     def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
-      CaseDef(Bind("t",
-        if (className != "") Typed(Ident(""), Ident(className))
+      CaseDef(Bind(newTermName("t"),
+        if (className != "") Typed(Ident(newTermName("")), Ident(newTermName(className)))
         else EmptyTree),
         guard, rhs)
     }
@@ -1567,7 +1567,7 @@ class A(a: Int) {
           case t: DefDef if(t.name.toString() == "acmatch_expr")=>
             val rhs = toInline.rhs.asInstanceOf[If]
             val caseDef = mkPattern("", "ASD", EmptyTree, rhs.copy())
-            val matchx = Match(Ident("x"), List(caseDef))
+            val matchx = Match(Ident(newTermName("x")), List(caseDef))
             t.copy(rhs = matchx) replaces t
         }
       }
@@ -1633,8 +1633,8 @@ object acmatch {
       .impl.body(3).asInstanceOf[DefDef]
 
     def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
-      CaseDef(Bind("t",
-        if (className != "") Typed(Ident(""), Ident(className))
+      CaseDef(Bind(newTermName("t"),
+        if (className != "") Typed(Ident(newTermName("")), Ident(newTermName(className)))
         else EmptyTree),
         guard, rhs)
     }
@@ -1645,7 +1645,7 @@ object acmatch {
           case t: DefDef if (t.name.toString() == "subst_expr") =>
             val rhs = toInline.rhs.asInstanceOf[Apply]
             val caseDef = mkPattern("", "Until", EmptyTree, rhs.copy())
-            val matchx = Match(Ident("obj"), List(caseDef))
+            val matchx = Match(Ident(newTermName("obj")), List(caseDef))
             t.copy(rhs = matchx) setPos t.pos
         }
       }
@@ -1703,8 +1703,8 @@ object acmatch {
       .impl.body(3).asInstanceOf[DefDef]
 
     def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
-      CaseDef(Bind("t",
-        if (className != "") Typed(Ident(""), Ident(className))
+      CaseDef(Bind(newTermName("t"),
+        if (className != "") Typed(Ident(newTermName("")), Ident(newTermName(className)))
         else EmptyTree),
         guard, rhs)
     }
@@ -1715,7 +1715,7 @@ object acmatch {
           case t: DefDef if (t.name.toString() == "subst_expr") =>
             val rhs = toInline.rhs.asInstanceOf[Function]
             val caseDef = mkPattern("", "Abstractionmv", EmptyTree, rhs.copy())
-            val matchx = Match(Ident("obj"), List(caseDef))
+            val matchx = Match(Ident(newTermName("obj")), List(caseDef))
             t.copy(rhs = matchx) setPos t.pos
         }
       }
@@ -1768,7 +1768,7 @@ object acmatch {
             val arg = buf(0)
             buf.remove(0)
             val fun1 = Select(
-              name = a.fun.symbol.nameString,
+              name = newTermName(a.fun.symbol.nameString),
               qualifier = arg)
             a.copy(args = buf.toList, fun = fun1) setPos a.pos
         }
@@ -1810,7 +1810,7 @@ object acmatch {
             val arg = buf(1)
             buf.remove(1)
             val fun1 = Select(
-              name = a.fun.symbol.nameString,
+              name = newTermName(a.fun.symbol.nameString),
               qualifier = arg)
             a.copy(args = buf.toList, fun = fun1) setPos a.pos
         }

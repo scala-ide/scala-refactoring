@@ -302,6 +302,7 @@ class MarkOccurrencesTest extends TestHelper {
 
   @Test
   def referenceFromInside = markOccurrences("""
+    package referenceFromInside
     class /*(*/Foo/*)*/ {
       class Bar {
         def foo = Foo.this
@@ -309,6 +310,7 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """,
     """
+    package referenceFromInside
     class /*(*/###/*)*/ {
       class Bar {
         def foo = ###.this

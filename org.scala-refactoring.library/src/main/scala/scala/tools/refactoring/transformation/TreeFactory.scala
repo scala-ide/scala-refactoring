@@ -16,19 +16,22 @@ trait TreeFactory {
 
   object Invisible extends Position
 
-  def mkRenamedSymTree(t: SymTree, name: String): SymTree = (t match {
-    case i: Ident => i.copy(name = name)
-    case v: ValDef => v.copy(name = name)
-    case d: DefDef => d.copy(name = name)
-    case b: Bind => b.copy(name = name)
-    case s: Select => s.copy(name = name)
-    case c: ClassDef => c.copy(name = name.toTypeName)
-    case t: This => t.copy(qual = name.toTypeName)
-    case m: ModuleDef => m.copy(name = name)
-    case t: TypeDef => t.copy(name = name.toTypeName)
-    case t: PackageDef => t.copy(pid = Ident(name) setPos t.pid.pos)
-    case t => throw new Exception("Found " + t.getClass.getName)
-  }) setPos t.pos
+  def mkRenamedSymTree(t: SymTree, nameString: String): SymTree = {
+    val name = newTermName(nameString)
+    t match {
+      case i: Ident => i.copy(name = name)
+      case v: ValDef => v.copy(name = name)
+      case d: DefDef => d.copy(name = name)
+      case b: Bind => b.copy(name = name)
+      case s: Select => s.copy(name = name)
+      case c: ClassDef => c.copy(name = name.toTypeName)
+      case t: This => t.copy(qual = name.toTypeName)
+      case m: ModuleDef => m.copy(name = name)
+      case t: TypeDef => t.copy(name = name.toTypeName)
+      case t: PackageDef => t.copy(pid = Ident(name) setPos t.pid.pos)
+      case t => throw new Exception("Found " + t.getClass.getName)
+    }
+  } setPos t.pos
 
   def mkRenamedTypeTree(t: TypeTree, name: String, originalSymbol: Symbol) = {
     val newType = t.tpe map {
@@ -50,10 +53,10 @@ trait TreeFactory {
   
   def mkImportFromStrings(qualifier: String, name: String) = {
     def mapPackageNames(qualifier: String) = {
-      qualifier.split("\\.").map(s => escapeScalaKeywordsForImport(s.toTermName)).mkString(".")
+      newTermName(qualifier.split("\\.").map(s => escapeScalaKeywordsForImport(newTermName(s))).mkString("."))
     }
     
-    new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(name, -1, name, -1) :: Nil)
+    new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(newTermName(name), -1, newTermName(name), -1) :: Nil)
   }
 
   def mkRenamedImportTree(t: ImportSelectorTree, name: String) =
@@ -71,8 +74,8 @@ trait TreeFactory {
 
   def mkValDef(name: String, rhs: Tree): ValDef = {
     
-    val valDef = ValDef(NoMods, name, new TypeTree, rhs)
-    def valDefForFunction = ValDef(NoMods, name, new TypeTree, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
+    val valDef = ValDef(NoMods, newTermName(name), new TypeTree, rhs)
+    def valDefForFunction = ValDef(NoMods, newTermName(name), new TypeTree, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
     
     rhs match {
       case rhs: Select if rhs.symbol.isMethod =>
@@ -104,7 +107,7 @@ trait TreeFactory {
           case xs => "(" + (xs map (_.name) mkString ", ") + ")"
         }
 
-        ValDef(NoMods, valName, new TypeTree(), call)
+        ValDef(NoMods, newTermName(valName), new TypeTree(), call)
     }
   }
 
@@ -114,10 +117,10 @@ trait TreeFactory {
       if (parameters.isEmpty)
         Nil
       else
-        parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), s.nameString, TypeTree(s.tpe), EmptyTree)))
+        parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(s.tpe), EmptyTree)))
     }
 
-    DefDef(mods withPosition (Flags.METHOD, NoPosition), name, Nil /*type parameters*/ , formalParameters, TypeTree(body.last.tpe), mkBlock(body))
+    DefDef(mods withPosition (Flags.METHOD, NoPosition), newTermName(name), Nil /*type parameters*/ , formalParameters, TypeTree(body.last.tpe), mkBlock(body))
   }
 
   def mkBlock(trees: List[Tree]): Block = trees match {
@@ -137,7 +140,7 @@ trait TreeFactory {
 
     val constructorArguments = argss map (_ map {
       case (mods, name, tpe) =>
-        ValDef(mods | Flags.PARAMACCESSOR, name, tpe, EmptyTree)
+        ValDef(mods | Flags.PARAMACCESSOR, newTermName(name), tpe, EmptyTree)
     })
 
     val constructor = {
@@ -148,12 +151,12 @@ trait TreeFactory {
           Apply(EmptyTree, args)
       }
 
-      DefDef(mods withPosition (Flags.METHOD, NoPosition), nme.CONSTRUCTOR.toString, Nil, constructorArguments, TypeTree(NoType), mkBlock(body))
+      DefDef(mods withPosition (Flags.METHOD, NoPosition), nme.CONSTRUCTOR, Nil, constructorArguments, TypeTree(NoType), mkBlock(body))
     }
 
     ClassDef(
       mods,
-      name.toTypeName,
+      newTypeName(name),
       tparams,
       Template(
         parents,
@@ -240,7 +243,7 @@ trait TreeFactory {
         // copy the tree and delete all positions so the full path will be written
         val newExpr = topdown(setNoPosition &> removeThisTrees) apply duplicateTree(expr) getOrElse expr
         val typeName = select.symbol.nameString
-        Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else typeName, -1, name, -1))))
+        Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else newTypeName(typeName), -1, name, -1))))
     }
   }
 }
