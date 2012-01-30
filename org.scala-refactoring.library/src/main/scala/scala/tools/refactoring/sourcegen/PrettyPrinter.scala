@@ -180,18 +180,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Select(tree: Select, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext) = {
       (qualifier, selector) match {
         
-        case (qualifier, name) if name.toString == "<init>" => 
+        case (qualifier, nme.CONSTRUCTOR | nme.PACKAGEkw | nme.unapply | nme.unapplySeq) => 
           p(qualifier)
         
-        case (qualifier, name) if name.toString == "package" => 
-          p(qualifier)
-        
-        case (qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
-          Fragment(escapeScalaKeywordsForImport(tree.symbol.nameString))
-          
-        case (qualifier, selector) if (selector.toString == "unapply" || selector.toString == "unapplySeq") =>
-          p(qualifier)
-          
         case (_: Select | _: Ident | _: Block | _: Literal | _: Apply | _: This | _: Super, _) =>
           p(qualifier, after = ".") ++ Fragment(escapeScalaKeywordsForImport(tree.nameString))
           
@@ -226,7 +217,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun: Select, args) if fun.name.toString endsWith "_$eq" =>
           p(fun) ++ " = " ++ pp(args, before = "(", after = ")", separator = ", ")
           
-        case (fun, (arg @ Ident(name)) :: Nil) if name.toString == "_" =>
+        case (fun @ (_: Select | _: Ident), (arg @ Ident(nme.WILDCARD)) :: Nil) =>
           p(fun) ++ " " ++ p(arg)
           
         // the empty tree is an implicit parameter, so we mustn't print parenthesis
@@ -580,7 +571,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Literal(tree: Literal, value: Constant)(implicit ctx: PrintingContext) = {
       
       if(value.tag == StringTag) {
-        Fragment("\""+ value.stringValue +"\"")
+        Fragment(value.escapedStringValue)
       } else if (value.isNumeric) {
         val suffix = value.tag match {
           case FloatTag => "f"

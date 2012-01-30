@@ -204,7 +204,7 @@ trait CompilationUnitDependencies {
           if (!isMethodCallFromExplicitReceiver
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD 
-              && (!qual.symbol.isTerm || qual.symbol.isStable)) {
+              && qual.symbol != null && (!qual.symbol.isTerm || qual.symbol.isStable)) {
             addToResult(t)
           }
 

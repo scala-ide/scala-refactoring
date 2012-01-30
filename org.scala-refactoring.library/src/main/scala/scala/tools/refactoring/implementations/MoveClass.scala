@@ -121,7 +121,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
               
               val imps = neededImports(toMove) filterNot { imp =>
                 // We don't want to add imports for types that are
-                // declared in `toMove`.
+                // children of `toMove`.
                 val declaration = index.declaration(imp.symbol)
                 declaration map (toMove.pos includes _.pos) getOrElse false
               }

@@ -182,18 +182,15 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       qualifier match {
              
-        case _ if selector.toString == "<init>" => 
+        // skip <init> from constructor calls
+        case _ if selector == nme.CONSTRUCTOR => 
           l ++ p(qualifier) ++ r
           
         case _: This if qualifier.pos == NoPosition => 
           l ++ Fragment(tree.symbol.nameString) ++ r
           
-        // skip <init> from constructor calls
-        case _: New if tree.symbol.isConstructor =>
-          l ++ p(qualifier) ++ r
-          
         case _ if tree.pos.sameRange(qualifier.pos) 
-            && (selector.toString == "unapply" || selector.toString == "apply" || selector.toString == "unapplySeq") =>
+            && (selector == nme.unapply || selector == nme.apply || selector == nme.unapplySeq) =>
           l ++ p(qualifier) ++ r
           
         case _: Apply if selector.toString.startsWith("unary_") =>
@@ -241,8 +238,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             !between.contains(" ") && !between.contains(".")
           }
           
-          def startsWithChar = _q.asText.matches(".*[a-zA-Z0-9]$")
-          def endsWithChar   = _n.asText.matches("^[a-zA-Z0-9].*")
+          def startsWithChar = _q.asText.matches(".*\\w$")
+          def endsWithChar   = _n.asText.matches("^\\w.*")
           
           def qualifierHasNoDot = qualifier match {
             case Apply(s @ global.Select(qual, name), _) if s.pos.isRange && qual.pos.isRange => 
@@ -276,7 +273,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def TypeApply(tree: TypeApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
       fun match {
         
-        case global.Select(fun @ global.Select(ths: global.This, _), _) if ths.pos == NoPosition => 
+        case global.Select(fun @ global.Select(ths: This, _), _) if ths.pos == NoPosition => 
           l ++ p(fun) ++ pp(args) ++ r
           
         case _ => 
@@ -425,7 +422,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
       
       tpt match {
-        case Select(_, name) if name.toString == "<repeated>" => 
+        case Select(_, tpnme.REPEATED_PARAM_CLASS_NAME) => 
           l ++ p(args.head) ++ r
         case _ if tpt.isEmpty && args.size == 1 =>
           l ++ p(args.head) ++ r

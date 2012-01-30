@@ -1361,6 +1361,21 @@ class A {
     """) prettyPrintsTo """class A {
   def fun[A, B, C](fu: (A, B, C) => A): A
 }"""
+    
+  @Test
+  def partialFunctionArg = treeFrom("""
+    class A {
+      def main[A, B](e: Either[A, B]) {
+        e match {
+          case Right(_) => ()
+        }
+      }
+    }
+    """) prettyPrintsTo """class A {
+  def main[A, B](e: Either[A,B]) = e match {
+    case Right(_) => ()
+  }
+}"""
 }
 
 
