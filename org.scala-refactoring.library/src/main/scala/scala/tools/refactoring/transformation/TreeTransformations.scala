@@ -64,7 +64,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
   
   def filter(f: PartialFunction[Tree, Boolean]) = predicate(f)
   
-  def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(predicate((t: Tree) => t == from) &> constant(to)))
+  def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(predicate((t: Tree) => t samePosAndType from) &> constant(to)))
       
   class TreeReplacesOtherTreeViaPosition[T <: Tree](t1: T) {
     def replaces[T2 >: T <: Tree](t2: T2): T = {

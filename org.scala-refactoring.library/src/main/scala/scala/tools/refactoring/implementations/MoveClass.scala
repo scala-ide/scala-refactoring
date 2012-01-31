@@ -63,6 +63,19 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
         Left(PreparationError("Files with multiple packages cannot be moved."))
     }
   }
+  
+  /**
+   * Returns all the statements that will be moved in this refactoring.
+   * 
+   * Note: it will also return Import trees, not just ImplDefs.
+   */
+  def statsToMove(selection: Selection, parameters: RefactoringParameters) = {
+    if(moveOnlyPartOfSourceFile(selection, parameters)) {
+      parameters.moveSingleImpl.toList
+    } else {
+      topLevelStats(selection)
+    }
+  }
 
   def perform(selection: Selection, preparationResult: PreparationResult, parameters: RefactoringParameters): Either[RefactoringError, List[Change]] = {
 
@@ -85,8 +98,8 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
       val newFileChanges = {
         val moveClass = {
-          val statsToMove = parameters.moveSingleImpl.toList
-          createRenamedTargetPackageTransformation(parameters, statsToMove, toMove.get)
+          val stats = statsToMove(selection, parameters)
+          createRenamedTargetPackageTransformation(parameters, stats, toMove.get)
         }
         val changes = transformFile(selection.file, moveClass)
         changes map (_.toNewFile(parameters.packageName))
@@ -95,8 +108,8 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       newFileChanges ++ removeClassFromOldFileAndAddImportToNewIfNecessary(selection, parameters)
 
     } else {
-      val statsToMove = topLevelStats(selection)
-      val transformation = createRenamedTargetPackageTransformation(parameters, statsToMove, selection.root)
+      val stats = statsToMove(selection, parameters)
+      val transformation = createRenamedTargetPackageTransformation(parameters, stats, selection.root)
       transformFile(selection.file, transformation)
     }
 

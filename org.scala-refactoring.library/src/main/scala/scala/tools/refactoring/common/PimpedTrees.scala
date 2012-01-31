@@ -291,8 +291,11 @@ trait PimpedTrees {
           ""
         else if (t.symbol.isSynthetic && name.toString.contains("$"))
           "_"
-        else if (t.symbol.isSynthetic)
+        // e.g. eta-expanded ValDefs and Idents
+        else if (t.symbol.isSynthetic && t.pos.isTransparent)
           ""
+        else if (name.toString.matches(".*\\$\\d+$"))
+          "_"
         else if (t.symbol != NoSymbol) {
           t.symbol.nameString
         } else 

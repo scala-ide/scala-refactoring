@@ -1218,6 +1218,34 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   }
   
   @Test
+  def testWildcardNames() = {
+    val src = """
+    package arith
+    
+    sealed abstract class Term
+    case object TmTrue extends Term
+    case object TmFalse extends Term
+    case object TmZero extends Term
+    case class  TmSucc(t: Term) extends Term
+
+    class ArithParser extends scala.util.parsing.combinator.JavaTokenParsers {
+    
+      def v: Parser[Term] = 
+        "true"  ^^ ( _ => TmTrue ) | 
+        "false" ^^ ( _ => TmFalse ) | 
+        nv
+        
+      def nv: Parser[Term] = 
+        "0" ^^ ( _ => TmZero ) | 
+        "succ"~>nv ^^ ( TmSucc(_) )
+    }
+    """
+      
+    val tree = treeFrom(src)
+    assertEquals(src, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
   def testImports() = {
     val tree = treeFrom("""
     import java.lang.{String => S}

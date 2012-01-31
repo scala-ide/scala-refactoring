@@ -673,7 +673,14 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           Layout("val ") ++ p(extractor) ++ " = " ++ p(rhs)
       }
     }
- 
+    
+    override def NameTree(tree: Tree)(implicit ctx: PrintingContext) = {
+      if (tree.pos.isTransparent) {
+        EmptyFragment
+      } else {
+        Fragment(tree.nameString)
+      }
+    }
     
     override def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext) = {
       tree.kind match {

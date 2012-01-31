@@ -869,4 +869,44 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class X extends Cc with x.y.Bb
     """
   } applyRefactoring(moveTo("x.y"))
+  
+  @Test
+  def moveObject = new FileSet {
+    """package arith
+
+sealed abstract class Term
+
+case object TmTrue extends Term
+case object TmFalse extends Term
+
+object /*(*/Arith/*)*/ extends scala.util.parsing.combinator.JavaTokenParsers {
+  
+  def isVal(t: Term) : Boolean = t match {
+    case TmTrue | TmFalse => true
+    case _ => false
+  }
+}
+    """ becomes
+    """package arith
+
+sealed abstract class Term
+
+case object TmTrue extends Term
+case object TmFalse extends Term
+    """
+    NewFile becomes """package x.y
+
+import arith.Term
+import arith.TmFalse
+import arith.TmTrue
+
+object /*(*/Arith/*)*/ extends scala.util.parsing.combinator.JavaTokenParsers {
+  
+  def isVal(t: Term) : Boolean = t match {
+    case TmTrue | TmFalse => true
+    case _ => false
+  }
+}
+    """
+  } applyRefactoring(moveTo("x.y"))
 }
