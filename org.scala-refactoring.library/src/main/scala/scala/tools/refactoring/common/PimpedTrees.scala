@@ -299,7 +299,7 @@ trait PimpedTrees {
         else if (t.symbol != NoSymbol) {
           t.symbol.nameString
         } else 
-          name.toString.trim
+          name.decode.toString.trim
       }
         
       t match {
@@ -352,7 +352,14 @@ trait PimpedTrees {
 
     val candidates = findAllTreesWithTheSamePosition(tree)
     
-    candidates find (_ eq tree) orElse (candidates filter (_ samePosAndType tree) lastOption)
+    candidates find {
+      // When searching for the original of a NameTree, we
+      // can additionally compare the names of the trees.
+      case c: NameTree if tree.isInstanceOf[NameTree] =>
+        c.nameString == tree.nameString
+      case c =>
+        c eq tree
+    } orElse (candidates filter (_ samePosAndType tree) lastOption)
   }
   
   val findAllTreesWithTheSamePosition: Tree => Iterable[Tree] = {
@@ -534,7 +541,7 @@ trait PimpedTrees {
       case TemplateExtractor(params, earlyBody, parents, self, body) =>
         params.flatten ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
   
-      case t @ ValDef(ModifierTree(mods), name, tpt, rhs) =>
+      case t @ ValDef(ModifierTree(mods), name, tpt, rhs) if !t.pos.isTransparent =>
         mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
        
       case t @ DefDef(ModifierTree(mods), name, _, _, tpt, rhs) =>
@@ -564,6 +571,7 @@ trait PimpedTrees {
         (NameTree(selector) setPos t.namePosition) :: Nil
         
       case t @ Select(qualifier, selector) =>
+        // FIXME: for-comprehensions result in incorrect NameTrees
         qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
         
       case BlockExtractor(stats) =>
@@ -742,9 +750,9 @@ trait PimpedTrees {
     if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
     def nameString = {
       if(pos.isRange && pos.source.content(pos.start) == '`' && !name.toString.startsWith("`")) {
-        "`"+ name.toString.trim +"`"
+        "`"+ name.decode.trim +"`"
       } else {
-        name.toString.trim 
+        name.decode.trim
       }
     }
     override def toString = "NameTree("+ nameString +")"
