@@ -821,9 +821,10 @@ trait PimpedTrees {
    *                         ^^^^ 
    */
   case class SuperConstructorCall(clazz: global.Tree, args: List[global.Tree]) extends global.Tree {
-    if(clazz.pos != global.NoPosition) setPos(clazz.pos withEnd args.lastOption.getOrElse(clazz).pos.end)
-
-    def errorSubtrees = Nil
+    if(clazz.pos.isRange) {
+      val lastPos = args.lastOption map (_.pos) filter (_.isRange) getOrElse clazz.pos
+      setPos(clazz.pos withEnd lastPos.end)
+    }
   }
   
   /**
