@@ -189,6 +189,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _: This if qualifier.pos == NoPosition => 
           l ++ Fragment(tree.symbol.nameString) ++ r
           
+        // This clause is a workaround for SI-5064
+        case _ if qualifier.pos.sameRange(tree.pos) && qualifier.pos.isTransparent =>
+          l ++ p(nameOrig) ++ r
+          
         case _ if tree.pos.sameRange(qualifier.pos) 
             && (selector == nme.unapply || selector == nme.apply || selector == nme.unapplySeq) =>
           l ++ p(qualifier) ++ r
@@ -224,11 +228,17 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           
         case _ =>
 
-          val _q = p(qualifier)
+          val _q = {
+            // Workaround for SI-5064
+            if(tree.pos.eq(qualifier.pos) && qualifier.pos.isRange && qualifier.isInstanceOf[This])
+              EmptyFragment
+            else
+              p(qualifier)
+          }
           val _n = {
             // the selector isn't visible in the source,
             // that's the case e.g. in for expressions.
-            if(tree.samePos(qualifier) && qualifier.pos.isRange)
+            if(tree.samePos(qualifier) && qualifier.pos.isRange && !qualifier.isInstanceOf[This])
               EmptyFragment
             else p(nameOrig)
           }

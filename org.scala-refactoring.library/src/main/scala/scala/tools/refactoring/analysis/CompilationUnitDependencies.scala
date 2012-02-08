@@ -72,7 +72,7 @@ trait CompilationUnitDependencies {
          * */
         findDeepestNeededSelect(underlying) map (_ => selected)
         
-      case s @ Select(qual, name) if s.pos.isRange && !qual.pos.isRange =>
+      case s @ Select(qual, name) if s.pos.isRange && (!qual.pos.isRange || qual.pos.isTransparent) =>
         Some(s) filter isImportReallyNeeded
       case s: Select =>
         findDeepestNeededSelect(s.qualifier)
@@ -80,7 +80,9 @@ trait CompilationUnitDependencies {
         None
     }
     
-    val neededDependencies = dependencies(t).flatMap {
+    val deps = dependencies(t)
+    
+    val neededDependencies = deps.flatMap {
       case t: Select if !t.pos.isRange => Some(t) filter isImportReallyNeeded
       case t => findDeepestNeededSelect(t)
     }.distinct
@@ -195,19 +197,26 @@ trait CompilationUnitDependencies {
         case Select(New(qual), _) =>
           traverse(qual)
         
+        // workaround for SI-5064
+        case t @ Select(qual: This, _) if qual.pos.sameRange(t.pos) =>
+          ()
+                  
         case t @ Select(qual, _) if t.pos.isRange =>
             
           // we don't need to add a dependency for method calls where the receiver
           // is explicit in the source code.
-          val isMethodCallFromExplicitReceiver = qual.pos.isRange && t.symbol.isMethod
+          val isMethodCallFromExplicitReceiver = {
+            qual.pos.isRange && t.symbol.isMethod && !(qual.pos.sameRange(t.pos) && qual.pos.isTransparent)
+          }
           
           if (!isMethodCallFromExplicitReceiver
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD 
+              && !t.pos.isTransparent
               && qual.symbol != null && (!qual.symbol.isTerm || qual.symbol.isStable)) {
             addToResult(t)
-          }
-
+          } 
+          
           super.traverse(t)
           
         /*

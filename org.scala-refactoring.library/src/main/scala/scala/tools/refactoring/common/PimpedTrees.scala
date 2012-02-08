@@ -170,6 +170,8 @@ trait PimpedTrees {
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case t: DefDef if t.name.toString == "<init>" => 
+            t.pos withStart t.pos.point withEnd (t.pos.point + "this".length)
           case ValDef(_, _, _, Match(_, CaseDef(unapply: UnApply , _, _) :: Nil)) if hasSingleBindWithTransparentPosition(unapply.args) => 
             // modify the position to remove the transparency..
             val b = findAllBinds(unapply.args).head 
@@ -303,6 +305,8 @@ trait PimpedTrees {
       }
         
       t match {
+        case t: DefDef if t.name.toString == "<init>" =>
+          "this"
         case t: Select if t.name.toString endsWith "_$eq"=>
           val n = extractName(t.name)
           n.substring(0, n.length - "_=".length)
@@ -568,6 +572,10 @@ trait PimpedTrees {
         (NameTree(t.nameString) setPos t.namePosition) :: qualifier :: Nil
         
       case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.isRange && t.pos.start == t.pos.point =>
+        (NameTree(selector) setPos t.namePosition) :: Nil
+      
+      // This clause is a workaround for SI-5064
+      case t @ Select(qualifier, selector) if qualifier.pos.sameRange(t.pos) && qualifier.pos.isTransparent =>
         (NameTree(selector) setPos t.namePosition) :: Nil
         
       case t @ Select(qualifier, selector) =>

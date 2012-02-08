@@ -1002,7 +1002,7 @@ class A(a: Int) {
     package abc
     trait tr[T] {
       def remove[A](elem: A, li: List[A]): List[A] = {
-        li.remove((x: A) => (elem equals x))
+        li.filterNot((x: A) => (elem equals x))
       }
     }
     """)
@@ -1019,7 +1019,7 @@ class A(a: Int) {
     package abc
     trait tr[T] {
       def remove[A](elem: A, li: List[A]): List[A] = {
-        li.remove((x: A) => (elem equals x))
+        li.filterNot((x: A) => (elem equals x))
       }
     }
     """, createText(result.get, Some(ast.pos.source)))
