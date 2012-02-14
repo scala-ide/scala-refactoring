@@ -10,10 +10,10 @@ import implementations.imports._
 import sourcegen._
 import transformation._
 import util._
-import scala.tools.refactoring.implementations.MergeParameterLists
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
     classOf[MoveClassTest],
+    classOf[GenerateHashcodeAndEqualsTest],
     classOf[MoveConstructorToCompanionObjectTest],
     classOf[ChangeParamOrderTest], 
     classOf[MergeParameterListsTest], 

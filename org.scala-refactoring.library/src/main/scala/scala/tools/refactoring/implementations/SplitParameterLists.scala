@@ -21,7 +21,7 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
       }
     }
     
-    checkRefactoringParamsHelper(prep._1.vparamss, params)
+    checkRefactoringParamsHelper(prep.defdef.vparamss, params)
   }
   
   def currySingleParamList[T](origVparams: List[T], positions: SplitPositions): List[List[T]] = {

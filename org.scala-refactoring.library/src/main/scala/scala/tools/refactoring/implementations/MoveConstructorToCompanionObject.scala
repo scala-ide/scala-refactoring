@@ -19,22 +19,18 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
   }
 
   override def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    val constructor = (prep.impl.body filter (t => t.hasSymbol && t.symbol.isPrimaryConstructor)).head.asInstanceOf[DefDef]
-
-    // TODO: get rid of this var
-    var companionModuleDef: Option[ModuleDef] = None
+    val constructor = prep.impl.body.collectFirst ({case t: DefDef if t.hasSymbol && t.symbol.isPrimaryConstructor => t}).get
 
     def makeApply(className: TermName, constr: DefDef) = {
       val params = constr.vparamss.map(_ map (p => p.symbol))
       val select: Tree = Select(New(Ident(className)), constr.name)
       val constructorCall = constr.vparamss.foldLeft(select)((fun, args) => Apply(fun, args map (p => Ident(p.name))))
-      mkDefDef(NoMods, "apply", parameters = params, body = List(constructorCall), typeParameters = prep.tparams) setPos NoPosition
+      mkApply(parameters = params, body = List(constructorCall), typeParameters = prep.tparams) setPos NoPosition
     }
 
     lazy val companionObject = {
       val impl = Template(Nil, emptyValDef, List(makeApply(prep.name, constructor)))
       val companionObject = ModuleDef(NoMods, prep.name, impl)
-      companionModuleDef = Some(companionObject)
       companionObject
     }
 
@@ -57,7 +53,9 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
 
     val addConstructorToCompanionObject = transform {
       case m @ ModuleDef(mods, name, t @ Template(parents, self, body)) => {
-        companionModuleDef = Some(m)
+        val params = constructor.vparamss.map(_ map (p => p.symbol))
+        val select: Tree = Select(New(Ident(name)), constructor.name)
+        val constructorCall = constructor.vparamss.foldLeft(select)((fun, args) => Apply(fun, args map (p => Ident(p.name))))
         val newBody = makeApply(prep.name, constructor) :: body
         ModuleDef(mods, name, Template(parents, self, newBody) setPos NoPosition) replaces m
       }
@@ -90,7 +88,6 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
         ModuleDef(mods, name, Template(parents, self, companionObject :: body)) replaces moduleDef
     }
     
-    // TODO: maybe make that somehow more efficient?
     val insertCompanionObject = topdown {
       enclosingFilter &> createCompanionObject |> id
     }
@@ -102,20 +99,25 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
 
     def redirectSingleConstructorCall = transform {
       case s: Select => {
-        val newSelect = Select(Ident(companionModuleDef.get.name), "apply")
+        val newSelect = Select(Ident(prep.name), "apply")
         newSelect
       }
     }
 
-    def redirectConstructorCalls = {
+    val redirectConstructorCalls = {
       val calls = index.occurences(constructor.symbol)
       val callRefactoring = topdown(constructorCallFilter(calls) &> redirectSingleConstructorCall |> id)
       callRefactoring
     }
+    
+    val sourcefileChanges = transformFile(selection.file, createApplyMethod)
 
-    val refactoring = createApplyMethod &> redirectConstructorCalls
+    val occurrences = index.occurences(constructor.symbol)
+    val cus = occurrences.flatMap(t => cuRoot(t.pos)).distinct
+    val constructorCallsChanges: List[Change] = refactor(cus flatMap (redirectConstructorCalls(_)))
 
-    Right(transformFile(selection.file, refactoring))
+    val changes = sourcefileChanges:::constructorCallsChanges
+    Right(changes)
   }
 
 }

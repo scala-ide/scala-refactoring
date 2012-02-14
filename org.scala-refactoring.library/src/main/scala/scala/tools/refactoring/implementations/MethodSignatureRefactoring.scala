@@ -13,7 +13,8 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
   case class AffectedDef(defSymbol: Symbol, nrParamLists: Int)
   case class AffectedDefs(originals: List[AffectedDef], partials: List[AffectedDef])
   
-  type PreparationResult = (DefDef, AffectedDefs)
+  case class MethodSignaturePrepResult(defdef: DefDef, affectedDefs: AffectedDefs)
+  type PreparationResult = MethodSignaturePrepResult
   
   def prepare(s: Selection) = {
     
@@ -200,7 +201,7 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
         val partialPartialDefs = PartialPartialsFinder.findPartials(partialDefs)
         val partialPartials = partialPartialDefs flatMap (t => index.overridesInClasses(t._1) map (AffectedDef(_, t._2)))
         
-        Right((selectedDefDef, AffectedDefs(originals, partials:::partialPartials)))
+        Right(MethodSignaturePrepResult(selectedDefDef, AffectedDefs(originals, partials:::partialPartials)))
       }
     }
   }
@@ -247,23 +248,23 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
     
     val refactorMethodSignature = {
       val originalNrParamLists = originalParams
-      val affectedDefDefs = prep._2
+      val affectedDefDefs = prep.affectedDefs
       val allDefDefSymbols = affectedDefDefs.originals
       val allPartialSymbols = affectedDefDefs.partials
       val singleRefactorings = allDefDefSymbols map (d => 
         refactorDefDef(index.declaration(d.defSymbol).get, originalParams) &> 
-        refactorOrdinaryCalls(d.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep._1, d)))
+        refactorOrdinaryCalls(d.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep.defdef, d)))
       val singlePartialRefactorings = allPartialSymbols map 
-        (p => refactorPartialCalls(p.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep._1, p)))
+        (p => refactorPartialCalls(p.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep.defdef, p)))
       val refactoring = (singleRefactorings:::singlePartialRefactorings).foldLeft(id[Tree])((t, c) => t &> c)
       refactoring
     }
     
     val affectedCus = {
-      val affectedDefs = prep._2
+      val affectedDefs = prep.affectedDefs
       val originalsSymbols = affectedDefs.originals.map(_.defSymbol)
       val partialsSymbols = affectedDefs.partials.map(_.defSymbol)
-      val allSymbols: List[Symbol] = prep._1.symbol::originalsSymbols:::partialsSymbols
+      val allSymbols: List[Symbol] = prep.defdef.symbol::originalsSymbols:::partialsSymbols
       val occurences = allSymbols.map(index.occurences)
       occurences.flatten.flatMap(t => cuRoot(t.pos)).distinct
     }

@@ -10,13 +10,11 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   
   outer =>
     
-  def generateHashcodeAndEquals(params: (Option[String => Boolean], Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new GenerateHashcodeAndEquals with SilentTracing with GlobalIndexes {
+  def generateHashcodeAndEquals(params: (Boolean, Option[String => Boolean]))(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new GenerateHashcodeAndEquals with SilentTracing {
       val global = outer.global
-      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
-      val index = GlobalIndex(cuIndexes)
     }
-    val changes = performRefactoring(params)
+    val changes = performRefactoring(refactoring.RefactoringParameters(params._1, params._2))
   }.changes
 
   @Test
@@ -34,19 +32,20 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
           other.isInstanceOf[generateHashcodeAndEquals.singleValParam.Foo]
         }
         
-        def equals(other: Any) = {
+        override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.singleValParam.Foo => that.canEqual(Foo.this).&&(param.==(that.param))
             case _ => false
           }
         }
         
-        def hashCode() = {
-          41.*(1).+(param.hashCode)
+        override def hashCode() = {
+          val prime = 41
+          prime.*(1).+(param.hashCode)
         }
       }
     """
-  } applyRefactoring(generateHashcodeAndEquals((None, false)))
+  } applyRefactoring(generateHashcodeAndEquals((false, None)))
   
   @Test
   def twoValParams = new FileSet {
@@ -63,19 +62,20 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
           other.isInstanceOf[generateHashcodeAndEquals.twoValParams.Foo]
         }
         
-        def equals(other: Any) = {
+        override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.twoValParams.Foo => that.canEqual(Foo.this).&&(p1.==(that.p1)).&&(p2.==(that.p2))
             case _ => false
           }
         }
         
-        def hashCode() = {
-          41.*(41.*(1).+(p1.hashCode)).+(p2.hashCode)
+        override def hashCode() = {
+          val prime = 41
+          prime.*(prime.*(1).+(p1.hashCode)).+(p2.hashCode)
         }
       }
     """
-  } applyRefactoring(generateHashcodeAndEquals((None, false)))
+  } applyRefactoring(generateHashcodeAndEquals((false, None)))
   
   @Test
   def excludeNonPublicParams = new FileSet {
@@ -92,19 +92,20 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
           other.isInstanceOf[generateHashcodeAndEquals.excludeNonPublicParams.Foo]
         }
         
-        def equals(other: Any) = {
+        override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.excludeNonPublicParams.Foo => that.canEqual(Foo.this).&&(p2.==(that.p2))
             case _ => false
           }
         }
         
-        def hashCode() = {
-          41.*(1).+(p2.hashCode)
+        override def hashCode() = {
+          val prime = 41
+          prime.*(1).+(p2.hashCode)
         }
       }
     """
-  } applyRefactoring(generateHashcodeAndEquals((None, false)))
+  } applyRefactoring(generateHashcodeAndEquals((false, None)))
   
   @Test
   def excludeVarsByDefault = new FileSet {
@@ -121,19 +122,20 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
           other.isInstanceOf[generateHashcodeAndEquals.excludeVarsByDefault.Foo]
         }
         
-        def equals(other: Any) = {
+        override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.excludeVarsByDefault.Foo => that.canEqual(Foo.this).&&(p2.==(that.p2))
             case _ => false
           }
         }
         
-        def hashCode() = {
-          41.*(1).+(p2.hashCode)
+        override def hashCode() = {
+          val prime = 41
+          prime.*(1).+(p2.hashCode)
         }
       }
     """
-  } applyRefactoring(generateHashcodeAndEquals((None, false)))
+  } applyRefactoring(generateHashcodeAndEquals((false, None)))
   
   @Test(expected=classOf[PreparationException])
   def failWithExistingEquals = new FileSet {
@@ -151,7 +153,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         override def equals(other: Any) = false 
       }
     """
-  } applyRefactoring(generateHashcodeAndEquals((None, false)))
+  } applyRefactoring(generateHashcodeAndEquals((false, None)))
   
   @Test(expected=classOf[PreparationException])
   def failWithExistingHashCode = new FileSet {
@@ -169,7 +171,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         override def hashCode() = 57 
       }
     """
-  } applyRefactoring(generateHashcodeAndEquals((None, false)))
+  } applyRefactoring(generateHashcodeAndEquals((false, None)))
   
   @Test
   def selectByName = new FileSet {
@@ -186,25 +188,26 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         other.isInstanceOf[generateHashcodeAndEquals.selectByName.Foo]
       }
       
-      def equals(other: Any) = {
+      override def equals(other: Any) = {
         other match {
           case that: generateHashcodeAndEquals.selectByName.Foo => that.canEqual(Foo.this).&&(p2.==(that.p2)).&&(p3.==(that.p3))
           case _ => false
         }
       }
       
-      def hashCode() = {
-        41.*(41.*(1).+(p2.hashCode)).+(p3.hashCode)
+      override def hashCode() = {
+        val prime = 41
+        prime.*(prime.*(1).+(p2.hashCode)).+(p3.hashCode)
       }
     }
     """
-  } applyRefactoring(generateHashcodeAndEquals((Some{
+  } applyRefactoring(generateHashcodeAndEquals(false, (Some{
     (name: String) => name match {
       case "p2" => true
       case "p3" => true
       case _ => false
     }
-  }), false))
+  })))
   
   @Test
   def callSuper = new FileSet {
@@ -221,27 +224,60 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
           other.isInstanceOf[generateHashcodeAndEquals.callSuper.Foo]
         }
         
-        def equals(other: Any) = {
+        override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.callSuper.Foo => Foo.super.equals(that).&&(that.canEqual(Foo.this)).&&(p1.==(that.p1)).&&(p2.==(that.p2))
             case _ => false
           }
         }
         
-        def hashCode() = {
-          41.*(41.*(Foo.super.hashCode()).+(p1.hashCode)).+(p2.hashCode)
+        override def hashCode() = {
+          val prime = 41
+          prime.*(prime.*(Foo.super.hashCode()).+(p1.hashCode)).+(p2.hashCode)
         }
       }
     """
-  } applyRefactoring(generateHashcodeAndEquals((None, true)))
+  } applyRefactoring(generateHashcodeAndEquals((true, None)))
+  
+  @Test
+  def emptyClassBody = new FileSet {
+    """
+      package generateHashcodeAndEquals.emptyClassBody
+
+      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) {
+    
+      }
+    """ becomes
+    """
+      package generateHashcodeAndEquals.emptyClassBody
+
+      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) {
+        def canEqual(other: Any) = {
+          other.isInstanceOf[generateHashcodeAndEquals.emptyClassBody.Foo]
+        }
+        
+        override def equals(other: Any) = {
+          other match {
+            case that: generateHashcodeAndEquals.emptyClassBody.Foo => Foo.super.equals(that).&&(that.canEqual(Foo.this)).&&(p1.==(that.p1)).&&(p2.==(that.p2))
+            case _ => false
+          }
+        }
+        
+        override def hashCode() = {
+          val prime = 41
+          prime.*(prime.*(Foo.super.hashCode()).+(p1.hashCode)).+(p2.hashCode)
+        }
+      }
+    """
+  } applyRefactoring(generateHashcodeAndEquals((true, None)))
   
   @Test
   def foo = {
     val tree = treeFrom {
       """
-        class Foo(var p1: String, val p2: Int) {
-          def callSuper = super.equals("dummy")
-        }
+      class Foo(p1: Int, var p2: Int, val p3: Int) {
+        val prime = 41
+      }
       """
     }
     assert(!(tree.toString contains "<error>"))

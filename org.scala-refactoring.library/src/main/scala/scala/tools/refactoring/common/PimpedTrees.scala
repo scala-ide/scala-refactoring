@@ -418,10 +418,8 @@ trait PimpedTrees {
     /**
      * Returns the primary constructor of the template.
      */
-    def primaryConstructor = t.body.filter {
-      case t: DefDef => 
-        t.symbol.isPrimaryConstructor || (t.symbol == NoSymbol && t.name.toString == nme.CONSTRUCTOR.toString)
-      case _ => false
+    def primaryConstructor = t.body collect {
+      case t: DefDef if t.symbol.isPrimaryConstructor || (t.symbol == NoSymbol && t.name.toString == nme.CONSTRUCTOR.toString) => t
     }
        
     /**
@@ -443,6 +441,42 @@ trait PimpedTrees {
             args
         } flatten
     } flatten
+
+    /**
+     * Returns all constructor parameters that are accessible from outside the class itself.
+     * The mutability of the parameter is contained in the second element of the tuple.
+     */
+    def nonPrivateClassParameters = {
+      val primaryConstructor = t.primaryConstructor.headOption
+      primaryConstructor match {
+        case None => Nil
+        case Some(pc) => {
+          val classParams = pc.vparamss.flatten
+          val paramAccessors = (t.body collect {
+            case defdef @ DefDef(mods, _, _, _, _, _) if mods.hasFlag(Flags.ACCESSOR) => defdef
+          })
+
+          val mutableParamNames = (t.body collect {
+            case valdef @ ValDef(mods, _, _, _) if mods.isParamAccessor && mods.isMutable => valdef.nameString
+          })
+          val paramMutability = Map(paramAccessors.map(d => (d.nameString, mutableParamNames contains d.nameString)): _*)
+          val paramAccessorNames = paramAccessors.map(_.nameString)
+          val nonPrivateClassParams = classParams.collect { case p: ValDef if paramAccessorNames.contains(p.nameString) => (p, paramMutability(p.nameString)) }
+          nonPrivateClassParams
+        }
+      }
+    }
+    
+    /**
+     * Returns whether the template has an implementation of an equals or hashCode method. 
+     */
+    def hasEqualsOrHashcode = {
+      val body = t.body
+      val existingEqualsOrHashcodeOption = body collectFirst {
+        case d: DefDef if (List("equals", "hashCode", "canEqual") contains d.nameString) => d
+      }
+      existingEqualsOrHashcodeOption.isDefined
+    }
   }
   
   implicit def additionalTemplateMethods(t: Template) = new TemplateMethods(t)

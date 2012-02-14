@@ -11,7 +11,7 @@ abstract class ChangeParamOrder extends MethodSignatureRefactoring {
   type RefactoringParameters = List[Permutation]
   
   override def checkRefactoringParams(prep: PreparationResult, params: RefactoringParameters) = 
-    (prep._1.vparamss corresponds params) (_.length == _.length)
+    (prep.defdef.vparamss corresponds params) (_.length == _.length)
   
   def reorder[T](origVparamss: List[List[T]], permutations: List[Permutation]): List[List[T]] =
     (origVparamss zip permutations) map {
