@@ -841,4 +841,21 @@ object ExtractMethod2 {
     }
     """
   } applyRefactoring(extract("plusOne"))
+  
+ @Test
+ def extractList = new FileSet {
+   """
+   class ExtractList {
+     val list = /*(*/1::Nil/*)*/
+   }
+   """ becomes
+   """
+   class ExtractList {
+     val extracted = /*(*/1::Nil
+     
+     val list = extracted/*)*/
+   }
+   """
+ } applyRefactoring(extract("extracted"))
+
 }
