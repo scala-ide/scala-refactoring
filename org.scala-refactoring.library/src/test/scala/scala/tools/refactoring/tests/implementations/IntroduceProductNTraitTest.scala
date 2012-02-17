@@ -20,7 +20,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
-  // TODO: FIXME: "with Product1[String]" should be "extends Product1[String]"
   def product1Simple = new FileSet {
     """
     package introduceProductNTrait.product1Simple
@@ -30,7 +29,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
     """
     package introduceProductNTrait.product1Simple
     
-    class /*(*/Foo/*)*/(val param: String) with Product1[String] {
+    class /*(*/Foo/*)*/(val param: String) extends Product1[String] {
       def _1() = {
         param
       }
@@ -55,7 +54,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(false, None))
   
   @Test
-  // TODO: FIXME (same as above)
   def product2Simple = new FileSet {
     """
     package introduceProductNTrait.product2Simple
@@ -65,7 +63,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
     """
     package introduceProductNTrait.product2Simple
     
-    class /*(*/Foo/*)*/(val p1: String, val p2: Int) with Product2[String, Int] {
+    class /*(*/Foo/*)*/(val p1: String, val p2: Int) extends Product2[String, Int] {
       def _1() = {
         p1
       }
@@ -94,7 +92,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(false, None))
   
   @Test
-  // TODO: FIXME: "... with  extends..."
   def multipleTraits = new FileSet {
     """
     package introduceProductNTrait.multipleTraits
@@ -104,7 +101,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
     """
     package introduceProductNTrait.multipleTraits
     
-    class /*(*/Foo/*)*/(var p: Int) with  extends Serializable with Product1[Int] {
+    class /*(*/Foo/*)*/(var p: Int) extends Serializable with Product1[Int] {
       def _1() = {
         p
       }
@@ -129,7 +126,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(true, Some(s => s == "p")))
   
   @Test
-  // TODO: FIXME: same as first two tests
   def nonPublicClassParams = new FileSet {
     """
     package introduceProductNTrait.nonPublicClassParams
@@ -139,7 +135,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
     """
     package introduceProductNTrait.nonPublicClassParams
     
-    class /*(*/Foo/*)*/(val immutable: Int, var mutable: Int, nonpublic: Int) with Product1[Int] {
+    class /*(*/Foo/*)*/(val immutable: Int, var mutable: Int, nonpublic: Int) extends Product1[Int] {
       def _1() = {
         immutable
       }

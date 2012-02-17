@@ -7,6 +7,6 @@
 	<classpathentry kind="src" path="src/main/scala"/>
 	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="src" path="src/test/scala"/>
-	<classpathentry kind="lib" path="/media/linux_data/programs/eclipses/scala_ide_2.9-2.0.0/configuration/org.eclipse.osgi/bundles/197/1/.cp/lib/scala-compiler.jar"/>
+
 	<classpathentry kind="output" path="bin"/>
 </classpath>

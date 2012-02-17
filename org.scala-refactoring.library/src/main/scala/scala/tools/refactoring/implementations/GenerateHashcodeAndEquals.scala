@@ -12,59 +12,37 @@ import scala.reflect.generic.Flags
  * following the recommendations given in chapter 28 of
  * Programming in Scala.
  */
-abstract class GenerateHashcodeAndEquals extends MultiStageRefactoring with common.InteractiveScalaCompiler with TreeFactory with PimpedTrees {
+abstract class GenerateHashcodeAndEquals extends ClassParameterDrivenSourceGeneration {
 
   import global._
   
-  case class PreparationResult(classDef: ClassDef, classParams: List[(String, Boolean)])
-  
-  /** A function that takes a class parameter name and decides
-   *  whether this parameter should be used in equals/hashCode
-   *  computations, and a boolean that indicates whether calls
-   *  to super should be used or not. The integer option specifies
-   *  the integer to be used in the hashcode computation (defaults
-   *  to 41).
-   */
-  case class RefactoringParameters(callSuper: Boolean = true, paramsFilter: Option[String => Boolean] = None)
-  
-  def prepare(s: Selection) = {
-    s.findSelectedOfType[ClassDef] match {
-      case None => Left(PreparationError("no class def selected"))
-      case Some(classdef) => {
-        if(classdef.impl.hasEqualsOrHashcode) {
-          Left(PreparationError("equals or hashCode already existing"))
-        } else {
-          Right(PreparationResult(classdef, classdef.impl.nonPrivateClassParameters.map(t => (t._1.nameString, t._2))))
-        }
-      }
+  override def failsBecause(classDef: ClassDef) = super.failsBecause(classDef) match {
+    case None => {
+      if(classDef.impl.hasEqualsOrHashcode)
+        Some("equals or hashCode already existing")
+      else
+        None
     }
+    case fails => fails
   }
   
-  override def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    val nonPrivateParams = prep.classDef.impl.nonPrivateClassParameters
-        
-    // if no params filter is supplied in the refactoring parameters we use only immutable class parameters
-    lazy val paramsFilter = {
-      // collect all immutable class parameters 
-      val immutableParams = nonPrivateParams collect { case t if !t._2 => t._1.nameString }
-      params.paramsFilter getOrElse ((str: String) => immutableParams contains str)
+  override def sourceGeneration(selectedParams: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters) = {
+    val superGeneration = super.sourceGeneration(selectedParams, preparationResult, refactoringParams)
+    
+    val equalityMethods = mkEqualityMethods(preparationResult.classDef.symbol, selectedParams, refactoringParams.callSuper)
+    def addEqualityMethods = transform {
+      case t @ Template(parents, self, body) => Template(parents, self, equalityMethods:::body) replaces t
     }
     
-    val paramsForEqual = nonPrivateParams collect { case t if paramsFilter(t._1.nameString)=> t._1 }
-    
-    val classSymbol = prep.classDef.symbol
-    
+    superGeneration &> addEqualityMethods
+  }
+  
+  def mkEqualityMethods(classSymbol: Symbol, params: List[ValDef], callSuper: Boolean) = {
     val canEqual = mkCanEqual(classSymbol)
-    val hashcode = mkHashcode(classSymbol, paramsForEqual, params.callSuper)
-    val equals = mkEquals(classSymbol, paramsForEqual, params.callSuper)
+    val hashcode = mkHashcode(classSymbol, params, callSuper)
+    val equals = mkEquals(classSymbol, params, callSuper)
     
-    val newBody = canEqual::equals::hashcode::prep.classDef.impl.body
-    val newTemplate = Template(prep.classDef.impl.parents, prep.classDef.impl.self, newBody) 
-    val refactoredTemplate = newTemplate replaces prep.classDef.impl
-    
-    Right(refactor(List(refactoredTemplate)))
+    canEqual::equals::hashcode::Nil
   }
-  
-  
   
 }

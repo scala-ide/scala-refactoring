@@ -529,7 +529,7 @@ trait PimpedTrees {
         }) filterNot (_.isEmpty) filter {
           // objects are always serializable, but the Serializable parent's position is NoPosition
           case t: TypeTree if t.pos == NoPosition && t.nameString == "Serializable" => false
-          case _ => true
+          case t => t.pos.isRange || t.pos == NoPosition
         }
         
         val self = if(tpl.self.isEmpty) EmptyTree else {
