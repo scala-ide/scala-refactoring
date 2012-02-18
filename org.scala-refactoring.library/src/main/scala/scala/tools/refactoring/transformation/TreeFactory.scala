@@ -129,22 +129,22 @@ trait TreeFactory {
   def mkHashcode(classSymbol: Symbol, classParamsForHashcode: List[ValDef], callSuper: Boolean, prime: Int = 41) = {
     val primeVal = mkValDef("prime", Literal(prime))
     val startFactor: Tree = if(callSuper) {
-      Apply(Select(Super(classSymbol, "".toTypeName), "hashCode"), Nil)
+      Apply(Select(Super(classSymbol, "".toTypeName), nme.hashCode_), Nil)
     } else {
       Literal(1)
     }
     val computation = classParamsForHashcode.foldLeft(startFactor)((inner, param) => {
-      val mult = Apply(Select(Ident(primeVal.name), "*"), List(inner))
-      Apply(Select(mult, "+"), List(Select(Ident(param.name), "hashCode")))
+      val mult = Apply(Select(Ident(primeVal.name), nme.MUL), List(inner))
+      Apply(Select(mult, nme.PLUS), List(Select(Ident(param.name), nme.hashCode_)))
     })
-    mkDefDef(Modifiers(0) withPosition(Flags.OVERRIDE, NoPosition), "hashCode", body = List(primeVal, computation))
+    mkDefDef(NoMods withPosition(Flags.OVERRIDE, NoPosition), "hashCode", body = List(primeVal, computation))
   }
   
   def mkCanEqual(classSymbol: Symbol) = {
     val paramStr = "other"
     val otherParamSymbol = NoSymbol.newValue(paramStr)
     otherParamSymbol.setInfo(classSymbol.ancestors.last.tpe)
-    val instanceCheck = TypeApply(Select(Ident(paramStr), "isInstanceOf"), List(TypeTree(classSymbol.tpe)))
+    val instanceCheck = TypeApply(Select(Ident(paramStr), nme.isInstanceOf_), List(TypeTree(classSymbol.tpe)))
     mkDefDef(NoMods, "canEqual", parameters = List(List(otherParamSymbol)), body = List(instanceCheck))
   }
   
@@ -153,24 +153,24 @@ trait TreeFactory {
     val otherParamSymbol = NoSymbol.newValue(paramStr)
     otherParamSymbol.setInfo(classSymbol.ancestors.last.tpe)
 
-    val canEqual = Apply(Select(Ident("that"), "canEqual"), List(This(classSymbol)))
-    val superCall = Apply(Select(Super(classSymbol, "".toTypeName), "equals"), List(Ident("that")))
+    val canEqual = Apply(Select(Ident("that"), nme.canEqual_), List(This(classSymbol)))
+    val superCall = Apply(Select(Super(classSymbol, "".toTypeName), nme.equals_), List(Ident("that")))
     val startCall = if (callSuper) {
-      Apply(Select(superCall, "&&"), List(canEqual))
+      Apply(Select(superCall, nme.ZAND), List(canEqual))
     } else {
       canEqual
     }
     val body = {
       classParamsForEqual.foldLeft(startCall)((apply, param) => {
-        val singleParamEqual = Apply(Select(Ident(param.name), "=="), List(Select(Ident("that"), param.name)))
-        Apply(Select(apply, "&&"), List(singleParamEqual))
+        val singleParamEqual = Apply(Select(Ident(param.name), nme.EQ), List(Select(Ident("that"), param.name)))
+        Apply(Select(apply, nme.ZAND), List(singleParamEqual))
       })
     }
     val bind = Bind("that", Typed(Ident(""), TypeTree(classSymbol.tpe)))
     val matchingTypesCase = CaseDef(bind, EmptyTree, body)
-    val defaultCase = CaseDef(Ident("_"), EmptyTree, Literal(false))
+    val defaultCase = CaseDef(Ident(nme.USCOREkw), EmptyTree, Literal(false))
     val matchTree = Match(Ident(paramStr), List(matchingTypesCase, defaultCase))
-    mkDefDef(Modifiers(0) withPosition (Flags.OVERRIDE, NoPosition), "equals", parameters = List(List(otherParamSymbol)), body = List(matchTree))
+    mkDefDef(NoMods withPosition (Flags.OVERRIDE, NoPosition), "equals", parameters = List(List(otherParamSymbol)), body = List(matchTree))
   }
 
   def mkBlock(trees: List[Tree]): Block = trees match {

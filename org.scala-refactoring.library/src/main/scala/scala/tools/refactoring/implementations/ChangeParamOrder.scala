@@ -3,15 +3,21 @@ package implementations
 
 import scala.tools.refactoring.common.Change
 
+/**
+ * Refactoring that changes the order of the parameters of a method.
+ */
 abstract class ChangeParamOrder extends MethodSignatureRefactoring {
 
   import global._
   
   type Permutation = List[Int]
+  /**
+   * There has to be a permutation for each parameter list of the selected method.
+   */
   type RefactoringParameters = List[Permutation]
   
-  override def checkRefactoringParams(prep: PreparationResult, params: RefactoringParameters) = 
-    (prep.defdef.vparamss corresponds params) (_.length == _.length)
+  override def checkRefactoringParams(prep: PreparationResult, affectedDefs: AffectedDefs, params: RefactoringParameters) = 
+    (prep.defdef.vparamss corresponds params) ((vp, p) => (0 until vp.length) containsSlice (p.sortWith(_ < _)))
   
   def reorder[T](origVparamss: List[List[T]], permutations: List[Permutation]): List[List[T]] =
     (origVparamss zip permutations) map {

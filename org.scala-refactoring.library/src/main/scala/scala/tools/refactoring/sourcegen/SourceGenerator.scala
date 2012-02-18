@@ -32,8 +32,38 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   def createChanges(ts: List[Tree]): List[TextChange] = context("Create changes") {
     generateFragmentsFromTrees(ts) map {
       case (file, tree, range, fragment) =>
-        val end = endPositionAtEndOfSourceFile(range)
-        TextChange(range.source, range.start, end, fragment.center.asText)
+
+        /*
+         * We need to fix the end position because the Scala compiler often doesn't
+         * have correct ranges for top-level trees.
+         * */
+        
+        def replacesCuRoot = {
+          compilationUnitOfFile(file) exists (_.body.samePos(tree.pos))
+        }
+        
+        lazy val trailingSrc = {
+          range.source.content.slice(range.end, range.source.length)
+        }
+
+        def hasTrailingBraceAndSomething = {
+          trailingSrc.contains('}') && trailingSrc.length > 1
+        }
+        
+        val actualEnd = {
+          if(replacesCuRoot && hasTrailingBraceAndSomething) {
+            // The RangePosition ends before the } that closes the top-level
+            // tree, so we include this additional offset in the source code
+            // the change replaces, otherwise we sometimes get stray } after
+            // a refactoring.
+            val offsetBelongingToCuRoot = trailingSrc.takeWhile(_ != '}').size + 1
+            range.end + offsetBelongingToCuRoot
+          } else {
+            endPositionAtEndOfSourceFile(range)
+          }
+        }
+        
+        TextChange(range.source, range.start, actualEnd, fragment.center.asText)
     }
   }
   

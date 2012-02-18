@@ -60,20 +60,18 @@ trait CommonPrintUtils {
     } 
   }
   
-        
-      def balanceParens(f: Fragment) = Fragment {
-        val txt = f.toLayout.withoutComments // TODO also without strings, etc.
-        val opening = txt.count(_ == '(')
-        val closing = txt.count(_ == ')')
-        if(opening > closing && closing > 0) {
-          f.asText.reverse.replaceFirst("\\)", ")" * (opening - closing + 1)).reverse
-        } else if(opening > closing) {
-          f.asText + (")" * (opening - closing))
-        } else if(opening < closing) {
-          ("(" * (closing - opening)) + f.asText
-        } else {
-          f.asText
-        }
-      }
-
+  def balanceParens(open: Char, close: Char)(f: Fragment) = Fragment {
+    val txt = f.toLayout.withoutComments // TODO also without strings, etc.
+    val opening = txt.count(_ == open)
+    val closing = txt.count(_ == close)
+    if(opening > closing && closing > 0) {
+      f.asText.reverse.replaceFirst("\\"+close, (""+ close) * (opening - closing + 1)).reverse
+    } else if(opening > closing) {
+      f.asText + ((""+ close) * (opening - closing))
+    } else if(opening < closing) {
+      ((""+ open) * (closing - opening)) + f.asText
+    } else {
+      f.asText
+    }
+  }
 }

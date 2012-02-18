@@ -271,16 +271,4 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(generateHashcodeAndEquals((true, None)))
   
-  @Test
-  def foo = {
-    val tree = treeFrom {
-      """
-      class Foo(p1: Int, var p2: Int, val p3: Int) {
-        val prime = 41
-      }
-      """
-    }
-    assert(!(tree.toString contains "<error>"))
-  }
-  
 }

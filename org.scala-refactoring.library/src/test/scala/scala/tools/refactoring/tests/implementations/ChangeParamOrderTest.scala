@@ -146,6 +146,90 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
   
   @Test
+  def partialsWithBody = new FileSet {
+    """
+    package changeParamOrder.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int)(i: Int, j: Int) = a + b + c + d + e
+      def firstPartial = {
+        val a = 1
+        val b = 2
+        add(a, b) _
+      }
+      val firstResult = firstPartial(1, 2, 3)(1, 2, 3)(1, 2)
+      def secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d, e)
+      }
+      val secondResult = secondPartial(1, 2, 3)(1, 2)
+    }
+    """ becomes
+    """
+    package changeParamOrder.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(b: Int, a: Int)(d: Int, e: Int, c: Int)(g: Int, h: Int, f: Int)(j: Int, i: Int) = a + b + c + d + e
+      def firstPartial = {
+        val a = 1
+        val b = 2
+        add(b, a) _
+      }
+      val firstResult = firstPartial(2, 3, 1)(2, 3, 1)(2, 1)
+      def secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(d, e, c)
+      }
+      val secondResult = secondPartial(2, 3, 1)(2, 1)
+    }
+    """
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 1::2::0::Nil, 1::2::0::Nil, 1::0::Nil)))
+  
+  @Test
+  def partialValsWithBody = new FileSet {
+    """
+    package changeParamOrder.partialValsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int)(i: Int, j: Int) = a + b + c + d + e
+      val firstPartial = {
+        val a = 1
+        val b = 2
+        add(a, b) _
+      }
+      val firstResult = firstPartial(1, 2, 3)(1, 2, 3)(1, 2)
+      val secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d, e)
+      }
+      val secondResult = secondPartial(1, 2, 3)(1, 2)
+    }
+    """ becomes
+    """
+    package changeParamOrder.partialValsWithBody
+    class A {
+      def /*(*/add/*)*/(b: Int, a: Int)(d: Int, e: Int, c: Int)(g: Int, h: Int, f: Int)(j: Int, i: Int) = a + b + c + d + e
+      val firstPartial = {
+        val a = 1
+        val b = 2
+        add(b, a) _
+      }
+      val firstResult = firstPartial(2, 3, 1)(2, 3, 1)(2, 1)
+      val secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(d, e, c)
+      }
+      val secondResult = secondPartial(2, 3, 1)(2, 1)
+    }
+    """
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 1::2::0::Nil, 1::2::0::Nil, 1::0::Nil)))
+  
+  @Test
   def curriedMethodCall = new FileSet {
     """
       package changeParamOrder.curriedMethodCall
@@ -328,5 +412,18 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil)))
+  
+  @Test(expected=classOf[RefactoringException])
+  def invalidPermutation = new FileSet {
+    """
+    package changeParamOrder.invalidPermutation
+    class Foo {
+      def /*(*/method/*)*/(a: Int, b: Int)(c: String, d: String, e: String)(f: Int, g: Int) = a+b+c+d+e+f+g
+    }
+    """ becomes
+    """
+    not relevant
+    """
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 1::0::3::Nil, 0::1::Nil)))
   
 }

@@ -1,14 +1,20 @@
 package scala.tools.refactoring
 package implementations
 
+/**
+ * Refactoring to split parameter lists of a method.
+ */
 abstract class SplitParameterLists extends MethodSignatureRefactoring {
 
   import global._
   
   type SplitPositions = List[Int]
+  /**
+   * Split positions must be provided for every parameter list of the method (though they can be Nil) 
+   */
   type RefactoringParameters = List[SplitPositions]
   
-  override def checkRefactoringParams(prep: PreparationResult, params: RefactoringParameters) = {
+  override def checkRefactoringParams(prep: PreparationResult, affectedDefs: AffectedDefs, params: RefactoringParameters) = {
     def checkRefactoringParamsHelper(vparamss: List[List[ValDef]], sectionss: List[SplitPositions]): Boolean = {
       val sortedSections = sectionss.map(Set(_: _*).toList.sorted)
       if(sortedSections != sectionss || vparamss.size != sectionss.size) {

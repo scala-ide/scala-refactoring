@@ -29,7 +29,7 @@ abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
     val productParentName = newTermName("Product" + arity + "[" + paramsTypenames.mkString(", ") + "]")
     
     def addProductTrait = transform {
-      case Template(parents, self, body) => Template(parents:::List(Ident(productParentName)), self, projections:::body)
+      case t @ Template(parents, self, body) => Template(parents:::List(Ident(productParentName)), self, projections:::body) replaces t
     }
     
     superGeneration &> addProductTrait

@@ -40,8 +40,9 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     
     def cus(): List[CompilationUnitIndex]
     
-    def declaration(s: Symbol): Option[DefTree] = 
+    def declaration(s: Symbol): Option[DefTree] = {
       cus.flatMap(_.definitions.get(s)).flatten.headOption
+    }
    
     def references(s: Symbol) = {
       val decls = declaration(s).toList

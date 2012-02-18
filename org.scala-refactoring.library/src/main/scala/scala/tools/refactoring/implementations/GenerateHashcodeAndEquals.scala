@@ -16,25 +16,21 @@ abstract class GenerateHashcodeAndEquals extends ClassParameterDrivenSourceGener
 
   import global._
   
-  override def failsBecause(classDef: ClassDef) = super.failsBecause(classDef) match {
-    case None => {
-      if(classDef.impl.hasEqualsOrHashcode)
-        Some("equals or hashCode already existing")
-      else
-        None
-    }
-    case fails => fails
+  override def failsBecause(classDef: ClassDef) =  {
+    if(classDef.impl.hasEqualsOrHashcode)
+      Some("equals or hashCode already existing")
+    else
+      None
   }
   
   override def sourceGeneration(selectedParams: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters) = {
-    val superGeneration = super.sourceGeneration(selectedParams, preparationResult, refactoringParams)
     
     val equalityMethods = mkEqualityMethods(preparationResult.classDef.symbol, selectedParams, refactoringParams.callSuper)
     def addEqualityMethods = transform {
-      case t @ Template(parents, self, body) => Template(parents, self, equalityMethods:::body) replaces t
+      case t @ Template(_, _, body) => t copy (body = equalityMethods:::body) replaces t
     }
     
-    superGeneration &> addEqualityMethods
+    addEqualityMethods
   }
   
   def mkEqualityMethods(classSymbol: Symbol, params: List[ValDef], callSuper: Boolean) = {

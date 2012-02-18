@@ -13,6 +13,8 @@ import util._
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
     classOf[MoveClassTest],
+    classOf[ExtractTraitTest],
+    classOf[IntroduceProductNTraitTest],
     classOf[GenerateHashcodeAndEqualsTest],
     classOf[MoveConstructorToCompanionObjectTest],
     classOf[ChangeParamOrderTest], 

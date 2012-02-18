@@ -92,7 +92,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """
   } applyRefactoring(moveConstructorToCompanion)
   
-  @Test // TODO: one space too much after class Enclosing in transformed code
+  @Test
   def withoutExistingCompanionWithEnclosingClass = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanionWithEnclosingClass
@@ -106,7 +106,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """
       package moveConstructorToCompanion.withoutExistingCompanionWithEnclosingClass
 
-      class Enclosing  {
+      class Enclosing {
         object Inner {
           def apply(p: Int) = {
             new Inner(p)
@@ -251,7 +251,27 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
   
   @Test
-  // TODO: replace x.apply(y) with x(y)?
+  def constructorWithoutParameters = new FileSet {
+    """
+      package moveConstructorToCompanion.emptyConstructor
+
+      class /*(*/Foo/*)*/ {
+      }
+    """ becomes
+    """
+      package moveConstructorToCompanion.emptyConstructor
+      object Foo {
+        def apply() = {
+          new Foo()
+        }
+      }
+
+      class /*(*/Foo/*)*/ {
+      }
+    """
+  } applyRefactoring(moveConstructorToCompanion)
+  
+  @Test
   def replaceConstructorCallsWithoutExistingCompanion = new FileSet {
     """
       package moveConstructorToCompanion.replaceConstructorCallsWithoutExistingCompanion
@@ -278,22 +298,33 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """
   } applyRefactoring(moveConstructorToCompanion)
   
-  @Test
-  def foo() = {
-    val tree = treeFrom {
-     """
-      package moveConstructorToCompanion.curriedConstructor
 
+  @Test
+  def replaceConstructorCallsInObject = new FileSet {
+    """
+      package moveConstructorToCompanion.replaceConstructorCallsInObject
+
+      class /*(*/Foo/*)*/(val p: Int)
+
+      object User {
+        val foo = new Foo(57)
+      }
+    """ becomes
+    """
+      package moveConstructorToCompanion.replaceConstructorCallsInObject
       object Foo {
-        def apply[A, B, C](a: A)(b: B)(c: C) = {
-          new Foo(a)(b)(c)
+        def apply(p: Int) = {
+          new Foo(p)
         }
       }
 
-      class /*(*/Foo/*)*/[A, B, C](a: A)(b: B)(c: C)
+      class /*(*/Foo/*)*/(val p: Int)
+
+      object User {
+        val foo = Foo.apply(57)
+      }
     """
-    }
-    assert(!(tree.toString contains "<error>"))
-  }
+  } applyRefactoring(moveConstructorToCompanion)
+
   
 }

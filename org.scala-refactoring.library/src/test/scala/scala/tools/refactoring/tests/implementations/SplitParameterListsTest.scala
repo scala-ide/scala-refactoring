@@ -296,6 +296,91 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil, 1::Nil)))
   
   @Test
+  def partialsWithBody = new FileSet {
+    """
+    package splitParameterLists.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int)(i: Int, j: Int) = a + b + c + d + e
+      def firstPartial = {
+        val a = 1
+        val b = 2
+        add(a, b) _
+      }
+      val firstResult = firstPartial(1, 2, 3)(1, 2, 3)(1, 2)
+      def secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d, e)
+      }
+      val secondResult = secondPartial(1, 2, 3)(1, 2)
+    }
+    """ becomes
+    """
+    package splitParameterLists.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int)(h: Int)(i: Int)(j: Int) = a + b + c + d + e
+      def firstPartial = {
+        val a = 1
+        val b = 2
+        add(a)(b) _
+      }
+      val firstResult = firstPartial(1, 2)(3)(1)(2)(3)(1)(2)
+      def secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d)(e)
+      }
+      val secondResult = secondPartial(1)(2)(3)(1)(2)
+    }
+    """
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil, 1::2::Nil, 1::Nil)))
+  
+  @Test
+  def partialValsWithBody = new FileSet {
+    """
+    package splitParameterLists.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int)(i: Int, j: Int) = a + b + c + d + e
+      val firstPartial = {
+        val a = 1
+        val b = 2
+        add(a, b) _
+      }
+      val firstResult = firstPartial(1, 2, 3)(1, 2, 3)(1, 2)
+      val secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d, e)
+      }
+      val secondResult = secondPartial(1, 2, 3)(1, 2)
+    }
+    """ becomes
+    """
+    package splitParameterLists.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int)(h: Int)(i: Int)(j: Int) = a + b + c + d + e
+      val firstPartial = {
+        val a = 1
+        val b = 2
+        add(a)(b) _
+      }
+      val firstResult = firstPartial(1, 2)(3)(1)(2)(3)(1)(2)
+      val secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d)(e)
+      }
+      val secondResult = secondPartial(1)(2)(3)(1)(2)
+    }
+    """
+  } applyRefactoring(splitParameterLists(List(1::Nil, 2::Nil, 1::2::Nil, 1::Nil)))
+  
+  
+  @Test
   @Ignore // TODO: implement
   def partialOverride = new FileSet {
     """

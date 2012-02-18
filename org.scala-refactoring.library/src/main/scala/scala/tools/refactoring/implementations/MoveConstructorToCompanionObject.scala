@@ -4,7 +4,7 @@ package implementations
 import scala.tools.refactoring.common.Change
 import transformation.TreeFactory
 
-abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring with common.InteractiveScalaCompiler with common.PimpedTrees with analysis.Indexes with TreeFactory {
+abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring with common.InteractiveScalaCompiler with analysis.Indexes {
 
   import global._
 
@@ -19,7 +19,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
   }
 
   override def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    val constructor = prep.impl.body.collectFirst ({case t: DefDef if t.hasSymbol && t.symbol.isPrimaryConstructor => t}).get
+    val constructor = prep.impl.primaryConstructor.head
 
     def makeApply(className: TermName, constr: DefDef) = {
       val params = constr.vparamss.map(_ map (p => p.symbol))
@@ -46,7 +46,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
         case _ => index.declaration(owner).get
       }
     }
-
+    
     def companionObjectFilter(companionSymbol: Symbol) = filter {
       case m: ModuleDef if (m.hasSymbol) => m.symbol == companionSymbol
     }
@@ -57,7 +57,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
         val select: Tree = Select(New(Ident(name)), constructor.name)
         val constructorCall = constructor.vparamss.foldLeft(select)((fun, args) => Apply(fun, args map (p => Ident(p.name))))
         val newBody = makeApply(prep.name, constructor) :: body
-        ModuleDef(mods, name, Template(parents, self, newBody) setPos NoPosition) replaces m
+        ModuleDef(mods, name, Template(parents, self, newBody)) replaces m
       }
     }
 
@@ -68,7 +68,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
     }
 
     val enclosingFilter = filter {
-      case `enclosingDefTree` => true
+      case tree: Tree if tree.hasSymbol && tree.symbol == enclosingDefTree.symbol => true
     }
 
     val isCompanionObjectExisting = predicate {
@@ -76,16 +76,17 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
     }
 
     val createCompanionObject = transform {
-      case packageDef @ PackageDef(pid, stats) =>
+      case packageDef @ PackageDef(pid, stats) => 
         PackageDef(pid, companionObject :: stats) replaces packageDef
-      case classDef @ ClassDef(mods, name, tparams, Template(parents, self, body)) =>
-        ClassDef(mods, name, tparams, Template(parents, self, companionObject :: body)) replaces classDef
-      case defdef @ DefDef(mods, name, tparams, vparamss, tpt, Block(stats, expr)) =>
-        DefDef(mods, name, tparams, vparamss, tpt, Block(companionObject :: stats, expr)) replaces defdef
-      case valdef @ ValDef(mods, name, tpt, Block(stats, expr)) =>
-        ValDef(mods, name, tpt, Block(companionObject :: stats, expr)) replaces valdef
-      case moduleDef @ ModuleDef(mods, name, Template(parents, self, body)) =>
-        ModuleDef(mods, name, Template(parents, self, companionObject :: body)) replaces moduleDef
+      case classDef @ ClassDef(mods, name, tparams, t @ Template(parents, self, body)) => 
+        ClassDef(mods, name, tparams, Template(parents, self, companionObject :: body) replaces t) replaces classDef
+      case defdef @ DefDef(mods, name, tparams, vparamss, tpt, b @ Block(stats, expr)) => 
+        DefDef(mods, name, tparams, vparamss, tpt, Block(companionObject :: stats, expr) replaces b) replaces defdef
+      case valdef @ ValDef(mods, name, tpt, b @ Block(stats, expr)) => 
+        ValDef(mods, name, tpt, Block(companionObject :: stats, expr) replaces b) replaces valdef
+      case moduleDef @ ModuleDef(mods, name, t @ Template(parents, self, body)) => 
+        ModuleDef(mods, name, Template(parents, self, companionObject :: body) replaces t) replaces moduleDef
+        
     }
     
     val insertCompanionObject = topdown {
@@ -99,7 +100,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
 
     def redirectSingleConstructorCall = transform {
       case s: Select => {
-        val newSelect = Select(Ident(prep.name), "apply")
+        val newSelect = Select(Ident(prep.name), nme.apply)
         newSelect
       }
     }

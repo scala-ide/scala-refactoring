@@ -118,15 +118,17 @@ trait TreeTransformations extends Transformations with TreeFactory {
     case _ => EmptyTree
   })
   
-  def shallowDuplicate(orig: Tree): Tree = new Transformer {
-    override val treeCopy = new StrictTreeCopier
-    override def transform(tree: Tree) = {
-      if (tree eq orig) 
-        super.transform(tree)
-      else 
-        tree
-    }
-  } transform orig
+  def shallowDuplicate[T <: Tree](orig: T): T = {
+    new Transformer {
+      override val treeCopy = new StrictTreeCopier
+      override def transform(tree: Tree) = {
+        if (tree eq orig) 
+          super.transform(tree)
+        else 
+          tree
+      }
+    } transform orig
+  }.asInstanceOf[T]
   
   
   val setNoPosition = transform {

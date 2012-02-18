@@ -11,7 +11,7 @@ import scala.reflect.generic.Flags
  * Baseclass for refactorings that generate class-level source based on
  * the class parameters.
  */
-abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactoring with common.InteractiveScalaCompiler with TreeFactory with PimpedTrees {
+abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactoring with common.InteractiveScalaCompiler {
 
   import global._
   
@@ -35,25 +35,18 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
     }
   }
   
-  def failsBecause(classDef: ClassDef): Option[String] = None
+  def failsBecause(classDef: ClassDef): Option[String]
   
-  override def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     val nonPrivateParams = prep.classDef.impl.nonPrivateClassParameters
         
-    // if no params filter is supplied in the refactoring parameters we use only immutable class parameters
-    lazy val paramsFilter = {
-      // collect all immutable class parameters 
-      val immutableParams = nonPrivateParams collect { case t if !t._2 => t._1.nameString }
-      params.paramsFilter getOrElse ((str: String) => immutableParams contains str)
-    }
-    
     val selectedParams = selectParams(nonPrivateParams, params.paramsFilter)
     
     val classSymbol = prep.classDef.symbol
     
     val templateFilter = filter {
       case prep.classDef.impl => true
-    }
+    } 
     
     val refactoring = topdown {
       matchingChildren {
@@ -74,6 +67,6 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
     candidates collect { case t if filter(t._1.nameString) => t._1}
   }
   
-  def sourceGeneration(params: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters): Transformation[Tree, Tree] = id
+  def sourceGeneration(params: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters): Transformation[Tree, Tree]
     
 }

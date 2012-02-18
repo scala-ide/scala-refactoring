@@ -71,7 +71,7 @@ trait TreeChangesDiscoverer {
       
       findOriginalTree(newTree) map (oldTree => Pair(oldTree, children(oldTree))) match {
         case None =>
-          Predef.error("should never happen")
+          sys.error("should never happen")
         case Some(Pair(oldTree, oldChildren)) =>
           
           /* Comparing a flat list of children of trees won't let us catch a 
@@ -123,27 +123,41 @@ trait TreeChangesDiscoverer {
     } else if (hasChangedChildren(t)) {
       trace("Top tree %s has changed children.", t.getClass.getSimpleName)
 
+      val isBlockOrTemplate = t match {
+        case _: Block | _: Template => true
+        case _ => false
+      }
+      
       lazy val originalChildren = findOriginalTree(t) map children getOrElse Nil
       lazy val modifiedChildren = children(t)
-      
-      t match {
-        case _: Block | _: Template if originalChildren.size == modifiedChildren.size =>
-          
-          originalChildren zip modifiedChildren filterNot {
-            case (t1, t2) => t1.samePosAndType(t2)
-          } match {
-            case (orig, changed) :: Nil if changed.pos == NoPosition =>
-              // only one statement in the block has changed, so we can rewrite just this one
-              // because it does not have a position, we return the position of the stmt it
-              // replaced
-              trace("Replace only the single changed statement in the block.")
-              List((changed, orig.pos, Set(changed) ++ searchChildrenForChanges(changed)))
-            case _ =>
-              resultWhenChanged
-          }
-     
-        case _ =>
-          resultWhenChanged          
+
+      if(isBlockOrTemplate && originalChildren.size == modifiedChildren.size) {
+        val onlyDifferentChildren = originalChildren zip modifiedChildren filterNot {
+          case (t1, t2) => t1.samePosAndType(t2)
+        }
+
+        // only one statement in the block has changed, so we can rewrite just this one
+        // because it does not have a position, we return the position of the stmt it
+        // replaced
+        
+        def replaceSingleDef(orig: Tree, changed: Tree) = {
+          trace("Replace only the single changed statement in the block.")
+          List((changed, orig.pos, Set(changed) ++ searchChildrenForChanges(changed)))          
+        }
+        
+        (t, onlyDifferentChildren) match {
+          case (t: Block   , (orig, changed) :: Nil) if changed.pos == NoPosition =>
+            replaceSingleDef(orig, changed)
+          case (t: Template, (orig, changed) :: Nil) if changed.pos == NoPosition && t.body.contains(changed) =>
+            // Only use the efficient replace when the changed tree is in the template body,
+            // if it's e.g. a parent type, then we still need to print the whole template 
+            // because of things like the extends keyword.
+            replaceSingleDef(orig, changed)
+          case _ =>
+            resultWhenChanged
+        }
+      } else {
+        resultWhenChanged
       }
     } else {
       children(t) flatMap (c => findAllChangedTrees(c))

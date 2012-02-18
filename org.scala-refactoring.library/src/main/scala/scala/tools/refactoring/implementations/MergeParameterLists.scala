@@ -1,6 +1,9 @@
 package scala.tools.refactoring
 package implementations
 
+/**
+ * Refactoring to merge parameter lists of a method.
+ */
 abstract class MergeParameterLists extends MethodSignatureRefactoring {
 
   import global._
@@ -8,7 +11,7 @@ abstract class MergeParameterLists extends MethodSignatureRefactoring {
   type MergePositions = List[Int]
   type RefactoringParameters = MergePositions
   
-  override def checkRefactoringParams(prep: PreparationResult, params: RefactoringParameters) = {
+  override def checkRefactoringParams(prep: PreparationResult, affectedDefs: AffectedDefs, params: RefactoringParameters) = {
     val selectedDefDef = prep.defdef
     val allowedMergeIndexesRange = 1 until selectedDefDef.vparamss.size
     val isNotEmpty = (p: RefactoringParameters) => !p.isEmpty
@@ -16,8 +19,8 @@ abstract class MergeParameterLists extends MethodSignatureRefactoring {
     val uniqueIndexes = (p: RefactoringParameters) => p.distinct == p
     val indexesInRange = (p: RefactoringParameters) => allowedMergeIndexesRange containsSlice (p.head to p.last)
     val mergeable = (p: RefactoringParameters) => {
-      val affectedDefs = prep.affectedDefs.originals:::prep.affectedDefs.partials
-      val preparedParams = affectedDefs.map(prepareParamsForSingleRefactoring(params, selectedDefDef, _))
+      val allAffectedDefs = affectedDefs.originals:::affectedDefs.partials
+      val preparedParams = allAffectedDefs.map(prepareParamsForSingleRefactoring(params, selectedDefDef, _))
       preparedParams.filter(_ contains 0).isEmpty
     }
     val allConditions = List(isNotEmpty, isSorted, uniqueIndexes, indexesInRange, mergeable)

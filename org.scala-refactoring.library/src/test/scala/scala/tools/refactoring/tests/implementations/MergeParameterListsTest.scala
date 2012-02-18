@@ -251,7 +251,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int) = a + b + c + d + e
         val alias = add _
-        val result = alias(1)(2)/*FIXME*/(3, 4)(5)
+        val result = alias(1)(2)(3, 4)(5)
       }
     """  becomes
     """
@@ -259,7 +259,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
       class A {
         def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d + e
         val alias = add _
-        val result = alias(1, 2)apply/*FIXME*/(3, 4, 5)
+        val result = alias(1, 2)(3, 4, 5)
       }
     """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
@@ -285,6 +285,90 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(mergeParameterLists(1::3::5::Nil))
+  
+  @Test
+  def partialsWithBody = new FileSet {
+    """
+    package mergeParameterLists.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int)(h: Int)(i: Int)(j: Int) = a + b + c + d + e
+      def firstPartial = {
+        val a = 1
+        val b = 2
+        add(a)(b) _
+      }
+      val firstResult = firstPartial(1, 2)(3)(1)(2)(3)(1)(2)
+      def secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d)(e)
+      }
+      val secondResult = secondPartial(1)(2)(3)(1)(2)
+    }
+    """ becomes
+    """
+    package mergeParameterLists.partialsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int)(i: Int, j: Int) = a + b + c + d + e
+      def firstPartial = {
+        val a = 1
+        val b = 2
+        add(a, b) _
+      }
+      val firstResult = firstPartial(1, 2, 3)(1, 2, 3)(1, 2)
+      def secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d, e)
+      }
+      val secondResult = secondPartial(1, 2, 3)(1, 2)
+    }
+    """
+  } applyRefactoring(mergeParameterLists(List(1, 3, 5, 6, 8)))
+  
+  @Test
+  def partialValsWithBody = new FileSet {
+    """
+    package mergeParameterLists.partialValsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int)(h: Int)(i: Int)(j: Int) = a + b + c + d + e
+      val firstPartial = {
+        val a = 1
+        val b = 2
+        add(a)(b) _
+      }
+      val firstResult = firstPartial(1, 2)(3)(1)(2)(3)(1)(2)
+      val secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d)(e)
+      }
+      val secondResult = secondPartial(1)(2)(3)(1)(2)
+    }
+    """ becomes
+    """
+    package mergeParameterLists.partialValsWithBody
+    class A {
+      def /*(*/add/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int)(i: Int, j: Int) = a + b + c + d + e
+      val firstPartial = {
+        val a = 1
+        val b = 2
+        add(a, b) _
+      }
+      val firstResult = firstPartial(1, 2, 3)(1, 2, 3)(1, 2)
+      val secondPartial = {
+        val c = 1
+        val d = 2
+        val e = 3
+        firstPartial(c, d, e)
+      }
+      val secondResult = secondPartial(1, 2, 3)(1, 2)
+    }
+    """
+  } applyRefactoring(mergeParameterLists(List(1, 3, 5, 6, 8)))
   
   @Test(expected=classOf[RefactoringException])
   def mergePointUsedForCurrying = new FileSet {

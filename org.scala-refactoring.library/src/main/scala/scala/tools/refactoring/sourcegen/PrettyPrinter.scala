@@ -235,7 +235,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             p(fun) ++ "(" ++ p(arg) ++ ")"
           
         case _ =>
-          p(fun) ++ balanceParens {
+          p(fun) ++ balanceParens('(', ')') {
             EmptyFragment ++ "(" ++ pp(args, separator = ", ") ++ ")"
           }
       }
@@ -451,7 +451,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         }
       }
 
-      val cond_ = balanceParens {
+      val cond_ = balanceParens('(', ')') {
         p(cond, before = "if (", after = ")") ++ thenLeadingLayout_ ++ Requisite.Blank
       }
       

@@ -473,7 +473,7 @@ trait PimpedTrees {
     def hasEqualsOrHashcode = {
       val body = t.body
       val existingEqualsOrHashcodeOption = body collectFirst {
-        case d: DefDef if (List("equals", "hashCode", "canEqual") contains d.nameString) => d
+        case d: DefDef if List(nme.equals_, nme.hashCode_, nme.canEqual_) contains d.name => d
       }
       existingEqualsOrHashcodeOption.isDefined
     }
@@ -550,7 +550,7 @@ trait PimpedTrees {
             tpl.self
           }
         }
-
+        
         Some((classParams, pimpedTpl.earlyDefs, parents, self, body))
       
       case _ => 
