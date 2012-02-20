@@ -4,8 +4,35 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.scala-refactoring</groupId>
   <artifactId>org.scala-refactoring</artifactId>
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
   <version>0.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
+  <name>Scala Refactoring Library</name>
+  <url>http://scala-refactoring.org</url>
+  <licenses>
+    <license>
+      <name>Scala License</name>
+      <url>http://www.scala-lang.org/node/146</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:git://git.assembla.com/scala-refactoring.git</connection>
+    <developerConnection>scm:git:git@git.assembla.com:scala-refactoring.git</developerConnection>
+    <tag>master</tag>
+    <url>http://scala-ide-portfolio.assembla.com/spaces/scala-refactoring/wiki</url>
+  </scm>
+  <developers>
+    <developer>
+      <id>misto</id>
+      <name>Mirko Stocker</name>
+      <email>me@misto.ch</email>
+    </developer>
+  </developers>
   <properties>
     <scala.version>2.8.0</scala.version>
     <scct.version>2.9.0-1</scct.version>
@@ -143,6 +170,19 @@
             <phase>test</phase>
             <goals>
               <goal>test</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
             </goals>
           </execution>
         </executions>
