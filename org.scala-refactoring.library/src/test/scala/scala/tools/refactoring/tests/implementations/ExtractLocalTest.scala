@@ -375,29 +375,6 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(extract("isOdd"))
   
-  @ScalaVersion(matches="2.8")
-  @Test
-  def extractFromValBlock28 = new FileSet { 
-      """
-      class Extr2 {
-        val a = {
-          val i = 1
-          /*(*/i + 2/*)*/
-        }
-      }
-    """ becomes """
-      class Extr2 {
-        val a = {
-          val i = 1
-          val addTwo = 
-          /*(*/i + 2
-          addTwo/*)*/
-        }
-      }
-    """
-  } applyRefactoring extract("addTwo")
-  
-  @ScalaVersion(matches="2.9")
   @Test
   def extractFromValBlock = new FileSet { 
       """

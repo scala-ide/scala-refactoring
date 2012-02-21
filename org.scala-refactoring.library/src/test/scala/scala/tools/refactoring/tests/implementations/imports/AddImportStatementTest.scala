@@ -154,36 +154,6 @@ class AddImportStatementTest extends TestHelper {
     """)
   }
 
-  @ScalaVersion(matches="2.8")
-  @Test
-  def importExistsBetweenPackages28 = {
-    addImport(("collection.mutable", "ListBuffer"), """
-      package nstd
-
-      import collection.mutable.HashMap
-
-      package pckg
-
-      import collection.mutable.HashMap
-      import collection.mutable.HashMap
-
-      object Main {}
-    """, """
-      package nstd
-
-      import collection.mutable.HashMap
-      import collection.mutable.ListBuffer
-
-      package pckg
-
-      import collection.mutable.HashMap
-      import collection.mutable.HashMap
-
-      object Main {}
-    """)
-  }
-
-  @ScalaVersion(matches="2.9")
   @Test
   def importExistsBetweenPackages = {
     addImport(("collection.mutable", "ListBuffer"), """

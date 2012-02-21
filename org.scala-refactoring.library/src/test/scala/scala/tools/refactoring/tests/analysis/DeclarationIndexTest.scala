@@ -77,21 +77,6 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
         }
       }
       """)
-  }  
-  
-  @ScalaVersion(matches="2.8")
-  @Test
-  def findShadowed28() = {
-    assertDeclarationOfSelection("""val x: java.lang.String = "a"""", """
-      object AfindShadowed {
-        private[this] val x = 1
-        def go  = {
-          val x = "a"
-          val y = /*(*/  x  /*)*/
-          y
-        }
-      }
-      """)
   }
   
   @Test
@@ -275,21 +260,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     assertReferencesOfSelection("""T (51, 52), T (77, 78)""", tree)
     assertDeclarationOfSelection("""type T>: Nothing <: Any""", tree)
   }
-
-  @ScalaVersion(matches="2.8")
-  @Test
-  def referencesToTypesInAppliedTypes28() = {    
-    assertReferencesOfSelection("""String (54, 60), scala.this.Predef.String (91, 97), String (121, 127)""", """      
-      object U {
-        def go(t: List[ /*(*/ String /*)*/ ]) = {
-          val s: String = ""
-          t: List[String]
-        }
-      }
-      """)
-  }
   
-  @ScalaVersion(matches="2.9")
   @Test
   def referencesToTypesInAppliedTypes() = {
     assertReferencesOfSelection("""scala.this.Predef.String (47, 53), scala.this.Predef.String (82, 88), scala.this.Predef.String (117, 123)""", """      
