@@ -9,7 +9,7 @@
     <artifactId>oss-parent</artifactId>
     <version>7</version>
   </parent>
-  <version>0.4.0</version>
+  <version>0.4.1</version>
   <packaging>pom</packaging>
   <name>Scala Refactoring Library</name>
   <url>http://scala-refactoring.org</url>
@@ -64,15 +64,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <inherited>false</inherited>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>latex-maven-plugin</artifactId>
