@@ -12,6 +12,7 @@ import org.junit.Ignore
 
 class MarkOccurrencesTest extends TestHelper {
   outer =>
+    
   def markOccurrences(original: String, expected: String) {
     
     val tree = treeFrom(original)
@@ -194,7 +195,6 @@ class MarkOccurrencesTest extends TestHelper {
       val sep2 = /*(*/#/*)*/.pathSeparator
     }
     """)
-    
 
   @Test
   def backtickedIdentifiers = markOccurrences("""
@@ -210,4 +210,147 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """)
   
+  @Test
+  def annotatedType = markOccurrences("""
+      object U {
+        def go(t: List[ /*(*/String/*)*/ ]) = {
+          val s: String = ""
+          t: List[String]
+        }
+      }
+    """,
+    """
+      object U {
+        def go(t: List[ /*(*/######/*)*/ ]) = {
+          val s: ###### = ""
+          t: List[######]
+        }
+      }
+    """)
+  
+  @Test
+  def filterInForComprehension1 = markOccurrences("""
+      object U {
+        for (/*(*/foo/*)*/ <- List("santa", "claus") if foo.startsWith("s")) yield foo
+      }
+    """,
+    """
+      object U {
+        for (/*(*/###/*)*/ <- List("santa", "claus") if ###.startsWith("s")) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehension2 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "claus") if /*(*/foo/*)*/.startsWith("s")) yield foo
+      }
+    """,
+    """
+      object U {
+        for (### <- List("santa", "claus") if /*(*/###/*)*/.startsWith("s")) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehension3 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "claus") if foo.startsWith("s")) yield /*(*/foo/*)*/
+      }
+    """,
+    """
+      object U {
+        for (### <- List("santa", "claus") if ###.startsWith("s")) yield /*(*/###/*)*/
+      }
+    """)
+  
+  @Test
+  def filterInForComprehension4 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "claus") if "".startsWith(/*(*/foo/*)*/)) yield foo
+      }
+    """,
+    """
+      object U {
+        for (### <- List("santa", "claus") if "".startsWith(/*(*/###/*)*/)) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehensions = markOccurrences("""
+      object U {
+        for (/*(*/foo/*)*/ <- List("santa", "2claus"); bar <- List(1,2) if foo.startsWith(""+ bar)) yield foo
+      }
+    """,
+    """
+      object U {
+        for (/*(*/###/*)*/ <- List("santa", "2claus"); bar <- List(1,2) if ###.startsWith(""+ bar)) yield ###
+      }
+    """)
+  
+  @Test
+  def filterInForComprehensions2 = markOccurrences("""
+      object U {
+        for (foo <- List("santa", "2claus"); /*(*/bar/*)*/ <- List(1,2) if foo.startsWith(""+ bar)) yield foo
+      }
+    """,
+    """
+      object U {
+        for (foo <- List("santa", "2claus"); /*(*/###/*)*/ <- List(1,2) if foo.startsWith(""+ ###)) yield foo
+      }
+    """)
+
+  @Test
+  def referenceFromInside = markOccurrences("""
+    package referenceFromInside
+    class /*(*/Foo/*)*/ {
+      class Bar {
+        def foo = Foo.this
+      }
+    }
+    """,
+    """
+    package referenceFromInside
+    class /*(*/###/*)*/ {
+      class Bar {
+        def foo = ###.this
+      }
+    }
+    """)
+
+  @Test
+  def referenceToOverridenTypesInSubclasses = markOccurrences("""
+    abstract class A {
+
+      type /*(*/Foo/*)*/
+
+      abstract class B extends A {
+
+        type Foo
+
+        class C extends B {
+
+          type Foo = Unit
+
+        }
+      }
+    }
+    """,
+    """
+    abstract class A {
+
+      type /*(*/###/*)*/
+
+      abstract class B extends A {
+
+        type ###
+
+        class C extends B {
+
+          type ### = Unit
+
+        }
+      }
+    }
+    """)
 }

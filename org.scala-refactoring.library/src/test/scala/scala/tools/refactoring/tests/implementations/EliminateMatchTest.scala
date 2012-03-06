@@ -12,6 +12,13 @@ import scala.tools.refactoring.implementations.EliminateMatch
 class EliminateMatchTest extends TestHelper with TestRefactoring {
   outer =>
   
+  def elim(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new EliminateMatch with SilentTracing with common.InteractiveScalaCompiler {
+      val global = outer.global
+    }
+    val changes = performRefactoring(new refactoring.RefactoringParameters)
+  }.changes
+    
   val some = Some("s"): Option[String]
   val none = None: Option[String]
 
@@ -75,13 +82,6 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
     assertEquals(1, x1)
     assertEquals(1, x2)
   }
-  
-  def elim(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new EliminateMatch with SilentTracing with common.InteractiveScalaCompiler {
-      val global = outer.global
-    }
-    val changes = performRefactoring(new refactoring.RefactoringParameters)
-  }.changes
   
   @Test
   def eliminateIsDefined = new FileSet {

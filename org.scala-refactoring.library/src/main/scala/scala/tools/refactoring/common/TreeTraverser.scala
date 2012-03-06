@@ -50,19 +50,25 @@ trait TreeTraverser {
       }
       select.setType(tpe).setSymbol(sym).setPos(pos)          
     }
-    
+
     def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree): Tree = {
-    
+
       val flattenedExistingTrees = tree.filter(_ => true) map {
         case t: Ident =>  (t.name.toString, t.pos)
         case t: Select => (t.name.toString, t.pos)
         case _ => return tree
       }
-      
-      val treesFromType = tpe.trimPrefix(tpe.toString).split("\\.").toList.reverse zip Stream.continually(NoPosition)
-      
+
+      val treesFromType = {
+        val tpeWithoutPrefix = tpe.trimPrefix(tpe.toString).split("\\.") match {
+          case tpes if tpe.isInstanceOf[SingletonType] => tpes.init // drop the `.type`
+          case tpes => tpes
+        }
+        tpeWithoutPrefix.toList.reverse zip Stream.continually(NoPosition)
+      }
+
       val fullPathOfAllTrees = (flattenedExistingTrees ++ treesFromType.drop(flattenedExistingTrees.size)).reverse
-      
+
       def symbolAncestors(s: Symbol): Stream[Symbol] = if(s == NoSymbol) Stream.continually(NoSymbol) else Stream.cons(s, symbolAncestors(s.owner))
       
       val select = fullPathOfAllTrees zip symbolAncestors(sym).take(fullPathOfAllTrees.length).reverse.toList match {
@@ -86,12 +92,28 @@ trait TreeTraverser {
     
     def handleAnnotations(as: List[AnnotationInfo]) {
       as foreach { annotation =>
+
         annotation.atp match {
           case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
             val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
             traverse(tree)
-          case _ => 
+          case _ =>
         }
+
+        // Annotations with parameters defined in Java need this:
+        annotation.assocs.unzip._2 collect {
+          case LiteralAnnotArg(Constant(value)) => value
+        } foreach {
+          case tpe @ TypeRef(_, sym, _) =>
+            /* The `annotation.pos` is wrong, we should instead extract
+             * the correct positions from the source code. */
+            fakeSelectTreeFromType(tpe, sym, annotation.pos) match {
+              case t: Select => traverse(t)
+              case _ => ()
+            }
+          case _ => ()
+        }
+
         annotation.args foreach traverse
       }
     }
@@ -107,6 +129,8 @@ trait TreeTraverser {
             handleAppliedTypeTree(tree, tpe)
           case (TypeRef(_, sym, _), tree) =>
             fakeSelectTree(sym.tpe, sym, tree) foreach traverse
+          case (tpe, tree) =>
+            // TODO ?
         }
     }
     
@@ -185,19 +209,68 @@ trait TreeTraverser {
   class TreeWithSymbolTraverser(f: (Symbol, Tree) => Unit) extends Traverser {
         
     override def traverse(t: Tree) = {
+      
       t match {
+        
+        /* For comprehensions are tricky, especially when combined with a filter:
+         * The following code:
+         * 
+         *   for (foo <- List("santa", "claus") if foo.startsWith("s")) yield foo
+         * 
+         * is converted to
+         * 
+         *   List("santa", "claus").withFilter(foo => foo.startsWith("s")).map(foo => foo)
+         * 
+         * so we have several foo ValDefs/RefTrees that need to be related with
+         * each other.
+         */   
+        case Apply(generator, (Function(arg :: _, body)) :: Nil) 
+          if arg.pos.startOrPoint < generator.pos.startOrPoint &&
+             between(arg, generator).contains("<-") =>
+          
+          val referencesToVal = {
+            val fromBody = body collect {
+              case t: RefTree if t.name == arg.name => t
+            }
+            val fromGenerator = generator collect {
+              case Apply(Select(_, nme.withFilter), (Function((v: ValDef) :: _, body)) :: Nil) 
+                if !v.pos.isRange && v.name == arg.name => 
+                  body collect {
+                    case t: RefTree if t.symbol == v.symbol => t
+                  }
+            } flatten
+            
+            fromBody ++ fromGenerator
+          }
+          
+          val valDefs = arg :: {
+            generator collect {
+              case Apply(Select(_, nme.withFilter), (Function((v: ValDef) :: _, _)) :: Nil) 
+                if !v.pos.isRange && v.name == arg.name =>
+                  v
+            }
+          }
+          
+          referencesToVal foreach { ref =>
+            valDefs foreach { valDef =>
+              f(valDef.symbol, ref)
+              f(ref.symbol, valDef)
+            }
+          }
+               
         case t: TypeTree if t.original != null =>
     
           (t.original, t.tpe) match {
             case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
-
-                args1 zip args2 foreach {
-                  case (i: RefTree, tpe: TypeRef) => 
-                    f(tpe.sym, i)
-                  case _ => ()
-                }
-              case _ => ()
-            }
+              args1 zip args2 foreach {
+                case (i: RefTree, tpe: TypeRef) =>
+                  f(tpe.sym, i)
+                case _ => ()
+              }
+            case (ExistentialTypeTree(AppliedTypeTree(tpt, _), _), ExistentialType(_, underlying: TypeRef)) =>
+              f(underlying.sym, tpt)
+            case _ => ()
+          }
             
         case t: ClassDef if t.symbol != NoSymbol => 
           
@@ -284,11 +357,23 @@ trait TreeTraverser {
               f(sym, t)
             case _ => ()
           }
+          
+        case t: This if t.pos.isRange =>
+          f(t.symbol, t)
+
+        case t: This if t.pos.isRange =>
+          f(t.symbol, t)
 
         case _ => ()  
       }
         
       super.traverse(t)
+    }
+    
+    private def between(t1: Tree, t2: Tree) = {
+      if(t1.pos.isRange && t2.pos.isRange)
+        t1.pos.source.content.slice(t1.pos.end, t2.pos.start) mkString
+      else ""
     }
   }
 }

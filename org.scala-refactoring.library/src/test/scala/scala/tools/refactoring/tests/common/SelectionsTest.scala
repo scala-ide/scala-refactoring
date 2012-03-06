@@ -5,11 +5,11 @@
 package scala.tools.refactoring
 package tests.common
 
-import tests.util.{TestHelper, TreePath}
+import tests.util.TestHelper
 import org.junit.Assert._
 import common.Selections
 
-class SelectionsTest extends TestHelper with TreePath {
+class SelectionsTest extends TestHelper {
 
   import global._
   

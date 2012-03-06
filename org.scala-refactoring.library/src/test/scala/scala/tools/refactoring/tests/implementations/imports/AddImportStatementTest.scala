@@ -9,6 +9,7 @@ import implementations.AddImportStatement
 import tests.util.TestHelper
 import common.Change
 import org.junit.Assert._
+import scala.tools.refactoring.common.TextChange
 
 class AddImportStatementTest extends TestHelper {
   outer =>
@@ -31,6 +32,7 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       import whatever.`type`.Bla
+      
       object Main
     """)
   }
@@ -76,6 +78,23 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       import collection.mutable.ListBuffer
+      
+      object Main {val lb = ListBuffer(1)}
+    """)
+  }
+  
+  @Test
+  def importInEmptyWithPackage = {
+    addImport(("collection.mutable", "ListBuffer"), """
+      package xy
+      
+      object Main {val lb = ListBuffer(1)}
+    """,
+    """
+      package xy
+      
+      import collection.mutable.ListBuffer
+      
       object Main {val lb = ListBuffer(1)}
     """)
   }
@@ -135,36 +154,6 @@ class AddImportStatementTest extends TestHelper {
     """)
   }
 
-  @ScalaVersion(matches="2.8")
-  @Test
-  def importExistsBetweenPackages28 = {
-    addImport(("collection.mutable", "ListBuffer"), """
-      package nstd
-
-      import collection.mutable.HashMap
-
-      package pckg
-
-      import collection.mutable.HashMap
-      import collection.mutable.HashMap
-
-      object Main {}
-    """, """
-      package nstd
-
-      import collection.mutable.HashMap
-      import collection.mutable.ListBuffer
-
-      package pckg
-
-      import collection.mutable.HashMap
-      import collection.mutable.HashMap
-
-      object Main {}
-    """)
-  }
-
-  @ScalaVersion(matches="2.9")
   @Test
   def importExistsBetweenPackages = {
     addImport(("collection.mutable", "ListBuffer"), """
@@ -182,13 +171,12 @@ class AddImportStatementTest extends TestHelper {
       package nstd
 
       import collection.mutable.HashMap
+
       import collection.mutable.HashMap
       import collection.mutable.HashMap
       import collection.mutable.ListBuffer
 
       package pckg
-
-      
 
       object Main {}
     """)
@@ -203,6 +191,7 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       package just.some.pkg
+      
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -222,6 +211,7 @@ class AddImportStatementTest extends TestHelper {
       package just
       package some
       package pkg
+      
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -243,6 +233,7 @@ class AddImportStatementTest extends TestHelper {
       package just
       package some
       package pkg {
+      
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -270,6 +261,7 @@ class AddImportStatementTest extends TestHelper {
     """
       package just
       package some
+      
       import collection.mutable.ListBuffer
       package pkg1 {
 

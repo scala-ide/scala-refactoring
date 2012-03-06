@@ -37,10 +37,6 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
     
-    def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
-    
-    def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, NL)
-    
     def printParameterList(vparamss: List[List[ValDef]], alreadyHasParensInLayout: => Boolean)(implicit ctx: PrintingContext) = vparamss match {
       // no parameter list, not even an empty one
       case Nil => 
@@ -184,18 +180,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Select(tree: Select, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext) = {
       (qualifier, selector) match {
         
-        case (qualifier, name) if name.toString == "<init>" => 
+        case (qualifier, nme.CONSTRUCTOR | nme.PACKAGEkw | nme.unapply | nme.unapplySeq) => 
           p(qualifier)
         
-        case (qualifier, name) if name.toString == "package" => 
-          p(qualifier)
-        
-        case (qualifier: This, selector) if qualifier.qual.toString == "immutable" =>
-          Fragment(escapeScalaKeywordsForImport(tree.symbol.nameString))
-          
-        case (qualifier, selector) if (selector.toString == "unapply" || selector.toString == "unapplySeq") =>
-          p(qualifier)
-          
         case (_: Select | _: Ident | _: Block | _: Literal | _: Apply | _: This | _: Super, _) =>
           p(qualifier, after = ".") ++ Fragment(escapeScalaKeywordsForImport(tree.nameString))
           
@@ -230,7 +217,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun: Select, args) if fun.name.toString endsWith "_$eq" =>
           p(fun) ++ " = " ++ pp(args, before = "(", after = ")", separator = ", ")
           
-        case (fun, (arg @ Ident(name)) :: Nil) if name.toString == "_" =>
+        case (fun @ (_: Select | _: Ident), (arg @ Ident(nme.WILDCARD)) :: Nil) =>
           p(fun) ++ " " ++ p(arg)
           
         // the empty tree is an implicit parameter, so we mustn't print parenthesis
@@ -376,7 +363,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     override def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext) = {
         
-      if(pid.name.toString == "<empty>") {
+      if(pid.name == nme.EMPTY_PACKAGE_NAME) {
         pp(stats, separator = newline)
       } else {
         pp(pid :: stats, before = "package ", separator = newline)
@@ -433,7 +420,12 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           p(impl)
       }
       
-      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = ", ", after = "]") ++ body
+      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = ", ", after = "]") ++ body.ifNotEmpty {
+        case body if body.asText.startsWith("{") => 
+          Layout(" ") ++ body
+        case body => 
+          body
+      }
     }
     
     override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext) = {
@@ -579,7 +571,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Literal(tree: Literal, value: Constant)(implicit ctx: PrintingContext) = {
       
       if(value.tag == StringTag) {
-        Fragment("\""+ value.stringValue +"\"")
+        Fragment(value.escapedStringValue)
       } else if (value.isNumeric) {
         val suffix = value.tag match {
           case FloatTag => "f"
@@ -676,12 +668,19 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def MultipleAssignment(tree: MultipleAssignment, extractor: Tree, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext): Fragment = {
       extractor match {
         case EmptyTree =>
-          Layout("val (") ++ pp(values, separator = ", ") ++ ") = " ++ p(rhs)
+          Layout("val (") ++ pp(values, separator = ", ", after = ")") ++ " = " ++ p(rhs)
         case _ =>
           Layout("val ") ++ p(extractor) ++ " = " ++ p(rhs)
       }
     }
- 
+    
+    override def NameTree(tree: Tree)(implicit ctx: PrintingContext) = {
+      if (tree.pos.isTransparent) {
+        EmptyFragment
+      } else {
+        Fragment(tree.nameString)
+      }
+    }
     
     override def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext) = {
       tree.kind match {

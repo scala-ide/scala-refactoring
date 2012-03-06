@@ -11,6 +11,8 @@ import org.junit.Assert._
 import common.Change
 import collection.mutable.ListBuffer
 import util.CompilerProvider
+import scala.tools.refactoring.common.NewFileChange
+import scala.tools.refactoring.common.TextChange
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
@@ -21,6 +23,8 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
+
+  implicit def stringToName(name: String): global.Name = global.newTermName(name)
     
   /**
    * A project to test multiple compilation units. Add all 
@@ -38,7 +42,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     def this() = this(randomFileName())
       
     private val srcs = ListBuffer[(String, String)]()
-        
+
     implicit def addRefactoringFile(src: String) = new {
       def becomes(expected: String) {
         srcs += src → expected
@@ -60,15 +64,25 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     
     def apply(f: FileSet => List[String]) = assert(f(this))
     
+    val NewFile = ""
+
     def applyRefactoring(createChanges: FileSet => List[Change]) {
       
       val changes = createChanges(this)
       
-      val res = sources zip (sources map fileName) map {
+      val res = sources zip (sources map fileName) flatMap {
+        case (NewFile, name) =>
+          changes collect {
+            case nfc: NewFileChange => nfc.text
+          }
+
         case (src, name) => 
-          val changeSet = changes filter (_.file.name == name)
-          Change.applyChanges(changeSet, src)
-      }
+          val textFileChanges = changes collect {
+            case tfc: TextChange if tfc.sourceFile.file.name == name => tfc
+          }
+          Change.applyChanges(textFileChanges, src) :: Nil
+
+      } filterNot (_.isEmpty)
       
       assert(res)
     }

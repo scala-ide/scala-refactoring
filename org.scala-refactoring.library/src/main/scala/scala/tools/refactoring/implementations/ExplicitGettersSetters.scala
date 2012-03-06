@@ -43,11 +43,11 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring with common.
     else
       Modifiers(Flags.PARAMACCESSOR)
       
-    val privateField = selectedValue copy (mods = privateFieldMods, name = privateName)
+    val privateField = selectedValue copy (mods = privateFieldMods, name = newTermName(privateName))
     
     val getter = DefDef(
         mods = Modifiers(Flags.METHOD) withPosition (Flags.METHOD, NoPosition), 
-        name = publicName, 
+        name = newTermName(publicName), 
         tparams = Nil, 
         vparamss = Nil, 
         tpt = EmptyTree, 
@@ -56,9 +56,9 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring with common.
     
     val setter = DefDef(
         mods = Modifiers(Flags.METHOD) withPosition (Flags.METHOD, NoPosition), 
-        name = publicName +"_=",
+        name = newTermName(publicName +"_="),
         tparams = Nil,
-        vparamss = List(List(ValDef(Modifiers(Flags.PARAM), publicName, TypeTree(selectedValue.tpt.tpe), EmptyTree))), 
+        vparamss = List(List(ValDef(Modifiers(Flags.PARAM), newTermName(publicName), TypeTree(selectedValue.tpt.tpe), EmptyTree))), 
         tpt = EmptyTree,
         rhs = Block(
             Assign(

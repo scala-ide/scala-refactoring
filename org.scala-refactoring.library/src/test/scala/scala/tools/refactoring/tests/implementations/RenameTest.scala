@@ -15,11 +15,7 @@ class RenameTest extends TestHelper with TestRefactoring {
   outer =>
   
   def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new Rename with SilentTracing with GlobalIndexes {
-      val global = outer.global
-      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
-      val index = GlobalIndex(cuIndexes) 
-    }
+    val refactoring = new Rename with SilentTracing with TestProjectIndex
     val changes = performRefactoring(name)
   }.changes
   
@@ -158,7 +154,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("c"))
-    
+  
   @Test
   def renameMultiAssignment = new FileSet {
     """
@@ -180,6 +176,74 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("c"))
+
+  @Test  
+  def renameMultiAssignmentWithTA = new FileSet {
+    """
+    package renameMultiAssignment
+    class A {
+      def print {
+        val (/*(*/a: Int/*)*/, b) = (5, 6)
+        println(a + b)
+      }
+    }
+    """ becomes
+    """
+    package renameMultiAssignment
+    class A {
+      def print {
+        val (/*(*/c: Int/*)*/, b) = (5, 6)
+        println(c + b)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("c"))
+
+  @Test
+  def renameClassWithTypeParameters = new FileSet {
+    """
+    case class /*(*/Test/*)*/[A, B](a:A,b:B)
+    """ becomes
+    """
+    case class /*(*/Test1/*)*/[A, B](a:A,b:B)
+    """
+  } applyRefactoring(renameTo("Test1"))
+
+  @Test
+  def renameAbstractType = new FileSet {
+    """
+    trait O {
+      trait Property[+T]
+      type /*(*/Prop_Tp/*)*/[+Vl_Tpe] <: Property[Vl_Tpe]
+      def properties: Set[Prop_Tp[_]] = null.asInstanceOf[Set[Prop_Tp[_]]]
+    }
+    """ becomes
+    """
+    trait O {
+      trait Property[+T]
+      type /*(*/Prop_Tpe/*)*/[+Vl_Tpe] <: Property[Vl_Tpe]
+      def properties: Set[Prop_Tpe[_]] = null.asInstanceOf[Set[Prop_Tpe[_]]]
+    }
+    """
+  } applyRefactoring(renameTo("Prop_Tpe"))
+
+  @Test
+  def renameReferenceToOuterclass = new FileSet {
+    """
+    package renameReferenceToOuterclass
+    class /*(*/Foo/*)*/ {
+      class Bar {
+        def foo = Foo.this
+      }
+    }""" becomes
+    """
+    package renameReferenceToOuterclass
+    class /*(*/Blubb/*)*/ {
+      class Bar {
+        def foo = Blubb.this
+      }
+    }"""
+  } applyRefactoring(renameTo("Blubb"))
     
   @Test
   def renameDeconstructingAssignment = new FileSet {
@@ -913,7 +977,85 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("Bar"))
   
   @Test
-  def renameClassSelfTypeAnnotation= new FileSet {
+  def renameClassExplicitSelfTypeAnnotation= new FileSet {
+    """
+    package renameClassExplicitSelfTypeAnnotation
+    trait A
+    class /*(*/Foo/*)*/ {
+      self: Foo with A=>
+    }
+    """ becomes 
+    """
+    package renameClassExplicitSelfTypeAnnotation
+    trait A
+    class /*(*/Babar/*)*/ {
+      self: Babar with A=>
+    }
+    """
+  } applyRefactoring(renameTo("Babar"))
+  
+  @Test
+  def renameWithMultipleContextBounds = new FileSet {
+    """
+    package test
+    class Foo[T] {
+      def /*(*/bar/*)*/[A: Numeric: Foo] = ""
+    }
+    """ becomes
+    """
+    package test
+    class Foo[T] {
+      def /*(*/babar/*)*/[A: Numeric: Foo] = ""
+    }
+    """
+  } applyRefactoring(renameTo("babar"))
+
+  @Test
+  def renameClassWithThisConstuctorCall = new FileSet {
+    """
+    package renameClassWithThisConstuctorCall
+
+    class /*(*/Config/*)*/(sourcePaths: Set[String], outputDir: String = null) {
+     def this() = this(Set())
+    }
+    """ becomes
+    """
+    package renameClassWithThisConstuctorCall
+
+    class /*(*/ConfigX/*)*/(sourcePaths: Set[String], outputDir: String = null) {
+     def this() = this(Set())
+    }
+    """
+  } applyRefactoring(renameTo("ConfigX"))
+
+  @Test
+  def renameAbstractTypesInHierarchy = new FileSet {
+    """
+    abstract class A {
+      type /*(*/Foo/*)*/
+      abstract class B extends A {
+        type Foo
+        class C extends B {
+          type Foo = Unit
+        }
+      }
+    }
+    """ becomes
+    """
+    abstract class A {
+      type /*(*/ConfigX/*)*/
+      abstract class B extends A {
+        type ConfigX
+        class C extends B {
+          type ConfigX = Unit
+        }
+      }
+    }
+    """
+  } applyRefactoring(renameTo("ConfigX"))
+
+  @Test
+  def renameClassSelfTypeAnnotation = new FileSet {
     """
     package renameClassWithSelfTypeAnnotation
     class /*(*/Foo/*)*/ {
@@ -927,6 +1069,22 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("Bar"))
+  
+  @Test
+  def renameClassSelfTypeAnnotation2 = new FileSet {
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Foo/*)*/ {
+      self: Foo =>
+    }
+    """ becomes 
+    """
+    package renameClassWithSelfTypeAnnotation
+    class /*(*/Babar/*)*/ {
+      self: Babar =>
+    }
+    """
+  } applyRefactoring(renameTo("Babar"))
   
   @Test
   def renameMethodWithContextBound = new FileSet {

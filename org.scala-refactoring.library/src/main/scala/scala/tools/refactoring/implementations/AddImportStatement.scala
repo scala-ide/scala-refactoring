@@ -8,36 +8,21 @@ package implementations
 import common.{InteractiveScalaCompiler, Change}
 import transformation.TreeFactory
 import scala.tools.nsc.io.AbstractFile
+import scala.tools.refactoring.common.TextChange
 
-abstract class AddImportStatement extends Refactoring with TreeFactory with InteractiveScalaCompiler {
+abstract class AddImportStatement extends Refactoring with InteractiveScalaCompiler {
 
   val global: tools.nsc.interactive.Global
 
-  def addImport(file: AbstractFile, fqName: String): List[Change] = addImports(file, List(fqName))
+  def addImport(file: AbstractFile, fqName: String): List[TextChange] = addImports(file, List(fqName))
 
-  def addImports(file: AbstractFile, importsToAdd: Iterable[String]): List[Change] = {
+  def addImports(file: AbstractFile, importsToAdd: Iterable[String]): List[TextChange] = {
 
-    import global._
-    
-    val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
-      case (p, imports, others) =>
-        val SplitAtDot = "(.*)\\.(.*?)".r
-        val importTrees = importsToAdd.map {
-          case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
-        }.toList
-        p copy (stats = (imports ::: importTrees ::: others)) replaces p
-    })
-    
     val astRoot = abstractFileToTree(file)
-    
-    val changes = {
-      // first try it at the top level to avoid traversing
-      // the complete AST
-      addImportStatement |>
-      topdown(matchingChildren(addImportStatement))
-    } apply astRoot
 
-    refactor(changes.toList)
+    refactor((addImportTransformation(importsToAdd) apply astRoot).toList) collect {
+      case tc: TextChange => tc
+    }
   }
   
   @deprecated("Use addImport(file, ..) instead", "0.4.0")
@@ -49,4 +34,7 @@ abstract class AddImportStatement extends Refactoring with TreeFactory with Inte
   def addImport(selection: Selection, pkg: String, name: String): List[Change] = {
     addImport(selection.file, pkg +"."+ name)
   }
+  
+  @deprecated("Not needed anymore, don't override.", "0.4.0")
+  def getContentForFile(file: AbstractFile): Array[Char] = throw new UnsupportedOperationException
 }

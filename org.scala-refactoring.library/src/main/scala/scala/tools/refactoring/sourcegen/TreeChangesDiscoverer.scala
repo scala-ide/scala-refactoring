@@ -30,21 +30,32 @@ trait TreeChangesDiscoverer {
      * This method determines if a leaf-tree in the AST has been changed. It should not be used
      * for trees that enclose other ASTs because this would lead to unnecessarily large changes.
      */
-    def hasTreeInternallyChanged(t: Tree): Boolean = findOriginalTree(t) map (t → _) getOrElse { 
+    def hasTreeInternallyChanged(t: Tree): Boolean = {
+      
+      val originalTree = findOriginalTree(t)
+      
+      if(originalTree.isEmpty) {
         trace("original not found for tree %s", t)
         return true
-      } match {
+      }
+      
+      val changed = (t -> originalTree.get) match {
         case (t: NameTree, o: NameTree) => 
           t.nameString != o.nameString
         case (t: Literal, o: Literal) =>
           t.value != o.value
         case (t: Ident, o: Ident) =>
           t.nameString != o.nameString
+        case (t: This, o: This) =>
+          t.qual.toString != o.qual.toString
         case (t: Import, o: Import) =>
           t != o
         case _ => 
           false
       }
+      
+      changed
+    }
     
     /**
      * Checks whether a tree has any changed children. We don't fully compare 

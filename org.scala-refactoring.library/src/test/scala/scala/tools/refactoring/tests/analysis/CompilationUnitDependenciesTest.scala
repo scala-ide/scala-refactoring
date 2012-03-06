@@ -15,7 +15,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   
   private def assertTrees(expected: String, src: String, f: Tree => Seq[Tree]) {
     val tree = treeFrom(src)
-    val imports = f(tree).sortBy(_.toString)
+    val imports = f(tree).sortBy(_.toString).map(asString)
     assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n")) 
   }
   
@@ -510,7 +510,20 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
+  @ScalaVersion(matches="2.10")
   def renamedPackage = assertDependencies(
+    """java.util
+       java.util.Map""",
+    """
+      import java.{ lang => jl, util => ju }
+      trait Y {
+        def build(ignored : ju.Map[_, _])
+      }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.9")
+  def renamedPackage29 = assertDependencies(
     """java.ju.Map
        java.util""",
     """
@@ -530,8 +543,22 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
       """)
       
+  @ScalaVersion(matches="2.10")
   @Test
   def importFromPackageObject = assertDependencies(
+    """scala.collection.package.breakOut
+       scala.this.Predef.Map
+       scala.this.Predef.identity""",
+    """
+      import scala.collection.breakOut
+      object TestbreakOut {
+        val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
+      }
+      """)
+      
+  @ScalaVersion(matches="2.9")
+  @Test
+  def importFromPackageObject29 = assertDependencies(
     """scala.collection.`package`.breakOut
        scala.this.Predef.Map
        scala.this.Predef.identity""",
@@ -557,7 +584,19 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(matches="2.10")
   def importFromPackageObjectNeeded = assertNeededImports(
+    """scala.collection.package.breakOut""",
+    """
+      import scala.collection.breakOut
+      object TestbreakOut {
+        val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
+      }
+      """)
+
+  @Test
+  @ScalaVersion(matches="2.9")
+  def importFromPackageObjectNeeded29 = assertNeededImports(
     """scala.collection.`package`.breakOut""",
     """
       import scala.collection.breakOut
@@ -565,6 +604,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
       }
       """)
+
 
   @Test
   def somePackages = assertDependencies(

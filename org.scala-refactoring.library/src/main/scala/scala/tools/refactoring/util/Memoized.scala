@@ -47,7 +47,23 @@ object Memoized {
   }
   
   def apply[X, Z](toMem: X => Z): X => Z = {
-    on(identity[X])(toMem)
+    
+    val cache = new java.util.WeakHashMap[X, Z]
+    
+    { (x: X) =>
+      if(cache.containsKey(x)) {
+        val n = cache.get(x)
+        if(n == null) {
+          toMem(x)
+        } else {
+          n
+        }
+      } else {
+        val n = toMem(x)
+        cache.put(x, n)
+        n
+      }
+    }  
   }
 }
 
