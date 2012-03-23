@@ -322,13 +322,24 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     "C on line 2, Defg on line 3, this on line 3"
   } apply(allDeclarations)
   
+  @ScalaVersion(matches="2.9")
+  @Test
+  def allSymbolsInIndex29 = new FileSet {
+    """
+    trait Abc
+    class B(s: String)
+    """ becomes
+    "class B, class Object, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, trait ScalaObject, type AnyRef, type String, value s, value s"
+  } apply(allSymbols)
+  
+  @ScalaVersion(matches="2.10")
   @Test
   def allSymbolsInIndex = new FileSet {
     """
     trait Abc
     class B(s: String)
     """ becomes
-    "class B, class Object, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, trait ScalaObject, type AnyRef, type String, value s, value s"
+    "class B, class Object, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, type AnyRef, type String, value s, value s"
   } apply(allSymbols)
   
   @Test
