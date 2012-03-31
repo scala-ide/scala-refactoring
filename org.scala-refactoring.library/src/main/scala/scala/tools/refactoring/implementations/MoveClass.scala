@@ -8,7 +8,7 @@ import scala.tools.refactoring.transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.common.TextChange
 
-abstract class MoveClass extends MultiStageRefactoring with TreeFactory with analysis.Indexes with TreeExtractors with InteractiveScalaCompiler with CompilationUnitDependencies {
+abstract class MoveClass extends MultiStageRefactoring with TreeFactory with analysis.Indexes with TreeExtractors with InteractiveScalaCompiler with CompilationUnitDependencies with ImportsHelper {
 
   import global._
 
@@ -122,31 +122,8 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
     Right(movedClassChanges ++ otherFiles)
   }
 
-  private def addRequiredImportsForExtractedClass(toMove: Tree, targetPackageName: String) = traverseAndTransformAll {
-    locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
-      case (p, existingImports, others) =>
-            
-        val oi = new OrganizeImports {
-          val global: MoveClass.this.global.type = MoveClass.this.global
-            
-          object NeededImports extends Participant {
-            def apply(trees: List[Import]) = {
-              
-              val imps = neededImports(toMove) filterNot { imp =>
-                // We don't want to add imports for types that are
-                // children of `toMove`.
-                val declaration = index.declaration(imp.symbol)
-                declaration map (toMove.pos includes _.pos) getOrElse false
-              }
-              mkImportTrees(imps, targetPackageName)
-            }
-          }
-        }
-        // TODO: Use IDE settings
-        val imports = scala.Function.chain(oi.NeededImports :: oi.SortImports :: Nil)(existingImports)         
-        // When we move the whole file, we only want to add imports to the originating package
-        p copy (stats = imports ::: others) replaces p
-    }
+  private def addRequiredImportsForExtractedClass(toMove: Tree, targetPackageName: String) = {
+    addRequiredImports(Some(toMove), Some(targetPackageName))
   }
   
   /**

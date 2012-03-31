@@ -12,9 +12,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   outer =>
     
   def extractTrait(params: (String, String => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractTrait with SilentTracing {
-      val global = outer.global
-    }
+    val refactoring = new ExtractTrait with SilentTracing with TestProjectIndex
     val changes = performRefactoring(new refactoring.RefactoringParameters(params._1, params._2))
   }.changes
   
@@ -330,15 +328,96 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("FirstReverser"), (name) => name == "reverseFirst"))
   
   @Test
-  def foo {
-    val tree = treeFrom{
-      """
-      class Empty[A, B] {
-      def empty: List[A] = Nil
-      }
-      """
+  def withImportsMovedToTrait = new FileSet {
+    """
+    package extractTrait.withImportsMovedToTrait
+    import scala.math.abs
+    
+    class /*(*/LpNorms/*)*/(val vector: List[Int]) {
+      def l1 = vector.map(prepare).sum
+      def lInf = vector.map(prepare).max
+      def prepare(value: Int) = abs(value)
     }
-    Assert.assertFalse(tree.toString contains "<error>")
-  }
+    """ becomes
+    """
+    package extractTrait.withImportsMovedToTrait
+    
+    class /*(*/LpNorms/*)*/(val vector: List[Int]) extends Preparator {
+      def l1 = vector.map(prepare).sum
+      def lInf = vector.map(prepare).max
+    }
+    """
+    NewFile becomes
+    """
+    package extractTrait.withImportsMovedToTrait
+    
+    import scala.math.abs
+    
+    trait Preparator {
+      def prepare(value: Int) = abs(value)
+    }
+    """
+  } applyRefactoring(extractTrait(("Preparator"), (name) => name == "prepare"))
+  
+  @Test
+  def withImportsOnlyInClass = new FileSet {
+    """
+    package extractTrait.withImportsOnlyInClass
+    
+    import scala.math.abs
+    
+    class /*(*/Original/*)*/{
+      def l1(vector: List[Int]) = vector.map(prepare).sum
+      def lInf(vector: List[Int]) = vector.map(prepare).max
+      def prepare(value: Int) = abs(value)
+    }
+    """ becomes
+    """
+    package extractTrait.withImportsOnlyInClass
+    
+    import scala.math.abs
+    
+    class /*(*/Original/*)*/ extends LpNorms {
+      def prepare(value: Int) = abs(value)
+    }
+    """
+    NewFile becomes
+    """
+    package extractTrait.withImportsOnlyInClass
+    trait LpNorms {
+      this: Original =>
+      def l1(vector: List[Int]) = vector.map(prepare).sum
+      def lInf(vector: List[Int]) = vector.map(prepare).max
+    }
+    """
+  } applyRefactoring(extractTrait(("LpNorms"), (name) => name.startsWith("l")))
+  
+  @Test
+  def fromTrait = new FileSet {
+    """
+    package extractTrait.fromTrait
+    
+    trait /*(*/Original/*)*/{
+      def square(a: Int) = a*a
+    
+      def cube(a: Int) = a*a*a
+    }
+    """ becomes
+    """
+    package extractTrait.fromTrait
+    
+    trait /*(*/Original/*)*/ extends Squarify {
+    
+      def cube(a: Int) = a*a*a
+    }
+    """
+    NewFile becomes
+    """
+    package extractTrait.fromTrait
+    trait Squarify {
+      def square(a: Int) = a*a
+    }
+    """
+  } applyRefactoring(extractTrait(("Squarify"), (name) => name == "square"))
   
 }
