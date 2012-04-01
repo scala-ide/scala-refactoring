@@ -326,5 +326,4 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """
   } applyRefactoring(moveConstructorToCompanion)
 
-  
 }

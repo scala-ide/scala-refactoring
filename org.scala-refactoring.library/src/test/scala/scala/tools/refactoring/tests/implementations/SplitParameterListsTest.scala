@@ -221,7 +221,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
       package splitParameterLists.twoPartiallyCurriedMethods
       class A {
         def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
-        def first = addaddaddaddaddaddadd(1)(2) _
+        def first = add(1)(2) _
         def second = add(1)(2)(3, 4)(5) _
         val result1 = first(3, 4)(5)(6)(7, 8)
         val result2 = second(6)(7, 8)
@@ -244,7 +244,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
     """
       package splitParameterLists.repeatedlyPartiallyApplied
       class A {
-        def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int) = a + b + c + d + e
+        def /*(*/add/*)*/(a: Int)(b: Int)(c: Int, d: Int)(e: Int)(f: Int)(g: Int, h: Int)(i: Int)(j: Int) = a + b + c + d + e
         def firstPartial = add(1)(2) _
         def secondPartial = firstPartial(3, 4)(5)
         def thirdPartial = secondPartial(6)(7, 8)

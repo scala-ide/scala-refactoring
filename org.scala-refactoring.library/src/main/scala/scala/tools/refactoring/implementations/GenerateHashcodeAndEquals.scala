@@ -1,12 +1,6 @@
 package scala.tools.refactoring
 package implementations
 
-import common.Change
-import scala.tools.refactoring.transformation.TreeFactory
-import scala.reflect.generic.ModifierFlags
-import scala.tools.refactoring.common.PimpedTrees
-import scala.reflect.generic.Flags
-
 /**
  * Refactoring that generates hashCode and equals implementations 
  * following the recommendations given in chapter 28 of

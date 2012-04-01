@@ -1,11 +1,9 @@
 package scala.tools.refactoring
 package implementations
 
+import scala.tools.refactoring.MultiStageRefactoring
+
 import common.Change
-import scala.tools.refactoring.transformation.TreeFactory
-import scala.reflect.generic.ModifierFlags
-import scala.tools.refactoring.common.PimpedTrees
-import scala.reflect.generic.Flags
 
 /**
  * Baseclass for refactorings that generate class-level source based on

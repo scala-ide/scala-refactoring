@@ -235,14 +235,16 @@ class RenameTest extends TestHelper with TestRefactoring {
       class Bar {
         def foo = Foo.this
       }
-    }""" becomes
+    }
+    """ becomes
     """
     package renameReferenceToOuterclass
     class /*(*/Blubb/*)*/ {
       class Bar {
         def foo = Blubb.this
       }
-    }"""
+    }
+    """
   } applyRefactoring(renameTo("Blubb"))
     
   @Test

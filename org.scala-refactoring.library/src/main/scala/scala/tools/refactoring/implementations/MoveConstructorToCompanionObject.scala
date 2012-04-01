@@ -95,13 +95,13 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
     val createApplyMethod = isCompanionObjectExisting &> refactorExistingCompanionObject |> insertCompanionObject
 
     def constructorCallFilter(calls: List[Tree]) = filter {
-      case s: Select => calls contains s
+      case Apply(s @ Select(_, _), _)=> calls contains s
     }
 
     def redirectSingleConstructorCall = transform {
-      case s: Select => {
-        val newSelect = Select(Ident(prep.name), nme.apply)
-        newSelect
+      case a: Apply=> {
+        val applySelect = Select(Ident(prep.name), nme.apply)
+        Apply(applySelect, a.args) replaces a
       }
     }
 

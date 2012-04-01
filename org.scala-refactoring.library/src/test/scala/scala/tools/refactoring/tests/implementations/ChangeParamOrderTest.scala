@@ -271,8 +271,8 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
       package changeParamOrder.repeatedlyPartiallyApplied
       class A {
-        def /*(*/add/*)*/(b: Int), a: Int)(c: Int, e: Int), d: Int)(h: Int, g: Int, f: Int) = a + b + c + d + e
-        def firstPartial = addaddaddaddaddaddadd(2, 1) _
+        def /*(*/add/*)*/(b: Int, a: Int)(c: Int, e: Int, d: Int)(h: Int, g: Int, f: Int) = a + b + c + d + e
+        def firstPartial = add(2, 1) _
         def secondPartial = firstPartial(3, 5, 4)
         val result = secondPartial(8, 7, 6)
       }
@@ -292,7 +292,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
       package changeParamOrder.aliasToVal
       class A {
-        def /*(*/add/*)*/(b: Int), a: Int)(c: Int, e: Int, d: Int) = a + b + c + d + e
+        def /*(*/add/*)*/(b: Int, a: Int)(c: Int, e: Int, d: Int) = a + b + c + d + e
         val alias = add _
         val result = alias(2, 1)(3, 5, 4)
       }

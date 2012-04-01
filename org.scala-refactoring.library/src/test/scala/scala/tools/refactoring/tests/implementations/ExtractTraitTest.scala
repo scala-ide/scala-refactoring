@@ -13,7 +13,17 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     
   def extractTrait(params: (String, String => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExtractTrait with SilentTracing with TestProjectIndex
-    val changes = performRefactoring(new refactoring.RefactoringParameters(params._1, params._2))
+    def filter(member: refactoring.global.ValOrDefDef) = params._2(member.symbol.nameString)
+    val changes = performRefactoring(new refactoring.RefactoringParameters(params._1, filter))
+  }.changes
+  
+  def extractTraitByParamListLength(params: (String, Int => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new ExtractTrait with SilentTracing with TestProjectIndex
+    def filter(member: refactoring.global.ValOrDefDef) = member match {
+      case valdef: refactoring.global.ValDef => false
+      case defdef: refactoring.global.DefDef => defdef.vparamss.headOption.map(vparams => params._2(vparams.size)).getOrElse(false)
+    }
+    val changes = performRefactoring(new refactoring.RefactoringParameters(params._1, filter))
   }.changes
   
   @Test
@@ -419,5 +429,31 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "square"))
+  
+  @Test
+  def overloadedMethods = new FileSet {
+    """
+    package extractTrait.overloadedMethods
+    
+    class /*(*/Overloaded/*)*/ {
+      def overloaded(a: Int) = a
+      def overloaded(a: Int, b: Int) = a+b
+    }
+    """ becomes
+    """
+    package extractTrait.overloadedMethods
+    
+    class /*(*/Overloaded/*)*/  extends OverloadedTrait {
+      def overloaded(a: Int) = a
+    }
+    """
+    NewFile becomes
+    """
+    package extractTrait.overloadedMethods
+    trait OverloadedTrait {
+      def overloaded(a: Int, b: Int) = a+b
+    }
+    """
+  } applyRefactoring(extractTraitByParamListLength("OverloadedTrait", (nrParams) => nrParams == 2))
   
 }

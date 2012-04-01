@@ -5,6 +5,13 @@ import common.Change
 import scala.tools.refactoring.common.PimpedTrees
 import scala.tools.refactoring.transformation.TreeFactory
 
+/**
+ * Refactoring that implements the ProductN trait for a class.
+ * Given N selected class parameters this refactoring generates
+ * the methods needed to implement the ProductN trait. This includes
+ * implementations for hashCode and equals.
+ * @see GenerateHashcodeAndEquals
+ */
 abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
 
   import global._
