@@ -1190,6 +1190,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
+  @Ignore // FIXME: https://issues.scala-lang.org/browse/SI-5603
   @Test
   def testEarlyDef() = {
     val tree = treeFrom("""

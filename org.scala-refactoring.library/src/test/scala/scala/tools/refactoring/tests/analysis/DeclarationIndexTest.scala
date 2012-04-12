@@ -247,7 +247,21 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     assertDeclarationOfSelection("""lazy var x$lzy: Int = 5""", tree)
   }
 
-    
+  @ScalaVersion(matches="2.9")
+  @Test
+  def referencesToTypes29() = {
+    val tree =  """      
+      object L {
+        def go[T](t: /*(*/ T /*)*/) = {
+          t: T
+        }
+      }
+      """
+    assertReferencesOfSelection("""T (51, 52), T (77, 78)""", tree)
+    assertDeclarationOfSelection("""type T>: Nothing <: Any""", tree)
+  }
+
+  @ScalaVersion(matches="2.10")
   @Test
   def referencesToTypes() = {
     val tree =  """      
@@ -258,7 +272,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       }
       """
     assertReferencesOfSelection("""T (51, 52), T (77, 78)""", tree)
-    assertDeclarationOfSelection("""type T>: Nothing <: Any""", tree)
+    assertDeclarationOfSelection("""type T""", tree)
   }
   
   @Test

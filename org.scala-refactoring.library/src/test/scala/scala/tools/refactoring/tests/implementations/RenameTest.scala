@@ -721,11 +721,17 @@ class RenameTest extends TestHelper with TestRefactoring {
   def renameClassWithBackTicks = new FileSet {
     """
     package renameClassWithBackTicks
-    /*(*/  class `A` { new `A` } /*)*/
+    /*(*/
+    class `A` {
+      val a = new `A`
+    } /*)*/
     """ becomes
     """
     package renameClassWithBackTicks
-    /*(*/  class `X Y` { new `X Y` } /*)*/
+    /*(*/
+    class `X Y` {
+      val a = new `X Y`
+    } /*)*/
     """
   } applyRefactoring(renameTo("`X Y`"))
 
