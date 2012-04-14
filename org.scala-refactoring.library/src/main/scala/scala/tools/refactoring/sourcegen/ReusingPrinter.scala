@@ -586,7 +586,12 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           } else if (isExistingBodyAllOnOneLine) {
             preBody ++ ppi(body, separator = newline) ++ r
           } else {
-            preBody ++ newline ++ ppi(body, separator = newline) ++ r
+            val body_ = ppi(body, separator = newline)
+            if(body_.leading.contains("{")) {
+              preBody ++ body_ ++ r  
+            } else {
+              preBody ++ newline ++ body_ ++ r
+            }
           }
       }
     }
