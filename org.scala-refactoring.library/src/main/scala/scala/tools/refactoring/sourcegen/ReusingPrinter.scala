@@ -501,9 +501,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         } isDefined
 
         if(isNextStmtEmptyPackage) {
-          p(pid)
+          p(pid, before = "package" ++ Requisite.Blank)
         } else {
-          p(pid, after = newline)
+          p(pid, before = "package" ++ Requisite.Blank, after = newline)
         }
       }
 
