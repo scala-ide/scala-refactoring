@@ -577,7 +577,7 @@ trait PimpedTrees {
         mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
         
       case TemplateExtractor(params, earlyBody, parents, self, body) =>
-        params.flatten ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
+        params.flatten ::: earlyBody ::: parents ::: self :: body
   
       case t @ ValDef(ModifierTree(mods), name, tpt, rhs) if !t.pos.isTransparent =>
         mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
@@ -617,7 +617,7 @@ trait PimpedTrees {
         qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
         
       case BlockExtractor(stats) =>
-        removeCompilerTreesForMultipleAssignment(stats)
+        stats
         
       case Return(expr) =>
         expr :: Nil
