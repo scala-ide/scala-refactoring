@@ -155,8 +155,11 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case body: Bind =>
           l ++ p(nameOrig) ++ p(body, before = "(", after = ")") ++ r
           
-        case _ =>
+        case body: Typed =>
           l ++ p(nameOrig) ++ p(body) ++ r    
+          
+        case _ =>
+          l ++ p(nameOrig) ++ p(body, before = " @ ") ++ r    
       }
     }
 
