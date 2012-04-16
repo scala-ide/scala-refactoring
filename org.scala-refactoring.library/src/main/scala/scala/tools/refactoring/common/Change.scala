@@ -68,7 +68,20 @@ object Change {
     val changes = ch collect {
       case tc: TextChange => tc
     }
-    (source /: changes.sortBy(-_.to)) { (src, change) =>
+    
+    val sortedChanges = changes.sortBy(-_.to)
+    
+    /* Test if there are any overlapping text edits. This is
+       not necessarily an error, but Eclipse doesn't allow 
+       overlapping text edits, and this helps us catch them
+       in our own tests. */ 
+    sortedChanges.sliding(2).toList foreach {
+      case List(TextChange(_, from, _, _), TextChange(_, _, to, _)) =>
+        assert(from >= to)
+      case _ => ()
+    }
+    
+    (source /: sortedChanges) { (src, change) =>
       src.substring(0, change.from) + change.text + src.substring(change.to)
     }
   }
