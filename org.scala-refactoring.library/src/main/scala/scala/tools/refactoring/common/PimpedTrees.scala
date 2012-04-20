@@ -8,7 +8,6 @@ package common
 import tools.nsc.symtab.Flags
 import tools.nsc.util.RangePosition
 import tools.nsc.ast.parser.Tokens
-import reflect.ClassManifest.fromClass
 import tools.nsc.symtab.Flags
 import scala.tools.nsc.Global
 import util.Memoized
@@ -127,7 +126,9 @@ trait PimpedTrees {
     def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && /*t.pos.point == p.point &&*/ t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
     def samePos(o: Tree): Boolean = samePos(o.pos)
-    def samePosAndType(o: Tree): Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
+    def samePosAndType(o: Tree): Boolean = {
+      samePos(o.pos) && (o.getClass.getName == t.getClass.getName)
+    }
         
     def collect[T](f: PartialFunction[Tree, T]) = { 
       val hits = new ListBuffer[T]
