@@ -74,4 +74,19 @@ trait CommonPrintUtils {
       f.asText
     }
   }
+
+  /**
+   * When extracting source code from the file via a tree's position,
+   * it depends on the tree type whether we can use the position's
+   * start or point.
+   * 
+   * @param t The tree that will be replaced.
+   * @param p The position to adapt. This does not have to be the position of t.
+   */
+  def adjustedStartPosForSourceExtraction(t: Tree, p: Position): Position = t match {
+    case _: Select | _: New  if t.pos.isRange && t.pos.start > t.pos.point =>
+      p withStart (p.start min p.point)
+    case _ => 
+      p
+  }
 }

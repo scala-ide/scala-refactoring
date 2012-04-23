@@ -133,7 +133,8 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
           }
         }, Some(source)) 
         trace("Change: %s", f.center.asText)
-        (source.file, tree, replaceRange, f)
+        val pos = adjustedStartPosForSourceExtraction(tree, replaceRange)
+        (source.file, tree, pos, f)
     } toList
   }
     
