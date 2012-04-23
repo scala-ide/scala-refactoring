@@ -54,7 +54,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       } else {
         trace("Not in change set, keep original code.")
         val end = endPositionAtEndOfSourceFile(t.pos)
-        Fragment(t.pos.source.content.slice(t.pos.start, end).mkString)
+        val start = adjustedStartPosForSourceExtraction(t, t.pos).start
+        Fragment(t.pos.source.content.slice(start, end).mkString)
       }
         
       val indentedFragment = {
