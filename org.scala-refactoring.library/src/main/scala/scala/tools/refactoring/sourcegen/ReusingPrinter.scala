@@ -54,7 +54,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       } else {
         trace("Not in change set, keep original code.")
         val end = endPositionAtEndOfSourceFile(t.pos)
-        Fragment(t.pos.source.content.slice(t.pos.start, end).mkString)
+        val start = adjustedStartPosForSourceExtraction(t, t.pos).start
+        Fragment(t.pos.source.content.slice(start, end).mkString)
       }
         
       val indentedFragment = {
@@ -155,8 +156,11 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case body: Bind =>
           l ++ p(nameOrig) ++ p(body, before = "(", after = ")") ++ r
           
-        case _ =>
+        case body: Typed =>
           l ++ p(nameOrig) ++ p(body) ++ r    
+          
+        case _ =>
+          l ++ p(nameOrig) ++ p(body, before = " @ ") ++ r    
       }
     }
 
@@ -501,9 +505,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         } isDefined
 
         if(isNextStmtEmptyPackage) {
-          p(pid)
+          p(pid, before = "package" ++ Requisite.Blank)
         } else {
-          p(pid, after = newline)
+          p(pid, before = "package" ++ Requisite.Blank, after = newline)
         }
       }
 
@@ -586,7 +590,12 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           } else if (isExistingBodyAllOnOneLine) {
             preBody ++ ppi(body, separator = newline) ++ r
           } else {
-            preBody ++ newline ++ ppi(body, separator = newline) ++ r
+            val body_ = ppi(body, separator = newline)
+            if(body_.leading.contains("{")) {
+              preBody ++ body_ ++ r  
+            } else {
+              preBody ++ newline ++ body_ ++ r
+            }
           }
       }
     }

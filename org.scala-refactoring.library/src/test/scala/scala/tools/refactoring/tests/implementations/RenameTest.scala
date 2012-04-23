@@ -20,6 +20,36 @@ class RenameTest extends TestHelper with TestRefactoring {
   }.changes
   
   @Test
+  def renameOverlapping = new FileSet {
+    """
+      package renameOverlapping
+
+      case class /*(*/Die/*)*/(top: Int, right: Int, front: Int) {
+        import Transform._ 
+    
+        def transform(how: Boolean) = how match {
+          case true => Die(front, right, top)  
+          case false => Die(front, right, top)
+        }
+      }
+      object Transform
+    """ becomes
+    """
+      package renameOverlapping
+
+      case class /*(*/Dice/*)*/(top: Int, right: Int, front: Int) {
+        import Transform._ 
+    
+        def transform(how: Boolean) = how match {
+          case true => Dice(front, right, top)  
+          case false => Dice(front, right, top)
+        }
+      }
+      object Transform
+    """
+  } applyRefactoring(renameTo("Dice")) 
+  
+  @Test
   def renameRecursive = new FileSet {
     """
       package renameRecursive
@@ -721,11 +751,17 @@ class RenameTest extends TestHelper with TestRefactoring {
   def renameClassWithBackTicks = new FileSet {
     """
     package renameClassWithBackTicks
-    /*(*/  class `A` { new `A` } /*)*/
+    /*(*/
+    class `A` {
+      val a = new `A`
+    } /*)*/
     """ becomes
     """
     package renameClassWithBackTicks
-    /*(*/  class `X Y` { new `X Y` } /*)*/
+    /*(*/
+    class `X Y` {
+      val a = new `X Y`
+    } /*)*/
     """
   } applyRefactoring(renameTo("`X Y`"))
 

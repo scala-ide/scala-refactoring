@@ -20,7 +20,7 @@ class CompilerInstance {
     
     val settings = new Settings
     
-    val scalaObjectSource = Class.forName("scala.ScalaObject").getProtectionDomain.getCodeSource
+    val scalaObjectSource = Class.forName("scala.Unit").getProtectionDomain.getCodeSource
       
     // is null in Eclipse/OSGI but luckily we don't need it there
     if(scalaObjectSource != null) {

@@ -53,6 +53,20 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   } applyRefactoring(moveTo("hehe"))
   
   @Test
+  def moveFromDefaultPackage = new FileSet {
+    """
+      import java.util.ArrayList
+
+      class ToMove
+    """ becomes
+    """
+      package a.b
+
+      class ToMove
+    """
+  } applyRefactoring(moveTo("a.b"))
+  
+  @Test
   def moveToParent = new FileSet {
     """
       package a.b.c

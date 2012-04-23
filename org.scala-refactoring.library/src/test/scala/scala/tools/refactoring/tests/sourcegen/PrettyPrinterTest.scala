@@ -1238,6 +1238,7 @@ object Aua {
 }"""
   }
 
+  @Ignore
   @Test
   def testEarlyDef() = {
     val tree = treeFrom("""

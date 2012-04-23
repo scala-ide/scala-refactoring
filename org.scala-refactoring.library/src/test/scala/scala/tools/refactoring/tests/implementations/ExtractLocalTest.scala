@@ -834,5 +834,29 @@ object ExtractMethod2 {
    }
    """
  } applyRefactoring(extract("extracted"))
+  
+ @Test
+ def extractFromConstructor = new FileSet {
+   """
+   object ExtractFromHere {
+     import java.net.URL
+     
+     val pluginXmlUrl = {
+       new URL(/*(*/""/*)*/)
+     }
+   }
+   """ becomes
+   """
+   object ExtractFromHere {
+     import java.net.URL
+     
+     val url = /*(*/""
+     
+     val pluginXmlUrl = {
+       new URL(url/*)*/)
+     }
+   }
+   """
+ } applyRefactoring(extract("url"))
 
 }

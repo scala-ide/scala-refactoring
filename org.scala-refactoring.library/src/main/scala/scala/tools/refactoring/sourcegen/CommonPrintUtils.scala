@@ -59,21 +59,34 @@ trait CommonPrintUtils {
         tpe.toString
     } 
   }
-  
         
-      def balanceParens(f: Fragment) = Fragment {
-        val txt = f.toLayout.withoutComments // TODO also without strings, etc.
-        val opening = txt.count(_ == '(')
-        val closing = txt.count(_ == ')')
-        if(opening > closing && closing > 0) {
-          f.asText.reverse.replaceFirst("\\)", ")" * (opening - closing + 1)).reverse
-        } else if(opening > closing) {
-          f.asText + (")" * (opening - closing))
-        } else if(opening < closing) {
-          ("(" * (closing - opening)) + f.asText
-        } else {
-          f.asText
-        }
-      }
+  def balanceParens(f: Fragment) = Fragment {
+    val txt = f.toLayout.withoutComments // TODO also without strings, etc.
+    val opening = txt.count(_ == '(')
+    val closing = txt.count(_ == ')')
+    if(opening > closing && closing > 0) {
+      f.asText.reverse.replaceFirst("\\)", ")" * (opening - closing + 1)).reverse
+    } else if(opening > closing) {
+      f.asText + (")" * (opening - closing))
+    } else if(opening < closing) {
+      ("(" * (closing - opening)) + f.asText
+    } else {
+      f.asText
+    }
+  }
 
+  /**
+   * When extracting source code from the file via a tree's position,
+   * it depends on the tree type whether we can use the position's
+   * start or point.
+   * 
+   * @param t The tree that will be replaced.
+   * @param p The position to adapt. This does not have to be the position of t.
+   */
+  def adjustedStartPosForSourceExtraction(t: Tree, p: Position): Position = t match {
+    case _: Select | _: New  if t.pos.isRange && t.pos.start > t.pos.point =>
+      p withStart (p.start min p.point)
+    case _ => 
+      p
+  }
 }

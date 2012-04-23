@@ -71,7 +71,7 @@ trait TreeChangesDiscoverer {
       
       findOriginalTree(newTree) map (oldTree => Pair(oldTree, children(oldTree))) match {
         case None =>
-          Predef.error("should never happen")
+          sys.error("should never happen")
         case Some(Pair(oldTree, oldChildren)) =>
           
           /* Comparing a flat list of children of trees won't let us catch a 
@@ -158,16 +158,18 @@ trait TreeChangesDiscoverer {
       case Nil => superTrees
       case t :: ts =>
       
-        def mergeOverlappingTrees(ts: List[Tree]): List[Tree] = ts match {
+        def mergeOverlappingTrees(t: Tree, ts: List[Tree]): List[Tree] = ts match {
           case Nil => t :: Nil
-          case x :: xs if properlyIncludes(x, t) => x :: xs
-          case x :: xs if properlyIncludes(t, x) => t :: xs
-          case x :: xs => x :: mergeOverlappingTrees(xs)
+          case x :: xs if properlyIncludes(x, t) => 
+            x :: mergeOverlappingTrees(x, xs)
+          case x :: xs if properlyIncludes(t, x) =>
+            t :: mergeOverlappingTrees(t, xs)
+          case x :: xs => x :: mergeOverlappingTrees(t, xs)
         }
       
-        findSuperTrees(ts, mergeOverlappingTrees(superTrees))
+        findSuperTrees(ts, mergeOverlappingTrees(t, superTrees))
     }
     
-    findSuperTrees(ts, Nil)
+    findSuperTrees(ts, Nil).distinct
   }
 }

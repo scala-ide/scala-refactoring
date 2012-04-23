@@ -21,7 +21,7 @@ trait TestRefactoring extends TestHelper {
       
       val global = TestRefactoring.this.global
         
-      val index = {
+      override val index = {
         val cuIndexes = project.trees map (_.pos.source.file) map { file => 
           global.unitOfFile(file).body
         } map CompilationUnitIndex.apply
