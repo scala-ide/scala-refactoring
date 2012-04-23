@@ -235,6 +235,7 @@
         </repository>
       </repositories>
     </profile>
+    <profile>
       <id>scala-2.9.x</id>
       <repositories>
         <repository>
