@@ -241,7 +241,7 @@
           <id>scala-toolchain-2.9.x</id>
           <name>Scala Toolchain 2.9.x p2 repository</name>
           <layout>p2</layout>
-          <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-29x</url>
+          <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-2.0.x</url>
         </repository>
       </repositories>
      </profile>
