@@ -1,7 +1,4 @@
 #!/bin/sh
 
-# mvn -Dscala.version=2.9.0 clean package $*
-# mvn -Dscala.version=2.9.0-1 clean package $*
-# mvn -Dscala.version=2.9.1 clean package $*
-# mvn -Dscala.version=2.9.2-SNAPSHOT clean package $*
-mvn -Dscala.version=2.10.0-SNAPSHOT clean package $*
+mvn -Dscala.version=2.9.3-SNAPSHOT -P scala-2.9.x clean package $*
+mvn -Dscala.version=2.10.0-SNAPSHOT -P scala-trunk clean package $*
