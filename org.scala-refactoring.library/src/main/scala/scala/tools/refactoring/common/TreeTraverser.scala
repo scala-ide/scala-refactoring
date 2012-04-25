@@ -259,7 +259,7 @@ trait TreeTraverser {
           }
                
         case t: TypeTree if t.original != null =>
-    
+          
           (t.original, t.tpe) match {
             case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
               args1 zip args2 foreach {
@@ -269,6 +269,8 @@ trait TreeTraverser {
               }
             case (ExistentialTypeTree(AppliedTypeTree(tpt, _), _), ExistentialType(_, underlying: TypeRef)) =>
               f(underlying.sym, tpt)
+            case (t, TypeRef(_, sym, _)) => 
+              f(sym, t)
             case _ => ()
           }
             
@@ -327,7 +329,7 @@ trait TreeTraverser {
           f(t.symbol, t)
         case t: RefTree =>
           f(t.symbol, t)
-        case t: TypeTree =>
+        case t: TypeTree if t.original == null =>
           
           def handleType(typ: Type): Unit = typ match {
             case RefinedType(parents, _) =>

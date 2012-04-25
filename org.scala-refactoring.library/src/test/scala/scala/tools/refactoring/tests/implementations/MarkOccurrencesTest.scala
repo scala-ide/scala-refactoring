@@ -317,7 +317,7 @@ class MarkOccurrencesTest extends TestHelper {
       }
     }
     """)
-
+    
   @Test
   def referenceToOverridenTypesInSubclasses = markOccurrences("""
     abstract class A {
@@ -351,6 +351,20 @@ class MarkOccurrencesTest extends TestHelper {
 
         }
       }
+    }
+    """)
+     
+  @Test
+  def typeAscriptionTraitMember = markOccurrences("""
+    trait ScalaIdeRefactoring {
+      trait /*(*/Refactoring/*)*/
+      val refactoring: Refactoring
+    }
+    """,
+    """
+    trait ScalaIdeRefactoring {
+      trait /*(*/###########/*)*/
+      val refactoring: ###########
     }
     """)
 }
