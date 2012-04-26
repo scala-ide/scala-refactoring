@@ -47,7 +47,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
         mkRenamedSymTree(s, newName)
       case t: TypeTree => 
         mkRenamedTypeTree(t, newName, prepared.selectedTree.symbol)
-      case t @ Literal(Constant(value: TypeRef)) if t.value.tag == ClassTag =>
+      case t @ Literal(Constant(value: TypeRef)) if isClassTag(t.value) =>
         val OriginalSymbol = prepared.selectedTree.symbol
         val newType = value map {
           case TypeRef(pre, OriginalSymbol, args) =>

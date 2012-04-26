@@ -208,13 +208,13 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun, args @ (Function(_, _: Match) :: _)) =>
           p(fun) ++ pp(args, before = " ")
           
-        case (fun: Select, args @ ((arg1: Apply) :: _)) if fun.name.toString endsWith "_$eq" =>
+        case (fun: Select, args @ ((arg1: Apply) :: _)) if fun.symbol.isSetter =>
           p(fun) ++ " = " ++ pp(args)
           
-        case (fun: Select, arg :: Nil) if fun.name.toString endsWith "_$eq" =>
+        case (fun: Select, arg :: Nil) if fun != null && fun.symbol.isSetter => 
           p(fun) ++ " = " ++ p(arg)
           
-        case (fun: Select, args) if fun.name.toString endsWith "_$eq" =>
+        case (fun: Select, args) if fun.symbol.isSetter =>
           p(fun) ++ " = " ++ pp(args, before = "(", after = ")", separator = ", ")
           
         case (fun @ (_: Select | _: Ident), (arg @ Ident(nme.WILDCARD)) :: Nil) =>
@@ -657,6 +657,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Ident(tree: Ident, name: Name)(implicit ctx: PrintingContext) = {
       if (tree.symbol.isSynthetic && name.toString.contains("$"))
         Fragment("_")
+      // Some identifiers start with an unnecessary <root> ident:
+      else if (tree.symbol.nameString == "<root>") 
+        EmptyFragment
       else  
         Fragment(name.toString)
     }

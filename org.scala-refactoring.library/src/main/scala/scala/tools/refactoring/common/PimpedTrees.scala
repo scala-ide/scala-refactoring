@@ -971,6 +971,12 @@ trait PimpedTrees {
       t
     }
   }
+  
+  def isClassTag(c: Constant): Boolean = {
+    // On 2.10 c.tag == ClazzTag
+    // On 2.9  c.tag == ClassTag
+    c.tpe.toString.matches("(java\\.lang\\.)?Class\\[.*")
+  }
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
@@ -989,6 +995,7 @@ trait PimpedTrees {
   
   val NoBlock = NotInstanceOf[Block]
   val NoPackageDef = NotInstanceOf[PackageDef]
+  val NoFunction = NotInstanceOf[Function]
  
   /**
    * A SourceLayoutTree can be used to insert arbitrary text into the code,
