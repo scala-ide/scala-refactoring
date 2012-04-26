@@ -392,7 +392,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil) =>
           l ++ p(fun) ++ p(arg) ++ r
           
-        case (TypeApply(receiver: Select, _), arg :: Nil) if !arg.isInstanceOf[Function] =>
+        case (fun @ TypeApply(receiver: Select, _), NoFunction(arg) :: Nil) if receiver != null =>
           if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
             l ++ p(fun) ++ p(arg) ++ r
           } else {
@@ -845,7 +845,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          * */
         trace("Literal tree is empty { }")
         Fragment((l ++ layout(tree.pos.start, tree.pos.end)(tree.pos.source) ++ r).asText)
-      } else if(value.tag == ClassTag) {
+      } else if(isClassTag(value)) {
         val tpe = value.tpe match {
           case TypeRef(_, _, arg :: Nil) =>
             arg

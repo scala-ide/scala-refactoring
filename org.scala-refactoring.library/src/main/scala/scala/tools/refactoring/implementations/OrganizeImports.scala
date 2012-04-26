@@ -43,7 +43,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   object CollapseImports extends Participant {
     def apply(trees: List[Import]) = {
       trees.foldRight(Nil: List[Import]) { 
-        case (imp: Import, x :: xs) if asSelectorString(imp.expr) == asSelectorString(x.expr) => 
+        case (imp: Import, x :: xs) if createText(imp.expr) == createText(x.expr) => 
           x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
         case (imp: Import, xs) => 
           imp :: xs
@@ -80,12 +80,18 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   }
   
   object SortImports extends Participant {
+    
+    def asText(t: Tree) = {
+      val blankTree = topdown(setNoPosition) apply duplicateTree(t) getOrElse t
+      createText(blankTree)
+    }
+    
     def apply(trees: List[Import]) = {
       trees.sortBy {
-        case Import(expr, selector :: Nil) if !wildcardImport(selector) => 
-          expr.toString + "." + selector.name.toString
-        case Import(expr, selectors) => 
-          expr.toString
+        case i @ Import(expr, selector :: Nil) if !wildcardImport(selector) => 
+          asText(expr) + "." + selector.name.toString
+        case i @ Import(expr, selectors) => 
+          asText(expr)
       }
     }
   }
