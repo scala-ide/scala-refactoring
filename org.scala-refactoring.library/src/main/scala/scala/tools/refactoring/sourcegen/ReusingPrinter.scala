@@ -707,12 +707,18 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         // It looks like we're in a "multiple assignment", then we don't print
         // the modifiers to avoid getting val (val x, val y) = ...
         case Select(qual, _) if qual.symbol.isSynthetic =>
-          nameTree :: Nil    
+          nameTree :: Nil
         case _ =>
           mods ::: nameTree :: Nil
       }
       
-      l ++ pp(modsAndName, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r    
+      // Handle right-associate methods, where there's a synthetic value that holds
+      // the argument that gets passed. Strange, but seems to work..
+      if(tree.symbol.isSynthetic && !tree.pos.includes(rhs.pos)) {
+        p(tpt) ++ p(rhs) ++ r
+      } else {
+        l ++ pp(modsAndName, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r            
+      }
     }
 
     override def DefDef(tree: DefDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
