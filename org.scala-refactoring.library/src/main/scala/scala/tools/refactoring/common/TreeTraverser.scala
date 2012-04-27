@@ -91,30 +91,44 @@ trait TreeTraverser {
     }
     
     def handleAnnotations(as: List[AnnotationInfo]) {
-      as foreach { annotation =>
-
-        annotation.atp match {
-          case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
-            val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
-            traverse(tree)
-          case _ =>
-        }
-
-        // Annotations with parameters defined in Java need this:
-        annotation.assocs.unzip._2 collect {
-          case LiteralAnnotArg(Constant(value)) => value
-        } foreach {
-          case tpe @ TypeRef(_, sym, _) =>
-            /* The `annotation.pos` is wrong, we should instead extract
-             * the correct positions from the source code. */
-            fakeSelectTreeFromType(tpe, sym, annotation.pos) match {
-              case t: Select => traverse(t)
+      
+      if(isScalaVersion("2.9")) {
+        as foreach { 
+          case annotation =>
+    
+            annotation.atp match {
+              case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
+                val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
+                traverse(tree)
+              case _ =>
+            }
+    
+            // Annotations with parameters defined in Java need this:
+            annotation.assocs.unzip._2 collect {
+              case LiteralAnnotArg(Constant(value)) => value
+            } foreach {
+              case tpe @ TypeRef(_, sym, _) =>
+                /* The `annotation.pos` is wrong, we should instead extract
+                 * the correct positions from the source code. */
+                fakeSelectTreeFromType(tpe, sym, annotation.pos) match {
+                  case t: Select => traverse(t)
+                  case _ => ()
+                }
               case _ => ()
             }
-          case _ => ()
+    
+            annotation.args foreach traverse
         }
-
-        annotation.args foreach traverse
+      } else {
+        
+        type FutureAnnotationInfo = AnnotationInfo {
+          // Starting from Scala 2.10, we can access the original tree
+          def original: Tree
+        }
+        
+        as foreach { 
+          case annotation: FutureAnnotationInfo => traverse(annotation.original)
+        }
       }
     }
     

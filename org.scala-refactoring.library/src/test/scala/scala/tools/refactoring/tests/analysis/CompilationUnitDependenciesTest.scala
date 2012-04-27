@@ -856,5 +856,18 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
       class Foo @Documented() (i: Int)
     """)
+    
+    
+  @Test
+  def annotationOnField = assertDependencies(
+    "java.lang.annotation.Documented",
+    """
+      import java.lang.annotation.Documented
+
+      class Foo {
+        @Documented() 
+        def xx(i: Int) = i
+      }
+    """)
 }
 

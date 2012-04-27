@@ -972,6 +972,10 @@ trait PimpedTrees {
     }
   }
   
+  def isScalaVersion(version: String) = {
+    scala.util.Properties.versionString.contains(version)
+  }
+  
   def isClassTag(c: Constant): Boolean = {
     // On 2.10 c.tag == ClazzTag
     // On 2.9  c.tag == ClassTag

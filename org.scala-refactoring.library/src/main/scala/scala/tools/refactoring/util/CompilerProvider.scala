@@ -45,8 +45,6 @@ class CompilerInstance {
 
 trait TreeCreationMethods {
   
-  private def isScala(version: String) = scala.util.Properties.versionString.contains(version)
-    
   val global: scala.tools.nsc.interactive.Global
   
   val randomFileName = {
