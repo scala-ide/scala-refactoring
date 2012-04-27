@@ -790,4 +790,32 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
+
+  @Test
+  @ScalaVersion(matches="2.10")
+  def annotationTypeDef = new FileSet {
+    
+    addToCompiler("ann.scala", """
+      package pkg
+      object annotations {
+        type Doc = java.lang.annotation.Documented
+      }
+    """)
+    
+    """
+    package whatever
+    import pkg.annotations.Doc
+    
+    @Doc
+    class Documented
+    """ becomes
+    """
+    package whatever
+    
+    import pkg.annotations.Doc
+    
+    @Doc
+    class Documented
+    """
+  } applyRefactoring organize
 }
