@@ -230,7 +230,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "number"))
   
   @Test
-  //TODO: fix parenthesis
   def addSelfTypeForClassMemberAccess = new FileSet {
     """
     package extractTrait.addSelfTypeForClassMemberAccess
@@ -242,7 +241,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     """
     package extractTrait.addSelfTypeForClassMemberAccess
     
-    class /*(*/Foo/*)*/(val shared: Int) {) extends Squarify
+    class /*(*/Foo/*)*/(val shared: Int) extends Squarify {
     }
     """
     NewFile becomes

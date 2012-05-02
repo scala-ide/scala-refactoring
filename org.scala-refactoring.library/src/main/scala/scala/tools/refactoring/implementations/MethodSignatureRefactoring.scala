@@ -25,12 +25,9 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
   case class AffectedDefs(originals: List[AffectedDef], partials: List[AffectedDef])
   
   /**
-   * defdef is the selected method that should be refactored and affectedDefs
-   * contains all DefDefs and ValDefs that have to join the refactoring. These includes
-   * all partial applications of defdef and all its versions in the inheritance hierarchy
-   * (and all this recursively).
+   * defdef is the selected method that should be refactored.
    */
-  case class MethodSignaturePrepResult(defdef: DefDef/*, affectedDefs: AffectedDefs*/)
+  case class MethodSignaturePrepResult(defdef: DefDef)
   type PreparationResult = MethodSignaturePrepResult
   
   def prepare(s: Selection) = {
@@ -42,8 +39,16 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
   
   override def perform(selection: Selection, prep: PreparationResult, originalParams: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     
-    val selectedDefDefSymbol = index.positionToSymbol(prep.defdef.pos).head // TODO: unsafe! - ensure we get a DefDef symbol!
-    
+    val selectedDefDefSymbol = {
+      val symbols = index.positionToSymbol(prep.defdef.pos)
+      symbols.filter(_.isMethod).headOption getOrElse {return Left(RefactoringError("failed to find the symbol of the selected method"))}
+    }
+   
+   /*
+   * affectedDefs contains all DefDefs and ValDefs that have to join the refactoring. These includes
+   * all partial applications of the selected defdef and all its versions in the inheritance hierarchy
+   * (and all this recursively)
+   */
     val affectedDefs = {
       val originalSymbols = index.overridesInClasses(selectedDefDefSymbol)
       val originals = originalSymbols map (AffectedDef(_, prep.defdef.vparamss.size))
@@ -82,7 +87,7 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
       filter {
         case apply: Apply => isPartialApply(apply)
       }
-  }
+    }
     
     def refactorCalls(callFilter: Symbol => Transformation[Tree, Tree])(applySymbol: Symbol, params: RefactoringParameters) = traverseApply {
       matchingChildren {

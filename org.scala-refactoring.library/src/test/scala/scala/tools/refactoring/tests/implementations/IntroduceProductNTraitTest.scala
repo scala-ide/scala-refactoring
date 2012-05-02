@@ -16,11 +16,12 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
       val index = GlobalIndex(cuIndexes)
     }
-    val changes = performRefactoring(refactoring.RefactoringParameters(params._1, params._2))
+    import refactoring.global.ValDef
+    val paramsFilter = params._2.map(strFilter => (param: ValDef) => strFilter(param.name.toString))
+    val changes = performRefactoring(refactoring.RefactoringParameters(params._1, paramsFilter))
   }.changes
   
   @Test
-  // TODO: fix parenthesis after Product1[String]
   def product1Simple = new FileSet {
     """
     package introduceProductNTrait.product1Simple
@@ -30,7 +31,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
     """
     package introduceProductNTrait.product1Simple
     
-    class /*(*/Foo/*)*/(val param: String) extends Product1[String]) {
+    class /*(*/Foo/*)*/(val param: String) extends Product1[String] {
       def _1() = {
         param
       }
@@ -55,7 +56,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(false, None))
   
   @Test
-  // TODO: fix parenthesis after Product2[String, Int]
   def product2Simple = new FileSet {
     """
     package introduceProductNTrait.product2Simple
@@ -65,7 +65,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
     """
     package introduceProductNTrait.product2Simple
     
-    class /*(*/Foo/*)*/(val p1: String, val p2: Int) extends Product2[String, Int]) {
+    class /*(*/Foo/*)*/(val p1: String, val p2: Int) extends Product2[String, Int] {
       def _1() = {
         p1
       }
@@ -128,7 +128,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(true, Some(s => s == "p")))
   
   @Test
-  // TODO: fix parenthesis after Product1[Int]
   def nonPublicClassParams = new FileSet {
     """
     package introduceProductNTrait.nonPublicClassParams
@@ -138,7 +137,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
     """
     package introduceProductNTrait.nonPublicClassParams
     
-    class /*(*/Foo/*)*/(val immutable: Int, var mutable: Int, nonpublic: Int) extends Product1[Int]) {
+    class /*(*/Foo/*)*/(val immutable: Int, var mutable: Int, nonpublic: Int) extends Product1[Int] {
       def _1() = {
         immutable
       }

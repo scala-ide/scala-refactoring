@@ -109,13 +109,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
     
     def printTemplate(tpl: Template, printExtends: Boolean)(implicit ctx: PrintingContext) = {
-      (tpl, orig(tpl)) match {
-    
-        case (t @ TemplateExtractor(params, earlyBody, parents, self, Nil), _) =>
-          val _params = params.headOption map (pms => pp(pms, separator = ", ", before = "(", after = ")")) getOrElse EmptyFragment
-          val _parents = pp(parents, before = if (printExtends && ! l.asText.contains("extends")) Requisite.Blank ++ "extends" ++ Requisite.Blank else "", separator = " with ")
-          l ++ _params ++ pp(earlyBody) ++ _parents ++ p(self) ++ r
-        
+            (tpl, orig(tpl)) match {
         case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, origSelf, origBody)) =>
           
           lazy val isExistingBodyAllOnOneLine = {
@@ -151,18 +145,22 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           } ++ p(self)
           
           if(origBody.isEmpty && origSelf.isEmpty && !body.isEmpty) {
-            val alreadyHasBodyInTheCode = r.matches("(?ms).*\\{.*\\}.*") 
-            val trailingLayout = if(alreadyHasBodyInTheCode) NoLayout else r
-            
-            val openingBrace = " {"+ NL + indentation
-            val closingBrace = NL + indentation +"}"
+            val openingBrace = " {" + NL + indentation
+            val closingBrace = NL + indentation + "}"
             val bodyResult = ppi(body, separator = newline)
             
-            preBody ++ trailingLayout ++ openingBrace ++ bodyResult ++ closingBrace
+            preBody ++ openingBrace ++ bodyResult ++ closingBrace
           } else if (isExistingBodyAllOnOneLine) {
             preBody ++ ppi(body, separator = newline) ++ r
+          } else if (body.isEmpty){
+            preBody ++ r
           } else {
-            preBody ++ newline ++ ppi(body, separator = newline) ++ r
+            val body_ = ppi(body, separator = newline)
+            if(body_.leading.contains("{")) {
+              preBody ++ body_ ++ r  
+            } else {
+              preBody ++ newline ++ body_ ++ r
+            }
           }
       }
     }

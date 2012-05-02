@@ -1315,9 +1315,7 @@ class A(a: Int) {
           } else {
             t
           }
-        case t => 
-          println(t)
-          t
+        case t => t
       })) apply ast
 
     assertEquals("""

@@ -28,25 +28,6 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
       mkApply(parameters = params, body = List(constructorCall), typeParameters = prep.tparams) setPos NoPosition
     }
 
-    lazy val companionObject = {
-      val impl = Template(Nil, emptyValDef, List(makeApply(prep.name, constructor)))
-      val companionObject = ModuleDef(NoMods, prep.name, impl)
-      companionObject
-    }
-
-    val enclosingDefTree = {
-      val owner = prep.symbol.owner
-      owner match {
-        case s: Symbol if s.isPackageClass => {
-          val enclosingPackageWithDeclarationSymbol = owner.ownerChain.dropWhile(s => index.declaration(s.companionModule).isEmpty).head
-          index.declaration(enclosingPackageWithDeclarationSymbol.companionModule).get
-        }
-        case s: Symbol if s.isModuleClass =>
-          index.declaration(s.companionModule).get
-        case _ => index.declaration(owner).get
-      }
-    }
-    
     def companionObjectFilter(companionSymbol: Symbol) = filter {
       case m: ModuleDef if (m.hasSymbol) => m.symbol == companionSymbol
     }
@@ -67,14 +48,25 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
       }
     }
 
-    val enclosingFilter = filter {
-      case tree: Tree if tree.hasSymbol && tree.symbol == enclosingDefTree.symbol => true
+    lazy val companionObject = {
+      val impl = Template(Nil, emptyValDef, List(makeApply(prep.name, constructor)))
+      val companionObject = ModuleDef(NoMods, prep.name, impl)
+      companionObject
     }
 
-    val isCompanionObjectExisting = predicate {
-      (t: Tree) => prep.symbol.companionModule != NoSymbol
+    val enclosingDefTree = {
+      val owner = prep.symbol.owner
+      owner match {
+        case s: Symbol if s.isPackageClass => {
+          val enclosingPackageWithDeclarationSymbol = owner.ownerChain.dropWhile(s => index.declaration(s.companionModule).isEmpty).head
+          index.declaration(enclosingPackageWithDeclarationSymbol.companionModule).get
+        }
+        case s: Symbol if s.isModuleClass =>
+          index.declaration(s.companionModule).get
+        case _ => index.declaration(owner).get
+      }
     }
-
+    
     val createCompanionObject = transform {
       case packageDef @ PackageDef(pid, stats) => 
         PackageDef(pid, companionObject :: stats) replaces packageDef
@@ -86,16 +78,24 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
         ValDef(mods, name, tpt, Block(companionObject :: stats, expr) replaces b) replaces valdef
       case moduleDef @ ModuleDef(mods, name, t @ Template(parents, self, body)) => 
         ModuleDef(mods, name, Template(parents, self, companionObject :: body) replaces t) replaces moduleDef
-        
     }
     
+    val enclosingFilter = filter {
+      case tree: Tree if tree.hasSymbol && tree.symbol == enclosingDefTree.symbol => true
+    }
+
     val insertCompanionObject = topdown {
       enclosingFilter &> createCompanionObject |> id
     }
+    
+    val isCompanionObjectExisting = predicate {
+      (t: Tree) => prep.symbol.companionModule != NoSymbol
+    }
+
     val createApplyMethod = isCompanionObjectExisting &> refactorExistingCompanionObject |> insertCompanionObject
 
     def constructorCallFilter(calls: List[Tree]) = filter {
-      case Apply(s @ Select(_, _), _)=> calls contains s
+      case Apply(s @ Select(_, _), _) => calls contains s
     }
 
     def redirectSingleConstructorCall = transform {
