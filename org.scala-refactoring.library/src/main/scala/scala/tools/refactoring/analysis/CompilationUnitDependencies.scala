@@ -34,6 +34,7 @@ trait CompilationUnitDependencies {
           case Select(Ident(names.scala), names.Predef) => false
           case Select(This(Scala), names.Predef) => false
           case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
+          case qual if qual.nameString == "ClassTag" => false
           case _ => true
         }
       }

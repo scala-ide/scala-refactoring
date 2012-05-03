@@ -8,7 +8,6 @@ package common
 import tools.nsc.symtab.Flags
 import tools.nsc.util.RangePosition
 import tools.nsc.ast.parser.Tokens
-import reflect.ClassManifest.fromClass
 import tools.nsc.symtab.Flags
 import scala.tools.nsc.Global
 import util.Memoized
@@ -127,7 +126,9 @@ trait PimpedTrees {
     def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && /*t.pos.point == p.point &&*/ t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
     def samePos(o: Tree): Boolean = samePos(o.pos)
-    def samePosAndType(o: Tree): Boolean = samePos(o.pos) && fromClass(o.getClass).equals(fromClass(t.getClass))
+    def samePosAndType(o: Tree): Boolean = {
+      samePos(o.pos) && (o.getClass.getName == t.getClass.getName)
+    }
         
     def collect[T](f: PartialFunction[Tree, T]) = { 
       val hits = new ListBuffer[T]
@@ -577,7 +578,7 @@ trait PimpedTrees {
         mods ::: (NameTree(name) setPos t.namePosition) :: impl :: Nil
         
       case TemplateExtractor(params, earlyBody, parents, self, body) =>
-        params.flatten ::: earlyBody ::: parents ::: self :: removeCompilerTreesForMultipleAssignment(body)
+        params.flatten ::: earlyBody ::: parents ::: self :: body
   
       case t @ ValDef(ModifierTree(mods), name, tpt, rhs) if !t.pos.isTransparent =>
         mods ::: (NameTree(name) setPos t.namePosition) :: tpt :: rhs :: Nil
@@ -617,7 +618,7 @@ trait PimpedTrees {
         qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
         
       case BlockExtractor(stats) =>
-        removeCompilerTreesForMultipleAssignment(stats)
+        stats
         
       case Return(expr) =>
         expr :: Nil
@@ -1004,6 +1005,16 @@ trait PimpedTrees {
       t
     }
   }
+  
+  def isScalaVersion(version: String) = {
+    scala.util.Properties.versionString.contains(version)
+  }
+  
+  def isClassTag(c: Constant): Boolean = {
+    // On 2.10 c.tag == ClazzTag
+    // On 2.9  c.tag == ClassTag
+    c.tpe.toString.matches("(java\\.lang\\.)?Class\\[.*")
+  }
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
@@ -1022,6 +1033,7 @@ trait PimpedTrees {
   
   val NoBlock = NotInstanceOf[Block]
   val NoPackageDef = NotInstanceOf[PackageDef]
+  val NoFunction = NotInstanceOf[Function]
  
   /**
    * A SourceLayoutTree can be used to insert arbitrary text into the code,

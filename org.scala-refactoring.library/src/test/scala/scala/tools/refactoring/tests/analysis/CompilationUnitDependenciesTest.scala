@@ -104,15 +104,35 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
       
   @Test
+  @ScalaVersion(matches="2.10")
   def objectType = assertDependencies(
-    """scala.xml.QNode""",
+    """<root>.scala.xml.QNode""",
     """
       import scala.xml._
       class MNO { var no: QNode.type = null }
       """)
 
   @Test
+  @ScalaVersion(matches="2.9")
+  def objectType29 = assertDependencies(
+    """scala.xml.QNode""",
+    """
+      import scala.xml._
+      class MNO { var no: QNode.type = null }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.10")
   def objectTypeRequiresImport = assertNeededImports(
+    """<root>.scala.xml.QNode""", 
+    """
+      import scala.xml._
+      class MNO { var no: QNode.type = null }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.9")
+  def objectTypeRequiresImport29 = assertNeededImports(
     """scala.xml.QNode""", 
     """
       import scala.xml._
@@ -543,20 +563,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
       """)
       
-  @ScalaVersion(matches="2.10")
-  @Test
-  def importFromPackageObject = assertDependencies(
-    """scala.collection.package.breakOut
-       scala.this.Predef.Map
-       scala.this.Predef.identity""",
-    """
-      import scala.collection.breakOut
-      object TestbreakOut {
-        val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
-      }
-      """)
-      
-  @ScalaVersion(matches="2.9")
   @Test
   def importFromPackageObject29 = assertDependencies(
     """scala.collection.`package`.breakOut
@@ -583,18 +589,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
       """)
 
-  @Test
-  @ScalaVersion(matches="2.10")
-  def importFromPackageObjectNeeded = assertNeededImports(
-    """scala.collection.package.breakOut""",
-    """
-      import scala.collection.breakOut
-      object TestbreakOut {
-        val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
-      }
-      """)
-
-  @Test
   @ScalaVersion(matches="2.9")
   def importFromPackageObjectNeeded29 = assertNeededImports(
     """scala.collection.`package`.breakOut""",
@@ -814,8 +808,36 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
     
   @Test
+  def implicitDefImports  = assertNeededImports(
+    "", """class ImplicitDef {
+
+      val readBuffer = Array.ofDim[Byte](1024)
+      val dataId: (Byte, Byte) = readBuffer.slice(0, 2)
+
+      implicit def arrayTo2Tuple[T](a: Array[T]): (T, T) = {
+        (a(0), a(1))
+      }
+    }""")
+    
+  @Test
+  @ScalaVersion(matches="2.10")
   def implicitDef = assertDependencies(
-    "scala.this.Predef.byteArrayOps",
+    """ClassTag.Byte
+       scala.this.Predef.byteArrayOps""",
+    """class ImplicitDef {
+
+      val readBuffer = Array.ofDim[Byte](1024)
+      val dataId: (Byte, Byte) = readBuffer.slice(0, 2)
+
+      implicit def arrayTo2Tuple[T](a: Array[T]): (T, T) = {
+        (a(0), a(1))
+      }
+    }""")
+
+  @Test
+  @ScalaVersion(matches="2.9")
+  def implicitDef29 = assertDependencies(
+    """scala.this.Predef.byteArrayOps""",
     """class ImplicitDef {
 
       val readBuffer = Array.ofDim[Byte](1024)
@@ -833,6 +855,19 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       import java.lang.annotation.Documented
 
       class Foo @Documented() (i: Int)
+    """)
+    
+    
+  @Test
+  def annotationOnField = assertDependencies(
+    "java.lang.annotation.Documented",
+    """
+      import java.lang.annotation.Documented
+
+      class Foo {
+        @Documented() 
+        def xx(i: Int) = i
+      }
     """)
 }
 

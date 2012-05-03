@@ -54,7 +54,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       } else {
         trace("Not in change set, keep original code.")
         val end = endPositionAtEndOfSourceFile(t.pos)
-        Fragment(t.pos.source.content.slice(t.pos.start, end).mkString)
+        val start = adjustedStartPosForSourceExtraction(t, t.pos).start
+        Fragment(t.pos.source.content.slice(start, end).mkString)
       }
         
       val indentedFragment = {
@@ -214,8 +215,11 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case body: Bind =>
           l ++ p(nameOrig) ++ p(body, before = "(", after = ")") ++ r
           
-        case _ =>
+        case body: Typed =>
           l ++ p(nameOrig) ++ p(body) ++ r    
+          
+        case _ =>
+          l ++ p(nameOrig) ++ p(body, before = " @ ") ++ r    
       }
     }
 
@@ -388,7 +392,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil) =>
           l ++ p(fun) ++ p(arg) ++ r
           
-        case (TypeApply(receiver: Select, _), arg :: Nil) if !arg.isInstanceOf[Function] =>
+        case (fun @ TypeApply(receiver: Select, _), NoFunction(arg) :: Nil) if receiver != null =>
           if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
             l ++ p(fun) ++ p(arg) ++ r
           } else {
@@ -566,9 +570,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         } isDefined
 
         if(isNextStmtEmptyPackage) {
-          p(pid)
+          p(pid, before = "package" ++ Requisite.Blank)
         } else {
-          p(pid, after = newline)
+          p(pid, before = "package" ++ Requisite.Blank, after = newline)
         }
       }
 
@@ -730,12 +734,18 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         // It looks like we're in a "multiple assignment", then we don't print
         // the modifiers to avoid getting val (val x, val y) = ...
         case Select(qual, _) if qual.symbol.isSynthetic =>
-          nameTree :: Nil    
+          nameTree :: Nil
         case _ =>
           mods ::: nameTree :: Nil
       }
       
-      l ++ pp(modsAndName, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r    
+      // Handle right-associate methods, where there's a synthetic value that holds
+      // the argument that gets passed. Strange, but seems to work..
+      if(tree.symbol.isSynthetic && !tree.pos.includes(rhs.pos)) {
+        p(tpt) ++ p(rhs) ++ r
+      } else {
+        l ++ pp(modsAndName, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r            
+      }
     }
 
     override def DefDef(tree: DefDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
@@ -841,7 +851,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          * */
         trace("Literal tree is empty { }")
         Fragment((l ++ layout(tree.pos.start, tree.pos.end)(tree.pos.source) ++ r).asText)
-      } else if(value.tag == ClassTag) {
+      } else if(isClassTag(value)) {
         val tpe = value.tpe match {
           case TypeRef(_, _, arg :: Nil) =>
             arg

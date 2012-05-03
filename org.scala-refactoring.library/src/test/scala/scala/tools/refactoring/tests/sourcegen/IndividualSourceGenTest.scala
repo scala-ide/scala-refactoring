@@ -1261,7 +1261,7 @@ class A(a: Int) {
     val str = """
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       def foo(f: Int): Boolean = {
         if((f == 0)) fail
         else false
@@ -1278,7 +1278,7 @@ class A(a: Int) {
     assertEquals("""
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       def foo(f: Int): Boolean = {
         if((f == 0)) fail()
         else false
@@ -1286,13 +1286,13 @@ class A(a: Int) {
     }
     """, common.Change.applyChanges(refactor(result.toList), str))
   }
-  
+
   @Test
   def testCopy4Variation() {
     val str = """
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       def foo(f: Int): Boolean = {
         if((f == 0)) fail()
         else false
@@ -1304,19 +1304,24 @@ class A(a: Int) {
     val result = topdown(matchingChildren(
       transform {
         case t: DefDef => t.copy()
-        case t: Apply if (t.fun.nameString == "fail") =>
-          val s = t.symbol.fullName
-          val qual = s.substring(0, s.lastIndexOf("."))
-          val select = Select(
-            qualifier = Ident(name = newTypeName(qual)),
-            name = t.fun.asInstanceOf[Select].name)
-          t.copy(fun = select) setPos t.pos
+        case t: Apply =>
+          if (t.fun.nameString == "fail") {
+            val s = t.symbol.fullName
+            val qual = s.substring(0, s.lastIndexOf("."))
+            val select = Select(
+              qualifier = Ident(name = newTypeName(qual)),
+              name = t.fun.asInstanceOf[Select].name)
+            t.copy(fun = select) setPos t.pos 
+          } else {
+            t
+          }
+        case t => t
       })) apply ast
 
     assertEquals("""
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       
       def foo(f: Int): Boolean = {
       if((f == 0)) abc.primitive.fail()
