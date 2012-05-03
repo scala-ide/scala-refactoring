@@ -20,7 +20,7 @@ abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
   override def sourceGeneration(selectedParams: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters) = {
     val superGeneration = super.sourceGeneration(selectedParams, preparationResult, refactoringParams)
 
-    def mkProjections() = {
+    val projections = {
       def makeElemProjection(elem: ValDef, pos: Int) = {
         val body = List(Ident(elem.name))
         mkDefDef(name = "_" + pos, body = body)
@@ -28,16 +28,14 @@ abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
 
       selectedParams.zipWithIndex.map(t => makeElemProjection(t._1, t._2 + 1))
     }
-
-    val projections = mkProjections
     
     val arity = selectedParams.length
     val paramsTypenames = selectedParams.map(v => v.tpt.nameString)
-    val productParentName = newTermName("Product" + arity + "[" + paramsTypenames.mkString(", ") + "]")
+    val productParent = Ident(newTermName("Product" + arity + "[" + paramsTypenames.mkString(", ") + "]"))
     
-    def addProductTrait = transform {
-      case t @ Template(parents, self, body) => Template(parents:::List(Ident(productParentName)), self, projections:::body) replaces t
-    }
+    def addProductTrait = transform ({
+      case t @ Template(parents, self, body) => (Template(parents:::List(productParent), self, projections:::body)) replaces t
+    })
     
     superGeneration &> addProductTrait
   }
