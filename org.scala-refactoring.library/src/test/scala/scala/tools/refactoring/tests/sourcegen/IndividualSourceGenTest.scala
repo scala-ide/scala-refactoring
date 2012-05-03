@@ -702,14 +702,15 @@ class Foo5
     """, generateText(removeAuxiliaryTrees apply tree get))
     
     assertEquals(0, createChanges(List(tree)).size)
-  }
-  
+  } 
+
   @Test
   def annotation(): Unit = {
     
     val tree = treeFrom("""
 import java.lang.String
-
+import scala.annotation.StaticAnnotation
+        
 class RunWith(c: Class[_]) extends StaticAnnotation
 
 /*(*/  /*)*/
@@ -720,7 +721,8 @@ class Test
       
     assertEquals("""
 import java.lang.String
-
+import scala.annotation.StaticAnnotation
+        
 class RunWith(c: Class[_]) extends StaticAnnotation
 
 /*(*/  /*)*/
