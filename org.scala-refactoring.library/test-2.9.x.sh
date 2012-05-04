@@ -1,0 +1,1 @@
+mvn -P scala-2.9.x -Dgpg.skip=true clean test
