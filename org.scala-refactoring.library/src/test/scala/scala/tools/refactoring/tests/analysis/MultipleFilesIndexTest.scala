@@ -13,8 +13,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
 
   import global._
   
-  var index: IndexLookup = GlobalIndex(Nil)
-  
+  var index: IndexLookup = EmptyIndex
   def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {
     ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos != NoPosition) map conversion sortWith(_ < _) mkString ", ")
   }
