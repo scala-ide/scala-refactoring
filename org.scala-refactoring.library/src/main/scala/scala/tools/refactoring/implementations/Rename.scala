@@ -20,9 +20,14 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
   
   def prepare(s: Selection) = {
     s.selectedSymbolTree match {
+      
+      // Has been renamed.. also check for a matching importselector that did the rename
+      case Some(t: RefTree) if t.name != t.symbol.name =>
+        Right(PreparationResult(t, true))
+        
       case Some(t) =>
-        val isLocalRename = (t.symbol.isPrivate || t.symbol.isLocal) && !  t.symbol.hasFlag(Flags.ACCESSOR)
-        Right(PreparationResult(t,isLocalRename))
+        val isLocalRename = (t.symbol.isPrivate || t.symbol.isLocal) && !t.symbol.hasFlag(Flags.ACCESSOR)
+        Right(PreparationResult(t, isLocalRename))
       case None => Left(PreparationError("no symbol selected found"))
     }
   }

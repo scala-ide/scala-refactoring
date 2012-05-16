@@ -67,11 +67,8 @@ trait CompilationUnitDependencies {
         /* When importing from a package object, e.g. scala.sys.`package`.error, the `package` select
          * doesn't have a position. So we "skip" this package object and continue with the underlying
          * select, which might again reveal a range position. 
-         * 
-         * If we find out that we need that underlying select, we return the original selected tree on
-         * the package object.
-         * */
-        findDeepestNeededSelect(underlying) map (_ => selected)
+         */
+        findDeepestNeededSelect(underlying)
         
       case s @ Select(qual, name) if s.pos.isRange && (!qual.pos.isRange || qual.pos.isTransparent) =>
         Some(s) filter isImportReallyNeeded

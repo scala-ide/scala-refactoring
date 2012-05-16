@@ -818,4 +818,37 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     class Documented
     """
   } applyRefactoring organize
+
+  def qualifiedImportFromPackageObject = new FileSet {
+    addToCompiler("package.scala", """
+      package test
+
+      package object pkg {
+        def f_pkg() = 1
+      }    
+    """)
+    
+    """
+      package test2
+      
+      import test.pkg
+      
+      class ScalaClass {
+        def f() {
+          pkg.f_pkg
+        }
+      }
+    """ becomes
+    """
+      package test2
+      
+      import test.pkg
+      
+      class ScalaClass {
+        def f() {
+          pkg.f_pkg
+        }
+      }
+    """
+  } applyRefactoring organize
 }
