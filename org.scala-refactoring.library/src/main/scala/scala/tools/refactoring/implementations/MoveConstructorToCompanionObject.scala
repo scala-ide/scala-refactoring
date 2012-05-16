@@ -4,6 +4,11 @@ package implementations
 import scala.tools.refactoring.common.Change
 import transformation.TreeFactory
 
+/**
+ * Generates an apply-method in the companion object that matches the primary
+ * constructor of the selected class. All calls to the primary constructor
+ * are redirected the the newly generated apply-method.
+ */
 abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring with common.InteractiveScalaCompiler with analysis.Indexes {
 
   import global._

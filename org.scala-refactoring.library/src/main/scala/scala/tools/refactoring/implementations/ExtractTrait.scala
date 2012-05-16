@@ -6,6 +6,10 @@ import scala.tools.refactoring.MultiStageRefactoring
 
 import common.Change
 
+/**
+ * Extracts members (vals, vars and defs) from a trait/class/object
+ * into a new trait.
+ */
 abstract class ExtractTrait extends MultiStageRefactoring with common.InteractiveScalaCompiler with analysis.Indexes with ImportsHelper {
   self =>
   
