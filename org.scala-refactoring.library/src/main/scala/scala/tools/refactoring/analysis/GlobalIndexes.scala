@@ -34,6 +34,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     def apply(t: Tree): IndexLookup = apply(List(CompilationUnitIndex(t)))
   }
   
+  val EmptyIndex = GlobalIndex(Nil)
+  
   trait GlobalIndex extends IndexLookup {
     
     this: SymbolExpander =>
