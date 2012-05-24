@@ -972,10 +972,10 @@ trait PimpedTrees {
   
   /**
    * @return Returns the (symbol) ancestors of the tree excluding the ROOT
-   * in descending order.
+   * in descending order. Also filters the symbols for package objects!
    */
   def ancestorSymbols(t: Tree): List[Symbol] = {
-    t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
+    t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).filterNot(_.isPackageObjectClass).reverse
   }
   
   /**
