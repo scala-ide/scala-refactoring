@@ -39,6 +39,7 @@ import util._
     classOf[OrganizeImportsGroupsTest], 
     classOf[OrganizeImportsWildcardsTest], 
     classOf[OrganizeImportsFullyRecomputeTest], 
+    classOf[OrganizeImportsRecomputeAndModifyTest], 
     classOf[UnusedImportsFinderTest], 
     classOf[OrganizeMissingImportsTest], 
     classOf[RenameTest], 
