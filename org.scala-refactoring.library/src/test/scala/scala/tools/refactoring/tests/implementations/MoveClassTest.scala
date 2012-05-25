@@ -294,7 +294,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package ch.misto
-      
+
       import scala.collection.mutable.ListBuffer
 
       class ToMove {
@@ -302,6 +302,29 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
 
       object SomeObj {
+        var lb: ListBuffer[Int] = _
+      }
+    """
+  } applyRefactoring(moveTo("ch.misto"))
+  
+  @Test
+  def wildcardsNotExpanded = new FileSet {
+    """
+      package org.com
+      package pkg
+
+      import scala.collection.mutable._
+
+      class ToMove {
+        var lb: ListBuffer[Int] = _
+      }
+    """ becomes
+    """
+      package ch.misto
+
+      import scala.collection.mutable._
+
+      class ToMove {
         var lb: ListBuffer[Int] = _
       }
     """
@@ -770,7 +793,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
     package x
     package z
-    
+
     import scala.collection.mutable.ListBuffer
 
     class ToMove extends Dependency {

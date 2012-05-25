@@ -18,18 +18,35 @@ trait ImportsHelper {
           object NeededImports extends Participant {
             def apply(trees: List[Import]) = {
               
-              val imps = neededImports(user) filterNot { imp =>
+              val externalDependencies = neededImports(user) filterNot { imp =>
                 // We don't want to add imports for types that are
                 // children of `importsUser`.
                 val declaration = index.declaration(imp.symbol)
                 declaration map (user.pos includes _.pos) getOrElse false
               }
-              mkImportTrees(imps, targetPkgName)
+                      
+              val newImportsToAdd = externalDependencies filterNot {
+                case Select(qualifier, name) =>
+                  
+                  val pkgString = importAsString(qualifier)
+                  
+                  trees exists { 
+                    case Import(expr, selectors) => 
+                      val pkgName = importAsString(expr)
+                      selectors exists { selector =>
+                        pkgName == pkgString && (selector.name == nme.WILDCARD || name.toString == selector.name.toString)
+                      }
+                  }
+              }
+              
+              val existingStillNeededImports = new RecomputeAndModifyUnused(externalDependencies)(trees)
+
+              existingStillNeededImports ::: SortImports(mkImportTrees(newImportsToAdd, targetPkgName))
             }
           }
         }
-        // TODO: Use IDE settings
-        val imports = scala.Function.chain(oi.NeededImports :: oi.SortImports :: Nil)(existingImports)         
+
+        val imports = oi.NeededImports(existingImports)         
         // When we move the whole file, we only want to add imports to the originating package
         pkg copy (stats = imports ::: rest) replaces pkg
       }
