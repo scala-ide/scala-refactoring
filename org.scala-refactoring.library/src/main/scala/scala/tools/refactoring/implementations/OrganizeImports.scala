@@ -46,7 +46,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     val RemoveUnneeded = Value
   }
   
-  type Participant = (List[Import] => List[Import])
+  trait Participant extends (List[Import] => List[Import]) {
+    def importAsString(t: Tree) = {
+      ancestorSymbols(t) map (_.nameString) mkString "."
+    }
+  }
   
   object CollapseImports extends Participant {
     def apply(trees: List[Import]) = {
@@ -166,29 +170,27 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     }
   }
   
-  class RecomputeAndModifyUnused(root: Tree) extends Participant {
-    
-    def importAsString(t: Tree) = {
-      ancestorSymbols(t) map (_.nameString) mkString "."
-    }
+  class RecomputeAndModifyUnused(allNeededImports: List[Tree]) extends Participant {
     
     def apply(trees: List[Import]) = {
-      val needed = neededImports(root) map importAsString
-      trees map {
+      
+      val importsNames = allNeededImports map importAsString
+        
+      trees flatMap {
         case imp @ Import(expr, selectors) =>
           val pkgName = importAsString(expr) +"."
           
           val neededSelectors = selectors.filter { selector =>
-            selector.name == nme.WILDCARD || needed.contains(pkgName + selector.name)
+            selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
           }
           
           if(neededSelectors.size == selectors.size) {
-            imp
+            Some(imp)
           } else if(neededSelectors.size > 0) {
             val newExpr = ↓(setNoPosition) apply duplicateTree(expr) getOrElse expr
-            Import(newExpr, neededSelectors)
+            Some(Import(newExpr, neededSelectors))
           } else {
-            Import(EmptyTree, Nil)
+            None
           }
       }
     }
@@ -285,7 +287,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         new FindNeededImports(selection.root, enclosingPackage) :: SortImports :: Nil
         
       case Dependencies.RecomputeAndModify =>
-        new RecomputeAndModifyUnused(selection.root) :: Nil
+        new RecomputeAndModifyUnused(neededImports(selection.root)) :: Nil
         
       case Dependencies.RemoveUnneeded =>   
         val unit = compilationUnitOfFile(selection.pos.source.file).get
