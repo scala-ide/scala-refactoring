@@ -1157,4 +1157,28 @@ trait Foo[A] {
 class Blubb
     """
   } applyRefactoring(renameTo("abc"))
+  
+  @Test
+  def coloncolon = new FileSet {
+    """
+    object Problem07 {
+      def /*(*/flatten/*)*/(list: List[Any]): List[Any] = list match {
+        case (head@_::_)::tail => flatten(head) ++ flatten(tail)
+        case Nil::tail => flatten(tail)
+        case head::tail => head::flatten(tail)
+        case Nil => Nil
+      } 
+    }
+    """ becomes 
+    """
+    object Problem07 {
+      def /*(*/fltn/*)*/(list: List[Any]): List[Any] = list match {
+        case (head@_::_)::tail => fltn(head) ++ fltn(tail)
+        case Nil::tail => fltn(tail)
+        case head::tail => head::fltn(tail)
+        case Nil => Nil
+      } 
+    }
+    """
+  } applyRefactoring(renameTo("fltn"))
 }

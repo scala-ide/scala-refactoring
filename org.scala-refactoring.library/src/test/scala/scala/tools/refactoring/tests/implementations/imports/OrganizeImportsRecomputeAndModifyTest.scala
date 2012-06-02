@@ -299,6 +299,45 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
+  
+  @Test
+  def severalScalaGroups = new FileSet {
+    """
+      import scala.collection.mutable.ListBuffer
+      import java.util.BitSet
+      import scala.xml.{Comment, Elem}
+      import java.util.{AbstractList, SortedSet}
+      import java.util.TreeSet
+      import org.xml.sax.Attributes
+      import scala.collection.mutable.HashMap
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet, TreeSet[Int])
+        val z: (Attributes, Comment, Elem)
+      }
+    """ becomes
+    """
+      import java.util.AbstractList
+      import java.util.BitSet
+      import java.util.TreeSet
+
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+
+      import scala.xml.{Comment, Elem}
+
+      import org.xml.sax.Attributes
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet, TreeSet[Int])
+        val z: (Attributes, Comment, Elem)
+      }
+    """
+  } applyRefactoring organizeCleanup(List("java", "scala.collection", "scala.xml"))
 
   def qualifiedImportFromPackageObject = new FileSet {
     addToCompiler("package.scala", """
