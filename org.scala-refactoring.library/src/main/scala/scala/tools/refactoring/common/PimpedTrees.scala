@@ -218,6 +218,8 @@ trait PimpedTrees {
               t.pos withStart t.pos.point
             } else if (qualifier.pos.sameRange(t.pos) && t.name.toString == "apply") {
               t.pos withEnd t.pos.start
+            } else if (qualifier.pos.isRange && t.name.decode.endsWith(":")) {
+              t.pos withEnd (t.pos.start + nameString.length)
             } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
               t.pos withStart (t.pos.end - nameString.length)
             } else if (qualifier.pos.isRange && (t.pos.point.max(qualifier.pos.end + 1)) <= t.pos.end) {

@@ -89,8 +89,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
      * Returns a NameTree for a tree's name and gives it the position of
      * the original tree's name.
      */
-    def nameOf(tree: Tree): Tree = {
-      outer.NameTree(tree.nameString) setPos orig(tree).namePosition
+    def nameOf(tree: Tree): NameTree = {
+      val namePos = orig(tree).namePosition
+      outer.NameTree(tree.nameString) setPos namePos
     }
     
     /**
@@ -328,8 +329,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
               between(qualifier, nameOrig)(tree.pos.source).contains(")")
             }
           }
-          
-          if(startsWithChar && endsWithChar && hasNoSeparator) {
+          if(qualifier.pos.isRange && tree.pos.start < qualifier.pos.start && nameOrig.nameString.endsWith(":")) {
+            l ++ _n ++ _q ++ r
+          } else if(startsWithChar && endsWithChar && hasNoSeparator) {
             l ++ _q ++ " " ++ _n ++ r
           } else if (qualifierHasNoDot && _n.leading.contains(".")) {
             l ++ "(" ++ _q ++ ")" ++ _n ++ r
