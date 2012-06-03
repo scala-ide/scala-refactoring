@@ -25,7 +25,8 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
 
   override def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     val constructors = prep.impl.body.collect{case d: DefDef if d.symbol.isConstructor => d}
-    val constructor = prep.impl.primaryConstructor.headOption.getOrElse(constructors.head)
+    val primaryConstructor = prep.impl.primaryConstructor.headOption
+    val constructor = primaryConstructor.getOrElse(constructors.head)
 
     def makeApply(className: TermName, constr: DefDef) = {
       val params = constr.vparamss.map(_ map (p => p.symbol))

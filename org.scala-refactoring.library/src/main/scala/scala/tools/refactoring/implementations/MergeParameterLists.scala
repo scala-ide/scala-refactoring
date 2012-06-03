@@ -56,10 +56,11 @@ abstract class MergeParameterLists extends MethodSignatureRefactoring {
   
   override def traverseApply[X <% (X ⇒ X) ⇒ X](t: ⇒ Transformation[X, X]) = bottomup(t)
   
-  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: AffectedDef): RefactoringParameters = {
+  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: DefInfo): RefactoringParameters = {
     val originalNrParamLists = selectedMethod.vparamss.size
     val currentNrParamLists = toRefactor.nrParamLists
-    val toShift = originalNrParamLists - currentNrParamLists
-    originalParams.map(_ - toShift).filter(_ >= 0)
+    val untouchables = toRefactor.nrUntouchableParamLists
+    val toShift = originalNrParamLists - currentNrParamLists - untouchables
+    originalParams.map(_ - toShift).filter(_ >= untouchables)
   }
 }

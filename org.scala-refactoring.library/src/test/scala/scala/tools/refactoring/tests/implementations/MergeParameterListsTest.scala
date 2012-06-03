@@ -4,6 +4,7 @@ package tests.implementations
 import implementations.MergeParameterLists
 import tests.util.TestHelper
 import tests.util.TestRefactoring
+import org.junit.Assert
 
 class MergeParameterListsTest extends TestHelper with TestRefactoring {
 
@@ -387,5 +388,47 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::2::Nil))
+  
+  @Test
+  def partiallyAppliedMethodUsage = new FileSet {
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage
+      class A {
+        def /*(*/curriedAdd4/*)*/(a: Int)(b: Int)(c: Int)(d: Int) = a + b + c + d
+        def alias(a: Int, b: Int) = curriedAdd4(a)(b) _
+        val ten = alias(1, 2)(3)(4)
+      }
+    """ becomes 
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage
+      class A {
+        def /*(*/curriedAdd4/*)*/(a: Int, b: Int)(c: Int, d: Int) = a + b + c + d
+        def alias(a: Int, b: Int) = curriedAdd4(a, b) _
+        val ten = alias(1, 2)(3, 4)
+      }
+    """
+  } applyRefactoring(mergeParameterLists(1::3::Nil))
+  
+  @Test
+  def partiallyAppliedMethodUsage2 = new FileSet {
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage2
+      class A {
+        def /*(*/curriedAdd6/*)*/(a: Int)(b: Int)(c: Int)(d: Int)(e: Int)(f: Int) = a + b + c + d + e + f
+        def alias = curriedAdd6 _
+        def partial(a: Int, b: Int) = alias(a)(b)
+        val result = partial(1,2)(3)(4)(5)(6)
+      }
+    """ becomes
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage2
+      class A {
+        def /*(*/curriedAdd6/*)*/(a: Int, b: Int)(c: Int, d: Int)(e: Int, f: Int) = a + b + c + d + e + f
+        def alias = curriedAdd6 _
+        def partial(a: Int, b: Int) = alias(a, b)
+        val result = partial(1,2)(3, 4)(5, 6)
+      }
+    """
+  } applyRefactoring(mergeParameterLists(1::3::5::Nil))
   
 }

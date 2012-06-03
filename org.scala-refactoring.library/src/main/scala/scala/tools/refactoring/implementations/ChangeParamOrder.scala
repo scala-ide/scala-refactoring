@@ -42,9 +42,17 @@ abstract class ChangeParamOrder extends MethodSignatureRefactoring {
     }
   }
   
-  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: AffectedDef): RefactoringParameters = {
+  override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: DefInfo): RefactoringParameters = {
     val toDrop = originalParams.size - toRefactor.nrParamLists
-    originalParams.drop(toDrop)
+    val touchablesPrepared = originalParams.drop(toDrop)
+    val nrUntouchables = toRefactor.nrUntouchableParamLists
+    val ids = originalParams.drop(toDrop - nrUntouchables).take(nrUntouchables) map { perm =>
+      (0 until perm.size).toList
+    }
+    ids match {
+      case Nil => touchablesPrepared
+      case _ => ids:::originalParams.drop(toDrop)
+    }
   }
     
 }

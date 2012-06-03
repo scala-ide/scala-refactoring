@@ -21,8 +21,7 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
 
   import global._
   
-  case class AffectedDef(defSymbol: Symbol, nrParamLists: Int)
-  case class AffectedDefs(originals: List[AffectedDef], partials: List[AffectedDef])
+  case class AffectedDefs(originals: List[DefInfo], partials: List[DefInfo])
   
   /**
    * defdef is the selected method that should be refactored.
@@ -51,11 +50,11 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
    */
     val affectedDefs = {
       val originalSymbols = index.overridesInClasses(selectedDefDefSymbol)
-      val originals = originalSymbols map (AffectedDef(_, prep.defdef.vparamss.size))
-      val partialDefs = PartialsFinder.findPartials(originalSymbols map ((_, prep.defdef.vparamss.size)))
-      val partials = partialDefs flatMap (t => index.overridesInClasses(t._1) map (AffectedDef(_, t._2)))
+      val originals = originalSymbols map (s => DefInfo(s, prep.defdef.vparamss.size))
+      val partialDefs = PartialsFinder.findPartials(originalSymbols map (DefInfo(_, prep.defdef.vparamss.size)))
+      val partials = partialDefs flatMap (d => index.overridesInClasses(d.symbol) map (s => DefInfo(s, d.nrParamLists, d.nrUntouchableParamLists)))
       val partialPartialDefs = PartialPartialsFinder.findPartials(partialDefs)
-      val partialPartials = partialPartialDefs flatMap (t => index.overridesInClasses(t._1) map (AffectedDef(_, t._2)))
+      val partialPartials = partialPartialDefs flatMap (d => index.overridesInClasses(d.symbol) map (s => DefInfo(s, d.nrParamLists, d.nrUntouchableParamLists)))
       AffectedDefs(originals, partials:::partialPartials)
     }
     
@@ -78,6 +77,7 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
     
     def filterPartialApply(applySymbol: Symbol) =  {
       def isPartialApply(apply: Apply): Boolean = apply match {
+        case Apply(fun: Select, _) if fun.hasSymbol && fun.symbol == applySymbol => true
         case Apply(Select(qualifier: Select, _), _) if qualifier.hasSymbol => qualifier.symbol == applySymbol
         case Apply(Select(qualifier: Apply, _), _) => isPartialApply(qualifier)
         case Apply(childApply: Apply, _) => isPartialApply(childApply)
@@ -99,22 +99,20 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
     def refactorPartialCalls = refactorCalls(filterPartialApply) _
     
     val refactorMethodSignature = {
-      val originalNrParamLists = originalParams
-      val affectedDefDefs = affectedDefs
-      val allDefDefSymbols = affectedDefDefs.originals
-      val allPartialSymbols = affectedDefDefs.partials
+      val allDefDefSymbols = affectedDefs.originals
+      val allPartialSymbols = affectedDefs.partials
       val singleRefactorings = allDefDefSymbols map (d => 
-        refactorDefDef(index.declaration(d.defSymbol).get, originalParams) &> 
-        refactorOrdinaryCalls(d.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep.defdef, d)))
+        refactorDefDef(index.declaration(d.symbol).get, originalParams) &> 
+        refactorOrdinaryCalls(d.symbol, prepareParamsForSingleRefactoring(originalParams, prep.defdef, d)))
       val singlePartialRefactorings = allPartialSymbols map 
-        (p => refactorPartialCalls(p.defSymbol, prepareParamsForSingleRefactoring(originalParams, prep.defdef, p)))
+        (p => refactorPartialCalls(p.symbol, prepareParamsForSingleRefactoring(originalParams, prep.defdef, p)))
       val refactoring = (singleRefactorings:::singlePartialRefactorings).foldLeft(id[Tree])((t, c) => t &> c)
       refactoring
     }
     
     val affectedCus = {
-      val originalsSymbols = affectedDefs.originals.map(_.defSymbol)
-      val partialsSymbols = affectedDefs.partials.map(_.defSymbol)
+      val originalsSymbols = affectedDefs.originals.map(_.symbol)
+      val partialsSymbols = affectedDefs.partials.map(_.symbol)
       val allSymbols: List[Symbol] = prep.defdef.symbol::originalsSymbols:::partialsSymbols
       val occurences = allSymbols.map(index.occurences)
       occurences.flatten.flatMap(t => cuRoot(t.pos)).distinct
@@ -139,6 +137,6 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
     
   def traverseApply[X <% (X ⇒ X) ⇒ X](t: => Transformation[X, X]) = topdown(t)
   
-  def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: AffectedDef): RefactoringParameters = originalParams
+  def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: DefInfo): RefactoringParameters = originalParams
   
 }

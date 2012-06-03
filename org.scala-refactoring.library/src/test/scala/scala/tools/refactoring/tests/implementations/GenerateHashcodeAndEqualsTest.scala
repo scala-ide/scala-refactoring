@@ -29,7 +29,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       """
       package generateHashcodeAndEquals.singleValParam
 
-      class /*(*/Foo/*)*/(val param: String) {
+      class /*(*/Foo/*)*/(val param: String) extends Equals {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.singleValParam.Foo]
         }
@@ -59,7 +59,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       """
       package generateHashcodeAndEquals.twoValParams
 
-      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) {
+      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) extends Equals {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.twoValParams.Foo]
         }
@@ -89,7 +89,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       """
       package generateHashcodeAndEquals.excludeNonPublicParams
 
-      class /*(*/Foo/*)*/(p1: String, val p2: List[Int]) {
+      class /*(*/Foo/*)*/(p1: String, val p2: List[Int]) extends Equals {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.excludeNonPublicParams.Foo]
         }
@@ -119,7 +119,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       """
       package generateHashcodeAndEquals.excludeVarsByDefault
 
-      class /*(*/Foo/*)*/(var p1: String, val p2: List[Int]) {
+      class /*(*/Foo/*)*/(var p1: String, val p2: List[Int]) extends Equals {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.excludeVarsByDefault.Foo]
         }
@@ -185,7 +185,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       """
     package generateHashcodeAndEquals.selectByName
     
-    class /*(*/Foo/*)*/(val p1: String, val p2: List[Int], var p3: Boolean, val p4: List[Boolean]) {
+    class /*(*/Foo/*)*/(val p1: String, val p2: List[Int], var p3: Boolean, val p4: List[Boolean]) extends Equals {
       def canEqual(other: Any) = {
         other.isInstanceOf[generateHashcodeAndEquals.selectByName.Foo]
       }
@@ -222,7 +222,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       """
       package generateHashcodeAndEquals.callSuper
 
-      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) {
+      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) extends Equals {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.callSuper.Foo]
         }
@@ -254,7 +254,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       """
       package generateHashcodeAndEquals.emptyClassBody
 
-      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) {
+      class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) extends Equals {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.emptyClassBody.Foo]
         }

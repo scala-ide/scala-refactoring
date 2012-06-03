@@ -455,4 +455,24 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(extractTraitByParamListLength("OverloadedTrait", (nrParams) => nrParams == 2))
   
+  @Test
+  //@Ignore
+  def inDefaultPackage = new FileSet {
+    """
+    class /*(*/OriginalClassInDefaultPackage/*)*/ {
+      def foo() {}
+    }
+    """ becomes
+    """
+    class /*(*/OriginalClassInDefaultPackage/*)*/  extends Foo{
+    }
+    """
+    NewFile becomes
+    """
+    trait Foo {
+      def foo() {}
+    }
+    """
+  } applyRefactoring(extractTrait("Foo", (s) => s == "foo"))
+  
 }

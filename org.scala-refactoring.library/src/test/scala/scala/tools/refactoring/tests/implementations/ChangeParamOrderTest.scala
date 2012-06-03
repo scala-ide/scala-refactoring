@@ -5,6 +5,7 @@ import implementations.ChangeParamOrder
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 import org.junit.Ignore
+import org.junit.Assert
 
 class ChangeParamOrderTest extends TestHelper with TestRefactoring {
 
@@ -426,4 +427,46 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 1::0::3::Nil, 0::1::Nil)))
   
+  @Test
+  def partiallyAppliedMethodUsage = new FileSet {
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage
+      class A {
+        def /*(*/curriedAdd5/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int) = a + b + c + d
+        def alias(a: Int, b: Int) = curriedAdd5(a, b) _
+        val result = alias(1, 2)(3, 4, 5)
+      }
+    """ becomes 
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage
+      class A {
+        def /*(*/curriedAdd5/*)*/(b: Int, a: Int)(c: Int, e: Int, d: Int) = a + b + c + d
+        def alias(a: Int, b: Int) = curriedAdd5(b, a) _
+        val result = alias(1, 2)(3, 5, 4)
+      }
+    """
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
+  
+  @Test
+  def partiallyAppliedMethodUsage2 = new FileSet {
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage2
+      class A {
+        def /*(*/curriedAdd9/*)*/(a: Int, b: Int)(c: Int, d: Int, e: Int)(f: Int, g: Int, h: Int, j: Int) = a + b + c + d + e + f
+        def alias = curriedAdd9 _
+        def partial(a: Int, b: Int) = alias(a, b)
+        val result = partial(1, 2)(3, 4, 5)(6, 7, 8, 9)
+      }
+    """ becomes
+    """
+      package splitParameterLists.partiallyAppliedMethodUsage2
+      class A {
+        def /*(*/curriedAdd9/*)*/(b: Int, a: Int)(e: Int, c: Int, d: Int)(j: Int, f: Int, g: Int, h: Int) = a + b + c + d + e + f
+        def alias = curriedAdd9 _
+        def partial(a: Int, b: Int) = alias(b, a)
+        val result = partial(1, 2)(5, 3, 4)(9, 6, 7, 8)
+      }
+    """
+  } applyRefactoring(changeParamOrder(List(1::0::Nil, 2::0::1::Nil, 3::0::1::2::Nil)))
+
 }

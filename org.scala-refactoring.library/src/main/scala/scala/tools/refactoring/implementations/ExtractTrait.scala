@@ -11,7 +11,6 @@ import common.Change
  * into a new trait.
  */
 abstract class ExtractTrait extends MultiStageRefactoring with common.InteractiveScalaCompiler with analysis.Indexes with ImportsHelper {
-  self =>
   
   import global._
   
@@ -20,10 +19,6 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
   case class RefactoringParameters(traitName: String, defFilter: ValOrDefDef => Boolean)
   
   override def prepare(s: Selection) = {
-    def hasAccessor(valDef: ValDef) = {
-      
-    }
-    
     def isDefDefExtractable(defdef: DefDef) = {
       defdef.hasSymbol && !(defdef.symbol.isPrivate || defdef.symbol.isConstructor) && 
       !defdef.mods.hasFlag(Flags.ACCESSOR) && !defdef.mods.isParamAccessor
@@ -79,16 +74,22 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
     }
     
     val enclosingPackages = findEnclosingPackages(classDef.pos)
+    val enclosing = {
+      enclosingPackages match {
+        case Nil => cuRoot(classDef.pos).getOrElse(return Left(RefactoringError("failed to find compilation unit of extractee")))
+        case p::ps => p
+      }
+    }
     
-    val sourceFileChanges = refactorClass(classBody, enclosingPackages, params.traitName, classDef)
+    val sourceFileChanges = refactorClass(classBody, enclosing, params.traitName, classDef)
     
     val traitNeedsSelfType = areSymbolsAccessed(traitBody, classMembers.filter(!_.isPrivate))
-    val traitFileChanges = refactorTrait(traitBody, traitNeedsSelfType, enclosingPackages, params.traitName, classDef)
+    val traitFileChanges = refactorTrait(traitBody, traitNeedsSelfType, enclosing, enclosingPackages, params.traitName, classDef)
     
     Right(sourceFileChanges:::traitFileChanges)
   }
   
-  private def refactorClass(classBody: List[Tree], enclosingPackages: List[PackageDef], traitName: String, classDef: ClassDef) = {
+  private def refactorClass(classBody: List[Tree], enclosing: Tree, traitName: String, classDef: ClassDef) = {
     val addTrait = {
       val extractedTrait = mkIdent(traitName, classDef.tparams)
       transform {
@@ -109,10 +110,16 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
       }
     } &> addRequiredImports(None, None)
     
-    refactor(classRefactoring(enclosingPackages.head).toList)
+    refactor(classRefactoring(enclosing/*enclosingPackages.head*/).toList)
   }
   
-  private def refactorTrait(traitBody: List[Tree], needsSelfTypeAnnotation: Boolean, enclosingPackages: List[PackageDef], traitName: String, classDef: ClassDef) = {
+  private def refactorTrait(
+      traitBody: List[Tree], 
+      needsSelfTypeAnnotation: Boolean, 
+      enclosing: Tree, 
+      enclosingPackages: List[PackageDef], 
+      traitName: String, 
+      classDef: ClassDef) = {
     val traitRefactoring = {
       transform {
         case pkg: PackageDef => {
@@ -132,7 +139,7 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
       } &> addRequiredImports(None, None)
     }
     
-    refactor(traitRefactoring(enclosingPackages.head).toList).map(_.toNewFile(""))
+    refactor(traitRefactoring(enclosing).toList).map(_.toNewFile(""))
   }
   
   private def areSymbolsAccessed(accessors: List[Tree], targets: List[Symbol]) = {

@@ -11,6 +11,8 @@ trait PartiallyAppliedMethodsFinder {
 
   import global._
   
+  case class DefInfo(symbol: Symbol, nrParamLists: Int, nrUntouchableParamLists: Int = 0)
+  
   /**
    * Contains the common framework of PartialsFinder and PartialPartialsFinder 
    * that fill in the missing parts.
@@ -97,9 +99,9 @@ trait PartiallyAppliedMethodsFinder {
      * Returns the def symbols of the partials found including 
      * the number of parameter lists left.
      */
-    def findPartialsForDef(defAndNrParamLists: (Symbol, Int)) = {
-      val defSymbol = defAndNrParamLists._1
-      val origNrParamLists = defAndNrParamLists._2
+    def findPartialsForDef(partial: DefInfo) = {
+      val defSymbol = partial.symbol
+      val origNrParamLists = partial.nrParamLists
       val allOccurences = index.occurences(defSymbol)
       val cuRoots = (allOccurences flatMap (occ => cuRoot(occ.pos))).distinct
       val hits = cuRoots flatMap { cuRoot =>
@@ -109,11 +111,14 @@ trait PartiallyAppliedMethodsFinder {
       }
       
       val handleDefDef = (d: DefDef, f: RHS) => {
-        Some(d.symbol, nrParamLists(f, origNrParamLists))
+        val nrPLists = nrParamLists(f, origNrParamLists)
+        val nrUntouchables = d.vparamss.size
+        Some(DefInfo(d.symbol, nrPLists, nrUntouchables))
       }
       
       val handleValDef = (v: ValDef, f: RHS) => {
-        accessor(v) map ((_, nrParamLists(f, origNrParamLists)))
+        val nrPLists = nrParamLists(f, origNrParamLists)
+        accessor(v) map (DefInfo(_, nrPLists))
       }
       
       hits flatMap {
@@ -132,7 +137,7 @@ trait PartiallyAppliedMethodsFinder {
      * as each found partial is represented by its symbol
      * and its number of parameter lists.
      */
-    def findPartials(defs: List[(Symbol, Int)], acc: List[(Symbol, Int)] = Nil): List[(Symbol, Int)] = {
+    def findPartials(defs: List[DefInfo], acc: List[DefInfo] = Nil): List[DefInfo] = {
       val partials = defs flatMap findPartialsForDef
       if(needsRecursion) {
         partials match {

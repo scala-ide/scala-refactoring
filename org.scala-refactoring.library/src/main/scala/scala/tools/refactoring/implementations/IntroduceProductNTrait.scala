@@ -29,17 +29,18 @@ abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
       selectedParams.zipWithIndex.map(t => makeElemProjection(t._1, t._2 + 1))
     }
     
-    val arity = selectedParams.length
-    val paramsTypenames = selectedParams.map(v => v.tpt.nameString)
-    val productParent = Ident(newTermName("Product" + arity + "[" + paramsTypenames.mkString(", ") + "]"))
-    
     def addProductTrait = transform ({
-      case t @ Template(parents, self, body) => (Template(parents:::List(productParent), self, projections:::body)) replaces t
+      case t @ Template(_, _, body) => t.copy(body = projections:::body) replaces t
     })
     
     superGeneration &> addProductTrait
   }
   
-  
+  override def newParentNames(selectedParams: List[ValDef]) = {
+    val arity = selectedParams.length
+    val paramsTypenames = selectedParams.map(v => v.tpt.nameString)
+    val productParent = "Product" + arity + "[" + paramsTypenames.mkString(", ") + "]"
+    productParent::Nil
+  }
 
 }
