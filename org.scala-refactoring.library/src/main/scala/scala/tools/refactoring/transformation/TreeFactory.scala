@@ -127,16 +127,28 @@ trait TreeFactory {
   }
   
   def mkHashcode(classSymbol: Symbol, classParamsForHashcode: List[ValDef], callSuper: Boolean, prime: Int = 41) = {
-    val primeVal = mkValDef("prime", Literal(Constant(prime)))
-    val startFactor: Tree = if(callSuper) {
-      Apply(Select(Super(classSymbol, newTypeName("")), nme.hashCode_), Nil)
-    } else {
-      Literal(Constant(1))
+    def mkSingleParamPart(param: ValDef, primeName: TermName, inner: Tree) = {
+      val mult = Apply(Select(Ident(primeName), nme.MUL), List(inner))
+        Apply(Select(mult, nme.PLUS), List(Select(Ident(param.name), nme.hashCode_)))
     }
-    val computation = classParamsForHashcode.foldLeft(startFactor)((inner, param) => {
-      val mult = Apply(Select(Ident(primeVal.name), nme.MUL), List(inner))
-      Apply(Select(mult, nme.PLUS), List(Select(Ident(param.name), nme.hashCode_)))
-    })
+    
+    def mkFold(init: Tree, primeName: TermName, paramsForHashcode: List[ValDef]) = {
+      paramsForHashcode.foldLeft(init)((inner, param) => {
+        mkSingleParamPart(param, primeName, inner)
+      })
+    }
+    
+    val primeVal = mkValDef("prime", Literal(Constant(prime)))
+    val oneLiteral = Literal(Constant(1))
+    val (startFactor, remainingParams): (Tree, List[ValDef]) = if(callSuper) {
+      (Apply(Select(Super(classSymbol, newTypeName("")), nme.hashCode_), Nil), classParamsForHashcode)
+    } else {
+      classParamsForHashcode match {
+        case Nil => (Ident(primeVal.name), Nil)
+        case p::ps => (mkSingleParamPart(p, primeVal.name, oneLiteral), ps)
+      }
+    }
+    val computation = mkFold(startFactor, primeVal.name, remainingParams)
     mkDefDef(NoMods withPosition(Flags.OVERRIDE, NoPosition), "hashCode", body = List(primeVal, computation))
   }
   

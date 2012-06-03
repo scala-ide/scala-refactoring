@@ -273,5 +273,33 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring (generateHashcodeAndEquals((true, None)))
+  
+  @Test
+  def noParams = new FileSet {
+    """
+    package generateHashcodeAndEquals.noParams
+    class /*(*/Foo/*)*/
+    """  becomes
+    """
+    package generateHashcodeAndEquals.noParams
+    class /*(*/Foo extends Equals {
+      def canEqual(other: Any) = {
+        other.isInstanceOf[generateHashcodeAndEquals.noParams.Foo]
+      }
+      
+      override def equals(other: Any) = {
+        other match {
+          case that: generateHashcodeAndEquals.noParams.Foo => that.canEqual(Foo.this)
+          case _ => false
+        }
+      }
+      
+      override def hashCode() = {
+        val prime = 41
+        prime
+      }
+    }/*)*/
+    """
+  } applyRefactoring(generateHashcodeAndEquals((false, Some((p) => false))))
 
 }
