@@ -37,6 +37,7 @@
     <scala.version>2.9.2</scala.version>
     <scct.version>2.9.0-1</scct.version>
     <tycho.version>0.10.0</tycho.version>
+    <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
   </properties>
   <modules>
@@ -254,7 +255,7 @@
           <id>scala-toolchain-2.9.x</id>
           <name>Scala Toolchain 2.9.x p2 repository</name>
           <layout>p2</layout>
-          <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-29x</url>
+          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-29x</url>
         </repository>
       </repositories>
     </profile>
@@ -266,7 +267,7 @@
           <id>scala-toolchain-trunk</id>
           <name>Scala Toolchain trunk p2 repository</name>
           <layout>p2</layout>
-          <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-trunk</url>
+          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-trunk</url>
         </repository>
       </repositories>
     </profile>
@@ -284,7 +285,7 @@
           <id>scala-toolchain-trunk</id>
           <name>Scala Toolchain virtualized p2 repository</name>
           <layout>p2</layout>
-          <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-virtualized</url>
+          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-virtualized</url>
         </repository>
       </repositories>
     </profile>
