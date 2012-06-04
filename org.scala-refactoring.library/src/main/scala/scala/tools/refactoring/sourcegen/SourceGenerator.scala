@@ -132,9 +132,22 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
             case o => o samePosAndType t
           }
         }, Some(source)) 
+        
         trace("Change: %s", f.center.asText)
+        
         val pos = adjustedStartPosForSourceExtraction(tree, replaceRange)
-        (source.file, tree, pos, f)
+        
+        // In some cases the replacement source starts with a space, and the replacing range
+        // also has a space leading up to it. In that case, we drop the leading space from the
+        // replacement fragment.
+        val replacementWithoutLeadingDuplicateSpace = {
+          if(pos.start > 0 && source.content(pos.start - 1) == ' ' && f.center.asText.startsWith(" ")) {
+            Fragment(f.center.asText.tail)
+          } else {
+            f
+          }
+        }
+        (source.file, tree, pos, replacementWithoutLeadingDuplicateSpace)
     } toList
   }
     

@@ -75,7 +75,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("Extracted", (name) => false)))
   
   @Test
-  // TODO: fix spaces before extends
   def extractSingleDefDef = new FileSet {
     """
     package extractTrait.extractSingleDefDef
@@ -89,7 +88,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     """
     package extractTrait.extractSingleDefDef
     
-    class /*(*/A/*)*/  extends Squarify {
+    class /*(*/A/*)*/ extends Squarify {
     
       def cube(a: Int) = a*a*a
     }
@@ -370,7 +369,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("Preparator"), (name) => name == "prepare"))
   
   @Test
-  // TODO: fix spaces before extends
   def withImportsOnlyInClass = new FileSet {
     """
     package extractTrait.withImportsOnlyInClass
@@ -388,7 +386,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     
     import scala.math.abs
     
-    class /*(*/Original/*)*/  extends LpNorms {
+    class /*(*/Original/*)*/ extends LpNorms {
       def prepare(value: Int) = abs(value)
     }
     """
@@ -404,7 +402,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("LpNorms"), (name) => name.startsWith("l")))
   
   @Test
-  // TODO: fix spaces before extends
   def fromTrait = new FileSet {
     """
     package extractTrait.fromTrait
@@ -418,7 +415,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     """
     package extractTrait.fromTrait
     
-    trait /*(*/Original/*)*/  extends Squarify {
+    trait /*(*/Original/*)*/ extends Squarify {
     
       def cube(a: Int) = a*a*a
     }
@@ -433,7 +430,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "square"))
   
   @Test
-  // TODO: fix spaces before extends
   def overloadedMethods = new FileSet {
     """
     package extractTrait.overloadedMethods
@@ -446,7 +442,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     """
     package extractTrait.overloadedMethods
     
-    class /*(*/Overloaded/*)*/  extends OverloadedTrait {
+    class /*(*/Overloaded/*)*/ extends OverloadedTrait {
       def overloaded(a: Int) = a
     }
     """
@@ -460,7 +456,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTraitByParamListLength("OverloadedTrait", (nrParams) => nrParams == 2))
   
   @Test
-  // TODO: fix spaces before extends
   def inDefaultPackage = new FileSet {
     """
     class /*(*/OriginalClassInDefaultPackage/*)*/ {
@@ -468,7 +463,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     }
     """ becomes
     """
-    class /*(*/OriginalClassInDefaultPackage/*)*/  extends Foo{
+    class /*(*/OriginalClassInDefaultPackage/*)*/ extends Foo{
     }
     """
     NewFile becomes

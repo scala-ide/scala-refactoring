@@ -121,8 +121,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           
           val params_ = params.headOption map (pms => pp(pms, separator = ", ", after = Requisite.anywhere(")"))) getOrElse EmptyFragment
 
-          val parents_ = pp(parents, before = (if (printExtends && earlyBody.isEmpty) Requisite.Blank ++ "extends" ++ Requisite.Blank else ""), separator = " with ")
-          
+          val parents_ = pp(parents, before = {
+              if (printExtends && earlyBody.isEmpty) {
+                Requisite.Blank ++ "extends" ++ Requisite.Blank
+              } else {
+                ""
+              }
+            }, separator = " with ")
+            
           val OpeningBrace = "(.*?)(\\s?\\{.*)".r
           
           val preBody = {
@@ -610,7 +616,17 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       else 
         p(nameOf(tree))
       
-      l ++ pp(mods, separator = Requisite.Blank, after = Requisite.Blank) ++ className ++ pp(tparams, separator="," ++ Requisite.Blank) ++ p(impl) ++ r
+      val modifiers = pp(mods, separator = Requisite.Blank, after = Requisite.Blank)
+      val typeParams = pp(tparams, separator="," ++ Requisite.Blank)
+      val template = p(impl)
+      
+      val beforeTpl = l ++ modifiers ++ className ++ typeParams
+      
+      if(beforeTpl.asText.endsWith(" ") && template.asText.startsWith(" ")) {
+        beforeTpl ++ Layout(template.asText.tail)
+      } else {
+        beforeTpl ++ template
+      } ++ r
     }
 
     override def ModuleDef(tree: ModuleDef, mods: List[ModifierTree], name: Name, impl: Template)(implicit ctx: PrintingContext) = {

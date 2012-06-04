@@ -275,7 +275,6 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((true, None)))
   
   @Test
-  // TODO: fix spaces before extends
   def noParams = new FileSet {
     """
     package generateHashcodeAndEquals.noParams
@@ -284,7 +283,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     """  becomes
     """
     package generateHashcodeAndEquals.noParams
-    class /*(*/Foo/*)*/  extends Equals {
+    class /*(*/Foo/*)*/ extends Equals {
       def canEqual(other: Any) = {
         other.isInstanceOf[generateHashcodeAndEquals.noParams.Foo]
       }
