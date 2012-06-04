@@ -275,14 +275,16 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((true, None)))
   
   @Test
+  // TODO: fix spaces before extends
   def noParams = new FileSet {
     """
     package generateHashcodeAndEquals.noParams
-    class /*(*/Foo/*)*/
+    class /*(*/Foo/*)*/ {
+    }
     """  becomes
     """
     package generateHashcodeAndEquals.noParams
-    class /*(*/Foo extends Equals {
+    class /*(*/Foo/*)*/  extends Equals {
       def canEqual(other: Any) = {
         other.isInstanceOf[generateHashcodeAndEquals.noParams.Foo]
       }
@@ -298,7 +300,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         val prime = 41
         prime
       }
-    }/*)*/
+    }
     """
   } applyRefactoring(generateHashcodeAndEquals((false, Some((p) => false))))
 
