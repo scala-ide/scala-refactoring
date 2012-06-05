@@ -494,30 +494,26 @@ trait PimpedTrees {
       case tpl: Template => 
       
         val pimpedTpl = additionalTemplateMethods(tpl)
-              
-        val primaryConstructorArgs = (pimpedTpl.primaryConstructor flatMap (t => t.asInstanceOf[DefDef].vparamss)) map (_.size)
         
-        // FIXME this is very very ugly
-        val classParams: List[List[ValDef]] = {
+        val classParams = {
+                  
+          val primaryConstructorArgs = pimpedTpl.primaryConstructor flatMap (_.vparamss) map (_.size)
           
-          var cp = pimpedTpl.constructorParameters
+          def groupPrimaryConstructorArgs(groups: List[Int], fields: List[ValDef]): List[List[ValDef]] = groups match {
+            case Nil => Nil
+            case n :: ns =>
+              val (current, rest) = fields.splitAt(n)
+              current :: groupPrimaryConstructorArgs(ns, rest)
+          }
         
-          if(primaryConstructorArgs.sum != cp.size) {
-            List(cp)
+          val constructorParameters = pimpedTpl.constructorParameters
+          if(primaryConstructorArgs.sum != constructorParameters.size) {
+            List(constructorParameters)
           } else {
-          
-            val xx = primaryConstructorArgs map { i =>
-              val(current, rest) = cp.splitAt(i)
-              cp = rest
-              current
-            }
-            
-            assert(cp == Nil)
-            
-            xx
+            groupPrimaryConstructorArgs(primaryConstructorArgs, constructorParameters)
           }
         }
-        
+                      
         val body = {
           val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains) 
           val removeGeneratedTrees = bodyWithoutPrimaryConstructorAndArgs filter keepTree
@@ -554,7 +550,7 @@ trait PimpedTrees {
           }
         }
         
-        Some((classParams, pimpedTpl.earlyDefs, parents, self, body))
+        Some(Tuple5(classParams, pimpedTpl.earlyDefs, parents, self, body))
       
       case _ => 
         None
