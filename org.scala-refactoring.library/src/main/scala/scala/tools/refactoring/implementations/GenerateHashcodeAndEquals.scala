@@ -11,8 +11,8 @@ abstract class GenerateHashcodeAndEquals extends ClassParameterDrivenSourceGener
   import global._
   
   override def failsBecause(classDef: ClassDef) =  {
-    if(classDef.impl.hasEqualsOrHashcode)
-      Some("equals or hashCode already existing")
+    if(classDef.impl.hasEqualityMethod)
+      Some("An equality method (equals, canEquals or hashCode) already exists.")
     else
       None
   }

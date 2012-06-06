@@ -174,6 +174,18 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring (generateHashcodeAndEquals((false, None)))
+  
+  @Test(expected = classOf[PreparationException])
+  def failWithExistingCanEqual = new FileSet {
+    """
+      package generateHashcodeAndEquals.failWithExistingCanEqual
+
+      class /*(*/Foo/*)*/ extends Equals {
+        def canEqual(that: Any) = false
+      }
+    """ becomes
+      """"""
+  } applyRefactoring (generateHashcodeAndEquals((false, None)))
 
   @Test
   def selectByName = new FileSet {
@@ -302,5 +314,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(generateHashcodeAndEquals((false, Some((p) => false))))
+  
+  @Test(expected = classOf[PreparationException])
+  def traitFails = new FileSet {
+    """
+    package generateHashcodeAndEquals.traitFails
+    trait NotAClass
+    """ becomes
+    ""
+  } applyRefactoring(generateHashcodeAndEquals((false, None)))
 
 }

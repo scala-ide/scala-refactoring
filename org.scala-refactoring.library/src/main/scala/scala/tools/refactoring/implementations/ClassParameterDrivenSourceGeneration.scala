@@ -23,8 +23,10 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
   case class RefactoringParameters(callSuper: Boolean = true, paramsFilter: Option[ValDef => Boolean] = None)
   
   def prepare(s: Selection) = {
+    val notAClass = Left(PreparationError("No class definition selected."))
     s.findSelectedOfType[ClassDef] match {
-      case None => Left(PreparationError("no class def selected"))
+      case None => notAClass
+      case Some(classDef) if classDef.hasSymbol && classDef.symbol.isTrait => notAClass
       case Some(classDef) => {
         failsBecause(classDef).map(PreparationError(_)) toLeft {
           PreparationResult(classDef, classDef.impl.nonPrivateClassParameters)

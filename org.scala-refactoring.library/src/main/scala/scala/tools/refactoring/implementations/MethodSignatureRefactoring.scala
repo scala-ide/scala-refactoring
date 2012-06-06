@@ -33,7 +33,7 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
     s.findSelectedOfType[DefDef].map {
       selectedDefDef => 
         MethodSignaturePrepResult(selectedDefDef)
-    }.toRight(PreparationError("no defdef selected"))
+    }.toRight(PreparationError("No method defintion selected."))
   }
   
   override def perform(selection: Selection, prep: PreparationResult, originalParams: RefactoringParameters): Either[RefactoringError, List[Change]] = {

@@ -471,9 +471,9 @@ trait PimpedTrees {
     }
     
     /**
-     * Returns whether the template has an implementation of an equals or hashCode method. 
+     * Returns whether the template has an implementation of an equals, canEquals or hashCode method. 
      */
-    def hasEqualsOrHashcode = {
+    def hasEqualityMethod = {
       val body = t.body
       val existingEqualsOrHashcodeOption = body collectFirst {
         case d: DefDef if List(nme.equals_, nme.hashCode_, nme.canEqual_) contains d.name => d
