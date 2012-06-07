@@ -463,7 +463,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     }
     """ becomes
     """
-    class /*(*/OriginalClassInDefaultPackage/*)*/ extends Foo{
+    class /*(*/OriginalClassInDefaultPackage/*)*/ extends Foo {
     }
     """
     NewFile becomes
@@ -474,4 +474,32 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring(extractTrait("Foo", (s) => s == "foo"))
   
+  //TODO the override in the generated source code is incorrect
+  @Test
+  def withExistingSuperclass = new FileSet {
+    """
+    package withExistingSuperclass
+    trait A {
+     def foo(s: String)
+    }
+    class /*(*/Foo/*)*/ extends A {
+      override def foo(s: String) {}
+    }
+    """ becomes
+    """
+    package withExistingSuperclass
+    trait A {
+     def foo(s: String)
+    }
+    class /*(*/Foo/*)*/ extends A with Extracted {
+    }
+    """
+    NewFile becomes
+    """
+    package withExistingSuperclass
+    trait Extracted {
+      override def foo(s: String) {}
+    }
+    """
+  } applyRefactoring(extractTrait("Extracted", _ == "foo"))
 }

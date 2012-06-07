@@ -109,66 +109,70 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       printChildren(tree)
     }
     
-    def printTemplate(tpl: Template, printExtends: Boolean)(implicit ctx: PrintingContext) = {
-            (tpl, orig(tpl)) match {
-        case (t @ TemplateExtractor(params, earlyBody, parents, self, body), o @ TemplateExtractor(_, _, _, origSelf, origBody)) =>
-          
-          lazy val isExistingBodyAllOnOneLine = {
-            val tplStartLine = o.pos.source.offsetToLine(o.pos.start)
-            val tplEndLine = o.pos.source.offsetToLine(o.pos.end)
-            tplStartLine == tplEndLine
+    def printTemplate(t: Template, printExtends: Boolean)(implicit ctx: PrintingContext) = {
+      
+      val TemplateExtractor(params, earlyBody, parents, self, body) = t
+        
+      val preBody = {
+        val xtends = Requisite.Blank ++ "extends" ++ Requisite.Blank 
+        val parents_ = pp(parents, before = if (printExtends) xtends else "", separator = " with ")
+        
+        val params_ = params.headOption map (pms => pp(pms, separator = ", ", after = Requisite.anywhere(")"))) getOrElse EmptyFragment
+        val SplitAtOpeningBrace = "(.*?)(\\s?\\{.*)".r
+        val hasNoClassParameters = params == Nil :: Nil || params == Nil
+        
+        if(hasNoClassParameters) {
+          l.asText match {
+            case SplitAtOpeningBrace(before, after) =>
+              Layout(before) ++ pp(earlyBody) ++ parents_.ifNotEmpty(_ ++ Requisite.Blank) ++ Layout(after)
+            case _ => 
+              pp(earlyBody) ++ l ++ parents_
           }
-          
-          val params_ = params.headOption map (pms => pp(pms, separator = ", ", after = Requisite.anywhere(")"))) getOrElse EmptyFragment
-
-          val parents_ = pp(parents, before = {
-              if (printExtends && earlyBody.isEmpty) {
-                Requisite.Blank ++ "extends" ++ Requisite.Blank
-              } else {
-                ""
-              }
-            }, separator = " with ")
-            
-          val OpeningBrace = "(.*?)(\\s?\\{.*)".r
-          
-          val preBody = {
-            if(params == Nil :: Nil || params == Nil) {
-              l.asText match {
-              case OpeningBrace(before, after) =>
-                EmptyFragment ++ before ++ pp(earlyBody) ++ parents_.ifNotEmpty(f => f ++ Requisite.Blank) ++ after
-              case otherwise => params_
-                pp(earlyBody) ++ l ++ parents_
-              }
-            } else {
-              params_.trailing.asText match {
-              case OpeningBrace(before, after) if earlyBody.isEmpty =>
-                l ++ params_.dropTrailingLayout ++ before ++ parents_ ++ after
-              case OpeningBrace(before, after) =>
-                l ++ params_.dropTrailingLayout ++ before ++ after ++ pp(earlyBody) ++ parents_ 
-              case otherwise => params_
-                l ++ params_ ++ pp(earlyBody) ++ parents_
-              }
-            }
-          } ++ p(self)
-          
-          if(origBody.isEmpty && origSelf.isEmpty && !body.isEmpty) {
-            val openingBrace = " {" + NL + indentation
-            val closingBrace = NL + indentation + "}"
-            val bodyResult = ppi(body, separator = newline)
-            
-            preBody ++ openingBrace ++ bodyResult ++ closingBrace
-          } else if (isExistingBodyAllOnOneLine) {
-            preBody ++ ppi(body, separator = newline) ++ r
-          } else if (body.isEmpty){
-            preBody ++ r
-          } else {
-            val body_ = ppi(body, separator = newline)
-            if(body_.leading.contains("{")) {
-              preBody ++ body_ ++ r  
-            } else {
-              preBody ++ newline ++ body_ ++ r
-            }
+        } else {
+          params_.trailing.asText match {
+            case SplitAtOpeningBrace(before, after) if earlyBody.isEmpty =>
+              l ++ params_.dropTrailingLayout ++ Layout(before) ++ parents_ ++ Layout(after)
+            case _ => params_
+              l ++ params_ ++ pp(earlyBody) ++ parents_
           }
+        }
+      }
+      
+      def hasNewlyIntroducedBody = orig(t) match {
+        case TemplateExtractor(_, _, _, origSelf, origBody) =>
+          origBody.isEmpty && origSelf.isEmpty && !body.isEmpty
+        case _ => false
+      }
+                
+      def isExistingBodyAllOnOneLine = {
+        val tplStartLine = t.pos.source.offsetToLine(t.pos.start)
+        val tplEndLine = t.pos.source.offsetToLine(t.pos.end)
+        tplStartLine == tplEndLine
+      }
+      
+      if(hasNewlyIntroducedBody) {
+        val openingBrace = " {" + NL + indentation
+        val closingBrace = NL + indentation + "}"
+        val bodyResult = ppi(body, separator = newline)
+        
+        preBody ++ p(self) ++ openingBrace ++ bodyResult ++ closingBrace
+      } else if (isExistingBodyAllOnOneLine) {
+        preBody ++ p(self) ++ ppi(body, separator = newline) ++ r
+      } else {
+        val body_ = ppi(body, separator = newline)
+        val trailing = r
+        val hasOpeningBrace = body_.leading.contains("{") || trailing.contains("{")
+        val needToPrintOpeningBrace = !hasOpeningBrace && trailing.contains("}") && !preBody.asText.endsWith("{")
+        
+        val self_ = if(needToPrintOpeningBrace) {
+          EmptyFragment ++ " {" ++ p(self) ++ newline
+        } else if(hasOpeningBrace) {
+          p(self) // if the opening brace already exists, there's also a newline present
+        } else {
+          p(self) ++ newline
+        }
+        
+        preBody ++ self_ ++ body_ ++ trailing
       }
     }
   }

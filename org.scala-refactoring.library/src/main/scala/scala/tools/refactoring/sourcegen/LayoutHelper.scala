@@ -362,6 +362,14 @@ trait LayoutHelper extends CommentHelpers {
               case _ => split(layout)
             }
             
+          case (l: TypeTree, tpl: Template, r) 
+              if tpl.parents.contains(l) && !tpl.parents.contains(r) && layout.contains("{") =>
+            val OpeningCurlyBrace = """(?ms)(.*?)\s?\{(.*)""".r
+            layout match {
+              case OpeningCurlyBrace(l, r)   => (l, r, "OpeningCurlyBrace after Template parents")
+              case _ => split(layout)
+            }
+            
           case (l, _, r) => split(layout)
         }
         

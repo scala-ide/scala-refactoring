@@ -649,7 +649,7 @@ object ExtractMethod2 {
     }
     """ becomes
     """
-    object ExtractLocalBugTest extends App{ 
+    object ExtractLocalBugTest extends App { 
       val List(one, three, eight) = List(1,3,8);
       printf("%d %d %d\n", one, three, eight)
   
