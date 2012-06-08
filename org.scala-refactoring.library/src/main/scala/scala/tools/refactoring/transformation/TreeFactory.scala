@@ -149,7 +149,7 @@ trait TreeFactory {
       }
     }
     val computation = mkFold(startFactor, primeVal.name, remainingParams)
-    mkDefDef(NoMods withPosition(Flags.OVERRIDE, NoPosition), "hashCode", body = List(primeVal, computation))
+    mkDefDef((NoMods withPosition(Flags.OVERRIDE, NoPosition)) | Flags.OVERRIDE, "hashCode", body = List(primeVal, computation))
   }
   
   def mkCanEqual(classSymbol: Symbol) = {
@@ -182,7 +182,7 @@ trait TreeFactory {
     val matchingTypesCase = CaseDef(bind, EmptyTree, body)
     val defaultCase = CaseDef(Ident(nme.USCOREkw), EmptyTree, Literal(Constant(false)))
     val matchTree = Match(Ident(paramStr), List(matchingTypesCase, defaultCase))
-    mkDefDef(NoMods withPosition (Flags.OVERRIDE, NoPosition), "equals", parameters = List(List(otherParamSymbol)), body = List(matchTree))
+    mkDefDef((NoMods withPosition (Flags.OVERRIDE, NoPosition)) | Flags.OVERRIDE, "equals", parameters = List(List(otherParamSymbol)), body = List(matchTree))
   }
 
   def mkBlock(trees: List[Tree]): Block = trees match {

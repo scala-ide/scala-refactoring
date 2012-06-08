@@ -848,6 +848,9 @@ trait PimpedTrees {
   object ModifierTree {
     def unapply(m: global.Modifiers) = {
       Some(m.positions.toList map {
+        // hack to get rid of override modifiers
+        // couldn't figure out how to remove a flag from the positions map (michael)
+        case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 => ModifierTree(0)
         case (flag, pos) if pos.isRange =>
           ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
         case (flag, _) =>

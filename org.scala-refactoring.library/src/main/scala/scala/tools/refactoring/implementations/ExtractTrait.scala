@@ -1,7 +1,7 @@
 package scala.tools.refactoring
 package implementations
 
-import tools.nsc.symtab.Flags
+import scala.tools.nsc.symtab.Flags
 import scala.tools.refactoring.MultiStageRefactoring
 
 import common.Change
@@ -130,7 +130,15 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
           } else {
             emptyValDef
           }
-          val impl = Template(Nil, selfType, traitBody)
+          // remove `override` modifiers
+          val preparedTraitBody = traitBody.map(t => t match {
+            case d @ DefDef(mods, name, tparams, vparamss, tpt, rhs) if mods.hasFlag(Flags.OVERRIDE) => {
+              val withoutOverride = mods &~ Flags.OVERRIDE
+              DefDef(withoutOverride, name, tparams, vparamss, tpt, rhs) replaces d
+            }
+            case _ => t
+          })
+          val impl = Template(Nil, selfType, preparedTraitBody)
           val mods = Modifiers(Flags.TRAIT).withPosition(Flags.TRAIT, NoPosition)
           val extractedTrait = ClassDef(mods, newTypeName(traitName), classDef.tparams, impl)
           val flattenedPkg = PackageDef(flattenPkgPids(enclosingPackages), imports:::List(extractedTrait))
