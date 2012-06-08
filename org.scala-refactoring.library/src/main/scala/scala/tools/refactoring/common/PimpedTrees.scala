@@ -470,15 +470,22 @@ trait PimpedTrees {
       }
     }
     
+    /*
+     * Returns existing equality methods.
+     * Note that this is a rough by-name check.
+     */
+    def existingEqualityMethods: List[ValOrDefDef] = {
+      t.body collect {
+        case d: ValOrDefDef if List(nme.equals_, nme.hashCode_, nme.canEqual_) contains d.name => d
+      }
+    }
+    
     /**
      * Returns whether the template has an implementation of an equals, canEquals or hashCode method. 
      */
-    def hasEqualityMethod = {
-      val body = t.body
-      val existingEqualsOrHashcodeOption = body collectFirst {
-        case d: DefDef if List(nme.equals_, nme.hashCode_, nme.canEqual_) contains d.name => d
-      }
-      existingEqualsOrHashcodeOption.isDefined
+    def hasEqualityMethod: Boolean = existingEqualityMethods match {
+      case Nil => false
+      case _ => true
     }
   }
   

@@ -11,18 +11,32 @@ abstract class GenerateHashcodeAndEquals extends ClassParameterDrivenSourceGener
   import global._
   
   override def failsBecause(classDef: ClassDef) =  {
-    if(classDef.impl.hasEqualityMethod)
-      Some("An equality method (equals, canEquals or hashCode) already exists.")
-    else
-      None
+    None
   }
   
   override def sourceGeneration(selectedParams: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters) = {
     
     val equalityMethods = mkEqualityMethods(preparationResult.classDef.symbol, selectedParams, refactoringParams.callSuper)
     val newParents = newParentNames(selectedParams).map(name => Ident(newTermName(name)))
+    
+    val equalityMethodNames = List(nme.equals_, nme.hashCode_, nme.canEqual_).map(_.toString)
+    def isEqualityMethod(t: Tree) = t match {
+      case d: ValOrDefDef => equalityMethodNames contains d.nameString
+      case _ => false
+    }
+    
     def addEqualityMethods = transform {
-      case t @ Template(parents, self, body) => Template(parents:::newParents, self, equalityMethods:::body) replaces t
+      case t @ Template(parents, self, body) => {
+        val existing = preparationResult.existingEqualityMethods
+        val bodyFilter: Tree => Boolean = refactoringParams.keepExistingEqualityMethods match {
+          case true => (t: Tree) => true
+          case false => (t: Tree) => !isEqualityMethod(t)
+        }
+        val filteredBody = body.filter(bodyFilter)
+        val equalityMethodsInBody = filteredBody collect {case d: ValOrDefDef if equalityMethodNames contains d.nameString => d.name }
+        val filteredEqualityMethods = equalityMethods.filter(e => !(equalityMethodsInBody contains e.name))
+        Template(parents:::newParents, self, filteredBody:::filteredEqualityMethods) replaces t
+      }
     }
     
     addEqualityMethods
