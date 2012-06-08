@@ -50,6 +50,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     def importAsString(t: Tree) = {
       ancestorSymbols(t) map (_.nameString) mkString "."
     }
+    def stripPositions(t: Tree) = {
+      topdown(setNoPosition) apply t.duplicate getOrElse t
+    }
   }
   
   object CollapseImports extends Participant {
@@ -93,10 +96,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   object SortImports extends Participant {
     
-    def asText(t: Tree) = {
-      val blankTree = topdown(setNoPosition) apply duplicateTree(t) getOrElse t
-      createText(blankTree)
-    }
+    def asText(t: Tree) = createText(stripPositions(t))
     
     def apply(trees: List[Import]) = {
       trees.sortBy {
@@ -187,8 +187,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           if(neededSelectors.size == selectors.size) {
             Some(imp)
           } else if(neededSelectors.size > 0) {
-            val newExpr = ↓(setNoPosition) apply duplicateTree(expr) getOrElse expr
-            Some(Import(newExpr, neededSelectors))
+            Some(Import(stripPositions(expr), neededSelectors))
           } else {
             None
           }
@@ -208,8 +207,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           }
           
           if(neededSelectors.size > 0) {
-            val newExpr = ↓(setNoPosition) apply duplicateTree(expr) getOrElse expr
-            Import(newExpr, neededSelectors)
+            Import(stripPositions(expr), neededSelectors)
           } else {
             Import(EmptyTree, Nil)
           }

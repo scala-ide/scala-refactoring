@@ -303,7 +303,7 @@ trait TreeFactory {
         }
 
         // copy the tree and delete all positions so the full path will be written
-        val newExpr = topdown(setNoPosition &> removeThisTrees) apply duplicateTree(expr) getOrElse expr
+        val newExpr = topdown(setNoPosition &> removeThisTrees) apply expr.duplicate getOrElse expr
         val typeName = select.symbol.nameString
         Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else newTypeName(typeName), -1, name, -1))))
     }
