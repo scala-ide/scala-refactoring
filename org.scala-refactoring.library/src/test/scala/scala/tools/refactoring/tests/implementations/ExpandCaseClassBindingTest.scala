@@ -137,4 +137,15 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(expand)
+  
+  @Test(expected=classOf[PreparationException])
+  def illegalExpansion = new FileSet {
+    """
+      package illegalExpansion
+      object /*(*/Xy/*)*/ {
+        
+      }
+    """ becomes
+    """"""
+  } applyRefactoring(expand)
 }

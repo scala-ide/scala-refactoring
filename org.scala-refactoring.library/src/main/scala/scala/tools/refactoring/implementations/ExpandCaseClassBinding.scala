@@ -22,7 +22,7 @@ abstract class ExpandCaseClassBinding extends MultiStageRefactoring with GlobalI
   
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
     
-    def failure = Left(PreparationError("No binding to expand found."))
+    def failure = Left(PreparationError("No binding to expand found. Please select a binding in a case clause."))
     
     val res = s.findSelectedOfType[CaseDef] flatMap { caseDef =>
       s.findSelectedOfType[Bind] map {
