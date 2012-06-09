@@ -337,6 +337,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("FirstReverser"), (name) => name == "reverseFirst"))
   
   @Test
+  @ScalaVersion(matches="2.10") // < 2.10 has problems with the math imports
   def withImportsMovedToTrait = new FileSet {
     """
     package extractTrait.withImportsMovedToTrait
@@ -359,7 +360,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     NewFile becomes
     """
     package extractTrait.withImportsMovedToTrait
-    
     import scala.math.abs
     
     trait Preparator {
@@ -369,6 +369,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("Preparator"), (name) => name == "prepare"))
   
   @Test
+  @ScalaVersion(matches="2.10") // < 2.10 has problems with the math imports
   def withImportsOnlyInClass = new FileSet {
     """
     package extractTrait.withImportsOnlyInClass

@@ -48,7 +48,8 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   
   trait Participant extends (List[Import] => List[Import]) {
     def importAsString(t: Tree) = {
-      ancestorSymbols(t) map (_.nameString) mkString "."
+      val ancestorSyms = ancestorSymbols(t)
+      ancestorSyms map (_.nameString) filterNot (_ == "package") mkString  (".")
     }
     def stripPositions(t: Tree) = {
       topdown(setNoPosition) apply t.duplicate getOrElse t

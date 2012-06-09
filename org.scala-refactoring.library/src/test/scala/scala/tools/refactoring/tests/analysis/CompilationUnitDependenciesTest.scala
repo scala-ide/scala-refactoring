@@ -322,7 +322,17 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(matches="2.10")
   def importIsUsedAsType = assertDependencies(
+    """java.util.ArrayList""",
+    """
+      import java.util._
+      class UsesMap { def x(m: java.util.ArrayList[Int]) = () }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.9")
+  def importIsUsedAsType29 = assertDependencies(
     """java.util
        java.util.ArrayList""",
     """
@@ -339,7 +349,18 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(matches="2.10")
   def importIsUsedAsTypeAscription = assertDependencies(
+    """scala.collection.immutable.Set
+       scala.this.Predef.Map
+       scala.this.Predef.any2ArrowAssoc""",
+    """
+      class UsesSet { val s: collection.immutable.Set[Any] = Map(1 -> 2).toSet }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.9")
+  def importIsUsedAsTypeAscription29 = assertDependencies(
     """scala.collection.immutable
        scala.collection.immutable.Set
        scala.this.Predef.Map
@@ -532,8 +553,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   @Test
   @ScalaVersion(matches="2.10")
   def renamedPackage = assertDependencies(
-    """java.util
-       java.util.Map""",
+    """java.util.Map""",
     """
       import java.{ lang => jl, util => ju }
       trait Y {
@@ -627,7 +647,22 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
+  @ScalaVersion(matches="2.10")
   def importedImplicitConversion = assertDependencies(
+    """java.util.List
+       scala.collection.JavaConversions.bufferAsJavaList
+       scala.collection.mutable.ListBuffer""",
+    """   
+      import scala.collection.JavaConversions._
+      object Conversions {
+        val sl = new scala.collection.mutable.ListBuffer[Int]
+        val jl : java.util.List[Int] = sl
+      }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.9")
+  def importedImplicitConversion29 = assertDependencies(
     """java.util
        java.util.List
        scala.collection.JavaConversions.bufferAsJavaList

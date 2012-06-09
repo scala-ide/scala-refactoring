@@ -915,7 +915,11 @@ trait PimpedTrees {
           // were removed during the transformations. Therefore we have
           // to look up the original apply method
           val argumentsFromOriginalTree = compilationUnitOfFile(apply.pos.source.file) map (_.body) flatMap { root =>
-            root.find(_ samePos apply) collect { case Apply(_, args) => args }
+            val treeWithSamePos = root.find(_ samePos apply)
+            treeWithSamePos collect { 
+              case Block(_, Apply(_, args)) => args 
+              case Apply(_, args) => args 
+            }
           } getOrElse (return block)
           
           val syntheticNamesToRealNames = (argumentsFromOriginalTree map { 
