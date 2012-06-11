@@ -265,7 +265,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ if qualifier.pos.sameRange(tree.pos) && qualifier.pos.isTransparent =>
           l ++ p(nameOrig) ++ r
           
-        case _ if tree.pos.sameRange(qualifier.pos) || qualifier.pos == NoPosition
+        case _ if (qualifier.pos == NoPosition || tree.pos.sameRange(qualifier.pos)) 
             && (selector == nme.unapply || selector == nme.apply || selector == nme.unapplySeq) =>
           l ++ p(qualifier) ++ r
           

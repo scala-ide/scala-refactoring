@@ -470,15 +470,22 @@ trait PimpedTrees {
       }
     }
     
+    /*
+     * Returns existing equality methods.
+     * Note that this is a rough by-name check.
+     */
+    def existingEqualityMethods: List[ValOrDefDef] = {
+      t.body collect {
+        case d: ValOrDefDef if List(nme.equals_, nme.hashCode_, nme.canEqual_) contains d.name => d
+      }
+    }
+    
     /**
      * Returns whether the template has an implementation of an equals, canEquals or hashCode method. 
      */
-    def hasEqualityMethod = {
-      val body = t.body
-      val existingEqualsOrHashcodeOption = body collectFirst {
-        case d: DefDef if List(nme.equals_, nme.hashCode_, nme.canEqual_) contains d.name => d
-      }
-      existingEqualsOrHashcodeOption.isDefined
+    def hasEqualityMethod: Boolean = existingEqualityMethods match {
+      case Nil => false
+      case _ => true
     }
   }
   
@@ -848,6 +855,9 @@ trait PimpedTrees {
   object ModifierTree {
     def unapply(m: global.Modifiers) = {
       Some(m.positions.toList map {
+        // hack to get rid of override modifiers
+        // couldn't figure out how to remove a flag from the positions map (michael)
+        case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 => ModifierTree(0)
         case (flag, pos) if pos.isRange =>
           ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
         case (flag, _) =>
@@ -905,7 +915,11 @@ trait PimpedTrees {
           // were removed during the transformations. Therefore we have
           // to look up the original apply method
           val argumentsFromOriginalTree = compilationUnitOfFile(apply.pos.source.file) map (_.body) flatMap { root =>
-            root.find(_ samePos apply) collect { case Apply(_, args) => args }
+            val treeWithSamePos = root.find(_ samePos apply)
+            treeWithSamePos collect { 
+              case Block(_, Apply(_, args)) => args 
+              case Apply(_, args) => args 
+            }
           } getOrElse (return block)
           
           val syntheticNamesToRealNames = (argumentsFromOriginalTree map { 

@@ -13,14 +13,22 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
 
   import global._
   
-  case class PreparationResult(classDef: ClassDef, classParams: List[(ValDef, Boolean)])
+  case class PreparationResult(
+      classDef: ClassDef, 
+      classParams: List[(ValDef, Boolean)], 
+      existingEqualityMethods: List[ValOrDefDef])
   
   /** A function that takes a class parameter name and decides
    *  whether this parameter should be used in equals/hashCode
-   *  computations, and a boolean that indicates whether calls
-   *  to super should be used or not.
+   *  computations, a boolean that indicates whether calls
+   *  to super should be used or not, and a boolean that indicates
+   *  whether existing equality methods (equals, canEqual and hashCode)
+   *  should be kept or replaced.
    */
-  case class RefactoringParameters(callSuper: Boolean = true, paramsFilter: Option[ValDef => Boolean] = None)
+  case class RefactoringParameters(
+      callSuper: Boolean = true, 
+      paramsFilter: ValDef => Boolean, 
+      keepExistingEqualityMethods: Boolean)
   
   def prepare(s: Selection) = {
     val notAClass = Left(PreparationError("No class definition selected."))
@@ -29,7 +37,9 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
       case Some(classDef) if classDef.hasSymbol && classDef.symbol.isTrait => notAClass
       case Some(classDef) => {
         failsBecause(classDef).map(PreparationError(_)) toLeft {
-          PreparationResult(classDef, classDef.impl.nonPrivateClassParameters)
+          val classParams = classDef.impl.nonPrivateClassParameters
+          val equalityMethods = classDef.impl.existingEqualityMethods
+          PreparationResult(classDef, classParams, equalityMethods)
         }
       }
     }
@@ -38,11 +48,7 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
   def failsBecause(classDef: ClassDef): Option[String]
   
   def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    val selectedParams = params.paramsFilter match {
-      case Some(paramsFilter) => prep.classParams.map(_._1) filter paramsFilter
-      // if no params filter is supplied we use only immutable class parameters
-      case None => prep.classParams.collect{ case (param, false) => param }
-    }
+    val selectedParams = prep.classParams.map(_._1) filter params.paramsFilter
     
     val classSymbol = prep.classDef.symbol
     

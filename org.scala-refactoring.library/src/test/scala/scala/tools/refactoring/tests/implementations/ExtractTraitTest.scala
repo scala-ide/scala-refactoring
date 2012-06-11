@@ -337,6 +337,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("FirstReverser"), (name) => name == "reverseFirst"))
   
   @Test
+  @ScalaVersion(matches="2.10") // < 2.10 has problems with the math imports
   def withImportsMovedToTrait = new FileSet {
     """
     package extractTrait.withImportsMovedToTrait
@@ -359,7 +360,6 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     NewFile becomes
     """
     package extractTrait.withImportsMovedToTrait
-    
     import scala.math.abs
     
     trait Preparator {
@@ -369,6 +369,7 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extractTrait(("Preparator"), (name) => name == "prepare"))
   
   @Test
+  @ScalaVersion(matches="2.10") // < 2.10 has problems with the math imports
   def withImportsOnlyInClass = new FileSet {
     """
     package extractTrait.withImportsOnlyInClass
@@ -498,8 +499,41 @@ class ExtractTraitTest extends TestHelper with TestRefactoring {
     """
     package withExistingSuperclass
     trait Extracted {
-      override def foo(s: String) {}
+      def foo(s: String) {}
     }
     """
   } applyRefactoring(extractTrait("Extracted", _ == "foo"))
+
+  @Test
+  def removeOverride = new FileSet {
+    """
+    package extractTrait.removeOverride
+    
+    trait T {
+      def foo(a: Int, b: Int) = a + b
+    }
+    
+    class /*(*/C/*)*/ extends T {
+      override def foo(a: Int, b: Int) = a * b
+    }
+    """ becomes
+    """
+    package extractTrait.removeOverride
+    
+    trait T {
+      def foo(a: Int, b: Int) = a + b
+    }
+    
+    class /*(*/C/*)*/ extends T with Extracted {
+    }
+    """
+    NewFile becomes
+    """
+    package extractTrait.removeOverride
+    trait Extracted {
+      def foo(a: Int, b: Int) = a * b
+    }
+    """
+  } applyRefactoring(extractTrait("Extracted", (s) => true))
+  
 }

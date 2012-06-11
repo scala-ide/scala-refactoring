@@ -10,15 +10,13 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
 
   outer =>
     
-  def introduceProductNTrait(params: (Boolean, Option[String => Boolean]))(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new IntroduceProductNTrait with SilentTracing with GlobalIndexes {
+  def introduceProductNTrait(params: (Boolean, String => Boolean, Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
+    val refactoring = new IntroduceProductNTrait with SilentTracing {
       val global = outer.global
-      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
-      val index = GlobalIndex(cuIndexes)
     }
     import refactoring.global.ValDef
-    val paramsFilter = params._2.map(strFilter => (param: ValDef) => strFilter(param.name.toString))
-    val changes = performRefactoring(refactoring.RefactoringParameters(params._1, paramsFilter))
+    val paramsFilter = (param: ValDef) => params._2(param.name.toString)
+    val changes = performRefactoring(refactoring.RefactoringParameters(params._1, paramsFilter, params._3))
   }.changes
   
   @Test
@@ -53,7 +51,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(false, None))
+  } applyRefactoring(introduceProductNTrait(false, _ => true, false))
   
   @Test
   def product2Simple = new FileSet {
@@ -91,7 +89,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(false, None))
+  } applyRefactoring(introduceProductNTrait(false, _ => true, false))
   
   @Test
   def multipleTraits = new FileSet {
@@ -125,7 +123,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(true, Some(s => s == "p")))
+  } applyRefactoring(introduceProductNTrait(true, s => s == "p", false))
   
   @Test
   def nonPublicClassParams = new FileSet {
@@ -159,6 +157,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(true, None))
+  } applyRefactoring(introduceProductNTrait(true, _ == "immutable", false))
     
 }
