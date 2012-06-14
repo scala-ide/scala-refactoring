@@ -63,7 +63,8 @@ trait CompilationUnitIndexes {
            * */
           case ts: TypeSymbol =>
             ts.info match {
-              case tr: TypeRef if tr.sym != null =>
+              case tr: TypeRef if tr.sym != null && /*otherwise we get wrong matches because of Type-Aliases*/ 
+                  tr.sym.nameString == s.nameString =>
                 add(tr.sym)
               case _ => ()
             }

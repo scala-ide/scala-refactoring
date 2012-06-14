@@ -338,7 +338,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
     trait Abc
     class B(s: String)
     """ becomes
-    "class B, class Object, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, type AnyRef, type String, value s, value s"
+    "class B, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, type AnyRef, type String, value s, value s"
   } apply(allSymbols)
   
   @Test

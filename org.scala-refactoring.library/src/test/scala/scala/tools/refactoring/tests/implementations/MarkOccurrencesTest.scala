@@ -367,4 +367,36 @@ class MarkOccurrencesTest extends TestHelper {
       val refactoring: ###########
     }
     """)
+    
+  @Test
+  def typeAliasRhs = markOccurrences("""
+    class Foo2 {
+      type T = /*(*/Int/*)*/
+      val x: T = 10
+      def foo(x: T) {}
+    }
+    """,
+    """
+    class Foo2 {
+      type T = /*(*/###/*)*/
+      val x: T = 10
+      def foo(x: T) {}
+    }
+    """)
+    
+  @Test
+  def typeAliasLhs = markOccurrences("""
+    class Foo2 {
+      type /*(*/T/*)*/ = Int
+      val x: T = 10
+      def foo(x: T) {}
+    }
+    """,
+    """
+    class Foo2 {
+      type /*(*/#/*)*/ = Int
+      val x: # = 10
+      def foo(x: #) {}
+    }
+    """)
 }
