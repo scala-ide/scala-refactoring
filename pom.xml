@@ -197,16 +197,6 @@
       <name>Maven Codehaus snapshot repository</name>
       <url>http://snapshots.repository.codehaus.org/</url>
     </repository>
-    <repository>
-      <id>scala-tools.org.releases</id>
-      <name>Scala Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </repository>
-    <repository>
-      <id>scala-tools.snapshot</id>
-      <name>Scala Tools maven snapshot repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-    </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
@@ -220,16 +210,6 @@
       <snapshots>
         <enabled>true</enabled>
       </snapshots>
-    </pluginRepository>
-    <pluginRepository>
-      <id>scala-tools.release</id>
-      <name>Scala Tools maven release repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </pluginRepository>
-    <pluginRepository>
-      <id>scala-tools.snapshot</id>
-      <name>Scala Tools maven snapshot repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
     </pluginRepository>
   </pluginRepositories>
   <reporting>
