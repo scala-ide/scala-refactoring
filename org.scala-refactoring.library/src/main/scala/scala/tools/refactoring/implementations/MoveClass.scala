@@ -157,8 +157,11 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
           targetPackages
         }
 
-        if(newPid.isEmpty) {
-          PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), implsToMove)
+        // move to the default package:
+        if(newPid == List("")) {
+          PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), implsToMove) replaces pkg
+        } else if(newPid.isEmpty) {
+          PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), implsToMove) // don't `replace` to get rid of empty lines
         } else {
           PackageDef(pid = Ident(newPid mkString ".") replaces pid, stats = implsToMove) replaces pkg
         }

@@ -66,7 +66,13 @@ trait TreeChangesDiscoverer {
       
       def newChildrenHaveSamePosAndTypesAs(oldChildren: List[Tree]) = {
         val newChildren = children(newTree)
-        (newChildren corresponds oldChildren) { (t1, t2) => t1.samePosAndType(t2) }
+        (newChildren corresponds oldChildren) {
+          // If we're going from the default package to an explicit package,
+          // we need to re-write the parent:
+          case (t1: Ident, Ident(nme.EMPTY_PACKAGE_NAME)) => 
+            t1.name == nme.EMPTY_PACKAGE_NAME
+          case (t1, t2) => t1.samePosAndType(t2)
+        }
       }
       
       findOriginalTree(newTree) map (oldTree => Pair(oldTree, children(oldTree))) match {

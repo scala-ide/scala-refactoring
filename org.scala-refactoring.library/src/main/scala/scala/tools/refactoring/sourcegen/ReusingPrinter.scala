@@ -573,16 +573,19 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       
       def hasOnlyNewImports = !imports.isEmpty && !imports.exists(_.pos.isRange)
 
-      val pid_ = l ++ {
+      val pid_ = {
 
         val isNextStmtEmptyPackage = restStats.headOption collect {
           case global.PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _) => true
         } isDefined
 
-        if(isNextStmtEmptyPackage) {
-          p(pid, before = "package" ++ Requisite.Blank)
+        // default package:
+        if (pid.name == nme.EMPTY_PACKAGE_NAME) {
+          EmptyFragment
+        } else if(isNextStmtEmptyPackage) {
+          l ++ p(pid, before = "package" ++ Requisite.Blank)
         } else {
-          p(pid, before = "package" ++ Requisite.Blank, after = newline)
+          l ++ p(pid, before = "package" ++ Requisite.Blank, after = newline)
         }
       }
 

@@ -778,7 +778,44 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(moveTo("org.scala-refactoring"))
+  
+  @Test
+  def moveToDefaultPackage = new FileSet {
+    """
+    package ctes
+    
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """ becomes
+    """
+    
+    
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """
+  } applyRefactoring(moveTo(""))
 
+  @Test
+  def moveFromDefaultPackageNoImports = new FileSet {
+    """
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """ becomes
+    """
+    package ctes
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """
+  } applyRefactoring(moveTo("ctes"))
+  
   @Test
   def nestedPackageAndImports = new FileSet {
     """
