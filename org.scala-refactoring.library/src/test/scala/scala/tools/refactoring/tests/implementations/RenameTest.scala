@@ -1181,4 +1181,20 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("fltn"))
+
+  @Test
+  def typeProjection = new FileSet {
+    """
+    class A {
+      trait /*(*/B/*)*/
+      def foo(b: A#B) {}
+    }
+    """ becomes 
+    """
+    class A {
+      trait /*(*/C/*)*/
+      def foo(b: A#C) {}
+    }
+    """
+  } applyRefactoring(renameTo("C"))
 }
