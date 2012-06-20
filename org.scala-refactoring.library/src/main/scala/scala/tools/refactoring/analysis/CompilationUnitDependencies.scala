@@ -151,6 +151,17 @@ trait CompilationUnitDependencies {
         } 
         selects foreach foundPotentialTree
       }
+                  
+      // we don't need to add a dependency for method calls where the receiver
+      // is explicit in the source code.
+      def isMethodCallFromExplicitReceiver(t: Select) = {
+        t.qualifier.pos.isRange && t.symbol.isMethod && 
+        !(t.qualifier.pos.sameRange(t.pos) && t.qualifier.pos.isTransparent)
+      }
+      
+      def hasStableQualifier(t: Select) = {
+        t.qualifier.symbol != null && (!t.qualifier.symbol.isTerm || t.qualifier.symbol.isStable)
+      }
       
       override def traverse(root: Tree) = root match {
 
@@ -172,18 +183,24 @@ trait CompilationUnitDependencies {
         
         case t : ApplyImplicitView =>
           
-          // if we find a select, it's a dependency
-          // this is likely not fine-grained enough
-          // and might add too many dependencies
-          t.fun find {
-            case t: Select => true
-            case _ => false
-          } foreach {
-            case Select(This(_), _) =>
-              // the implicit conversion is available from `X.this`, so
-              // we don't need to import it.
-            case t: Select => 
-              foundPotentialTree(t)
+          val hasSelectFromNonPackageThis = t.fun exists {
+            case Select(ths: This, _) if !ths.symbol.isPackageClass =>
+              true
+            case _ =>
+              false
+          }
+          
+          if(hasSelectFromNonPackageThis) {
+            // We can ignore this tree because it is selected from a 
+            // non-package instance, so there's nothing useful to import.
+          } else {
+
+            t.fun find {
+              case t: Select =>
+                !isMethodCallFromExplicitReceiver(t) && !t.pos.isTransparent && hasStableQualifier(t)
+              case _ => 
+                false
+            } foreach foundPotentialTree
           }
           
           t.args foreach traverse
@@ -200,18 +217,12 @@ trait CompilationUnitDependencies {
           ()
                   
         case t @ Select(qual, _) if t.pos.isRange =>
-            
-          // we don't need to add a dependency for method calls where the receiver
-          // is explicit in the source code.
-          val isMethodCallFromExplicitReceiver = {
-            qual.pos.isRange && t.symbol.isMethod && !(qual.pos.sameRange(t.pos) && qual.pos.isTransparent)
-          }
           
-          if (!isMethodCallFromExplicitReceiver
+          if (!isMethodCallFromExplicitReceiver(t)
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD 
               && !t.pos.isTransparent
-              && qual.symbol != null && (!qual.symbol.isTerm || qual.symbol.isStable)) {
+              && hasStableQualifier(t)) {
             addToResult(t)
           } 
           

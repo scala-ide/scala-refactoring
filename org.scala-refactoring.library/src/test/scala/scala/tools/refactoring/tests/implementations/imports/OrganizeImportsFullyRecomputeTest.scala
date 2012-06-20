@@ -851,4 +851,31 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       }
     """
   } applyRefactoring organize
+
+  @Test
+  def implicitConversion = new FileSet {
+    addToCompiler("implicitConversion.scala", """
+      package implicitConversion
+      trait AimplicitConversion {
+        class B
+        object B {
+          implicit def any2B(i: Any): B = new B
+        }
+      }
+    """);
+    """
+    import implicitConversion.AimplicitConversion
+    
+    object C extends AimplicitConversion {
+      val b: B = new Object
+    }
+    """ becomes
+    """
+    import implicitConversion.AimplicitConversion
+    
+    object C extends AimplicitConversion {
+      val b: B = new Object
+    }
+    """
+  } applyRefactoring organize
 }
