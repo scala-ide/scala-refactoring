@@ -12,6 +12,7 @@ import transformation._
 import util._
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
+    classOf[CustomFormattingTest],
     classOf[ExpandCaseClassBindingTest],
     classOf[MoveClassTest],
     classOf[ExtractTraitTest],

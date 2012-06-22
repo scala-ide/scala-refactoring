@@ -9,7 +9,7 @@ import tools.nsc.util.RangePosition
 
 trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
-  outer: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with Indentations =>
+  outer: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with Formatting with Indentations =>
 
   import global._
   
@@ -551,10 +551,15 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
 
     override def Import(tree: Import, expr: Tree, selectors: List[ImportSelectorTree])(implicit ctx: PrintingContext) = {
+      
+      val sp = spacingAroundMultipleImports
+      
+      val selectors_ = pp(selectors, before = sp, separator = ", ", after = sp)
+      
       if(selectors.size > 1) {
-        l ++ "import " ++ p(expr, after = ".") ++ "{" ++ pp(selectors, separator = ", ") ++ "}" ++ r
+        l ++ "import " ++ p(expr, after = ".") ++ "{" ++ selectors_ ++ "}" ++ r
       } else {
-        l ++ "import " ++ p(expr, after = ".") ++ pp(selectors, separator = ", ") ++ r
+        l ++ "import " ++ p(expr, after = ".") ++ selectors_ ++ r
       }    
     }
   }
