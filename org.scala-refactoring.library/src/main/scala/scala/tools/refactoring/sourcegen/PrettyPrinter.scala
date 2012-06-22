@@ -11,7 +11,7 @@ import scala.reflect.NameTransformer
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
-  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper =>
+  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper with Formatting =>
   
   import global._
   
@@ -353,7 +353,13 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       expr match {
         case EmptyTree => EmptyFragment
         case _ if selectors.isEmpty => p(expr)
-        case _ => Layout("import ") ++ p(expr) ++ Layout(".") ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
+        case _ => 
+          val sp = spacingAroundMultipleImports
+          val selectors_ = if(needsBraces) {
+            "{" + sp + ss + sp + "}"
+          } else ss
+          
+          Layout("import ") ++ p(expr) ++ Layout(".") ++ Fragment(selectors_)
       }
     }
   }  

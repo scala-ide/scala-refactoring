@@ -8,7 +8,7 @@ import scala.tools.nsc.util.SourceFile
 
 trait AbstractPrinter extends SourceCodeHelpers with CommonPrintUtils {
 
-  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess =>
+  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with Formatting =>
 
   import global._
 
