@@ -13,7 +13,7 @@ trait TreeExtractors {
   
   import global._
   
-  object names {
+  object Names {
     lazy val scala = newTermName("scala")
     lazy val pkg = newTermName("package")
     lazy val None  = newTermName("None")
@@ -31,7 +31,7 @@ trait TreeExtractors {
    */
   object SomeExpr {
     def unapply(t: Tree): Option[Tree] = t match {
-      case Apply(TypeApply(Select(Select(Ident(names.scala), names.Some), _), (_: TypeTree) :: Nil), argToSome :: Nil) => Some(argToSome)
+      case Apply(TypeApply(Select(Select(Ident(Names.scala), Names.Some), _), (_: TypeTree) :: Nil), argToSome :: Nil) => Some(argToSome)
       case _ => None
     }
   }
@@ -41,7 +41,7 @@ trait TreeExtractors {
    */
   object NoneExpr {
     def unapply(t: Tree) = cond(t) {
-      case Select(Ident(names.scala), names.None) => true
+      case Select(Ident(Names.scala), Names.None) => true
     }
   }
   
@@ -51,10 +51,10 @@ trait TreeExtractors {
   object ListExpr {
     def unapply(t: Tree): Option[Tree] = t match {
       case Block(
-            (ValDef(_, v1, _, arg)) :: Nil, Apply(TypeApply(Select(Select(This(names.immutable), names.Nil), names.::), (_: TypeTree) :: Nil), 
+            (ValDef(_, v1, _, arg)) :: Nil, Apply(TypeApply(Select(Select(This(Names.immutable), Names.Nil), Names.::), (_: TypeTree) :: Nil), 
             Ident(v2) :: Nil)) if v1 == v2 =>
         Some(arg) 
-      case Apply(TypeApply(Select(Select(This(names.immutable), names.List), names.apply), (_: TypeTree) :: Nil), arg :: Nil) => 
+      case Apply(TypeApply(Select(Select(This(Names.immutable), Names.List), Names.apply), (_: TypeTree) :: Nil), arg :: Nil) => 
         Some(arg)
       case _ => 
         None
@@ -66,7 +66,7 @@ trait TreeExtractors {
    */
   object NilExpr {
     def unapply(t: Tree) = cond(t) {
-      case Select(This(names.immutable), names.Nil) => true
+      case Select(This(Names.immutable), Names.Nil) => true
     }
   }
 
@@ -121,7 +121,7 @@ trait TreeExtractors {
     object NoneCaseDef {
                 
       def unapply(t: Tree): Option[Tree] = t match {
-        case CaseDef(Select(Ident(names.scala), names.None), EmptyTree, body) => Some(body)
+        case CaseDef(Select(Ident(Names.scala), Names.None), EmptyTree, body) => Some(body)
         case CaseDef(_, EmptyTree, body @ NoneExpr()) => Some(body)
         case _ => None
       }
@@ -132,7 +132,7 @@ trait TreeExtractors {
         case CaseDef(Apply(tt: TypeTree, bind :: _), EmptyTree, body) =>
     
           tt.original match {
-            case Select(Ident(names.scala), names.Some) =>           
+            case Select(Ident(Names.scala), Names.Some) =>           
               bind match {
                 case Bind(name, Ident(nme.WILDCARD)) => Some(Pair(name, body))
                 case Ident(name)   => Some(Pair(name, body))

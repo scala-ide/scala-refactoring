@@ -100,13 +100,15 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
         true
     }
     
-    if(cannotDecideIfNeeded) return true
-    
-    val dependentModules = computeDependentModules(unit)
-    
-    (wildcardImport(s) && isWildcardImportNeeded(unit, dependentModules, expr, s)) ||
+    if(cannotDecideIfNeeded) {
+      true // the import is needed
+    } else {
+      val dependentModules = computeDependentModules(unit)
+          
+      (wildcardImport(s) && isWildcardImportNeeded(unit, dependentModules, expr, s)) ||
       dependentModules.exists(m => m.name.toString == s.name.toString) ||
       importSelectorImportsFromNeededPackageObject(unit, expr)
+    }
   }
   
   def findUnusedImports(unit: CompilationUnit): List[(String, Int)] = {

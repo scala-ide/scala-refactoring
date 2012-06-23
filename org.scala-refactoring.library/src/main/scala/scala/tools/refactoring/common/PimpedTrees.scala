@@ -56,6 +56,8 @@ trait PimpedTrees {
         else 
           new RangePosition(t.pos.source, imp.namePos, imp.namePos, imp.namePos + imp.name.length)
       }
+      
+      assert(imp.name != nme.NO_NAME, "Unexpected name %s in %s. The full import tree is %s".format(imp.name, imp, t))
     
       val name = NameTree(imp.name) setPos pos
       
@@ -324,7 +326,7 @@ trait PimpedTrees {
         case t: NameTree => t.nameString
         case t: TypeTree => t.symbol.nameString // FIXME: use something better
         case ImportSelectorTree(NameTree(name), _) => name.toString
-        case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
+        case _ => sys.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
       }
     }
   }
@@ -795,7 +797,7 @@ trait PimpedTrees {
    * Represent a Name as a tree, including its position.
    */
   case class NameTree(name: global.Name) extends global.Tree {
-    if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
+    if (name == nme.NO_NAME) sys.error("Name cannot be <none>, NoSymbol used?")
     def nameString = {
       if(pos.isRange && pos.source.content(pos.start) == '`' && !name.toString.startsWith("`")) {
         "`"+ name.decode.trim +"`"
@@ -806,7 +808,7 @@ trait PimpedTrees {
     override def toString = "NameTree("+ nameString +")"
     override def setPos(p: Position) = {
       if(p != NoPosition && p.start < 0) {
-        Predef.error("pos.start is"+ p.start)
+        sys.error("pos.start is"+ p.start)
       }
       super.setPos(p)
     }

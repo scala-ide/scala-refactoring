@@ -81,7 +81,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
       Fragment(code.asText)
     }
 
-    def default(t: Tree)(implicit ctx: PrintingContext): Fragment = Predef.error("Not implemented! "+ t.getClass.getSimpleName)
+    def default(t: Tree)(implicit ctx: PrintingContext): Fragment = sys.error("Not implemented! "+ t.getClass.getSimpleName)
 
     def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Template)(implicit ctx: PrintingContext): Fragment = default(tree)
     def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext): Fragment = default(tree)

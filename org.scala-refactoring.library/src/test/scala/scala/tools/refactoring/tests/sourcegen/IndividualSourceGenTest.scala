@@ -285,7 +285,7 @@ else {
     }
     """) match {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
-      case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
+      case _ => Assert.fail(); sys.error("") // too bad fail does not return Nothing
     }
     
     val newRHS1 = Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(shallowDuplicate(originalDefDef.rhs) setPos NoPosition))
@@ -338,7 +338,7 @@ else {
     }
     """) match {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
-      case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
+      case _ => Assert.fail(); sys.error("") // too bad fail does not return Nothing
     }
     
     val newRHS1 = new Block(List(Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(originalDefDef.rhs))), EmptyTree)

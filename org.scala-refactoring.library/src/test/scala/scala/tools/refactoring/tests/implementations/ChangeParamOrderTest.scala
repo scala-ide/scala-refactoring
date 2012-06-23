@@ -56,7 +56,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::0::2::Nil)))	
+  } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::0::2::Nil)))
   
   @Test
   def methodCall = new FileSet {

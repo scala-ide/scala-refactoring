@@ -27,12 +27,12 @@ trait CompilationUnitDependencies {
         val Java = newTypeName("java")
         val `lang` = newTermName("lang")
         t.qualifier match {
-          case Ident(names.scala) => false
+          case Ident(Names.scala) => false
           case This(Scala) => false
           case Select(This(Java), `lang`) => false
-          case Select(Ident(names.scala), names.pkg) => false
-          case Select(Ident(names.scala), names.Predef) => false
-          case Select(This(Scala), names.Predef) => false
+          case Select(Ident(Names.scala), Names.pkg) => false
+          case Select(Ident(Names.scala), Names.Predef) => false
+          case Select(This(Scala), Names.Predef) => false
           case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
           case qual if qual.nameString == "ClassTag" => false
           case _ => true
@@ -167,9 +167,9 @@ trait CompilationUnitDependencies {
 
         case Import(_, _) => ()
 
-        case Select(Ident(names.scala), _) => ()
+        case Select(Ident(Names.scala), _) => ()
         
-        case Select(Select(Ident(names.scala), names.pkg), _) => ()
+        case Select(Select(Ident(Names.scala), Names.pkg), _) => ()
         
         case t: Template =>
           // The primary constructor can have visible annotations even
