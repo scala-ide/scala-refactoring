@@ -40,14 +40,14 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       
       override def equals(other: Any) = {
         other match {
-          case that: introduceProductNTrait.product1Simple.Foo => that.canEqual(Foo.this).&&(param.==(that.param))
+          case that: introduceProductNTrait.product1Simple.Foo => that.canEqual(Foo.this) && param == that.param
           case _ => false
         }
       }
       
       override def hashCode() = {
         val prime = 41
-        prime.*(1).+(param.hashCode)
+        prime * 1 + param.hashCode
       }
     }
     """
@@ -78,14 +78,14 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       
       override def equals(other: Any) = {
         other match {
-          case that: introduceProductNTrait.product2Simple.Foo => that.canEqual(Foo.this).&&(p1.==(that.p1)).&&(p2.==(that.p2))
+          case that: introduceProductNTrait.product2Simple.Foo => that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
           case _ => false
         }
       }
       
       override def hashCode() = {
         val prime = 41
-        prime.*(prime.*(1).+(p1.hashCode)).+(p2.hashCode)
+        prime * (prime * 1 + p1.hashCode) + p2.hashCode
       }
     }
     """
@@ -112,14 +112,14 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       
       override def equals(other: Any) = {
         other match {
-          case that: introduceProductNTrait.multipleTraits.Foo => Foo.super.equals(that).&&(that.canEqual(Foo.this)).&&(p.==(that.p))
+          case that: introduceProductNTrait.multipleTraits.Foo => Foo.super.equals(that) && that.canEqual(Foo.this) && p == that.p
           case _ => false
         }
       }
       
       override def hashCode() = {
         val prime = 41
-        prime.*(Foo.super.hashCode()).+(p.hashCode)
+        prime * Foo.super.hashCode() + p.hashCode
       }
     }
     """
@@ -146,14 +146,14 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       
       override def equals(other: Any) = {
         other match {
-          case that: introduceProductNTrait.nonPublicClassParams.Foo => Foo.super.equals(that).&&(that.canEqual(Foo.this)).&&(immutable.==(that.immutable))
+          case that: introduceProductNTrait.nonPublicClassParams.Foo => Foo.super.equals(that) && that.canEqual(Foo.this) && immutable == that.immutable
           case _ => false
         }
       }
       
       override def hashCode() = {
         val prime = 41
-        prime.*(Foo.super.hashCode()).+(immutable.hashCode)
+        prime * Foo.super.hashCode() + immutable.hashCode
       }
     }
     """

@@ -36,14 +36,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def equals(other: Any) = {
           other match {
-            case that: generateHashcodeAndEquals.singleValParam.Foo => that.canEqual(Foo.this).&&(param.==(that.param))
+            case that: generateHashcodeAndEquals.singleValParam.Foo => that.canEqual(Foo.this) && param == that.param
             case _ => false
           }
         }
         
         override def hashCode() = {
           val prime = 41
-          prime.*(1).+(param.hashCode)
+          prime * 1 + param.hashCode
         }
       }
     """
@@ -66,14 +66,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def equals(other: Any) = {
           other match {
-            case that: generateHashcodeAndEquals.twoValParams.Foo => that.canEqual(Foo.this).&&(p1.==(that.p1)).&&(p2.==(that.p2))
+            case that: generateHashcodeAndEquals.twoValParams.Foo => that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
         
         override def hashCode() = {
           val prime = 41
-          prime.*(prime.*(1).+(p1.hashCode)).+(p2.hashCode)
+          prime * (prime * 1 + p1.hashCode) + p2.hashCode
         }
       }
     """
@@ -96,14 +96,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def equals(other: Any) = {
           other match {
-            case that: generateHashcodeAndEquals.excludeNonPublicParams.Foo => that.canEqual(Foo.this).&&(p2.==(that.p2))
+            case that: generateHashcodeAndEquals.excludeNonPublicParams.Foo => that.canEqual(Foo.this) && p2 == that.p2
             case _ => false
           }
         }
         
         override def hashCode() = {
           val prime = 41
-          prime.*(1).+(p2.hashCode)
+          prime * 1 + p2.hashCode
         }
       }
     """
@@ -130,7 +130,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def hashCode() = {
           val prime = 41
-          prime.*(prime.*(1).+(p1.hashCode)).+(p2.hashCode)
+          prime * (prime * 1 + p1.hashCode) + p2.hashCode
         }
       }
     """
@@ -155,14 +155,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def equals(other: Any) = {
           other match {
-            case that: generateHashcodeAndEquals.dropExistingHashCode.Foo => that.canEqual(Foo.this).&&(p1.==(that.p1)).&&(p2.==(that.p2))
+            case that: generateHashcodeAndEquals.dropExistingHashCode.Foo => that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
         
         override def hashCode() = {
           val prime = 41
-          prime.*(prime.*(1).+(p1.hashCode)).+(p2.hashCode)
+          prime * (prime * 1 + p1.hashCode) + p2.hashCode
         }
       }
     """
@@ -215,14 +215,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       
       override def equals(other: Any) = {
         other match {
-          case that: generateHashcodeAndEquals.selectByName.Foo => that.canEqual(Foo.this).&&(p2.==(that.p2)).&&(p3.==(that.p3))
+          case that: generateHashcodeAndEquals.selectByName.Foo => that.canEqual(Foo.this) && p2 == that.p2 && p3 == that.p3
           case _ => false
         }
       }
       
       override def hashCode() = {
         val prime = 41
-        prime.*(prime.*(1).+(p2.hashCode)).+(p3.hashCode)
+        prime * (prime * 1 + p2.hashCode) + p3.hashCode
       }
     }
     """
@@ -251,14 +251,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def equals(other: Any) = {
           other match {
-            case that: generateHashcodeAndEquals.callSuper.Foo => Foo.super.equals(that).&&(that.canEqual(Foo.this)).&&(p1.==(that.p1)).&&(p2.==(that.p2))
+            case that: generateHashcodeAndEquals.callSuper.Foo => Foo.super.equals(that) && that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
         
         override def hashCode() = {
           val prime = 41
-          prime.*(prime.*(Foo.super.hashCode()).+(p1.hashCode)).+(p2.hashCode)
+          prime * (prime * Foo.super.hashCode() + p1.hashCode) + p2.hashCode
         }
       }
     """
@@ -283,14 +283,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def equals(other: Any) = {
           other match {
-            case that: generateHashcodeAndEquals.emptyClassBody.Foo => Foo.super.equals(that).&&(that.canEqual(Foo.this)).&&(p1.==(that.p1)).&&(p2.==(that.p2))
+            case that: generateHashcodeAndEquals.emptyClassBody.Foo => Foo.super.equals(that) && that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
         
         override def hashCode() = {
           val prime = 41
-          prime.*(prime.*(Foo.super.hashCode()).+(p1.hashCode)).+(p2.hashCode)
+          prime * (prime * Foo.super.hashCode() + p1.hashCode) + p2.hashCode
         }
       }
     """

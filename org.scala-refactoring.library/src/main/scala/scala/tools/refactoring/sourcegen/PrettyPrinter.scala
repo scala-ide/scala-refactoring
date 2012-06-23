@@ -203,6 +203,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
     
     override def Apply(tree: Apply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
+      
+      def isOperator(n: Name) = n.isOperatorName && n != nme.CONSTRUCTOR
+      
       (fun, args) match {
            
         case (fun, args @ (Function(_, _: Match) :: _)) =>
@@ -224,7 +227,23 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun, List(EmptyTree)) =>
           p(fun)
           
-        case (Select(selector, _), arg :: Nil) =>
+        case (Select(selector, op), arg :: Nil) if isOperator(op) =>
+          
+          def needsParensAroundArguments(t: Tree) = t match {
+            case global.Apply(Select(_, op2), _) => 
+              isOperator(op2) && precedence(op2) <= precedence(op)
+            case _ => false
+          }
+          
+          val select_ = p(selector, after = Requisite.Blank) ++ fun.nameString 
+          
+          if(needsParensAroundArguments(arg)) {
+            select_ ++ p(arg, before = " (", after = ")")
+          } else {
+            select_ ++ p(arg, before = Requisite.Blank)
+          }
+          
+        case (Select(selector, op), arg :: Nil) =>
           val t = context("ignore") {
             p(selector).toLayout
           }
@@ -235,7 +254,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             p(fun) ++ "(" ++ p(arg) ++ ")"
           
         case _ =>
-          p(fun) ++ balanceParens('(', ')') {
+          val fun_ = p(fun) 
+          
+          fun_ ++ balanceParens('(', ')') {
             EmptyFragment ++ "(" ++ pp(args, separator = ", ") ++ ")"
           }
       }

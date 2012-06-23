@@ -5,6 +5,8 @@
 package scala.tools.refactoring
 package sourcegen
 
+import scala.tools.nsc.util.BatchSourceFile
+
 trait CommonPrintUtils {
 
   this: common.CompilerAccess with AbstractPrinter =>
@@ -89,4 +91,18 @@ trait CommonPrintUtils {
     case _ => 
       p
   }
+  
+  lazy val precedence: Name => Int = {
+
+    // Copied from the compiler
+    def newUnitParser(code: String)      = new syntaxAnalyzer.UnitParser(newCompilationUnit(code))
+    def newCompilationUnit(code: String) = new CompilationUnit(newSourceFile(code))
+    def newSourceFile(code: String)      = new BatchSourceFile("<refactoring>", code)
+
+    val parser = newUnitParser("")
+    
+    // I ♥ Scala
+    name => parser.precedence(newTermName(name.decode))
+  }
+  
 }
