@@ -583,7 +583,8 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
   
   @Test
-  def importMethodFromSamePackage = new FileSet {
+  @ScalaVersion(matches="2.9") // it works correctly on 2.9, but the 2.10 version is better
+  def importMethodFromSamePackage29 = new FileSet {
     
     addToCompiler("testimplicits", """
     package a.b.c
@@ -603,6 +604,35 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     package a.b.c
     
     import a.b.c.TestImplicits.stringToBytes
+
+    object Tester {
+      "":Array[Byte]
+    }
+    """
+  } applyRefactoring organize
+  
+  @Test
+  @ScalaVersion(matches="2.10")
+  def importMethodFromSamePackage = new FileSet {
+    
+    addToCompiler("testimplicits", """
+    package a.b.c
+    object TestImplicits {
+      implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
+    }""");
+    
+    """
+    package a.b.c
+    import TestImplicits._
+
+    object Tester {
+      "":Array[Byte]
+    }
+    """ becomes
+    """
+    package a.b.c
+    
+    import TestImplicits.stringToBytes
 
     object Tester {
       "":Array[Byte]

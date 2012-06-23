@@ -688,7 +688,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
-  def importedImplicitConversionNeedsImport2 = assertNeededImports(
+  @ScalaVersion(matches="2.9")
+  def importedImplicitConversionNeedsImportShortForm29 = assertNeededImports(
     """scala.this.collection.JavaConversions.asScalaBuffer""",
     """ 
       import collection.JavaConversions._
@@ -696,7 +697,19 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         val l = new java.util.ArrayList[String]
         l map (_.toInt)
       }
-    """)      
+    """)    
+      
+  @Test
+  @ScalaVersion(matches="2.10")
+  def importedImplicitConversionNeedsImportShortForm = assertNeededImports(
+    """scala.collection.JavaConversions.asScalaBuffer""",
+    """ 
+      import collection.JavaConversions._
+      class ListConversion {
+        val l = new java.util.ArrayList[String]
+        l map (_.toInt)
+      }
+    """)
       
   @Test
   def importedImplicitArgument {
