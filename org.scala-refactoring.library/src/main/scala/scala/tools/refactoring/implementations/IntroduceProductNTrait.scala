@@ -36,7 +36,7 @@ abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
     superGeneration &> addProductTrait
   }
   
-  override def newParentNames(selectedParams: List[ValDef]) = {
+  override def newParentNames(classDef: ClassDef, selectedParams: List[ValDef]) = {
     val arity = selectedParams.length
     val paramsTypenames = selectedParams.map(v => v.tpt.nameString)
     val productParent = "Product" + arity + "[" + paramsTypenames.mkString(", ") + "]"

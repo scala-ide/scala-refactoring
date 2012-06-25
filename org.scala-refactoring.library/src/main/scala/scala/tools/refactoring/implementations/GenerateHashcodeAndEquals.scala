@@ -17,7 +17,7 @@ abstract class GenerateHashcodeAndEquals extends ClassParameterDrivenSourceGener
   override def sourceGeneration(selectedParams: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters) = {
     
     val equalityMethods = mkEqualityMethods(preparationResult.classDef.symbol, selectedParams, refactoringParams.callSuper)
-    val newParents = newParentNames(selectedParams).map(name => Ident(newTermName(name)))
+    val newParents = newParentNames(preparationResult.classDef, selectedParams).map(name => Ident(newTermName(name)))
     
     val equalityMethodNames = List(nme.equals_, nme.hashCode_, nme.canEqual_).map(_.toString)
     def isEqualityMethod(t: Tree) = t match {
@@ -50,8 +50,12 @@ abstract class GenerateHashcodeAndEquals extends ClassParameterDrivenSourceGener
     canEqual::equals::hashcode::Nil
   }
   
-  protected def newParentNames(selectedParams: List[ValDef]): List[String] = {
-    "Equals"::Nil
+  protected def newParentNames(classDef: ClassDef, selectedParams: List[ValDef]): List[String] = {
+    val existingParents = classDef.impl.parents.map(_.nameString)
+    if(existingParents contains "Equals")
+      Nil
+    else
+      "Equals"::Nil
   }
   
 }

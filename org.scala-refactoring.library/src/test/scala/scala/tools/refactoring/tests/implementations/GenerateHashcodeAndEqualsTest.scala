@@ -180,7 +180,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     """
       package generateHashcodeAndEquals.keepExistingCanEqual
 
-      class /*(*/Foo/*)*/ extends Equals with Equals {
+      class /*(*/Foo/*)*/ extends Equals {
         def canEqual(that: Any) = false
         
         override def equals(other: Any) = {
@@ -363,5 +363,31 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
+  
+  @Test
+  def dontExtendEqualsTwice = new FileSet {
+    """
+    class /*(*/Foo/*)*/ extends Equals {
+      def canEqual(that: Any) = false
+    }
+    """ becomes
+    """
+    class /*(*/Foo/*)*/ extends Equals {
+      def canEqual(that: Any) = false
+      
+      override def equals(other: Any) = {
+        other match {
+          case that: Foo => that.canEqual(Foo.this)
+          case _ => false
+        }
+      }
+      
+      override def hashCode() = {
+        val prime = 41
+        prime
+      }
+    }
+    """
+  } applyRefactoring(generateHashcodeAndEquals((false, _ => false, true)))
 
 }
