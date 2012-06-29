@@ -929,7 +929,15 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
 
     override def Assign(tree: Assign, lhs: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
-      l ++ p(lhs, after = "=") ++ p(rhs) ++ r
+      rhs match {
+        // Handle assignments like +=, which are desugared in the AST
+        case Apply(Select(_, name), _) if rhs.pos.isTransparent && name.isOperatorName =>
+          // the rhs already contains the layout for the operator, note that this might
+          // break should the refactoring change the operator name as well.
+          l ++ p(rhs) ++ r 
+        case _ =>
+          l ++ p(lhs, after = "=") ++ p(rhs) ++ r
+      }
     }
     
     override def MultipleAssignment(tree: MultipleAssignment, extractor: Tree, values: List[ValDef], rhs: Tree)(implicit ctx: PrintingContext) = {
