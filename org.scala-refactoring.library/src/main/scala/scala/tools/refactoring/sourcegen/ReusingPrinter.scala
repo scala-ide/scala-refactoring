@@ -652,7 +652,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
 
     override def Template(tree: Template, parents: List[Tree], self: Tree, body: List[Tree])(implicit ctx: PrintingContext) = {
-      printTemplate(tree, printExtends = true)
+      printTemplate(tree, printExtends = !tree.isTemplateForAnonymousClass)
     }
   }
 

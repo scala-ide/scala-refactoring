@@ -472,7 +472,7 @@ trait PimpedTrees {
       }
     }
     
-    /*
+    /**
      * Returns existing equality methods.
      * Note that this is a rough by-name check.
      */
@@ -488,6 +488,14 @@ trait PimpedTrees {
     def hasEqualityMethod: Boolean = existingEqualityMethods match {
       case Nil => false
       case _ => true
+    }
+    
+    /**
+     * Returns true if this template belongs to an anonymous class.
+     */
+    def isTemplateForAnonymousClass = t.primaryConstructor exists { t =>
+      val sym = t.symbol
+      sym != NoSymbol && sym.owner.isAnonymousClass
     }
   }
   
