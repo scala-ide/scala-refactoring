@@ -177,7 +177,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       
       val importsNames = allNeededImports map importAsString
         
-      trees flatMap {
+      val result = trees flatMap {
         case imp @ Import(expr, selectors) =>
           val pkgName = importAsString(expr) +"."
           
@@ -187,9 +187,16 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           
           // If parts of the expr aren't ranges, then we have an import that depends on an
           // other import (see OrganizeImportsRecomputeAndModifyTest#importDependingOnImport)
-          def exprIsAllRangePos = !expr.exists(!_.pos.isRange)
+          val exprIsAllRangePos = {
+            // no Tree#forall, so we use double-negative
+            !expr.exists(t => !t.pos.isRange)
+          }
           
-          if(neededSelectors.size == selectors.size && exprIsAllRangePos) {
+          val invisiblePartIsDefaultImported = {
+            findDeepestNeededSelect(expr) exists isQualifierDefaultImported
+          }
+          
+          if(neededSelectors.size == selectors.size && (exprIsAllRangePos || invisiblePartIsDefaultImported)) {
             Some(imp)
           } else if(neededSelectors.size > 0) {
             Some(Import(Ident(importAsString(expr)), neededSelectors))
@@ -197,6 +204,13 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
             None
           }
       }
+      
+      // remove duplicates:
+      result.foldLeft(Nil: List[Import]) {
+        case (rest, imp) if rest.exists(t => t.toString == imp.toString) =>
+          rest 
+        case (rest, imp) => imp :: rest
+      } reverse
     }
   }
   

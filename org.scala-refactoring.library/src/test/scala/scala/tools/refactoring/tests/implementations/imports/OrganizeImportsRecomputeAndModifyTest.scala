@@ -208,7 +208,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     }
     """ becomes
     """
-    import java.lang.System.currentTimeMillis
+    import System.currentTimeMillis
 
     object Dummy {
       val x = currentTimeMillis
@@ -414,6 +414,27 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     class Foo {
       Baz.baz
       withInstance { _ => () }
+    }
+    """
+  } applyRefactoring organize
+  
+  @Test
+  def removeDuplicate = new FileSet {
+    """
+    package removeDuplicate
+    import collection.mutable
+    import collection.mutable
+    
+    class Foo {
+      val m = new mutable.HashSet[String]
+    }
+    """ becomes
+    """
+    package removeDuplicate
+    import collection.mutable
+    
+    class Foo {
+      val m = new mutable.HashSet[String]
     }
     """
   } applyRefactoring organize
