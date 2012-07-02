@@ -1024,4 +1024,16 @@ class PathSeparator {
     }
     """
   } applyRefactoring extract("three")
+  
+  @Test(expected=classOf[PreparationException])
+  def extractionNeedsSelection = new FileSet {
+    """
+    class Foo {
+      def bar = {
+        List(1,2,3).mkString(/*(*//*)*/",")
+      }
+    }
+    """ becomes
+    ""
+  } applyRefactoring extract("sep")
 }
