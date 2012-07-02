@@ -1201,7 +1201,7 @@ class Blubb
   @Test
   def overriddenMethod = new FileSet {
     """
-    package bar
+    package overriddenMethod.bar
 
     trait Bar {
       def bippy: String
@@ -1209,7 +1209,7 @@ class Blubb
       def bar = bippy.toUpperCase  
     }
     """ becomes """
-    package bar
+    package overriddenMethod.bar
 
     trait Bar {
       def booh: String
@@ -1219,6 +1219,7 @@ class Blubb
     """
     ;
     """
+    package overriddenMethod
     import bar.Bar
     
     class Foo extends Bar {
@@ -1226,6 +1227,7 @@ class Blubb
     }
     """ becomes 
     """
+    package overriddenMethod
     import bar.Bar
     
     class Foo extends Bar {
