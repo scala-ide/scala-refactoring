@@ -185,10 +185,14 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
             selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
           }
           
-          if(neededSelectors.size == selectors.size) {
+          // If parts of the expr aren't ranges, then we have an import that depends on an
+          // other import (see OrganizeImportsRecomputeAndModifyTest#importDependingOnImport)
+          def exprIsAllRangePos = !expr.exists(!_.pos.isRange)
+          
+          if(neededSelectors.size == selectors.size && exprIsAllRangePos) {
             Some(imp)
           } else if(neededSelectors.size > 0) {
-            Some(Import(stripPositions(expr), neededSelectors))
+            Some(Import(Ident(importAsString(expr)), neededSelectors))
           } else {
             None
           }

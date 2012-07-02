@@ -189,7 +189,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     import java.{util => ju}
-    import ju.{ArrayList => AL}
+    import java.util.{ArrayList => AL}
     trait Y {
       def build(ignored : ju.Map[_, _])
         def build2(ignored : AL[Int])
@@ -208,7 +208,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     }
     """ becomes
     """
-    import System.currentTimeMillis
+    import java.lang.System.currentTimeMillis
 
     object Dummy {
       val x = currentTimeMillis
@@ -339,6 +339,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """
   } applyRefactoring organizeCleanup(List("java", "scala.collection", "scala.xml"))
 
+  @Test
   def qualifiedImportFromPackageObject = new FileSet {
     addToCompiler("package.scala", """
       package test
@@ -372,27 +373,48 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """
   } applyRefactoring organize
   
-  def multipleImportsOneWildcard = new FileSet {
+  @Test
+  def importDependingOnImport = new FileSet {
+    addToCompiler("Bar.scala", """
+    package barr
+    
+    object Bar {
+      val instance = new Bar
+      
+      def withInstance(f: Bar => Unit): Unit = ()
+    }
+    
+    class Bar
+    """)
+    
+    addToCompiler("Baz.scala", """
+    package barr
+    
+    object Baz {
+      def baz = 2
+    }
+    """)
+    
     """
-    import java.lang.Integer.valueOf
-    import java.lang.Integer.toBinaryString
-    import java.lang.Double.toHexString
-
-    trait Temp {
-      valueOf("5")
-      toBinaryString(27)
-      toHexString(5)
+    package importDependingOnImport
+    import barr.{Baz, Bar}
+    import Bar.withInstance
+    
+    class Foo {
+      Baz.baz
+      withInstance { _ => () }
     }
     """ becomes
     """
-    import java.lang.Double.toHexString
-    import java.lang.Integer._
-
-    trait Temp {
-      valueOf("5")
-      toBinaryString(27)
-      toHexString(5)
+    package importDependingOnImport
+    
+    import barr.Baz
+    import barr.Bar.withInstance
+    
+    class Foo {
+      Baz.baz
+      withInstance { _ => () }
     }
     """
-  } applyRefactoring organizeWildcards(Set("java.lang.Integer"))
+  } applyRefactoring organize
 }
