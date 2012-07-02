@@ -92,10 +92,13 @@ trait DependentSymbolExpanders {
             hasClazzInAncestors
           case _ => false
         }
+        val containingClass = s.owner
         
-        val subClasses = allSubClasses(s.owner) 
+        val superClasses = containingClass.ancestors
+        
+        val subClasses = allSubClasses(containingClass) 
                 
-        val overrides = subClasses map {
+        val overrides = (subClasses ++ superClasses) map {
           case otherClassDecl =>
             try {
               s overriddenSymbol otherClassDecl

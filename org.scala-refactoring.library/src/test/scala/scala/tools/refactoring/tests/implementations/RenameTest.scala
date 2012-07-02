@@ -1197,4 +1197,40 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("C"))
+
+  @Test
+  def overriddenMethod = new FileSet {
+    """
+    package bar
+
+    trait Bar {
+      def bippy: String
+      
+      def bar = bippy.toUpperCase  
+    }
+    """ becomes """
+    package bar
+
+    trait Bar {
+      def booh: String
+      
+      def bar = booh.toUpperCase  
+    }
+    """
+    ;
+    """
+    import bar.Bar
+    
+    class Foo extends Bar {
+      override def /*(*/bippy/*)*/: String = "foo"
+    }
+    """ becomes 
+    """
+    import bar.Bar
+    
+    class Foo extends Bar {
+      override def /*(*/booh/*)*/: String = "foo"
+    }
+    """
+  } applyRefactoring(renameTo("booh"))
 }
