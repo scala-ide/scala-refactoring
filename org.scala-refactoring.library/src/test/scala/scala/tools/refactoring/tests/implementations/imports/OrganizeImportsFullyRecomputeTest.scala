@@ -908,4 +908,36 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
+
+  @Test
+  def dependencyInSameFile = new FileSet {
+    """
+    class Foo {
+      import Bar.instance
+      
+      def foo = instance.toString
+      def bar = Bar.instance.toString
+    }
+    
+    object Bar {
+      val instance = new Bar
+    }
+    
+    class Bar
+    """ becomes
+    """
+    class Foo {
+      import Bar.instance
+      
+      def foo = instance.toString
+      def bar = Bar.instance.toString
+    }
+    
+    object Bar {
+      val instance = new Bar
+    }
+    
+    class Bar
+    """
+  } applyRefactoring organize
 }

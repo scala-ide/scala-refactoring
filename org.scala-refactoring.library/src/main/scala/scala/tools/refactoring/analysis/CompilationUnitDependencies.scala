@@ -78,9 +78,19 @@ trait CompilationUnitDependencies {
         None
     }
     
+    /**
+     * Check if the definition is also a child of the outer `t`. In that case, we don't need
+     * to add an import because the dependency is to a local definition.
+     */
+    def isLocalDefinition(dependency: Tree) = t.exists {
+      case t: DefTree => dependency.symbol == t.symbol
+      case _ => false
+    } 
+    
     val deps = dependencies(t)
     
     val neededDependencies = deps.flatMap {
+      case t if isLocalDefinition(t) => None
       case t: Select if !t.pos.isRange => Some(t) filter isImportReallyNeeded
       case t => findDeepestNeededSelect(t)
     }.distinct
