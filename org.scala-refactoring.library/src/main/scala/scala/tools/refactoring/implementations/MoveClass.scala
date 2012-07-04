@@ -47,13 +47,23 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
     }
 
     val topLevelImpls = topLevelImplDefs(s)
+    
+    def hasSingleTopLevelImpl = topLevelImpls.size == 1
+    
+    def hasToplevelClassAndCompanion = topLevelImpls match {
+      case fst :: snd :: Nil =>
+        fst.symbol.companionSymbol == snd.symbol
+      case _ => false
+    }
 
     s.findSelectedOfType[ImplDef] match {
       // If there is only one ImplDef in the file, we simply move
       // all impls. This doesn't matter from the refactoring's
       // perspective, but is used in the IDE to determine if it's
       // possible to split a class from a multiple-definition file.
-      case Some(singleImplDef) if topLevelImpls.size == 1 =>
+      case Some(singleImplDef) if hasSingleTopLevelImpl =>
+        Right(None)
+      case Some(singleImplDef) if hasToplevelClassAndCompanion =>
         Right(None)
       case Some(singleImplDef) =>
         Right(Some(singleImplDef))
@@ -223,6 +233,9 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
     def referencesToMovedClasses(moved: List[ImplDef]): Map[SourceFile, List[(ImplDef, List[Tree])]] = {
 
+      // `moved` can contain duplicates, e.g. a class and its companion object
+      val distinctImplsToMove = moved.groupBy(_.nameString).mapValues(_.head).values.toList.sortBy(_.nameString)
+      
       val referencesPerFile = collection.mutable.Map[SourceFile, List[(ImplDef, List[Tree])]]()
 
       def addToMap(impl: ImplDef) {
@@ -234,7 +247,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
         }
       }
 
-      moved foreach addToMap
+      distinctImplsToMove foreach addToMap
 
       referencesPerFile.toMap
     }
@@ -243,7 +256,8 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       toMove map (List(_)) getOrElse topLevelImplDefs(selection)
     } flatMap {
       case (sourceFile, entries) => entries.toList map {
-        case (implDef, references) => (sourceFile, implDef, references)
+        case (implDef, references) => 
+          (sourceFile, implDef, references)
       }
     }
 
@@ -261,10 +275,8 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
         }
 
         if(!alreadyHasImportSelector && hasReferenceWithoutFullName) {
-
           val addImport = new AddImportStatement { val global = MoveClass.this.global }
           addImport.addImport(sourceFile.file, newFullPackageName + "." + referencedName)
-
         } else {
 
           def hasMovedName(s: ImportSelector) = s.name.toString == referencedName

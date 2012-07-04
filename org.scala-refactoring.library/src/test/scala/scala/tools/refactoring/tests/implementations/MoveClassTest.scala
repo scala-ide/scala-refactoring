@@ -800,6 +800,33 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   } applyRefactoring(moveTo(""))
 
   @Test
+  def moveCompanionObjectAlongNoOtherImpls = new FileSet {
+    """
+    object /*(*/BFF/*)*/
+    class BFF
+    """ becomes
+    """
+    package bff
+    object /*(*/BFF/*)*/
+    class BFF
+    """
+  } applyRefactoring(moveTo("bff"))
+  
+  @Ignore
+  @Test
+  def moveCompanionObjectAlong = new FileSet {
+    """
+    object /*(*/BFF/*)*/
+    class BFF
+    class Outsider
+    """ becomes
+    """
+    class Outsider
+    """
+    NewFile becomes """""""
+  } applyRefactoring(moveTo("bff"))
+  
+  @Test
   def moveFromDefaultPackageNoImports = new FileSet {
     """
     object Ctes {
@@ -815,6 +842,42 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(moveTo("ctes"))
+
+  @Test
+  def updateReferencesToMovedObject = new FileSet {
+    """
+    object Bar64 {
+      val instance = new Bar64
+    }
+    
+    class Bar64
+    """ becomes
+    """
+    package bar
+    object Bar64 {
+      val instance = new Bar64
+    }
+    
+    class Bar64
+    """
+    """
+    class Foo64 {
+      import Bar64.instance
+      
+      def foo = instance.toString
+      def bar = Bar64.instance.toString
+    }
+    """ becomes """
+    import bar.Bar64
+    
+    class Foo64 {
+      import Bar64.instance
+      
+      def foo = instance.toString
+      def bar = Bar64.instance.toString
+    }
+    """
+  } applyRefactoring(moveTo("bar"))
   
   @Test
   def nestedPackageAndImports = new FileSet {
