@@ -15,7 +15,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
 
     printer =>
 
-    def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = context("Printing Tree "+ t.getClass.getSimpleName) {
+    def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = context("Printing Tree "+ t.getClass.getName) {
       
       trace("current indentation set to %s", ctx.ind.current)
       
@@ -74,6 +74,8 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         case tree @ SelfTypeTree(name, tpt) => printer.SelfTypeTree(tree, name, tpt)
         case tree: SourceLayoutTree => printer.SourceLayoutTree(tree)
         case tree: NameTree => printer.NameTree(tree)
+        // PlainText is a hook that allows the user to inject custom text into the output
+        case tree: PlainText => tree.print(ctx)
       }
 
       trace("results in %s", code.asText)
@@ -201,7 +203,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
             separator.getLayout.asText.startsWith("\n") ||
             separator.getLayout.asText.startsWith("\r")
             )) {
-          Requisite.newline(ind.current + ind.defaultIncrement, NL)
+          Requisite.newline(ind.current + ind.defaultIncrement, ctx.newline)
         } else {
           separator
         }

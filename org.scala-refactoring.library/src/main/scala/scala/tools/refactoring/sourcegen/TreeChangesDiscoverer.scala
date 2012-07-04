@@ -101,13 +101,13 @@ trait TreeChangesDiscoverer {
       
       def findChildren(t: Tree, parents: List[Tree]): List[Tree] = {
         if (isSameAsOriginalTree(t)) {
-          trace("  Tree %s is unchanged.", t.getClass.getSimpleName)
+          trace("  Tree %s is unchanged.", t.getClass.getName)
           Nil
         } else if (hasTreeInternallyChanged(t)) { 
-          trace("  Tree %s has changed internally.", t.getClass.getSimpleName)
+          trace("  Tree %s has changed internally.", t.getClass.getName)
           t :: parents ::: searchChildrenForChanges(t)
         } else if (hasChangedChildren(t)) {
-          trace("  Tree %s has changed children.", t.getClass.getSimpleName)
+          trace("  Tree %s has changed children.", t.getClass.getName)
           t :: parents ::: searchChildrenForChanges(t)
         } else {
           children(t) flatMap (c => findChildren(c, t :: parents))
@@ -121,13 +121,13 @@ trait TreeChangesDiscoverer {
     def resultWhenChanged = List((t, t.pos, Set(t) ++ searchChildrenForChanges(t)))
     
     if (isSameAsOriginalTree(t)) {
-      trace("Top tree %s is unchanged.", t.getClass.getSimpleName)
+      trace("Top tree %s is unchanged.", t.getClass.getName)
       Nil
     } else if (hasTreeInternallyChanged(t)) {
-      trace("Top tree %s has changed internally.", t.getClass.getSimpleName)
+      trace("Top tree %s has changed internally.", t.getClass.getName)
       resultWhenChanged
     } else if (hasChangedChildren(t)) {
-      trace("Top tree %s has changed children.", t.getClass.getSimpleName)
+      trace("Top tree %s has changed children.", t.getClass.getName)
 
       val isBlockOrTemplate = t match {
         case _: Block | _: Template => true

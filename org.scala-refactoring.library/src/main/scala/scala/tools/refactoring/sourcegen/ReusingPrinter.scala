@@ -74,6 +74,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
   trait PrintingUtils {
     this: TreePrinting =>
     
+    def NL(implicit ctx: PrintingContext) = ctx.newline
+      
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
 
     def l(implicit ctx: PrintingContext) = leadingLayoutForTree(ctx.parent)

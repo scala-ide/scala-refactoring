@@ -34,6 +34,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
   trait PrintingUtils {
     this: TreePrinting =>
+      
+    def NL(implicit ctx: PrintingContext) = ctx.newline
     
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
     
@@ -714,7 +716,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     override def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext) = {
       tree.kind match {
-        case SourceLayouts.Newline => Fragment(NL + NL + ctx.ind.current)
+        case SourceLayouts.Newline => 
+          Fragment(NL + NL + ctx.ind.current)
       }
     }
   }

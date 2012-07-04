@@ -1935,4 +1935,45 @@ object acmatch {
     class XY
     """, Change.applyChanges(refactor(res.toList), str))
   }
+  
+  @Test
+  def insertPlainString() {
+    val source = """
+    class InsertHere {
+      def method = {
+        val list = List(1,2,3) 
+        list map (i => i * 2)
+      }
+    }
+    """
+    val ast = treeFrom(source)
+    val transformed = topdown {
+      matchingChildren {
+        transform {
+          case t @ Block(stmts, expr) =>
+            val string = PlainText.Indented("""
+               |for (
+               |  i <- list
+               |) yield {
+               |  i * 2
+               |}""".stripMargin)
+            
+            t.copy(expr = string)
+        }
+      }
+     } apply ast
+
+    assertEquals("""
+    class InsertHere {
+      def method = {
+        val list = List(1,2,3) 
+        for (
+          i <- list
+        ) yield {
+          i * 2
+        }
+      }
+    }
+    """, Change.applyChanges(refactor(transformed.toList), source))
+  }
 }

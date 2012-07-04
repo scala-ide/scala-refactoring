@@ -145,7 +145,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         if(inserts.isEmpty) ungrouped += imp
       }
       
-      val spacer = Import(SourceLayoutTree(SourceLayouts.Newline), Nil)
+      val spacer = Import(PlainText.BlankLine, Nil)
       
       val allImports = (grouped.values.toList.map(_.toList) ::: List(ungrouped.toList)).filterNot(_.isEmpty)
       
@@ -154,6 +154,16 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       } else {
         allImports.flatten
       }
+    }
+  }
+  
+  object RemoveDuplicates extends Participant {
+    def apply(trees: List[Import]) = {
+      trees.foldLeft(Nil: List[Import]) {
+        case (rest, imp) if rest.exists(t => t.toString == imp.toString) =>
+          rest 
+        case (rest, imp) => imp :: rest
+      } reverse
     }
   }
   
@@ -177,7 +187,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       
       val importsNames = allNeededImports map importAsString
         
-      val result = trees flatMap {
+      trees flatMap {
         case imp @ Import(expr, selectors) =>
           val pkgName = importAsString(expr) +"."
           
@@ -204,13 +214,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
             None
           }
       }
-      
-      // remove duplicates:
-      result.foldLeft(Nil: List[Import]) {
-        case (rest, imp) if rest.exists(t => t.toString == imp.toString) =>
-          rest 
-        case (rest, imp) => imp :: rest
-      } reverse
     }
   }
   
@@ -304,7 +307,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         new FindNeededImports(selection.root, enclosingPackage) :: SortImports :: Nil
         
       case Dependencies.RecomputeAndModify =>
-        new RecomputeAndModifyUnused(neededImports(selection.root)) :: Nil
+        new RecomputeAndModifyUnused(neededImports(selection.root)) :: RemoveDuplicates :: Nil
         
       case Dependencies.RemoveUnneeded =>   
         val unit = compilationUnitOfFile(selection.pos.source.file).get

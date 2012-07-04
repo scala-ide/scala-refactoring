@@ -25,7 +25,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
        */
       def once(t: Tree) = t match {
         
-        case _: ImportSelectorTree | _: SourceLayoutTree =>
+        case _: ImportSelectorTree | _: SourceLayoutTree | _: PlainText =>
           t
           
         case MultipleAssignment(extractor, vals, rhs) =>
@@ -139,16 +139,16 @@ trait TreeTransformations extends Transformations with TreeFactory {
 
     import global._
 
-      val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
-        case (p, imports, others) =>
-          val SplitAtDot = "(.*)\\.(.*?)".r
-          val importTrees = importsToAdd.map {
-            case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
-          }.toList
-          p copy (stats = (imports ::: importTrees ::: others)) replaces p
-      })
+    val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+      case (p, imports, others) =>
+        val SplitAtDot = "(.*)\\.(.*?)".r
+        val importTrees = importsToAdd.map {
+          case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
+        }.toList
+        p copy (stats = (imports ::: importTrees ::: others)) replaces p
+    })
 
-      // first try it at the top level to avoid traversing the complete AST
-      addImportStatement |> topdown(matchingChildren(addImportStatement))
+    // first try it at the top level to avoid traversing the complete AST
+    addImportStatement |> topdown(matchingChildren(addImportStatement))
   }
 }

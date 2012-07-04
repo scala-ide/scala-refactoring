@@ -12,6 +12,8 @@ import tools.nsc.symtab.Flags
 import scala.tools.nsc.Global
 import util.Memoized
 import scala.collection.mutable.ListBuffer
+import scala.tools.refactoring.sourcegen.Fragment
+import scala.tools.refactoring.sourcegen.AbstractPrinter
 
 /**
  * A collection of implicit conversions for ASTs and other 
@@ -1057,15 +1059,70 @@ trait PimpedTrees {
   val NoPackageDef = NotInstanceOf[PackageDef]
   val NoFunction = NotInstanceOf[Function]
  
+  
+  /**
+   *  The PlainText "tree" provides a hook into the source code generation.
+   *  When a PlainText tree occurs during source code generation, its `print`
+   *  method is called with the current AbstractPrinter#PrintingContext. The
+   *  result is inserted into the generated source code.
+   *  
+   *  For some use cases (blank line, raw and indented string) implementations
+   *  already exist in the `PlainText` object.
+   *  
+   *  Note that PlainText trees should never be allowed to escape the Scala
+   *  refactoring library, so be careful when using compiler utilities to
+   *  transform trees.
+   */
+  abstract class PlainText extends global.Tree {
+    def print(ctx: AbstractPrinter#PrintingContext): Fragment
+  }
+  
+  object PlainText {
+    
+    /**
+     * Inserts a blank line into the generated source code.
+     */
+    case object BlankLine extends PlainText {
+      def print(ctx: AbstractPrinter#PrintingContext) = {
+        Fragment(ctx.newline + ctx.newline + ctx.ind.current)
+      }  
+    }
+    
+    /**
+     * Inserts `text` verbatim into the source code.
+     * 
+     * Note: to automatically indent the string, use `Indented`. 
+     */
+    case class Raw(text: String) extends PlainText {
+      def print(ctx: AbstractPrinter#PrintingContext) = {
+        Fragment(text)
+      }    
+    }
+    
+    /**
+     * Indents `text` to the current indentation level and
+     * inserts it into the generated code.
+     */
+    case class Indented(text: String) extends PlainText {
+      def print(ctx: AbstractPrinter#PrintingContext) = {
+        Fragment(text.replaceAll(ctx.newline, ctx.newline + ctx.ind.current))
+      }    
+    }
+  }
+  
   /**
    * A SourceLayoutTree can be used to insert arbitrary text into the code,
-   * for example, blank lines.
+   * for example, blank lines. 
+   * 
    */
+  @deprecated("Use PlainText objects and its components", "0.5.0")
   case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree {
     def errorSubtrees = Nil
   }
+  @deprecated("Use PlainText objects and its components", "0.5.0")
   object SourceLayouts {
     sealed trait Kinds
+    @deprecated("Use PlainText.Newline instead", "0.5.0")
     object Newline extends Kinds
   }
 }

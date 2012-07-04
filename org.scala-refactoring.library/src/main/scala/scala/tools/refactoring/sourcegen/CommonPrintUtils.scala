@@ -13,18 +13,11 @@ trait CommonPrintUtils {
 
   import global._
   
-  def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
+  def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, ctx.newline)
     
-  def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, NL)
+  def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, ctx.newline)
     
   def indentation(implicit ctx: PrintingContext) = ctx.ind.current
-  
-  def NL(implicit ctx: PrintingContext): String = {
-    if(ctx.file.exists(_.content.containsSlice("\r\n")))
-      "\r\n"
-    else
-      "\n"
-  }
 
   def typeToString(tree: TypeTree, t: Type)(implicit ctx: PrintingContext): String = {
     t match {
