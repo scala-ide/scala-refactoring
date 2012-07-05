@@ -51,8 +51,16 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       val ancestorSyms = ancestorSymbols(t)
       ancestorSyms map (_.nameString) filterNot (_ == "package") mkString  (".")
     }
+    
     def stripPositions(t: Tree) = {
       topdown(setNoPosition) apply t.duplicate getOrElse t
+    }
+                    
+    def isImportFromScalaPackage(expr: Tree) = {
+      expr.filter(_ => true).lastOption exists {
+        case Ident(nme.scala_) => true
+        case _ => false
+      }
     }
   }
   
@@ -197,19 +205,32 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           
           // If parts of the expr aren't ranges, then we have an import that depends on an
           // other import (see OrganizeImportsRecomputeAndModifyTest#importDependingOnImport)
-          val exprIsAllRangePos = {
+          def exprIsAllRangePos = {
             // no Tree#forall, so we use double-negative
             !expr.exists(t => !t.pos.isRange)
           }
           
-          val invisiblePartIsDefaultImported = {
+          def invisiblePartIsDefaultImported = {
             findDeepestNeededSelect(expr) exists isQualifierDefaultImported
           }
           
           if(neededSelectors.size == selectors.size && (exprIsAllRangePos || invisiblePartIsDefaultImported)) {
             Some(imp)
           } else if(neededSelectors.size > 0) {
-            Some(Import(Ident(importAsString(expr)), neededSelectors))
+
+            /* Imports from the scala package don't have to start with `scala`,
+             * and we don't want to enforce this, so we just keep the expr as
+             * it is. On the other hand, if the import is not from the `scala`
+             * package, we set all positions to NoPos to make the visible in
+             * the generated code.
+             */
+            val fullExpr = if(isImportFromScalaPackage(expr)) {
+              expr
+            } else {
+              stripPositions(expr)
+            }
+            
+            Some(Import(fullExpr, neededSelectors))
           } else {
             None
           }
@@ -240,6 +261,36 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   class FindNeededImports(root: Tree, enclosingPackage: String) extends Participant {
     def apply(trees: List[Import]) = {
       mkImportTrees(neededImports(root), enclosingPackage)
+    }
+  }
+  
+  object PrependScalaPackage extends Participant {
+    def apply(trees: List[Import]) = {
+      trees map {
+        case t @ Import(expr, _) if isImportFromScalaPackage(expr) =>
+          // Setting all positions to NoPosition forces the pretty printer
+          // to print the complete selector including the leading `scala`
+          t copy (expr = stripPositions(expr))
+        case t => t
+      }
+    }
+  }
+  
+  object DropScalaPackage extends Participant {
+    def apply(trees: List[Import]) = {
+      trees map {
+        case t @ Import(expr, name) if isImportFromScalaPackage(expr) =>
+          
+          val transformation = traverseAndTransformAll {
+            transform {
+              case t @ Ident(nme.scala_) =>
+                Ident(nme.scala_) copyAttrs t setPos Invisible
+            }
+          }
+          
+          t copy (expr = transformation(expr).get /*safe becaues of pattern guard*/)
+        case t => t
+      }
     }
   }
   

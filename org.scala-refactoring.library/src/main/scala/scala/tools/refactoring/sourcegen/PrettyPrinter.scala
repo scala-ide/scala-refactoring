@@ -382,7 +382,16 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             "{" + sp + ss + sp + "}"
           } else ss
           
-          Layout("import ") ++ p(expr) ++ Layout(".") ++ Fragment(selectors_)
+          // When removing leading package names, sometimes there's a leftover `.` to remove.
+          // We can't remove the `.` in the LayoutHelper because Select printers need them to
+          // handle various special cases.
+          val Cleanup = """^\.?(.*?)\.?\s*\{?\s*$""".r
+          
+          val expr_ = p(expr).asText match {
+            case Cleanup(expr) => expr
+          }
+          
+          Layout("import ") ++ Fragment(expr_) ++ Requisite.allowSurroundingWhitespace(".") ++ Fragment(selectors_)
       }
     }
   }  

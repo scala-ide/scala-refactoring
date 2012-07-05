@@ -13,6 +13,8 @@ import util._
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
     classOf[CustomFormattingTest],
+    classOf[PrependOrDropScalaPackageFromRecomputedTest],
+    classOf[PrependOrDropScalaPackageKeepTest],
     classOf[ExpandCaseClassBindingTest],
     classOf[MoveClassTest],
     classOf[ExtractTraitTest],
