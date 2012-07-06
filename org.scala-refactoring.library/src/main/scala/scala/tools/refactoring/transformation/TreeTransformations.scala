@@ -25,6 +25,13 @@ trait TreeTransformations extends Transformations with TreeFactory {
        */
       def once(t: Tree) = t match {
         
+        case NamedArgument(name, rhs) =>
+          transform(rhs) match {
+            case `rhs` => t
+            case rhs =>
+              NamedArgument(name, rhs)
+          }
+        
         case _: ImportSelectorTree | _: SourceLayoutTree | _: PlainText =>
           t
           

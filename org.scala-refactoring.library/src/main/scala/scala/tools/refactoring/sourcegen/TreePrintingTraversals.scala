@@ -74,6 +74,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         case tree @ SelfTypeTree(name, tpt) => printer.SelfTypeTree(tree, name, tpt)
         case tree: SourceLayoutTree => printer.SourceLayoutTree(tree)
         case tree: NameTree => printer.NameTree(tree)
+        case tree @ NamedArgument(name, rhs) => printer.NamedArgument(tree, name, rhs)
         // PlainText is a hook that allows the user to inject custom text into the output
         case tree: PlainText => tree.print(ctx)
       }
@@ -137,6 +138,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
     def SelfTypeTree(tree: SelfTypeTree, name: NameTree, tpt: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def NameTree(tree: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
+    def NamedArgument(tree: Tree, name: NameTree, rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     
     def printIndentedSingleTree(
       tree: Tree,
