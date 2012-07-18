@@ -43,7 +43,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def hashCode() = {
           val prime = 41
-          prime * 1 + param.hashCode
+          prime + param.hashCode
         }
       }
     """
@@ -73,7 +73,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def hashCode() = {
           val prime = 41
-          prime * (prime * 1 + p1.hashCode) + p2.hashCode
+          prime * (prime + p1.hashCode) + p2.hashCode
         }
       }
     """
@@ -103,7 +103,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def hashCode() = {
           val prime = 41
-          prime * 1 + p2.hashCode
+          prime + p2.hashCode
         }
       }
     """
@@ -130,7 +130,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def hashCode() = {
           val prime = 41
-          prime * (prime * 1 + p1.hashCode) + p2.hashCode
+          prime * (prime + p1.hashCode) + p2.hashCode
         }
       }
     """
@@ -162,7 +162,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         
         override def hashCode() = {
           val prime = 41
-          prime * (prime * 1 + p1.hashCode) + p2.hashCode
+          prime * (prime + p1.hashCode) + p2.hashCode
         }
       }
     """
@@ -222,7 +222,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       
       override def hashCode() = {
         val prime = 41
-        prime * (prime * 1 + p2.hashCode) + p3.hashCode
+        prime * (prime + p2.hashCode) + p3.hashCode
       }
     }
     """

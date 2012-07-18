@@ -130,7 +130,7 @@ trait TreeFactory {
   def mkHashcode(classSymbol: Symbol, classParamsForHashcode: List[ValDef], callSuper: Boolean, prime: Int = 41) = {
     def mkSingleParamPart(param: ValDef, primeName: TermName, inner: Tree) = {
       val mult = Apply(Select(Ident(primeName), nme.MUL), List(inner))
-        Apply(Select(mult, nme.PLUS), List(Select(Ident(param.name), nme.hashCode_)))
+      Apply(Select(mult, nme.PLUS), List(Select(Ident(param.name), nme.hashCode_)))
     }
     
     def mkFold(init: Tree, primeName: TermName, paramsForHashcode: List[ValDef]) = {
@@ -146,7 +146,8 @@ trait TreeFactory {
     } else {
       classParamsForHashcode match {
         case Nil => (Ident(primeVal.name), Nil)
-        case p::ps => (mkSingleParamPart(p, primeVal.name, oneLiteral), ps)
+        case p::ps => 
+          (Apply(Select(Ident(primeVal.name), nme.PLUS), List(Select(Ident(p.name), nme.hashCode_))), ps)
       }
     }
     val computation = mkFold(startFactor, primeVal.name, remainingParams)

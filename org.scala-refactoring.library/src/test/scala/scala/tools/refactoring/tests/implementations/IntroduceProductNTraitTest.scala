@@ -47,7 +47,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       
       override def hashCode() = {
         val prime = 41
-        prime * 1 + param.hashCode
+        prime + param.hashCode
       }
     }
     """
@@ -85,7 +85,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       
       override def hashCode() = {
         val prime = 41
-        prime * (prime * 1 + p1.hashCode) + p2.hashCode
+        prime * (prime + p1.hashCode) + p2.hashCode
       }
     }
     """
