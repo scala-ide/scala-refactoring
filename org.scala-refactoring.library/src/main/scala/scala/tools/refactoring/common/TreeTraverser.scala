@@ -339,6 +339,14 @@ trait TreeTraverser {
           }
           
           f(t.symbol, t)
+        
+        case BlockExtractor(stats) =>
+          stats foreach traverse
+          
+        case ApplyExtractor(fun, args) =>
+          traverse(fun)
+          args foreach traverse
+          
         case t: DefTree if t.symbol != NoSymbol =>
           f(t.symbol, t)
         case t: RefTree =>
@@ -379,8 +387,13 @@ trait TreeTraverser {
           
         case _ => ()  
       }
-        
-      super.traverse(t)
+      
+      t match {
+        case _: NamedArgument | _: NameTree | _: MultipleAssignment =>
+          ()
+        case t =>
+          super.traverse(t)
+      }
     }
     
     private def between(t1: Tree, t2: Tree) = {

@@ -1235,4 +1235,104 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("booh"))
+
+  @Test
+  def namedParameter = new FileSet {
+    """
+    class NamedParameter {
+      def foo(/*(*/b/*)*/: Int, c: String) {
+        println(b)
+      }
+      foo(c = "", b = 5)
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(/*(*/xys/*)*/: Int, c: String) {
+        println(xys)
+      }
+      foo(c = "", xys = 5)
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+
+  @Test
+  def namedParameterAndDefault = new FileSet {
+    """
+    class NamedParameter {
+      def foo(/*(*/b/*)*/: Int, c: String = "") {
+        println(b)
+      }
+      foo(b = 5)
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(/*(*/xys/*)*/: Int, c: String = "") {
+        println(xys)
+      }
+      foo(xys = 5)
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+
+  @Test
+  def namedParameterInDeclaredOrder = new FileSet {
+    """
+    class NamedParameter {
+      def foo(/*(*/b/*)*/: Int, c: String) {
+        println(b)
+      }
+      foo(b = 5, c = "")
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(/*(*/xys/*)*/: Int, c: String) {
+        println(xys)
+      }
+      foo(xys = 5, c = "")
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+  
+  @Test
+  def namedParameterInSecondArgsList = new FileSet {
+    """
+    class NamedParameter {
+      def foo(x: Int)(/*(*/b/*)*/: Int, c: String) {
+        println(b)
+      }
+      foo(5)(b = 5, c = "")
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(x: Int)(/*(*/xys/*)*/: Int, c: String) {
+        println(xys)
+      }
+      foo(5)(xys = 5, c = "")
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+  
+  @Test
+  def updateMethodAndNamedArgument = new FileSet {
+    """
+    class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(what = 1) = 2
+    }
+    """ becomes 
+    """
+    class Updateable { def update(/*(*/xys/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(xys = 1) = 2
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
 }

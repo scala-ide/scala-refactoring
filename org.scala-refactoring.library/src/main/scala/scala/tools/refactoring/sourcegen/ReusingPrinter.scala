@@ -978,5 +978,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         l ++ Fragment(tree.nameString) ++ r
       }
     }
+    
+    override def NamedArgument(tree: Tree, name: NameTree, rhs: Tree)(implicit ctx: PrintingContext) = {
+      l ++ p(name) ++ Requisite.Blank ++ "=" ++ Requisite.Blank ++ p(rhs) ++ r
+    }
   }
 }

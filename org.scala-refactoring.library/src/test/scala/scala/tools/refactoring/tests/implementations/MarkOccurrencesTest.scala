@@ -399,4 +399,22 @@ class MarkOccurrencesTest extends TestHelper {
       def foo(x: #) {}
     }
     """)
+    
+  @Test
+  def namedArg = markOccurrences("""
+    class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(what = 1) = 2
+    }
+    """,
+    """
+    class Updateable { def update(/*(*/####/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(########) = 2
+    }
+    """)
 }

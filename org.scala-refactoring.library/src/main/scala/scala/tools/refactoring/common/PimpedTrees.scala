@@ -14,6 +14,7 @@ import util.Memoized
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.sourcegen.Fragment
 import scala.tools.refactoring.sourcegen.AbstractPrinter
+import scala.tools.refactoring.sourcegen.Layout
 
 /**
  * A collection of implicit conversions for ASTs and other 
@@ -617,7 +618,7 @@ trait PimpedTrees {
       
       case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This | _: Super => Nil
       
-      case Apply(fun, args) =>
+      case ApplyExtractor(fun, args) =>
         fun :: args
          
       case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_")=>
@@ -719,6 +720,9 @@ trait PimpedTrees {
         
       case AssignOrNamedArg(lhs, rhs) =>
         lhs :: rhs :: Nil
+        
+      case NamedArgument(nme, rhs) =>
+        nme :: rhs :: Nil
         
       case MultipleAssignment(extractor, values, rhs) =>
         extractor :: values ::: rhs :: Nil
@@ -898,13 +902,82 @@ trait PimpedTrees {
   case class SelfTypeTree(name: NameTree, tpt: Tree) extends global.Tree {
     def errorSubtrees = Nil
   }
+  
+  case class NamedArgument(nameTree: NameTree, rhs: Tree) extends global.RefTree {
+    val name = nameTree.name
+  }
     
+  object ApplyExtractor {
+    
+    def couldHaveDefaultArguments(t: Tree) = t match {
+      case Apply(qualifier, args) =>
+        
+        def isSetter = PartialFunction.cond(qualifier) {
+          case t: Select => t.name.endsWith(nme.EQL)
+        }
+        
+        def isVarArgsCall = {
+          // TODO is there a better check?
+          qualifier.tpe.params.size != args.size
+        }
+        
+        t.pos.isRange && 
+        qualifier.pos.isRange && 
+        qualifier.tpe != null &&
+        !args.isEmpty &&
+        !isSetter &&
+        !isVarArgsCall &&
+        args.exists(_.pos.isRange)
+      case _ => false
+    }
+    
+    
+    def unapply(t: Apply): Option[(Tree, List[Tree])] = t match {
+      
+      case Apply(qualifier, args) if couldHaveDefaultArguments(t) =>
+        
+        val declaredParameterSyms = qualifier.tpe.params
+        
+        val argsWithPreviousTree = (qualifier :: args).sliding(2, 1).toList
+        
+        val transformedArgs = argsWithPreviousTree zip declaredParameterSyms map {
+          case (List(leading, argument), sym) if argument.pos.isRange =>
+            
+            val src = Layout(leading.pos.source, leading.pos.end, argument.pos.start).withoutComments
+            val isNamedArgument = {
+              // The second clause tests for the case where there's an update method
+              // that's called without named arguments, like `obj() = 1'.
+              src.contains("=") && !src.matches(".*\\).*=.*")
+            }
+            
+            if(isNamedArgument) {
+              val start = leading.pos.end + src.indexOf(sym.decodedName)
+              val end = start + sym.decodedName.length
+              val namePos = argument.pos withStart start withPoint start withEnd end
+              
+              new NamedArgument(NameTree(sym.name) setPos namePos, argument) {
+                setSymbol(sym)
+                setPos(argument.pos withStart start withPoint argument.pos.start)
+              }
+            } else {
+              argument
+            }
+                      
+          case (List(leading, argument), sym) => argument
+        }
+        
+        Some(Pair(t.fun, transformedArgs))
+        
+      case _ => 
+        Some(Pair(t.fun, t.args))
+    }
+  }
   /**
    * Unify the children of a Block tree and sort them 
    * in the same order they appear in the source code.
    * 
    * Also reshapes some trees: multiple assignments are
-   * removed and named arguments are reordered.
+   * removed and named argument trees are created.
    */
   object BlockExtractor {
     
@@ -918,8 +991,8 @@ trait PimpedTrees {
             case _ => return block
           }
           
-          val argumentNames = fun.tpe match {
-            case tpe: MethodType => tpe.params map (_.name)
+          val argumentSymbols = fun.tpe match {
+            case tpe: MethodType => tpe.params
             case _ => return block
           }
           
@@ -934,10 +1007,10 @@ trait PimpedTrees {
             }
           } getOrElse (return block)
           
-          val syntheticNamesToRealNames = (argumentsFromOriginalTree map { 
+          val syntheticNameToSymbol = (argumentsFromOriginalTree map { 
             case a: Ident => a.name 
             case _ => return block
-          }) zip argumentNames toMap
+          }) zip (argumentSymbols) toMap
           
           val startOffset = apply.pos.point 
           // FIXME strip comments!
@@ -945,13 +1018,19 @@ trait PimpedTrees {
           
           val newValDefs = stats collect {
             case t: ValDef if t.pos != NoPosition=> 
-              val newVal = t.copy(name = syntheticNamesToRealNames(t.name)) 
+              val sym = syntheticNameToSymbol(t.name)
+              
+              val newVal = NamedArgument(NameTree(sym.name), t.rhs) setSymbol sym
+              
               // FIXME we can do a better search..
               val nameStart = argumentsSource.indexOf(newVal.name.toString)
               
               if(nameStart >= 0) {
                 val nameLength = newVal.name.length
-                newVal setPos (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+                val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+                newVal.nameTree setPos namePos
+                newVal setPos namePos.withEnd(t.pos.end)
+                newVal
               } else /*no named argument*/ {
                 t.rhs
               }

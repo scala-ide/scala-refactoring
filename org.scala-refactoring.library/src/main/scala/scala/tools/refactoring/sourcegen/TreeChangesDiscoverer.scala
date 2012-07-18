@@ -42,6 +42,8 @@ trait TreeChangesDiscoverer {
       val changed = (t -> originalTree.get) match {
         case (t: NameTree, o: NameTree) => 
           t.nameString != o.nameString
+        case (t: NamedArgument, o: NamedArgument) => 
+          t.name != o.name
         case (t: Literal, o: Literal) =>
           t.value != o.value
         case (t: Ident, o: Ident) =>
