@@ -575,18 +575,6 @@ class RenameTest extends TestHelper with TestRefactoring {
     }"""
   } applyRefactoring(renameTo("P"))
     
-  @Ignore
-  @Test
-  def renameNamedParameter = new FileSet {
-    """
-    object ByNameParap {
-      def withParam(param1: Int,/*(*/name/*)*/: String) = println(name)
-      withParam(name = "Mirko", param1 = 5)
-      withParam(5, "Mirko")
-    }""" becomes
-    """"""
-  } applyRefactoring(renameTo("n"))
-    
   @Test
   def renameSelfType = new FileSet {
     """

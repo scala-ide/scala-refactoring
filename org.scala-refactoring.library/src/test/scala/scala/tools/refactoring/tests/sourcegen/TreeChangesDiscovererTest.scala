@@ -23,7 +23,8 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   }
   
   val doubleAllDefNames = transform {
-    case t: DefDef => t.copy(name = t.name.toString + t.name.toString) setPos t.pos
+    case t: DefDef => 
+      t.copy(name = t.name.append(t.name)) setPos t.pos
   }
   
   val replaceStmtInBlock = transform {

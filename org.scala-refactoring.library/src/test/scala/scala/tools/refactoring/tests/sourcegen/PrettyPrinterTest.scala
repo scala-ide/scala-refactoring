@@ -150,7 +150,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     val tree = Block(
         DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
-          "eins",
+          newTermName("eins"),
           Nil,
           Nil,
           EmptyTree,
@@ -158,7 +158,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
         ),
         DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
-          "zwei",
+          newTermName("zwei"),
           Nil,
           Nil :: Nil,
           EmptyTree,
@@ -176,7 +176,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = DefDef(
           NoMods withPosition (Flags.IMPLICIT, NoPosition) withPosition (Flags.METHOD, NoPosition) ,
-          "eins",
+          newTermName("eins"),
           Nil,
           List(List(ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), newTermName("a"), EmptyTree, EmptyTree))),
           EmptyTree,
@@ -194,7 +194,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition) ,
-          "m",
+          newTermName("m"),
           TypeDef(NoMods, newTypeName("X"), Nil, EmptyTree) :: Nil,
           List(List(arg)),
           EmptyTree,
@@ -251,7 +251,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
 
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
-          "eins",
+          newTermName("eins"),
           TypeDef( NoMods, newTypeName("R"), Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, newTypeName("Rate"), Nil, EmptyTree ))) :: Nil,
           Nil,
           EmptyTree,

@@ -904,6 +904,7 @@ trait PimpedTrees {
   }
   
   case class NamedArgument(nameTree: NameTree, rhs: Tree) extends global.RefTree {
+    def qualifier = EmptyTree
     val name = nameTree.name
   }
     

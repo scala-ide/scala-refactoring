@@ -4,8 +4,6 @@ package tests.implementations
 import implementations.ChangeParamOrder
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-import org.junit.Ignore
-import org.junit.Assert
 
 class ChangeParamOrderTest extends TestHelper with TestRefactoring {
 
