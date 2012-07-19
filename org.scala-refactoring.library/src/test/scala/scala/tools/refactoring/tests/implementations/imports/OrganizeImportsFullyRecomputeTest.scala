@@ -912,6 +912,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   @Test
   def dependencyInSameFile = new FileSet {
     """
+    package dependencyInSameFile
     class Foo {
       import Bar.instance
       
@@ -926,6 +927,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     class Bar
     """ becomes
     """
+    package dependencyInSameFile
     class Foo {
       import Bar.instance
       

@@ -807,6 +807,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     package bff
+    
     object /*(*/BFF/*)*/
     class BFF
     """
@@ -836,6 +837,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     package ctes
+    
     object Ctes {
       val A = 2
       val B = 3
@@ -854,6 +856,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     package bar
+    
     object Bar64 {
       val instance = new Bar64
     }
