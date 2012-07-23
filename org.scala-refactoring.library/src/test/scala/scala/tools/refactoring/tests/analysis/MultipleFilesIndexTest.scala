@@ -15,7 +15,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   var index: IndexLookup = EmptyIndex
   def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {
-    ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map (_ filter (_.pos != NoPosition) map conversion sortWith(_ < _) mkString ", ")
+    ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map { ts => 
+      (ts filter (_.pos != NoPosition) map conversion distinct) sortWith(_ < _) mkString ", "
+    }
   }
   
   def buildIndex(pro: FileSet) {
@@ -73,7 +75,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
         "<no-name> on line "+ sym.pos.line
       else
         sym.nameString +" on line "+ sym.pos.line
-    }
+    } 
   }
   
   def allSymbols(pro: FileSet): List[String] = {
@@ -363,7 +365,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
       val a = 42
     }
     """ becomes
-    "$init$ on line 2, C on line 2, a on line 5, a on line 5, m on line 4, someMethod on line 3"
+    "$init$ on line 2, C on line 2, a on line 5, m on line 4, someMethod on line 3"
   } apply(allDeclarations)
   
   @Test

@@ -6,7 +6,7 @@ package scala.tools.refactoring
 package sourcegen
 import scala.tools.nsc.util.SourceFile
 
-trait AbstractPrinter extends SourceCodeHelpers with CommonPrintUtils {
+trait AbstractPrinter extends CommonPrintUtils {
 
   this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with Formatting =>
 

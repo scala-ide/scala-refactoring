@@ -82,7 +82,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
   
   private[refactoring] def generate(tree: Tree, changeset: ChangeSet = AllTreesHaveChanged, sourceFile: Option[SourceFile]): Fragment = {
 
-    val initialIndentation = if(tree.hasExistingCode) indentation(tree) else ""
+    val initialIndentation = if(tree.hasExistingCode) indentationString(tree) else ""
     val in = new Indentation(defaultIndentationStep, initialIndentation)
     
     print(tree, PrintingContext(in, changeset, tree, sourceFile))

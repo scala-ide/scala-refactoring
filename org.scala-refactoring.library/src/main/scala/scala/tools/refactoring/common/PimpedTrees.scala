@@ -341,7 +341,7 @@ trait PimpedTrees {
    * except if there's a newline at the end.
    */
   def endPositionAtEndOfSourceFile(pos: Position, otherWise: Option[Int] = None) = {
-    // TODO: properly investigate this for a scalac bug report
+    // TODO: This is only needed for Scala < 2.10
     val lastCharInFile = pos.source.content(pos.end)
     if(pos.source.length -1 == pos.end 
         && lastCharInFile != '\n'

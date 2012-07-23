@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-trait TreePrintingTraversals extends SourceCodeHelpers {
+trait TreePrintingTraversals {
 
   self: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with AbstractPrinter =>
 
@@ -302,9 +302,9 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         val childrenOnNewLine = children(parent) filter (_.pos.isRange) filter (_.pos.line != parent.pos.line)
   
         if (childrenOnNewLine exists (_ samePos t)) {
-          Some(indentation(t))
+          Some(indentationString(t))
         } else {
-          childrenOnNewLine.headOption map indentation
+          childrenOnNewLine.headOption map indentationString
         }
   
       } else None

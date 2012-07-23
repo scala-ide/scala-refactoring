@@ -9,7 +9,7 @@ import scala.tools.nsc.util.SourceFile
 import common.PimpedTrees
 import common.Tracing
 
-trait LayoutHelper extends CommentHelpers {
+trait LayoutHelper {
   
   self: Formatting with Tracing with PimpedTrees with common.CompilerAccess =>
   
@@ -59,9 +59,13 @@ trait LayoutHelper extends CommentHelpers {
   def layout(start: Int, end: Int)(implicit s: SourceFile) = Layout(s, start, end)
   def between(l: Tree, r: Tree)(implicit s: SourceFile) = layout(l.pos.end, r.pos.start)(s)
 
-  def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = 
-    Layout(t.pos.source, 0, t.pos.start) → 
-    Layout(t.pos.source, t.pos.end, endPositionAtEndOfSourceFile(t.pos, Some(t.pos.source.length)))
+  def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = {
+    val leading = Layout(t.pos.source, 0, t.pos.start)
+    // TODO: This is only needed for Scala < 2.10
+    val endPos = endPositionAtEndOfSourceFile(t.pos, Some(t.pos.source.length))
+    val trailing = Layout(t.pos.source, t.pos.end, endPos)
+    leading → trailing
+  }
     
   def layoutForSingleChild(t: Tree, p: Tree): (Layout, Layout) = 
     splitLayoutBetweenParentAndFirstChild(child = t, parent = p)._2 →     
@@ -319,7 +323,7 @@ trait LayoutHelper extends CommentHelpers {
       case (l, r) => 
         
         val source = between(l, r)(left.pos.source).toString
-        val (layout, comments) = splitComment(source)
+        val (layout, comments) = CommentsUtils.splitComment(source)
         
         val (ll, lr, rule) = (l, parent, r) match {
           

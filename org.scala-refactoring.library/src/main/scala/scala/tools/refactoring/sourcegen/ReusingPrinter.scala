@@ -32,7 +32,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     override def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = {
       
-      val originalIndentation = outer.indentation(t)
+      val originalIndentation = outer.indentationString(t)
       
       val newCtx = ctx.copy(ind = ctx.ind.setTo(originalIndentation))
             
