@@ -71,7 +71,11 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
         
         decs ::: refs
         
-      } filter (_.pos.isRange) distinct
+      } filter {
+        // see SI-6141
+        case t: Ident => t.pos.isRange
+        case t => t.pos.isOpaqueRange
+      } distinct
     }
     
     def allDefinedSymbols = cus.flatMap(_.definitions.keys)

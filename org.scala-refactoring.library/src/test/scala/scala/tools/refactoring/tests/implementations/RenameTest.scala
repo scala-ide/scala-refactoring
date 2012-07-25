@@ -1339,4 +1339,24 @@ class Blubb
     object RenamedClass extends RenamedClass
     """
   } applyRefactoring(renameTo("RenamedClass"))
+  
+  @Test
+  def constructionInforComprehension = new FileSet {
+    """
+    package constructorInForComprehension
+    case class /*(*/A/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (A(x) <- Seq(A(1), A(2))) yield x
+    }
+    """ becomes 
+    """
+    package constructorInForComprehension
+    case class /*(*/BBB/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (BBB(x) <- Seq(BBB(1), BBB(2))) yield x
+    }
+    """
+  } applyRefactoring(renameTo("BBB"))
 }

@@ -417,4 +417,22 @@ class MarkOccurrencesTest extends TestHelper {
       up(########) = 2
     }
     """)
+
+  @Test
+  def constructorInForComprehension = markOccurrences("""
+    package constructorInForComprehension
+    case class /*(*/A/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (A(x) <- Seq(A(1), A(2))) yield x
+    }
+    """,
+    """
+    package constructorInForComprehension
+    case class /*(*/#/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (#(x) <- Seq(#(1), #(2))) yield x
+    }
+    """)
 }
