@@ -1323,4 +1323,20 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("xys"))
+  
+  @Test
+  def privatePrimaryConstructor = new FileSet {
+    """
+    class /*(*/SomeClass/*)*/ private () extends AnyRef {
+      def meta = SomeClass
+    }
+    object SomeClass extends SomeClass
+    """ becomes 
+    """
+    class /*(*/RenamedClass/*)*/ private () extends AnyRef {
+      def meta = RenamedClass
+    }
+    object RenamedClass extends RenamedClass
+    """
+  } applyRefactoring(renameTo("RenamedClass"))
 }

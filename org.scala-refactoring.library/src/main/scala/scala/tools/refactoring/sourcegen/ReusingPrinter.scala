@@ -116,7 +116,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       val TemplateExtractor(params, earlyBody, parents, self, body) = t
         
       val preBody = {
-        val xtends = Requisite.Blank ++ "extends" ++ Requisite.Blank 
+        val xtends = Requisite.anywhere("extends", " extends ")
         val parents_ = pp(parents, before = if (printExtends) xtends else "", separator = " with ")
         
         val params_ = params.headOption map (pms => pp(pms, separator = ", ", after = Requisite.anywhere(")"))) getOrElse EmptyFragment
