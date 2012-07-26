@@ -510,7 +510,8 @@ trait PimpedTrees {
    * self type annotation and the real body.
    */
   object TemplateExtractor {
-    def unapply(t: Tree) = t match {
+    
+    def unapply(t: Tree): Option[(List[List[ValDef]], List[Tree], List[Tree], Tree, List[Tree])] = t match {
       case tpl: Template => 
       
         val pimpedTpl = additionalTemplateMethods(tpl)
@@ -932,10 +933,11 @@ trait PimpedTrees {
       case _ => false
     }
     
+    def unapply(t: Apply): Option[(Tree, List[Tree])] = extract(t)
     
-    def unapply(t: Apply): Option[(Tree, List[Tree])] = t match {
+    val extract: Apply => Option[(Tree, List[Tree])] = Memoized {
       
-      case Apply(qualifier, args) if couldHaveDefaultArguments(t) =>
+      case t @ Apply(qualifier, args) if couldHaveDefaultArguments(t) =>
         
         val declaredParameterSyms = qualifier.tpe.params
         
@@ -969,7 +971,7 @@ trait PimpedTrees {
         
         Some(Pair(t.fun, transformedArgs))
         
-      case _ => 
+      case t => 
         Some(Pair(t.fun, t.args))
     }
   }

@@ -5,13 +5,17 @@
 package scala.tools.refactoring
 package sourcegen
 
+import scala.tools.refactoring.util.Memoized
+
 object CommentsUtils {
   
-  def stripComment(source: String): String = splitComment(source)._1
+  def stripComment(source: String): String = splitComment(source.toCharArray)._1
   
-  def splitComment(source: Seq[Char]): (String, String) = source match {
-    case Nil => ("", "")
-    case a :: Nil => (a.toString, " ")
+  def splitComment(source: String): (String, String) = splitComment(source.toCharArray)
+    
+  val splitComment: Array[Char] => (String, String) = Memoized {
+    case Array() => ("", "")
+    case Array(a) => (a.toString, " ")
     case s =>
       var nestingLevel = 0
       var lineComment = false
@@ -25,48 +29,40 @@ object CommentsUtils {
         text append t
       }
       
-      (s ++ " ") reduceLeft({
-        case (_1, _2) if nextToComment =>
+      (s ++ " ") sliding(2) foreach {
+        case Array(_1, _2) if nextToComment =>
           nextToComment = false
           add(_1, ' ')
-          _2
         
-        case ('/', '/') if !lineComment && nestingLevel == 0 => 
+        case Array('/', '/') if !lineComment && nestingLevel == 0 => 
           lineComment = true
           nextToComment = true
           add('/', ' ')
-          '/'
         
-        case ('\r', _2) =>
+        case Array('\r', _2) =>
           lineComment = false
           add('\r', '\r')
-          _2
           
-        case ('\n', _2) =>
+        case Array('\n', _2) =>
           lineComment = false
           add('\n', '\n')
-          _2
           
-        case ('/', '*') if !lineComment =>
+        case Array('/', '*') if !lineComment =>
           nestingLevel += 1
           nextToComment = true
           add('/', ' ')
-          '*'
           
-        case ('*', '/') if !lineComment && nestingLevel > 0 =>
+        case Array('*', '/') if !lineComment && nestingLevel > 0 =>
           nestingLevel -= 1
           nextToComment = true
           add('*', ' ')
-          '/'
           
-        case (_1, _2) if lineComment || nestingLevel > 0 => 
+        case Array(_1, _2) if lineComment || nestingLevel > 0 => 
           add(_1, ' ')
-          _2
           
-        case (_1, _2) =>
+        case Array(_1, _2) =>
           add(' ', _1)
-          _2
-      }: (Char, Char) => Char)
+      }
             
       (text mkString, comment mkString)
   }
