@@ -28,7 +28,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   }
   
   val doubleAllDefNames = transform {
-    case t: DefDef => t.copy(name = t.name.toString + t.name.toString) setPos t.pos
+    case t: DefDef => 
+      t.copy(name = t.name.append(t.name)) setPos t.pos
   }
   
   val negateAllBools = transform {
@@ -317,7 +318,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
        def bar() {
          Transaction.run[Unit](Transaction.Kind.ReadOnly)
        }
-    }""")
+    }
+    """)
         
     assertEquals("""
     package com.somedomain.test
@@ -337,7 +339,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
        def bar() {
          Transaction.run[Unit](Transaction.Kind.ReadOnly)
        }
-    }""", generateText(removeAuxiliaryTrees apply tree get))
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test
@@ -514,13 +517,15 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
       trait Demo2 {
         var assignee = 1
         assignee += -42
-      }""")
+      }
+      """)
       
     assertEquals("""
       trait Demo2 {
         var assignee = 1
         assignee += -42
-      }""", generateText(tree))
+      }
+      """, generateText(tree))
   }
   
   @Test
@@ -531,7 +536,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         val d = -1d
         val f = -1f
         val l = -1l
-      }""")
+      }
+      """)
       
     assertEquals("""
       trait NegativeNumber {
@@ -539,7 +545,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         val d = -1d
         val f = -1f
         val l = -1l
-      }""", generateText(tree))
+      }
+      """, generateText(tree))
   }
   
   @Test
@@ -550,7 +557,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
           var i = 0
           i = 1
         }
-      }""")
+      }
+      """)
       
     assertEquals("""
       trait Demo1 {
@@ -558,7 +566,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
           var i = 0
           i = 1
         }
-      }""", generateText(tree))
+      }
+      """, generateText(tree))
   }
   
   @Test
@@ -570,7 +579,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         up() = 1
         up(1) = 2
         up(1, 2) = 3
-      }""")
+      }
+      """)
       
     assertEquals("""
       class Updateable { def update(args: Int*) = 0 }
@@ -579,7 +589,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         up() = 1
         up(1) = 2
         up(1, 2) = 3
-      }""", generateText(tree))
+      }
+      """, generateText(tree))
   }
   
   @Test
@@ -590,7 +601,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         def i_=(i: Int) = {
           _i = i
         }
-      }""")
+      }
+      """)
       
     assertEquals("""
       package oneFromMany
@@ -598,7 +610,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         def i_=(i: Int) = {
           _i = i
         }
-      }""", generateText(removeAuxiliaryTrees apply tree get))
+      }
+      """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test
@@ -606,12 +619,14 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     val tree = treeFrom("""
       class MethodWithTypeParam {
         def foo[A, B, C] = 1
-      }""")
+      }
+      """)
       
     assertEquals("""
       class MethodWithTypeParam {
         def foo[A, B, C] = 1
-      }""", generateText(removeAuxiliaryTrees apply tree get))
+      }
+      """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test
@@ -863,7 +878,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
           false
         else
           true
-    }""")
+    }
+      """)
     
     assertEquals("""
     object Functions {
@@ -873,7 +889,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
           true
         else
           false
-    }""", generateText(removeAuxiliaryTrees &> ↓(matchingChildren(negateAllBools)) apply tree get))     
+    }
+      """, generateText(removeAuxiliaryTrees &> ↓(matchingChildren(negateAllBools)) apply tree get))     
   }
   
   @Test
@@ -898,7 +915,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
           println("hello!")
           true
         }
-    }""")
+    }
+    """)
     
     assertEquals("""
     object Functions {
@@ -920,7 +938,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
           println("hello!")
           false
         }
-    }""", generateText(removeAuxiliaryTrees &> ↓(matchingChildren(negateAllBools)) apply tree get))
+    }
+    """, generateText(removeAuxiliaryTrees &> ↓(matchingChildren(negateAllBools)) apply tree get))
   }
     
   @Test
@@ -932,7 +951,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
       val sum: Seq[Int] => Int = _ reduceLeft (_+_)
       List(1, 2) map (_ + 1)
       List(1, 2) map (i => i + 1)
-    }""")
+    }
+    """)
       
     assertEquals("""
     object Functions {
@@ -940,7 +960,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
       val sum: Seq[Int] => Int = _ reduceLeft (_+_)
       List(1, 2) map (_ + 1)
       List(1, 2) map (i => i + 1)
-    }""", generateText(removeAuxiliaryTrees apply tree get))
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test
@@ -953,7 +974,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
       def id[C](c: C) = c
       protected type C >: Nothing
       type D <: AnyRef
-    }""")
+    }
+        """)
     
     assertEquals("""
     trait Types {
@@ -962,7 +984,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
       def id[C](c: C) = c
       protected type C >: Nothing
       type D <: AnyRef
-    }""", generateText(removeAuxiliaryTrees apply tree get))
+    }
+        """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test
@@ -976,7 +999,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
         people foreach printName
       }
-    }""")
+    }
+    """)
     
     assertEquals("""
     object Rename1 {
@@ -986,7 +1010,8 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
         people foreach printName
       }
-    }""", generateText(removeAuxiliaryTrees apply tree get))
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test

@@ -14,9 +14,11 @@ Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.util
 Bundle-ClassPath: .
 Import-Package: scala.reflect.internal;resolution:=optional,
+ scala.reflect.internal.util;resolution:=optional,
  scala.reflect.api;resolution:=optional,
  scala.reflect.std;resolution:=optional,
  scala.reflect.runtime;resolution:=optional,
+ scala.reflect.makro;resolution:=optional,
  scala.tools.nsc,
  scala.tools.nsc.ast,
  scala.tools.nsc.ast.parser,

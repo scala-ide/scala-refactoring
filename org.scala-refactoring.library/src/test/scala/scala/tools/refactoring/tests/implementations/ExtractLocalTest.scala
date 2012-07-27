@@ -649,7 +649,7 @@ object ExtractMethod2 {
     }
     """ becomes
     """
-    object ExtractLocalBugTest extends App{ 
+    object ExtractLocalBugTest extends App { 
       val List(one, three, eight) = List(1,3,8);
       printf("%d %d %d\n", one, three, eight)
   
@@ -858,5 +858,28 @@ object ExtractMethod2 {
    }
    """
  } applyRefactoring(extract("url"))
+  
+  @Test
+  def plusAssignRhs = new FileSet {
+   """
+    class ExtractLocalVariable {
+      def f() {
+        var i= 3
+        i += /*(*/g()/*)*/ // select 'g()' here
+      }
+      def g()= 2
+    }
+   """ becomes
+   """
+    class ExtractLocalVariable {
+      def f() {
+        var i= 3
+        val result_of_g = g()
+        i += /*(*/result_of_g/*)*/ // select 'g()' here
+      }
+      def g()= 2
+    }
+   """
+  } applyRefactoring(extract("result_of_g"))
 
 }

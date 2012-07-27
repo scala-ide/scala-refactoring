@@ -7,18 +7,18 @@ package sourcegen
 
 import scala.tools.nsc.util.SourceFile
 
-trait Layout extends CommentHelpers {
+trait Layout {
   self =>
   
-  def contains(s: String) = stripComment(asText).contains(s)
+  def contains(s: String) = withoutComments.contains(s)
   
-  def matches(r: String) = stripComment(asText).matches(r)
+  def matches(r: String) = withoutComments.matches(r)
   
   /**
    * @return Returns this layout as a string but without comments. 
    *         Comments are replaced by whitespace.
    */
-  def withoutComments = stripComment(asText)
+  lazy val withoutComments = CommentsUtils.stripComment(asText)
 
   def asText: String
   
@@ -76,9 +76,9 @@ object Layout {
       case Some(i) => copy(end = i) → copy(start = i)
     }
     
-    private def splitFromLeft(cs: Seq[Char]): Option[Int] = split(cs, c => stripComment(asText).indexOf(c))
+    private def splitFromLeft(cs: Seq[Char]): Option[Int] = split(cs, c => withoutComments.indexOf(c))
     
-    private def splitFromRight(cs: Seq[Char]): Option[Int] = split(cs, c => stripComment(asText).lastIndexOf(c))
+    private def splitFromRight(cs: Seq[Char]): Option[Int] = split(cs, c => withoutComments.lastIndexOf(c))
 
     private def split(cs: Seq[Char], findIndex: Char => Int): Option[Int] = cs.toList match {
       case Nil => 

@@ -27,23 +27,47 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
      * Should NOT be used when the units has errors.
      */
     val FullyRecompute = Value
+
+    /**
+     * Recomputes the imports and removes all existing 
+     * imports not in the computed set. This mode preserves
+     * the user's formatting of imports, and is used for
+     * refactorings that modify imports but don't want
+     * to fully reorganize them.
+     */
+    val RecomputeAndModify = Value    
     
     /**
      * Tries to remove unneeded imports, but don't 
      * throw them out when it's uncertain whether
      * they are really unneeded. Should be safe when
-     * there are compile errors or when used without
-     * an interactive compiler.
+     * there are compile errors.
      */
     val RemoveUnneeded = Value
   }
   
-  type Participant = (List[Import] => List[Import])
+  trait Participant extends (List[Import] => List[Import]) {
+    def importAsString(t: Tree) = {
+      val ancestorSyms = ancestorSymbols(t)
+      ancestorSyms map (_.nameString) filterNot (_ == "package") mkString  (".")
+    }
+    
+    def stripPositions(t: Tree) = {
+      topdown(setNoPosition) apply t.duplicate getOrElse t
+    }
+                    
+    def isImportFromScalaPackage(expr: Tree) = {
+      expr.filter(_ => true).lastOption exists {
+        case Ident(nme.scala_) => true
+        case _ => false
+      }
+    }
+  }
   
   object CollapseImports extends Participant {
     def apply(trees: List[Import]) = {
       trees.foldRight(Nil: List[Import]) { 
-        case (imp: Import, x :: xs) if asSelectorString(imp.expr) == asSelectorString(x.expr) => 
+        case (imp: Import, x :: xs) if createText(imp.expr) == createText(x.expr) => 
           x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
         case (imp: Import, xs) => 
           imp :: xs
@@ -80,12 +104,15 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   }
   
   object SortImports extends Participant {
+    
+    def asText(t: Tree) = createText(stripPositions(t))
+    
     def apply(trees: List[Import]) = {
       trees.sortBy {
-        case Import(expr, selector :: Nil) if !wildcardImport(selector) => 
-          expr.toString + "." + selector.name.toString
-        case Import(expr, selectors) => 
-          expr.toString
+        case i @ Import(expr, selector :: Nil) if !wildcardImport(selector) => 
+          asText(expr) + "." + selector.name.toString
+        case i @ Import(expr, selectors) => 
+          asText(expr)
       }
     }
   }
@@ -93,13 +120,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   case class AlwaysUseWildcards(imports: Set[String]) extends Participant {
     def apply(trees: List[Import]) = {
       val seen = collection.mutable.HashSet[String]()
-      def asString(t: Tree) = {
-        t.filter(_ => true).map {
-          case Ident(name) => name.toString
-          case Select(_, name) => name.toString
-          case _ => ""
-        }.reverse.mkString(".")
-      }
       trees flatMap {
         case imp @ Import(qual, selectors) if imports.contains(asString(qual)) && !selectors.exists(renames) =>
           if(seen.contains(asString(qual))) {
@@ -133,7 +153,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         if(inserts.isEmpty) ungrouped += imp
       }
       
-      val spacer = Import(SourceLayoutTree(SourceLayouts.Newline), Nil)
+      val spacer = Import(PlainText.BlankLine, Nil)
       
       val allImports = (grouped.values.toList.map(_.toList) ::: List(ungrouped.toList)).filterNot(_.isEmpty)
       
@@ -142,6 +162,16 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       } else {
         allImports.flatten
       }
+    }
+  }
+  
+  object RemoveDuplicates extends Participant {
+    def apply(trees: List[Import]) = {
+      trees.foldLeft(Nil: List[Import]) {
+        case (rest, imp) if rest.exists(t => t.toString == imp.toString) =>
+          rest 
+        case (rest, imp) => imp :: rest
+      } reverse
     }
   }
   
@@ -159,6 +189,55 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     }
   }
   
+  class RecomputeAndModifyUnused(allNeededImports: List[Tree]) extends Participant {
+    
+    def apply(trees: List[Import]) = {
+      
+      val importsNames = allNeededImports map importAsString
+        
+      trees flatMap {
+        case imp @ Import(expr, selectors) =>
+          val pkgName = importAsString(expr) +"."
+          
+          val neededSelectors = selectors.filter { selector =>
+            selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
+          }
+          
+          // If parts of the expr aren't ranges, then we have an import that depends on an
+          // other import (see OrganizeImportsRecomputeAndModifyTest#importDependingOnImport)
+          def exprIsAllRangePos = {
+            // no Tree#forall, so we use double-negative
+            !expr.exists(t => !t.pos.isRange)
+          }
+          
+          def invisiblePartIsDefaultImported = {
+            findDeepestNeededSelect(expr) exists isQualifierDefaultImported
+          }
+          
+          if(neededSelectors.size == selectors.size && (exprIsAllRangePos || invisiblePartIsDefaultImported)) {
+            Some(imp)
+          } else if(neededSelectors.size > 0) {
+
+            /* Imports from the scala package don't have to start with `scala`,
+             * and we don't want to enforce this, so we just keep the expr as
+             * it is. On the other hand, if the import is not from the `scala`
+             * package, we set all positions to NoPos to make the visible in
+             * the generated code.
+             */
+            val fullExpr = if(isImportFromScalaPackage(expr)) {
+              expr
+            } else {
+              stripPositions(expr)
+            }
+            
+            Some(Import(fullExpr, neededSelectors))
+          } else {
+            None
+          }
+      }
+    }
+  }
+  
   class RemoveUnused(unit: RichCompilationUnit, importsToAdd: List[(String, String)]) extends Participant {
     def apply(trees: List[Import]) = {
       val additionallyImportedTypes = importsToAdd.unzip._2
@@ -171,8 +250,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           }
           
           if(neededSelectors.size > 0) {
-            val newExpr = ↓(setNoPosition) apply duplicateTree(expr) getOrElse expr
-            Import(newExpr, neededSelectors)
+            Import(stripPositions(expr), neededSelectors)
           } else {
             Import(EmptyTree, Nil)
           }
@@ -183,6 +261,36 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   class FindNeededImports(root: Tree, enclosingPackage: String) extends Participant {
     def apply(trees: List[Import]) = {
       mkImportTrees(neededImports(root), enclosingPackage)
+    }
+  }
+  
+  object PrependScalaPackage extends Participant {
+    def apply(trees: List[Import]) = {
+      trees map {
+        case t @ Import(expr, _) if isImportFromScalaPackage(expr) =>
+          // Setting all positions to NoPosition forces the pretty printer
+          // to print the complete selector including the leading `scala`
+          t copy (expr = stripPositions(expr))
+        case t => t
+      }
+    }
+  }
+  
+  object DropScalaPackage extends Participant {
+    def apply(trees: List[Import]) = {
+      trees map {
+        case t @ Import(expr, name) if isImportFromScalaPackage(expr) =>
+          
+          val transformation = traverseAndTransformAll {
+            transform {
+              case t @ Ident(nme.scala_) =>
+                Ident(nme.scala_) copyAttrs t setPos Invisible
+            }
+          }
+          
+          t copy (expr = transformation(expr).get /*safe becaues of pattern guard*/)
+        case t => t
+      }
     }
   }
   
@@ -248,7 +356,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         }
         
         new FindNeededImports(selection.root, enclosingPackage) :: SortImports :: Nil
-      case Dependencies.RemoveUnneeded =>
+        
+      case Dependencies.RecomputeAndModify =>
+        new RecomputeAndModifyUnused(neededImports(selection.root)) :: RemoveDuplicates :: Nil
+        
+      case Dependencies.RemoveUnneeded =>   
         val unit = compilationUnitOfFile(selection.pos.source.file).get
         new AddNewImports(params.importsToAdd) :: SortImports :: new RemoveUnused(unit, params.importsToAdd) :: Nil  
     }

@@ -31,7 +31,7 @@ trait TestRefactoring extends TestHelper {
     
     val refactoring: MultiStageRefactoring
 
-    lazy val selection = refactoring.FileSelection(project.selection.file, project.selection.pos.start, project.selection.pos.end)
+    lazy val selection = new refactoring.FileSelection(project.selection.file, project.selection.pos.start, project.selection.pos.end)
 
     lazy val preparationResult = refactoring.prepare(selection)
 
@@ -40,9 +40,9 @@ trait TestRefactoring extends TestHelper {
         case Right(prepare) =>
           refactoring.perform(selection, prepare, parameters) match {
             case Right(modifications) => modifications
-            case Left(error) => throw new PreparationException(error.cause)
+            case Left(error) => throw new RefactoringException(error.cause)
           }
-        case Left(error) => throw new RefactoringException(error.cause)
+        case Left(error) => throw new PreparationException(error.cause)
       }
     }
   }

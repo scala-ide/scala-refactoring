@@ -23,7 +23,14 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
   type RefactoringParameters = String
 
   def prepare(s: Selection) = {
-    s.findSelectedOfType[DefDef].toRight(PreparationError("no enclosing method definition found"))
+    s.findSelectedOfType[DefDef] match {
+      case _ if s.selectedTopLevelTrees.size == 0 =>
+        Left(PreparationError("No expressions or statements selected."))
+      case Some(tree) =>
+        Right(tree)
+      case None =>
+        Left(PreparationError("No enclosing method definition found: please select code that's inside a method."))
+    }
   }
     
   def perform(selection: Selection, selectedMethod: PreparationResult, methodName: RefactoringParameters): Either[RefactoringError, List[Change]] = {

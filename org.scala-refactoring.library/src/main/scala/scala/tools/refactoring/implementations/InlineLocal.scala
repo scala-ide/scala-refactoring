@@ -29,8 +29,13 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
     }
     
     selectedValue match {
-      case Some(t) if (t.symbol.isPrivate || t.symbol.isLocal) && !t.symbol.isMutable && !t.symbol.isParameter => Right(t)
-      case _ => Left(PreparationError("No local value selected."))
+      case Some(t) if (t.symbol.isPrivate || t.symbol.isLocal) 
+        && !t.symbol.isMutable && !t.symbol.isParameter
+        && t.symbol.enclMethod != NoSymbol => Right(t)
+      case Some(t) =>
+        Left(PreparationError("The selected value cannot be inlined."))
+      case _ => 
+        Left(PreparationError("No local value selected."))
     }
   }
     

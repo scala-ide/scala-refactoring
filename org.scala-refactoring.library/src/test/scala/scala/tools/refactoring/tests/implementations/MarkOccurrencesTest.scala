@@ -299,7 +299,7 @@ class MarkOccurrencesTest extends TestHelper {
         for (foo <- List("santa", "2claus"); /*(*/###/*)*/ <- List(1,2) if foo.startsWith(""+ ###)) yield foo
       }
     """)
-
+  
   @Test
   def referenceFromInside = markOccurrences("""
     package referenceFromInside
@@ -317,7 +317,7 @@ class MarkOccurrencesTest extends TestHelper {
       }
     }
     """)
-
+    
   @Test
   def referenceToOverridenTypesInSubclasses = markOccurrences("""
     abstract class A {
@@ -351,6 +351,88 @@ class MarkOccurrencesTest extends TestHelper {
 
         }
       }
+    }
+    """)
+     
+  @Test
+  def typeAscriptionTraitMember = markOccurrences("""
+    trait ScalaIdeRefactoring {
+      trait /*(*/Refactoring/*)*/
+      val refactoring: Refactoring
+    }
+    """,
+    """
+    trait ScalaIdeRefactoring {
+      trait /*(*/###########/*)*/
+      val refactoring: ###########
+    }
+    """)
+    
+  @Test
+  def typeAliasRhs = markOccurrences("""
+    class Foo2 {
+      type T = /*(*/Int/*)*/
+      val x: T = 10
+      def foo(x: T) {}
+    }
+    """,
+    """
+    class Foo2 {
+      type T = /*(*/###/*)*/
+      val x: T = 10
+      def foo(x: T) {}
+    }
+    """)
+    
+  @Test
+  def typeAliasLhs = markOccurrences("""
+    class Foo2 {
+      type /*(*/T/*)*/ = Int
+      val x: T = 10
+      def foo(x: T) {}
+    }
+    """,
+    """
+    class Foo2 {
+      type /*(*/#/*)*/ = Int
+      val x: # = 10
+      def foo(x: #) {}
+    }
+    """)
+    
+  @Test
+  def namedArg = markOccurrences("""
+    class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(what = 1) = 2
+    }
+    """,
+    """
+    class Updateable { def update(/*(*/####/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(########) = 2
+    }
+    """)
+
+  @Test
+  def constructorInForComprehension = markOccurrences("""
+    package constructorInForComprehension
+    case class /*(*/A/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (A(x) <- Seq(A(1), A(2))) yield x
+    }
+    """,
+    """
+    package constructorInForComprehension
+    case class /*(*/#/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (#(x) <- Seq(#(1), #(2))) yield x
     }
     """)
 }

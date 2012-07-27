@@ -93,7 +93,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       }
       """)
   }
-  
+    
   @Test
   @ScalaVersion(matches="2.10")
   def findShadowed() = {

@@ -5,24 +5,19 @@
 package scala.tools.refactoring
 package sourcegen
 
+import scala.tools.nsc.util.BatchSourceFile
+
 trait CommonPrintUtils {
 
   this: common.CompilerAccess with AbstractPrinter =>
 
   import global._
   
-  def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, NL)
+  def newline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.current, ctx.newline)
     
-  def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, NL)
+  def indentedNewline(implicit ctx: PrintingContext) = Requisite.newline(ctx.ind.incrementDefault.current, ctx.newline)
     
   def indentation(implicit ctx: PrintingContext) = ctx.ind.current
-  
-  def NL(implicit ctx: PrintingContext): String = {
-    if(ctx.file.exists(_.content.containsSlice("\r\n")))
-      "\r\n"
-    else
-      "\n"
-  }
 
   def typeToString(tree: TypeTree, t: Type)(implicit ctx: PrintingContext): String = {
     t match {
@@ -60,16 +55,16 @@ trait CommonPrintUtils {
     } 
   }
         
-  def balanceParens(f: Fragment) = Fragment {
+  def balanceParens(open: Char, close: Char)(f: Fragment) = Fragment {
     val txt = f.toLayout.withoutComments // TODO also without strings, etc.
-    val opening = txt.count(_ == '(')
-    val closing = txt.count(_ == ')')
+    val opening = txt.count(_ == open)
+    val closing = txt.count(_ == close)
     if(opening > closing && closing > 0) {
-      f.asText.reverse.replaceFirst("\\)", ")" * (opening - closing + 1)).reverse
+      f.asText.reverse.replaceFirst("\\" + close, ("" + close) * (opening - closing + 1)).reverse
     } else if(opening > closing) {
-      f.asText + (")" * (opening - closing))
+      f.asText + (("" + close) * (opening - closing))
     } else if(opening < closing) {
-      ("(" * (closing - opening)) + f.asText
+      (("" + open) * (closing - opening)) + f.asText
     } else {
       f.asText
     }
@@ -89,4 +84,18 @@ trait CommonPrintUtils {
     case _ => 
       p
   }
+  
+  lazy val precedence: Name => Int = {
+
+    // Copied from the compiler
+    def newUnitParser(code: String)      = new syntaxAnalyzer.UnitParser(newCompilationUnit(code))
+    def newCompilationUnit(code: String) = new CompilationUnit(newSourceFile(code))
+    def newSourceFile(code: String)      = new BatchSourceFile("<refactoring>", code)
+
+    val parser = newUnitParser("")
+    
+    // I ♥ Scala
+    name => parser.precedence(newTermName(name.decode))
+  }
+  
 }

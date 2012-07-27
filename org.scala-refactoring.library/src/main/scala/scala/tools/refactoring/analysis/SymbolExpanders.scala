@@ -80,7 +80,6 @@ trait DependentSymbolExpanders {
     this: IndexLookup =>
     
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
-      
       case s @ (_: global.TypeSymbol | _: global.TermSymbol) if s.owner.isClass =>
       
         def allSubClasses(clazz: Symbol) = allDefinedSymbols.filter {
@@ -93,10 +92,13 @@ trait DependentSymbolExpanders {
             hasClazzInAncestors
           case _ => false
         }
+        val containingClass = s.owner
         
-        val subClasses = allSubClasses(s.owner) 
+        val superClasses = containingClass.ancestors
+        
+        val subClasses = allSubClasses(containingClass) 
                 
-        val overrides = subClasses map {
+        val overrides = (subClasses ++ superClasses) map {
           case otherClassDecl =>
             try {
               s overriddenSymbol otherClassDecl

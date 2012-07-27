@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-trait TreePrintingTraversals extends SourceCodeHelpers {
+trait TreePrintingTraversals {
 
   self: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with AbstractPrinter =>
 
@@ -15,7 +15,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
 
     printer =>
 
-    def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = context("Printing Tree "+ t.getClass.getSimpleName) {
+    def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = context("Printing Tree "+ t.getClass.getName) {
       
       trace("current indentation set to %s", ctx.ind.current)
       
@@ -74,6 +74,9 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         case tree @ SelfTypeTree(name, tpt) => printer.SelfTypeTree(tree, name, tpt)
         case tree: SourceLayoutTree => printer.SourceLayoutTree(tree)
         case tree: NameTree => printer.NameTree(tree)
+        case tree @ NamedArgument(name, rhs) => printer.NamedArgument(tree, name, rhs)
+        // PlainText is a hook that allows the user to inject custom text into the output
+        case tree: PlainText => tree.print(ctx)
       }
 
       trace("results in %s", code.asText)
@@ -81,7 +84,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
       Fragment(code.asText)
     }
 
-    def default(t: Tree)(implicit ctx: PrintingContext): Fragment = Predef.error("Not implemented! "+ t.getClass.getSimpleName)
+    def default(t: Tree)(implicit ctx: PrintingContext): Fragment = sys.error("Not implemented! "+ t.getClass.getSimpleName)
 
     def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Template)(implicit ctx: PrintingContext): Fragment = default(tree)
     def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext): Fragment = default(tree)
@@ -135,6 +138,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
     def SelfTypeTree(tree: SelfTypeTree, name: NameTree, tpt: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def NameTree(tree: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
+    def NamedArgument(tree: Tree, name: NameTree, rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     
     def printIndentedSingleTree(
       tree: Tree,
@@ -201,7 +205,7 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
             separator.getLayout.asText.startsWith("\n") ||
             separator.getLayout.asText.startsWith("\r")
             )) {
-          Requisite.newline(ind.current + ind.defaultIncrement, NL)
+          Requisite.newline(ind.current + ind.defaultIncrement, ctx.newline)
         } else {
           separator
         }
@@ -298,9 +302,9 @@ trait TreePrintingTraversals extends SourceCodeHelpers {
         val childrenOnNewLine = children(parent) filter (_.pos.isRange) filter (_.pos.line != parent.pos.line)
   
         if (childrenOnNewLine exists (_ samePos t)) {
-          Some(indentation(t))
+          Some(indentationString(t))
         } else {
-          childrenOnNewLine.headOption map indentation
+          childrenOnNewLine.headOption map indentationString
         }
   
       } else None

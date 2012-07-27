@@ -285,7 +285,7 @@ else {
     }
     """) match {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
-      case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
+      case _ => Assert.fail(); sys.error("") // too bad fail does not return Nothing
     }
     
     val newRHS1 = Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(shallowDuplicate(originalDefDef.rhs) setPos NoPosition))
@@ -338,7 +338,7 @@ else {
     }
     """) match {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
-      case _ => Assert.fail(); Predef.error("") // too bad fail does not return Nothing
+      case _ => Assert.fail(); sys.error("") // too bad fail does not return Nothing
     }
     
     val newRHS1 = new Block(List(Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(originalDefDef.rhs))), EmptyTree)
@@ -702,14 +702,15 @@ class Foo5
     """, generateText(removeAuxiliaryTrees apply tree get))
     
     assertEquals(0, createChanges(List(tree)).size)
-  }
-  
+  } 
+
   @Test
   def annotation(): Unit = {
     
     val tree = treeFrom("""
 import java.lang.String
-
+import scala.annotation.StaticAnnotation
+        
 class RunWith(c: Class[_]) extends StaticAnnotation
 
 /*(*/  /*)*/
@@ -720,7 +721,8 @@ class Test
       
     assertEquals("""
 import java.lang.String
-
+import scala.annotation.StaticAnnotation
+        
 class RunWith(c: Class[_]) extends StaticAnnotation
 
 /*(*/  /*)*/
@@ -1261,7 +1263,7 @@ class A(a: Int) {
     val str = """
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       def foo(f: Int): Boolean = {
         if((f == 0)) fail
         else false
@@ -1278,7 +1280,7 @@ class A(a: Int) {
     assertEquals("""
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       def foo(f: Int): Boolean = {
         if((f == 0)) fail()
         else false
@@ -1286,13 +1288,13 @@ class A(a: Int) {
     }
     """, common.Change.applyChanges(refactor(result.toList), str))
   }
-  
+
   @Test
   def testCopy4Variation() {
     val str = """
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       def foo(f: Int): Boolean = {
         if((f == 0)) fail()
         else false
@@ -1304,19 +1306,24 @@ class A(a: Int) {
     val result = topdown(matchingChildren(
       transform {
         case t: DefDef => t.copy()
-        case t: Apply if (t.fun.nameString == "fail") =>
-          val s = t.symbol.fullName
-          val qual = s.substring(0, s.lastIndexOf("."))
-          val select = Select(
-            qualifier = Ident(name = newTypeName(qual)),
-            name = t.fun.asInstanceOf[Select].name)
-          t.copy(fun = select) setPos t.pos
+        case t: Apply =>
+          if (t.fun.nameString == "fail") {
+            val s = t.symbol.fullName
+            val qual = s.substring(0, s.lastIndexOf("."))
+            val select = Select(
+              qualifier = Ident(name = newTypeName(qual)),
+              name = t.fun.asInstanceOf[Select].name)
+            t.copy(fun = select) setPos t.pos 
+          } else {
+            t
+          }
+        case t => t
       })) apply ast
 
     assertEquals("""
     package abc
     object primitive {
-      def fail() = {}
+      def fail() = {true}
       
       def foo(f: Int): Boolean = {
       if((f == 0)) abc.primitive.fail()
@@ -1927,5 +1934,46 @@ object acmatch {
     
     class XY
     """, Change.applyChanges(refactor(res.toList), str))
+  }
+  
+  @Test
+  def insertPlainString() {
+    val source = """
+    class InsertHere {
+      def method = {
+        val list = List(1,2,3) 
+        list map (i => i * 2)
+      }
+    }
+    """
+    val ast = treeFrom(source)
+    val transformed = topdown {
+      matchingChildren {
+        transform {
+          case t @ Block(stmts, expr) =>
+            val string = PlainText.Indented("""
+               |for (
+               |  i <- list
+               |) yield {
+               |  i * 2
+               |}""".stripMargin)
+            
+            t.copy(expr = string)
+        }
+      }
+     } apply ast
+
+    assertEquals("""
+    class InsertHere {
+      def method = {
+        val list = List(1,2,3) 
+        for (
+          i <- list
+        ) yield {
+          i * 2
+        }
+      }
+    }
+    """, Change.applyChanges(refactor(transformed.toList), source))
   }
 }

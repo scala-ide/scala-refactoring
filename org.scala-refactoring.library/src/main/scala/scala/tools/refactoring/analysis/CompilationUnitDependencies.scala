@@ -11,81 +11,93 @@ trait CompilationUnitDependencies {
 
   import global._
 
+  def isQualifierDefaultImported(t: Tree) = !isQualifierNotDefaultImported(t)
+
+  def isQualifierNotDefaultImported(t: Tree) = t match {
+    case t: Select =>
+      val Scala = newTypeName("scala")
+      val Java = newTypeName("java")
+      val `lang` = newTermName("lang")
+      t.qualifier match {
+        case Ident(Names.scala) => false
+        case This(Scala) => false
+        case Select(This(Java), `lang`) => false
+        case Select(Ident(Names.scala), Names.pkg) => false
+        case Select(Ident(Names.scala), Names.Predef) => false
+        case Select(This(Scala), Names.Predef) => false
+        case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
+        case qual if qual.nameString == "ClassTag" => false
+        case _ => true
+      }
+    case _ => true
+  }
+  
+  /**
+   * Helper function to filter out trees that we don't need
+   * to import, for example because they come from Predef.
+   */
+  def isImportReallyNeeded(t: Select) = {
+    
+    val lastSymbol = t.filter(_ => true).last.symbol
+    
+    if(lastSymbol != NoSymbol && lastSymbol.isLocal) {
+      // Our import "chain" starts from a local value,
+      // so we cannot import `t` globally.
+      false
+    } else {
+      !isQualifierDefaultImported(t)
+    }
+  }
+  
+  /**
+   * Finds the last "visible" (with a range position) select in some tree selection.
+   * 
+   * Selects are usually only partly written down in source code (except when we write
+   * down the full name to some identifier), so there exists a select at which the tree
+   * turns from being visible to being invisible. We need to find this tree to determine
+   * whether we need do make an import with the minimally required path.
+   * 
+   * This function also already filters trees that we don't need to import, e.g. from the
+   * Predef or the scala package.
+   */
+  def findDeepestNeededSelect(t: Tree): Option[Select] = t match {
+    case selected @ Select(qual @ Select(underlying, _), _) if qual.symbol.isPackageObject && underlying.pos.isRange =>
+      
+      /* When importing from a package object, e.g. scala.sys.`package`.error, the `package` select
+       * doesn't have a position. So we "skip" this package object and continue with the underlying
+       * select, which might again reveal a range position. 
+       */
+      findDeepestNeededSelect(underlying)
+      
+    case s @ Select(qual, name) if s.pos.isRange && (!qual.pos.isRange || qual.pos.isTransparent) =>
+      Some(s)
+    case s: Select =>
+      findDeepestNeededSelect(s.qualifier)
+    case _ =>
+      None
+  }
+  
   /**
    * Calculates a list of all needed imports for the given Tree.
    */
-  def neededImports(t: Tree): List[Select] = {
-
-    /**
-     * Helper function to filter out trees that we don't need
-     * to import, for example because they come from Predef.
-     */
-    def isImportReallyNeeded(t: Select) = {
-      
-      def checkIfQualifierIsNotDefaultImported = {
-        val Scala = newTypeName("scala")
-        val Java = newTypeName("java")
-        val `lang` = newTermName("lang")
-        t.qualifier match {
-          case Ident(names.scala) => false
-          case This(Scala) => false
-          case Select(This(Java), `lang`) => false
-          case Select(Ident(names.scala), names.pkg) => false
-          case Select(Ident(names.scala), names.Predef) => false
-          case Select(This(Scala), names.Predef) => false
-          case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
-          case _ => true
-        }
-      }
-      
-      val lastSymbol = t.filter(_ => true).last.symbol
-      
-      if(lastSymbol != NoSymbol && lastSymbol.isLocal) {
-        // Our import "chain" starts from a local value,
-        // so we cannot import `t` globally.
-        false
-      } else {
-        checkIfQualifierIsNotDefaultImported
-      }
-    }
+  def neededImports(t: Tree): List[Select] = {    
     
     /**
-     * Finds the last "visible" (with a range position) select in some tree selection.
-     * 
-     * Selects are usually only partly written down in source code (except when we write
-     * down the full name to some identifier), so there exists a select at which the tree
-     * turns from being visible to being invisible. We need to find this tree to determine
-     * whether we need do make an import with the minimally required path.
-     * 
-     * This function also already filters trees that we don't need to import, e.g. from the
-     * Predef or the scala package.
+     * Check if the definition is also a child of the outer `t`. In that case, we don't need
+     * to add an import because the dependency is to a local definition.
      */
-    def findDeepestNeededSelect(t: Tree): Option[Select] = t match {
-      case selected @ Select(qual @ Select(underlying, _), _) if qual.symbol.isPackageObject && underlying.pos.isRange =>
-        
-        /* When importing from a package object, e.g. scala.sys.`package`.error, the `package` select
-         * doesn't have a position. So we "skip" this package object and continue with the underlying
-         * select, which might again reveal a range position. 
-         * 
-         * If we find out that we need that underlying select, we return the original selected tree on
-         * the package object.
-         * */
-        findDeepestNeededSelect(underlying) map (_ => selected)
-        
-      case s @ Select(qual, name) if s.pos.isRange && (!qual.pos.isRange || qual.pos.isTransparent) =>
-        Some(s) filter isImportReallyNeeded
-      case s: Select =>
-        findDeepestNeededSelect(s.qualifier)
-      case _ =>
-        None
-    }
+    def isLocalDefinition(dependency: Tree) = t.exists {
+      case t: DefTree => dependency.symbol == t.symbol
+      case _ => false
+    } 
     
     val deps = dependencies(t)
     
     val neededDependencies = deps.flatMap {
-      case t: Select if !t.pos.isRange => Some(t) filter isImportReallyNeeded
-      case t => findDeepestNeededSelect(t)
-    }.distinct
+      case t if isLocalDefinition(t) => None
+      case t: Select if !t.pos.isRange => Some(t)
+      case t => findDeepestNeededSelect(t) 
+    } filter isImportReallyNeeded distinct
     
     // Eliminate duplicates by converting them to strings.
     neededDependencies.groupBy(asSelectorString).map(_._2.head).toList filterNot (_.symbol == t.symbol)
@@ -153,14 +165,25 @@ trait CompilationUnitDependencies {
         } 
         selects foreach foundPotentialTree
       }
+                  
+      // we don't need to add a dependency for method calls where the receiver
+      // is explicit in the source code.
+      def isMethodCallFromExplicitReceiver(t: Select) = {
+        t.qualifier.pos.isRange && t.symbol.isMethod && 
+        !(t.qualifier.pos.sameRange(t.pos) && t.qualifier.pos.isTransparent)
+      }
+      
+      def hasStableQualifier(t: Select) = {
+        t.qualifier.symbol != null && (!t.qualifier.symbol.isTerm || t.qualifier.symbol.isStable)
+      }
       
       override def traverse(root: Tree) = root match {
 
         case Import(_, _) => ()
 
-        case Select(Ident(names.scala), _) => ()
+        case Select(Ident(Names.scala), _) => ()
         
-        case Select(Select(Ident(names.scala), names.pkg), _) => ()
+        case Select(Select(Ident(Names.scala), Names.pkg), _) => ()
         
         case t: Template =>
           // The primary constructor can have visible annotations even
@@ -174,18 +197,24 @@ trait CompilationUnitDependencies {
         
         case t : ApplyImplicitView =>
           
-          // if we find a select, it's a dependency
-          // this is likely not fine-grained enough
-          // and might add too many dependencies
-          t.fun find {
-            case t: Select => true
-            case _ => false
-          } foreach {
-            case Select(This(_), _) =>
-              // the implicit conversion is available from `X.this`, so
-              // we don't need to import it.
-            case t: Select => 
-              foundPotentialTree(t)
+          val hasSelectFromNonPackageThis = t.fun exists {
+            case Select(ths: This, _) if !ths.symbol.isPackageClass =>
+              true
+            case _ =>
+              false
+          }
+          
+          if(hasSelectFromNonPackageThis) {
+            // We can ignore this tree because it is selected from a 
+            // non-package instance, so there's nothing useful to import.
+          } else {
+
+            t.fun find {
+              case t: Select =>
+                !isMethodCallFromExplicitReceiver(t) && !t.pos.isTransparent && hasStableQualifier(t)
+              case _ => 
+                false
+            } foreach foundPotentialTree
           }
           
           t.args foreach traverse
@@ -202,18 +231,12 @@ trait CompilationUnitDependencies {
           ()
                   
         case t @ Select(qual, _) if t.pos.isRange =>
-            
-          // we don't need to add a dependency for method calls where the receiver
-          // is explicit in the source code.
-          val isMethodCallFromExplicitReceiver = {
-            qual.pos.isRange && t.symbol.isMethod && !(qual.pos.sameRange(t.pos) && qual.pos.isTransparent)
-          }
           
-          if (!isMethodCallFromExplicitReceiver
+          if (!isMethodCallFromExplicitReceiver(t)
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD 
               && !t.pos.isTransparent
-              && qual.symbol != null && (!qual.symbol.isTerm || qual.symbol.isStable)) {
+              && hasStableQualifier(t)) {
             addToResult(t)
           } 
           

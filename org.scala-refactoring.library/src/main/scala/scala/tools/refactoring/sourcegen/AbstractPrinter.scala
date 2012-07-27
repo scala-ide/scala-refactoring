@@ -6,9 +6,9 @@ package scala.tools.refactoring
 package sourcegen
 import scala.tools.nsc.util.SourceFile
 
-trait AbstractPrinter extends SourceCodeHelpers with CommonPrintUtils {
+trait AbstractPrinter extends CommonPrintUtils {
 
-  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess =>
+  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with Formatting =>
 
   import global._
 
@@ -16,7 +16,14 @@ trait AbstractPrinter extends SourceCodeHelpers with CommonPrintUtils {
    * PrintingContext is passed around with all the print methods and contains 
    * the context or environment for the current printing.
    */
-  case class PrintingContext(ind: Indentation, changeSet: ChangeSet, parent: Tree, file: Option[SourceFile])
+  case class PrintingContext(ind: Indentation, changeSet: ChangeSet, parent: Tree, file: Option[SourceFile]) {
+    def newline: String = {
+      if(file.exists(_.content.containsSlice("\r\n")))
+        "\r\n"
+      else
+        "\n"
+    }
+  }
 
   trait ChangeSet {
     def hasChanged(t: Tree): Boolean

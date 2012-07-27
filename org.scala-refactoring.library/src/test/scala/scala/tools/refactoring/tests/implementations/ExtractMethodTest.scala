@@ -994,4 +994,46 @@ class PathSeparator {
 }
     """
   } applyRefactoring extract("sayHello")
+
+  @Test
+  def extractFromWithinAnonymousClass = new FileSet {
+    """
+    class ExtractFromAnonClass {
+      def method {
+        val o= new Object {
+          def f() {
+            val i= /*(*/1 + 2/*)*/
+          }
+        }  
+      }
+    }
+    """ becomes
+    """
+    class ExtractFromAnonClass {
+      def method {
+        val o= new Object {
+          def f() {
+            val i= three/*)*/
+          }
+          
+          private def three: Int = {
+            /*(*/1 + 2
+          }
+        }  
+      }
+    }
+    """
+  } applyRefactoring extract("three")
+  
+  @Test(expected=classOf[PreparationException])
+  def extractionNeedsSelection = new FileSet {
+    """
+    class Foo {
+      def bar = {
+        List(1,2,3).mkString(/*(*//*)*/",")
+      }
+    }
+    """ becomes
+    ""
+  } applyRefactoring extract("sep")
 }

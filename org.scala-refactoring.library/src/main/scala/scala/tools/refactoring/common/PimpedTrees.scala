@@ -12,6 +12,9 @@ import tools.nsc.symtab.Flags
 import scala.tools.nsc.Global
 import util.Memoized
 import scala.collection.mutable.ListBuffer
+import scala.tools.refactoring.sourcegen.Fragment
+import scala.tools.refactoring.sourcegen.AbstractPrinter
+import scala.tools.refactoring.sourcegen.Layout
 
 /**
  * A collection of implicit conversions for ASTs and other 
@@ -56,6 +59,8 @@ trait PimpedTrees {
         else 
           new RangePosition(t.pos.source, imp.namePos, imp.namePos, imp.namePos + imp.name.length)
       }
+      
+      assert(imp.name != nme.NO_NAME, "Unexpected name %s in %s. The full import tree is %s".format(imp.name, imp, t))
     
       val name = NameTree(imp.name) setPos pos
       
@@ -218,6 +223,8 @@ trait PimpedTrees {
               t.pos withStart t.pos.point
             } else if (qualifier.pos.sameRange(t.pos) && t.name.toString == "apply") {
               t.pos withEnd t.pos.start
+            } else if (qualifier.pos.isRange && t.name.decode.endsWith(":")) {
+              t.pos withEnd (t.pos.start + nameString.length)
             } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
               t.pos withStart (t.pos.end - nameString.length)
             } else if (qualifier.pos.isRange && (t.pos.point.max(qualifier.pos.end + 1)) <= t.pos.end) {
@@ -322,7 +329,7 @@ trait PimpedTrees {
         case t: NameTree => t.nameString
         case t: TypeTree => t.symbol.nameString // FIXME: use something better
         case ImportSelectorTree(NameTree(name), _) => name.toString
-        case _ => Predef.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
+        case _ => sys.error("Tree "+ t.getClass.getSimpleName +" does not have a name.")
       }
     }
   }
@@ -334,7 +341,7 @@ trait PimpedTrees {
    * except if there's a newline at the end.
    */
   def endPositionAtEndOfSourceFile(pos: Position, otherWise: Option[Int] = None) = {
-    // TODO: properly investigate this for a scalac bug report
+    // TODO: This is only needed for Scala < 2.10
     val lastCharInFile = pos.source.content(pos.end)
     if(pos.source.length -1 == pos.end 
         && lastCharInFile != '\n'
@@ -419,10 +426,8 @@ trait PimpedTrees {
     /**
      * Returns the primary constructor of the template.
      */
-    def primaryConstructor = t.body.filter {
-      case t: DefDef => 
-        t.symbol.isPrimaryConstructor || (t.symbol == NoSymbol && t.name.toString == nme.CONSTRUCTOR.toString)
-      case _ => false
+    def primaryConstructor = t.body collect {
+      case t: DefDef if t.symbol.isPrimaryConstructor || (t.symbol == NoSymbol && t.name.toString == nme.CONSTRUCTOR.toString) => t
     }
        
     /**
@@ -444,6 +449,57 @@ trait PimpedTrees {
             args
         } flatten
     } flatten
+
+    /**
+     * Returns all constructor parameters that are accessible from outside the class itself.
+     * The mutability of the parameter is contained in the second element of the tuple.
+     */
+    def nonPrivateClassParameters = {
+      val primaryConstructor = t.primaryConstructor.headOption
+      primaryConstructor match {
+        case None => Nil
+        case Some(pc) => {
+          val classParams = pc.vparamss.flatten
+          val paramAccessors = (t.body collect {
+            case defdef @ DefDef(mods, _, _, _, _, _) if mods.hasFlag(Flags.ACCESSOR) => defdef
+          })
+
+          val mutableParamNames = (t.body collect {
+            case valdef @ ValDef(mods, _, _, _) if mods.isParamAccessor && mods.isMutable => valdef.nameString
+          })
+          val paramMutability = Map(paramAccessors.map(d => (d.nameString, mutableParamNames contains d.nameString)): _*)
+          val paramAccessorNames = paramAccessors.map(_.nameString)
+          val nonPrivateClassParams = classParams.collect { case p: ValDef if paramAccessorNames.contains(p.nameString) => (p, paramMutability(p.nameString)) }
+          nonPrivateClassParams
+        }
+      }
+    }
+    
+    /**
+     * Returns existing equality methods.
+     * Note that this is a rough by-name check.
+     */
+    def existingEqualityMethods: List[ValOrDefDef] = {
+      t.body collect {
+        case d: ValOrDefDef if List(nme.equals_, nme.hashCode_, nme.canEqual_) contains d.name => d
+      }
+    }
+    
+    /**
+     * Returns whether the template has an implementation of an equals, canEquals or hashCode method. 
+     */
+    def hasEqualityMethod: Boolean = existingEqualityMethods match {
+      case Nil => false
+      case _ => true
+    }
+    
+    /**
+     * Returns true if this template belongs to an anonymous class.
+     */
+    def isTemplateForAnonymousClass = t.primaryConstructor exists { t =>
+      val sym = t.symbol
+      sym != NoSymbol && sym.owner.isAnonymousClass
+    }
   }
   
   implicit def additionalTemplateMethods(t: Template) = new TemplateMethods(t)
@@ -454,34 +510,31 @@ trait PimpedTrees {
    * self type annotation and the real body.
    */
   object TemplateExtractor {
-    def unapply(t: Tree) = t match {
+    
+    def unapply(t: Tree): Option[(List[List[ValDef]], List[Tree], List[Tree], Tree, List[Tree])] = t match {
       case tpl: Template => 
       
         val pimpedTpl = additionalTemplateMethods(tpl)
-              
-        val primaryConstructorArgs = (pimpedTpl.primaryConstructor flatMap (t => t.asInstanceOf[DefDef].vparamss)) map (_.size)
         
-        // FIXME this is very very ugly
-        val classParams: List[List[ValDef]] = {
+        val classParams = {
+                  
+          val primaryConstructorArgs = pimpedTpl.primaryConstructor flatMap (_.vparamss) map (_.size)
           
-          var cp = pimpedTpl.constructorParameters
+          def groupPrimaryConstructorArgs(groups: List[Int], fields: List[ValDef]): List[List[ValDef]] = groups match {
+            case Nil => Nil
+            case n :: ns =>
+              val (current, rest) = fields.splitAt(n)
+              current :: groupPrimaryConstructorArgs(ns, rest)
+          }
         
-          if(primaryConstructorArgs.sum != cp.size) {
-            List(cp)
+          val constructorParameters = pimpedTpl.constructorParameters
+          if(primaryConstructorArgs.sum != constructorParameters.size) {
+            List(constructorParameters)
           } else {
-          
-            val xx = primaryConstructorArgs map { i =>
-              val(current, rest) = cp.splitAt(i)
-              cp = rest
-              current
-            }
-            
-            assert(cp == Nil)
-            
-            xx
+            groupPrimaryConstructorArgs(primaryConstructorArgs, constructorParameters)
           }
         }
-        
+                      
         val body = {
           val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains) 
           val removeGeneratedTrees = bodyWithoutPrimaryConstructorAndArgs filter keepTree
@@ -496,7 +549,7 @@ trait PimpedTrees {
         }) filterNot (_.isEmpty) filter {
           // objects are always serializable, but the Serializable parent's position is NoPosition
           case t: TypeTree if t.pos == NoPosition && t.nameString == "Serializable" => false
-          case _ => true
+          case t => t.pos.isRange || t.pos == NoPosition
         }
         
         val self = if(tpl.self.isEmpty) EmptyTree else {
@@ -517,8 +570,8 @@ trait PimpedTrees {
             tpl.self
           }
         }
-
-        Some((classParams, pimpedTpl.earlyDefs, parents, self, body))
+        
+        Some(Tuple5(classParams, pimpedTpl.earlyDefs, parents, self, body))
       
       case _ => 
         None
@@ -566,7 +619,7 @@ trait PimpedTrees {
       
       case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This | _: Super => Nil
       
-      case Apply(fun, args) =>
+      case ApplyExtractor(fun, args) =>
         fun :: args
          
       case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_")=>
@@ -669,6 +722,9 @@ trait PimpedTrees {
       case AssignOrNamedArg(lhs, rhs) =>
         lhs :: rhs :: Nil
         
+      case NamedArgument(nme, rhs) =>
+        nme :: rhs :: Nil
+        
       case MultipleAssignment(extractor, values, rhs) =>
         extractor :: values ::: rhs :: Nil
         
@@ -756,7 +812,7 @@ trait PimpedTrees {
    * Represent a Name as a tree, including its position.
    */
   case class NameTree(name: global.Name) extends global.Tree {
-    if (name.toString == "<none>") Predef.error("Name cannot be <none>, NoSymbol used?")
+    if (name == nme.NO_NAME) sys.error("Name cannot be <none>, NoSymbol used?")
     def nameString = {
       if(pos.isRange && pos.source.content(pos.start) == '`' && !name.toString.startsWith("`")) {
         "`"+ name.decode.trim +"`"
@@ -767,7 +823,7 @@ trait PimpedTrees {
     override def toString = "NameTree("+ nameString +")"
     override def setPos(p: Position) = {
       if(p != NoPosition && p.start < 0) {
-        Predef.error("pos.start is"+ p.start)
+        sys.error("pos.start is"+ p.start)
       }
       super.setPos(p)
     }
@@ -816,6 +872,9 @@ trait PimpedTrees {
   object ModifierTree {
     def unapply(m: global.Modifiers) = {
       Some(m.positions.toList map {
+        // hack to get rid of override modifiers
+        // couldn't figure out how to remove a flag from the positions map (michael)
+        case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 => ModifierTree(0)
         case (flag, pos) if pos.isRange =>
           ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
         case (flag, _) =>
@@ -844,13 +903,84 @@ trait PimpedTrees {
   case class SelfTypeTree(name: NameTree, tpt: Tree) extends global.Tree {
     def errorSubtrees = Nil
   }
+  
+  case class NamedArgument(nameTree: NameTree, rhs: Tree) extends global.RefTree {
+    def qualifier = EmptyTree
+    val name = nameTree.name
+  }
     
+  object ApplyExtractor {
+    
+    def couldHaveDefaultArguments(t: Tree) = t match {
+      case Apply(qualifier, args) =>
+        
+        def isSetter = PartialFunction.cond(qualifier) {
+          case t: Select => t.name.endsWith(nme.EQL)
+        }
+        
+        def isVarArgsCall = {
+          // TODO is there a better check?
+          qualifier.tpe.params.size != args.size
+        }
+        
+        t.pos.isRange && 
+        qualifier.pos.isRange && 
+        qualifier.tpe != null &&
+        !args.isEmpty &&
+        !isSetter &&
+        !isVarArgsCall &&
+        args.exists(_.pos.isRange)
+      case _ => false
+    }
+    
+    def unapply(t: Apply): Option[(Tree, List[Tree])] = extract(t)
+    
+    val extract: Apply => Option[(Tree, List[Tree])] = Memoized {
+      
+      case t @ Apply(qualifier, args) if couldHaveDefaultArguments(t) =>
+        
+        val declaredParameterSyms = qualifier.tpe.params
+        
+        val argsWithPreviousTree = (qualifier :: args).sliding(2, 1).toList
+        
+        val transformedArgs = argsWithPreviousTree zip declaredParameterSyms map {
+          case (List(leading, argument), sym) if argument.pos.isRange =>
+            
+            val src = Layout(leading.pos.source, leading.pos.end, argument.pos.start).withoutComments
+            val isNamedArgument = {
+              // The second clause tests for the case where there's an update method
+              // that's called without named arguments, like `obj() = 1'.
+              src.contains("=") && !src.matches(".*\\).*=.*")
+            }
+            
+            if(isNamedArgument) {
+              val start = leading.pos.end + src.indexOf(sym.decodedName)
+              val end = start + sym.decodedName.length
+              val namePos = argument.pos withStart start withPoint start withEnd end
+              
+              new NamedArgument(NameTree(sym.name) setPos namePos, argument) {
+                setSymbol(sym)
+                setPos(argument.pos withStart start withPoint argument.pos.start)
+              }
+            } else {
+              argument
+            }
+                      
+          case (List(leading, argument), sym) => argument
+        }
+        
+        Some(Pair(t.fun, transformedArgs))
+        
+      case t => 
+        Some(Pair(t.fun, t.args))
+    }
+  }
   /**
    * Unify the children of a Block tree and sort them 
    * in the same order they appear in the source code.
    * 
    * Also reshapes some trees: multiple assignments are
-   * removed and named arguments are reordered.
+   * removed and named argument trees are created.
    */
   object BlockExtractor {
     
@@ -864,8 +994,8 @@ trait PimpedTrees {
             case _ => return block
           }
           
-          val argumentNames = fun.tpe match {
-            case tpe: MethodType => tpe.params map (_.name)
+          val argumentSymbols = fun.tpe match {
+            case tpe: MethodType => tpe.params
             case _ => return block
           }
           
@@ -873,13 +1003,17 @@ trait PimpedTrees {
           // were removed during the transformations. Therefore we have
           // to look up the original apply method
           val argumentsFromOriginalTree = compilationUnitOfFile(apply.pos.source.file) map (_.body) flatMap { root =>
-            root.find(_ samePos apply) collect { case Apply(_, args) => args }
+            val treeWithSamePos = root.find(_ samePos apply)
+            treeWithSamePos collect { 
+              case Block(_, Apply(_, args)) => args 
+              case Apply(_, args) => args 
+            }
           } getOrElse (return block)
           
-          val syntheticNamesToRealNames = (argumentsFromOriginalTree map { 
+          val syntheticNameToSymbol = (argumentsFromOriginalTree map { 
             case a: Ident => a.name 
             case _ => return block
-          }) zip argumentNames toMap
+          }) zip (argumentSymbols) toMap
           
           val startOffset = apply.pos.point 
           // FIXME strip comments!
@@ -887,13 +1021,19 @@ trait PimpedTrees {
           
           val newValDefs = stats collect {
             case t: ValDef if t.pos != NoPosition=> 
-              val newVal = t.copy(name = syntheticNamesToRealNames(t.name)) 
+              val sym = syntheticNameToSymbol(t.name)
+              
+              val newVal = NamedArgument(NameTree(sym.name), t.rhs) setSymbol sym
+              
               // FIXME we can do a better search..
               val nameStart = argumentsSource.indexOf(newVal.name.toString)
               
               if(nameStart >= 0) {
                 val nameLength = newVal.name.length
-                newVal setPos (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+                val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+                newVal.nameTree setPos namePos
+                newVal setPos namePos.withEnd(t.pos.end)
+                newVal
               } else /*no named argument*/ {
                 t.rhs
               }
@@ -938,10 +1078,10 @@ trait PimpedTrees {
   
   /**
    * @return Returns the (symbol) ancestors of the tree excluding the ROOT
-   * in descending order.
+   * in descending order. Also filters the symbols for package objects!
    */
   def ancestorSymbols(t: Tree): List[Symbol] = {
-    t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).reverse
+    t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).filterNot(_.isPackageObjectClass).reverse
   }
   
   /**
@@ -971,6 +1111,16 @@ trait PimpedTrees {
       t
     }
   }
+  
+  def isScalaVersion(version: String) = {
+    scala.util.Properties.versionString.contains(version)
+  }
+  
+  def isClassTag(c: Constant): Boolean = {
+    // On 2.10 c.tag == ClazzTag
+    // On 2.9  c.tag == ClassTag
+    c.tpe.toString.matches("(java\\.lang\\.)?Class\\[.*")
+  }
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
@@ -989,16 +1139,72 @@ trait PimpedTrees {
   
   val NoBlock = NotInstanceOf[Block]
   val NoPackageDef = NotInstanceOf[PackageDef]
+  val NoFunction = NotInstanceOf[Function]
  
+  
+  /**
+   *  The PlainText "tree" provides a hook into the source code generation.
+   *  When a PlainText tree occurs during source code generation, its `print`
+   *  method is called with the current AbstractPrinter#PrintingContext. The
+   *  result is inserted into the generated source code.
+   *  
+   *  For some use cases (blank line, raw and indented string) implementations
+   *  already exist in the `PlainText` object.
+   *  
+   *  Note that PlainText trees should never be allowed to escape the Scala
+   *  refactoring library, so be careful when using compiler utilities to
+   *  transform trees.
+   */
+  abstract class PlainText extends global.Tree {
+    def print(ctx: AbstractPrinter#PrintingContext): Fragment
+  }
+  
+  object PlainText {
+    
+    /**
+     * Inserts a blank line into the generated source code.
+     */
+    case object BlankLine extends PlainText {
+      def print(ctx: AbstractPrinter#PrintingContext) = {
+        Fragment(ctx.newline + ctx.newline + ctx.ind.current)
+      }  
+    }
+    
+    /**
+     * Inserts `text` verbatim into the source code.
+     * 
+     * Note: to automatically indent the string, use `Indented`. 
+     */
+    case class Raw(text: String) extends PlainText {
+      def print(ctx: AbstractPrinter#PrintingContext) = {
+        Fragment(text)
+      }    
+    }
+    
+    /**
+     * Indents `text` to the current indentation level and
+     * inserts it into the generated code.
+     */
+    case class Indented(text: String) extends PlainText {
+      def print(ctx: AbstractPrinter#PrintingContext) = {
+        Fragment(text.replaceAll(ctx.newline, ctx.newline + ctx.ind.current))
+      }    
+    }
+  }
+  
   /**
    * A SourceLayoutTree can be used to insert arbitrary text into the code,
-   * for example, blank lines.
+   * for example, blank lines. 
+   * 
    */
+  @deprecated("Use PlainText objects and its components", "0.5.0")
   case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree {
     def errorSubtrees = Nil
   }
+  @deprecated("Use PlainText objects and its components", "0.5.0")
   object SourceLayouts {
     sealed trait Kinds
+    @deprecated("Use PlainText.Newline instead", "0.5.0")
     object Newline extends Kinds
   }
 }

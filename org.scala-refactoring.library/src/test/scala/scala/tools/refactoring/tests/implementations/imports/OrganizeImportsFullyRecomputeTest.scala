@@ -581,16 +581,17 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
-
+  
   @Test
-  def importMethodFromSamePackage = new FileSet {
-
+  @ScalaVersion(matches="2.9") // it works correctly on 2.9, but the 2.10 version is better
+  def importMethodFromSamePackage29 = new FileSet {
+    
     addToCompiler("testimplicits", """
-      package a.b.c
-      object TestImplicits {
-        implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
-      }""");
-
+    package a.b.c
+    object TestImplicits {
+      implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
+    }""");
+    
     """
     package a.b.c
     import TestImplicits._
@@ -609,17 +610,46 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
+  
+  @Test
+  @ScalaVersion(matches="2.10")
+  def importMethodFromSamePackage = new FileSet {
+    
+    addToCompiler("testimplicits", """
+    package a.b.c
+    object TestImplicits {
+      implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
+    }""");
+    
+    """
+    package a.b.c
+    import TestImplicits._
 
+    object Tester {
+      "":Array[Byte]
+    }
+    """ becomes
+    """
+    package a.b.c
+    
+    import TestImplicits.stringToBytes
+
+    object Tester {
+      "":Array[Byte]
+    }
+    """
+  } applyRefactoring organize
+  
   @Test
   def importedPackageHasKeywordName = new FileSet {
-
+    
     addToCompiler("testkeyword", """
-      package other
-      package `type`
-      object `implicit` {
-        val x = 42
-      }""");
-
+    package other
+    package `type`
+    object `implicit` {
+      val x = 42
+    }""");
+    
     """
     package a.b.c
     import other.`type`.`implicit`
@@ -638,7 +668,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
-
+  
   @Test
   def fileWithoutNewline = new FileSet {
     """
@@ -648,7 +678,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     
     class MyClass[T]"""
   } applyRefactoring organize
-
+  
   @Test
   def parensAtEndOfFile = new FileSet {
     """
@@ -658,16 +688,16 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     
     class MyClass(i: Int)"""
   } applyRefactoring organize
-
+  
   @Test
   def importFromSamePackage = new FileSet {
-
+    
     addToCompiler("first", """
-      package mypackage
+    package mypackage
 
-      class First
-      """);
-
+    class First
+    """);
+    
     """
     package mypackage
 
@@ -685,17 +715,17 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
-
+  
   @Test
   def importFromSameNestedPackage = new FileSet {
-
+    
     addToCompiler("first", """
-      package mypackage
-      package sub
+    package mypackage
+    package sub
 
-      class First
-      """);
-
+    class First
+    """);
+    
     """
     package mypackage
     package sub
@@ -788,6 +818,128 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       type Prop_Tp[+Vl_Tpe] <: Property[Vl_Tpe]
       def properties: Set[Prop_Tp[_]] = null.asInstanceOf[Set[Prop_Tp[_]]]
     }
+    """
+  } applyRefactoring organize
+
+  @Test
+  @ScalaVersion(matches="2.10")
+  def annotationTypeDef = new FileSet {
+    
+    addToCompiler("ann.scala", """
+      package pkg
+      object annotations {
+        type Doc = java.lang.annotation.Documented
+      }
+    """)
+    
+    """
+    package whatever
+    import pkg.annotations.Doc
+    
+    @Doc
+    class Documented
+    """ becomes
+    """
+    package whatever
+    
+    import pkg.annotations.Doc
+    
+    @Doc
+    class Documented
+    """
+  } applyRefactoring organize
+
+  def qualifiedImportFromPackageObject = new FileSet {
+    addToCompiler("package.scala", """
+      package test
+
+      package object pkg {
+        def f_pkg() = 1
+      }    
+    """)
+    
+    """
+      package test2
+      
+      import test.pkg
+      
+      class ScalaClass {
+        def f() {
+          pkg.f_pkg
+        }
+      }
+    """ becomes
+    """
+      package test2
+      
+      import test.pkg
+      
+      class ScalaClass {
+        def f() {
+          pkg.f_pkg
+        }
+      }
+    """
+  } applyRefactoring organize
+
+  @Test
+  def implicitConversion = new FileSet {
+    addToCompiler("implicitConversion.scala", """
+      package implicitConversion
+      trait AimplicitConversion {
+        class B
+        object B {
+          implicit def any2B(i: Any): B = new B
+        }
+      }
+    """);
+    """
+    import implicitConversion.AimplicitConversion
+    
+    object C extends AimplicitConversion {
+      val b: B = new Object
+    }
+    """ becomes
+    """
+    import implicitConversion.AimplicitConversion
+    
+    object C extends AimplicitConversion {
+      val b: B = new Object
+    }
+    """
+  } applyRefactoring organize
+
+  @Test
+  def dependencyInSameFile = new FileSet {
+    """
+    package dependencyInSameFile
+    class Foo {
+      import Bar.instance
+      
+      def foo = instance.toString
+      def bar = Bar.instance.toString
+    }
+    
+    object Bar {
+      val instance = new Bar
+    }
+    
+    class Bar
+    """ becomes
+    """
+    package dependencyInSameFile
+    class Foo {
+      import Bar.instance
+      
+      def foo = instance.toString
+      def bar = Bar.instance.toString
+    }
+    
+    object Bar {
+      val instance = new Bar
+    }
+    
+    class Bar
     """
   } applyRefactoring organize
 }

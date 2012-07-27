@@ -265,14 +265,16 @@ class RenameTest extends TestHelper with TestRefactoring {
       class Bar {
         def foo = Foo.this
       }
-    }""" becomes
+    }
+    """ becomes
     """
     package renameReferenceToOuterclass
     class /*(*/Blubb/*)*/ {
       class Bar {
         def foo = Blubb.this
       }
-    }"""
+    }
+    """
   } applyRefactoring(renameTo("Blubb"))
     
   @Test
@@ -572,18 +574,6 @@ class RenameTest extends TestHelper with TestRefactoring {
       val p = P("Mirko")
     }"""
   } applyRefactoring(renameTo("P"))
-    
-  @Ignore
-  @Test
-  def renameNamedParameter = new FileSet {
-    """
-    object ByNameParap {
-      def withParam(param1: Int,/*(*/name/*)*/: String) = println(name)
-      withParam(name = "Mirko", param1 = 5)
-      withParam(5, "Mirko")
-    }""" becomes
-    """"""
-  } applyRefactoring(renameTo("n"))
     
   @Test
   def renameSelfType = new FileSet {
@@ -1045,7 +1035,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("babar"))
-
+  
   @Test
   def renameClassWithThisConstuctorCall = new FileSet {
     """
@@ -1063,7 +1053,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("ConfigX"))
-
+  
   @Test
   def renameAbstractTypesInHierarchy = new FileSet {
     """
@@ -1155,4 +1145,218 @@ trait Foo[A] {
 class Blubb
     """
   } applyRefactoring(renameTo("abc"))
+  
+  @Test
+  def coloncolon = new FileSet {
+    """
+    object Problem07 {
+      def /*(*/flatten/*)*/(list: List[Any]): List[Any] = list match {
+        case (head@_::_)::tail => flatten(head) ++ flatten(tail)
+        case Nil::tail => flatten(tail)
+        case head::tail => head::flatten(tail)
+        case Nil => Nil
+      } 
+    }
+    """ becomes 
+    """
+    object Problem07 {
+      def /*(*/fltn/*)*/(list: List[Any]): List[Any] = list match {
+        case (head@_::_)::tail => fltn(head) ++ fltn(tail)
+        case Nil::tail => fltn(tail)
+        case head::tail => head::fltn(tail)
+        case Nil => Nil
+      } 
+    }
+    """
+  } applyRefactoring(renameTo("fltn"))
+
+  @Test
+  def typeProjection = new FileSet {
+    """
+    class A {
+      trait /*(*/B/*)*/
+      def foo(b: A#B) {}
+    }
+    """ becomes 
+    """
+    class A {
+      trait /*(*/C/*)*/
+      def foo(b: A#C) {}
+    }
+    """
+  } applyRefactoring(renameTo("C"))
+
+  @Test
+  def overriddenMethod = new FileSet {
+    """
+    package overriddenMethod.bar
+
+    trait Bar {
+      def bippy: String
+      
+      def bar = bippy.toUpperCase  
+    }
+    """ becomes """
+    package overriddenMethod.bar
+
+    trait Bar {
+      def booh: String
+      
+      def bar = booh.toUpperCase  
+    }
+    """
+    ;
+    """
+    package overriddenMethod
+    import bar.Bar
+    
+    class Foo extends Bar {
+      override def /*(*/bippy/*)*/: String = "foo"
+    }
+    """ becomes 
+    """
+    package overriddenMethod
+    import bar.Bar
+    
+    class Foo extends Bar {
+      override def /*(*/booh/*)*/: String = "foo"
+    }
+    """
+  } applyRefactoring(renameTo("booh"))
+
+  @Test
+  def namedParameter = new FileSet {
+    """
+    class NamedParameter {
+      def foo(/*(*/b/*)*/: Int, c: String) {
+        println(b)
+      }
+      foo(c = "", b = 5)
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(/*(*/xys/*)*/: Int, c: String) {
+        println(xys)
+      }
+      foo(c = "", xys = 5)
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+
+  @Test
+  def namedParameterAndDefault = new FileSet {
+    """
+    class NamedParameter {
+      def foo(/*(*/b/*)*/: Int, c: String = "") {
+        println(b)
+      }
+      foo(b = 5)
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(/*(*/xys/*)*/: Int, c: String = "") {
+        println(xys)
+      }
+      foo(xys = 5)
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+
+  @Test
+  def namedParameterInDeclaredOrder = new FileSet {
+    """
+    class NamedParameter {
+      def foo(/*(*/b/*)*/: Int, c: String) {
+        println(b)
+      }
+      foo(b = 5, c = "")
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(/*(*/xys/*)*/: Int, c: String) {
+        println(xys)
+      }
+      foo(xys = 5, c = "")
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+  
+  @Test
+  def namedParameterInSecondArgsList = new FileSet {
+    """
+    class NamedParameter {
+      def foo(x: Int)(/*(*/b/*)*/: Int, c: String) {
+        println(b)
+      }
+      foo(5)(b = 5, c = "")
+    }
+    """ becomes 
+    """
+    class NamedParameter {
+      def foo(x: Int)(/*(*/xys/*)*/: Int, c: String) {
+        println(xys)
+      }
+      foo(5)(xys = 5, c = "")
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+  
+  @Test
+  def updateMethodAndNamedArgument = new FileSet {
+    """
+    class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(what = 1) = 2
+    }
+    """ becomes 
+    """
+    class Updateable { def update(/*(*/xys/*)*/: Int, rest: Int) = 0 }
+    
+    class NamedParameter {
+      val up = new Updateable
+      up(xys = 1) = 2
+    }
+    """
+  } applyRefactoring(renameTo("xys"))
+  
+  @Test
+  def privatePrimaryConstructor = new FileSet {
+    """
+    class /*(*/SomeClass/*)*/ private () extends AnyRef {
+      def meta = SomeClass
+    }
+    object SomeClass extends SomeClass
+    """ becomes 
+    """
+    class /*(*/RenamedClass/*)*/ private () extends AnyRef {
+      def meta = RenamedClass
+    }
+    object RenamedClass extends RenamedClass
+    """
+  } applyRefactoring(renameTo("RenamedClass"))
+  
+  @Test
+  def constructionInforComprehension = new FileSet {
+    """
+    package constructorInForComprehension
+    case class /*(*/A/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (A(x) <- Seq(A(1), A(2))) yield x
+    }
+    """ becomes 
+    """
+    package constructorInForComprehension
+    case class /*(*/BBB/*)*/(val x: Int)
+    
+    object Foo {
+      def doit = for (BBB(x) <- Seq(BBB(1), BBB(2))) yield x
+    }
+    """
+  } applyRefactoring(renameTo("BBB"))
 }

@@ -33,4 +33,36 @@ trait Indentations {
       Layout(code.replace("\n"+ oldIndentation, "\n"+ current))
     }
   }
+  
+  def indentationString(tree: scala.tools.nsc.Global#Tree): String = {
+    
+    def stripCommentFromSourceFile() = {
+      if(memoizedSourceWithoutComments contains tree.pos.source.path) {
+        memoizedSourceWithoutComments(tree.pos.source.path)
+      } else {
+        val (src, _) = CommentsUtils.splitComment(tree.pos.source.content)
+        memoizedSourceWithoutComments += tree.pos.source.path → src
+        src
+      }
+    }
+    
+    var i = {
+      if(tree.pos.start == tree.pos.source.length || tree.pos.source.content(tree.pos.start) == '\n' || tree.pos.source.content(tree.pos.start) == '\r') 
+        tree.pos.start - 1 
+      else 
+        tree.pos.start
+    }
+    val contentWithoutComment = stripCommentFromSourceFile()
+        
+    while(i >= 0 && contentWithoutComment(i) != '\n') {      
+      i -= 1
+    }
+    
+    i += 1
+        
+    """\s*""".r.findFirstIn(contentWithoutComment.slice(i, tree.pos.start) mkString).getOrElse("")
+  }
+
+  private [this] val memoizedSourceWithoutComments = scala.collection.mutable.Map.empty[String, String]
+  
 }

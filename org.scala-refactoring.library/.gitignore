@@ -1,3 +1,5 @@
 .scala_dependencies
 bin
 target
+.cache
+.settings

@@ -91,30 +91,44 @@ trait TreeTraverser {
     }
     
     def handleAnnotations(as: List[AnnotationInfo]) {
-      as foreach { annotation =>
-
-        annotation.atp match {
-          case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
-            val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
-            traverse(tree)
-          case _ =>
-        }
-
-        // Annotations with parameters defined in Java need this:
-        annotation.assocs.unzip._2 collect {
-          case LiteralAnnotArg(Constant(value)) => value
-        } foreach {
-          case tpe @ TypeRef(_, sym, _) =>
-            /* The `annotation.pos` is wrong, we should instead extract
-             * the correct positions from the source code. */
-            fakeSelectTreeFromType(tpe, sym, annotation.pos) match {
-              case t: Select => traverse(t)
+      
+      if(isScalaVersion("2.9")) {
+        as foreach { 
+          case annotation =>
+    
+            annotation.atp match {
+              case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
+                val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
+                traverse(tree)
+              case _ =>
+            }
+    
+            // Annotations with parameters defined in Java need this:
+            annotation.assocs.unzip._2 collect {
+              case LiteralAnnotArg(Constant(value)) => value
+            } foreach {
+              case tpe @ TypeRef(_, sym, _) =>
+                /* The `annotation.pos` is wrong, we should instead extract
+                 * the correct positions from the source code. */
+                fakeSelectTreeFromType(tpe, sym, annotation.pos) match {
+                  case t: Select => traverse(t)
+                  case _ => ()
+                }
               case _ => ()
             }
-          case _ => ()
+    
+            annotation.args foreach traverse
         }
-
-        annotation.args foreach traverse
+      } else {
+        
+        type FutureAnnotationInfo = AnnotationInfo {
+          // Starting from Scala 2.10, we can access the original tree
+          def original: Tree
+        }
+        
+        as foreach { 
+          case annotation: FutureAnnotationInfo => traverse(annotation.original)
+        }
       }
     }
     
@@ -259,7 +273,7 @@ trait TreeTraverser {
           }
                
         case t: TypeTree if t.original != null =>
-    
+          
           (t.original, t.tpe) match {
             case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
               args1 zip args2 foreach {
@@ -269,6 +283,8 @@ trait TreeTraverser {
               }
             case (ExistentialTypeTree(AppliedTypeTree(tpt, _), _), ExistentialType(_, underlying: TypeRef)) =>
               f(underlying.sym, tpt)
+            case (t, TypeRef(_, sym, _)) => 
+              f(sym, t)
             case _ => ()
           }
             
@@ -323,11 +339,19 @@ trait TreeTraverser {
           }
           
           f(t.symbol, t)
+        
+        case BlockExtractor(stats) =>
+          stats foreach traverse
+          
+        case ApplyExtractor(fun, args) =>
+          traverse(fun)
+          args foreach traverse
+          
         case t: DefTree if t.symbol != NoSymbol =>
           f(t.symbol, t)
         case t: RefTree =>
           f(t.symbol, t)
-        case t: TypeTree =>
+        case t: TypeTree if t.original == null =>
           
           def handleType(typ: Type): Unit = typ match {
             case RefinedType(parents, _) =>
@@ -360,14 +384,16 @@ trait TreeTraverser {
           
         case t: This if t.pos.isRange =>
           f(t.symbol, t)
-
-        case t: This if t.pos.isRange =>
-          f(t.symbol, t)
-
+          
         case _ => ()  
       }
-        
-      super.traverse(t)
+      
+      t match {
+        case _: NamedArgument | _: NameTree | _: MultipleAssignment =>
+          ()
+        case t =>
+          super.traverse(t)
+      }
     }
     
     private def between(t1: Tree, t2: Tree) = {

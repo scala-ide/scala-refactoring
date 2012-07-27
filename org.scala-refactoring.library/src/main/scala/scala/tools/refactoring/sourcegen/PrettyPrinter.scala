@@ -11,7 +11,7 @@ import scala.reflect.NameTransformer
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
-  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper =>
+  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper with Formatting =>
   
   import global._
   
@@ -34,6 +34,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
   trait PrintingUtils {
     this: TreePrinting =>
+      
+    def NL(implicit ctx: PrintingContext) = ctx.newline
     
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
     
@@ -203,18 +205,21 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
     
     override def Apply(tree: Apply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
+      
+      def isOperator(n: Name) = n.isOperatorName && n != nme.CONSTRUCTOR
+      
       (fun, args) match {
            
         case (fun, args @ (Function(_, _: Match) :: _)) =>
           p(fun) ++ pp(args, before = " ")
           
-        case (fun: Select, args @ ((arg1: Apply) :: _)) if fun.name.toString endsWith "_$eq" =>
+        case (fun: Select, args @ ((arg1: Apply) :: _)) if fun.symbol.isSetter =>
           p(fun) ++ " = " ++ pp(args)
           
-        case (fun: Select, arg :: Nil) if fun.name.toString endsWith "_$eq" =>
+        case (fun: Select, arg :: Nil) if fun != null && fun.symbol.isSetter => 
           p(fun) ++ " = " ++ p(arg)
           
-        case (fun: Select, args) if fun.name.toString endsWith "_$eq" =>
+        case (fun: Select, args) if fun.symbol.isSetter =>
           p(fun) ++ " = " ++ pp(args, before = "(", after = ")", separator = ", ")
           
         case (fun @ (_: Select | _: Ident), (arg @ Ident(nme.WILDCARD)) :: Nil) =>
@@ -224,7 +229,23 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun, List(EmptyTree)) =>
           p(fun)
           
-        case (Select(selector, _), arg :: Nil) =>
+        case (Select(selector, op), arg :: Nil) if isOperator(op) =>
+          
+          def needsParensAroundArguments(t: Tree) = t match {
+            case global.Apply(Select(_, op2), _) => 
+              isOperator(op2) && precedence(op2) <= precedence(op)
+            case _ => false
+          }
+          
+          val select_ = p(selector, after = Requisite.Blank) ++ fun.nameString 
+          
+          if(needsParensAroundArguments(arg)) {
+            select_ ++ p(arg, before = " (", after = ")")
+          } else {
+            select_ ++ p(arg, before = Requisite.Blank)
+          }
+          
+        case (Select(selector, op), arg :: Nil) =>
           val t = context("ignore") {
             p(selector).toLayout
           }
@@ -235,7 +256,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             p(fun) ++ "(" ++ p(arg) ++ ")"
           
         case _ =>
-          p(fun) ++ balanceParens {
+          val fun_ = p(fun) 
+          
+          fun_ ++ balanceParens('(', ')') {
             EmptyFragment ++ "(" ++ pp(args, separator = ", ") ++ ")"
           }
       }
@@ -353,7 +376,22 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       expr match {
         case EmptyTree => EmptyFragment
         case _ if selectors.isEmpty => p(expr)
-        case _ => Layout("import ") ++ p(expr) ++ Layout(".") ++ Fragment(if(needsBraces) "{" + ss + "}" else ss)
+        case _ => 
+          val sp = spacingAroundMultipleImports
+          val selectors_ = if(needsBraces) {
+            "{" + sp + ss + sp + "}"
+          } else ss
+          
+          // When removing leading package names, sometimes there's a leftover `.` to remove.
+          // We can't remove the `.` in the LayoutHelper because Select printers need them to
+          // handle various special cases.
+          val Cleanup = """^\.?(.*?)\.?\s*\{?\s*$""".r
+          
+          val expr_ = p(expr).asText match {
+            case Cleanup(expr) => expr
+          }
+          
+          Layout("import ") ++ Fragment(expr_) ++ Requisite.allowSurroundingWhitespace(".") ++ Fragment(selectors_)
       }
     }
   }  
@@ -451,7 +489,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         }
       }
 
-      val cond_ = balanceParens {
+      val cond_ = balanceParens('(', ')') {
         p(cond, before = "if (", after = ")") ++ thenLeadingLayout_ ++ Requisite.Blank
       }
       
@@ -657,6 +695,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def Ident(tree: Ident, name: Name)(implicit ctx: PrintingContext) = {
       if (tree.symbol.isSynthetic && name.toString.contains("$"))
         Fragment("_")
+      // Some identifiers start with an unnecessary <root> ident:
+      else if (tree.symbol.nameString == "<root>") 
+        EmptyFragment
       else  
         Fragment(name.toString)
     }
@@ -684,7 +725,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     
     override def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext) = {
       tree.kind match {
-        case SourceLayouts.Newline => Fragment(NL + NL + ctx.ind.current)
+        case SourceLayouts.Newline => 
+          Fragment(NL + NL + ctx.ind.current)
       }
     }
   }

@@ -294,7 +294,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package ch.misto
-      
+
       import scala.collection.mutable.ListBuffer
 
       class ToMove {
@@ -302,6 +302,29 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
 
       object SomeObj {
+        var lb: ListBuffer[Int] = _
+      }
+    """
+  } applyRefactoring(moveTo("ch.misto"))
+  
+  @Test
+  def wildcardsNotExpanded = new FileSet {
+    """
+      package org.com
+      package pkg
+
+      import scala.collection.mutable._
+
+      class ToMove {
+        var lb: ListBuffer[Int] = _
+      }
+    """ becomes
+    """
+      package ch.misto
+
+      import scala.collection.mutable._
+
+      class ToMove {
         var lb: ListBuffer[Int] = _
       }
     """
@@ -755,7 +778,110 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(moveTo("org.scala-refactoring"))
+  
+  @Test
+  def moveToDefaultPackage = new FileSet {
+    """
+    package ctes
+    
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """ becomes
+    """
+    
+    
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """
+  } applyRefactoring(moveTo(""))
 
+  @Test
+  def moveCompanionObjectAlongNoOtherImpls = new FileSet {
+    """
+    object /*(*/BFF/*)*/
+    class BFF
+    """ becomes
+    """
+    package bff
+    
+    object /*(*/BFF/*)*/
+    class BFF
+    """
+  } applyRefactoring(moveTo("bff"))
+  
+  @Ignore
+  @Test
+  def moveCompanionObjectAlong = new FileSet {
+    """
+    object /*(*/BFF/*)*/
+    class BFF
+    class Outsider
+    """ becomes
+    """
+    class Outsider
+    """
+    NewFile becomes """""""
+  } applyRefactoring(moveTo("bff"))
+  
+  @Test
+  def moveFromDefaultPackageNoImports = new FileSet {
+    """
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """ becomes
+    """
+    package ctes
+    
+    object Ctes {
+      val A = 2
+      val B = 3
+    }
+    """
+  } applyRefactoring(moveTo("ctes"))
+
+  @Test
+  def updateReferencesToMovedObject = new FileSet {
+    """
+    object Bar64 {
+      val instance = new Bar64
+    }
+    
+    class Bar64
+    """ becomes
+    """
+    package bar
+    
+    object Bar64 {
+      val instance = new Bar64
+    }
+    
+    class Bar64
+    """
+    """
+    class Foo64 {
+      import Bar64.instance
+      
+      def foo = instance.toString
+      def bar = Bar64.instance.toString
+    }
+    """ becomes """
+    import bar.Bar64
+    
+    class Foo64 {
+      import Bar64.instance
+      
+      def foo = instance.toString
+      def bar = Bar64.instance.toString
+    }
+    """
+  } applyRefactoring(moveTo("bar"))
+  
   @Test
   def nestedPackageAndImports = new FileSet {
     """
@@ -770,7 +896,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
     package x
     package z
-    
+
     import scala.collection.mutable.ListBuffer
 
     class ToMove extends Dependency {

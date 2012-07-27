@@ -239,7 +239,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromCaseWithMultipleStatements = new FileSet {
     """
-      class Extr2 {
+      class Extr2 { def m {
         Nil match {
           case Nil =>
             val a = 5
@@ -247,55 +247,55 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
             val b = six
             b
         }
-      }
+      }}
     """ becomes
     """
-      class Extr2 {
+      class Extr2 { def m {
         Nil match {
           case Nil =>
             val a = 5
             val b = /*(*/a + 1
             b
         }
-      }
+      }}
     """
   } applyRefactoring(inline)
   
   @Test
   def inlineFromCaseWithSingleStatement = new FileSet {
     """
-      class Extr2 {
+      class Extr2 { def m {
         Nil match {
           case Nil =>
             println("huhu")
             /*(*/val six = 5 + 1/*)*/ 
             six
         }
-      }
+      }}
     """ becomes
     """
-      class Extr2 {
+      class Extr2 { def m {
         Nil match {
           case Nil =>
             println("huhu")
             5 + 1
         }
-      }
+      }}
     """
   } applyRefactoring(inline)
   
   @Test
   def inlineFromCaseWithTwoStatements = new FileSet {
     """
-      class Extr2 {
+      class Extr2 { def m {
         /*(*/val six = 5 + 1/*)*/ 
         six toString
-      }
+      }}
     """ becomes
     """
-      class Extr2 {
+      class Extr2 { def m {
         5 + 1 toString
-      }
+      }}
     """
   } applyRefactoring(inline)
   
@@ -365,81 +365,81 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromTry = new FileSet {
     """
-      class Extr2 {
+      class Extr2 { def m {
         try {
           val a = List(1,2,3)
            /*(*/val largerThanTwo = a filter (_> 2)/*)*/ 
           largerThanTwo mkString ", "
         }
-      }
+      }}
     """ becomes
     """
-      class Extr2 {
+      class Extr2 { def m {
         try {
           val a = List(1,2,3)
           a filter (_> 2)mkString ", "
         }
-      }
+      }}
     """
   } applyRefactoring(inline)
 
   @Test
   def inlineFromFunctionWithCurlyBraces = new FileSet {
     """
-      class Extr2 {
+      class Extr2 { def m {
         List(1,2,3) filter { it =>
           /*(*/val isOdd = it + 1 % 2/*)*/ 
           isOdd == 0
         }
-      }
+      }}
     """ becomes
     """
-      class Extr2 {
+      class Extr2 { def m {
         List(1,2,3) filter { it =>
           /*(*/
           it + 1 % 2== 0
         }
-      }
+      }}
     """
   } applyRefactoring(inline)
 
   @Test
   def inlineFromValBlock = new FileSet {
     """
-      class Extr2 {
+      class Extr2 { def m {
         val a = {
           val i = 1
           val addTwo = /*(*/i + 2/*)*/
           addTwo
         }
-      }
+      }}
     """ becomes
     """
-      class Extr2 {
+      class Extr2 { def m {
         val a = {
           val i = 1
           /*(*/i + 2
         }
-      }
+      }}
     """
   } applyRefactoring(inline)
   
   @Test
   def inlineFromThen = new FileSet {
     """
-      class Extr2 {
+      class Extr2 { def m {
         if(true) {
           /*(*/val ab = "a" + "b"/*)*/ 
           ab + "c"
         }
-      }
+      }}
     """ becomes
     """
-      class Extr2 {
+      class Extr2 { def m {
         if(true) {
           "a" + "b"+ "c"
         }
-      }
+      }}
     """
   } applyRefactoring(inline)
   
@@ -488,7 +488,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineFromSeveralVals = new FileSet {
     """
     class InlineTest {
-      {
+      def m {
         val /*(*//*)*/bbb = 42
         val c = List(bbb)
         c
@@ -497,7 +497,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     class InlineTest {
-      {
+      def m {
         val c = List(42)
         c
       }
@@ -509,7 +509,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineFromVal = new FileSet {
     """
     class InlineTest {
-      {
+      def m {
         val bbb = 42
         val c = List(/*(*/bbb/*)*/)
         c
@@ -518,13 +518,30 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     class InlineTest {
-      {
+      def m {
         val c = List(42/*)*/)
         c
       }
     }
     """
   } applyRefactoring(inline)
-
-
+  
+  @Test
+  def inlineInListConcatenation = new FileSet {
+    """
+     class InlineTest {
+       def m {
+         val /*(*/as/*)*/ = List(1, 2)
+         val concatenated = as:::List(3, 4)
+       }
+     }
+    """ becomes
+    """
+     class InlineTest {
+       def m {
+         val concatenated = List(1, 2):::List(3, 4)
+       }
+     }
+    """
+  } applyRefactoring(inline)
 }

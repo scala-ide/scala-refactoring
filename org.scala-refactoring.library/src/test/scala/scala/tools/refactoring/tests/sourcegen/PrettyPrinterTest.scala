@@ -150,7 +150,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     val tree = Block(
         DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
-          "eins",
+          newTermName("eins"),
           Nil,
           Nil,
           EmptyTree,
@@ -158,7 +158,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
         ),
         DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
-          "zwei",
+          newTermName("zwei"),
           Nil,
           Nil :: Nil,
           EmptyTree,
@@ -176,7 +176,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = DefDef(
           NoMods withPosition (Flags.IMPLICIT, NoPosition) withPosition (Flags.METHOD, NoPosition) ,
-          "eins",
+          newTermName("eins"),
           Nil,
           List(List(ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), newTermName("a"), EmptyTree, EmptyTree))),
           EmptyTree,
@@ -194,7 +194,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
     
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition) ,
-          "m",
+          newTermName("m"),
           TypeDef(NoMods, newTypeName("X"), Nil, EmptyTree) :: Nil,
           List(List(arg)),
           EmptyTree,
@@ -251,7 +251,7 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
 
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
-          "eins",
+          newTermName("eins"),
           TypeDef( NoMods, newTypeName("R"), Nil, TypeBoundsTree( EmptyTree, TypeDef( NoMods, newTypeName("Rate"), Nil, EmptyTree ))) :: Nil,
           Nil,
           EmptyTree,
@@ -344,7 +344,7 @@ class ATest {
     """)
 
     tree prettyPrintsTo """class Test {
-  val x = true.&&(true.&&(false).!)
+  val x = true && true && false.!
 }"""
   }
   
@@ -587,11 +587,11 @@ trait AbstractPrinter {
     """)
 
     tree prettyPrintsTo """trait WhileLoop {
-  while(true.!=(false)){
+  while(true != false){
     println("The world is still ok!")
   }
   
-  while(true.!=(false)){
+  while(true != false){
     println("The world is still ok!")
   }
   
@@ -632,7 +632,7 @@ trait AbstractPrinter {
     tree prettyPrintsTo """trait WhileLoop {
   do println("The world is still ok!") while(true)
   
-  do println("The world is still ok!") while(true.!=(false))
+  do println("The world is still ok!") while(true != false)
   
   do {
     println("The world is still ok!")
@@ -752,7 +752,7 @@ class Demo2(a: String, b: Int)"""
   }
   
   List(1, 2).collect {
-    case i if i.>(5) => i
+    case i if i > 5 => i
   }
   
   List(1, 2).map {
@@ -959,9 +959,9 @@ object A"""
     tree prettyPrintsTo """object Functions {
   val x = if (true) false else true
   
-  val y = if (true.==(false)) true else if (true.==(true)) false else true
+  val y = if (true == false) true else if (true == true) false else true
   
-  val z = if (true.==(false)) true else if (true.==(true)) false else {
+  val z = if (true == false) true else if (true == true) false else {
     println("hello!")
     true
   }
@@ -980,13 +980,13 @@ object A"""
     }""")
 
     tree prettyPrintsTo """object Functions {
-  List(1, 2).map((i: Int) => i.+(1))
+  List(1, 2).map((i: Int) => i + 1)
   
-  val sum: Seq[Int] => Int = _.reduceLeft(_.+(_))
+  val sum: Seq[Int] => Int = _.reduceLeft(_ + _)
   
-  List(1, 2).map(_.+(1))
+  List(1, 2).map(_ + 1)
   
-  List(1, 2).map(i => i.+(1))
+  List(1, 2).map(i => i + 1)
 }"""
   }
 
@@ -1345,9 +1345,9 @@ class A {
   
   def e(i: Int) = i
   
-  def f(i: Int)(j: Int) = i.+(j)
+  def f(i: Int)(j: Int) = i + j
   
-  def g(i: Int, j: Int) = i.+(j)
+  def g(i: Int, j: Int) = i + j
   
   def h(i: Int, j: Int): (Int, Int) = (i, j)
   
@@ -1376,6 +1376,42 @@ class A {
   def main[A, B](e: Either[A,B]) = e match {
     case Right(_) => ()
   }
+}"""
+    
+  @Test
+  def operatorPrecedences1 = treeFrom("""
+    class A {
+      5 * (2 + 1)
+    }
+    """) prettyPrintsTo """class A {
+  5 * (2 + 1)
+}"""
+    
+  @Test
+  def operatorPrecedences2 = treeFrom("""
+    class A {
+      5 * 2 + 1
+    }
+    """) prettyPrintsTo """class A {
+  5 * 2 + 1
+}"""
+    
+  @Test
+  def operatorPrecedences3 = treeFrom("""
+    class A {
+      1 + 2 + 3
+    }
+    """) prettyPrintsTo """class A {
+  1 + 2 + 3
+}"""
+    
+  @Test
+  def operatorPrecedences4 = treeFrom("""
+    class A {
+      1 + (2 + 3)
+    }
+    """) prettyPrintsTo """class A {
+  1 + (2 + 3)
 }"""
 }
 
