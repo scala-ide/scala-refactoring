@@ -400,6 +400,7 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """)
     
+  @Ignore
   @Test
   def namedArg = markOccurrences("""
     class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }

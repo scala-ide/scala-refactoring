@@ -1224,6 +1224,7 @@ class Blubb
     """
   } applyRefactoring(renameTo("booh"))
 
+  @Ignore
   @Test
   def namedParameter = new FileSet {
     """
@@ -1244,6 +1245,7 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
+  @Ignore
   @Test
   def namedParameterAndDefault = new FileSet {
     """
@@ -1264,6 +1266,7 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
+  @Ignore
   @Test
   def namedParameterInDeclaredOrder = new FileSet {
     """
@@ -1284,6 +1287,7 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
   
+  @Ignore
   @Test
   def namedParameterInSecondArgsList = new FileSet {
     """
@@ -1304,6 +1308,7 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
   
+  @Ignore
   @Test
   def updateMethodAndNamedArgument = new FileSet {
     """
