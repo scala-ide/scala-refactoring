@@ -266,9 +266,31 @@
       <repositories>
         <repository>
           <id>scala-toolchain-scalaide-2.0</id>
-          <name>Scala Toolchain for Scala IDE 2.0 p2 repository</name>
+          <name>Scala Toolchain for Scala IDE p2 repository</name>
           <layout>p2</layout>
           <url>http://download.scala-ide.org/incoming-release-29/dependencies/osgi-toolchain</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>release-ide-210</id>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-scalaide-2.0</id>
+          <name>Scala Toolchain for Scala IDE p2 repository</name>
+          <layout>p2</layout>
+          <url>http://download.scala-ide.org/incoming-release-210/dependencies/osgi-toolchain</url>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>release-ide-211</id>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-scalaide-2.0</id>
+          <name>Scala Toolchain for Scala IDE p2 repository</name>
+          <layout>p2</layout>
+          <url>http://download.scala-ide.org/incoming-release-211/dependencies/osgi-toolchain</url>
         </repository>
       </repositories>
     </profile>
