@@ -65,7 +65,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           Fragment(indentedLeadingLayout, indentedCode, trailingParent)
         } else 
           Fragment(leadingParent, printedFragment.toLayout, trailingParent)    
-      } \\ (trace("Result "+ t.getClass.getSimpleName +": %s", _))
+      } \\ (trace("Result "+ getSimpleClassName(t) +": %s", _))
       
       indentedFragment
     }

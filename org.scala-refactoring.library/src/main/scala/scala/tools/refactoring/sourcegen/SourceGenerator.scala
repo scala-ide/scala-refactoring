@@ -113,7 +113,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     
     changesPerFile map {
       case (source, replaceRange, tree, changes) =>
-        trace("Creating code for %s. %d tree(s) in changeset.", tree.getClass.getSimpleName, changes.size)
+        trace("Creating code for %s. %d tree(s) in changeset.", getSimpleClassName(tree), changes.size)
         val f = generate(tree, new ChangeSet {
           def hasChanged(t: Tree) = changes.exists { 
             /*

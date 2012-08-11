@@ -328,7 +328,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           t.nameString
       }
     } catch {
-      case _ => "Unhandled tree: "+ t.getClass.getSimpleName +". You found a bug! Please report it."
+      case _ => "Unhandled tree: "+ getSimpleClassName(t) +". You found a bug! Please report it."
     }
     
     val erroneousTrees = s.root.filter {

@@ -18,7 +18,6 @@ trait Tracing {
     }
   }
   
-  // TODO could we print the whole sequence with http://www.websequencediagrams.com ?
   def context[T](name: String)(body: => T): T = {
  
     val spacer = "─" * (indent.length - 1) 
@@ -32,30 +31,38 @@ trait Tracing {
       print ((indent * level) + "╭"+ spacer +"┴────────" )
     }
   }
-  
-  def trace(msg: String, args: Any*) {
+
+  def trace(msg: => String, arg1: => Any, args: Any*) {
         
-    val as: Array[AnyRef] = args map {
+    val as: Array[AnyRef] = arg1 +: args map {
       case s: String => "«"+ s.replaceAll("\n", "\\\\n") +"»"
       case a: AnyRef => a
-      
     } toArray
     
     trace(msg.format(as: _*))
   }
   
-  def trace(msg: String) {
+  def trace(msg: => String) {
     val border = (indent * level) + marker
     print(border + msg.replaceAll("\n", "\n"+ border))
   }
   
-  private[common] def print(s: String): Unit
+  private[common] def print(s: => String): Unit
 }
 
 trait ConsoleTracing extends Tracing {
-  override def print(s: String) = println(s)
+  override def print(s: => String) = println(s)
 }
 
 trait SilentTracing extends Tracing {
-  override def print(s: String) = ()
+  override def print(s: => String) = ()
+  
+  @inline
+  override def trace(msg: => String, arg1: => Any, args: Any*) = ()
+
+  @inline
+  override def trace(msg: => String) = ()
+
+  @inline
+  override def context[T](name: String)(body: => T): T = body
 }

@@ -31,7 +31,7 @@ trait TreeFactory {
       case t: PackageDef => t.copy(pid = Ident(name) setPos t.pid.pos)
       case t: SelectFromTypeTree => t.copy(name = name.toTypeName)
       case t: NamedArgument => t.copy(nameTree = NameTree(name) replaces t.nameTree)
-      case t => throw new Exception("Found " + t.getClass.getName)
+      case t => throw new Exception("Found " + getSimpleClassName(t))
     }
   } setPos t.pos
 
