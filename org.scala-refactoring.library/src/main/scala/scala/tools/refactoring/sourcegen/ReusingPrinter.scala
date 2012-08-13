@@ -396,10 +396,19 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (fun: Select, arg :: Nil) if 
             (fun.qualifier != EmptyTree && keepTree(fun.qualifier)) /*has receiver*/
              || fun.name.toString.endsWith("$eq") /*assigns*/ =>
-          val _arg = balanceParens('(', ')') {
-            p(arg) ++ r
+          val _fun = p(fun)
+          
+          /* 
+           * The opening parenthesis could also be trailing the function, if that's
+           * the case we include the trailing layout in the balanceParens call.
+           */
+          if(_fun.trailing.contains("(")) {
+            val _arg = balanceParens('(', ')')(_fun.trailing ++ p(arg) ++ r)
+            l ++ _fun.dropTrailingLayout ++ _arg
+          } else {
+            val _arg = balanceParens('(', ')')(p(arg) ++ r)
+            l ++ _fun ++ _arg
           }
-          l ++ p(fun) ++ _arg
           
         case (TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil) =>
           l ++ p(fun) ++ p(arg) ++ r
