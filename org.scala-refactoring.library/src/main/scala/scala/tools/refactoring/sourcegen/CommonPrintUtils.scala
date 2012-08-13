@@ -32,7 +32,7 @@ trait CommonPrintUtils {
           case NamedType(name, _)      => name.toString
           case t @ TypeRef(pre, sym, args) => t.toString
           case RefinedType(parents, _) => parents mkString " with "
-          case t => throw new Exception("Unhandled type "+ t.getClass.getSimpleName)
+          case t => throw new Exception("Unhandled type "+ getSimpleClassName(t))
         } mkString " with "
       case typeRef @ TypeRef(tpe, sym, arg1 :: ret :: Nil) if definitions.isFunctionType(typeRef) =>
         typeToString(tree, arg1) +" => "+ typeToString(tree, ret)

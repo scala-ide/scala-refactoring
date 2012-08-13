@@ -15,7 +15,7 @@ trait TreePrintingTraversals {
 
     printer =>
 
-    def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = context("Printing Tree "+ t.getClass.getName) {
+    def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = context("Printing Tree "+ getSimpleClassName(t)) {
       
       trace("current indentation set to %s", ctx.ind.current)
       
@@ -84,7 +84,7 @@ trait TreePrintingTraversals {
       Fragment(code.asText)
     }
 
-    def default(t: Tree)(implicit ctx: PrintingContext): Fragment = sys.error("Not implemented! "+ t.getClass.getSimpleName)
+    def default(t: Tree)(implicit ctx: PrintingContext): Fragment = sys.error("Not implemented! "+ getSimpleClassName(t))
 
     def ClassDef(tree: ClassDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], impl: Template)(implicit ctx: PrintingContext): Fragment = default(tree)
     def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext): Fragment = default(tree)

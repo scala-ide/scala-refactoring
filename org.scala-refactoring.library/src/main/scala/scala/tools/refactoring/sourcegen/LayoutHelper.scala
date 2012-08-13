@@ -19,9 +19,9 @@ trait LayoutHelper {
   
     def layoutFromParent() = (originalLeftSibling(t), originalParentOf(t), originalRightSibling(t)) match {
       case (_,          None,    _          ) => layoutForCompilationUnitRoot(t)        \\ (_ => trace("compilation unit root"))
-      case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child with parent %s", p.getClass.getSimpleName))
-      case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child with parent %s", p.getClass.getSimpleName))
-      case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child with parent %s", p.getClass.getSimpleName))
+      case (None,       Some(p), None       ) => layoutForSingleChild(t, p)             \\ (_ => trace("single child with parent %s", getSimpleClassName(p)))
+      case (None,       Some(p), Some(right)) => layoutForLeftOuterChild(t, p, right)   \\ (_ => trace("left outer child with parent %s", getSimpleClassName(p)))
+      case (Some(left), Some(p), None       ) => layoutForRightOuterChild(t, p, left)   \\ (_ => trace("right outer child with parent %s", getSimpleClassName(p)))
       case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right, parent = p) \\ (_ => trace("enclosed child"))
     }
 
@@ -88,7 +88,7 @@ trait LayoutHelper {
     if(child.pos.isTransparent && parent.pos.isTransparent) 
       return NoLayout → NoLayout
     
-    trace("splitting layout between parent %s and first child %s", parent.getClass.getSimpleName, child.getClass.getSimpleName)
+    trace("splitting layout between parent %s and first child %s", getSimpleClassName(parent), getSimpleClassName(child))
     
     implicit val currentFile = child.pos.source
     
@@ -201,7 +201,7 @@ trait LayoutHelper {
 
   def splitLayoutBetweenLastChildAndParent(child: Tree, parent: Tree): (Layout, Layout) = {
      
-    trace("splitting layout between last child %s and parent %s", child.getClass.getSimpleName, parent.getClass.getSimpleName)
+    trace("splitting layout between last child %s and parent %s", getSimpleClassName(child), getSimpleClassName(parent))
      
     implicit val currentFile = child.pos.source
      
@@ -390,7 +390,7 @@ trait LayoutHelper {
           }
         }
         
-        trace("Rule %s splits (%s, %s) layout %s into %s and %s", rule, l.getClass.getSimpleName, r.getClass.getSimpleName, layout, ll, lr)
+        trace("Rule %s splits (%s, %s) layout %s into %s and %s", rule, getSimpleClassName(l), getSimpleClassName(r), layout, ll, lr)
         Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(ll), comments)) → Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(lr) reverse, comments reverse) reverse)
     }
   }

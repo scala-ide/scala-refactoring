@@ -71,7 +71,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
    * Creates a string from a tree, regenerating all trees.
    * 
    * If the sourceFile parameter is passed, it will be used to figure out
-   * what kinds of newline seperators we should generate. If None is passed,
+   * what kinds of newline separators we should generate. If None is passed,
    * '\n' is used.
    */
   def createText(t: Tree, sourceFile: Option[SourceFile] = None): String = generate(tree = t, sourceFile = sourceFile).asText
@@ -113,7 +113,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
     
     changesPerFile map {
       case (source, replaceRange, tree, changes) =>
-        trace("Creating code for %s. %d tree(s) in changeset.", tree.getClass.getSimpleName, changes.size)
+        trace("Creating code for %s. %d tree(s) in changeset.", getSimpleClassName(tree), changes.size)
         val f = generate(tree, new ChangeSet {
           def hasChanged(t: Tree) = changes.exists { 
             /*

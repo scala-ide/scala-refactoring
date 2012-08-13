@@ -21,7 +21,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     unitOfFile get file map (_.body) flatMap removeAuxiliaryTrees
   }
     
-  def generateText(t: Tree): String = generate(t, sourceFile = Some(t.pos.source)).asText
+  def generateText(t: Tree): String = createText(t, sourceFile = Some(t.pos.source))
   
   val reverseBody = transform {
     case t: Template => t.copy(body = t.body.reverse) setPos t.pos
@@ -1269,6 +1269,26 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
       
     val tree = treeFrom(src)
     assertEquals(src, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def testApplyWithNewlineInArgumentsList() = {
+    
+    val tree = treeFrom("""
+    object testApplyWithNewlineInArgumentsList {
+      val list = List[Int]()
+      Predef.assert(
+        !list.isEmpty)
+    }
+    """)
+
+    assertEquals("""
+    object testApplyWithNewlineInArgumentsList {
+      val list = List[Int]()
+      Predef.assert(
+        !list.isEmpty)
+    }
+    """, generateText(removeAuxiliaryTrees apply tree get))
   }
   
   @Test
