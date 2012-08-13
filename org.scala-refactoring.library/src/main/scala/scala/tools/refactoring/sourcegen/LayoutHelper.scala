@@ -251,6 +251,7 @@ trait LayoutHelper {
   private val Class = """(.*?)(class.*)""".r
   private val EmptyParens = """(?ms)(.*?\(\s*\)\s*)(.*)""".r
   private val OpeningBrace = """(.*?)\((.*)""".r
+  private val OpeningSquareBracket = """(.*?)\[(.*)""".r
   private val OpeningCurlyBrace = """(?ms)(.*?)\{(.*)""".r
   private val Match = """(?ms)(.*?)\s?match(.*)""".r
   private val Colon = """(.*?:\s+)(.*)""".r
@@ -301,9 +302,10 @@ trait LayoutHelper {
         case CommaSpace(l, r)      => Some(l, r, "CommaSpace")
         case _                     => None
       }) orElse (layout match {
-        case Comma(l, r)           => Some(l, r, "Comma")
-        case Dot(l, r)             => Some(l, r, "Dot")
-        case s                     => Some(s, "", "NoMatch")
+        case Comma(l, r)                => Some(l, r, "Comma")
+        case Dot(l, r)                  => Some(l, r, "Dot")
+        case OpeningSquareBracket(l, r) => Some(l, r, "OpeningSquareBracket")
+        case s                          => Some(s, "", "NoMatch")
       }) get
     }
     
