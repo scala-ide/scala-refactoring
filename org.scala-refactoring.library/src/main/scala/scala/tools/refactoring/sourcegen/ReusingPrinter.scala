@@ -355,18 +355,28 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
     }
 
-    override def TypeApply(tree: TypeApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
-      fun match {
-        
-        case global.Select(fun @ global.Select(ths: This, _), _) if ths.pos == NoPosition => 
-          l ++ p(fun) ++ pp(args) ++ r
-          
-        case _ => 
-          l ++ p(fun) ++ pp(args, separator = ", ", before = "[", after = "]") ++ r    
-      }
+    override def TypeApply(tree: TypeApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {          
+      val _fun = p(fun)
+      val _args = pp(args, separator = ", ", before = "[", after = "]")
+      
+      l ++ _fun.dropTrailingLayout ++ balanceParens('[', ']')(_fun.trailing ++ _args ++ r)
     }
 
     override def Apply(tree: Apply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
+      
+      def balanceParensAroundCall(recv: Fragment, args: Fragment) = {
+        /* 
+         * The opening parenthesis could also be trailing the function, if that's
+         * the case we include the trailing layout in the balanceParens call.
+         */
+        if(recv.trailing.contains("(")) {
+          val _arg = balanceParens('(', ')')(recv.trailing ++ args ++ r)
+          l ++ recv.dropTrailingLayout ++ _arg
+        } else {
+          val _arg = balanceParens('(', ')')(args ++ r)
+          l ++ recv ++ _arg
+        }
+      }
       
       (fun, args) match {
         
@@ -393,22 +403,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (_, ((_: Bind) :: ( _: Bind) :: _)) =>
           l ++ p(fun) ++ pp(args, before = if(l contains "(") NoRequisite else "(", separator = ", ", after = ")") ++ r
           
-        case (fun: Select, arg :: Nil) if 
-            (fun.qualifier != EmptyTree && keepTree(fun.qualifier)) /*has receiver*/
-             || fun.name.toString.endsWith("$eq") /*assigns*/ =>
-          val _fun = p(fun)
+        case (fun: Select, arg :: Nil) if keepTree(fun.qualifier) /*has receiver*/
+            || fun.name.toString.endsWith("$eq") /*assigns*/ =>
           
-          /* 
-           * The opening parenthesis could also be trailing the function, if that's
-           * the case we include the trailing layout in the balanceParens call.
-           */
-          if(_fun.trailing.contains("(")) {
-            val _arg = balanceParens('(', ')')(_fun.trailing ++ p(arg) ++ r)
-            l ++ _fun.dropTrailingLayout ++ _arg
-          } else {
-            val _arg = balanceParens('(', ')')(p(arg) ++ r)
-            l ++ _fun ++ _arg
-          }
+          balanceParensAroundCall(p(fun), p(arg))
           
         case (TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil) =>
           l ++ p(fun) ++ p(arg) ++ r
@@ -464,7 +462,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           }
           
         case (fun, args) =>
-          l ++ p(fun) ++ pp(args, separator = ("," ++ Requisite.Blank), before = "(", after = Requisite.anywhere(")"))  ++ r
+          val _args = pp(args, separator = ("," ++ Requisite.Blank), before = "(", after = Requisite.anywhere(")"))
+          balanceParensAroundCall(p(fun), _args)
       }
     }
   }
@@ -493,7 +492,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def TypeDef(tree: TypeDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], rhs: Tree)(implicit ctx: PrintingContext) = {
       val nameTree = nameOf(tree)
-      l ++ pp(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++ pp(tparams) ++ p(rhs)  ++ r
+      l ++ pp(mods ::: nameTree :: Nil, separator = Requisite.Blank) ++ pp(tparams, before = "["/*, after = "]"*/) ++ p(rhs)  ++ r
     }
     
     override def SelectFromTypeTree(tree: SelectFromTypeTree, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext) = {
@@ -503,6 +502,17 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     override def CompoundTypeTree(tree: CompoundTypeTree, tpl: Template)(implicit ctx: PrintingContext) = {
       balanceParens('{', '}') {
         printTemplate(tpl, printExtends = false)
+      }
+    }
+    
+    override def ExistentialTypeTree(tree: ExistentialTypeTree, tpt: Tree, whereClauses: List[Tree])(implicit ctx: PrintingContext) = {
+      whereClauses match {
+        // [_]
+        case (t: TypeDef) :: Nil if t.symbol.isSynthetic =>
+          p(tpt) ++ p(t, before = "[", after = "]")
+    
+        case _ =>
+          p(tpt) ++ pp(whereClauses, before = " forSome {", after = " }")
       }
     }
         
@@ -649,7 +659,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         p(nameOf(tree))
       
       val modifiers = pp(mods, separator = Requisite.Blank, after = Requisite.Blank)
-      val typeParams = pp(tparams, separator="," ++ Requisite.Blank)
+      val typeParams = pp(tparams, separator="," ++ Requisite.Blank, before = "[", after = "]")
       val template = p(impl)
       
       val beforeTpl = l ++ modifiers ++ className ++ typeParams

@@ -1276,17 +1276,105 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     
     val tree = treeFrom("""
     object testApplyWithNewlineInArgumentsList {
-      val list = List[Int]()
-      Predef.assert(
-        !list.isEmpty)
+      var list: List[
+                     Int] = List()
+      var list0: List[Int] = List()
+      var list1: List[List[Int]] = List()
+      var list2 = List[Int]()             // additional [
+      var list3 = List[List[Int]]()           // additional [
+      var list4: List[Int] = List[Int]()        // additional [
+      var list5: List[List[Int]] = List[List[Int]]()  // additional [
+
+      assert(!list0.isEmpty)
+      Predef.assert(!list0.isEmpty)
+      
+      assert((!list1.isEmpty))            // missing (
+      Predef.assert((!list1.isEmpty))
+      
+      assert(((!list2.isEmpty)))            // missing (
+      Predef.assert(((!list2.isEmpty)))
+      
+      assert(
+          !list3.isEmpty)
+      
+      Predef.assert(                  // additional (
+          !list3.isEmpty)
+      
+      assert(
+          (!list4.isEmpty)
+          )
+          
+      Predef.assert(                  // additional (
+          (!list4.isEmpty)
+          )
+      
+      assert(
+          if (!list5.isEmpty) true
+          else false
+      )
+      
+      Predef.assert(                  // additional (
+          if (!list5.isEmpty) true
+          else false
+      )
+      
+      assert(if (!list5.isEmpty) true
+          else false)
+          
+      Predef.assert(if (!list5.isEmpty) true
+          else false)
     }
     """)
 
     assertEquals("""
     object testApplyWithNewlineInArgumentsList {
-      val list = List[Int]()
-      Predef.assert(
-        !list.isEmpty)
+      var list: List[
+                     Int] = List()
+      var list0: List[Int] = List()
+      var list1: List[List[Int]] = List()
+      var list2 = List[Int]()             // additional [
+      var list3 = List[List[Int]]()           // additional [
+      var list4: List[Int] = List[Int]()        // additional [
+      var list5: List[List[Int]] = List[List[Int]]()  // additional [
+
+      assert(!list0.isEmpty)
+      Predef.assert(!list0.isEmpty)
+      
+      assert((!list1.isEmpty))            // missing (
+      Predef.assert((!list1.isEmpty))
+      
+      assert(((!list2.isEmpty)))            // missing (
+      Predef.assert(((!list2.isEmpty)))
+      
+      assert(
+          !list3.isEmpty)
+      
+      Predef.assert(                  // additional (
+          !list3.isEmpty)
+      
+      assert(
+          (!list4.isEmpty)
+          )
+          
+      Predef.assert(                  // additional (
+          (!list4.isEmpty)
+          )
+      
+      assert(
+          if (!list5.isEmpty) true
+          else false
+      )
+      
+      Predef.assert(                  // additional (
+          if (!list5.isEmpty) true
+          else false
+      )
+      
+      assert(if (!list5.isEmpty) true
+          else false)
+          
+      Predef.assert(if (!list5.isEmpty) true
+          else false)
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
