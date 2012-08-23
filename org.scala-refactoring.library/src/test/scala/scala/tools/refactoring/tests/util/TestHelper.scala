@@ -13,6 +13,7 @@ import collection.mutable.ListBuffer
 import util.CompilerProvider
 import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.TextChange
+import scala.tools.nsc.util.FailedInterrupt
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
@@ -68,7 +69,16 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
 
     def applyRefactoring(createChanges: FileSet => List[Change]) {
       
-      val changes = createChanges(this)
+      val changes = try {
+        global.ask { () =>
+          createChanges(this)
+        }
+      } catch {
+        case e: FailedInterrupt => 
+          throw e.getCause
+        case e: InterruptedException => 
+          throw e.getCause
+      }
       
       val res = sources zip (sources map fileName) flatMap {
         case (NewFile, name) =>

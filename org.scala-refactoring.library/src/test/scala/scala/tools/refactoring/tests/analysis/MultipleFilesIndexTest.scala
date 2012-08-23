@@ -22,7 +22,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   def buildIndex(pro: FileSet) {
     
-    val cuIndexes = pro.trees map CompilationUnitIndex.apply
+    val cuIndexes = global.ask { () =>
+      pro.trees map CompilationUnitIndex.apply
+    }
     
     index = GlobalIndex(cuIndexes)
   }

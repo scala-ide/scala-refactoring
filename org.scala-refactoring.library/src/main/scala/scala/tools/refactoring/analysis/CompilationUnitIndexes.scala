@@ -30,6 +30,8 @@ trait CompilationUnitIndexes {
   
     def apply(tree: Tree) = {
       
+      assertCurrentThreadIsPresentationCompiler()
+      
       val defs = new HashMap[Symbol, ListBuffer[DefTree]]
       val refs = new HashMap[Symbol, ListBuffer[Tree]]
   

@@ -22,7 +22,9 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     
     val tree = treeFrom(testSource)
     
-    index = GlobalIndex(List(CompilationUnitIndex(tree)))
+    index = global.ask { () =>
+      GlobalIndex(List(CompilationUnitIndex(tree)))
+    }
     
     val firstSelected = findMarkedNodes(testSource, tree).get.selectedTopLevelTrees.head
   

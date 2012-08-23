@@ -1,6 +1,21 @@
 package scala.tools
 
+import scala.tools.nsc.interactive.PresentationCompilerThread
+
 package object refactoring {
+  
+  /**
+   * Asserts that the current operation is running on the thread
+   * of the presentation compiler (PC). This is necessary because many
+   * operations on compiler symbols can trigger further compilation,
+   * which needs to be done on the PC thread.
+   * 
+   * To run an operation on the PC thread, use global.ask { .. }
+   */
+  def assertCurrentThreadIsPresentationCompiler() {
+    val msg = "operation should be running on the presentation compiler thread"
+    assert(Thread.currentThread.isInstanceOf[PresentationCompilerThread], msg)
+  }
   
   /**
    * Safe way to get a simple class name from an object. 
