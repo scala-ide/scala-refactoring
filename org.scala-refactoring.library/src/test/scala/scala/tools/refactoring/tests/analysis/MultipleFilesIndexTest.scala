@@ -8,10 +8,22 @@ package tests.analysis
 import tests.util.TestHelper
 import org.junit.Assert._
 import analysis.{TreeAnalysis, GlobalIndexes}
+import org.junit.After
 
 class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnalysis {
 
   import global._
+  
+  @After 
+  def cleanup {
+    global.ask { () =>
+      global.unitOfFile.values.foreach { cu =>
+        global.removeUnitOf(cu.source)
+        global.getUnitOf(cu.source)
+      }
+    }
+    global.askReset  
+  }
   
   var index: IndexLookup = EmptyIndex
   def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {

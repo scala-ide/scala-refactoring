@@ -8,10 +8,22 @@ package tests.analysis
 import analysis.CompilationUnitDependencies
 import org.junit.Assert.assertEquals
 import tests.util.TestHelper
+import org.junit.After
 
 class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDependencies with common.TreeExtractors {
 
   import global._
+  
+  @After 
+  def cleanup {
+    global.ask { () =>
+      global.unitOfFile.values.foreach { cu =>
+        global.removeUnitOf(cu.source)
+        global.getUnitOf(cu.source)
+      }
+    }
+    global.askReset  
+  }
   
   private def assertTrees(expected: String, src: String, f: Tree => Seq[Tree]) {
     val tree = treeFrom(src)
