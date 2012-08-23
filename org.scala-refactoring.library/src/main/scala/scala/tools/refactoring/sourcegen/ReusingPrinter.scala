@@ -355,19 +355,11 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
     }
 
-    override def TypeApply(tree: TypeApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
-      fun match {
-        
-        case global.Select(fun @ global.Select(ths: This, _), _) if ths.pos == NoPosition => 
-          l ++ p(fun) ++ pp(args) ++ r
-          
-        case _ => 
-          
-          val _fun = p(fun)
-          val _args = pp(args, separator = ", ", before = "[", after = "]")
-          
-          l ++ _fun.dropTrailingLayout ++ balanceParens('[', ']')(_fun.trailing ++ _args ++ r)
-      }
+    override def TypeApply(tree: TypeApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {          
+      val _fun = p(fun)
+      val _args = pp(args, separator = ", ", before = "[", after = "]")
+      
+      l ++ _fun.dropTrailingLayout ++ balanceParens('[', ']')(_fun.trailing ++ _args ++ r)
     }
 
     override def Apply(tree: Apply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
