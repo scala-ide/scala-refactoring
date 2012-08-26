@@ -14,6 +14,7 @@ import util.CompilerProvider
 import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.TextChange
 import scala.tools.nsc.util.FailedInterrupt
+import org.junit.Before
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
@@ -26,19 +27,16 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   type ScalaVersion = tests.util.ScalaVersion
 
   implicit def stringToName(name: String): global.Name = global.newTermName(name)
+
+  @Before
+  def cleanup() = resetPresentationCompiler()
     
   /**
    * A project to test multiple compilation units. Add all 
    * sources using "add" before using any of the lazy vals.
    */
   abstract class FileSet(val name: String) {
-    
-    global.unitOfFile.values.foreach { cu =>
-      global.removeUnitOf(cu.source)
-      global.getUnitOf(cu.source)
-    }
-    
-    global.askReset
+
     
     def this() = this(randomFileName())
       

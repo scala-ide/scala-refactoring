@@ -17,7 +17,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
   
   import global._
   
-  val tree = treeFrom("""
+  def tree = treeFrom("""
     package treetest
 
     class Test {

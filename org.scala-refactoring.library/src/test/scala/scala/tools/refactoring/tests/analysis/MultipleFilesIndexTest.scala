@@ -10,40 +10,30 @@ import org.junit.Assert._
 import analysis.{TreeAnalysis, GlobalIndexes}
 import org.junit.After
 
-class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnalysis {
+class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
 
   import global._
   
-  @After 
-  def cleanup {
-    global.ask { () =>
-      global.unitOfFile.values.foreach { cu =>
-        global.removeUnitOf(cu.source)
-        global.getUnitOf(cu.source)
-      }
-    }
-    global.askReset  
-  }
+  val index = EmptyIndex
   
-  var index: IndexLookup = EmptyIndex
   def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {
     ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map { ts => 
       (ts filter (_.pos != NoPosition) map conversion distinct) sortWith(_ < _) mkString ", "
     }
   }
   
-  def buildIndex(pro: FileSet) {
+  def buildIndex(pro: FileSet) = {
     
     val cuIndexes = global.ask { () =>
       pro.trees map CompilationUnitIndex.apply
     }
     
-    index = GlobalIndex(cuIndexes)
+    GlobalIndex(cuIndexes)
   }
 
   def findReferences(pro: FileSet): List[String] = {
 
-    buildIndex(pro)
+    val index = buildIndex(pro)
               
     val sym = pro.selection.selectedSymbols head
     
@@ -57,7 +47,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
 
   def findOverrides(pro: FileSet): List[String] = {
 
-    buildIndex(pro)
+    val index = buildIndex(pro)
               
     val sym = pro.selection.selectedSymbols head
     
@@ -71,7 +61,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   def classHierarchy(pro: FileSet): List[String] = {
               
-    buildIndex(pro)
+    val index = buildIndex(pro)
 
     val sym = pro.selection.selectedSymbols head
         
@@ -82,7 +72,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   def allDeclarations(pro: FileSet): List[String] = {
               
-    buildIndex(pro)
+    val index = buildIndex(pro)
         
     aggregateFileNamesWithTrees(index.allDeclarations() map (_._2) toList) { sym => 
       if(sym.nameString == "")
@@ -94,7 +84,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   def allSymbols(pro: FileSet): List[String] = {
               
-    buildIndex(pro)
+    val index = buildIndex(pro)
         
     List((index.allSymbols() map (_.toString) sortWith (_ < _)) mkString (", "))
   }

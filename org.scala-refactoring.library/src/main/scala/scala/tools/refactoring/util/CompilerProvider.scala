@@ -91,4 +91,14 @@ object CompilerInstance extends CompilerInstance
 trait CompilerProvider extends TreeCreationMethods {
 
   val global = CompilerInstance.compiler
+  
+  private [refactoring] def resetPresentationCompiler() {
+        
+    global.unitOfFile.values.foreach { cu =>
+      global.removeUnitOf(cu.source)
+      global.getUnitOf(cu.source)
+    }
+    
+    global.askReset
+  }
 }

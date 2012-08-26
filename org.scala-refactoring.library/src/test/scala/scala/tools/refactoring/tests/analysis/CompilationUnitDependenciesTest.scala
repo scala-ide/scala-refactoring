@@ -14,17 +14,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   import global._
   
-  @After 
-  def cleanup {
-    global.ask { () =>
-      global.unitOfFile.values.foreach { cu =>
-        global.removeUnitOf(cu.source)
-        global.getUnitOf(cu.source)
-      }
-    }
-    global.askReset  
-  }
-  
   private def assertTrees(expected: String, src: String, f: Tree => Seq[Tree]) {
     val tree = treeFrom(src)
     val imports = f(tree).sortBy(_.toString).map(asString)
