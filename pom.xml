@@ -105,6 +105,9 @@
             <jvmArg>-Xms256m</jvmArg>
             <jvmArg>-Xmx768m</jvmArg>
           </jvmArgs>
+	  <args>
+            <arg>-Ydependent-method-types</arg>
+          </args>
         </configuration>
       </plugin>
       <plugin>
