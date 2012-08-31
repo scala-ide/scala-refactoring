@@ -9,16 +9,8 @@ import org.junit.Assert
 
 class SplitParameterListsTest extends TestHelper with TestRefactoring {
 
-  outer =>
-
-  import outer.global._
-
   def splitParameterLists(splitPositions: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new SplitParameterLists with SilentTracing with GlobalIndexes {
-      val global = outer.global
-      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
-      val index = GlobalIndex(cuIndexes)
-    }
+    val refactoring = new SplitParameterLists with SilentTracing with TestProjectIndex
     val changes = performRefactoring(splitPositions)
   }.changes
 

@@ -16,10 +16,6 @@ import tools.nsc.ast.parser.Tokens
 class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   
   import global._
-  
-  override def treeForFile(file: AbstractFile) = {
-    unitOfFile get file map (_.body) flatMap removeAuxiliaryTrees
-  }
     
   def generateText(t: Tree): String = createText(t, sourceFile = Some(t.pos.source))
   

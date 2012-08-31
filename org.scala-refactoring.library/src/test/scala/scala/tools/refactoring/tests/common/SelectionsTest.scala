@@ -15,19 +15,21 @@ class SelectionsTest extends TestHelper {
   
   private def getIndexedSelection(src: String) = {
     val tree = treeFrom(src)
-    findMarkedNodes(src, tree)
+    val start = commentSelectionStart(src)
+    val end   = commentSelectionEnd(src)
+    FileSelection(tree.pos.source.file, tree, start, end)
   }
   
   def selectedLocalVariable(expected: String, src: String) = {
     
-    val selection = getIndexedSelection(src) get
+    val selection = getIndexedSelection(src)
     
     assertEquals(expected, selection.selectedSymbolTree.get.symbol.name.toString)
   }
   
   def assertSelection(expectedTrees: String, expectedSymbols: String, src: String) = {
     
-    val selection = getIndexedSelection(src) get
+    val selection = getIndexedSelection(src)
     
     assertEquals(expectedTrees, selection.allSelectedTrees map (_.getClass.getSimpleName) mkString ", ")
     assertEquals(expectedSymbols, selection.selectedSymbols mkString ", ")

@@ -108,10 +108,8 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     }
     
     private def isPosContainedIn(p1: Position, p2: Position) = {
-      p1.isRange && 
-      !p1.isTransparent && 
-      p2.isRange && 
-      !p2.isTransparent && 
+      p1.isOpaqueRange && 
+      p2.isOpaqueRange && 
       p2.includes(p1) && 
       p1.source == p2.source
     }

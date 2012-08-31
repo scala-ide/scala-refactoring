@@ -7,14 +7,8 @@ import tests.util.TestRefactoring
 
 class ChangeParamOrderTest extends TestHelper with TestRefactoring {
 
-  outer =>
-    
   def changeParamOrder(permutations: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ChangeParamOrder with SilentTracing with GlobalIndexes {
-      val global = outer.global
-      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
-      val index = GlobalIndex(cuIndexes)
-    }
+    val refactoring = new ChangeParamOrder with SilentTracing with TestProjectIndex
     val changes = performRefactoring(permutations)
   }.changes
   

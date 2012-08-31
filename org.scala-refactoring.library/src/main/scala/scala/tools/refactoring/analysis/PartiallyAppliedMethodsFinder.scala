@@ -23,15 +23,9 @@ trait PartiallyAppliedMethodsFinder {
      * Finds the accessor method for the given ValDef.
      */
     def accessor(v: ValDef) = {
-      val rootOption = cuRoot(v.pos)
-      rootOption flatMap { root =>
-        val p: Tree => Boolean = (tree: Tree) => tree match {
-          case defdef: DefDef => v.nameString equals defdef.nameString
-          case _ => false
-        }
-        val traverser = new FilterTreeTraverser(p)
-        traverser.traverse(root)
-        traverser.hits.headOption.map(_.symbol)
+      v.symbol.getter(v.symbol.owner) match {
+        case NoSymbol => None
+        case sym => Some(sym)
       }
     }
     
@@ -102,8 +96,8 @@ trait PartiallyAppliedMethodsFinder {
     def findPartialsForDef(partial: DefInfo) = {
       val defSymbol = partial.symbol
       val origNrParamLists = partial.nrParamLists
-      val allOccurences = index.occurences(defSymbol)
-      val cuRoots = (allOccurences flatMap (occ => cuRoot(occ.pos))).distinct
+      val allOccurrences = index.occurences(defSymbol)
+      val cuRoots = index.rootsOf(allOccurrences)
       val hits = cuRoots flatMap { cuRoot =>
         val traverser = new FilterTreeTraverser(isPartialForSymbol(defSymbol))
         traverser.traverse(cuRoot)

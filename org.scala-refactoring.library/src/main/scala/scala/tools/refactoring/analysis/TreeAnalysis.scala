@@ -29,7 +29,7 @@ trait TreeAnalysis {
 
     allLocalSymbols filterNot {
       index.declaration(_).map(selection.contains) getOrElse true
-    } filter (t => t.pos.isRange && !t.pos.isTransparent) sortBy (_.pos.start) distinct
+    } filter (t => t.pos.isOpaqueRange) sortBy (_.pos.start) distinct
   }
 
   /**

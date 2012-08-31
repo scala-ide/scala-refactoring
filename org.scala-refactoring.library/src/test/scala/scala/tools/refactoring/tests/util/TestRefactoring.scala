@@ -8,6 +8,10 @@ package tests.util
 import analysis.GlobalIndexes
 import common.Change
 import org.junit.Assert._
+import scala.tools.refactoring.common.CompilerAccess
+import common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.Selections
 
 trait TestRefactoring extends TestHelper {
   
@@ -22,23 +26,24 @@ trait TestRefactoring extends TestHelper {
       val global = TestRefactoring.this.global
         
       override val index = {
-        val cuIndexes = project.trees map (_.pos.source.file) map { file => 
+        
+        val trees = project.sources map (x => addToCompiler(project.fileName(x), x)) map (global.unitOfFile(_).body)
+        
+        val cuIndexes = trees map (_.pos.source.file) map { file => 
           global.unitOfFile(file).body
         } map CompilationUnitIndex.apply
         GlobalIndex(cuIndexes)
       }      
     }
     
-    val refactoring: MultiStageRefactoring
+    val refactoring: MultiStageRefactoring with InteractiveScalaCompiler
 
-    lazy val selection = new refactoring.FileSelection(project.selection.file, project.selection.pos.start, project.selection.pos.end)
-
-    lazy val preparationResult = refactoring.prepare(selection)
+    def preparationResult = refactoring.prepare(selection(refactoring, project))
 
     def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = {
       preparationResult match {
         case Right(prepare) =>
-          refactoring.perform(selection, prepare, parameters) match {
+          refactoring.perform(selection(refactoring, project), prepare, parameters) match {
             case Right(modifications) => modifications
             case Left(error) => throw new RefactoringException(error.cause)
           }

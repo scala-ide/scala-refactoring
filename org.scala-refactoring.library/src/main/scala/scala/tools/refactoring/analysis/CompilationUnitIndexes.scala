@@ -22,13 +22,14 @@ trait CompilationUnitIndexes {
   import global._
   
   trait CompilationUnitIndex {
+    def root: Tree
     def definitions: Map[Symbol, List[DefTree]]
     def references:  Map[Symbol, List[Tree]]
   }
   
   object CompilationUnitIndex {
   
-    def apply(tree: Tree) = {
+    def apply(tree: Tree): CompilationUnitIndex = {
       
       assertCurrentThreadIsPresentationCompiler()
       
@@ -82,6 +83,7 @@ trait CompilationUnitIndexes {
       (new TreeWithSymbolTraverser(handleSymbol)).traverse(tree)
       
       new CompilationUnitIndex {
+        val root = tree
         val definitions = defs.map {case (sym, v) => sym.initialize → v.toList} toMap
         val references  = refs.map {case (sym, v) => sym.initialize → v.toList} toMap
       }

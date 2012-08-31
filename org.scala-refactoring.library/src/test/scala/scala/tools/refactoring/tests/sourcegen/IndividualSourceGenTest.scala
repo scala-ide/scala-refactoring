@@ -17,10 +17,6 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   
   import global._
   
-  override def treeForFile(file: AbstractFile) = {
-    unitOfFile get file map (_.body) flatMap removeAuxiliaryTrees
-  }
-    
   def generateText(t: Tree): String = generate(t, sourceFile = Some(t.pos.source)).asText
   
   implicit def treeToPrettyPrint(original: Tree) = new {
@@ -914,7 +910,7 @@ class A(a: Int) {
         
       }
       def asd() = {
-        List("").mapcar((x: String) => x.isEmpty())
+        List("").mapcar(((x: String) => x.isEmpty()))
       }
     }
     """, res)
@@ -1830,7 +1826,7 @@ object acmatch {
     object primitive {
       def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
       def asd(li: List[Int]) = {
-        li.reduce((_:Int) + (_:Int), 0) 
+        li.reduce(((_:Int) + (_:Int)), 0) 
       }
     }
     """, res)

@@ -24,8 +24,10 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
   
   def buildIndex(pro: FileSet) = {
     
+    val trees = pro.sources map (x => addToCompiler(pro.fileName(x), x)) map (global.unitOfFile(_).body)
+    
     val cuIndexes = global.ask { () =>
-      pro.trees map CompilationUnitIndex.apply
+      trees map CompilationUnitIndex.apply
     }
     
     GlobalIndex(cuIndexes)
@@ -35,9 +37,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
 
     val index = buildIndex(pro)
               
-    val sym = pro.selection.selectedSymbols head
+    val sym = selection(this, pro).selectedSymbols head
     
-    aggregateFileNamesWithTrees(index.occurences(sym)) { symTree => 
+    aggregateFileNamesWithTrees(index.occurences(sym.asInstanceOf[global.Symbol]) /*2.9*/) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
       else 
@@ -49,9 +51,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
 
     val index = buildIndex(pro)
               
-    val sym = pro.selection.selectedSymbols head
+    val sym = selection(this, pro).selectedSymbols head
     
-    aggregateFileNamesWithTrees(index.overridesInClasses(sym) map index.declaration flatten) { symTree => 
+    aggregateFileNamesWithTrees(index.overridesInClasses(sym.asInstanceOf[global.Symbol] /*2.9*/) map index.declaration flatten) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
       else 
@@ -63,9 +65,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
               
     val index = buildIndex(pro)
 
-    val sym = pro.selection.selectedSymbols head
+    val sym = selection(this, pro).selectedSymbols head
         
-    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner) map index.declaration flatten) { sym => 
+    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner.asInstanceOf[global.Symbol] /*2.9*/) map index.declaration flatten) { sym => 
       sym.nameString +" on line "+ sym.pos.line
     }
   }

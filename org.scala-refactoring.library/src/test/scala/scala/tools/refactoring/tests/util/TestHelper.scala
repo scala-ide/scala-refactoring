@@ -5,16 +5,16 @@
 package scala.tools.refactoring
 package tests.util
 
-import tools.nsc.util.BatchSourceFile
-import tools.nsc.io.AbstractFile
-import org.junit.Assert._
-import common.Change
-import collection.mutable.ListBuffer
-import util.CompilerProvider
-import scala.tools.refactoring.common.NewFileChange
-import scala.tools.refactoring.common.TextChange
+import scala.Option.option2Iterable
+import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.util.FailedInterrupt
+import scala.tools.refactoring.Refactoring
+import scala.tools.refactoring.common.{Change, NewFileChange, TextChange}
+import scala.tools.refactoring.util.CompilerProvider
+import org.junit.Assert.assertEquals
 import org.junit.Before
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.Selections
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
@@ -26,8 +26,6 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
 
-  implicit def stringToName(name: String): global.Name = global.newTermName(name)
-
   @Before
   def cleanup() = resetPresentationCompiler()
     
@@ -37,7 +35,6 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
    */
   abstract class FileSet(val name: String) {
 
-    
     def this() = this(randomFileName())
       
     private val srcs = ListBuffer[(String, String)]()
@@ -51,15 +48,6 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     def fileName(src: String) = name +"_"+ sources.indexOf(src).toString
     
     lazy val sources = srcs.unzip._1 toList
-    
-    lazy val expected = srcs.unzip._2 toList
-    
-    lazy val trees = sources map (x => addToCompiler(fileName(x), x)) map (global.unitOfFile(_).body)
-    
-    lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
-      // not all refactorings need a selection:
-      FileSelection(trees.head.pos.source.file, trees.head, 0, 0)
-    }
     
     def apply(f: FileSet => List[String]) = assert(f(this))
     
@@ -97,20 +85,34 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     
     private def assert(res: List[String]) = {
       assertEquals(srcs.length, res.length)
+      val expected = srcs.unzip._2.toList
       expected zip res foreach (p => assertEquals(p._1, p._2))
+    }
+  }
+  
+  def selection(refactoring: Selections with InteractiveScalaCompiler, project: FileSet) = {
+    
+    val files = project.sources map (x => addToCompiler(project.fileName(x), x))
+    val trees: List[refactoring.global.Tree] = files map (refactoring.global.unitOfFile(_).body)
+    
+    (project.sources zip trees flatMap {
+      case (src, tree) => 
+        findMarkedNodes(refactoring)(src, tree)
+    } headOption) getOrElse {
+      refactoring.FileSelection(trees.head.pos.source.file, trees.head, 0, 0)
     }
   }
   
   val startPattern = "/*(*/"
   val endPattern = "/*)*/"
     
-  def findMarkedNodes(src: String, tree: global.Tree): Option[Selection] = {
+  def findMarkedNodes(r: Selections with InteractiveScalaCompiler)(src: String, tree: r.global.Tree): Option[r.Selection] = {
     
     val start = commentSelectionStart(src)
     val end   = commentSelectionEnd(src)
     
     if(start >= 0 && end >= 0)
-      Some(FileSelection(tree.pos.source.file, tree, start, end))
+      Some(r.FileSelection(tree.pos.source.file, tree, start, end))
     else 
       None
   }
