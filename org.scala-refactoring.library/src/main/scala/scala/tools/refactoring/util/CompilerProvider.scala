@@ -100,5 +100,7 @@ trait CompilerProvider extends TreeCreationMethods {
     }
     
     global.askReset
+
+    global.checkNoResponsesOutstanding
   }
 }
