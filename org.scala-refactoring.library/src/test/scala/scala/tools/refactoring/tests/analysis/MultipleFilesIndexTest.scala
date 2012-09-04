@@ -26,11 +26,11 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
     
     val trees = pro.sources map (x => addToCompiler(pro.fileName(x), x)) map (global.unitOfFile(_).body)
     
-    val cuIndexes = global.askForResponse { () =>
+    val cuIndexes = global.ask { () =>
       trees map CompilationUnitIndex.apply
-    } get
+    }
     
-    GlobalIndex(cuIndexes.left.get)
+    GlobalIndex(cuIndexes)
   }
 
   def findReferences(pro: FileSet): List[String] = {
