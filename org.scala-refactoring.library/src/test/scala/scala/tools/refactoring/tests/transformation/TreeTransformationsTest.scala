@@ -13,10 +13,6 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
   
   import global._
   
-  override def treeForFile(file: AbstractFile) = {
-    global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
-  }
-  
   def assertAllRangesOrNoPosition(t: Tree) =  assertFalse(t.exists(t => !(t.pos.isRange || t.pos == global.NoPosition)))
   
   @Test

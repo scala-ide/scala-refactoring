@@ -107,8 +107,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case If(cond, Block((body: Block) :: Nil, _), _) =>
           Fragment(tree.nameString) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ p(body)
         
-        case If(cond, then, _) =>
-          Fragment(tree.nameString) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ p(then)
+        case If(cond, ifTrue, _) =>
+          Fragment(tree.nameString) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ p(ifTrue)
       }
     }
   }

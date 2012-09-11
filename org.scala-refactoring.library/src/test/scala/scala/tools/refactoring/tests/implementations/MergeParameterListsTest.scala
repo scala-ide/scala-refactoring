@@ -13,11 +13,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   import outer.global._
   
   def mergeParameterLists(mergePositions: List[Int])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new MergeParameterLists with SilentTracing with GlobalIndexes {
-      val global = outer.global
-      val cuIndexes = pro.trees map (_.pos.source.file) map (file => global.unitOfFile(file).body) map CompilationUnitIndex.apply
-      val index = GlobalIndex(cuIndexes)
-    }
+    val refactoring = new MergeParameterLists with SilentTracing with TestProjectIndex
     val changes = performRefactoring(mergePositions)
   }.changes
   

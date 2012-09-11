@@ -5,14 +5,16 @@
 package scala.tools.refactoring
 package tests.util
 
-import tools.nsc.util.BatchSourceFile
-import tools.nsc.io.AbstractFile
-import org.junit.Assert._
-import common.Change
-import collection.mutable.ListBuffer
-import util.CompilerProvider
-import scala.tools.refactoring.common.NewFileChange
-import scala.tools.refactoring.common.TextChange
+import scala.Option.option2Iterable
+import scala.collection.mutable.ListBuffer
+import scala.tools.nsc.util.FailedInterrupt
+import scala.tools.refactoring.Refactoring
+import scala.tools.refactoring.common.{Change, NewFileChange, TextChange}
+import scala.tools.refactoring.util.CompilerProvider
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.Selections
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
@@ -24,21 +26,15 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
 
-  implicit def stringToName(name: String): global.Name = global.newTermName(name)
+  @Before
+  def cleanup() = resetPresentationCompiler()
     
   /**
    * A project to test multiple compilation units. Add all 
    * sources using "add" before using any of the lazy vals.
    */
   abstract class FileSet(val name: String) {
-    
-    global.unitOfFile.values.foreach { cu =>
-      global.removeUnitOf(cu.source)
-      global.getUnitOf(cu.source)
-    }
-    
-    global.askReset
-    
+
     def this() = this(randomFileName())
       
     private val srcs = ListBuffer[(String, String)]()
@@ -53,22 +49,22 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     
     lazy val sources = srcs.unzip._1 toList
     
-    lazy val expected = srcs.unzip._2 toList
-    
-    lazy val trees = sources map (x => addToCompiler(fileName(x), x)) map (global.unitOfFile(_).body)
-    
-    lazy val selection = (sources zip trees flatMap (x => findMarkedNodes(x._1, x._2)) headOption) getOrElse {
-      // not all refactorings need a selection:
-      FileSelection(trees.head.pos.source.file, trees.head, 0, 0)
-    }
-    
     def apply(f: FileSet => List[String]) = assert(f(this))
     
     val NewFile = ""
 
     def applyRefactoring(createChanges: FileSet => List[Change]) {
       
-      val changes = createChanges(this)
+      val changes = try {
+        global.ask { () =>
+          createChanges(this)
+        }
+      } catch {
+        case e: FailedInterrupt => 
+          throw e.getCause
+        case e: InterruptedException => 
+          throw e.getCause
+      }
       
       val res = sources zip (sources map fileName) flatMap {
         case (NewFile, name) =>
@@ -89,20 +85,34 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     
     private def assert(res: List[String]) = {
       assertEquals(srcs.length, res.length)
+      val expected = srcs.unzip._2.toList
       expected zip res foreach (p => assertEquals(p._1, p._2))
+    }
+  }
+  
+  def selection(refactoring: Selections with InteractiveScalaCompiler, project: FileSet) = {
+    
+    val files = project.sources map (x => addToCompiler(project.fileName(x), x))
+    val trees: List[refactoring.global.Tree] = files map (refactoring.global.unitOfFile(_).body)
+    
+    (project.sources zip trees flatMap {
+      case (src, tree) => 
+        findMarkedNodes(refactoring)(src, tree)
+    } headOption) getOrElse {
+      refactoring.FileSelection(trees.head.pos.source.file, trees.head, 0, 0)
     }
   }
   
   val startPattern = "/*(*/"
   val endPattern = "/*)*/"
     
-  def findMarkedNodes(src: String, tree: global.Tree): Option[Selection] = {
+  def findMarkedNodes(r: Selections with InteractiveScalaCompiler)(src: String, tree: r.global.Tree): Option[r.Selection] = {
     
     val start = commentSelectionStart(src)
     val end   = commentSelectionEnd(src)
     
     if(start >= 0 && end >= 0)
-      Some(FileSelection(tree.pos.source.file, tree, start, end))
+      Some(r.FileSelection(tree.pos.source.file, tree, start, end))
     else 
       None
   }

@@ -121,11 +121,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     def apply(trees: List[Import]) = {
       val seen = collection.mutable.HashSet[String]()
       trees flatMap {
-        case imp @ Import(qual, selectors) if imports.contains(asString(qual)) && !selectors.exists(renames) =>
-          if(seen.contains(asString(qual))) {
+        case imp @ Import(qual, selectors) if imports.contains(asSelectorString(qual)) && !selectors.exists(renames) =>
+          if(seen.contains(asSelectorString(qual))) {
             None
           } else {
-            seen += asString(qual)
+            seen += asSelectorString(qual)
             Some(Import(qual, List(ImportSelector(nme.WILDCARD, -1, nme.WILDCARD, -1))).copyAttrs(imp))
           }
         case t => Some(t)

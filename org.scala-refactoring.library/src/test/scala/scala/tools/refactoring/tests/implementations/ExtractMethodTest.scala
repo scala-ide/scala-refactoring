@@ -10,7 +10,6 @@ import implementations.ExtractMethod
 import tests.util.TestHelper
 
 class ExtractMethodTest extends TestHelper with TestRefactoring {
-  outer =>
   
   def extract(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex

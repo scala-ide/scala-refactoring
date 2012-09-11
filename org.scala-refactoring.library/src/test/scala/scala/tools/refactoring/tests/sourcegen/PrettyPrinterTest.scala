@@ -18,10 +18,6 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
 
   import global._
 
-  override def treeForFile(file: AbstractFile) = {
-    unitOfFile get file map (_.body) flatMap removeAuxiliaryTrees
-  }
-
   implicit def treeToPrettyPrint(original: Tree) = new {
 
     def cleanTree(t: Tree) =

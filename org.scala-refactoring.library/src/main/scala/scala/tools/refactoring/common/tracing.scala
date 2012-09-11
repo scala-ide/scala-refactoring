@@ -7,12 +7,14 @@ package common
 
 trait Tracing {
   
-  implicit def anythingToTrace[T](t: T) = new {
+  class TraceAndReturn[T](t: T) {
     def \\ (trace: T => Unit) = {
       trace(t)
       t
     }
   }
+  
+  implicit def anythingToTrace[T](t: T) = new TraceAndReturn[T](t)
   
   def context[T](name: String)(body: => T): T
 

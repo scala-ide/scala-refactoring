@@ -134,7 +134,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           params_.trailing.asText match {
             case SplitAtOpeningBrace(before, after) if earlyBody.isEmpty =>
               l ++ params_.dropTrailingLayout ++ Layout(before) ++ parents_ ++ Layout(after)
-            case _ => params_
+            case _ =>
               l ++ params_ ++ pp(earlyBody) ++ parents_
           }
         }
@@ -193,8 +193,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case If(cond, Block((body: Block) :: Nil, _), _) =>
           l ++ p(labelName) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ p(body) ++ r
         
-        case If(cond, then, _) =>
-          l ++ p(labelName) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ pi(then) ++ r        
+        case If(cond, ifTrue, _) =>
+          l ++ p(labelName) ++ Layout("(") ++ p(cond) ++ Layout(")") ++ pi(ifTrue) ++ r        
       }
     }
   }

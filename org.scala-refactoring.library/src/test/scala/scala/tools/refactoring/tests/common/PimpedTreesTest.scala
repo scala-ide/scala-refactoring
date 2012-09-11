@@ -11,13 +11,9 @@ import common.PimpedTrees
 
 class PimpedTreesTest extends TestHelper with PimpedTrees {
   
-  override def treeForFile(file: AbstractFile) = {
-    global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
-  }
-  
   import global._
   
-  val tree = treeFrom("""
+  def tree = treeFrom("""
     package treetest
 
     class Test {
@@ -66,7 +62,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     val v = tree.find(_.isInstanceOf[ValDef]).get
     val actual = originalParentOf(v).get.toString.replaceAll("\r\n", "\n")
     
-    assertTrue(actual.contains("<empty> {\n  private[this] val test: Int = 42;\n  private[this] val test2: Int = 42\n}"))
+    assertTrue(actual.contains("private[this] val test: Int = 42;"))
     
     assertEquals(None, originalLeftSibling(v))
     assertEquals("private[this] val test2: Int = 42", originalRightSibling(v).get.toString)

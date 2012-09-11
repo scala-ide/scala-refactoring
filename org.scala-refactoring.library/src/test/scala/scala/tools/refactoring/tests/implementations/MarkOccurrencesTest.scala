@@ -20,10 +20,12 @@ class MarkOccurrencesTest extends TestHelper {
     val markOccurrences = new MarkOccurrences with GlobalIndexes {
       val global = outer.global
 
-      lazy val index = {
+      val index = {
         val file = tree.pos.source.file
         val t = global.unitOfFile(file).body
-        GlobalIndex(CompilationUnitIndex(t) :: Nil) 
+        global.ask { () =>
+          GlobalIndex(CompilationUnitIndex(t) :: Nil) 
+        }
       }
     }
     

@@ -59,6 +59,14 @@ trait Indexes {
      * declare the symbol that have a range position.
      */
     def occurences(s: global.Symbol): List[global.Tree]
+    
+    /**
+     * Returns the root trees of the given trees that are part of this index.
+     * 
+     * The roots are typically PackageDefs, but this isn't necessarily
+     * true because an index can also be created for a smaller scope.
+     */
+    def rootsOf(trees: List[global.Tree]): List[global.Tree]
 
     /**
      * For the given Symbol - which is a class or object - returns a

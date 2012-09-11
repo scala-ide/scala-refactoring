@@ -39,8 +39,8 @@ trait LayoutHelper {
       children(t) match {
         case Nil =>
           NoLayout
-        case c => 
-          splitLayoutBetweenParentAndFirstChild(parent = t, child = c.head)._1
+        case c :: _=> 
+          splitLayoutBetweenParentAndFirstChild(parent = t, child = c)._1
       }
     } getOrElse NoLayout \\ (l => trace("leading layout for tree:  %s", l.toString))
   }

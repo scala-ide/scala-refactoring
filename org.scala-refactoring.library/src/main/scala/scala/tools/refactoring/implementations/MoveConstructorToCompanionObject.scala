@@ -121,8 +121,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
     val sourcefileChanges = transformFile(selection.file, createApplyMethod)
 
     val occurrences = index.occurences(constructor.symbol)
-    val cus = occurrences.flatMap(t => cuRoot(t.pos)).distinct
-    val constructorCallsChanges: List[Change] = refactor(cus flatMap (redirectConstructorCalls(_)))
+    val constructorCallsChanges: List[Change] = refactor(index.rootsOf(occurrences) flatMap (redirectConstructorCalls(_)))
 
     val changes = sourcefileChanges:::constructorCallsChanges
     Right(changes)

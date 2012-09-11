@@ -69,7 +69,7 @@ trait CompilationUnitDependencies {
        */
       findDeepestNeededSelect(underlying)
       
-    case s @ Select(qual, name) if s.pos.isRange && (!qual.pos.isRange || qual.pos.isTransparent) =>
+    case s @ Select(qual, name) if s.pos.isRange && !qual.pos.isOpaqueRange =>
       Some(s)
     case s: Select =>
       findDeepestNeededSelect(s.qualifier)
@@ -230,12 +230,11 @@ trait CompilationUnitDependencies {
         case t @ Select(qual: This, _) if qual.pos.sameRange(t.pos) =>
           ()
                   
-        case t @ Select(qual, _) if t.pos.isRange =>
+        case t @ Select(qual, _) if t.pos.isOpaqueRange =>
           
           if (!isMethodCallFromExplicitReceiver(t)
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD 
-              && !t.pos.isTransparent
               && hasStableQualifier(t)) {
             addToResult(t)
           } 

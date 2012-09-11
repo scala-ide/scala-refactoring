@@ -8,8 +8,6 @@ import org.junit.Assert
 import org.junit.Ignore
 
 class ExtractTraitTest extends TestHelper with TestRefactoring {
-
-  outer =>
     
   def extractTrait(params: (String, String => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExtractTrait with SilentTracing with TestProjectIndex

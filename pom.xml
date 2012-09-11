@@ -100,9 +100,9 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
-        <version>2.15.2</version>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <goals>
@@ -116,6 +116,9 @@
             <jvmArg>-Xms256m</jvmArg>
             <jvmArg>-Xmx768m</jvmArg>
           </jvmArgs>
+	  <args>
+            <arg>${scalac.options}</arg>
+          </args>
         </configuration>
       </plugin>
       <plugin>
@@ -253,14 +256,13 @@
         <version>2.5</version>
       </plugin>
       <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
-	<version>2.15.0</version>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+	<version>3.1.0</version>
       </plugin>
     </plugins>
   </reporting>
   <profiles>
-
     <profile>
       <id>release-ide-29</id>
       <repositories>
@@ -296,6 +298,9 @@
     </profile>
     <profile>
       <id>scala-2.9.x</id>
+      <properties>
+        <scalac.options>-Ydependent-method-types</scalac.options>
+      </properties>
       <repositories>
         <repository>
           <id>scala-toolchain-2.9.x</id>
@@ -305,7 +310,6 @@
         </repository>
       </repositories>
     </profile>
-
     <profile>
       <id>scala-trunk</id>
       <repositories>
@@ -317,7 +321,6 @@
         </repository>
       </repositories>
     </profile>
-
     <profile>
       <id>scala-virtualized-trunk</id>
       <activation>
@@ -334,53 +337,6 @@
           <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-virtualized</url>
         </repository>
       </repositories>
-    </profile>
-    
-    <profile>
-      <id>coverage</id>
-      <repositories>
-        <repository>
-          <id>scct repository</id>
-          <url>http://mtkopone.github.com/scct/maven-repo</url>
-        </repository>
-      </repositories>
-      <dependencies>
-        <dependency>
-          <groupId>reaktor</groupId>
-	  <artifactId>scct_${scct.version}</artifactId>
-          <version>0.1-SNAPSHOT</version>
-        </dependency>
-      </dependencies>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.6</version>
-            <configuration>
-              <systemPropertyVariables>
-                <scct.project.name>${project.name}</scct.project.name>
-                <scct.coverage.file>${project.build.outputDirectory}/coverage.data</scct.coverage.file>
-                <scct.report.dir>${project.build.directory}/coverage-report</scct.report.dir>
-                <scct.source.dir>${project.build.sourceDirectory}</scct.source.dir>
-              </systemPropertyVariables>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.scala-tools</groupId>
-            <artifactId>maven-scala-plugin</artifactId>
-            <configuration>
-              <compilerPlugins>
-                <compilerPlugin>
-                  <groupId>reaktor</groupId>
-		  <artifactId>scct_${scct.version}</artifactId>
-                  <version>0.1-SNAPSHOT</version>
-                </compilerPlugin>
-              </compilerPlugins>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
 </project>

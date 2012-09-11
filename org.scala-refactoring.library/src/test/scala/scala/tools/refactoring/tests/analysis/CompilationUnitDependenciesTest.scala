@@ -8,6 +8,7 @@ package tests.analysis
 import analysis.CompilationUnitDependencies
 import org.junit.Assert.assertEquals
 import tests.util.TestHelper
+import org.junit.After
 
 class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDependencies with common.TreeExtractors {
 
@@ -20,11 +21,11 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   }
   
   def assertNeededImports(expected: String, src: String) {
-    assertTrees(expected, src, neededImports)
+    assertTrees(expected, src, tree => global.ask(() => neededImports(tree)))
   }
 
   def assertDependencies(expected: String, src: String) {
-    assertTrees(expected, src, dependencies)
+    assertTrees(expected, src, tree => global.ask(() => dependencies(tree)))
   }
 
   @Test
@@ -396,6 +397,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   def singleTypeUsedAsSelfTypeAnnotation = assertDependencies(
     """java.util.Observer""",
     """
+      package singleTypeUsedAsSelfTypeAnnotation
       import java.util.Observer
       trait X {
         this: Observer =>

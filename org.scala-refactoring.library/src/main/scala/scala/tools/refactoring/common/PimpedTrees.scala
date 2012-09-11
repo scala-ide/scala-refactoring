@@ -27,18 +27,6 @@ trait PimpedTrees {
   import global._
 
   /**
-   * Returns the tree that is contained in this file. Is
-   * overridden in testing to manipulate the trees (i.e.
-   * remove compiler generated trees)
-   */
-  def treeForFile(file: tools.nsc.io.AbstractFile): Option[Tree] = compilationUnitOfFile(file) map (_.body)
-    
-  /**
-   * Returns the compilation unit root for that position.
-   */  
-  def cuRoot(p: Position): Option[Tree] = if (p == NoPosition) None else treeForFile(p.source.file)
-
-  /**
    * Represent an import selector as a tree, including both names as trees.
    */
   case class ImportSelectorTree(name: NameTree, rename: global.Tree) extends global.Tree {
@@ -388,6 +376,20 @@ trait PimpedTrees {
     }
   }
   
+  /**
+   * Returns the compilation unit root for that position.
+   * 
+   * Note: there's also index.roots to get all compilation
+   * units that are part of this refactoring.
+   */  
+  private def cuRoot(p: Position): Option[Tree] = {
+    if (p == NoPosition) 
+      None 
+    else {
+      compilationUnitOfFile(p.source.file) map (_.body)
+    }
+  }
+  
   class DefDefMethods(defdef: DefDef) {
     
     def contextBounds: List[Tree] = {
@@ -578,7 +580,6 @@ trait PimpedTrees {
     }
   }
   
-  
   /**
    * Returns all children that have a representation in the source code.
    * This includes Name and Modifier trees and excludes everything that
@@ -703,8 +704,8 @@ trait PimpedTrees {
         templ :: Nil
         
       // while loop  
-      case LabelDef(name, params, If(cond, then, _)) =>
-        (NameTree(name) setPos t.namePosition) :: params ::: cond :: then :: Nil
+      case LabelDef(name, params, If(cond, ifTrue, _)) =>
+        (NameTree(name) setPos t.namePosition) :: params ::: cond :: ifTrue :: Nil
         
       // do .. while loop  
       case LabelDef(name, params, Block(stats, If(cond, _, _))) =>

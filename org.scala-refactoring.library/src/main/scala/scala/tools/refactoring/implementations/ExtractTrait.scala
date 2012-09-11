@@ -73,13 +73,8 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
       return Left(RefactoringError("can't reference private class members from extracted trait or private trait members from class"))
     }
     
-    val enclosingPackages = findEnclosingPackages(classDef.pos)
-    val enclosing = {
-      enclosingPackages match {
-        case Nil => cuRoot(classDef.pos).getOrElse(return Left(RefactoringError("failed to find compilation unit of extractee")))
-        case p::ps => p
-      }
-    }
+    val enclosingPackages = findEnclosingPackages(selection.root, classDef.pos)
+    val enclosing = enclosingPackages.headOption getOrElse selection.root
     
     val sourceFileChanges = refactorClass(classBody, enclosing, params.traitName, classDef)
     
@@ -186,19 +181,8 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
     flattenedPkgPid
   }
   
-  private def findEnclosingPackages(pos: Position) = {
-    val cu = cuRoot(pos).get
-    def enclosingPackageFilter(tree: Tree): Boolean = tree match {
-      case pkg @ PackageDef(pid, stats) => {
-        pkg.pos.properlyIncludes(pos)
-      }
-      case _ => false
-    }
-    val traverser = new FilterTreeTraverser(enclosingPackageFilter)
-    traverser.traverse(cu)
-    traverser.hits.toList collect {
-      case pkg: PackageDef => pkg
-    }
+  private def findEnclosingPackages(root: Tree, pos: Position) = root collect {
+    case pkg @ PackageDef(pid, stats) if pkg.pos.properlyIncludes(pos) => pkg
   }
   
   private def mkIdent(name: String, typeParams: List[TypeDef]) = {

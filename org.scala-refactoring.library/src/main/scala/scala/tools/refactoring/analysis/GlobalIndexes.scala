@@ -52,6 +52,16 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
       occs filterNot decls.contains
     }
     
+    def rootsOf(trees: List[Tree]) = {
+      (for {
+        cu <- cus
+        tree <- trees
+        if cu.root.pos.source.file == tree.pos.source.file
+      } yield {
+        cu.root
+      }).distinct
+    }
+    
     def expandSymbol(s: global.Symbol): List[global.Symbol] = {
       def expandSymbols(ss: List[Symbol]) = ss flatMap expand filter (_ != NoSymbol) distinct
             

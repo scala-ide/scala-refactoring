@@ -114,8 +114,8 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
       val originalsSymbols = affectedDefs.originals.map(_.symbol)
       val partialsSymbols = affectedDefs.partials.map(_.symbol)
       val allSymbols: List[Symbol] = prep.defdef.symbol::originalsSymbols:::partialsSymbols
-      val occurences = allSymbols.map(index.occurences)
-      occurences.flatten.flatMap(t => cuRoot(t.pos)).distinct
+      val occurences = allSymbols.flatMap(index.occurences)
+      index.rootsOf(occurences)
     }
     
     val changedTrees = affectedCus flatMap (refactorMethodSignature(_))

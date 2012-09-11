@@ -12,10 +12,6 @@ import sourcegen.TreeChangesDiscoverer
 
 class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeChangesDiscoverer with SilentTracing with transformation.TreeFactory {
   
-  override def treeForFile(file: AbstractFile) = {
-    global.unitOfFile.get(file) map (_.body) flatMap removeAuxiliaryTrees
-  }
-  
   import global._
   
   val reverseBody = transform {

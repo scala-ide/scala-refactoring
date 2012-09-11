@@ -8,32 +8,38 @@ package tests.analysis
 import tests.util.TestHelper
 import org.junit.Assert._
 import analysis.{TreeAnalysis, GlobalIndexes}
+import org.junit.After
 
-class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnalysis {
+class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
 
   import global._
   
-  var index: IndexLookup = EmptyIndex
+  val index = EmptyIndex
+  
   def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {
     ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map { ts => 
       (ts filter (_.pos != NoPosition) map conversion distinct) sortWith(_ < _) mkString ", "
     }
   }
   
-  def buildIndex(pro: FileSet) {
+  def buildIndex(pro: FileSet) = {
     
-    val cuIndexes = pro.trees map CompilationUnitIndex.apply
+    val trees = pro.sources map (x => addToCompiler(pro.fileName(x), x)) map (global.unitOfFile(_).body)
     
-    index = GlobalIndex(cuIndexes)
+    val cuIndexes = global.ask { () =>
+      trees map CompilationUnitIndex.apply
+    }
+    
+    GlobalIndex(cuIndexes)
   }
 
   def findReferences(pro: FileSet): List[String] = {
 
-    buildIndex(pro)
+    val index = buildIndex(pro)
               
-    val sym = pro.selection.selectedSymbols head
+    val sym = selection(this, pro).selectedSymbols head
     
-    aggregateFileNamesWithTrees(index.occurences(sym)) { symTree => 
+    aggregateFileNamesWithTrees(index.occurences(sym.asInstanceOf[global.Symbol]) /*2.9*/) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
       else 
@@ -43,11 +49,11 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
 
   def findOverrides(pro: FileSet): List[String] = {
 
-    buildIndex(pro)
+    val index = buildIndex(pro)
               
-    val sym = pro.selection.selectedSymbols head
+    val sym = selection(this, pro).selectedSymbols head
     
-    aggregateFileNamesWithTrees(index.overridesInClasses(sym) map index.declaration flatten) { symTree => 
+    aggregateFileNamesWithTrees(index.overridesInClasses(sym.asInstanceOf[global.Symbol] /*2.9*/) map index.declaration flatten) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
       else 
@@ -57,18 +63,18 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   def classHierarchy(pro: FileSet): List[String] = {
               
-    buildIndex(pro)
+    val index = buildIndex(pro)
 
-    val sym = pro.selection.selectedSymbols head
+    val sym = selection(this, pro).selectedSymbols head
         
-    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner) map index.declaration flatten) { sym => 
+    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner.asInstanceOf[global.Symbol] /*2.9*/) map index.declaration flatten) { sym => 
       sym.nameString +" on line "+ sym.pos.line
     }
   }
   
   def allDeclarations(pro: FileSet): List[String] = {
               
-    buildIndex(pro)
+    val index = buildIndex(pro)
         
     aggregateFileNamesWithTrees(index.allDeclarations() map (_._2) toList) { sym => 
       if(sym.nameString == "")
@@ -80,7 +86,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with TreeAnal
   
   def allSymbols(pro: FileSet): List[String] = {
               
-    buildIndex(pro)
+    val index = buildIndex(pro)
         
     List((index.allSymbols() map (_.toString) sortWith (_ < _)) mkString (", "))
   }
