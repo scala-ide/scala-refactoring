@@ -265,6 +265,9 @@
   <profiles>
     <profile>
       <id>release-ide-29</id>
+      <properties>
+        <scalac.options>-Ydependent-method-types</scalac.options>
+      </properties>
       <repositories>
         <repository>
           <id>scala-toolchain-scalaide-2.0</id>
