@@ -47,7 +47,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
   @Test
   def evidence = assertDependencies(
-    """""",
+    """scala.Some""",
     """
     trait Transformations {
     
@@ -586,7 +586,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
-  def importFromPackageObject29 = assertDependencies(
+  def importFromPackageObject = assertDependencies(
     """scala.collection.`package`.breakOut
        scala.this.Predef.Map
        scala.this.Predef.identity""",

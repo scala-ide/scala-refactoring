@@ -141,7 +141,7 @@ trait CompilationUnitDependencies {
           case t: This if isInTopLevelPackage(t.qual.toString) =>
             false
           case t: This => 
-            !t.pos.isRange
+            !t.pos.isOpaqueRange
           case _ => false
         }
       }
@@ -168,9 +168,12 @@ trait CompilationUnitDependencies {
                   
       // we don't need to add a dependency for method calls where the receiver
       // is explicit in the source code.
-      def isMethodCallFromExplicitReceiver(t: Select) = {
-        t.qualifier.pos.isRange && t.symbol.isMethod && 
-        !(t.qualifier.pos.sameRange(t.pos) && t.qualifier.pos.isTransparent)
+      def isMethodCallFromExplicitReceiver(t: Select) = t match {
+        case Select(qual, nme.apply) =>
+          t.qualifier.pos.isRange
+        case t =>
+          t.qualifier.pos.isRange && t.symbol.isMethod && 
+          !(t.qualifier.pos.sameRange(t.pos) && t.qualifier.pos.isTransparent)
       }
       
       def hasStableQualifier(t: Select) = {
@@ -229,7 +232,13 @@ trait CompilationUnitDependencies {
         // workaround for SI-5064
         case t @ Select(qual: This, _) if qual.pos.sameRange(t.pos) =>
           ()
-                  
+          
+        // workaround for SI-5064        
+        case t @ Select(qual: Select, nme.apply) if qual.pos.isTransparent && t.pos.isOpaqueRange =>
+          if(hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier)) {
+            addToResult(qual)
+          }
+          
         case t @ Select(qual, _) if t.pos.isOpaqueRange =>
           
           if (!isMethodCallFromExplicitReceiver(t)

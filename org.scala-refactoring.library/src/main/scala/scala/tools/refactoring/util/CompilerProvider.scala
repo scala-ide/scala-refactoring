@@ -96,11 +96,11 @@ trait CompilerProvider extends TreeCreationMethods {
         
     global.unitOfFile.values.foreach { cu =>
       global.removeUnitOf(cu.source)
-      global.getUnitOf(cu.source)
+      assert(global.getUnitOf(cu.source).isEmpty)
     }
-    
-    global.askReset
 
+    global.askReset
+    
     global.checkNoResponsesOutstanding
   }
 }

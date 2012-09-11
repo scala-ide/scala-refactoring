@@ -630,8 +630,8 @@ trait PimpedTrees {
         (NameTree(selector) setPos t.namePosition) :: Nil
       
       // This clause is a workaround for SI-5064
-      case t @ Select(qualifier, selector) if qualifier.pos.sameRange(t.pos) && qualifier.pos.isTransparent =>
-        (NameTree(selector) setPos t.namePosition) :: Nil
+//      case t @ Select(qualifier, selector) if qualifier.pos.sameRange(t.pos) && qualifier.pos.isTransparent =>
+//        (NameTree(selector) setPos t.namePosition) :: Nil
         
       case t @ Select(qualifier, selector) =>
         // FIXME: for-comprehensions result in incorrect NameTrees
