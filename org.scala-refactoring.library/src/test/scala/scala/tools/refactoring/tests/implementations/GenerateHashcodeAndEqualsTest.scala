@@ -5,11 +5,23 @@ import implementations.GenerateHashcodeAndEquals
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 import org.junit.Ignore
+import org.junit.After
+import scala.tools.refactoring.util.CompilerInstance
 
 class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
 
   outer =>
-
+    
+  // We are experiencing instable test runs, maybe it helps when we
+  // use a fresh compiler for each test case:
+  
+  override val global = (new CompilerInstance).compiler
+  
+  @After
+  def shutdownCompiler {
+    global.askShutdown
+  }
+    
   def generateHashcodeAndEquals(params: (Boolean, String => Boolean, Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new GenerateHashcodeAndEquals with SilentTracing {
       val global = outer.global
