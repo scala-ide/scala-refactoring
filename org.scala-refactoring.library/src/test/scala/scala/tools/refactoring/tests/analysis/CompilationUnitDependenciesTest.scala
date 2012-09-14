@@ -45,8 +45,28 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
     }
     """)
+
   @Test
-  def evidence = assertDependencies(
+  @ScalaVersion(matches="2.10")
+  def evidence210 = assertDependencies(
+    """scala.Some""",
+    """
+    trait Transformations {
+    
+      abstract class Transformation[X, Y] {
+        def apply(x: X): Option[Y]
+      }
+  
+      def allChildren[X <% (X ⇒ Y) ⇒ Y, Y](t: ⇒ Transformation[X, Y]) = new Transformation[X, Y] {
+        def apply(in: X): Option[Y] = {
+          Some(in(child => t(child) getOrElse (return None)))
+        }
+      }
+    }
+    """)
+  @Test
+  @ScalaVersion(matches="2.9.3")
+  def evidence293 = assertDependencies(
     """scala.Some""",
     """
     trait Transformations {
