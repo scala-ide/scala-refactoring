@@ -26,6 +26,6 @@ package object refactoring {
   def getSimpleClassName(o: Object): String = try {
     o.getClass.getSimpleName
   } catch {
-    case _: InternalError => o.getClass.getName
+    case _: InternalError | _: NoClassDefFoundError => o.getClass.getName
   }
 } 
