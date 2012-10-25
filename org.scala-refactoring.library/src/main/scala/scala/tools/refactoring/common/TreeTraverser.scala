@@ -92,6 +92,10 @@ trait TreeTraverser {
     
     def handleAnnotations(as: List[AnnotationInfo]) {
       
+      def isScalaVersion(version: String) = {
+        scala.util.Properties.versionString.contains(version)
+      }
+      
       if(isScalaVersion("2.9")) {
         as foreach { 
           case annotation =>

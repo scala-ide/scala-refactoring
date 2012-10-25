@@ -125,7 +125,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     package renameLazyVals
     class A {
       def print {
-        lazy val /*(*/a/*)*/ = 42
+        lazy val /*(*/a = 42/*)*/
         println(a)
       }
     }
@@ -134,7 +134,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     package renameLazyVals
     class A {
       def print {
-        lazy val /*(*/c/*)*/ = 42
+        lazy val /*(*/c = 42/*)*/
         println(c)
       }
     }

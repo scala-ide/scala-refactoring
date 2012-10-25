@@ -1113,8 +1113,11 @@ trait PimpedTrees {
     }
   }
   
-  def isScalaVersion(version: String) = {
-    scala.util.Properties.versionString.contains(version)
+  lazy val scalaVersion = {
+    val Version = "version (\\d+)\\.(\\d+)\\.(\\d+).*".r
+    scala.util.Properties.versionString match {
+      case Version(fst, snd, trd) => (fst.toInt, snd.toInt, trd.toInt)
+    }
   }
   
   def isClassTag(c: Constant): Boolean = {

@@ -35,8 +35,10 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
   def perform(selection: Selection, prepared: PreparationResult, newName: RefactoringParameters): Either[RefactoringError, List[Change]] = {
 
     trace("Selected tree is %s", prepared.selectedTree)
+
+    val sym = prepared.selectedTree.symbol
     
-    val occurences = index.occurences(prepared.selectedTree.symbol) 
+    val occurences = index.occurences(sym) 
     
     occurences foreach (s => trace("Symbol is referenced at %s (%s:%s, %s:%s)", 
         s, s.pos.source.file.name, s.pos.line, s.pos.start, s.pos.end))

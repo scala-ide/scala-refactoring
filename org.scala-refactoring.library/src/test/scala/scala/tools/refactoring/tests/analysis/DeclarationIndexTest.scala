@@ -266,7 +266,10 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       }
       """
     assertReferencesOfSelection("""x (85, 86)""", tree)
-    assertDeclarationOfSelection("""lazy <artifact> var x$lzy: Int = 5""", tree)
+    assertDeclarationOfSelection("""<stable> <accessor> lazy def x: Int = {
+  x$lzy = 5;
+  x$lzy
+}""", tree)
   }
 
   @ScalaVersion(matches="2.9")

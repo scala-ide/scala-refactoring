@@ -41,7 +41,7 @@ trait CompilationUnitIndexes {
           defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
         
         t.symbol match {
-          case ts: TermSymbol if ts.isLazy =>
+          case ts: TermSymbol if ts.isLazy && scalaVersion._2 < 11 =>
             add(ts.lazyAccessor)
           case _ =>
             add(s)
