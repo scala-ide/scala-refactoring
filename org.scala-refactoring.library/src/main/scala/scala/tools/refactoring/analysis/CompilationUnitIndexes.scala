@@ -40,8 +40,12 @@ trait CompilationUnitIndexes {
         def add(s: Symbol) = 
           defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
         
+        def isLowerScalaVersionThan2_10_1 = {
+          scalaVersion._2 < 10 || scalaVersion._2 == 10 && scalaVersion._3 == 0
+        }
+          
         t.symbol match {
-          case ts: TermSymbol if ts.isLazy && scalaVersion._2 < 11 =>
+          case ts: TermSymbol if ts.isLazy && isLowerScalaVersionThan2_10_1 =>
             add(ts.lazyAccessor)
           case _ =>
             add(s)
