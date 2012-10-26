@@ -237,7 +237,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       """)
   }
   
-  @ScalaVersion(matches="2.10")
+  @ScalaVersion(matches="2.10.0")
   @Test
   def referencesToLazyVal210() = {
     val tree =  """      
