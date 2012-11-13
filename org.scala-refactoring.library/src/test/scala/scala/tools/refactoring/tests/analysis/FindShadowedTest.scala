@@ -13,6 +13,7 @@ class FindShadowedTest extends TestHelper {
 
   import global._
   
+  @Ignore
   @Test
   def findSimpleShadowing() {
 
