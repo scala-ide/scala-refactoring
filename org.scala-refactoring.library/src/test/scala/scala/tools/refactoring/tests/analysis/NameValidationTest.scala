@@ -49,7 +49,10 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
   
   def nameAlreadyUsed(t: global.Tree, r: global.Tree): String => Boolean = {
     index = global.ask {() => GlobalIndex(r)}
-    s => !doesNameCollide(s, t.symbol).isEmpty
+    s => 
+      global.ask { () =>
+        !doesNameCollide(s, t.symbol).isEmpty
+      }
   }
 
   @Test

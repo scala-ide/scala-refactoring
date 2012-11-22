@@ -13,7 +13,7 @@ class UnusedImportsFinderTest extends TestHelper {
     
   def findUnusedImports(expected: String, src: String) {
     
-   val unuseds = {
+   val unuseds = global.ask { () =>
       new UnusedImportsFinder {
   
         val global = outer.global

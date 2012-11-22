@@ -32,7 +32,9 @@ class MarkOccurrencesTest extends TestHelper {
     val start = original.indexOf(startPattern) + startPattern.length
     val end   = original.indexOf(endPattern)
     
-    val (_, positions) = markOccurrences.occurrencesOf(tree.pos.source.file, start, end)
+    val (_, positions) = global.ask { () =>
+      markOccurrences.occurrencesOf(tree.pos.source.file, start, end)
+    }  
         
     val res = positions.foldLeft(original) {
       case (src, pos) =>

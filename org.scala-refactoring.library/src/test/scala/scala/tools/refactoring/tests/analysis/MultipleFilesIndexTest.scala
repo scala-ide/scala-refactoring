@@ -50,7 +50,11 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
               
     val sym = selection(this, pro).selectedSymbols head
     
-    aggregateFileNamesWithTrees(index.occurences(sym.asInstanceOf[global.Symbol]) /*2.9*/) { symTree => 
+    val occurrences = global.ask { () =>
+      index.occurences(sym.asInstanceOf[global.Symbol]) /*2.9*/
+    }
+    
+    aggregateFileNamesWithTrees(occurrences) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
       else 
@@ -64,7 +68,11 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
               
     val sym = selection(this, pro).selectedSymbols head
     
-    aggregateFileNamesWithTrees(index.overridesInClasses(sym.asInstanceOf[global.Symbol] /*2.9*/) map index.declaration flatten) { symTree => 
+    val overrides = global.ask { () =>
+      index.overridesInClasses(sym.asInstanceOf[global.Symbol]) /*2.9*/
+    }
+    
+    aggregateFileNamesWithTrees(overrides map index.declaration flatten) { symTree => 
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
       else 

@@ -48,7 +48,9 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   def assertReferencesOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
     
     def refs(s: Symbol): String = {
-       val ranges = index.references(s).toList filter (_.pos.isRange) sortBy(_.pos.start)
+       val ranges = global.ask { () =>
+         index.references(s).toList filter (_.pos.isRange) sortBy(_.pos.start)
+       }
        val strings = ranges map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
        strings mkString ", "
     }
