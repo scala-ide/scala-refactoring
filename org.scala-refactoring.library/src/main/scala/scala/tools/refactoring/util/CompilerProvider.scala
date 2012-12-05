@@ -36,9 +36,11 @@ class CompilerInstance {
         //throw new Exception(pos.source.file.name + pos.show + msg)
       }
     })
-  
-    new compiler.Run  
-    
+
+    compiler.ask { () =>
+      new compiler.Run
+    }
+
     compiler
   }
 }
