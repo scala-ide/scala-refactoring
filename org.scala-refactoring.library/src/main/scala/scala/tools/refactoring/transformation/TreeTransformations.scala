@@ -81,7 +81,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
 
   implicit def replacesTree[T <: Tree](t1: T) = new TreeReplacesOtherTreeViaPosition(t1)
     
-  implicit def abstractFileToTree(file: tools.nsc.io.AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
+  def abstractFileToTree(file: tools.nsc.io.AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
   
   /**
    * Replace the first sequence of elements with another sequence.
@@ -115,15 +115,6 @@ trait TreeTransformations extends Transformations with TreeFactory {
         splitImports(p, stats)
     }
   }
-  
-  val removeAuxiliaryTrees = ↓(transform {
-
-    case t: Tree if (t.pos == NoPosition || t.pos.isRange) => t
-    
-    case t: ValDef => emptyValDef
-    
-    case _ => EmptyTree
-  })
   
   def shallowDuplicate[T <: Tree](orig: T): T = {
     new Transformer {

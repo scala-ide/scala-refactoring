@@ -534,7 +534,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
       
       tpt match {
-        case Select(_, tpnme.REPEATED_PARAM_CLASS_NAME) => 
+        case Select(_, tpnme.REPEATED_PARAM_CLASS_NAME | tpnme.BYNAME_PARAM_CLASS_NAME) => 
           l ++ p(args.head) ++ r
         case _ if tpt.isEmpty && args.size == 1 =>
           l ++ p(args.head) ++ r

@@ -80,7 +80,7 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
       insertionPoint map refineInsertionPoint
     }
     
-    val insertionPoint = findBlockInsertionPosition(selection.file, selectedExpression) getOrElse {
+    val insertionPoint = findBlockInsertionPosition(selection.root, selectedExpression) getOrElse {
       return Left(RefactoringError("No insertion point found."))
     }
         

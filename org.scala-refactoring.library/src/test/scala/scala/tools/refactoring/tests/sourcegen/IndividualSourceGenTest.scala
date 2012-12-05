@@ -35,11 +35,11 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
     
     val newDefDef = originalDefDef.copy()
         
-    assertEquals(exp1, generate(removeAuxiliaryTrees apply newDefDef get, sourceFile = Some(originalDefDef.pos.source)).asText)
+    assertEquals(exp1, generate(newDefDef, sourceFile = Some(originalDefDef.pos.source)).asText)
 
     newDefDef.setPos(originalDefDef.pos)
     
-    assertEquals(exp2, generate(removeAuxiliaryTrees apply newDefDef get, sourceFile = Some(originalDefDef.pos.source)).asText)    
+    assertEquals(exp2, generate(newDefDef, sourceFile = Some(originalDefDef.pos.source)).asText)    
   }
   
   @Test
