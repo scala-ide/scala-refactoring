@@ -259,7 +259,7 @@ trait TreeFactory {
    *  someExpr becomes someExpr fun (param => body)
    * 
    */
-  def mkFunctionCallWithFunctionArgument(selector: Tree, fun: String, param: Name, body: Tree) = {
+  def mkFunctionCallWithFunctionArgument(selector: Tree, fun: String, param: TermName, body: Tree) = {
     Apply(
       Select(selector, newTermName(fun)), 
       List(Function(List(ValDef(Modifiers(Flags.PARAM), param, EmptyTree, EmptyTree)), body))

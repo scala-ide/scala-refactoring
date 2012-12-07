@@ -47,7 +47,7 @@ abstract class EliminateMatch extends MultiStageRefactoring with common.TreeExtr
      * in the case body. There are two possible kinds of case bodies: a simple Apply
      * call and a Block that has the Some at its end.
      */
-    def replaceWithMap(mtch: Match, param: Name, someCaseBody: Tree) = {
+    def replaceWithMap(mtch: Match, param: TermName, someCaseBody: Tree) = {
       transform {
         case `mtch` =>
           someCaseBody match {
@@ -63,7 +63,7 @@ abstract class EliminateMatch extends MultiStageRefactoring with common.TreeExtr
       }
     }
     
-    def replaceWithCall(fun: String, mtch: Match, param: Name, body: Tree) = {
+    def replaceWithCall(fun: String, mtch: Match, param: TermName, body: Tree) = {
       transform {
         case `mtch` =>
           mkFunctionCallWithFunctionArgument(mtch.selector, fun, param, body)

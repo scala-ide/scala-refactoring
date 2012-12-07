@@ -44,7 +44,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
         val params = constructor.vparamss.map(_ map (p => p.symbol))
         val select: Tree = Select(New(Ident(name)), constructor.name)
         val constructorCall = constructor.vparamss.foldLeft(select)((fun, args) => Apply(fun, args map (p => Ident(p.name))))
-        val newBody = makeApply(prep.name, constructor) :: body
+        val newBody = makeApply(prep.name.toTermName, constructor) :: body
         ModuleDef(mods, name, Template(parents, self, newBody)) replaces m
       }
     }
@@ -56,8 +56,8 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
     }
 
     lazy val companionObject = {
-      val impl = Template(Nil, emptyValDef, List(makeApply(prep.name, constructor)))
-      val companionObject = ModuleDef(NoMods, prep.name, impl)
+      val impl = Template(Nil, emptyValDef, List(makeApply(prep.name.toTermName, constructor)))
+      val companionObject = ModuleDef(NoMods, prep.name.toTermName, impl)
       companionObject
     }
 

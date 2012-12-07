@@ -128,14 +128,14 @@ trait TreeExtractors {
     }
     
     object SomeCaseDef {
-      def unapply(t: Tree): Option[(Name, Tree)] = t match {
+      def unapply(t: Tree): Option[(TermName, Tree)] = t match {
         case CaseDef(Apply(tt: TypeTree, bind :: _), EmptyTree, body) =>
     
           tt.original match {
             case Select(Ident(Names.scala), Names.Some) =>           
               bind match {
-                case Bind(name, Ident(nme.WILDCARD)) => Some(Pair(name, body))
-                case Ident(name)   => Some(Pair(name, body))
+                case Bind(name: TermName, Ident(nme.WILDCARD)) => Some(Pair(name, body))
+                case Ident(name: TermName)   => Some(Pair(name, body))
                 case _ => None
               }
             case _ => None
@@ -144,7 +144,7 @@ trait TreeExtractors {
       }
     }
     
-    def unapply(ts: List[Tree]): Option[Triple[Name, Tree, Tree]] = {
+    def unapply(ts: List[Tree]): Option[Triple[TermName, Tree, Tree]] = {
       
       ts match {
         case  SomeCaseDef(name, someBody) :: NoneCaseDef(noneBody) :: Nil =>
