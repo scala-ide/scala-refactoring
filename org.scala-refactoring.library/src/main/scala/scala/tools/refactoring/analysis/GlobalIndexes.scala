@@ -82,8 +82,17 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
         decs ::: refs
         
       } filter {
+        
         // see SI-6141
         case t: Ident => t.pos.isRange
+        
+        // Calls to super.xy are This trees with a ClassSymbol, but we don't
+        // want to see them when looking for occurrences of the ClassSymbol, 
+        // so we filter them here.
+        case t: This if t.pos.isRange => 
+          val src = t.pos.source.content.slice(t.pos.start, t.pos.end).mkString
+          src != "super"
+        
         case t => t.pos.isOpaqueRange
       } distinct
     }

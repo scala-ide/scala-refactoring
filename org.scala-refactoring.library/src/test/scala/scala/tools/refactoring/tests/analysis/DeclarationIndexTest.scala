@@ -322,5 +322,16 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       }
       """)
   }
+  
+  @Test
+  def referencesToClassWithSuper() = {
+    assertReferencesOfSelection("""""", """      
+      class T {
+        /*(*/private abstract class MySource extends Source {
+          override def hasNext = super.hasNext
+        }/*)*/
+      }
+      """)
+  }
 }
 
