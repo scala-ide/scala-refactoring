@@ -23,9 +23,11 @@ abstract public class ScalaVersionTestRule {
       ScalaVersion onlyOn = meth.getAnnotation(ScalaVersion.class);
 
       if (onlyOn != null) {
-        if (Properties.versionString().contains(onlyOn.matches())) {
+        if (!onlyOn.doesNotMatch().isEmpty() && Properties.versionString().contains(onlyOn.doesNotMatch())) {
+          return new EmptyStatement();
+        } else if (Properties.versionString().contains(onlyOn.matches())) {
           return stmt;
-        } else {
+        } else{
           return new EmptyStatement();
         }
       } else {

@@ -5,5 +5,6 @@ import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ScalaVersion {
-  String matches();
+  String matches() default "";
+  String doesNotMatch() default "";
 }

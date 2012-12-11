@@ -37,6 +37,7 @@ class AddImportStatementTest extends TestHelper {
     """)
   }
   
+  @ScalaVersion(doesNotMatch="2.9")
   @Test
   def importAnnotationOnClassWithoutPackage = {
     addImport(("scala.annotation.unchecked", "uncheckedStable"), 
@@ -50,6 +51,7 @@ class T
     """)
   }
   
+  @ScalaVersion(doesNotMatch="2.9")
   @Test
   def importAnnotationOnObjectWithoutPackage = {
     addImport(("scala.annotation.unchecked", "uncheckedStable"), 
