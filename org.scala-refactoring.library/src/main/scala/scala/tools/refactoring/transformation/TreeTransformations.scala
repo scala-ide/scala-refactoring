@@ -137,12 +137,32 @@ trait TreeTransformations extends Transformations with TreeFactory {
 
     import global._
 
+    def importTrees = {
+      val SplitAtDot = "(.*)\\.(.*?)".r
+      importsToAdd.map {
+        case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
+      }.toList      
+    }
+    
     val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+      
+      // For an empty PackageDef, with no exiting imports but with an Impl that has an annotation, we need to
+      // modify positions so that the annotation, which is not in the AST, doesn't get assigned to the PackageDef
+      // but to the Impl
+      case (p @ PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _), Nil, others @ (impl :: _)) if !impl.symbol.annotations.isEmpty =>
+        
+        // The `pid` is invisible anyway, but by erasing its position we make sure 
+        // it doesn't get any layout associated
+        val ignoredPid = p.pid setPos NoPosition
+        
+        // The empty PackageDef starts at the position of its first child, so the annotation of the Impl
+        // is outside its parent's range. The Source Generator can't handle this, so we let the PackageDef
+        // start at position 0 so that the annotation gets associated to the child.
+        val pos = p.pos withStart 0
+        
+        p copy (pid = ignoredPid, stats = (importTrees ::: others)) setPos pos
+      
       case (p, imports, others) =>
-        val SplitAtDot = "(.*)\\.(.*?)".r
-        val importTrees = importsToAdd.map {
-          case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
-        }.toList
         p copy (stats = (imports ::: importTrees ::: others)) replaces p
     })
 

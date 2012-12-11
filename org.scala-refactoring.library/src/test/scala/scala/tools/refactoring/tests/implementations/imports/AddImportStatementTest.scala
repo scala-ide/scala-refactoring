@@ -38,6 +38,32 @@ class AddImportStatementTest extends TestHelper {
   }
   
   @Test
+  def importAnnotationOnClassWithoutPackage = {
+    addImport(("scala.annotation.unchecked", "uncheckedStable"), 
+    """
+      @uncheckedStable
+      class T
+    """,
+    """import scala.annotation.unchecked.uncheckedStable
+@uncheckedStable
+class T
+    """)
+  }
+  
+  @Test
+  def importAnnotationOnObjectWithoutPackage = {
+    addImport(("scala.annotation.unchecked", "uncheckedStable"), 
+    """
+      @uncheckedStable
+      object T
+    """,
+    """import scala.annotation.unchecked.uncheckedStable
+@uncheckedStable
+object T
+    """)
+  }
+  
+  @Test
   def importWithPackageObject = {
     addImport(("java.util", "ArrayList"), """
       // Copyright blabla

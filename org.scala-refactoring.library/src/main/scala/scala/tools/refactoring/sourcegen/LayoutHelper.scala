@@ -94,6 +94,13 @@ trait LayoutHelper {
     
     val (left, right) = (fixValDefPosition(parent), fixValDefPosition(child)) match {
       
+      // Empty PackageDefs shouldn't get any layout assigned if the impl has an annotation (the
+      // annotation isn't represented in the AST and is treated like any other layout), so we
+      // assign all the layout from the beginning of the file to the child.
+      // @see TreeTransformations#addImportTransformation
+      case (p @ PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _), c: ImplDef) if !c.symbol.annotations.isEmpty =>
+        NoLayout → layout(0, c.pos.start)
+        
       case (p: PackageDef, c) =>
         layout(p.pos.start, c.pos.start) → NoLayout
         
