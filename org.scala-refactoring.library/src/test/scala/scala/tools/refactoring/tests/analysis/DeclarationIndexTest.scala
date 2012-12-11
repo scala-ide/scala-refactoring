@@ -5,11 +5,11 @@
 package scala.tools.refactoring
 package tests.analysis
 
-import tests.util.TestHelper
+import tests.util._
 import org.junit.Assert._
 import analysis._
 
-class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalysis {
+class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalysis with FreshCompilerForeachTest {
 
   import global._
   

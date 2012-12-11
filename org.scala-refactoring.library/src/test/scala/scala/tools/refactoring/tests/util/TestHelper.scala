@@ -25,9 +25,6 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
-
-  @Before
-  def cleanup() = resetPresentationCompiler()
     
   /**
    * A project to test multiple compilation units. Add all 

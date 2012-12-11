@@ -5,23 +5,10 @@
 package scala.tools.refactoring
 package tests.analysis
 
-import tests.util.TestHelper
-import org.junit.Assert._
-import analysis.{TreeAnalysis, GlobalIndexes}
-import org.junit.After
-import scala.tools.refactoring.util.CompilerInstance
+import analysis.GlobalIndexes
+import tests.util._
 
-class MultipleFilesIndexTest extends TestHelper with GlobalIndexes {
-
-  // We are experiencing instable test runs, maybe it helps when we
-  // use a fresh compiler for each test case:
-  
-  override val global = (new CompilerInstance).compiler
-  
-  @After
-  def shutdownCompiler {
-    global.askShutdown
-  }
+class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCompilerForeachTest {
   
   import global._
   

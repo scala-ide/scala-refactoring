@@ -7,10 +7,11 @@ package tests.analysis
 
 import analysis.CompilationUnitDependencies
 import org.junit.Assert.assertEquals
-import tests.util.TestHelper
+import tests.util._
 import org.junit.After
+import common.TreeExtractors
 
-class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDependencies with common.TreeExtractors {
+class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDependencies with TreeExtractors with FreshCompilerForeachTest {
 
   import global._
   
