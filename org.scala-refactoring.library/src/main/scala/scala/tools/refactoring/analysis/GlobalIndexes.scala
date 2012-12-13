@@ -6,6 +6,8 @@ package scala.tools.refactoring
 package analysis
 
 import common.PimpedTrees
+import collection.mutable.{ListBuffer, HashSet}
+import annotation.tailrec
 
 /**
  * Provides an implementation of the Indexes.IndexLookup trait
@@ -61,12 +63,24 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
         cu.root
       }).distinct
     }
-    
+
     def expandSymbol(s: global.Symbol): List[global.Symbol] = {
-      def expandSymbols(ss: List[Symbol]) = ss flatMap expand filter (_ != NoSymbol) distinct
-            
+
+      @tailrec
+      def expandSymbols(res:ListBuffer[Symbol], seen: HashSet[Symbol], ss: List[Symbol], n:Int):List[Symbol] =
+        if (n == 0) res.toList else{
+          val nuS = ss flatMap expand filterNot (x => seen(x) || x == NoSymbol)
+          if (nuS.isEmpty) res.toList else {
+            nuS foreach { s =>
+              seen += s
+              res += s
+              }
+            expandSymbols(res, seen, nuS, n-1)
+            }
+          }
+
       // we should probably do this until a fixpoint is reached. but for now, three times seems to be enough
-      expandSymbols(expandSymbols(expandSymbols(List(s))))
+      expandSymbols(ListBuffer(s), HashSet(s), List(s), 3)
     }
       
     def occurences(s: global.Symbol) = {
