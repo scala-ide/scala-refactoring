@@ -42,7 +42,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
     case t @ DefDef(_, _, _, _, _, rhs) => t copy (rhs = new Block(Nil, rhs)) setPos t.pos
   }
     
-  def transformAndFind(trans: Transformation[Tree, Tree], src: String) = {
+  def transformAndFind(trans: Transformation[Tree, Tree], src: String) = global.ask { () =>
     
     def describe(t: Tree) = if(t.pos == NoPosition) t.getClass.getSimpleName else t.getClass.getSimpleName +"("+ t.pos.line +")"
 
