@@ -19,6 +19,8 @@ import scala.tools.refactoring.sourcegen.Layout
 /**
  * A collection of implicit conversions for ASTs and other 
  * helper functions that work on trees.
+ * 
+ * @TODO try to make this trait smaller by splitting it into smaller parts
  */
 trait PimpedTrees {
   
@@ -115,8 +117,8 @@ trait PimpedTrees {
    * name, which is tricky for Selects.
    */
   class TreeMethodsForPositions(t: Tree) {
-    def hasExistingCode = t != null && !t.isEmpty && t.pos.isRange
-    def hasNoCode = t != null && !t.isEmpty && t.pos == NoPosition
+    def hasExistingCode = t != null && !isEmptyTree(t) && t.pos.isRange
+    def hasNoCode = t != null && !isEmptyTree(t) && t.pos == NoPosition
     def samePos(p: Position): Boolean = t.pos.sameRange(p) && /*t.pos.point == p.point &&*/ t.pos.source == p.source && t.pos.isTransparent == p.isTransparent
     def samePos(o: Tree): Boolean = samePos(o.pos)
     def samePosAndType(o: Tree): Boolean = {
@@ -548,13 +550,13 @@ trait PimpedTrees {
             tpl.parents
           case params => 
             SuperConstructorCall(tpl.parents.head, params) :: tpl.parents.tail
-        }) filterNot (_.isEmpty) filter {
+        }) filterNot (isEmptyTree) filter {
           // objects are always serializable, but the Serializable parent's position is NoPosition
           case t: TypeTree if t.pos == NoPosition && t.nameString == "Serializable" => false
           case t => t.pos.isRange || t.pos == NoPosition
         }
         
-        val self = if(tpl.self.isEmpty) EmptyTree else {
+        val self = if(isEmptyTree(tpl.self)) EmptyTree else {
           
           if(tpl.pos.isRange) {
 
@@ -807,7 +809,7 @@ trait PimpedTrees {
     ((t: Tree) => findSibling(t, originalParentOf(t), 1, 0)) → ((t: Tree) => findSibling(t, originalParentOf(t), 0, 1))
   }
   
-  def keepTree(t: Tree) = !t.isEmpty && (t.pos.isRange || t.pos == NoPosition)
+  def keepTree(t: Tree) = !isEmptyTree(t) && (t.pos.isRange || t.pos == NoPosition)
   
   /**
    * Represent a Name as a tree, including its position.
@@ -988,7 +990,7 @@ trait PimpedTrees {
     def unapply(t: Block) = {
 
       def fixNamedArgumentCall(block: Block): Tree = block match {
-        case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if apply.pos.isRange && emptyArgs.size == stats.size && emptyArgs.forall(i => i.isEmpty || !i.pos.isRange) =>
+        case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if apply.pos.isRange && emptyArgs.size == stats.size && emptyArgs.forall(i => isEmptyTree(i) || !i.pos.isRange) =>
         
           val allValDefs = stats forall {
             case t: ValDef => t.pos.isRange && t.pos.start > apply.pos.start
@@ -1125,6 +1127,14 @@ trait PimpedTrees {
     // On 2.9  c.tag == ClassTag
     c.tpe.toString.matches("(java\\.lang\\.)?Class\\[.*")
   }
+  
+  /**
+   * Returns whether the tree is considered empty. 
+   * 
+   * Prior to Scala 2.10.1 it was sufficient to check Tree#isEmpty,
+   * but now we also need to check if the tree is equal to emptyValDef.
+   */
+  def isEmptyTree(t: Tree): Boolean = t.eq(emptyValDef) || t.isEmpty
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
