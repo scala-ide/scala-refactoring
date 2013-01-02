@@ -18,7 +18,7 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   import global._
   
   def generateText(t: Tree): String = global.ask { () =>
-    generate(t, sourceFile = Some(t.pos.source)).asText
+    createText(t, sourceFile = Some(t.pos.source))
   }
   
   implicit def treeToPrettyPrint(original: Tree) = new {

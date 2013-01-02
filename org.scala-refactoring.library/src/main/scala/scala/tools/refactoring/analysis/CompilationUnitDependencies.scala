@@ -180,9 +180,15 @@ trait CompilationUnitDependencies {
         t.qualifier.symbol != null && (!t.qualifier.symbol.isTerm || t.qualifier.symbol.isStable)
       }
       
-      override def traverse(root: Tree) = root match {
+      val language = newTermName("language")
+      
+      override def traverse(tree: Tree) = tree match {
 
-        case Import(_, _) => ()
+        // Always add the SIP 18 language imports as required until we can handle them properly
+        case Import(select @ Select(Ident(nme.scala_), `language`), feature) => 
+          feature foreach (selector => addToResult(Select(select, selector.name)))
+          
+        case Import(_, _) => () 
 
         case Select(Ident(Names.scala), _) => ()
         
@@ -196,7 +202,7 @@ trait CompilationUnitDependencies {
               handleAnnotations(primaryConstructor.symbol.annotations)
           }
           
-          super.traverse(root)
+          super.traverse(tree)
         
         case t : ApplyImplicitView =>
           
@@ -271,11 +277,11 @@ trait CompilationUnitDependencies {
             case select: Select =>
               traverse(select)
             case _ =>
-              super.traverse(root)
+              super.traverse(tree)
           }
 
         case _ =>
-          super.traverse(root)
+          super.traverse(tree)
       }
     }
 

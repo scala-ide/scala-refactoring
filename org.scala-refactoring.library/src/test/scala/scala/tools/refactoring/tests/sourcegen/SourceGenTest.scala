@@ -17,7 +17,9 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   
   import global._
     
-  def generateText(t: Tree): String = createText(t, sourceFile = Some(t.pos.source))
+  def generateText(t: Tree): String = global.ask { () =>
+    createText(t, sourceFile = Some(t.pos.source))
+  }
   
   val reverseBody = transform {
     case t: Template => t.copy(body = t.body.reverse) setPos t.pos

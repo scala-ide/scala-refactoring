@@ -943,4 +943,46 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     class Bar
     """
   } applyRefactoring organize
+
+  @Test
+  @ScalaVersion(doesNotMatch="2.9")
+  def ignoreScalaLanguageImports = new FileSet {
+    """
+    package ignoreScalaLanguageImports
+    
+    import scala.language.reflectiveCalls
+    
+    object Bar {
+    }
+    """ becomes
+    """
+    package ignoreScalaLanguageImports
+    
+    import scala.language.reflectiveCalls
+    
+    object Bar {
+    }
+    """
+  } applyRefactoring organize
+
+  @Test
+  @ScalaVersion(doesNotMatch="2.9")
+  def ignoreLanguageImports = new FileSet {
+    """
+    package ignoreScalaLanguageImports
+    
+    import language.reflectiveCalls
+    
+    object Bar {
+    }
+    """ becomes
+    """
+    package ignoreScalaLanguageImports
+    
+    import scala.language.reflectiveCalls
+    
+    object Bar {
+    }
+    """
+  } applyRefactoring organize
 }
