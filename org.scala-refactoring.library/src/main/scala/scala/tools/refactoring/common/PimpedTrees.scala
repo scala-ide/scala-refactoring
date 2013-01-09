@@ -175,11 +175,18 @@ trait PimpedTrees {
           case ValDef(_, _, _, Match(_, CaseDef(apply: Apply, _, _) :: Nil)) if hasSingleBindWithTransparentPosition(apply.args) =>
             val b = findAllBinds(apply.args).head
             b.pos withEnd b.namePosition.end
+          // this is what a `lazy val Pattern(lazy) = ..` is translated to from 2.10.1 onwards
+          case DefDef(_, _, _, _, _, Block(List(Assign(_, Match(_, CaseDef(apply: Apply, _, _) :: Nil))), _)) if hasSingleBindWithTransparentPosition(apply.args) =>
+            val b = findAllBinds(apply.args).head
+            b.pos withEnd b.namePosition.end
+          case DefDef(_, _, _, _, _, Block(List(Assign(_, Match(_, CaseDef(unapply: Apply, _, _) :: Nil))), _)) if hasSingleBindWithTransparentPosition(unapply.args) =>
+            val b = findAllBinds(unapply.args).head
+            b.pos withEnd b.namePosition.end
           case t: ValOrDefDef =>
             
             val name = t.symbol match {
               case NoSymbol => t.name.toString.trim
-              case ts: TermSymbol if ts.isLazy => ts.lazyAccessor.nameString
+              case ts: TermSymbol if ts.isLazy && ts.isMutable => ts.lazyAccessor.nameString
               case _ => t.symbol.nameString
             }
             
