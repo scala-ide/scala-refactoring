@@ -21,10 +21,10 @@
     </license>
   </licenses>
   <scm>
-    <connection>scm:git:git://git.assembla.com/scala-refactoring.git</connection>
-    <developerConnection>scm:git:git@git.assembla.com:scala-refactoring.git</developerConnection>
+    <connection>scm:git:https://github.com/scala-ide/scala-refactoring.git</connection>
+    <developerConnection>scm:git:git@github.com:scala-ide/scala-refactoring.git</developerConnection>
     <tag>master</tag>
-    <url>http://scala-ide-portfolio.assembla.com/spaces/scala-refactoring/wiki</url>
+    <url>https://github.com/scala-ide/scala-refactoring</url>
   </scm>
   <developers>
     <developer>
@@ -35,6 +35,7 @@
   </developers>
   <properties>
     <scala.version>2.9.2</scala.version>
+    <version.suffix>2_09</version.suffix>
     <tycho.version>0.12.0</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
@@ -86,40 +87,6 @@
         <configuration>
           <resolver>p2</resolver>
           <pomDependencies>consider</pomDependencies>
-        </configuration>
-      </plugin>
-      <!-- git hash extractor -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <version>1.1</version>
-      </plugin>
-      <plugin>
-        <!-- plugin used to extract the git hash and store it in ${buildNumber} -->
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>validate</phase>
-            <goals>
-              <goal>create</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <doCheck>false</doCheck>
-          <doUpdate>false</doUpdate>
-          <shortRevisionLength>7</shortRevisionLength>
-        </configuration>
-      </plugin>
-      <!-- for setting a better qualifier -->
-      <plugin>
-        <groupId>org.eclipse.tycho</groupId>
-        <artifactId>tycho-packaging-plugin</artifactId>
-        <version>${tycho.version}</version>
-        <configuration>
-          <format>yyyyMMddHHmm'-${buildNumber}'</format>
-          <archiveSite>true</archiveSite>
         </configuration>
       </plugin>
       <plugin>
@@ -221,6 +188,35 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <!-- plugin used to extract the git hash and store it in ${buildNumber} -->
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>1.2</version>
+        <executions>
+          <execution>
+            <phase>validate</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <doCheck>false</doCheck>
+          <doUpdate>false</doUpdate>
+          <shortRevisionLength>7</shortRevisionLength>
+        </configuration>
+      </plugin>
+      <plugin>
+        <!-- create a better version number -->
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-packaging-plugin</artifactId>
+	<version>${tycho.version}</version>
+        <configuration>
+          <format>'${version.suffix}-'yyyyMMddHHmm'-${buildNumber}'</format>
+          <archiveSite>true</archiveSite>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <repositories>
@@ -290,6 +286,7 @@
       <id>release-ide-29</id>
       <properties>
         <scalac.options>-Ydependent-method-types</scalac.options>
+        <version.suffix>2_09</version.suffix>
       </properties>
       <repositories>
         <repository>
@@ -302,6 +299,9 @@
     </profile>
     <profile>
       <id>release-ide-210</id>
+      <properties>
+        <version.suffix>2_10</version.suffix>
+      </properties>
       <repositories>
         <repository>
           <id>scala-toolchain-scalaide-2.0</id>
@@ -313,6 +313,9 @@
     </profile>
     <profile>
       <id>release-ide-211</id>
+      <properties>
+        <version.suffix>2_11</version.suffix>
+      </properties>
       <repositories>
         <repository>
           <id>scala-toolchain-scalaide-2.0</id>
@@ -326,6 +329,7 @@
       <id>scala-2.9.x</id>
       <properties>
         <scalac.options>-Ydependent-method-types</scalac.options>
+        <version.suffix>2_09</version.suffix>
       </properties>
       <repositories>
         <repository>
@@ -338,6 +342,9 @@
     </profile>
     <profile>
       <id>scala-2.10.x</id>
+      <properties>
+        <version.suffix>2_10</version.suffix>
+      </properties>
       <repositories>
         <repository>
           <id>scala-toolchain-2.10.x</id>
@@ -349,6 +356,9 @@
     </profile>
     <profile>
       <id>scala-2.11.x</id>
+      <properties>
+        <version.suffix>2_11</version.suffix>
+      </properties>
       <repositories>
         <repository>
           <id>scala-toolchain-2.11.x</id>
@@ -360,6 +370,9 @@
     </profile>
     <profile>
       <id>scala-virtualized-trunk</id>
+      <properties>
+        <version.suffix>2_10</version.suffix>
+      </properties>
       <activation>
         <property>
           <name>scala.version</name>
