@@ -36,7 +36,7 @@
   <properties>
     <scala.version>2.9.2</scala.version>
     <version.suffix>2_09</version.suffix>
-    <tycho.version>0.12.0</tycho.version>
+    <tycho.version>0.15.0</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
   </properties>
@@ -209,7 +209,7 @@
     <repository>
       <id>helios</id>
       <layout>p2</layout>
-      <url>http://download.eclipse.org/releases/helios</url>
+      <url>http://download.eclipse.org/releases/indigo</url>
     </repository>
     <repository>
       <id>codehaus-snapshots</id>
