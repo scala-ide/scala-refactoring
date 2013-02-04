@@ -233,18 +233,6 @@
   </repositories>
   <pluginRepositories>
     <pluginRepository>
-      <id>org.eclipse.tycho</id>
-      <name>Tycho snapshot repository</name>
-      <url>https://repository.sonatype.org/content/repositories/snapshots</url>
-    </pluginRepository>
-    <pluginRepository>
-      <id>undercover-snaphost</id>
-      <url>http://undercover.googlecode.com/svn/maven/snapshot-repository</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </pluginRepository>
-    <pluginRepository>
       <id>sonatype.release</id>
       <name>Sonatype maven release repository</name>
       <url>https://oss.sonatype.org/content/repositories/releases/</url>
@@ -254,6 +242,18 @@
       <id>sonatype.snapshot</id>
       <name>Sonatype maven snapshot repository</name>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>org.eclipse.tycho</id>
+      <name>Tycho snapshot repository</name>
+      <url>https://repository.sonatype.org/content/repositories/snapshots</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>undercover-snapshot</id>
+      <url>http://undercover.googlecode.com/svn/maven/snapshot-repository</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
     </pluginRepository>
   </pluginRepositories>
   <reporting>
