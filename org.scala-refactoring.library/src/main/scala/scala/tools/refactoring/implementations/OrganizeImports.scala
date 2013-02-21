@@ -300,6 +300,53 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       newImports ::: trees
     }
   }
+
+  case class CollapseSelectorsToWildcard(maxIndividualImports: Int = 2, exclude: Set[String] = Set()) extends Participant {
+    def apply(trees: List[Import]) = {
+
+      // Don't collapse if newly imported names collide with names currently
+      // imported by wildcards.
+      val wildcardImportedNames = collection.mutable.HashSet[Name]()
+      wildcardImportedNames ++= getWildcardImportedNames(trees)
+
+      trees.map {
+        case imp @ Import(exp, selectors) if selectors.size > maxIndividualImports &&
+          !exclude.contains(asSelectorString(exp)) &&
+          !selectors.exists(wildcardImport) &&
+          !selectors.exists(renames) &&
+          canSafelyCollapse(imp, wildcardImportedNames) =>
+          // This replacement causes previously explicitly imported names to be imported,
+          // which lowers their precedence. Subsequent wildcard imports should not collide
+          // with these.
+          wildcardImportedNames ++= selectors.collect {
+            case ImportSelector(name, _, _, _) if name != nme.WILDCARD => name
+          }
+          imp.copy(selectors = List(ImportSelector(nme.WILDCARD, -1, nme.WILDCARD, -1)))
+        case imp =>
+          imp
+      }
+    }
+
+    def getWildcardImportedNames(trees: List[Import]) = {
+      trees flatMap {
+        case Import(exp, selectors) if selectors.exists(wildcardImport) =>
+          val all = exp.tpe.members.map(_.name).toSet
+          val explicit = selectors.collect {
+            case ImportSelector(name, _, _, _) if name != nme.WILDCARD => name
+          }.toSet
+          all filterNot explicit.contains
+        case _ => Nil
+      }
+    }
+
+    def canSafelyCollapse(imp: Import, wildcardImportedNames: collection.Set[Name]) = {
+      val importedSymbolNames = imp.selectors.map(_.name)
+      val newSymbols = imp.expr.tpe.members.filterNot(symbol => importedSymbolNames.contains(symbol.name))
+      val newNames = newSymbols.map(_.name)
+
+      !newNames.exists(wildcardImportedNames.contains) && !newSymbols.exists(_.isImplicit)
+    }
+  }
     
   def DefaultOptions = List(CollapseImports, SimplifyWildcards, SortImportSelectors, SortImports)
   
