@@ -184,6 +184,38 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
+  @ScalaVersion(matches="2.10.0")
+  def switchAnnotation210 = assertDependencies(
+    """Integer.parseInt
+       java.this.lang.Integer
+       scala.annotation.switch""",
+    """
+      import scala.annotation._
+      object ASwitch {
+        val x = (Integer.parseInt("5"): @switch) match {
+          case 5 => true
+          case 6 => false
+        }
+      }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.10.1")
+  def switchAnnotation2101 = assertDependencies(
+    """java.this.lang.Integer
+       scala.annotation.switch""",
+    """
+      import scala.annotation._
+      object ASwitch {
+        val x = (Integer.parseInt("5"): @switch) match {
+          case 5 => true
+          case 6 => false
+        }
+      }
+      """)
+      
+  @Test
+  @ScalaVersion(matches="2.11")
   def switchAnnotation = assertDependencies(
     """Integer.parseInt
        java.this.lang.Integer
