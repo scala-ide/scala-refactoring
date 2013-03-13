@@ -217,8 +217,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   @Test
   @ScalaVersion(matches="2.11")
   def switchAnnotation = assertDependencies(
-    """Integer.parseInt
-       java.this.lang.Integer
+    """java.this.lang.Integer
        scala.annotation.switch""",
     """
       import scala.annotation._
