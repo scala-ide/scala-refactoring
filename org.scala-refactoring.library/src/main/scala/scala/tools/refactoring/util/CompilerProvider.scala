@@ -6,9 +6,12 @@ package scala.tools.refactoring
 package util
 
 import java.io.File
-import scala.tools.nsc.interactive.{Response, Global}
+import scala.tools.nsc.interactive.Response
+import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.io.AbstractFile
-import scala.tools.nsc.util.{SourceFile, Position, BatchSourceFile}
+import scala.tools.nsc.util.SourceFile
+import scala.tools.nsc.util.Position
+import scala.tools.nsc.util.BatchSourceFile
 import scala.tools.nsc.Settings
 import scala.tools.nsc.reporters.ConsoleReporter
 

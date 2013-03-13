@@ -9,7 +9,9 @@ import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
 import sourcegen.SourceGenerator
-import common.{SilentTracing, ConsoleTracing, Change}
+import common.SilentTracing
+import common.ConsoleTracing
+import common.Change
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 

@@ -6,7 +6,8 @@ package scala.tools.refactoring
 package analysis
 
 import tools.nsc.util.BatchSourceFile
-import tools.nsc.ast.parser.{Scanners, Tokens}
+import tools.nsc.ast.parser.Scanners
+import tools.nsc.ast.parser.Tokens
 
 /**
  * NameValidation offers several methods to validate
