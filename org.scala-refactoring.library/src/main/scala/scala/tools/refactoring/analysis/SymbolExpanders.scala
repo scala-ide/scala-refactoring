@@ -80,36 +80,24 @@ trait DependentSymbolExpanders {
     this: IndexLookup =>
     
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
-      case s @ (_: global.TypeSymbol | _: global.TermSymbol) if s.owner.isClass =>
-      
+      case s @ (_: global.TypeSymbol | _: global.TermSymbol) if s.owner.isClass => {
+
         def allSubClasses(clazz: Symbol) = allDefinedSymbols.filter {
-          case decl if decl.isClass || decl.isModule => 
+          case decl if decl.isClass || decl.isModule =>
             val ancestors = decl.ancestors
-            // it seems like I can't compare these symbols with ==?
-            val hasClazzInAncestors = ancestors.exists { t => 
-              t.pos.sameRange(clazz.pos) && t.pos.source == clazz.pos.source
-            }
-            hasClazzInAncestors
+            ancestors.exists { _ == clazz }
           case _ => false
         }
         val containingClass = s.owner
-        
+
         val superClasses = containingClass.ancestors
-        
-        val subClasses = allSubClasses(containingClass) 
-                
-        val overrides = (subClasses ++ superClasses) map {
-          case otherClassDecl =>
-            try {
-              s overriddenSymbol otherClassDecl
-            } catch {
-              case e: Error =>
-                // FIXME What can we do here?
-                throw e
-            }
-        }
+
+        val subClasses = allSubClasses(containingClass)
+
+        val overrides = (subClasses map (s overridingSymbol _)) ++ (superClasses map (s overriddenSymbol _))
 
         overrides
+      }
       case _ => Nil
     })
   }
