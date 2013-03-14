@@ -5,7 +5,10 @@
 package scala.tools.refactoring
 package implementations
 
-import common.{CompilerAccess, PimpedTrees, SilentTracing, TreeTraverser}
+import common.CompilerAccess
+import common.PimpedTrees
+import common.SilentTracing
+import common.TreeTraverser
 import sourcegen.SourceGenerator
 
 trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeTraverser with PimpedTrees with SilentTracing {

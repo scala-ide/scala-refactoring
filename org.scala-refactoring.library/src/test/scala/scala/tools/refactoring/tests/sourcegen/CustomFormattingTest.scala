@@ -9,7 +9,8 @@ import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
 import sourcegen.SourceGenerator
-import common.{SilentTracing, ConsoleTracing}
+import common.SilentTracing
+import common.ConsoleTracing
 import scala.tools.refactoring.implementations.OrganizeImports
 import scala.tools.refactoring.tests.util.TestRefactoring
 

@@ -5,7 +5,10 @@
 package scala.tools.refactoring
 
 import scala.tools.nsc.io.AbstractFile
-import scala.tools.refactoring.common.{SilentTracing, Selections, PimpedTrees, Change}
+import scala.tools.refactoring.common.SilentTracing
+import scala.tools.refactoring.common.Selections
+import scala.tools.refactoring.common.PimpedTrees
+import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.sourcegen.SourceGenerator
 import scala.tools.refactoring.transformation.TreeTransformations
 import scala.tools.refactoring.common.TextChange

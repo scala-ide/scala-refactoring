@@ -9,7 +9,9 @@ import scala.Option.option2Iterable
 import scala.collection.mutable.ListBuffer
 import scala.tools.nsc.util.FailedInterrupt
 import scala.tools.refactoring.Refactoring
-import scala.tools.refactoring.common.{Change, NewFileChange, TextChange}
+import scala.tools.refactoring.common.Change
+import scala.tools.refactoring.common.NewFileChange
+import scala.tools.refactoring.common.TextChange
 import scala.tools.refactoring.util.CompilerProvider
 import org.junit.Assert.assertEquals
 import org.junit.Before

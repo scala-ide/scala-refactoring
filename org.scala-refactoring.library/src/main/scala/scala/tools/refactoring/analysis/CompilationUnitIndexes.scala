@@ -5,7 +5,8 @@
 package scala.tools.refactoring
 package analysis
 
-import collection.mutable.{HashMap, ListBuffer}
+import collection.mutable.HashMap
+import collection.mutable.ListBuffer
 
 /**
  * A CompilationUnitIndex is a light-weight index that

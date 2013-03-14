@@ -5,7 +5,8 @@
 package scala.tools.refactoring
 package implementations
 
-import common.{TreeTraverser, Change}
+import common.TreeTraverser
+import common.Change
 import transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
