@@ -3,7 +3,10 @@ package implementations
 
 import scala.tools.nsc.util.SourceFile
 import scala.tools.refactoring.analysis.CompilationUnitDependencies
-import scala.tools.refactoring.common.{TreeExtractors, NewFileChange, InteractiveScalaCompiler, Change}
+import scala.tools.refactoring.common.TreeExtractors
+import scala.tools.refactoring.common.NewFileChange
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.common.TextChange

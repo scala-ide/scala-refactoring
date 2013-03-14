@@ -6,7 +6,8 @@ package scala.tools.refactoring
 package tests.implementations
 
 import org.junit.Assert._
-import tests.util.{TestHelper, TestRefactoring}
+import tests.util.TestHelper
+import tests.util.TestRefactoring
 import scala.tools.refactoring.implementations.EliminateMatch
 
 class EliminateMatchTest extends TestHelper with TestRefactoring {

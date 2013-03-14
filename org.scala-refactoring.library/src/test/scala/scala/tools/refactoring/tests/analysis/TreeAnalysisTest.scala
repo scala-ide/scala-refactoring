@@ -8,7 +8,8 @@ package tests.analysis
 import tests.util.TestHelper
 import org.junit.Assert._
 import common.Selections
-import analysis.{GlobalIndexes, TreeAnalysis}
+import analysis.GlobalIndexes
+import analysis.TreeAnalysis
 
 class TreeAnalysisTest extends TestHelper with GlobalIndexes with TreeAnalysis {
 
