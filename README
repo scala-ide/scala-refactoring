@@ -4,6 +4,9 @@
 
 Welcome to the Scala Refactoring project!
 
+The project requires Scala 2.10 but also supports 2.11. For older versions of
+Scala, please take a look at the various branches.
+
 1. Project Layout
 --------------------------------------------------------------------------------
 
@@ -67,9 +70,9 @@ The examples directory contains two demos:
 2. Building
 --------------------------------------------------------------------------------
 
-We use Maven (minimum version is 3 because we use Tycho) to build the project:
+We use Maven to build the project:
 
-> mvn -Dscala.version=2.9.0 package
+> ./build.sh
 
 creates all the artifacts, except for the documentation, which needs to be
 built separately. For different versions of Scala, take a look at the build.sh
