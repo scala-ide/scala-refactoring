@@ -113,7 +113,7 @@ trait TreeFactory {
     }
   }
 
-  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree], typeParameters: List[TypeDef] = Nil): DefDef = {
+  def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree], typeParameters: List[TypeDef] = Nil, returnType: Option[TypeTree] = None): DefDef = {
     val formalParameters = {
       if (parameters.isEmpty)
         Nil
@@ -121,11 +121,11 @@ trait TreeFactory {
         parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(s.tpe), EmptyTree)))
     }
     
-    DefDef(mods withPosition (Flags.METHOD, NoPosition), newTermName(name), typeParameters, formalParameters, TypeTree(body.last.tpe), mkBlock(body))
+    DefDef(mods withPosition (Flags.METHOD, NoPosition), newTermName(name), typeParameters, formalParameters, returnType.getOrElse(TypeTree(body.last.tpe)), mkBlock(body))
   }
   
   def mkApply(mods: Modifiers = NoMods, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree], typeParameters: List[TypeDef] = Nil) = {
-    mkDefDef(mods = mods, name = "apply", parameters = parameters, body = body, typeParameters)
+    mkDefDef(mods = mods, name = "apply", parameters = parameters, body = body, typeParameters, None)
   }
   
   def mkHashcode(classSymbol: Symbol, classParamsForHashcode: List[ValDef], callSuper: Boolean, prime: Int = 41) = {
