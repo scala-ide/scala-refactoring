@@ -31,7 +31,7 @@ trait PimpedTrees {
   /**
    * Represent an import selector as a tree, including both names as trees.
    */
-  case class ImportSelectorTree(name: NameTree, rename: global.Tree) extends global.Tree {
+  case class ImportSelectorTree(name: pimpedTrees.NameTree, rename: global.Tree) extends global.Tree {
     def errorSubtrees = Nil
   }
   
@@ -910,11 +910,11 @@ trait PimpedTrees {
    *   self: A with B =>
    *   ^^^^^^^^^^^^^^
    */
-  case class SelfTypeTree(name: NameTree, tpt: Tree) extends global.Tree {
+  case class SelfTypeTree(name: pimpedTrees.NameTree, tpt: Tree) extends global.Tree {
     def errorSubtrees = Nil
   }
   
-  case class NamedArgument(nameTree: NameTree, rhs: Tree) extends global.RefTree {
+  case class NamedArgument(nameTree: pimpedTrees.NameTree, rhs: Tree) extends global.RefTree {
     def qualifier = EmptyTree
     val name = nameTree.name
   }
