@@ -988,6 +988,7 @@ object A"""
   }
 
   @Test
+  @ScalaVersion(matches="2.10")
   def testTypeDefs() = {
 
     val tree = treeFrom("""
@@ -1009,6 +1010,32 @@ object A"""
   protected type C >: Nothing 
   
   type D <: AnyRef
+}"""
+  }
+
+  @Test
+  @ScalaVersion(matches="2.11")
+  def testTypeDefs_211() = {
+
+    val tree = treeFrom("""
+    trait Types {
+      type A = Int
+      type B >: Nothing <: AnyRef
+      def id[C](c: C) = c
+      protected type C >: Nothing
+      type D <: AnyRef
+    }""")
+
+    tree prettyPrintsTo """trait Types {
+  type A = Int
+  
+  type B >: Nothing <: AnyRef
+  
+  def id[C](c: C) = c
+  
+  protected type C >: Nothing <: Any
+  
+  type D >: Nothing <: AnyRef
 }"""
   }
 
