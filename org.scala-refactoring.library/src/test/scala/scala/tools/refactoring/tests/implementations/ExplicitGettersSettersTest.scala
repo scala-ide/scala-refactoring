@@ -10,8 +10,6 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 import org.junit.Assert._
 
-import language.reflectiveCalls
-
 class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   outer =>
   

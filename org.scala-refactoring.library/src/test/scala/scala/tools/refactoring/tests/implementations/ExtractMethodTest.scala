@@ -9,8 +9,6 @@ import tests.util.TestRefactoring
 import implementations.ExtractMethod
 import tests.util.TestHelper
 
-import language.reflectiveCalls
-
 class ExtractMethodTest extends TestHelper with TestRefactoring {
   
   def extract(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {

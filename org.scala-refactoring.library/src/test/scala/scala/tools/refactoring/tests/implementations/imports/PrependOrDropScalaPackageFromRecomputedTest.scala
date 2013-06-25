@@ -8,9 +8,7 @@ package tests.implementations.imports
 import implementations.OrganizeImports
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-
-import language.reflectiveCalls
-
+      
 class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTest {
     
   def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {

@@ -15,8 +15,6 @@ import common.Change
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
-import language.{postfixOps, implicitConversions}
-
 class IndividualSourceGenTest extends TestHelper with SourceGenerator with SilentTracing with transformation.TreeFactory {
   
   import global._

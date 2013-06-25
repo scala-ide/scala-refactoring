@@ -7,8 +7,6 @@ import tests.util.TestRefactoring
 import org.junit.Ignore
 import org.junit.Assert
 
-import language.reflectiveCalls
-
 class SplitParameterListsTest extends TestHelper with TestRefactoring {
 
   def splitParameterLists(splitPositions: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {

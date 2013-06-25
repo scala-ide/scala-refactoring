@@ -11,8 +11,6 @@ import tests.util.TestHelper
 import org.junit.Assert._
 import scala.tools.refactoring.implementations.ExpandCaseClassBinding
 
-import language.reflectiveCalls
-
 class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   
   def expand(pro: FileSet) = new TestRefactoringImpl(pro) {

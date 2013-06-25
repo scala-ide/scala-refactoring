@@ -9,8 +9,6 @@ import tests.util.TestHelper
 import org.junit.Assert._
 import common.PimpedTrees
 
-import language.{postfixOps, reflectiveCalls}
-
 class TreeTransformationsTest extends TestHelper with PimpedTrees {
   
   import global._
