@@ -10,6 +10,7 @@ import common.Change
 import transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
+import scala.util.control.NonFatal
 
 /**
  * A refactoring that recomputes and reorganizes import statements in a file.
@@ -376,7 +377,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           t.nameString
       }
     } catch {
-      case _ => "Unhandled tree: "+ getSimpleClassName(t) +". You found a bug! Please report it."
+      case NonFatal(_) => "Unhandled tree: "+ getSimpleClassName(t) +". You found a bug! Please report it."
     }
     
     val erroneousTrees = s.root.filter {

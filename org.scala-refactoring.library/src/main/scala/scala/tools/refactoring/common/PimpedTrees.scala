@@ -6,7 +6,6 @@ package scala.tools.refactoring
 package common
 
 import tools.nsc.symtab.Flags
-import tools.nsc.util.RangePosition
 import tools.nsc.ast.parser.Tokens
 import tools.nsc.symtab.Flags
 import scala.tools.nsc.Global
@@ -15,6 +14,7 @@ import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.sourcegen.Fragment
 import scala.tools.refactoring.sourcegen.AbstractPrinter
 import scala.tools.refactoring.sourcegen.Layout
+import scala.reflect.internal.util.RangePosition
 
 /**
  * A collection of implicit conversions for ASTs and other 
@@ -202,7 +202,7 @@ trait PimpedTrees {
             val pos = if(t.pos.point - t.pos.start == name.length && src == name) 
               t.pos withEnd t.pos.point
             else 
-              new tools.nsc.util.RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
+              new RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
 
             if(t.mods.isSynthetic && t.pos.isTransparent) 
               pos.makeTransparent

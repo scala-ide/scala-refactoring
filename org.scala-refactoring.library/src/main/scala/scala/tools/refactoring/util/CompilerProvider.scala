@@ -9,11 +9,11 @@ import java.io.File
 import scala.tools.nsc.interactive.Response
 import scala.tools.nsc.interactive.Global
 import scala.tools.nsc.io.AbstractFile
-import scala.tools.nsc.util.SourceFile
-import scala.tools.nsc.util.Position
-import scala.tools.nsc.util.BatchSourceFile
 import scala.tools.nsc.Settings
 import scala.tools.nsc.reporters.ConsoleReporter
+import scala.reflect.internal.util.BatchSourceFile
+import scala.reflect.internal.util.SourceFile
+import scala.reflect.internal.util.Position
 
 class CompilerInstance {
   

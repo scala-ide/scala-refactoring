@@ -8,6 +8,7 @@ package analysis
 import tools.nsc.util.BatchSourceFile
 import tools.nsc.ast.parser.Scanners
 import tools.nsc.ast.parser.Tokens
+import scala.util.control.NonFatal
 
 /**
  * NameValidation offers several methods to validate
@@ -39,7 +40,7 @@ trait NameValidation {
       
       firstTokenIsIdentifier && secondTokenIsEOF
     } catch {
-      case _ => false
+      case NonFatal(_) => false
     }
   }
   

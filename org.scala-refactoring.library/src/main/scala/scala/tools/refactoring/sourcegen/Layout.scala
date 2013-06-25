@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-import scala.tools.nsc.util.SourceFile
+import scala.reflect.internal.util.SourceFile
 
 trait Layout {
   self =>

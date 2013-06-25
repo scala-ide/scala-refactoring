@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package sourcegen
 
-import scala.tools.nsc.util.BatchSourceFile
+import scala.reflect.internal.util.BatchSourceFile
 
 trait CommonPrintUtils {
 

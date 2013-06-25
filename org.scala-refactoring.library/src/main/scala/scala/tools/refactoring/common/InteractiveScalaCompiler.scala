@@ -6,7 +6,7 @@ package scala.tools.refactoring
 package common
 
 import tools.nsc.io.AbstractFile
-import scala.tools.nsc.util.SourceFile
+import scala.reflect.internal.util.SourceFile
 
 /**
  * Many parts of the library can work with the non-interactive global,

@@ -5,8 +5,8 @@
 package scala.tools.refactoring
 package common
 
-import scala.tools.nsc.util.SourceFile
 import scala.tools.nsc.io.AbstractFile
+import scala.reflect.internal.util.SourceFile
 
 /**
  * The common interface for all changes.

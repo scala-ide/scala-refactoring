@@ -8,8 +8,8 @@ package sourcegen
 import common.Tracing
 import common.Change
 import common.PimpedTrees
-import scala.tools.nsc.util.SourceFile
 import scala.tools.refactoring.common.TextChange
+import scala.reflect.internal.util.SourceFile
 
 trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinter with PimpedTrees with LayoutHelper with Formatting with TreeChangesDiscoverer {
   

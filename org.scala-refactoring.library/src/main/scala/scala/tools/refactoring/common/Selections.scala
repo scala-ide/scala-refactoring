@@ -7,7 +7,7 @@ package common
 
 import collection.mutable.ListBuffer
 import tools.nsc.Global
-import tools.nsc.util.RangePosition
+import scala.reflect.internal.util.RangePosition
 
 trait Selections extends TreeTraverser with common.PimpedTrees {
   

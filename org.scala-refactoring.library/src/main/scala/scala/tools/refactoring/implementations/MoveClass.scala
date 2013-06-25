@@ -1,7 +1,6 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.tools.nsc.util.SourceFile
 import scala.tools.refactoring.analysis.CompilationUnitDependencies
 import scala.tools.refactoring.common.TreeExtractors
 import scala.tools.refactoring.common.NewFileChange
@@ -10,6 +9,7 @@ import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.common.TextChange
+import scala.reflect.internal.util.SourceFile
 
 abstract class MoveClass extends MultiStageRefactoring with TreeFactory with analysis.Indexes with TreeExtractors with InteractiveScalaCompiler with CompilationUnitDependencies with ImportsHelper {
 

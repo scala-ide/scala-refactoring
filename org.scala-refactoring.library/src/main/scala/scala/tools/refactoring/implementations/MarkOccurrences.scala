@@ -5,7 +5,8 @@
 package scala.tools.refactoring
 package implementations
 
-import tools.nsc.util.RangePosition
+import scala.reflect.internal.util.RangePosition
+import scala.util.control.NonFatal
 
 abstract class MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.PimpedTrees {
     
@@ -54,7 +55,7 @@ abstract class MarkOccurrences extends common.Selections with analysis.Indexes w
         val namePos = try {
           selectedLocal.namePosition
         } catch {
-          case _ => NoPosition
+          case NonFatal(_) => NoPosition
         }
         val symbol = selectedLocal.symbol
         

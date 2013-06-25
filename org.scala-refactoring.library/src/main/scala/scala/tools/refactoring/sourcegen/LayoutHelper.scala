@@ -5,9 +5,9 @@
 package scala.tools.refactoring
 package sourcegen
 
-import scala.tools.nsc.util.SourceFile
 import common.PimpedTrees
 import common.Tracing
+import scala.reflect.internal.util.SourceFile
 
 trait LayoutHelper {
   
@@ -63,9 +63,7 @@ trait LayoutHelper {
 
   def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = {
     val leading = Layout(t.pos.source, 0, t.pos.start)
-    // TODO: This is only needed for Scala < 2.10
-    val endPos = endPositionAtEndOfSourceFile(t.pos, Some(t.pos.source.length))
-    val trailing = Layout(t.pos.source, t.pos.end, endPos)
+    val trailing = Layout(t.pos.source, t.pos.end, t.pos.source.length)
     leading → trailing
   }
     
