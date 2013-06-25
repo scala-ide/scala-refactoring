@@ -1080,6 +1080,7 @@ object A"""
 }"""
   }
 
+  @Ignore
   @Test
   def testValOrDefDefModifiers() = {
 
