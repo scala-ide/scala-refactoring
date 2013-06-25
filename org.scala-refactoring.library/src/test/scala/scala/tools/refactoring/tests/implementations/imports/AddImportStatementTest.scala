@@ -11,8 +11,6 @@ import common.Change
 import org.junit.Assert._
 import scala.tools.refactoring.common.TextChange
 
-import language.reflectiveCalls
-
 class AddImportStatementTest extends TestHelper {
   outer =>
   

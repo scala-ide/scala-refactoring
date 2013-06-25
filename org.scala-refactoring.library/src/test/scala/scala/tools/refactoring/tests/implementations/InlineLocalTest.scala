@@ -10,8 +10,6 @@ import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
 
-import language.reflectiveCalls
-
 class InlineLocalTest extends TestHelper with TestRefactoring {
   outer =>
   

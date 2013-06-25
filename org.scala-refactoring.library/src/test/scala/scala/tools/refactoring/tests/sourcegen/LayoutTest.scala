@@ -9,8 +9,6 @@ import org.junit.Test
 import org.junit.Assert._
 import sourcegen._
 
-import language.postfixOps
-
 class LayoutTest {
 
   @Test

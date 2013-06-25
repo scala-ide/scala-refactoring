@@ -14,8 +14,6 @@ import common.ConsoleTracing
 import scala.tools.refactoring.implementations.OrganizeImports
 import scala.tools.refactoring.tests.util.TestRefactoring
 
-import language.reflectiveCalls
-
 class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGenerator with SilentTracing {
   
   var surroundingImport = ""

@@ -10,8 +10,6 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 import scala.tools.refactoring.implementations.EliminateMatch
 
-import language.reflectiveCalls
-
 class EliminateMatchTest extends TestHelper with TestRefactoring {
   outer =>
   
@@ -61,7 +59,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       case None => false
     }
     
-    def f2(x: Option[String]) = x.isDefined
+    def f2(x: Option[String]) = x isDefined
     
     assertEquals(f1(some), f2(some))
     assertEquals(f1(none), f2(none))

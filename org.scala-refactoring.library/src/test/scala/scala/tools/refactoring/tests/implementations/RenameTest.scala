@@ -11,8 +11,6 @@ import tests.util.TestHelper
 import org.junit.Assert._
 import org.junit.Ignore
 
-import language.reflectiveCalls
-
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
   

@@ -6,8 +6,6 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 import scala.tools.refactoring.implementations.IntroduceProductNTrait
 
-import language.reflectiveCalls
-
 class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
 
   outer =>
