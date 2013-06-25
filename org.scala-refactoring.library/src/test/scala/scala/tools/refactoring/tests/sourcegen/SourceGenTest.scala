@@ -962,6 +962,38 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     }
     """, generateText(removeAuxiliaryTrees apply tree get))
   }
+    
+  @Test
+  def testTypeDefNoLowerBound() = {
+    
+    val tree = treeFrom("""
+    trait Types {
+      type D <: AnyRef
+    }
+        """)
+    
+    assertEquals("""
+    trait Types {
+      type D <: AnyRef
+    }
+        """, generateText(removeAuxiliaryTrees apply tree get))
+  }
+  
+  @Test
+  def testTypeDefNoUpperBound() = {
+    
+    val tree = treeFrom("""
+    trait Types {
+      type D >: Nothing
+    }
+        """)
+    
+    assertEquals("""
+    trait Types {
+      type D >: Nothing
+    }
+        """, generateText(removeAuxiliaryTrees apply tree get))
+  }
   
   @Test
   def testTypeDefs() = {

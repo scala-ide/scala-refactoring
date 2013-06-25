@@ -546,6 +546,13 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          l ++ p(tpt) ++ pp(args, before = "[", separator = ", ", after = "]") ++ r 
       }
     }
+        
+    override def TypeBoundsTree(tree: TypeBoundsTree, lo: Tree, hi: Tree)(implicit ctx: PrintingContext) = {
+      val lo_ = if(lo.pos.isDefined) p(lo) else EmptyFragment
+      val hi_ = if(hi.pos.isDefined) p(hi) else EmptyFragment
+        
+      lo_ ++ hi_
+    }
   }
 
   trait FunctionPrinters {

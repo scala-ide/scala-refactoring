@@ -50,6 +50,8 @@ trait LayoutHelper {
       children(t) match {
         case Nil =>
           NoLayout
+        case c if c.exists(!_.pos.isRange) =>
+          NoLayout
         case c => 
           splitLayoutBetweenLastChildAndParent (parent = t, child = c.last)._2
       }
@@ -85,7 +87,7 @@ trait LayoutHelper {
 
   def splitLayoutBetweenParentAndFirstChild(child: Tree, parent: Tree): (Layout, Layout) = {
     
-    if(child.pos.isTransparent && parent.pos.isTransparent) 
+    if((child.pos.isTransparent && parent.pos.isTransparent) || child.pos == NoPosition) 
       return NoLayout → NoLayout
     
     trace("splitting layout between parent %s and first child %s", getSimpleClassName(parent), getSimpleClassName(child))
