@@ -18,6 +18,8 @@ import org.junit.Before
 import scala.tools.refactoring.common.InteractiveScalaCompiler
 import scala.tools.refactoring.common.Selections
 
+import language.{postfixOps, implicitConversions}
+
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
   
   type Test = org.junit.Test

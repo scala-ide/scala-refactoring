@@ -8,7 +8,9 @@ package tests.implementations.imports
 import implementations.OrganizeImports
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-      
+
+import language.reflectiveCalls
+
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {

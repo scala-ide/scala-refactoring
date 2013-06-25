@@ -617,9 +617,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       val pid_ = {
 
-        val isNextStmtEmptyPackage = restStats.headOption collect {
+        val isNextStmtEmptyPackage = restStats.headOption.collect {
           case global.PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _) => true
-        } isDefined
+        }.isDefined
 
         // default package:
         if (pid.name == nme.EMPTY_PACKAGE_NAME) {

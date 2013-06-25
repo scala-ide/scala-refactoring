@@ -7,6 +7,8 @@ import org.junit.Assert.assertEquals
 import tests.util.TestHelper
 import scala.tools.refactoring.implementations._
 
+import language.reflectiveCalls
+
 class AddMethodTest extends TestHelper {
   outer =>
 

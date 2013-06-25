@@ -30,28 +30,11 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
     }
 
     // we also need all the dependencies of the compilation unit
-    val unitDependencies = {
-      unit.depends filterNot { s =>
-        
-        /*
-         * In interactive mode, the compiler contains more information (constants are not inlined) and
-         * we can analyze more correctly.  In non-interactive use, we currently don't have a way to do
-         * this, so we prefer to get false negatives instead of false positives.
-         * 
-         * This way, when this trait is used during organize imports, an import that was previously
-         * not detected by the compiler's code analysis can now be removed.
-         * */
-        
-        if(global.forInteractive)
-          s == NoSymbol || s.isModuleClass
-        else
-          s == NoSymbol
-      } toList
-    }
+    val unitDependencies =  unit.depends.filterNot(_ == NoSymbol).toList
     
     val astDependencies = filterTree(unit.body, importsIgnoringTraverser) map (_.tpe.typeSymbol)
         
-    (unitDependencies ::: (astDependencies)) distinct
+    (unitDependencies ::: (astDependencies)).distinct
   }
 
   def wildcardImport(i: ImportSelector) = i.name == nme.WILDCARD

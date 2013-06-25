@@ -60,7 +60,7 @@ trait Indentations {
     
     i += 1
         
-    """\s*""".r.findFirstIn(contentWithoutComment.slice(i, tree.pos.start) mkString).getOrElse("")
+    """\s*""".r.findFirstIn(contentWithoutComment.slice(i, tree.pos.start).mkString).getOrElse("")
   }
 
   private [this] val memoizedSourceWithoutComments = scala.collection.mutable.Map.empty[String, String]

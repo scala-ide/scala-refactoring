@@ -42,7 +42,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   
   def assertDeclarationOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
     case t @ (_: TypeTree | _: RefTree) => 
-      index.declaration(t.symbol).head toString
+      index.declaration(t.symbol).head.toString
   }
   
   def assertReferencesOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {

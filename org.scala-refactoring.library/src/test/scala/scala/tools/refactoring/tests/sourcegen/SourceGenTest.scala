@@ -14,6 +14,8 @@ import common.ConsoleTracing
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
+import language.{postfixOps, implicitConversions}
+
 class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
   
   import global._

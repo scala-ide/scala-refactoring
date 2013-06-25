@@ -8,6 +8,8 @@ package tests.analysis
 import analysis.GlobalIndexes
 import tests.util._
 
+import language.{postfixOps, reflectiveCalls}
+
 class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCompilerForeachTest {
   
   import global._

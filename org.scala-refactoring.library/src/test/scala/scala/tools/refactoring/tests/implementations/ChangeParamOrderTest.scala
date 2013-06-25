@@ -5,6 +5,8 @@ import implementations.ChangeParamOrder
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 
+import language.reflectiveCalls
+
 class ChangeParamOrderTest extends TestHelper with TestRefactoring {
 
   def changeParamOrder(permutations: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {

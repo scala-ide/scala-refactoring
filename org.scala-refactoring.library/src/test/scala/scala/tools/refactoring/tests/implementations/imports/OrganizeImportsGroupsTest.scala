@@ -6,7 +6,9 @@ package scala.tools.refactoring
 package tests.implementations.imports
 
 import org.junit.Test
-      
+
+import language.reflectiveCalls
+
 class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
     
   def organize(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {

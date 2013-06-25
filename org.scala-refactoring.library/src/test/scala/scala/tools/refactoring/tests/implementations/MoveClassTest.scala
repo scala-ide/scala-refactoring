@@ -7,6 +7,8 @@ import implementations.MoveClass
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 
+import language.reflectiveCalls
+
 class MoveClassTest extends TestHelper with TestRefactoring {
     
   private def createRefactoring(pro: FileSet) = {

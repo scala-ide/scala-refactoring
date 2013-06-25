@@ -186,14 +186,14 @@ trait LayoutHelper {
     t match {
       case t @ ValDef(_, _, _, rhs) =>
       
-        val childBeforeRhs = children(t) takeWhile (c => !(c samePos rhs)) lastOption match {
+        val childBeforeRhs = children(t).takeWhile(c => !(c samePos rhs)).lastOption match {
           case Some(tree) => tree
           case None => return t
         }
       
         if(childBeforeRhs.pos.isRange && rhs.pos.isRange && between(childBeforeRhs, rhs)(t.pos.source).contains("{")) {
         
-          val offsetToClosing = layout(rhs.pos.end, t.pos.source.length)(t.pos.source).asText takeWhile (_ != '}') length
+          val offsetToClosing = layout(rhs.pos.end, t.pos.source.length)(t.pos.source).asText.takeWhile(_ != '}').length
           val ct = t.copy().copyAttrs(t)
         
           val end = t.pos.end + offsetToClosing + 1
@@ -275,12 +275,12 @@ trait LayoutHelper {
  
   def splitLayoutBetweenSiblings(parent: Tree, left: Tree, right: Tree): (Layout, Layout) = {
       
-    def mergeLayoutWithComment(l: Seq[Char], c: Seq[Char]) = l zip c map {
+    def mergeLayoutWithComment(l: Seq[Char], c: Seq[Char]) = l.zip(c).map {
       case (' ', _1) => _1
       case (_1, ' ') => _1
       case ('\n', '\n') => '\n'
       case ('\r', '\r') => '\r'
-    } mkString
+    }.mkString
     
     def split(layout: String): (String, String, String) = {
 
@@ -289,7 +289,7 @@ trait LayoutHelper {
        * kinds of layout that contain an @. */
       def layoutDoesNotIncludeAnnotation = !layout.contains("@")
       
-      (layout match {
+      ((layout match {
         case Else(l, r)            => Some(l, r, "else")
         case Match(l, r)           => Some(l, r, "match")
         case StartComment(l, r)    => Some(l, r, "StartComment")
@@ -313,7 +313,7 @@ trait LayoutHelper {
         case Dot(l, r)                  => Some(l, r, "Dot")
         case OpeningSquareBracket(l, r) => Some(l, r, "OpeningSquareBracket")
         case s                          => Some(s, "", "NoMatch")
-      }) get
+      })).get
     }
     
     (fixValDefPosition(left), fixValDefPosition(right)) match {

@@ -1,5 +1,7 @@
 package scala.tools.refactoring.tests.implementations.imports
 
+import language.reflectiveCalls
+
 class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBaseTest {
 
   def organize(exclude: Set[String] = Set())(pro: FileSet) = new OrganizeImportsRefatoring(pro) {

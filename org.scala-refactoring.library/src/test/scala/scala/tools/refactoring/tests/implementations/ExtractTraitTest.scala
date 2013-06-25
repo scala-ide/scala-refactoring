@@ -7,6 +7,8 @@ import scala.tools.refactoring.implementations.ExtractTrait
 import org.junit.Assert
 import org.junit.Ignore
 
+import language.reflectiveCalls
+
 class ExtractTraitTest extends TestRefactoring {
     
   def extractTrait(params: (String, String => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {

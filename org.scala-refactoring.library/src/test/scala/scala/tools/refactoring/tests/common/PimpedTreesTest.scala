@@ -46,9 +46,9 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     
     val i = tree.find(_.toString == "42").get
     
-    val root = originalParentOf(i) flatMap (originalParentOf(_) flatMap (originalParentOf(_) flatMap originalParentOf)) get
+    val root = originalParentOf(i) flatMap (originalParentOf(_) flatMap (originalParentOf(_) flatMap originalParentOf))
     
-    assertTrue(root.isInstanceOf[PackageDef])
+    assertTrue(root.get.isInstanceOf[PackageDef])
   }
   
   @Test

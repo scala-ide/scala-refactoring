@@ -22,7 +22,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
    * trees that have changed.
    */
   def createFragment(t: Tree): Fragment = {
-    generateFragmentsFromTrees(List(t)) map (_._4) head
+    generateFragmentsFromTrees(List(t)).map(_._4).head
   }
   
   /**
@@ -111,7 +111,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
       trace("No changes were found.")
     }
     
-    changesPerFile map {
+    changesPerFile.map {
       case (source, replaceRange, tree, changes) =>
         trace("Creating code for %s. %d tree(s) in changeset.", getSimpleClassName(tree), changes.size)
         val f = generate(tree, new ChangeSet {
@@ -148,7 +148,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
           }
         }
         (source.file, tree, pos, replacementWithoutLeadingDuplicateSpace)
-    } toList
+    }.toList
   }
     
   override def print(t: Tree, ctx: PrintingContext): Fragment = {

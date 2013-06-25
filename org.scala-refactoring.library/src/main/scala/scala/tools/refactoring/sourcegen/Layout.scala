@@ -54,7 +54,7 @@ object Layout {
   
   case class LayoutFromFile(source: SourceFile, start: Int, end: Int) extends Layout {
   
-    lazy val asText = source.content.slice(start, end) mkString
+    lazy val asText = source.content.slice(start, end).mkString
           
     def splitAfter(cs: Char*): (Layout, Layout) = splitFromLeft(cs) match {
       case None => this → NoLayout

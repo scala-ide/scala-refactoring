@@ -173,7 +173,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         case (rest, imp) if rest.exists(t => t.toString == imp.toString) =>
           rest 
         case (rest, imp) => imp :: rest
-      } reverse
+      }.reverse
     }
   }
   
@@ -387,7 +387,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       case _ => false
     }
     
-    val missingImportNames = erroneousTrees map getMissingTypeNameForErroneousTree toList
+    val missingImportNames = erroneousTrees.map(getMissingTypeNameForErroneousTree).toList
     
     Right(new PreparationResult(missingImportNames))
   }

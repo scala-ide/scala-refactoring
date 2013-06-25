@@ -13,13 +13,13 @@ import common.SilentTracing
 import common.ConsoleTracing
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
-import scala.tools.nsc.util.BatchSourceFile
+import scala.reflect.internal.util.BatchSourceFile
 
 class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTracing with transformation.TreeFactory {
 
   import global._
 
-  implicit def treeToPrettyPrint(original: Tree) = new {
+  implicit class TreePrettyPrintMethods(original: Tree) {
 
     def cleanTree(t: Tree) =
       (removeAuxiliaryTrees &> emptyAllPositions)(t).get
@@ -1111,7 +1111,7 @@ object A"""
     protected sealed class Dddd
     """)
 
-    val modTree = (removeAuxiliaryTrees &> ↓(changeSomeModifiers)) apply tree get
+    val modTree = (removeAuxiliaryTrees &> ↓(changeSomeModifiers)).apply(tree).get
 
     tree prettyPrintsTo """package xy
 
