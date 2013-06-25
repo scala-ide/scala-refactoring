@@ -47,7 +47,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     case t: DefDef   =>
       t.copy(mods = NoMods withPosition (Flags.PROTECTED, NoPosition) withPosition (Flags.METHOD, NoPosition)) setPos t.pos
     case t: ValDef   =>
-      t.copy(mods = NoMods withPosition (Tokens.VAL,   NoPosition)) setPos t.pos
+      t.copy(mods = NoMods withPosition (Flags.PROTECTED, NoPosition) withPosition (Tokens.VAL, NoPosition)) setPos t.pos
     case t => t
   }
     
@@ -1067,7 +1067,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     val tree = treeFrom("""
     class A {
       /*a*/private/*b*/def/*c*/test() = 5
-      lazy val i = 5
+      val i = 5
       final protected def a() = i
     }
     """)
@@ -1075,7 +1075,7 @@ class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
     assertEquals("""
     class A {
       /*a*/protected def test() = 5
-      val i = 5
+      protected val i = 5
       protected def a() = i
     }
     """, generateText((removeAuxiliaryTrees &> ↓(changeSomeModifiers)) apply tree get))
