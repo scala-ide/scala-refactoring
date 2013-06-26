@@ -7,14 +7,12 @@ package common
 
 trait Tracing {
   
-  class TraceAndReturn[T](t: T) {
+  implicit class TraceAndReturn[T](t: T) {
     def \\ (trace: T => Unit) = {
       trace(t)
       t
     }
   }
-  
-  implicit def anythingToTrace[T](t: T) = new TraceAndReturn[T](t)
   
   def context[T](name: String)(body: => T): T
 
@@ -45,10 +43,10 @@ trait ConsoleTracing extends Tracing {
 
   override def trace(msg: => String, arg1: => Any, args: Any*) {
         
-    val as: Array[AnyRef] = arg1 +: args map {
+    val as: Array[AnyRef] = arg1 +: args.toArray map {
       case s: String => "«"+ s.replaceAll("\n", "\\\\n") +"»"
       case a: AnyRef => a
-    } toArray
+    }
     
     trace(msg.format(as: _*))
   }

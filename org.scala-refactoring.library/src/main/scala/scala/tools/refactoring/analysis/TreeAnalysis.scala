@@ -27,9 +27,9 @@ trait TreeAnalysis {
       _.ownerChain.contains(currentOwner)
     }
 
-    allLocalSymbols filterNot {
+    allLocalSymbols.filterNot {
       index.declaration(_).map(selection.contains) getOrElse true
-    } filter (t => t.pos.isOpaqueRange) sortBy (_.pos.start) distinct
+    }.filter(t => t.pos.isOpaqueRange).sortBy(_.pos.start).distinct
   }
 
   /**
@@ -43,6 +43,6 @@ trait TreeAnalysis {
 
     val occurencesOfSelectedDeclarations = declarationsInTheSelection flatMap (index.occurences)
 
-    occurencesOfSelectedDeclarations filterNot (selection.contains) map (_.symbol) distinct
+    occurencesOfSelectedDeclarations.filterNot(selection.contains).map(_.symbol).distinct
   }
 }

@@ -166,7 +166,6 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   }
   
   @Test
-  @Ignore // fails on 2.9, need more time to investigate or write a better test
   def findNestedChanges() {
     assertEquals("DefDef(3): TypeTree(3), ValDef(3), Function(5), Apply(5), Block(3), DefDef(3), Template(4), Literal(5), AppliedTypeTree(3), Select(3), ApplyToImplicitArgs(5), NameTree(3), ModuleDef(4)", 
       transformAndFind(↓(matchingChildren(doubleAllDefNames |> incrementIntegers)), 

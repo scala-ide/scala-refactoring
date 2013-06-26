@@ -40,7 +40,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     val sym = selection(this, pro).selectedSymbols head
     
     val occurrences = global.ask { () =>
-      index.occurences(sym.asInstanceOf[global.Symbol]) /*2.9*/
+      index.occurences(sym)
     }
     
     aggregateFileNamesWithTrees(occurrences) { symTree => 
@@ -58,7 +58,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     val sym = selection(this, pro).selectedSymbols head
     
     val overrides = global.ask { () =>
-      index.overridesInClasses(sym.asInstanceOf[global.Symbol]) /*2.9*/
+      index.overridesInClasses(sym)
     }
     
     aggregateFileNamesWithTrees(overrides map index.declaration flatten) { symTree => 
@@ -75,7 +75,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
 
     val sym = selection(this, pro).selectedSymbols head
         
-    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner.asInstanceOf[global.Symbol] /*2.9*/) map index.declaration flatten) { sym => 
+    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner) map index.declaration flatten) { sym => 
       sym.nameString +" on line "+ sym.pos.line
     }
   }
@@ -337,17 +337,6 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     "C on line 2, Defg on line 3, this on line 3"
   } apply(allDeclarations)
   
-  @ScalaVersion(matches="2.9")
-  @Test
-  def allSymbolsInIndex29 = new FileSet {
-    """
-    trait Abc
-    class B(s: String)
-    """ becomes
-    "class B, class Object, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, trait ScalaObject, type AnyRef, type String, value s, value s"
-  } apply(allSymbols)
-  
-  @ScalaVersion(matches="2.10")
   @Test
   def allSymbolsInIndex = new FileSet {
     """

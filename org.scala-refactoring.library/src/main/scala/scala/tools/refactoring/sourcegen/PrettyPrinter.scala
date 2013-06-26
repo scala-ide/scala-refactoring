@@ -9,6 +9,8 @@ import scala.tools.nsc.symtab.Flags
 import Requisite.anywhere
 import scala.reflect.NameTransformer
 
+import language.implicitConversions
+
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
   
   outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper with Formatting =>
@@ -634,7 +636,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       
       if(stats.size > 1 && !stats.head.hasExistingCode && stats.tail.exists(_.hasExistingCode)) {
         
-        val firstWithExistingCode = stats.find(_.hasExistingCode) get
+        val firstWithExistingCode = stats.find(_.hasExistingCode).get
         val printed = p(firstWithExistingCode)
         if(printed.leading.matches("(?ms).*\\{.*")) {
           

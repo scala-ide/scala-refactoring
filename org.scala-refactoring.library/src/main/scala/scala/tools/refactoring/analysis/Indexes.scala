@@ -73,27 +73,27 @@ trait Indexes {
      * list of all sub- and super classes, in no particular order.
      */
     def completeClassHierarchy(s: global.Symbol): List[global.Symbol] =
-      s :: (allDefinedSymbols filter (_.ancestors contains s)) flatMap (s => s :: s.ancestors) filter (_.pos != global.NoPosition) distinct
+      (s :: (allDefinedSymbols.filter(_.ancestors contains s))).flatMap(s => s :: s.ancestors).filter(_.pos.isDefined).distinct
     
     /**
      * For the given Symbol - which is a package - returns a
      * list of all sub- and super packages, in no particular order.
      */
     def completePackageHierarchy(s: global.Symbol): List[global.Symbol] =
-      allDefinedSymbols filter (_.ownerChain contains s) flatMap (s => s :: s.ownerChain) filter (_.isPackageClass) filter (_.pos != global.NoPosition) distinct
+      allDefinedSymbols.filter(_.ownerChain contains s).flatMap(s => s :: s.ownerChain).filter(_.isPackageClass).filter(_.pos.isDefined).distinct
       
     /**
      * Returns a map that associates each defined symbol in the index
      * with its DefTree.
      */
     def allDeclarations(): Map[global.Symbol, global.DefTree] = 
-      allDefinedSymbols() flatMap (sym => declaration(sym) map (sym → _)) toMap
+      allDefinedSymbols().flatMap(sym => declaration(sym).map(sym → _)).toMap
       
     /**
      * Returns all overrides of the symbol s.
      */
     def overridesInClasses(s: global.Symbol): List[global.Symbol] =
-      completeClassHierarchy(s.owner) map s.overridingSymbol  filterNot global.NoSymbol.==
+      completeClassHierarchy(s.owner) map s.overridingSymbol  filter (_.pos.isDefined)
     
     /**
      * From a position, returns the symbols that contain a tree 

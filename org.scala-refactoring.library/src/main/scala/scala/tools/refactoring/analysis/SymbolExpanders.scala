@@ -47,13 +47,13 @@ trait DependentSymbolExpanders {
       case s if s != NoSymbol && s.owner.isClass && s.hasFlag(Flags.ACCESSOR) =>
 
         (declaration(s.owner) collect {
-          case ClassDef(_, _, _, Template(_, _, body)) => body collect {
-            case d @ DefDef(_, _, _, _, _, Block(stats, _)) if d.symbol.isConstructor => stats collect {
+          case ClassDef(_, _, _, Template(_, _, body)) => body.collect {
+            case d @ DefDef(_, _, _, _, _, Block(stats, _)) if d.symbol.isConstructor => stats.collect {
               case Apply(_, args) => args collect {
                 case symTree: SymTree if symTree.symbol.nameString == s.nameString => symTree.symbol
               }
-            } flatten
-          } flatten
+            }.flatten
+          }.flatten
         }).toList.flatten
 
     case _ => Nil

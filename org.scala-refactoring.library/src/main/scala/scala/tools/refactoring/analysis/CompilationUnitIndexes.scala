@@ -89,8 +89,8 @@ trait CompilationUnitIndexes {
       
       new CompilationUnitIndex {
         val root = tree
-        val definitions = defs.map {case (sym, v) => sym.initialize → v.toList} toMap
-        val references  = refs.map {case (sym, v) => sym.initialize → v.toList} toMap
+        val definitions = defs.map{ case (sym, v) => sym.initialize → v.toList}.toMap
+        val references  = refs.map{ case (sym, v) => sym.initialize → v.toList}.toMap
       }
     }
   }

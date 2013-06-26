@@ -31,7 +31,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
 
     // we also need all the dependencies of the compilation unit
     val unitDependencies = {
-      unit.depends filterNot { s =>
+      unit.depends.filterNot { s =>
         
         /*
          * In interactive mode, the compiler contains more information (constants are not inlined) and
@@ -46,12 +46,12 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
           s == NoSymbol || s.isModuleClass
         else
           s == NoSymbol
-      } toList
+      }.toList
     }
     
     val astDependencies = filterTree(unit.body, importsIgnoringTraverser) map (_.tpe.typeSymbol)
         
-    (unitDependencies ::: (astDependencies)) distinct
+    (unitDependencies ::: (astDependencies)).distinct
   }
 
   def wildcardImport(i: ImportSelector) = i.name == nme.WILDCARD

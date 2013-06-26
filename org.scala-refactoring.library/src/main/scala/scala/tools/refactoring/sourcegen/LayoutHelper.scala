@@ -400,7 +400,7 @@ trait LayoutHelper {
         }
         
         trace("Rule %s splits (%s, %s) layout %s into %s and %s", rule, getSimpleClassName(l), getSimpleClassName(r), layout, ll, lr)
-        Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(ll), comments)) → Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(lr) reverse, comments reverse) reverse)
+        Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(ll), comments)) → Layout(mergeLayoutWithComment(removeLeadingOrTrailingComma(lr).reverse, comments.reverse).reverse)
     }
   }
 }

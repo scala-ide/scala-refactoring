@@ -5,7 +5,9 @@
 package scala.tools.refactoring
 package sourcegen
 
-import tools.nsc.util.RangePosition
+import scala.reflect.internal.util.RangePosition
+
+import language.implicitConversions
 
 trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
@@ -846,6 +848,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             } else {
               current ++ ", " ++ mergeTypeParameters(next)
             }
+          case _ =>
+            EmptyFragment
         }
         
         mergeTypeParameters(tree.tparamsWithContextBounds) ifNotEmpty {

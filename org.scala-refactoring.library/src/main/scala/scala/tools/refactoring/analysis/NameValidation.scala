@@ -5,10 +5,10 @@
 package scala.tools.refactoring
 package analysis
 
-import tools.nsc.util.BatchSourceFile
 import tools.nsc.ast.parser.Scanners
 import tools.nsc.ast.parser.Tokens
 import scala.util.control.NonFatal
+import scala.reflect.internal.util.BatchSourceFile
 
 /**
  * NameValidation offers several methods to validate
@@ -74,11 +74,11 @@ trait NameValidation {
     val owner = s.owner
 
     if(s.isPrivate || s.isLocal) {
-      isNameAlreadyUsedInLocalScope
+      isNameAlreadyUsedInLocalScope.distinct
     } else if(owner.isClass && !(owner.isModuleClass || owner.isClass && nme.isLocalName(owner.name))) {
-      isNameAlreadyUsedInClassHierarchy
+      isNameAlreadyUsedInClassHierarchy.distinct
     } else {
-      isNameAlreadyUsedInPackageHierarchy
-    } distinct
+      isNameAlreadyUsedInPackageHierarchy.distinct
+    }
   }
 }

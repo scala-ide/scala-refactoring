@@ -63,14 +63,12 @@ trait TreeCreationMethods {
   }
   
   def treeFrom(file: SourceFile): global.Tree = {
-        
-    val r1 = new Response[global.Tree]
-    global.askParsedEntered(file, true, r1)
-    r1.get // we don't care about the result yet
     
-    val r2 = new Response[global.Tree]
-    global.askType(file, false, r2)
-    r2.get match {
+    val response = new Response[global.Tree]
+    
+    global.ask(() => global.askLoadedTyped(file, response))
+    
+    response.get match {
       case Left(tree) => tree
       case Right(ex) => throw ex
     }

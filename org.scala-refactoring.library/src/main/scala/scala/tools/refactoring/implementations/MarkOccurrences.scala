@@ -40,13 +40,13 @@ abstract class MarkOccurrences extends common.Selections with analysis.Indexes w
        
       case imp: Import =>
         
-        (imp.Selectors() find { selector =>
+        imp.Selectors().find { selector =>
           positionOverlapsSelection(selector.pos)
-        }).toList flatMap { selector =>
+        }.toList.flatMap { selector =>
           findSymbolForImportSelector(imp.expr, selector.name.name)
-        } map { sym =>
+        }.map { sym =>
           occurrencesForSymbol(sym)
-        } flatten
+        }.flatten
         
       case selectedLocal =>
         // source files that contain errors can lead to 

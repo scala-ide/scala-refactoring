@@ -91,49 +91,7 @@ trait TreeTraverser {
     }
     
     def handleAnnotations(as: List[AnnotationInfo]) {
-      
-      def isScalaVersion(version: String) = {
-        scala.util.Properties.versionString.contains(version)
-      }
-      
-      if(isScalaVersion("2.9")) {
-        as foreach { 
-          case annotation =>
-    
-            annotation.atp match {
-              case tpe @ TypeRef(_, sym, _) if annotation.pos != NoPosition =>
-                val tree = fakeSelectTreeFromType(tpe, sym, annotation.pos)
-                traverse(tree)
-              case _ =>
-            }
-    
-            // Annotations with parameters defined in Java need this:
-            annotation.assocs.unzip._2 collect {
-              case LiteralAnnotArg(Constant(value)) => value
-            } foreach {
-              case tpe @ TypeRef(_, sym, _) =>
-                /* The `annotation.pos` is wrong, we should instead extract
-                 * the correct positions from the source code. */
-                fakeSelectTreeFromType(tpe, sym, annotation.pos) match {
-                  case t: Select => traverse(t)
-                  case _ => ()
-                }
-              case _ => ()
-            }
-    
-            annotation.args foreach traverse
-        }
-      } else {
-        
-        type FutureAnnotationInfo = AnnotationInfo {
-          // Starting from Scala 2.10, we can access the original tree
-          def original: Tree
-        }
-        
-        as foreach { 
-          case annotation: FutureAnnotationInfo => traverse(annotation.original)
-        }
-      }
+      as map (_.original) foreach traverse
     }
     
     def handleAppliedTypeTree(tree: AppliedTypeTree, tpe: TypeRef): Unit = (tree, tpe) match {
@@ -250,13 +208,13 @@ trait TreeTraverser {
             val fromBody = body collect {
               case t: RefTree if t.name == arg.name => t
             }
-            val fromGenerator = generator collect {
+            val fromGenerator = generator.collect {
               case Apply(Select(_, nme.withFilter), (Function((v: ValDef) :: _, body)) :: Nil) 
                 if !v.pos.isRange && v.name == arg.name => 
                   body collect {
                     case t: RefTree if t.symbol == v.symbol => t
                   }
-            } flatten
+            }.flatten
             
             fromBody ++ fromGenerator
           }
@@ -402,7 +360,7 @@ trait TreeTraverser {
     
     private def between(t1: Tree, t2: Tree) = {
       if(t1.pos.isRange && t2.pos.isRange)
-        t1.pos.source.content.slice(t1.pos.end, t2.pos.start) mkString
+        t1.pos.source.content.slice(t1.pos.end, t2.pos.start).mkString
       else ""
     }
   }

@@ -86,24 +86,8 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       }
       """)
   }
-  
-  @Test
-  @ScalaVersion(matches="2.9")
-  def findShadowed29() = {
-    assertDeclarationOfSelection("""val x: java.lang.String = "a"""", """
-      object AfindShadowed {
-        private[this] val x = 1
-        def go  = {
-          val x = "a"
-          val y = /*(*/  x  /*)*/
-          y
-        }
-      }
-      """)
-  }
     
   @Test
-  @ScalaVersion(matches="2.10")
   def findShadowed() = {
     assertDeclarationOfSelection("""val x: String = "a"""", """
       object AfindShadowed {
@@ -274,21 +258,6 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
 }""", tree)
   }
 
-  @ScalaVersion(matches="2.9")
-  @Test
-  def referencesToTypes29() = {
-    val tree =  """      
-      object L {
-        def go[T](t: /*(*/ T /*)*/) = {
-          t: T
-        }
-      }
-      """
-    assertReferencesOfSelection("""T (51, 52), T (77, 78)""", tree)
-    assertDeclarationOfSelection("""type T>: Nothing <: Any""", tree)
-  }
-
-  @ScalaVersion(matches="2.10")
   @Test
   def referencesToTypes() = {
     val tree =  """      

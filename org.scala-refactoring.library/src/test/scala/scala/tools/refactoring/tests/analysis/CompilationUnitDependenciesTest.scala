@@ -48,26 +48,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  @ScalaVersion(matches="2.10")
-  def evidence210 = assertDependencies(
-    """scala.Some""",
-    """
-    trait Transformations {
-    
-      abstract class Transformation[X, Y] {
-        def apply(x: X): Option[Y]
-      }
-  
-      def allChildren[X <% (X ⇒ Y) ⇒ Y, Y](t: ⇒ Transformation[X, Y]) = new Transformation[X, Y] {
-        def apply(in: X): Option[Y] = {
-          Some(in(child => t(child) getOrElse (return None)))
-        }
-      }
-    }
-    """)
-  @Test
-  @ScalaVersion(matches="2.9.3")
-  def evidence293 = assertDependencies(
+  def evidence = assertDependencies(
     """scala.Some""",
     """
     trait Transformations {
@@ -126,25 +107,14 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
       
   @Test
-  @ScalaVersion(matches="2.10")
   def objectType = assertDependencies(
     """<root>.scala.xml.QNode""",
     """
       import scala.xml._
       class MNO { var no: QNode.type = null }
       """)
-
-  @Test
-  @ScalaVersion(matches="2.9")
-  def objectType29 = assertDependencies(
-    """scala.xml.QNode""",
-    """
-      import scala.xml._
-      class MNO { var no: QNode.type = null }
-      """)
       
   @Test
-  @ScalaVersion(matches="2.10")
   def objectTypeRequiresImport = assertNeededImports(
     """<root>.scala.xml.QNode""", 
     """
@@ -153,27 +123,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
-  @ScalaVersion(matches="2.9")
-  def objectTypeRequiresImport29 = assertNeededImports(
-    """scala.xml.QNode""", 
-    """
-      import scala.xml._
-      class MNO { var no: QNode.type = null }
-      """)
-
-  @Test
-  @ScalaVersion(matches="2.9")
-  def valAnnotation29 = assertDependencies(
-    """java.lang.Object
-       scala.reflect.BeanProperty
-       scala.this.Predef.String""",
-    """
-      import scala.reflect.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
-      """)
-      
-  @Test
-  @ScalaVersion(matches="2.10")
   def valAnnotation = assertDependencies(
     """java.lang.Object
        scala.beans.BeanProperty
@@ -230,16 +179,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  @ScalaVersion(matches="2.9")
-  def annotationRequiresImport29 = assertNeededImports(
-    """scala.reflect.BeanProperty""", 
-    """
-      import scala.reflect.BeanProperty
-      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
-      """)
-
-  @Test
-  @ScalaVersion(matches="2.10")
   def annotationRequiresImport = assertNeededImports(
     """scala.beans.BeanProperty""", 
     """
@@ -375,19 +314,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  @ScalaVersion(matches="2.10")
   def importIsUsedAsType = assertDependencies(
     """java.util.ArrayList""",
-    """
-      import java.util._
-      class UsesMap { def x(m: java.util.ArrayList[Int]) = () }
-      """)
-      
-  @Test
-  @ScalaVersion(matches="2.9")
-  def importIsUsedAsType29 = assertDependencies(
-    """java.util
-       java.util.ArrayList""",
     """
       import java.util._
       class UsesMap { def x(m: java.util.ArrayList[Int]) = () }
@@ -403,7 +331,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   @ScalaVersion(matches="2.10")
-  def importIsUsedAsTypeAscription = assertDependencies(
+  def importIsUsedAsTypeAscription210 = assertDependencies(
     """scala.collection.immutable.Set
        scala.this.Predef.Map
        scala.this.Predef.any2ArrowAssoc""",
@@ -412,12 +340,11 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
-  @ScalaVersion(matches="2.9")
-  def importIsUsedAsTypeAscription29 = assertDependencies(
-    """scala.collection.immutable
-       scala.collection.immutable.Set
-       scala.this.Predef.Map
-       scala.this.Predef.any2ArrowAssoc""",
+  @ScalaVersion(matches="2.11")
+  def importIsUsedAsTypeAscription = assertDependencies(
+    """scala.collection.immutable.Set
+       scala.this.Predef.ArrowAssoc
+       scala.this.Predef.Map""",
     """
       class UsesSet { val s: collection.immutable.Set[Any] = Map(1 -> 2).toSet }
       """)
@@ -605,21 +532,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
-  @ScalaVersion(matches="2.10")
   def renamedPackage = assertDependencies(
     """java.util.Map""",
-    """
-      import java.{ lang => jl, util => ju }
-      trait Y {
-        def build(ignored : ju.Map[_, _])
-      }
-      """)
-      
-  @Test
-  @ScalaVersion(matches="2.9")
-  def renamedPackage29 = assertDependencies(
-    """java.ju.Map
-       java.util""",
     """
       import java.{ lang => jl, util => ju }
       trait Y {
@@ -663,17 +577,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
       """)
 
-  @ScalaVersion(matches="2.9")
-  def importFromPackageObjectNeeded29 = assertNeededImports(
-    """scala.collection.`package`.breakOut""",
-    """
-      import scala.collection.breakOut
-      object TestbreakOut {
-        val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
-      }
-      """)
-
-
   @Test
   def somePackages = assertDependencies(
     """a.X""",
@@ -701,26 +604,9 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
-  @ScalaVersion(matches="2.10")
   def importedImplicitConversion = assertDependencies(
     """java.util.List
        scala.collection.JavaConversions.bufferAsJavaList
-       scala.collection.mutable.ListBuffer""",
-    """   
-      import scala.collection.JavaConversions._
-      object Conversions {
-        val sl = new scala.collection.mutable.ListBuffer[Int]
-        val jl : java.util.List[Int] = sl
-      }
-      """)
-      
-  @Test
-  @ScalaVersion(matches="2.9")
-  def importedImplicitConversion29 = assertDependencies(
-    """java.util
-       java.util.List
-       scala.collection.JavaConversions.bufferAsJavaList
-       scala.collection.mutable
        scala.collection.mutable.ListBuffer""",
     """   
       import scala.collection.JavaConversions._
@@ -742,19 +628,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
       
   @Test
-  @ScalaVersion(matches="2.9")
-  def importedImplicitConversionNeedsImportShortForm29 = assertNeededImports(
-    """scala.this.collection.JavaConversions.asScalaBuffer""",
-    """ 
-      import collection.JavaConversions._
-      class ListConversion {
-        val l = new java.util.ArrayList[String]
-        l map (_.toInt)
-      }
-    """)    
-      
-  @Test
-  @ScalaVersion(matches="2.10")
   def importedImplicitConversionNeedsImportShortForm = assertNeededImports(
     """scala.collection.JavaConversions.asScalaBuffer""",
     """ 
@@ -922,24 +795,9 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     }""")
     
   @Test
-  @ScalaVersion(matches="2.10")
   def implicitDef = assertDependencies(
     """ClassTag.Byte
        scala.this.Predef.byteArrayOps""",
-    """class ImplicitDef {
-
-      val readBuffer = Array.ofDim[Byte](1024)
-      val dataId: (Byte, Byte) = readBuffer.slice(0, 2)
-
-      implicit def arrayTo2Tuple[T](a: Array[T]): (T, T) = {
-        (a(0), a(1))
-      }
-    }""")
-
-  @Test
-  @ScalaVersion(matches="2.9")
-  def implicitDef29 = assertDependencies(
-    """scala.this.Predef.byteArrayOps""",
     """class ImplicitDef {
 
       val readBuffer = Array.ofDim[Byte](1024)

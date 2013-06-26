@@ -44,10 +44,7 @@ trait TreeFactory {
       case t => t
     }
 
-    val typeTree = t match {
-      case att: AppliedTypeTree => att.copy()
-      case _ => new TypeTree
-    }
+    val typeTree = new TypeTree
 
     typeTree setType newType
     typeTree setPos t.pos
@@ -241,15 +238,12 @@ trait TreeFactory {
     mkClass(mods withPosition (Flags.CASE, NoPosition), name, tparams, argss, body, parents, superArgs)
   }
   
-  class CopyTypeFromOtherTree(t1: Tree) {
+  implicit class CopyTypeFromOtherTree(t1: Tree) {
     def typeFrom(t2: Tree) = {
-      t1.tpe = t2.tpe
-      t1
+      t1.setType(t2.tpe)
     }
   }
 
-  implicit def typeFromTree(t1: Tree) = new CopyTypeFromOtherTree(t1)
-  
   /**
    * Creates a function call `fun` on the selector and passes a function with
    * a single parameter `param` and the body `body`.

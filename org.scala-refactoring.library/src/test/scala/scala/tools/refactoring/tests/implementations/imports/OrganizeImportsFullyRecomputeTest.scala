@@ -436,20 +436,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  @ScalaVersion(matches="2.9")
-  def annotation29 = new FileSet {
-    """
-    import scala.reflect.BeanProperty
-    case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
-    """ becomes
-    """
-    import scala.reflect.BeanProperty
-    case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
-    """
-  } applyRefactoring organize
-
-  @Test
-  @ScalaVersion(matches="2.10")
   def annotation = new FileSet {
     """
     import scala.beans.BeanProperty
@@ -586,36 +572,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
   
   @Test
-  @ScalaVersion(matches="2.9") // it works correctly on 2.9, but the 2.10 version is better
-  def importMethodFromSamePackage29 = new FileSet {
-    
-    addToCompiler("testimplicits", """
-    package a.b.c
-    object TestImplicits {
-      implicit def stringToBytes(s: String): Array[Byte] = s.getBytes
-    }""");
-    
-    """
-    package a.b.c
-    import TestImplicits._
-
-    object Tester {
-      "":Array[Byte]
-    }
-    """ becomes
-    """
-    package a.b.c
-    
-    import a.b.c.TestImplicits.stringToBytes
-
-    object Tester {
-      "":Array[Byte]
-    }
-    """
-  } applyRefactoring organize
-  
-  @Test
-  @ScalaVersion(matches="2.10")
   def importMethodFromSamePackage = new FileSet {
     
     addToCompiler("testimplicits", """
@@ -948,7 +904,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  @ScalaVersion(doesNotMatch="2.9")
   def ignoreScalaLanguageImports = new FileSet {
     """
     package ignoreScalaLanguageImports
@@ -969,7 +924,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  @ScalaVersion(doesNotMatch="2.9")
   def ignoreLanguageImports = new FileSet {
     """
     package ignoreScalaLanguageImports

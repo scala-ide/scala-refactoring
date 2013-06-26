@@ -5,6 +5,8 @@
 package scala.tools.refactoring
 package transformation
 
+import language.implicitConversions
+
 trait TreeTransformations extends Transformations with TreeFactory {
   
   this: common.PimpedTrees with common.CompilerAccess =>
@@ -73,20 +75,18 @@ trait TreeTransformations extends Transformations with TreeFactory {
   
   def replaceTree(from: Tree, to: Tree) = ↓(matchingChildren(predicate((t: Tree) => t samePosAndType from) &> constant(to)))
       
-  class TreeReplacesOtherTreeViaPosition[T <: Tree](t1: T) {
+  implicit class TreeReplacesOtherTreeViaPosition[T <: Tree](t1: T) {
     def replaces[T2 >: T <: Tree](t2: T2): T = {
       t1 setPos t2.pos
     }
   }
 
-  implicit def replacesTree[T <: Tree](t1: T) = new TreeReplacesOtherTreeViaPosition(t1)
-    
   def abstractFileToTree(file: tools.nsc.io.AbstractFile): global.Tree = compilationUnitOfFile(file).get.body
   
   /**
    * Replace the first sequence of elements with another sequence.
    */
-  implicit def additionalListMethods[T](l: List[T]) = new {
+  implicit class AdditionalListMethods[T](l: List[T]) {
     def replaceSequence(what: List[T], replacement: List[T]): List[T] = {
       def inner(from: List[T], what: List[T], replacement: List[T]): List[T] = (from, what) match {
         case (Nil, _) => Nil

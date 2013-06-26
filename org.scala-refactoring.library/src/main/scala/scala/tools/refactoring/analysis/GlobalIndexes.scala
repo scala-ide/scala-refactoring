@@ -87,7 +87,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     def occurences(s: global.Symbol) = {
       val expandedSymbol = expandSymbol(s)
       
-      expandedSymbol flatMap { sym =>
+      expandedSymbol.flatMap { sym =>
         
         val decs = declaration(sym).toList 
         val refs = cus.flatMap { cu => 
@@ -96,7 +96,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
         
         decs ::: refs
         
-      } filter {
+      }.filter {
         
         // see SI-6141
         case t: Ident => t.pos.isRange
@@ -109,7 +109,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           src != "super"
         
         case t => t.pos.isOpaqueRange
-      } distinct
+      }.distinct
     }
     
     def allDefinedSymbols = cus.flatMap(_.definitions.keys)
@@ -127,7 +127,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
       
       cus.flatMap { cu =>
         cu.definitions.flatMap(hasTreeWithPos) ++ cu.references.flatMap(hasTreeWithPos)
-      } filter (_ != NoSymbol) distinct
+      }.filter(_ != NoSymbol).distinct
     }
   }
 }

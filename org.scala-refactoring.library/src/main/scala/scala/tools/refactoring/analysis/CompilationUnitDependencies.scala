@@ -97,7 +97,7 @@ trait CompilationUnitDependencies {
       case t if isLocalDefinition(t) => None
       case t: Select if !t.pos.isRange => Some(t)
       case t => findDeepestNeededSelect(t) 
-    } filter isImportReallyNeeded distinct
+    }.filter(isImportReallyNeeded).distinct
     
     // Eliminate duplicates by converting them to strings.
     neededDependencies.groupBy(asSelectorString).map(_._2.head).toList filterNot (_.symbol == t.symbol)

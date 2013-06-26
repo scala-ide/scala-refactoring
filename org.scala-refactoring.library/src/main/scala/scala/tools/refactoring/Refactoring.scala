@@ -49,7 +49,7 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
     case TextChange(file, from, to, changeText) =>
 
       def commonPrefixLength(s1: Seq[Char], s2: Seq[Char]) =
-        s1 zip s2 takeWhile Function.tupled(_==_) length
+        (s1 zip s2 takeWhile Function.tupled(_==_)).length
       
       val original    = file.content.subSequence(from, to).toString
       val replacement = changeText

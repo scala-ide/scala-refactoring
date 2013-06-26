@@ -84,7 +84,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * @see findSelectedWithPredicate for more information
      */
     def findSelectedOfType[T](implicit m: Manifest[T]): Option[T] = 
-      findSelectedWithPredicate(t => m.erasure.isInstance(t)) map (_.asInstanceOf[T])
+      findSelectedWithPredicate(t => m.runtimeClass.isInstance(t)) map (_.asInstanceOf[T])
     
     /**
      * Finds a selected tree by a predicate. The tree does not have to be selected completely,

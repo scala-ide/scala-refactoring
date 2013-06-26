@@ -16,6 +16,8 @@ import scala.tools.refactoring.sourcegen.AbstractPrinter
 import scala.tools.refactoring.sourcegen.Layout
 import scala.reflect.internal.util.RangePosition
 
+import language.implicitConversions
+
 /**
  * A collection of implicit conversions for ASTs and other 
  * helper functions that work on trees.
@@ -39,7 +41,7 @@ trait PimpedTrees {
    * Import selectors are not trees, but we can provide an extractor
    * that converts the ImportSelectors into our own ImportSelectorTrees.
    */
-  class ImportSelectorTreeExtractor(t: global.Import) {
+  implicit class ImportSelectorTreeExtractor(t: global.Import) {
     // work around for https://lampsvn.epfl.ch/trac/scala/ticket/3392
     def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
     
@@ -108,8 +110,6 @@ trait PimpedTrees {
       (candidates find { s => s.isClass || s.isTrait }) orElse
       candidates.headOption
   }
-  
-  implicit def importToImportSelectorTreeExtractor(t: global.Import) = new ImportSelectorTreeExtractor(t)
   
   /**
    * Add some methods to Tree that make it easier to compare
@@ -242,7 +242,7 @@ trait PimpedTrees {
             t.pos withEnd (t.pos.start + "while".length)
             
           case t @ LabelDef(name, _, Block(stats, cond)) if name.toString startsWith "doWhile" =>
-            val src = stats.last.pos.source.content.slice(stats.last.pos.end, cond.pos.start) mkString
+            val src = stats.last.pos.source.content.slice(stats.last.pos.end, cond.pos.start).mkString
             val whileStart = stats.last.pos.end + src.indexOf("while")
             t.pos withStart whileStart withEnd (whileStart + "while".length)
             
@@ -279,9 +279,9 @@ trait PimpedTrees {
           // set all points to the start, keeping wrong points
           // around leads to the calculation of wrong lines
           if(pos2.isTransparent)
-            pos2 withPoint pos2.start makeTransparent
+            pos2.withPoint(pos2.start).makeTransparent
           else
-            pos2 withPoint pos2.start
+            pos2.withPoint(pos2.start)
       }
     }
 
@@ -338,7 +338,6 @@ trait PimpedTrees {
    * except if there's a newline at the end.
    */
   def endPositionAtEndOfSourceFile(pos: Position, otherWise: Option[Int] = None) = {
-    // TODO: This is only needed for Scala < 2.10
     val lastCharInFile = pos.source.content(pos.end)
     if(pos.source.length -1 == pos.end 
         && lastCharInFile != '\n'
@@ -368,7 +367,7 @@ trait PimpedTrees {
         c.nameString == tree.nameString
       case c =>
         c eq tree
-    } orElse (candidates filter (_ samePosAndType tree) lastOption)
+    } orElse (candidates.filter(_ samePosAndType tree).lastOption)
   }
   
   val findAllTreesWithTheSamePosition: Tree => Iterable[Tree] = {
@@ -399,7 +398,7 @@ trait PimpedTrees {
     }
   }
   
-  class DefDefMethods(defdef: DefDef) {
+  implicit class DefDefMethods(defdef: DefDef) {
     
     def contextBounds: List[Tree] = {
       defdef.vparamss.lastOption.toList.flatten collect {
@@ -408,7 +407,7 @@ trait PimpedTrees {
           && name.toString.startsWith(nme.EVIDENCE_PARAM_PREFIX)
           && tpt.original.isInstanceOf[AppliedTypeTree] =>
             tpt.original.asInstanceOf[AppliedTypeTree].tpt
-      } toList
+      } 
     }
     
     def tparamsWithContextBounds: List[Tree] = {
@@ -422,8 +421,6 @@ trait PimpedTrees {
         defdef.vparamss.init  
     }
   }
-
-  implicit def additionalDefDefMethods(t: DefDef) = new DefDefMethods(t)
 
   class TemplateMethods(t: Template) {
     
@@ -447,19 +444,19 @@ trait PimpedTrees {
     def earlyDefs = t.body.collect {
       case t @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if t.symbol.isConstructor => stats filter treeInfo.isEarlyDef
       case t @ DefDef(_, _, _, _, _, rhs) if t.symbol.isConstructor && treeInfo.isEarlyDef(rhs) => rhs :: Nil
-    } flatten
+    }.flatten
       
     /**
      * Returns the trees that are passed to a super constructor call.
      */
     def superConstructorParameters = t.body.collect {
       case d @ DefDef(_, _, _, _, _, BlockExtractor(stats)) if d.symbol.isConstructor || d.name.toString == nme.CONSTRUCTOR.toString =>
-        stats collect {
+        stats.collect {
           // we need to exclude calls to this class' constructors, this seems to catch them:
           case a @ Apply(_, args) if a.tpe != t.tpe || (a.tpe == null && t.tpe == null) =>
             args
-        } flatten
-    } flatten
+        }.flatten
+    }.flatten
 
     /**
      * Returns all constructor parameters that are accessible from outside the class itself.
@@ -547,7 +544,7 @@ trait PimpedTrees {
         }
                       
         val body = {
-          val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot (pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters contains) 
+          val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot ((pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters).contains) 
           val removeGeneratedTrees = bodyWithoutPrimaryConstructorAndArgs filter keepTree
           removeCompilerTreesForMultipleAssignment(removeGeneratedTrees)
         }
@@ -869,7 +866,7 @@ trait PimpedTrees {
       case Tokens.VAR   => "var"
       case Tokens.TYPE  => "type"
       case Tokens.DEF   => "def"
-      case _            => "<unknown>: " + flagsToString(flag)
+      case _            => "<unknown flag, please report a bug>"
     }
     
     def errorSubtrees = Nil
@@ -1020,14 +1017,14 @@ trait PimpedTrees {
             }
           } getOrElse (return block)
           
-          val syntheticNameToSymbol = (argumentsFromOriginalTree map { 
+          val syntheticNameToSymbol = argumentsFromOriginalTree.map { 
             case a: Ident => a.name 
             case _ => return block
-          }) zip (argumentSymbols) toMap
+          }.zip(argumentSymbols).toMap
           
           val startOffset = apply.pos.point 
           // FIXME strip comments!
-          val argumentsSource = apply.pos.source.content.slice(startOffset, apply.pos.end) mkString
+          val argumentsSource = apply.pos.source.content.slice(startOffset, apply.pos.end).mkString
           
           val newValDefs = stats collect {
             case t: ValDef if t.pos != NoPosition=> 
@@ -1129,11 +1126,7 @@ trait PimpedTrees {
     }
   }
   
-  def isClassTag(c: Constant): Boolean = {
-    // On 2.10 c.tag == ClazzTag
-    // On 2.9  c.tag == ClassTag
-    c.tpe.toString.matches("(java\\.lang\\.)?Class\\[.*")
-  }
+  def isClassTag(c: Constant): Boolean = c.tag == ClazzTag
   
   /**
    * Returns whether the tree is considered empty. 
@@ -1145,7 +1138,7 @@ trait PimpedTrees {
    
   class NotInstanceOf[T](m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
-      if(m.erasure.isInstance(t)) {
+      if(m.runtimeClass.isInstance(t)) {
         None
       } else
         Some(t)

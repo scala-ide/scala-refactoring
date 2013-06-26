@@ -1,6 +1,8 @@
 package scala.tools.refactoring
 package implementations
 
+import language.reflectiveCalls
+
 trait ImportsHelper {
 
   self: common.InteractiveScalaCompiler with analysis.Indexes with transformation.Transformations with transformation.TreeTransformations with common.PimpedTrees =>

@@ -64,6 +64,6 @@ object CommentsUtils {
           add(' ', _1)
       }
             
-      (text mkString, comment mkString)
+      (text.mkString, comment.mkString)
   }
 }
