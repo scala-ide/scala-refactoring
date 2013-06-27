@@ -20,10 +20,6 @@ class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTraci
   import global._
 
   implicit class TreePrettyPrintMethods(original: Tree) {
-
-    def cleanTree(t: Tree) =
-      (removeAuxiliaryTrees &> emptyAllPositions)(t).get
-
     def prettyPrintsTo(expected: String) = {
       val sourceFile = {
         // we only need the source file to see what kinds of newline we need to generate,
@@ -1112,7 +1108,7 @@ object A"""
     protected sealed class Dddd
     """)
 
-    val modTree = (removeAuxiliaryTrees &> ↓(changeSomeModifiers)).apply(tree).get
+    val modTree = (↓(changeSomeModifiers)).apply(tree).get
 
     tree prettyPrintsTo """package xy
 

@@ -118,7 +118,23 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
       None
   }
 
-  val emptyAllPositions = topdown(setNoPosition)
+  def cleanTree(t: global.Tree) = {
+    global.ask{ () =>
+      val removeAuxiliaryTrees = ↓(transform {
+    
+        case t: global.Tree if (t.pos == global.NoPosition || t.pos.isRange) => t
+        
+        case t: global.ValDef => global.emptyValDef
+        
+        // We want to exclude "extends AnyRef" in the pretty printer tests
+        case t: global.Select if t.name.isTypeName && t.name.toString != "AnyRef" => t
+        
+        case t => global.EmptyTree
+      })
+      
+      (removeAuxiliaryTrees &> topdown(setNoPosition))(t).get
+    }
+  }
   
   def commentSelectionStart(src: String): Int = {
     src.indexOf(startPattern) + startPattern.length
@@ -127,16 +143,4 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   def commentSelectionEnd(src: String): Int = {
     src.indexOf(endPattern)
   }
-  
-  val removeAuxiliaryTrees = ↓(transform {
-
-    case t: global.Tree if (t.pos == global.NoPosition || t.pos.isRange) => t
-    
-    case t: global.ValDef => global.emptyValDef
-    
-    // We want to exclude "extends AnyRef" in the pretty printer tests
-    case t: global.Select if t.name.isTypeName && t.name.toString != "AnyRef" => t
-    
-    case t => global.EmptyTree
-  })
 }

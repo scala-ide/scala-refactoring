@@ -47,7 +47,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
     
     def describe(t: Tree) = if(t.pos == NoPosition) t.getClass.getSimpleName else t.getClass.getSimpleName +"("+ t.pos.line +")"
 
-    val transformed = (removeAuxiliaryTrees &> trans)(treeFrom(src)).get
+    val transformed = (trans)(treeFrom(src)).get
 
     findAllChangedTrees(transformed) map {
       case (t, r, c) => describe(t) +": "+ c.map(describe).mkString(", ")
@@ -167,7 +167,7 @@ class TreeChangesDiscovererTest extends TestHelper with PimpedTrees with TreeCha
   
   @Test
   def findNestedChanges() {
-    assertEquals("DefDef(3): TypeTree(3), ValDef(3), Function(5), Apply(5), Block(3), DefDef(3), Template(4), Literal(5), AppliedTypeTree(3), Select(3), ApplyToImplicitArgs(5), NameTree(3), ModuleDef(4)", 
+    assertEquals("DefDef(3): Function(5), Apply(5), Block(3), DefDef(3), Template(4), Literal(5), ApplyToImplicitArgs(5), NameTree(3), ModuleDef(4)", 
       transformAndFind(↓(matchingChildren(doubleAllDefNames |> incrementIntegers)), 
     """
      class Test {

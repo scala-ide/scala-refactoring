@@ -26,7 +26,6 @@ class IndividualSourceGenTest extends TestHelper with SourceGenerator with Silen
   }
   
   implicit def treeToPrettyPrint(original: Tree) = new {
-    def cleanTree(t: Tree) = (removeAuxiliaryTrees &> emptyAllPositions)(t).get
     def prettyPrintsTo(expected: String) = assertEquals(expected, generateText(cleanTree(original)))
   }
   
@@ -220,9 +219,9 @@ else {
       case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
     }
         
-    assertEquals("""val a = {4 + 3  }""", generate(removeAuxiliaryTrees apply valDef get, sourceFile = Some(tree.pos.source)).center.asText)
+    assertEquals("""val a = {4 + 3  }""", generate(valDef, sourceFile = Some(tree.pos.source)).center.asText)
           
-    assertEquals("""{4 + 3  }""", generate(removeAuxiliaryTrees apply valDef.rhs get, sourceFile = Some(tree.pos.source)).asText)
+    assertEquals("""{4 + 3  }""", generate(valDef.rhs, sourceFile = Some(tree.pos.source)).asText)
           
     assertEquals(0, createChanges(List(valDef)).size)
   }
@@ -294,10 +293,10 @@ else {
     
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
         
-    assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", generate(removeAuxiliaryTrees apply newDefDef1 get, sourceFile = Some(originalDefDef.pos.source)).center.asText)
+    assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", generate(newDefDef1, sourceFile = Some(originalDefDef.pos.source)).center.asText)
    
     assertEquals("""
-       def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", createFragment(removeAuxiliaryTrees apply newDefDef1 get).asText)
+       def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", createFragment(newDefDef1).asText)
    
     val newRHS2 = Apply(Select(Ident(newTermName("com")), newTermName("synchronized")), List(originalDefDef.rhs))
     
@@ -305,12 +304,12 @@ else {
         
     assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
-       })""", generate(removeAuxiliaryTrees apply newDefDef2 get, sourceFile = Some(originalDefDef.pos.source)).center.asText)
+       })""", generate(newDefDef2, sourceFile = Some(originalDefDef.pos.source)).center.asText)
           
     assertEquals("""
        def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
-       })""", createFragment(removeAuxiliaryTrees apply newDefDef2 get).asText)
+       })""", createFragment(newDefDef2).asText)
  
        
     assertEquals(1, createChanges(List(newDefDef1)).size)
@@ -354,7 +353,7 @@ else {
           println(a.value)
         }
       })
-      }""", createFragment(removeAuxiliaryTrees apply newDefDef1 get).asText)
+      }""", createFragment(newDefDef1).asText)
 
   }
   
@@ -373,7 +372,7 @@ else {
     class Test {
      var box = new VBox[Int]({ 2 + 4 })
     }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -409,7 +408,7 @@ class Foo3 {
    // after getIdFoo
    def setIdFoo(id: Int) = idFoo = id
 }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -435,7 +434,7 @@ class Foo3 {
    private var idFoo = { 3 + 4 }
    // after idFoo
 }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -455,7 +454,7 @@ class Foo3 {
    var _idFoo = 7
    this._idFoo = 5
 }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -479,7 +478,7 @@ class Account2 {
      value += v
    }
 }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -503,7 +502,7 @@ object Acco {
        v + a
      })
 }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -525,7 +524,7 @@ object Acco {
  
       p(5, separator = ", ", before = "\\{", after = "\\}")  
     }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -551,7 +550,7 @@ object Acco {
         p(second = 42, first = "-")
       }
     }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -577,7 +576,7 @@ object Acco {
         p(second = 42)
       }
     }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -609,7 +608,7 @@ object Acco {
           mods_ + theI
       }
     }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -633,7 +632,7 @@ object Acco {
           ()
       }
     }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -655,7 +654,7 @@ object Acco {
     }
     
     class Foo
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -681,7 +680,7 @@ object Foo4 {
 class Foo4[T](name: String) {
    def echo[T](t: T):T = t
 }
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }
@@ -701,7 +700,7 @@ object Foo5 {
    def apply() = { new Foo5 }
 }
 class Foo5
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   } 
@@ -731,7 +730,7 @@ class RunWith(c: Class[_]) extends StaticAnnotation
 
 @RunWith(classOf[String])
 class Test
-    """, generateText(removeAuxiliaryTrees apply tree get))
+    """, generateText(tree))
     
     assertEquals(0, createChanges(List(tree)).size)
   }

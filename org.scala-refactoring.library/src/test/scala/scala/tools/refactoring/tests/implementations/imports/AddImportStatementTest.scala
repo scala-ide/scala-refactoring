@@ -21,7 +21,7 @@ class AddImportStatementTest extends TestHelper {
     val refactoring = new AddImportStatement with SilentTracing {
       val global = outer.global
       val file = addToCompiler(randomFileName(), src)
-      val change = addImport(file, imp._1 + "." + imp._2)
+      val change = global.ask(()=> addImport(file, imp._1 + "." + imp._2))
     }
     
     assertEquals(expected, Change.applyChanges(refactoring.change, src))

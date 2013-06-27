@@ -8,44 +8,14 @@ package tests.transformation
 import tests.util.TestHelper
 import org.junit.Assert._
 import common.PimpedTrees
-
 import language.{postfixOps, reflectiveCalls}
+import scala.tools.nsc.util.FailedInterrupt
 
 class TreeTransformationsTest extends TestHelper with PimpedTrees {
   
   import global._
   
   def assertAllRangesOrNoPosition(t: Tree) =  assertFalse(t.exists(t => !(t.pos.isRange || t.pos == global.NoPosition)))
-  
-  @Test
-  def removeAuxiliary() = {
-    
-    val tree = treeFrom("""
-    package xyz
-    class Test {      
-      def a(): Int
-      def b(): Int = 5
-      def c() = 5
-      def d() = {
-        val a = 5
-        a + 0
-      }
-    }
-    """)
-    
-    assertAllRangesOrNoPosition(removeAuxiliaryTrees(tree).get)
-  }
-  
-  @Test
-  def removeAuxiliaryCaseClass() = {
-    
-    val tree = treeFrom("""
-    package xy
-    case class A(i: Int, a: String)
-    """)
-    
-    assertAllRangesOrNoPosition(removeAuxiliaryTrees(tree).get)
-  }
   
   @Test
   def allEmpty() = {
@@ -55,7 +25,7 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
     case class AllEmpty(i: Int, a: String)
     """)
     
-    val newTree = (removeAuxiliaryTrees &> emptyAllPositions)(tree).get
+    val newTree = cleanTree(tree)
     
     assertFalse(newTree.exists(_.pos != NoPosition))
   }
@@ -69,7 +39,7 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
   } 
   
   @Test 
-  def allChildrenAreCalled() = {
+  def allChildrenAreCalled() = global.ask { () =>
     
     var out = List[String]()
     
@@ -91,7 +61,7 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
   }  
   
   @Test 
-  def allAbortsEarly() = {
+  def allAbortsEarly() = global.ask { () =>
     
     var out = List[String]()
     
@@ -112,7 +82,7 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
   }  
   
   @Test 
-  def topDownIsDepthFirst() = {
+  def topDownIsDepthFirst() = global.ask { () =>
     
     var out = List[String]()
     
@@ -133,7 +103,7 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
   }  
   
   @Test 
-  def bottomUp() = {
+  def bottomUp() = global.ask { () =>
     
     var out = List[String]()
     
@@ -153,8 +123,8 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
     assertEquals("Ident, Ident, Select, Template, ClassDef, Ident, Select, Template, ClassDef, PackageDef", out.reverse mkString ", ")
   }
   
-  @Test(expected = classOf[StackOverflowError]) 
-  def topdownCanDiverge() {
+  @Test(expected = classOf[FailedInterrupt]) 
+  def topdownCanDiverge(): Unit = global.ask { () =>
     
     var out = List[String]()
     
@@ -175,7 +145,7 @@ class TreeTransformationsTest extends TestHelper with PimpedTrees {
   }
   
   @Test
-  def bottomUpDoesNotDiverge() {
+  def bottomUpDoesNotDiverge() = global.ask { () =>
     
     
     var out = List[String]()

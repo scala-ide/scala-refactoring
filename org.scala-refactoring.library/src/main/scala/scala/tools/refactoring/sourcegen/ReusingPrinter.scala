@@ -405,7 +405,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ pp(args) ++ r
           
         case (_, ((_: Bind) :: ( _: Bind) :: _)) =>
-          l ++ p(fun) ++ pp(args, before = if(l contains "(") NoRequisite else "(", separator = ", ", after = ")") ++ r
+          val _fun = p(fun)
+          val hasInfixExtractor = (l ++ _fun).asText.isEmpty
+          val _args = if(hasInfixExtractor) {
+            pp(args)
+          } else {
+            pp(args, before = if(l contains "(") NoRequisite else "(", separator = ", ", after = ")")
+          }
+          l ++ _fun ++ _args ++ r
           
         case (fun: Select, arg :: Nil) if keepTree(fun.qualifier) /*has receiver*/
             || fun.name.toString.endsWith("$eq") /*assigns*/ =>
@@ -415,7 +422,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (TypeApply(_: Select, _), (arg @ Function(_, _: Match)) :: Nil) =>
           l ++ p(fun) ++ p(arg) ++ r
           
-        case (fun @ TypeApply(receiver: Select, _), NoFunction(arg) :: Nil) if receiver != null =>
+        case (fun @ TypeApply(receiver: Select, _), NoFunction(arg) :: Nil) if receiver != null && keepTree(fun) =>
           if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
             l ++ p(fun) ++ p(arg) ++ r
           } else {
@@ -465,6 +472,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             l ++ p(fun) ++ r
           }
           
+        case (fun, args) if !keepTree(fun) /* Constructors, Tuples */ =>
+          val _args = pp(args, separator = ("," ++ Requisite.Blank), before = Requisite.anywhere("("), after = Requisite.anywhere(")"))
+          l ++ _args ++ r
+
         case (fun, args) =>
           val _args = pp(args, separator = ("," ++ Requisite.Blank), before = "(", after = Requisite.anywhere(")"))
           balanceParensAroundCall(p(fun), _args)
