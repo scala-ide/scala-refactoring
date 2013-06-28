@@ -20,7 +20,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   import global._
 
   implicit class TreePrettyPrintMethods(original: Tree) {
-    def prettyPrintsTo(expected: String) = {
+    def prettyPrintsTo(expected: String) = global.ask { () =>
       val sourceFile = {
         // we only need the source file to see what kinds of newline we need to generate,
         // so we just pass the expected output :-)

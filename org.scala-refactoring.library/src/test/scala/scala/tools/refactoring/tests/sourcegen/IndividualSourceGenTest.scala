@@ -774,14 +774,16 @@ class A(a: Int) {
     }
     """)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case a: Apply =>
-            a.copy(args = List[Tree]()) setPos a.pos
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case a: Apply =>
+              a.copy(args = List[Tree]()) setPos a.pos
+          }
         }
-      }
-    } apply (ast)
+      } apply (ast)
+    }
 
     assertEquals("""
     trait tr {
@@ -805,13 +807,15 @@ class A(a: Int) {
     }
     """)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case a: Apply => a.fun
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case a: Apply => a.fun
+          }
         }
-      }
-    } apply (ast)
+      } apply (ast)
+    }
 
     assertEquals("""
     trait tr {      
@@ -939,17 +943,19 @@ class A(a: Int) {
     
     val ast = treeFrom(src)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case a: Apply if (a.args.length > 1) =>
-            val fun1 = Select(
-              name = newTermName(a.fun.symbol.nameString),
-              qualifier = a.args.last)
-            a.copy(args = a.args.init, fun = fun1) replaces a
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case a: Apply if (a.args.length > 1) =>
+              val fun1 = Select(
+                name = newTermName(a.fun.symbol.nameString),
+                qualifier = a.args.last)
+              a.copy(args = a.args.init, fun = fun1) replaces a
+          }
         }
-      }
-    } apply (ast)
+      } apply (ast)
+    }
     
     assertEquals("""
     package abc
@@ -1071,7 +1077,7 @@ class A(a: Int) {
     """, res1)
   }
    
-    @Test
+  @Test
   def changeMethodInvocation3() {
 
     val ast = treeFrom("""
@@ -1082,22 +1088,24 @@ class A(a: Int) {
           , List("Def"))
     }
     """)
+ 
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-
-          case a: Apply if (a.args.length > 1) =>
-            val buf = a.args.toBuffer
-            val arg = buf(1)
-            buf.remove(1)
-            val fun1 = Select(
-              name = newTermName(a.fun.symbol.nameString),
-              qualifier = arg)
-            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+            case a: Apply if (a.args.length > 1) =>
+              val buf = a.args.toBuffer
+              val arg = buf(1)
+              buf.remove(1)
+              val fun1 = Select(
+                name = newTermName(a.fun.symbol.nameString),
+                qualifier = arg)
+              a.copy(args = buf.toList, fun = fun1) setPos a.pos
+          }
         }
-      }
-    } apply (ast)
+      } apply (ast)
+    }
 
     assertEquals("""
     package abc
@@ -1273,10 +1281,12 @@ class A(a: Int) {
     """
     val ast = treeFrom(str)
 
-    val result = topdown(matchingChildren(
-      transform {
-        case t: Apply if (t.fun.nameString == "fail") => t.copy()
-      })) apply ast
+    val result = global.ask { () =>
+      topdown(matchingChildren(
+        transform {
+          case t: Apply if (t.fun.nameString == "fail") => t.copy()
+        })) apply ast
+    }
 
     assertEquals("""
     package abc
@@ -1304,22 +1314,24 @@ class A(a: Int) {
     """
     val ast = treeFrom(str)
 
-    val result = topdown(matchingChildren(
-      transform {
-        case t: DefDef => t.copy()
-        case t: Apply =>
-          if (t.fun.nameString == "fail") {
-            val s = t.symbol.fullName
-            val qual = s.substring(0, s.lastIndexOf("."))
-            val select = Select(
-              qualifier = Ident(name = newTypeName(qual)),
-              name = t.fun.asInstanceOf[Select].name)
-            t.copy(fun = select) setPos t.pos 
-          } else {
-            t
-          }
-        case t => t
-      })) apply ast
+    val result = global.ask { () =>
+      topdown(matchingChildren(
+        transform {
+          case t: DefDef => t.copy()
+          case t: Apply =>
+            if (t.fun.nameString == "fail") {
+              val s = t.symbol.fullName
+              val qual = s.substring(0, s.lastIndexOf("."))
+              val select = Select(
+                qualifier = Ident(name = newTypeName(qual)),
+                name = t.fun.asInstanceOf[Select].name)
+              t.copy(fun = select) setPos t.pos 
+            } else {
+              t
+            }
+          case t => t
+        })) apply ast
+    }
 
     assertEquals("""
     package abc
@@ -1350,37 +1362,40 @@ class A(a: Int) {
     }
     """
     val ast = treeFrom(str)
-    var defdef: Tree = null
 
-    topdown(matchingChildren(
-      transform {
-        case t: DefDef if (t.name == newTermName("enumerate")) =>
-          defdef = t; t
-      })) apply ast
+    val result = global.ask { () =>
+      var defdef: Tree = null
 
-    val names = Map("A" -> "A1")
-    val res = topdown(matchingChildren(
-      transform {
-        case t @ TypeApply(Select(name, qualifier), args) =>
-          val s = t.symbol.fullName
-          val qual = s.substring(0, s.lastIndexOf("."))
-          val select = Select(
-            qualifier = Ident(name = newTypeName(qual)),
-            name = t.fun.asInstanceOf[Select].name)
-          t.copy(fun = select, args = args) setPos t.pos
-        case t: TypeTree if (names.contains(t.nameString)) =>
-          mkRenamedTypeTree(t, names(t.nameString).toString(), t.symbol)
-        case t: TypeDef if (names.contains(t.name.toString)) =>
-          mkRenamedSymTree(t, names(t.name.toString))
-      })) apply defdef
+      topdown(matchingChildren(
+        transform {
+          case t: DefDef if (t.name == newTermName("enumerate")) =>
+            defdef = t; t
+        })) apply ast
 
-    val result = topdown(matchingChildren(
-      transform {
-        case c: ClassDef if (c.name == newTypeName("tr")) =>
-          val t = c.impl
-          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
-          c.copy(impl = templ) setPos c.pos
-      })) apply ast
+      val names = Map("A" -> "A1")
+      val res = topdown(matchingChildren(
+        transform {
+          case t @ TypeApply(Select(name, qualifier), args) =>
+            val s = t.symbol.fullName
+            val qual = s.substring(0, s.lastIndexOf("."))
+            val select = Select(
+              qualifier = Ident(name = newTypeName(qual)),
+              name = t.fun.asInstanceOf[Select].name)
+            t.copy(fun = select, args = args) setPos t.pos
+          case t: TypeTree if (names.contains(t.nameString)) =>
+            mkRenamedTypeTree(t, names(t.nameString).toString(), t.symbol)
+          case t: TypeDef if (names.contains(t.name.toString)) =>
+            mkRenamedSymTree(t, names(t.name.toString))
+        })) apply defdef
+
+      topdown(matchingChildren(
+        transform {
+          case c: ClassDef if (c.name == newTypeName("tr")) =>
+            val t = c.impl
+            val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+            c.copy(impl = templ) setPos c.pos
+        })) apply ast
+    }
 
     assertEquals("""
     package abc
@@ -1412,21 +1427,23 @@ class A(a: Int) {
     }
     """)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
 
-          case a: Apply if (a.args.length > 1) =>
-            val buf = a.args.toBuffer
-            val arg = buf(1)
-            buf.remove(1)
-            val fun1 = Select(
-              name = newTermName(a.fun.symbol.nameString),
-              qualifier = arg)
-            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+            case a: Apply if (a.args.length > 1) =>
+              val buf = a.args.toBuffer
+              val arg = buf(1)
+              buf.remove(1)
+              val fun1 = Select(
+                name = newTermName(a.fun.symbol.nameString),
+                qualifier = arg)
+              a.copy(args = buf.toList, fun = fun1) setPos a.pos
+          }
         }
-      }
-    } apply (ast)
+      } apply (ast)
+    }
 
     assertEquals("""
     package abc
@@ -1569,17 +1586,20 @@ class A(a: Int) {
         guard, rhs)
     }
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: DefDef if(t.name.toString() == "acmatch_expr")=>
-            val rhs = toInline.rhs.asInstanceOf[If]
-            val caseDef = mkPattern("", "ASD", EmptyTree, rhs.copy())
-            val matchx = Match(Ident(newTermName("x")), List(caseDef))
-            t.copy(rhs = matchx) replaces t
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case t: DefDef if(t.name.toString() == "acmatch_expr")=>
+              val rhs = toInline.rhs.asInstanceOf[If]
+              val caseDef = mkPattern("", "ASD", EmptyTree, rhs.copy())
+              val matchx = Match(Ident(newTermName("x")), List(caseDef))
+              t.copy(rhs = matchx) replaces t
+          }
         }
-      }
-    } apply ast
+      } apply ast
+    }
+
     assertEquals("""
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1647,17 +1667,20 @@ object acmatch {
         guard, rhs)
     }
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: DefDef if (t.name.toString() == "subst_expr") =>
-            val rhs = toInline.rhs.asInstanceOf[Apply]
-            val caseDef = mkPattern("", "Until", EmptyTree, rhs.copy())
-            val matchx = Match(Ident(newTermName("obj")), List(caseDef))
-            t.copy(rhs = matchx) setPos t.pos
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case t: DefDef if (t.name.toString() == "subst_expr") =>
+              val rhs = toInline.rhs.asInstanceOf[Apply]
+              val caseDef = mkPattern("", "Until", EmptyTree, rhs.copy())
+              val matchx = Match(Ident(newTermName("obj")), List(caseDef))
+              t.copy(rhs = matchx) setPos t.pos
+          }
         }
-      }
-    } apply ast
+      } apply ast
+    }
+
     assertEquals("""
 object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1717,17 +1740,20 @@ object acmatch {
         guard, rhs)
     }
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: DefDef if (t.name.toString() == "subst_expr") =>
-            val rhs = toInline.rhs.asInstanceOf[Function]
-            val caseDef = mkPattern("", "Abstractionmv", EmptyTree, rhs.copy())
-            val matchx = Match(Ident(newTermName("obj")), List(caseDef))
-            t.copy(rhs = matchx) setPos t.pos
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case t: DefDef if (t.name.toString() == "subst_expr") =>
+              val rhs = toInline.rhs.asInstanceOf[Function]
+              val caseDef = mkPattern("", "Abstractionmv", EmptyTree, rhs.copy())
+              val matchx = Match(Ident(newTermName("obj")), List(caseDef))
+              t.copy(rhs = matchx) setPos t.pos
+          }
         }
-      }
-    } apply ast
+      } apply ast
+    }
+
     assertEquals("""
 object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1871,13 +1897,15 @@ object acmatch {
     sealed class XY
     """
     val ast = treeFrom(str)
-    val res = topdown {
-      matchingChildren {
-        transform {
-          case x: ClassDef => x.copy(mods = NoMods) replaces x
+    val res= global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case x: ClassDef => x.copy(mods = NoMods) replaces x
+          }
         }
-      }
-     } apply ast
+      } apply ast
+    }
 
     assertEquals("""
     class asd {
@@ -1894,16 +1922,19 @@ object acmatch {
     class XY
     """
     val ast = treeFrom(str)
-    val res = once {
-      transform {
-        case t: PackageDef =>
-          val st = t.stats.map(a => a match {
-            case x: ClassDef =>
-              x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition))
-            case x => x
-          })
-          t.copy(stats = st) setPos t.pos
-      }} apply ast
+    val res= global.ask { () =>
+      once {
+        transform {
+          case t: PackageDef =>
+            val st = t.stats.map(a => a match {
+              case x: ClassDef =>
+                x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition))
+              case x => x
+            })
+            t.copy(stats = st) setPos t.pos
+        }
+      } apply ast
+    }
 
     assertEquals("""
     abstract sealed class asd {
@@ -1921,13 +1952,15 @@ object acmatch {
     sealed class XY
     """
     val ast = treeFrom(str)
-    val res = topdown {
-      matchingChildren {
-        transform {
-          case x: ClassDef => x.copy(mods = NoMods)
+    val res= global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case x: ClassDef => x.copy(mods = NoMods)
+          }
         }
-      }
-     } apply ast
+      } apply ast
+    }
 
     assertEquals("""
     class asd {
