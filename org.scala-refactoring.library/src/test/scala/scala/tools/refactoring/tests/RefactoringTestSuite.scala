@@ -35,7 +35,6 @@ import util._
     classOf[MoveConstructorToCompanionObjectTest],
     classOf[MultipleFilesIndexTest], 
     classOf[NameValidationTest], 
-    classOf[NotTest], 
     classOf[OrganizeImportsFullyRecomputeTest], 
     classOf[OrganizeImportsGroupsTest], 
     classOf[OrganizeImportsRecomputeAndModifyTest], 

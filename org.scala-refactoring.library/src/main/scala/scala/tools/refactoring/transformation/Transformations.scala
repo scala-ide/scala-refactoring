@@ -8,25 +8,29 @@ package transformation
 /**
  * Transformations is the basis for all refactoring transformations.
  * 
- * A transformation is a Function from X ⇒ Option[Y], and can be
+ * A transformation is a Function from X ⇒ Option[X], and can be
  * combined with other transformations in two ways:
  *   andThen - which applies the second transformation only if the 
  *             first one was successful, i.e. returned Some(_).
  *   orElse  - which is applied only when the first transformation
  *             returned None.
  * 
- * X any Y are typically instances of global.Tree, but this is not 
+ * Xs are typically instances of global.Tree, but this is not 
  * enforced. Once a transformations is assembled, it has to be applied
  * to a tree and its children. The function `all` applies a transformation
- * to the children of a tree. To keep the transformations generic, the 
- * trees have to be convertible to (X ⇒ X) ⇒ X. In the case of the 
- * trees, the tree has to apply the transformation to all children and
- * return one single tree.
+ * to the children of a tree. In the case of the trees, the tree has to 
+ * apply the transformation to all children and return one single tree.
  * 
  * Additional functions are provided that apply a transformation top-down
  * or bottom-up.
  */
 trait Transformations {
+  
+  this: common.CompilerAccess =>
+  
+  type X = global.Tree
+  
+  def traverse(x: X, f: X ⇒ X): X
     
   abstract class Transformation[X, Y] extends (X ⇒ Option[Y]) {
     self ⇒
@@ -110,9 +114,9 @@ trait Transformations {
    * If the transformation fails on one child, abort and
    * fail the whole application.
    */
-  def allChildren[X <% (X ⇒ Y) ⇒ Y, Y](t: ⇒ T[X, Y]) = new T[X, Y] {
-    def apply(in: X): Option[Y] = {
-      Some(in(child => t(child) getOrElse (return None)))
+  def allChildren(t: ⇒ T[X, X]) = new T[X, X] {
+    def apply(in: X): Option[X] = {
+      Some(traverse(in, child => t(child) getOrElse (return None)))
     }
   }
 
@@ -124,7 +128,7 @@ trait Transformations {
    * identity transformation `id` and don't fail, unlike
    * `allChildren`.
    */
-  def matchingChildren [X <% (X ⇒ X) ⇒ X](t: T[X, X]) = allChildren(t |> id[X])
+  def matchingChildren(t: T[X, X]) = allChildren(t |> id[X])
   
   /**
    * Applies a transformation top-down, that is, it applies
@@ -132,9 +136,9 @@ trait Transformations {
    * transformed T to all children. The consequence is that
    * the children "see" their new parent.
    */
-  def ↓       [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
-  def topdown [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↓(t)
-  def preorder[X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↓(t)
+  def ↓       (t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
+  def topdown (t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
+  def preorder(t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
   
   /**
    * Applies a transformation bottom-up, that is, it applies
@@ -142,9 +146,9 @@ trait Transformations {
    * then to their parent. The consequence is that the parent
    * "sees" its transformed children.
    */ 
-  def ↑        [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
-  def bottomup [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↑(t)
-  def postorder[X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]) = ↑(t)
+  def ↑        (t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
+  def bottomup (t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
+  def postorder(t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
   
   /**
    * Do a transformation until it succeeded once, then just fail.
@@ -154,7 +158,7 @@ trait Transformations {
    * parameter to another transformation and instantiated multiple
    * times.
    */ 
-  def once [X <: AnyRef <% (X ⇒ X) ⇒ X](t: T[X, X]): T[X, X] = new T[X, X] {
+  def once [X <: AnyRef](t: T[X, X]): T[X, X] = new T[X, X] {
     var alreadyMatched = false
     def apply(x: X): Option[X] = {
       if(alreadyMatched) return None
@@ -167,12 +171,12 @@ trait Transformations {
     }
   }
   
-  def traverseAndTransformAll [X <% (X ⇒ X) ⇒ X](t: ⇒ T[X, X]): T[X, X] = t |> topdown(matchingChildren(t))
+  def traverseAndTransformAll (t: ⇒ T[X, X]): T[X, X] = t |> topdown(matchingChildren(t))
 
   /**
    * Creates a transformation that always returns the value x.
    */ 
-  def constant[X, Y](y: Y) = transformation[X, Y] {
+  def constant(y: X) = transformation[X, X] {
     case _ => y
   }
 }

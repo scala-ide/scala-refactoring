@@ -15,7 +15,7 @@ import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 import scala.reflect.internal.util.BatchSourceFile
 
-class PrettyPrinterTest extends TestHelper with SourceGenerator with SilentTracing with transformation.TreeFactory {
+class PrettyPrinterTest extends TestHelper with SilentTracing {
 
   import global._
 

@@ -52,8 +52,6 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
     
   override def applyRefactoring(params: RefactoringParameters) = transform {
     case apply @ Apply(fun, args) => {
-//      println("apply: \n" + apply)
-//      println("params: " + params)
       val originalTree = findOriginalTree(apply)
       val pos = paramListPos(originalTree) - 1
       val splitParamLists = splitSingleParamList(apply.args, params(pos))
@@ -62,7 +60,7 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
     }
   }
     
-  override def traverseApply[X <% (X ⇒ X) ⇒ X](t: ⇒ Transformation[X, X]) = bottomup(t)
+  override def traverseApply(t: ⇒ Transformation[X, X]) = bottomup(t)
   
   override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: DefInfo): RefactoringParameters = {
     val toDrop = originalParams.size - toRefactor.nrParamLists

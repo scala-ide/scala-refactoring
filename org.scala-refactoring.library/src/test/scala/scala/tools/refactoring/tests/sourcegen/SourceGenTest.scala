@@ -16,11 +16,11 @@ import tools.nsc.ast.parser.Tokens
 
 import language.{postfixOps, implicitConversions}
 
-class SourceGenTest extends TestHelper with SourceGenerator with SilentTracing {
+class SourceGenTest extends TestHelper with SilentTracing {
   
   import global._
     
-  def generateText(t: Tree): String = global.ask { () =>
+  def generateText(t: => Tree): String = global.ask { () =>
     createText(t, sourceFile = Some(t.pos.source))
   }
   

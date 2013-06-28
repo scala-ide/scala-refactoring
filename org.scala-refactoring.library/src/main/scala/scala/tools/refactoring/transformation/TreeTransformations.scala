@@ -13,8 +13,8 @@ trait TreeTransformations extends Transformations with TreeFactory {
   
   import global._
         
-  implicit def treesToTraversalFunction(tree: Tree): (Tree => Tree) => Tree = f => {
-    
+  def traverse(tree: Tree, f: Tree => Tree): Tree = {
+       
     /**
      * Hooks into the Scala compiler's Transformer but applies only 
      * one transformation and then returns that result.
@@ -25,21 +25,21 @@ trait TreeTransformations extends Transformations with TreeFactory {
        * Transforms the children of the trees using `f` and creates
        * a new t with the transformed children
        */
-      def once(t: Tree) = t match {
+      def once(tree: Tree) = tree match {
         
         case NamedArgument(name, rhs) =>
           transform(rhs) match {
-            case `rhs` => t
+            case `rhs` => tree
             case rhs =>
               NamedArgument(name, rhs)
           }
         
         case _: ImportSelectorTree | _: SourceLayoutTree | _: PlainText =>
-          t
+          tree
           
         case MultipleAssignment(extractor, vals, rhs) =>
           (transform(extractor), transformTrees(vals), transform(rhs)) match {
-            case (`extractor`, `vals`, `rhs`) => t
+            case (`extractor`, `vals`, `rhs`) => tree
             case (e, v, r) => MultipleAssignment(e, v.asInstanceOf[List[ValDef]], r)
           }
             
@@ -63,6 +63,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
           
         case t => super.transform(t)
       }
+      
       override def transform(t: Tree) = f(t)
     }
     
