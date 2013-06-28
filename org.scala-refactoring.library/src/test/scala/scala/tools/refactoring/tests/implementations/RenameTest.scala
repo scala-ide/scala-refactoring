@@ -1366,4 +1366,22 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("BBB"))
+  
+  @Test
+  def privateMembersTupleNotation = new FileSet {
+    """
+    package privateMembersTupleNotation
+    class /*(*/Test/*)*/ {
+    
+      private val A, B, C = this
+    }
+    """ becomes 
+    """
+    package privateMembersTupleNotation
+    class /*(*/MyTest/*)*/ {
+    
+      private val A, B, C = this
+    }
+    """
+  } applyRefactoring(renameTo("MyTest"))
 }
