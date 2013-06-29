@@ -1108,7 +1108,9 @@ object A"""
     protected sealed class Dddd
     """)
 
-    val modTree = (↓(changeSomeModifiers)).apply(tree).get
+    val modTree = global.ask { () =>
+      (topdown(changeSomeModifiers)).apply(tree).get
+    }
 
     tree prettyPrintsTo """package xy
 

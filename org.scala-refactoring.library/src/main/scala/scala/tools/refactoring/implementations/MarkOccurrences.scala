@@ -59,12 +59,11 @@ abstract class MarkOccurrences extends common.Selections with analysis.Indexes w
         }
         val symbol = selectedLocal.symbol
         
-        if(symbol == null || namePos == NoPosition || !positionOverlapsSelection(namePos))
-          return (EmptyTree, Nil)
-        
-        
-          
-        occurrencesForSymbol(symbol)
+        if(symbol == null || namePos == NoPosition || !positionOverlapsSelection(namePos)) {
+          Nil
+        } else {
+          occurrencesForSymbol(symbol)
+        }
     }
     
     (selectedTree getOrElse EmptyTree, occurrences)

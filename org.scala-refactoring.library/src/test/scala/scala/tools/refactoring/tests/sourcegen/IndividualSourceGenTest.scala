@@ -34,7 +34,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
     case _ => Assert.fail(); throw new Exception("unreachable")
   }
   
-  def testDefDefWithNoPositionAndOriginalPosition(src: String, exp1: String, exp2: String) {
+  def testDefDefWithNoPositionAndOriginalPosition(src: String, exp1: String, exp2: String) = global.ask { () =>
     
     val originalDefDef = getFirstMethod(src)
     
@@ -120,13 +120,15 @@ trait tr[A] {
     val ast = treeFrom(src)    
     val defdef = mkDefDef(name = "member", body = List(Ident(newTermName("()"))))
     
-    val transformedAst = topdown {
-      matchingChildren {
-        transform {
-          case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+    val result = global.ask {() => 
+      topdown {
+        matchingChildren {
+          transform {
+            case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+          }
         }
-      }
-    } apply ast
+      } apply ast
+    }
     
     assertEquals("""
 trait tr[A] {
@@ -139,7 +141,7 @@ trait tr[A] {
     ()
   }
 }
-""", common.Change.applyChanges(refactor(transformedAst.toList), src))
+""", generateText(result.get))
   }
   
   @Test
@@ -154,13 +156,15 @@ trait tr[A] {
     
     val defdef = mkDefDef(name = "member", body = List(Ident(newTermName("()"))))
     
-    val transformedAst = topdown {
-      matchingChildren {
-        transform {
-          case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+    val result = global.ask{ () => 
+      topdown {
+        matchingChildren {
+          transform {
+            case t: Template => t.copy(body = t.body ::: List(defdef)) setPos t.pos
+          }
         }
-      }
-    } apply ast
+      } apply ast
+    }
     
     assertEquals("""
 trait tr[A] {
@@ -170,7 +174,7 @@ trait tr[A] {
   }
 
 }
-""", common.Change.applyChanges(refactor(transformedAst.toList), src))
+""", generateText(result.get))
   }
   
   @Test
@@ -190,15 +194,20 @@ trait tr[A] {
       }
     """)
     
-    val transformedAst = topdown {
-      matchingChildren {
-        transform {
-          case t: DefDef => t.copy()
+    val result = global.ask {() => 
+      topdown {
+        matchingChildren {
+          transform {
+            case t: DefDef => t.copy()
+          }
         }
-      }
-    } apply ast
+      } apply ast
+    }
 
-    val changes = refactor(transformedAst.toList)
+    val changes = global.ask {() =>  
+      refactor(result.toList)
+    }
+    
     assertEquals("""if (li.emptyp) false
 else {
   (a equals li.car) || member(a, li.cdr)
@@ -219,11 +228,14 @@ else {
       case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
     }
         
-    assertEquals("""val a = {4 + 3  }""", generate(valDef, sourceFile = Some(tree.pos.source)).center.asText)
-          
-    assertEquals("""{4 + 3  }""", generate(valDef.rhs, sourceFile = Some(tree.pos.source)).asText)
-          
-    assertEquals(0, createChanges(List(valDef)).size)
+    global.ask { () =>
+      
+      assertEquals("""val a = {4 + 3  }""", generate(valDef, sourceFile = Some(tree.pos.source)).center.asText)
+            
+      assertEquals("""{4 + 3  }""", generate(valDef.rhs, sourceFile = Some(tree.pos.source)).asText)
+            
+      assertEquals(0, createChanges(List(valDef)).size)
+    }
   }
   
   @Test
@@ -238,24 +250,26 @@ else {
     }
     """)
     
-    val transformedAst = topdown {
-      matchingChildren {
-        transform {
-          case t: ValDef if t.name.toString == "ab " => 
-
-            val newRhs = Block(
-              mkClass(
-                name = "$anon", 
-                parents = Ident(newTermName("A")) :: Ident(newTermName("B")) :: Nil,
-                superArgs = Literal(Constant(5)) :: Nil
-              ), 
-              Apply(Select(New(Ident(newTermName("$anon"))), nme.CONSTRUCTOR), Nil)
-            )
-            
-            t.copy(rhs = newRhs)
+    val result = global.ask {() =>
+      topdown {
+        matchingChildren {
+          transform {
+            case t: ValDef if t.name.toString == "ab " => 
+  
+              val newRhs = Block(
+                mkClass(
+                  name = "$anon", 
+                  parents = Ident(newTermName("A")) :: Ident(newTermName("B")) :: Nil,
+                  superArgs = Literal(Constant(5)) :: Nil
+                ), 
+                Apply(Select(New(Ident(newTermName("$anon"))), nme.CONSTRUCTOR), Nil)
+              )
+              
+              t.copy(rhs = newRhs)
+          }
         }
-      }
-    } apply ast
+      } apply ast
+    }
     
     assertEquals("""
     class A(x: Int)
@@ -263,11 +277,11 @@ else {
     object AWithB {
       val ab = new A(5) with B
     }
-    """, generateText(transformedAst.get))
+    """, generateText(result.get))
   }
   
   @Test
-  def modifiedDefDef(): Unit = {
+  def modifiedDefDef(): Unit = global.ask { () =>
     
     val originalDefDef = treeFrom("""
     object Account {
@@ -353,7 +367,7 @@ else {
           println(a.value)
         }
       })
-      }""", createFragment(newDefDef1).asText)
+      }""", global.ask(() => createFragment(newDefDef1).asText))
 
   }
   
@@ -792,7 +806,7 @@ class A(a: Int) {
         bar()
       }
     }
-    """, createText(result.get, Some(ast.pos.source)))
+    """, generateText(result.get))
   }
   
   @Test
@@ -824,7 +838,7 @@ class A(a: Int) {
         bar
       }
     }
-    """, createText(result.get, Some(ast.pos.source)))
+    """, generateText(result.get))
   }
 
   @Test
@@ -843,31 +857,33 @@ class A(a: Int) {
     }
     """
     val ast = treeFrom(str)
+
+    val res = global.ask { () =>
+            
+      var valDef: ValDef = null
+      topdown {
+        matchingChildren {
+          transform {
+            case t: ValDef =>
+              valDef = t
+              t
+          }
+        }
+      } apply (ast)
+      
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case d: DefDef if (d.name.toString() == "every") => d.copy() replaces d
+            case t: Ident if (t.symbol == valDef.symbol) =>
+              Ident(newTypeName("this")) setPos t.pos
+          }
+        }
+      } apply (ast)
+
+      common.Change.applyChanges(refactor(result.toList), str)
+    }
     
-    var valDef: ValDef = null
-    topdown {
-      matchingChildren {
-        transform {
-          case t: ValDef =>
-            valDef = t
-            t
-        }
-      }
-    } apply (ast)
-
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case d: DefDef if (d.name.toString() == "every") => d.copy() replaces d
-          case t: Ident if (t.symbol == valDef.symbol) =>
-            Ident(newTypeName("this")) setPos t.pos
-        }
-      }
-    } apply (ast)
-
-
-    val changes = refactor(result.toList)
-    val res = common.Change.applyChanges(changes, str)
     assertEquals("""
     class MyList[T] {
       //transformation works correctly when parentheses are missing here 
@@ -898,20 +914,23 @@ class A(a: Int) {
     """
     val ast = treeFrom(str)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case a: Apply if (a.args.length > 1) =>
-            val fun1 = Select(
-              name = newTermName(a.fun.symbol.nameString),
-              qualifier = a.args.last)
-            a.copy(args = a.args.init, fun = fun1) replaces a
-        }
-      }
-    } apply (ast)
+    val res = global.ask { () =>
 
-    val changes = refactor(result.toList)
-    val res = common.Change.applyChanges(changes, str)
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case a: Apply if (a.args.length > 1) =>
+              val fun1 = Select(
+                name = newTermName(a.fun.symbol.nameString),
+                qualifier = a.args.last)
+              a.copy(args = a.args.init, fun = fun1) replaces a
+          }
+        }
+      } apply (ast)
+  
+      common.Change.applyChanges(refactor(result.toList), str)
+    }
+
     assertEquals("""
     package abc
     object primitive {
@@ -968,7 +987,7 @@ class A(a: Int) {
       }.append(List("asd"))
       
     }
-    """, createText(result.get, Some(ast.pos.source)))
+    """, generateText(result.get))
   }   
   
   @Test
@@ -984,29 +1003,32 @@ class A(a: Int) {
       
     val ast = treeFrom(src)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: DefDef if (t.vparamss(0).size > 0) =>
-            val vparamss = List(List(t.vparamss(0).head))
-            t.copy(vparamss = vparamss) setPos t.pos
+    val res = global.ask { () =>
+    
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case t: DefDef if (t.vparamss(0).size > 0) =>
+              val vparamss = List(List(t.vparamss(0).head))
+              t.copy(vparamss = vparamss) setPos t.pos
+          }
         }
-      }
-    } apply (ast)
-
-    val changes = refactor(result.toList)
-
+      } apply (ast)
+  
+      Change.applyChanges(refactor(result.toList), src)
+    }
     assertEquals("""
     trait tr {
       def remove[A](elem: A): List[A] = {
         li.remove_if((x: A) => (elem equals x))
       }
     }
-    """, common.Change.applyChanges(changes, src))
+    """, res)
   }
   
    @Test
   def testParentheses() {
+     
     val ast = treeFrom("""
     package abc
     trait tr[T] {
@@ -1015,14 +1037,17 @@ class A(a: Int) {
       }
     }
     """)
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: DefDef if (t.name == newTermName("remove")) =>
-            t.copy() replaces t
+    
+    val result = global.ask { () =>
+      topdown {
+        matchingChildren {
+          transform {
+            case t: DefDef if (t.name == newTermName("remove")) =>
+              t.copy() replaces t
+          }
         }
-      }
-    } apply (ast)
+      } apply (ast)
+    }
 
     assertEquals("""
     package abc
@@ -1031,7 +1056,7 @@ class A(a: Int) {
         li.filterNot((x: A) => (elem equals x))
       }
     }
-    """, createText(result.get, Some(ast.pos.source)))
+    """, generateText(result.get))
   }
    
    @Test
@@ -1047,22 +1072,26 @@ class A(a: Int) {
     """
     val ast = treeFrom(str)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: Template =>
-            t.copy(body = t.body ::: List(t.body.last)) setPos t.pos
-          case t @ TypeApply(Select(name, qualifier), args) if (t.symbol.name == newTermName("member")) =>
-            val s = t.symbol.fullName
-            val qual = s.substring(0, s.lastIndexOf("."))
-            Select(
-              qualifier = Ident(name = newTypeName(qual)),
-              name = t.fun.asInstanceOf[Select].name)
+    val res = global.ask { () =>
+      
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case t: Template =>
+              t.copy(body = t.body ::: List(t.body.last)) setPos t.pos
+            case t @ TypeApply(Select(name, qualifier), args) if (t.symbol.name == newTermName("member")) =>
+              val s = t.symbol.fullName
+              val qual = s.substring(0, s.lastIndexOf("."))
+              Select(
+                qualifier = Ident(name = newTypeName(qual)),
+                name = t.fun.asInstanceOf[Select].name)
+          }
         }
-      }
-    } apply ast
-    val changes = refactor(result.toList)
-    val res1 = common.Change.applyChanges(changes, str)
+      } apply ast
+      
+      Change.applyChanges(refactor(result.toList), str)
+    }
+    
     assertEquals("""
     package asd
     object primitive {
@@ -1074,7 +1103,7 @@ class A(a: Int) {
         li.isEmpty || ((!(asd.primitive.member(li.head, li.tail))) && has_no_duplicates(li.tail))
       }
     }
-    """, res1)
+    """, res)
   }
    
   @Test
@@ -1114,7 +1143,7 @@ class A(a: Int) {
       
       List("Def").append(List("asd"))
     }
-    """, createText(result.get, Some(ast.pos.source)))
+    """, generateText(result.get))
   }
   
   @Test
@@ -1132,16 +1161,18 @@ class A(a: Int) {
     """
     val ast = treeFrom(str)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: DefDef => t.copy()
+    val res = global.ask { () =>
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case t: DefDef => t.copy()
+          }
         }
-      }
-    } apply ast
+      } apply ast
+      
+      Change.applyChanges(refactor(result.toList), str)
+    }
 
-    val changes = refactor(result.toList)
-    val res1 = common.Change.applyChanges(changes, str)
     assertEquals("""
     object primitive {
       def member[A](a:A, li:List[A]):Boolean = {
@@ -1152,7 +1183,7 @@ class A(a: Int) {
         true
       }
     }
-    """, res1)
+    """, res)
   }
   
   @Test
@@ -1170,29 +1201,35 @@ class A(a: Int) {
     }
     """
     val ast = treeFrom(str)
-    var defdef: Tree = null
+    
+    val res = global.ask { () =>
 
-    topdown(matchingChildren(
-      transform {
-        case t: DefDef if (t.name == newTermName("divide")) =>
-          defdef = t; t
-      })) apply ast
-
-    val res = topdown(matchingChildren(
-      transform {
-        case t: TypeTree if (t.nameString == "A") =>
-          mkRenamedTypeTree(t, "A1", t.symbol)
-        case t: TypeDef if (t.nameString == "A") =>
-          mkRenamedSymTree(t, "A1")
-      })) apply defdef
-
-    val result = topdown(matchingChildren(
-      transform {
-        case c: ClassDef if (c.name == newTypeName("tr")) =>
-          val t = c.impl
-          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
-          c.copy(impl = templ) setPos c.pos
-      })) apply ast
+      var defdef: Tree = null
+ 
+      topdown(matchingChildren(
+        transform {
+          case t: DefDef if (t.name == newTermName("divide")) =>
+            defdef = t; t
+        })) apply ast
+  
+      val res = topdown(matchingChildren(
+        transform {
+          case t: TypeTree if (t.nameString == "A") =>
+            mkRenamedTypeTree(t, "A1", t.symbol)
+          case t: TypeDef if (t.nameString == "A") =>
+            mkRenamedSymTree(t, "A1")
+        })) apply defdef
+  
+      val result = topdown(matchingChildren(
+        transform {
+          case c: ClassDef if (c.name == newTypeName("tr")) =>
+            val t = c.impl
+            val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+            c.copy(impl = templ) setPos c.pos
+        })) apply ast
+        
+      Change.applyChanges(refactor(result.toList), str)
+    }
 
     assertEquals("""
     package abc
@@ -1208,7 +1245,7 @@ class A(a: Int) {
         null
       }
     }
-    """, common.Change.applyChanges(refactor(result.toList), str))
+    """, res)
   }
   
   @Test
@@ -1226,29 +1263,35 @@ class A(a: Int) {
     }
     """
     val ast = treeFrom(str)
-    var defdef: Tree = null
+    
+    val res = global.ask { () =>
 
-    topdown(matchingChildren(
-      transform {
-        case t: DefDef if (t.name == newTermName("member_test")) =>
-          defdef = t; t
-      })) apply ast
-
-    val res = topdown(matchingChildren(
-      transform {
-        case t: TypeTree if (t.nameString == "B") =>
-          mkRenamedTypeTree(t, "B1", t.symbol)
-        case t: TypeDef if (t.nameString == "B") =>
-          mkRenamedSymTree(t, "B1")
-      })) apply defdef
-
-    val result = topdown(matchingChildren(
-      transform {
-        case c: ClassDef if (c.name == newTypeName("tr")) =>
-          val t = c.impl
-          val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
-          c.copy(impl = templ) setPos c.pos
-      })) apply ast
+      var defdef: Tree = null
+  
+      topdown(matchingChildren(
+        transform {
+          case t: DefDef if (t.name == newTermName("member_test")) =>
+            defdef = t; t
+        })) apply ast
+  
+      val res = topdown(matchingChildren(
+        transform {
+          case t: TypeTree if (t.nameString == "B") =>
+            mkRenamedTypeTree(t, "B1", t.symbol)
+          case t: TypeDef if (t.nameString == "B") =>
+            mkRenamedSymTree(t, "B1")
+        })) apply defdef
+  
+      val result = topdown(matchingChildren(
+        transform {
+          case c: ClassDef if (c.name == newTypeName("tr")) =>
+            val t = c.impl
+            val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
+            c.copy(impl = templ) setPos c.pos
+        })) apply ast
+      
+      Change.applyChanges(refactor(result.toList), str)
+    }
 
     assertEquals("""
     package abc
@@ -1264,7 +1307,7 @@ class A(a: Int) {
         reduce1((b: Boolean, xli: B1) => b, li, false)
       }
     }
-    """, common.Change.applyChanges(refactor(result.toList), str))
+    """, res)
   }
    
   @Test
@@ -1282,10 +1325,12 @@ class A(a: Int) {
     val ast = treeFrom(str)
 
     val result = global.ask { () =>
-      topdown(matchingChildren(
+      val result = topdown(matchingChildren(
         transform {
           case t: Apply if (t.fun.nameString == "fail") => t.copy()
         })) apply ast
+        
+      Change.applyChanges(refactor(result.toList), str)
     }
 
     assertEquals("""
@@ -1297,7 +1342,7 @@ class A(a: Int) {
         else false
       }
     }
-    """, common.Change.applyChanges(refactor(result.toList), str))
+    """, result)
   }
 
   @Test
@@ -1315,7 +1360,8 @@ class A(a: Int) {
     val ast = treeFrom(str)
 
     val result = global.ask { () =>
-      topdown(matchingChildren(
+      
+      val result = topdown(matchingChildren(
         transform {
           case t: DefDef => t.copy()
           case t: Apply =>
@@ -1331,6 +1377,8 @@ class A(a: Int) {
             }
           case t => t
         })) apply ast
+        
+      Change.applyChanges(refactor(result.toList), str)
     }
 
     assertEquals("""
@@ -1343,7 +1391,7 @@ class A(a: Int) {
       else false
       }
     }
-    """, common.Change.applyChanges(refactor(result.toList), str))
+    """, result)
   }
   
   @Test
@@ -1388,13 +1436,15 @@ class A(a: Int) {
             mkRenamedSymTree(t, names(t.name.toString))
         })) apply defdef
 
-      topdown(matchingChildren(
+      val result = topdown(matchingChildren(
         transform {
           case c: ClassDef if (c.name == newTypeName("tr")) =>
             val t = c.impl
             val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
             c.copy(impl = templ) setPos c.pos
         })) apply ast
+        
+      Change.applyChanges(refactor(result.toList), str)
     }
 
     assertEquals("""
@@ -1413,7 +1463,7 @@ class A(a: Int) {
       Nil
       }
     }
-    """, common.Change.applyChanges(refactor(result.toList), str))
+    """, result)
   }
   
   @Test
@@ -1451,7 +1501,7 @@ class A(a: Int) {
       def append[A](li1: List[A], li2: List[A]) = Nil
       (if(true) List("A") else List("B")).append(List("asd"))
     }
-    """, createText(result.get, Some(ast.pos.source)))
+    """, generateText(result.get))
   }
   
   @Test
@@ -1466,41 +1516,44 @@ class A(a: Int) {
     """
     val ast = treeFrom(str)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case a: Apply if (a.args.length > 1) =>
-            val buf = a.args.toBuffer
-            val arg = buf(1)
-            buf.remove(1)
-            val fun1 = Select(
-              name = newTermName(a.fun.symbol.nameString),
-              qualifier = arg)
-            a.copy(args = buf.toList, fun = fun1) setPos a.pos
-        case a: Function =>
-          val res = topdown {
-            matchingChildren {
-              transform {
-                case a: Apply =>
-                  a.symbol = NoSymbol
-                  a
+    val result = global.ask { () =>
+     
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case a: Apply if (a.args.length > 1) =>
+              val buf = a.args.toBuffer
+              val arg = buf(1)
+              buf.remove(1)
+              val fun1 = Select(
+                name = newTermName(a.fun.symbol.nameString),
+                qualifier = arg)
+              a.copy(args = buf.toList, fun = fun1) setPos a.pos
+          case a: Function =>
+            val res = topdown {
+              matchingChildren {
+                transform {
+                  case a: Apply =>
+                    a.symbol = NoSymbol
+                    a
+                }
               }
-            }
-          } apply a
-          res.get
+            } apply a
+            res.get
+          }
         }
-      }
-    } apply (ast)
-    
-    val changes = refactor(result.toList)
-    val res = common.Change.applyChanges(changes, str)
+      } apply (ast)
+      
+      common.Change.applyChanges(refactor(result.toList), str)
+    }
+   
     assertEquals("""
     package abc
     object primitive {
       def remove_if_not[A](fun:(A) => Boolean, li0:List[A]):List[A] = Nil
       val opentries = List(Nil).remove_if_not((_:List[Int]).isEmpty)
     }
-    """, res)
+    """, result)
   }
 
   @Test
@@ -1527,16 +1580,19 @@ class A(a: Int) {
         guard, rhs)
     }
     
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case t: Match =>
-            val rhs = toInline.rhs.asInstanceOf[If]
-            val caseDef = mkPattern("", "ASD", EmptyTree, rhs.copy())
-            t.copy(cases = t.cases ::: List(caseDef))
-          }
-      }
-    } apply ast
+    val result = global.ask { () =>
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case t: Match =>
+              val rhs = toInline.rhs.asInstanceOf[If]
+              val caseDef = mkPattern("", "ASD", EmptyTree, rhs.copy())
+              t.copy(cases = t.cases ::: List(caseDef))
+            }
+        }
+      } apply ast
+      Change.applyChanges(refactor(result.toList), src)
+    }
     assertEquals("""
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1548,7 +1604,7 @@ class A(a: Int) {
       case t: ASD => if ((null equals null)) true else fail
     }
   }
-    """, Change.applyChanges(refactor(result.toList), src))
+    """, result)
   }
   
   @Test
@@ -1587,7 +1643,7 @@ class A(a: Int) {
     }
 
     val result = global.ask { () =>
-      topdown {
+      val result = topdown {
         matchingChildren {
           transform {
             case t: DefDef if(t.name.toString() == "acmatch_expr")=>
@@ -1598,6 +1654,8 @@ class A(a: Int) {
           }
         }
       } apply ast
+      
+      Change.applyChanges(refactor(result.toList), src)
     }
 
     assertEquals("""
@@ -1629,7 +1687,7 @@ class A(a: Int) {
       } else method()
     }
   }
-  """, Change.applyChanges(refactor(result.toList), src))
+  """, result)
   }
   
   @Test
@@ -1668,7 +1726,7 @@ object acmatch {
     }
 
     val result = global.ask { () =>
-      topdown {
+      val result = topdown {
         matchingChildren {
           transform {
             case t: DefDef if (t.name.toString() == "subst_expr") =>
@@ -1679,6 +1737,8 @@ object acmatch {
           }
         }
       } apply ast
+      
+      Change.applyChanges(refactor(result.toList), src)
     }
 
     assertEquals("""
@@ -1701,7 +1761,7 @@ object acmatch {
       override def untilp = true
     }
   }
-  """, Change.applyChanges(refactor(result.toList), src))
+  """, result)
   }
   
   @Test
@@ -1741,7 +1801,7 @@ object acmatch {
     }
 
     val result = global.ask { () =>
-      topdown {
+      val result = topdown {
         matchingChildren {
           transform {
             case t: DefDef if (t.name.toString() == "subst_expr") =>
@@ -1752,6 +1812,8 @@ object acmatch {
           }
         }
       } apply ast
+      
+      Change.applyChanges(refactor(result.toList), src)
     }
 
     assertEquals("""
@@ -1776,7 +1838,7 @@ object acmatch {
       def abstractionmatchp = true
     }
   }
-  """, Change.applyChanges(refactor(result.toList), src))
+  """, result)
   }
   
   @Test
@@ -1794,22 +1856,26 @@ object acmatch {
     }
     """
     val ast = treeFrom(str)
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case a @ Apply(fun: TypeApply, _) =>
-            val buf = a.args.toBuffer
-            val arg = buf(0)
-            buf.remove(0)
-            val fun1 = Select(
-              name = newTermName(a.fun.symbol.nameString),
-              qualifier = arg)
-            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+    
+    val result = global.ask { () =>
+    
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case a @ Apply(fun: TypeApply, _) =>
+              val buf = a.args.toBuffer
+              val arg = buf(0)
+              buf.remove(0)
+              val fun1 = Select(
+                name = newTermName(a.fun.symbol.nameString),
+                qualifier = arg)
+              a.copy(args = buf.toList, fun = fun1) setPos a.pos
+          }
         }
-      }
-    } apply (ast)
-    val changes = refactor(result.toList)
-    val res = Change.applyChanges(changes, str)
+      } apply (ast)
+      
+      Change.applyChanges(refactor(result.toList), str)
+    }
     assertEquals("""
     package abc
     object primitive {
@@ -1820,7 +1886,7 @@ object acmatch {
         li2.length() + b}, 0)
       }
     }
-    """, res)
+    """, result)
   }
   
   @Test
@@ -1836,23 +1902,26 @@ object acmatch {
     """
     val ast = treeFrom(str)
 
-    val result = topdown {
-      matchingChildren {
-        transform {
-          case a: Apply if (a.args.length > 1) =>
-            val buf = a.args.toBuffer
-            val arg = buf(1)
-            buf.remove(1)
-            val fun1 = Select(
-              name = newTermName(a.fun.symbol.nameString),
-              qualifier = arg)
-            a.copy(args = buf.toList, fun = fun1) setPos a.pos
+    val result = global.ask { () =>
+      
+      val result = topdown {
+        matchingChildren {
+          transform {
+            case a: Apply if (a.args.length > 1) =>
+              val buf = a.args.toBuffer
+              val arg = buf(1)
+              buf.remove(1)
+              val fun1 = Select(
+                name = newTermName(a.fun.symbol.nameString),
+                qualifier = arg)
+              a.copy(args = buf.toList, fun = fun1) setPos a.pos
+          }
         }
-      }
-    } apply (ast)
-
-    val changes = refactor(result.toList)
-    val res = Change.applyChanges(changes, str)
+      } apply (ast)
+    
+      Change.applyChanges(refactor(result.toList), str)
+    }
+    
     assertEquals("""
     object primitive {
       def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
@@ -1860,7 +1929,7 @@ object acmatch {
         li.reduce(((_:Int) + (_:Int)), 0) 
       }
     }
-    """, res)
+    """, result)
   }
     
   @Test
@@ -1871,22 +1940,28 @@ object acmatch {
     class XY
     """
     val ast = treeFrom(str)
-    val res = once {
-      transform {
-        case t: PackageDef =>
-          val st = t.stats.map(a => a match {
-            case x: ClassDef =>
-              x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition)) setPos x.pos
-            case x => x
-          })
-          t.copy(stats = st) setPos t.pos
-      }} apply ast
+    
+    val result = global.ask { () =>
+    
+      val res = once {
+        transform {
+          case t: PackageDef =>
+            val st = t.stats.map(a => a match {
+              case x: ClassDef =>
+                x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition)) setPos x.pos
+              case x => x
+            })
+            t.copy(stats = st) setPos t.pos
+        }} apply ast
+
+      Change.applyChanges(refactor(res.toList), str)
+    }
 
     assertEquals("""
     abstract sealed class asd {
     }
     sealed class XY
-    """, Change.applyChanges(refactor(res.toList), str))
+    """, result)
   }
   
   @Test
@@ -1897,21 +1972,25 @@ object acmatch {
     sealed class XY
     """
     val ast = treeFrom(str)
-    val res= global.ask { () =>
-      topdown {
+    
+    val result = global.ask { () =>
+      
+      val result = topdown {
         matchingChildren {
           transform {
             case x: ClassDef => x.copy(mods = NoMods) replaces x
           }
         }
       } apply ast
+      
+      Change.applyChanges(refactor(result.toList), str)
     }
 
     assertEquals("""
     class asd {
     }
     class XY
-    """, Change.applyChanges(refactor(res.toList), str))
+    """, result)
   }
       
   @Test
@@ -1922,8 +2001,8 @@ object acmatch {
     class XY
     """
     val ast = treeFrom(str)
-    val res= global.ask { () =>
-      once {
+    val result = global.ask { () =>
+      val res = once {
         transform {
           case t: PackageDef =>
             val st = t.stats.map(a => a match {
@@ -1934,6 +2013,8 @@ object acmatch {
             t.copy(stats = st) setPos t.pos
         }
       } apply ast
+      
+      Change.applyChanges(refactor(res.toList), str)
     }
 
     assertEquals("""
@@ -1941,7 +2022,7 @@ object acmatch {
     }
     
     sealed class XY
-    """, Change.applyChanges(refactor(res.toList), str))
+    """, result)
   }
   
   @Test
@@ -1952,14 +2033,17 @@ object acmatch {
     sealed class XY
     """
     val ast = treeFrom(str)
-    val res= global.ask { () =>
-      topdown {
+    val result = global.ask { () =>
+      
+      val result = topdown {
         matchingChildren {
           transform {
             case x: ClassDef => x.copy(mods = NoMods)
           }
         }
       } apply ast
+      
+      Change.applyChanges(refactor(result.toList), str)
     }
 
     assertEquals("""
@@ -1967,7 +2051,7 @@ object acmatch {
     }
     
     class XY
-    """, Change.applyChanges(refactor(res.toList), str))
+    """, result)
   }
   
   @Test
@@ -1980,22 +2064,29 @@ object acmatch {
       }
     }
     """
+    
     val ast = treeFrom(source)
-    val transformed = topdown {
-      matchingChildren {
-        transform {
-          case t @ Block(stmts, expr) =>
-            val string = PlainText.Indented("""
-               |for (
-               |  i <- list
-               |) yield {
-               |  i * 2
-               |}""".stripMargin)
-            
-            t.copy(expr = string)
+    
+    val result = global.ask { () =>
+      
+      val transformed = topdown {
+        matchingChildren {
+          transform {
+            case t @ Block(stmts, expr) =>
+              val string = PlainText.Indented("""
+                 |for (
+                 |  i <- list
+                 |) yield {
+                 |  i * 2
+                 |}""".stripMargin)
+              
+              t.copy(expr = string)
+          }
         }
-      }
-     } apply ast
+       } apply ast
+       
+       Change.applyChanges(refactor(transformed.toList), source)
+    }
 
     assertEquals("""
     class InsertHere {
@@ -2008,6 +2099,6 @@ object acmatch {
         }
       }
     }
-    """, Change.applyChanges(refactor(transformed.toList), source))
+    """, result)
   }
 }

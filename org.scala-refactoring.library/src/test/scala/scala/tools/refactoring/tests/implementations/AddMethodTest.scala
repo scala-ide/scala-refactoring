@@ -16,7 +16,7 @@ class AddMethodTest extends TestHelper {
     val refactoring = new AddMethod with SilentTracing {
       val global = outer.global
       val file = addToCompiler(randomFileName(), src)
-      val change = addMethod(file, className, methodName, parameters, returnType, target)
+      val change = global.ask(() => addMethod(file, className, methodName, parameters, returnType, target))
     }
     assertEquals(expected, Change.applyChanges(refactoring.change, src))
   }

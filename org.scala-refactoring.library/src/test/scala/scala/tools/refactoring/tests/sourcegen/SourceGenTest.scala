@@ -70,7 +70,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
         (a equals li.head) || true
       }
     }
-    """, createText(ast, Some(ast.pos.source)))
+    """, generateText(ast))
   }
     
   @Test
@@ -88,7 +88,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
     trait tr[A] {
       self: List[A]=>
     }
-    """, createText(ast, Some(ast.pos.source)))
+    """, generateText(ast))
   }
   
   @Test
@@ -1094,7 +1094,9 @@ class SourceGenTest extends TestHelper with SilentTracing {
     protected sealed class D9
     """)
     
-    val modTree = (↓(changeSomeModifiers)) apply tree get
+    val modTree = global.ask { () =>
+      (topdown(changeSomeModifiers)) apply tree get
+    }
     
     assertEquals("""
     package xy

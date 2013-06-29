@@ -42,7 +42,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
   }
     
   @Test
-  def parentChain() {
+  def parentChain() = global.ask { () =>
     
     val i = tree.find(_.toString == "42").get
     
@@ -52,12 +52,12 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
   }
   
   @Test
-  def rootHasNoParent() {
+  def rootHasNoParent() = global.ask { () =>
     assertEquals(None, originalParentOf(tree))
   }
   
   @Test
-  def testSiblings() {
+  def testSiblings() = global.ask { () =>
     
     val v = tree.find(_.isInstanceOf[ValDef]).get
     val actual = originalParentOf(v).get.toString.replaceAll("\r\n", "\n")
