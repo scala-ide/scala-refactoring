@@ -104,4 +104,24 @@ trait Main {
   }
 }""")
   }
+  
+  @Test
+  def addMethodByClosestPosition = {
+    addMethod("Main", "method", Nil, None, AddToClosest(30), """
+class Main {
+
+}
+object Main {
+
+}""",
+      """
+class Main {
+
+}
+object Main {
+  def method = {
+    ???
+  }
+}""")
+  }
 }
