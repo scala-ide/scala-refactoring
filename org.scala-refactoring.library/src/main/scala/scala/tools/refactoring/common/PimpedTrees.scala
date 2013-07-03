@@ -361,12 +361,23 @@ trait PimpedTrees {
     val candidates = findAllTreesWithTheSamePosition(tree)
     
     candidates find {
-      // When searching for the original of a NameTree, we
-      // can additionally compare the names of the trees.
+      /* 
+       * When searching for the original of a NameTree, we
+       * can additionally compare the names of the trees.
+       * */
       case c: NameTree if tree.isInstanceOf[NameTree] =>
         c.nameString == tree.nameString
       case c =>
-        c eq tree
+        
+        /* 
+         * Some trees have the same type and position as their child 
+         * (e.g. in a for comprehension, the withFilter Select has the
+         * same position as the underlying Select), in that case, we 
+         * also compare the structure of the trees.
+         * 
+         * See RenameTest#renameMethodForComprehensionBody
+         * */
+        (c eq tree) || (c equalsStructure tree)
     } orElse (candidates.filter(_ samePosAndType tree).lastOption)
   }
   

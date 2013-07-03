@@ -1384,4 +1384,38 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("MyTest"))
+  
+  @Test
+  def renameMethodForComprehensionBody = new FileSet {
+    """
+    package renameMethodForComprehensionBody
+    class Testing {
+      def isBlank[T](t: T) = false
+      object elt {
+        val child = List(1,2,3)
+      }
+      
+      def /*(*/processContent/*)*/ {
+        for(node <- elt.child if !isBlank(node)) {
+          val element = new Array(node)
+        }
+      }
+    }
+    """ becomes 
+    """
+    package renameMethodForComprehensionBody
+    class Testing {
+      def isBlank[T](t: T) = false
+      object elt {
+        val child = List(1,2,3)
+      }
+      
+      def /*(*/getContent/*)*/ {
+        for(node <- elt.child if !isBlank(node)) {
+          val element = new Array(node)
+        }
+      }
+    }
+    """
+  } applyRefactoring(renameTo("getContent"))
 }
