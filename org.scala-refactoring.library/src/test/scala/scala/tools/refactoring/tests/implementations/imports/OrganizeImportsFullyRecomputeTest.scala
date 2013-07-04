@@ -942,4 +942,28 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
+  
+  @Test
+  def runWith = new FileSet {
+    """
+    package runWith
+
+    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
+
+    import java.util.BitSet
+    
+    @RunWith(classOf[BitSet])
+    class MainActivityTest {}
+    """ becomes
+    """
+    package runWith
+    
+    import java.util.BitSet
+
+    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
+    
+    @RunWith(classOf[BitSet])
+    class MainActivityTest {}
+    """
+  } applyRefactoring organize
 }
