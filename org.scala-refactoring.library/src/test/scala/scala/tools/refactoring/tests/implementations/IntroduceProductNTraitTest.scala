@@ -5,12 +5,23 @@ import implementations.IntroduceProductNTrait
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 import scala.tools.refactoring.implementations.IntroduceProductNTrait
-
 import language.reflectiveCalls
+import org.junit.After
+import scala.tools.refactoring.util.CompilerInstance
 
 class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
 
   outer =>
+        
+  // We are experiencing instable test runs, maybe it helps when we
+  // use a fresh compiler for each test case:
+  
+  override val global = (new CompilerInstance).compiler
+  
+  @After
+  def shutdownCompiler {
+    global.askShutdown
+  }
     
   def introduceProductNTrait(params: (Boolean, String => Boolean, Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new IntroduceProductNTrait with SilentTracing {

@@ -6,11 +6,22 @@ import util.TestRefactoring
 import scala.tools.refactoring.implementations.ExtractTrait
 import org.junit.Assert
 import org.junit.Ignore
-
 import language.reflectiveCalls
+import scala.tools.refactoring.util.CompilerInstance
+import org.junit.After
 
 class ExtractTraitTest extends TestRefactoring {
-    
+      
+  // We are experiencing instable test runs, maybe it helps when we
+  // use a fresh compiler for each test case:
+  
+  override val global = (new CompilerInstance).compiler
+  
+  @After
+  def shutdownCompiler {
+    global.askShutdown
+  }
+  
   def extractTrait(params: (String, String => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExtractTrait with SilentTracing with TestProjectIndex
     def filter(member: refactoring.global.ValOrDefDef) = params._2(member.symbol.nameString)

@@ -73,9 +73,6 @@ trait TreeCreationMethods {
       case Right(ex) => throw ex
     }
   }
-
-  def treesFrom(sources: List[SourceFile]): List[global.Tree] =
-    sources map treeFrom
   
   /**
    * Add a source file with the given name and content to this compiler instance.

@@ -29,7 +29,7 @@ trait TestRefactoring extends TestHelper {
       
       val global = TestRefactoring.this.global
         
-      override val index = {
+      override val index = global.ask { () =>
         
         val trees = project.sources map (x => addToCompiler(project.fileName(x), x)) map (global.unitOfFile(_).body)
         
@@ -37,12 +37,14 @@ trait TestRefactoring extends TestHelper {
           global.unitOfFile(file).body
         } map CompilationUnitIndex.apply
         GlobalIndex(cuIndexes)
-      }      
+      }
     }
     
     val refactoring: MultiStageRefactoring with InteractiveScalaCompiler
 
-    def preparationResult = refactoring.prepare(selection(refactoring, project))
+    def preparationResult = global.ask { () =>
+      refactoring.prepare(selection(refactoring, project))
+    }
 
     def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = global.ask { () =>
       preparationResult match {
