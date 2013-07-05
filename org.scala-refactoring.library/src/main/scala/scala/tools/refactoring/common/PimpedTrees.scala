@@ -42,7 +42,7 @@ trait PimpedTrees {
    * that converts the ImportSelectors into our own ImportSelectorTrees.
    */
   implicit class ImportSelectorTreeExtractor(t: global.Import) {
-    // work around for https://lampsvn.epfl.ch/trac/scala/ticket/3392
+
     def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
     
       val pos = {
@@ -646,10 +646,6 @@ trait PimpedTrees {
       case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.isRange && t.pos.start == t.pos.point =>
         (NameTree(selector) setPos t.namePosition) :: Nil
       
-      // This clause is a workaround for SI-5064
-//      case t @ Select(qualifier, selector) if qualifier.pos.sameRange(t.pos) && qualifier.pos.isTransparent =>
-//        (NameTree(selector) setPos t.namePosition) :: Nil
-        
       case t @ Select(qualifier, selector) =>
         // FIXME: for-comprehensions result in incorrect NameTrees
         qualifier :: (NameTree(selector) setPos t.namePosition) :: Nil
@@ -750,25 +746,9 @@ trait PimpedTrees {
         definition :: Nil
         
       case _ => Nil
-       
     }
     
-    ch map {
-       /**
-       * An empty RHS that is implemented as '.. { }' creates a Literal 
-       * tree with a range length of 1, remove that tree.
-       */
-      case t: Literal if t.pos.isRange && t.pos.end - t.pos.start == 1 && t.toString == "()" => 
-        EmptyTree
-        
-      /**
-       * hide the implicit "apply" call
-       */
-      case t @ Select(qualifier: Select, name) if name.toString == "apply" && t.samePos(qualifier) => 
-        qualifier
-            
-      case t => t
-    } filter keepTree
+    ch filter keepTree
   }
   
   private def removeCompilerTreesForMultipleAssignment(body: List[Tree]): List[Tree] = {
@@ -908,7 +888,14 @@ trait PimpedTrees {
    */
   case class SuperConstructorCall(clazz: global.Tree, args: List[global.Tree]) extends global.Tree {
     if(clazz.pos.isRange) {
-      val lastPos = args.lastOption map (_.pos) filter (_.isRange) getOrElse clazz.pos
+      val lastPos = args.lastOption map (_.pos) filter (_.isRange) map { pos =>
+        /*
+         * We want to include all the layout including the ) in the position.
+         * */
+        val layout = Layout(pos.source, pos.end, pos.source.length)
+        val countToParens = layout.withoutComments.takeWhile(_ != ')').size
+        pos.withEnd(pos.end + countToParens + 1)
+      } getOrElse clazz.pos
       setPos(clazz.pos withEnd lastPos.end)
     }
   }
@@ -1130,13 +1117,6 @@ trait PimpedTrees {
     }
   }
   
-  lazy val scalaVersion = {
-    val Version = "version (\\d+)\\.(\\d+)\\.(\\d+).*".r
-    scala.util.Properties.versionString match {
-      case Version(fst, snd, trd) => (fst.toInt, snd.toInt, trd.toInt)
-    }
-  }
-  
   def isClassTag(c: Constant): Boolean = c.tag == ClazzTag
   
   /**
@@ -1147,7 +1127,7 @@ trait PimpedTrees {
    */
   def isEmptyTree(t: Tree): Boolean = t.eq(emptyValDef) || t.isEmpty
    
-  class NotInstanceOf[T](m: Manifest[T]) {
+  class NotInstanceOf[T](implicit m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
       if(m.runtimeClass.isInstance(t)) {
         None
@@ -1156,15 +1136,10 @@ trait PimpedTrees {
     }
   }                                              
   
-  object NotInstanceOf {
-    def apply[T](implicit m: Manifest[T]) = {
-      new NotInstanceOf[T](m)
-    }
-  }
-  
-  val NoBlock = NotInstanceOf[Block]
-  val NoPackageDef = NotInstanceOf[PackageDef]
-  val NoFunction = NotInstanceOf[Function]
+  object NoBlock extends NotInstanceOf[Block]
+  object NoPackageDef extends NotInstanceOf[PackageDef]
+  object NoFunction extends NotInstanceOf[Function]
+  object NoImportSelectorTree extends NotInstanceOf[ImportSelectorTree]
  
   
   /**

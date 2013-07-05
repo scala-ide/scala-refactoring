@@ -29,7 +29,14 @@ trait CompilationUnitIndexes {
   }
   
   object CompilationUnitIndex {
-  
+      
+    private lazy val scalaVersion = {
+      val Version = "version (\\d+)\\.(\\d+)\\.(\\d+).*".r
+      scala.util.Properties.versionString match {
+        case Version(fst, snd, trd) => (fst.toInt, snd.toInt, trd.toInt)
+      }
+    }
+    
     def apply(tree: Tree): CompilationUnitIndex = {
       
       assertCurrentThreadIsPresentationCompiler()

@@ -896,8 +896,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
 
     override def SuperConstructorCall(tree: SuperConstructorCall, clazz: global.Tree, args: List[global.Tree])(implicit ctx: PrintingContext) = {
-      val after: Requisite = if(r.contains(")")) NoRequisite else ")"
-      l ++ p(clazz) ++ pp(args, separator = ", ", before = "(", after = after) ++ r
+      l ++ p(clazz) ++ pp(args, separator = ", ", before = "(", after = ")") ++ r
     }
 
     override def Super(tree: Super, qual: Tree, mix: Name)(implicit ctx: PrintingContext) = {
@@ -946,15 +945,15 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
     }
   
-     def charAtTreeStartPos(t: Tree) = t.pos match {
-        case range: RangePosition => Some(t.pos.source.content(t.pos.start))
-        case _ => None
-      }
+    def charAtTreeStartPos(t: Tree) = t.pos match {
+      case range: RangePosition => Some(t.pos.source.content(t.pos.start))
+      case _ => None
+    }
       
-      def charBeforeTreeEndPos(t: Tree) = t.pos match {
-        case range: RangePosition => Some(t.pos.source.content(t.pos.end - 1))
-        case _ => None
-      }
+    def charBeforeTreeEndPos(t: Tree) = t.pos match {
+      case range: RangePosition => Some(t.pos.source.content(t.pos.end - 1))
+      case _ => None
+    }
   }
 
   trait BlockPrinters {

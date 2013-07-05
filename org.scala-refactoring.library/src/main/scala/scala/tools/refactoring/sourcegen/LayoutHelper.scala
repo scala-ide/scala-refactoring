@@ -223,9 +223,6 @@ trait LayoutHelper {
       case (c, p: ImplDef) =>
         layout(c.pos.end, p.pos.end) splitAfter '}'
          
-       case (c: SuperConstructorCall, p: Template) =>
-         layout(c.pos.end, p.pos.end) splitAtAndExclude ')'
-         
        case (c, p: Template) =>
          layout(c.pos.end, p.pos.end) splitBefore (')', '\r', '\n')
          
@@ -238,10 +235,7 @@ trait LayoutHelper {
        case (c, p: Select) =>
          NoLayout → NoLayout
         
-       case (c, p: Block) =>
-         layout(c.pos.end, p.pos.end) splitBefore ('\r', '\n')
-         
-       case (c, p: Match) =>
+       case (c, p @ (_: Block | _: Match)) =>
          layout(c.pos.end, p.pos.end) splitBefore ('\r', '\n')
          
        case (c, p) =>
@@ -289,43 +283,37 @@ trait LayoutHelper {
        * kinds of layout that contain an @. */
       def layoutDoesNotIncludeAnnotation = !layout.contains("@")
       
-      ((layout match {
-        case Else(l, r)            => Some(l, r, "else")
-        case Match(l, r)           => Some(l, r, "match")
-        case StartComment(l, r)    => Some(l, r, "StartComment")
-        case Class(l, r)           => Some(l, r, "Class")
-        case Colon(l, r)           => Some(l, r, "Colon")
-        case EmptyParens(l, r)     => Some(l, r, "EmptyParens")
-        case OpeningBrace(l, r)    => Some(l, r, "OpeningBrace")
-        case Arrow(l, r)       => Some(l, r, "`=>`")
-        case _                     => None
-      }) orElse (layout match { // Work around https://lampsvn.epfl.ch/trac/scala/ticket/1133
+      (layout match {
+        case Else(l, r)             => Some(l, r, "else")
+        case Match(l, r)            => Some(l, r, "match")
+        case StartComment(l, r)     => Some(l, r, "StartComment")
+        case Class(l, r)            => Some(l, r, "Class")
+        case Colon(l, r)            => Some(l, r, "Colon")
+        case EmptyParens(l, r)      => Some(l, r, "EmptyParens")
+        case OpeningBrace(l, r)     => Some(l, r, "OpeningBrace")
+        case Arrow(l, r)            => Some(l, r, "`=>`")
         case ClosingBrace(l, r) if layoutDoesNotIncludeAnnotation => Some(l, r, "ClosingBrace")
         case Equals(l, r)       if layoutDoesNotIncludeAnnotation => Some(l, r, "Equals")
         case ImportStatementNewline(l, r) => Some(l, r, "ImportStatement Newline")
-        case ImportStatement(l, r) => Some(l, r, "ImportStatement")
+        case ImportStatement(l, r)  => Some(l, r, "ImportStatement")
         case ClosingCurlyBrace(l, r)=> Some(l, r, "ClosingCurlyBrace")
-        case NewLine(l, r)         => Some(l, r, "NewLine")
-        case CommaSpace(l, r)      => Some(l, r, "CommaSpace")
-        case _                     => None
-      }) orElse (layout match {
+        case NewLine(l, r)          => Some(l, r, "NewLine")
+        case CommaSpace(l, r)       => Some(l, r, "CommaSpace")
         case Comma(l, r)                => Some(l, r, "Comma")
         case Dot(l, r)                  => Some(l, r, "Dot")
         case OpeningSquareBracket(l, r) => Some(l, r, "OpeningSquareBracket")
         case s                          => Some(s, "", "NoMatch")
-      })).get
+      }).get
     }
     
     (fixValDefPosition(left), fixValDefPosition(right)) match {
-      case (_, EmptyTree) | (EmptyTree, _) => NoLayout → NoLayout
+      case (_, EmptyTree) 
+         | (EmptyTree, _) 
+         | (_: Import, _: Import) 
+         | (_: ImportSelectorTree, _: ImportSelectorTree) => 
+        NoLayout → NoLayout
       
-      case (l: Import, r: Import) => 
-        NoLayout → NoLayout
-        
-      case (l: ImportSelectorTree, r: ImportSelectorTree) =>
-        NoLayout → NoLayout
-        
-      case (l, r: ImportSelectorTree) if !l.isInstanceOf[ImportSelectorTree] =>
+      case (NoImportSelectorTree(l), r: ImportSelectorTree) =>
         // All the layout, like '.' and '{' belongs to the selector.
         between(l, r)(l.pos.source) → NoLayout
 

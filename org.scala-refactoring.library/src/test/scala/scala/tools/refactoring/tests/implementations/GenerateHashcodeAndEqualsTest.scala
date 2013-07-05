@@ -403,5 +403,37 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, true)))
+  
+  @Test
+  def traitWithExistingSuperConstructorCall = new FileSet {
+    """
+    package traitWithExistingSuperConstructorCall
+    
+    class Point(val x: Int)
+    class /*(*/ColoredPoint/*)*/(override val x: Int) extends Point(x)
+    """ becomes
+    """
+    package traitWithExistingSuperConstructorCall
+    
+    class Point(val x: Int)
+    class /*(*/ColoredPoint/*)*/(override val x: Int) extends Point(x) with Equals {
+      def canEqual(other: Any) = {
+        other.isInstanceOf[traitWithExistingSuperConstructorCall.ColoredPoint]
+      }
+      
+      override def equals(other: Any) = {
+        other match {
+          case that: traitWithExistingSuperConstructorCall.ColoredPoint => that.canEqual(ColoredPoint.this)
+          case _ => false
+        }
+      }
+      
+      override def hashCode() = {
+        val prime = 41
+        prime
+      }
+    }
+    """
+  } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
 
 }

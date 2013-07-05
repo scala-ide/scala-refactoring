@@ -1164,17 +1164,19 @@ class SourceGenTest extends TestHelper with SilentTracing {
     
     val tree = treeFrom("""
     class ASuperClass(x: Int, val d: String)
+    
     class AClass(i: Int, var b: String) extends ASuperClass(i, b) {
     }
     """)
     
     assertEquals("""
     class ASuperClass(x: Int, val d: String)
+    
     class AClass(i: Int, var b: String) extends ASuperClass(i, b) {
     }
     """, generateText(tree))
   }
-  
+
   @Test
   def thisConstructorCall() = {
 
