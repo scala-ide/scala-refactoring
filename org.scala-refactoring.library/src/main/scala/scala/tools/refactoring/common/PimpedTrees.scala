@@ -33,9 +33,7 @@ trait PimpedTrees {
   /**
    * Represent an import selector as a tree, including both names as trees.
    */
-  case class ImportSelectorTree(name: pimpedTrees.NameTree, rename: global.Tree) extends global.Tree {
-    def errorSubtrees = Nil
-  }
+  case class ImportSelectorTree(name: pimpedTrees.NameTree, rename: global.Tree) extends global.Tree
   
   /**
    * Import selectors are not trees, but we can provide an extractor
@@ -819,13 +817,6 @@ trait PimpedTrees {
       }
     }
     override def toString = "NameTree("+ nameString +")"
-    override def setPos(p: Position) = {
-      if(p != NoPosition && p.start < 0) {
-        sys.error("pos.start is"+ p.start)
-      }
-      super.setPos(p)
-    }
-    def errorSubtrees = Nil
   }
   object NameTree {
     def apply(name: String) = new NameTree(newTermName(name))
@@ -859,8 +850,6 @@ trait PimpedTrees {
       case Tokens.DEF   => "def"
       case _            => "<unknown flag, please report a bug>"
     }
-    
-    def errorSubtrees = Nil
   } 
     
   /**
@@ -905,9 +894,7 @@ trait PimpedTrees {
    *   self: A with B =>
    *   ^^^^^^^^^^^^^^
    */
-  case class SelfTypeTree(name: pimpedTrees.NameTree, tpt: Tree) extends global.Tree {
-    def errorSubtrees = Nil
-  }
+  case class SelfTypeTree(name: pimpedTrees.NameTree, tpt: Tree) extends global.Tree
   
   case class NamedArgument(nameTree: pimpedTrees.NameTree, rhs: Tree) extends global.RefTree {
     def qualifier = EmptyTree
@@ -1066,9 +1053,7 @@ trait PimpedTrees {
     }
   }
   
-  case class MultipleAssignment(extractor: Tree, names: List[ValDef], rhs: Tree) extends global.Tree {
-    def errorSubtrees = Nil
-  }
+  case class MultipleAssignment(extractor: Tree, names: List[ValDef], rhs: Tree) extends global.Tree
   
   /**
    * Converts a tree containing Idents and Selects to a `.` separated string.
@@ -1198,9 +1183,8 @@ trait PimpedTrees {
    * 
    */
   @deprecated("Use PlainText objects and its components", "0.5.0")
-  case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree {
-    def errorSubtrees = Nil
-  }
+  case class SourceLayoutTree(kind: SourceLayouts.Kinds) extends global.Tree
+
   @deprecated("Use PlainText objects and its components", "0.5.0")
   object SourceLayouts {
     sealed trait Kinds
