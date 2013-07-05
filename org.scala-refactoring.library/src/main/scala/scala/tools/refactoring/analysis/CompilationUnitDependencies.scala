@@ -24,7 +24,7 @@ trait CompilationUnitDependencies {
         case Select(This(Java), `lang`) => false
         case Select(Ident(Names.scala), Names.pkg) => false
         case Select(Ident(Names.scala), Names.Predef) => false
-        case Select(This(Scala), Names.Predef) => false
+        case Select(This(Scala), _) => false
         case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
         case qual if qual.nameString == "ClassTag" => false
         case _ => true

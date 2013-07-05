@@ -966,4 +966,18 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     class MainActivityTest {}
     """
   } applyRefactoring organize
+  
+  @Test
+  def shouldIgnoreScalaPackage = new FileSet {
+    """
+    package shouldIgnoreScalaPackage
+
+    class Blah {  val x = for (e <- Array(1, 2, 3)) yield e }
+    """ becomes
+    """
+    package shouldIgnoreScalaPackage
+
+    class Blah {  val x = for (e <- Array(1, 2, 3)) yield e }
+    """
+  } applyRefactoring organize
 }
