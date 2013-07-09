@@ -22,16 +22,21 @@ class CompilerInstance {
   lazy val compiler = {
     
     val settings = new Settings
-    
-    val scalaObjectSource = Class.forName("scala.Unit").getProtectionDomain.getCodeSource
-      
+
+    // find the jar that has class `className`
+    def codeSource(className: String) = Class.forName(className).getProtectionDomain.getCodeSource
+
+    val scalaObjectSource  = codeSource("scala.Unit")
+
     // is null in Eclipse/OSGI but luckily we don't need it there
     if(scalaObjectSource != null) {
-      val compilerPath = Class.forName("scala.tools.nsc.Interpreter").getProtectionDomain.getCodeSource.getLocation
-      val libPath = scalaObjectSource.getLocation          
-      val pathList = List(compilerPath,libPath)
+      val scalaXmlSource     = codeSource("scala.xml.Elem")
+      val scalaParsingSource = codeSource("scala.util.parsing.combinator.JavaTokenParsers")
+      val compilerSource     = codeSource("scala.tools.nsc.Interpreter")
+
+      val libraryJars = List(compilerSource, scalaObjectSource, scalaXmlSource, scalaParsingSource).map(_.getLocation).distinct // distinct to drop duplicate jars in non-modularized Scala verions (as of 2.11.0-M4, xml and util.parsing are in separate jars)
       val origBootclasspath = settings.bootclasspath.value
-      settings.bootclasspath.value = ((origBootclasspath :: pathList) ::: additionalClassPathEntry.toList) mkString File.pathSeparator
+      settings.bootclasspath.value = ((origBootclasspath :: libraryJars) ::: additionalClassPathEntry.toList) mkString File.pathSeparator
     }
     
     val compiler = new Global(settings, new ConsoleReporter(settings) {
