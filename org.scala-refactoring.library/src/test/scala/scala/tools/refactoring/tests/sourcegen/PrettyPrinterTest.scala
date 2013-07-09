@@ -712,7 +712,7 @@ class Demo2(a: String, b: Int)"""
         case i => i
       }
 
-      List(1,2) collect {
+      List(1,2) map {
         case i if i > 5 => i
       }
       
@@ -744,7 +744,7 @@ class Demo2(a: String, b: Int)"""
     case i => i
   }
   
-  List(1, 2).collect {
+  List(1, 2).map {
     case i if i > 5 => i
   }
   
