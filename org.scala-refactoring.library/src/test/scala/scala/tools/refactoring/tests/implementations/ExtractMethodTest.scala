@@ -737,6 +737,10 @@ object ExtractMethod3 {
           println("It's true")
       }
 
+      private def isFalse(check: Boolean): Boolean = {
+        /*(*/check == false/*)*/ /*hi*/
+      }
+
       def unrelated1 {
         println("unrelated1")
       }
@@ -747,10 +751,6 @@ object ExtractMethod3 {
 
       def unrelated3 {
         println("unrelated3")
-      }
-
-      private def isFalse(check: Boolean): Boolean = {
-        /*(*/check == false/*)*/ /*hi*/
       }
     }
 
