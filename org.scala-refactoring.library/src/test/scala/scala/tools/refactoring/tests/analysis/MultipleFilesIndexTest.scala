@@ -11,42 +11,42 @@ import tests.util._
 import language.{postfixOps, reflectiveCalls}
 
 class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCompilerForeachTest {
-  
+
   import global._
-  
+
   val index = EmptyIndex
-  
+
   def aggregateFileNamesWithTrees(ts: List[Tree])(conversion: Tree => String) = {
-    ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map { ts => 
+    ts.groupBy(_.pos.source.file.name).toList.sortWith(_._1 < _._1).unzip._2 map { ts =>
       (ts filter (_.pos != NoPosition) map conversion distinct) sortWith(_ < _) mkString ", "
     }
   }
-  
+
   def buildIndex(pro: FileSet) = {
-    
+
     val trees = pro.sources map (x => addToCompiler(pro.fileName(x), x)) map (global.unitOfFile(_).body)
-    
+
     val cuIndexes = global.ask { () =>
       trees map CompilationUnitIndex.apply
     }
-    
+
     GlobalIndex(cuIndexes)
   }
 
   def findReferences(pro: FileSet): List[String] = {
 
     val index = buildIndex(pro)
-              
+
     val sym = selection(this, pro).selectedSymbols head
-    
+
     val occurrences = global.ask { () =>
       index.occurences(sym)
     }
-    
-    aggregateFileNamesWithTrees(occurrences) { symTree => 
+
+    aggregateFileNamesWithTrees(occurrences) { symTree =>
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
-      else 
+      else
         symTree.nameString +" on line "+ symTree.pos.line
     }
   }
@@ -54,51 +54,51 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   def findOverrides(pro: FileSet): List[String] = {
 
     val index = buildIndex(pro)
-              
+
     val sym = selection(this, pro).selectedSymbols head
-    
+
     val overrides = global.ask { () =>
       index.overridesInClasses(sym)
     }
-    
-    aggregateFileNamesWithTrees(overrides map index.declaration flatten) { symTree => 
+
+    aggregateFileNamesWithTrees(overrides map index.declaration flatten) { symTree =>
       if(symTree.hasSymbol)
         symTree.symbol.nameString +" on line "+ symTree.pos.line
-      else 
+      else
         symTree.nameString +" on line "+ symTree.pos.line
     }
   }
-  
+
   def classHierarchy(pro: FileSet): List[String] = {
-              
+
     val index = buildIndex(pro)
 
     val sym = selection(this, pro).selectedSymbols head
-        
-    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner) map index.declaration flatten) { sym => 
+
+    aggregateFileNamesWithTrees(index.completeClassHierarchy(sym.owner) map index.declaration flatten) { sym =>
       sym.nameString +" on line "+ sym.pos.line
     }
   }
-  
+
   def allDeclarations(pro: FileSet): List[String] = {
-              
+
     val index = buildIndex(pro)
-        
-    aggregateFileNamesWithTrees(index.allDeclarations() map (_._2) toList) { sym => 
+
+    aggregateFileNamesWithTrees(index.allDeclarations() map (_._2) toList) { sym =>
       if(sym.nameString == "")
         "<no-name> on line "+ sym.pos.line
       else
         sym.nameString +" on line "+ sym.pos.line
-    } 
+    }
   }
-  
+
   def allSymbols(pro: FileSet): List[String] = {
-              
+
     val index = buildIndex(pro)
-        
+
     List((index.allSymbols() map (_.toString) sortWith (_ < _)) mkString (", "))
   }
-  
+
   @Test
   def findReferencesToClass = new FileSet("p1") {
     """
@@ -127,9 +127,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       class X(a: p1.A)
     """ becomes
     """A on line 3, A on line 4, A on line 5, A on line 8"""
-    
+
   } apply(findReferences)
-  
+
   @Test
   def findReferencesToMethod = new FileSet("p2") {
     """
@@ -167,9 +167,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       class G extends A
     """ becomes
     """method on line 10, method on line 4, method on line 5, method on line 6"""
-    
+
   } apply(findReferences)
-  
+
   @Test
   def findReferencesToTraitMethod = new FileSet("p3") {
     """
@@ -177,7 +177,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       trait Trait {
         /*(*/  def method: String  /*)*/
       }
-      
+
       class A extends Trait {
         def method = "impl by def"
       }
@@ -193,9 +193,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       class C(val method: String) extends p3.Trait
     """ becomes
     """method on line 3"""
-    
+
   } apply(findReferences)
-  
+
   @Test
   def findReferencesFromCallSite = new FileSet("p4") {
     """
@@ -213,9 +213,9 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       }
     """ becomes
     """getInt on line 4"""
-    
+
   } apply(findReferences)
-  
+
   @Test
   def findValues = new FileSet("p5") {
     """
@@ -228,7 +228,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     ;
     """
       package p5
-      class B(override val s: String) 
+      class B(override val s: String)
           extends A(s) {
         val b = new B("b")
         val bb = b.s
@@ -236,19 +236,19 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     """s on line 3, s on line 4, s on line 6"""
 
-  } apply(findReferences)  
+  } apply(findReferences)
 
   @Test
   def findSuperCall = new FileSet("p6") {
     """
       package p6
       class A(/*(*/  val s: String  /*)*/, val t: Int)
-      class B(override val s: String) 
+      class B(override val s: String)
         extends A(s, 5)
     """ becomes
     """s on line 3, s on line 4, s on line 5"""
   } apply(findReferences)
-  
+
   @Test
   def findCaseClassValues = new FileSet("p7") {
     """
@@ -260,7 +260,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     """s on line 3, s on line 5"""
   } apply(findReferences)
-  
+
   @Test
   def passMethodAsFunction = new FileSet("p8") {
     """
@@ -270,12 +270,12 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       }
       object Main {
         val a = new A
-        List(1,2,3) map a.double 
+        List(1,2,3) map a.double
       }
     """ becomes
     """double on line 4, double on line 8"""
   } apply(findReferences)
-  
+
   @Test
   def traitImplementation = new FileSet("p9") {
     """
@@ -285,11 +285,11 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       }
       object Impl {
         val a = new Index { def countDeclarations(s: String) = 0 }
-      } 
+      }
     """ becomes
     """countDeclarations on line 4, countDeclarations on line 7"""
   } apply(findReferences)
-  
+
   @Test
   def findInImports = new FileSet("p10") {
     """
@@ -306,7 +306,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     """A on line 3, A on line 4"""
   } apply(findReferences)
-  
+
   @Test
   def inClassHierarchy = new FileSet("p11") {
     """
@@ -321,7 +321,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     """C on line 2, Defg on line 3"""
   } apply(classHierarchy)
-  
+
   @Test
   def allDeclarationsInClasses = new FileSet {
     """
@@ -336,7 +336,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     "C on line 2, Defg on line 3, this on line 3"
   } apply(allDeclarations)
-  
+
   @Test
   def allSymbolsInIndex = new FileSet {
     """
@@ -345,7 +345,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     "class B, class String, constructor B, constructor Object, object Predef, package <empty>, package scala, trait Abc, type AnyRef, type String, value s, value s"
   } apply(allSymbols)
-  
+
   @Test
   def allDeclarationsMethods = new FileSet {
     """
@@ -370,7 +370,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     "$init$ on line 2, C on line 2, a on line 5, m on line 4, someMethod on line 3"
   } apply(allDeclarations)
-  
+
   @Test
   def overriddenMethods = new FileSet {
     """
@@ -390,7 +390,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     "someMethod on line 3"
   } apply(findOverrides)
-  
+
   @Test
   def overriddenMethods2 = new FileSet {
     """
@@ -410,7 +410,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
     """ becomes
     "someMethod on line 3"
   } apply(findOverrides)
-  
+
   @Test
   def overriddenMethods3 = new FileSet {
     """
@@ -418,13 +418,13 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       def someMethod = "abc"
     }
     class B extends Abc {
-      /*(*/override def someMethod = "b"/*)*/ 
+      /*(*/override def someMethod = "b"/*)*/
     }
     """ becomes
     "someMethod on line 3, someMethod on line 6"
 
   } apply(findOverrides)
-  
+
   @Test
   def overriddenMethods4 = new FileSet {
     """
@@ -432,7 +432,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
       def someMethod = "abc"
     }
     class B extends Abc {
-      /*(*/override def someMethod = "b"/*)*/ 
+      /*(*/override def someMethod = "b"/*)*/
     }
     class C extends B {
       override def someMethod = "c"

@@ -13,7 +13,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     val refactoring = new ChangeParamOrder with SilentTracing with TestProjectIndex
     val changes = performRefactoring(permutations)
   }.changes
-  
+
   @Test
   def exchangeTwoParams = new FileSet {
     """
@@ -29,7 +29,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::Nil)))
-  
+
   @Test
   def multipleParameterLists = new FileSet {
     """
@@ -51,13 +51,13 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::0::2::Nil)))
-  
+
   @Test
   def methodCall = new FileSet {
     """
       package changeParamOrder.methodCall
       class Defining {
-        def /*(*/method/*)*/(first: Int, second: String, third: Int) = second + first 
+        def /*(*/method/*)*/(first: Int, second: String, third: Int) = second + first
       }
       class Calling {
         val defining = new Defining
@@ -67,7 +67,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
       package changeParamOrder.methodCall
       class Defining {
-        def /*(*/method/*)*/(second: String, first: Int, third: Int) = second + first 
+        def /*(*/method/*)*/(second: String, first: Int, third: Int) = second + first
       }
       class Calling {
         val defining = new Defining
@@ -75,13 +75,13 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil)))
-  
+
   @Test
   def methodCallMultipleParamLists = new FileSet {
     """
       package changeParamOrder.methodCallMultipleParamLists
       class Defining {
-        def /*(*/method/*)*/(first: Int, second: String, third: Int)(a: Int, b: Int, c: Int, d: Int) = second + first 
+        def /*(*/method/*)*/(first: Int, second: String, third: Int)(a: Int, b: Int, c: Int, d: Int) = second + first
       }
       class Calling {
         val defining = new Defining
@@ -91,7 +91,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
       package changeParamOrder.methodCallMultipleParamLists
       class Defining {
-        def /*(*/method/*)*/(second: String, first: Int, third: Int)(b: Int, c: Int, a: Int, d: Int) = second + first 
+        def /*(*/method/*)*/(second: String, first: Int, third: Int)(b: Int, c: Int, a: Int, d: Int) = second + first
       }
       class Calling {
         val defining = new Defining
@@ -99,7 +99,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::2::0::3::Nil)))
-  
+
   @Test
   def partialMethod = new FileSet {
     """
@@ -117,9 +117,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         def partial = add _
         val three = partial(2, 1)
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::Nil)))
-  
+
   @Test
   def curriedPartialMethod = new FileSet {
     """
@@ -137,9 +137,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         def partial = add5(2, 1) _
         val ten = partial(3, 5, 4)
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
-  
+
   @Test
   def partialsWithBody = new FileSet {
     """
@@ -181,7 +181,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 1::2::0::Nil, 1::2::0::Nil, 1::0::Nil)))
-  
+
   @Test
   def partialValsWithBody = new FileSet {
     """
@@ -223,13 +223,13 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 1::2::0::Nil, 1::2::0::Nil, 1::0::Nil)))
-  
+
   @Test
   def curriedMethodCall = new FileSet {
     """
       package changeParamOrder.curriedMethodCall
       class Defining {
-        def /*(*/method/*)*/(first: Int, second: String, third: Int)(a: Int, b: String, c: Int, d: Int) = second + first 
+        def /*(*/method/*)*/(first: Int, second: String, third: Int)(a: Int, b: String, c: Int, d: Int) = second + first
       }
       class Currying {
         val defining = new Defining
@@ -241,7 +241,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     """
       package changeParamOrder.curriedMethodCall
       class Defining {
-        def /*(*/method/*)*/(second: String, first: Int, third: Int)(b: String, c: Int, a: Int, d: Int) = second + first 
+        def /*(*/method/*)*/(second: String, first: Int, third: Int)(b: String, c: Int, a: Int, d: Int) = second + first
       }
       class Currying {
         val defining = new Defining
@@ -251,7 +251,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil, 1::2::0::3::Nil)))
-  
+
   @Test
   def repeatedlyPartiallyApplied = new FileSet {
     """
@@ -271,9 +271,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         def secondPartial = firstPartial(3, 5, 4)
         val result = secondPartial(8, 7, 6)
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
-  
+
   @Test
   def aliasToVal = new FileSet {
     """
@@ -291,9 +291,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         val alias = add _
         val result = alias(2, 1)(3, 5, 4)
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
-  
+
   @Test
   def partiallyAppliedVal = new FileSet {
     """
@@ -311,9 +311,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         val partial = add(2, 1) _
         val result = partial(3, 5, 4)(8, 7, 6)
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
-  
+
   @Test
   def repeatedlyPartiallyAppliedVal = new FileSet {
     """
@@ -333,9 +333,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         val secondPartial = firstPartial(3, 5, 4)
         val result = secondPartial(8, 7, 6)
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil, 2::1::0::Nil)))
-  
+
   @Test
   def changeParamOrderSubclass = new FileSet {
     """
@@ -357,9 +357,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       class Child extends Parent {
         override def method(b: Int, a: Int, c: Int) = a*b*c
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil)))
-  
+
   @Test
   def changeParamOrderSuperclass = new FileSet {
     """
@@ -381,9 +381,9 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       class Child extends Parent {
         override def /*(*/method/*)*/(b: Int, a: Int, c: Int) = a*b*c
       }
-    """ 
+    """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil)))
-  
+
   @Test
   def changeParamOrderSuperClassCall = new FileSet {
     """
@@ -407,7 +407,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::2::Nil)))
-  
+
   @Test(expected=classOf[RefactoringException])
   def invalidPermutation = new FileSet {
     """
@@ -420,7 +420,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
     not relevant
     """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 1::0::3::Nil, 0::1::Nil)))
-  
+
   @Test
   def partiallyAppliedMethodUsage = new FileSet {
     """
@@ -430,7 +430,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
         def alias(a: Int, b: Int) = curriedAdd5(a, b) _
         val result = alias(1, 2)(3, 4, 5)
       }
-    """ becomes 
+    """ becomes
     """
       package splitParameterLists.partiallyAppliedMethodUsage
       class A {
@@ -440,7 +440,7 @@ class ChangeParamOrderTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(changeParamOrder(List(1::0::Nil, 0::2::1::Nil)))
-  
+
   @Test
   def partiallyAppliedMethodUsage2 = new FileSet {
     """

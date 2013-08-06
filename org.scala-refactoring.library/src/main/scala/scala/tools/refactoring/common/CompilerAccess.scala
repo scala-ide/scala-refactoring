@@ -8,8 +8,8 @@ package common
 import tools.nsc.io.AbstractFile
 
 trait CompilerAccess {
-  
+
   val global: tools.nsc.Global
-  
+
   def compilationUnitOfFile(f: AbstractFile): Option[global.CompilationUnit]
 }

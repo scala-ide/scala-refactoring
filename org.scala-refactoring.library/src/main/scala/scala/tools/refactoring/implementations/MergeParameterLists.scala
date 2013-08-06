@@ -7,10 +7,10 @@ package implementations
 abstract class MergeParameterLists extends MethodSignatureRefactoring {
 
   import global._
-  
+
   type MergePositions = List[Int]
   type RefactoringParameters = MergePositions
-  
+
   override def checkRefactoringParams(prep: PreparationResult, affectedDefs: AffectedDefs, params: RefactoringParameters) = {
     val selectedDefDef = prep.defdef
     val allowedMergeIndexesRange = 1 until selectedDefDef.vparamss.size
@@ -26,7 +26,7 @@ abstract class MergeParameterLists extends MethodSignatureRefactoring {
     val allConditions = List(isNotEmpty, isSorted, uniqueIndexes, indexesInRange, mergeable)
     allConditions.foldLeft(true)((b, f) => b && f(params))
   }
-  
+
   override def defdefRefactoring(params: RefactoringParameters) = transform {
     case orig @ DefDef(mods, name, tparams, vparamss, tpt, rhs) => {
       val vparamssWithIndex = vparamss.zipWithIndex
@@ -37,7 +37,7 @@ abstract class MergeParameterLists extends MethodSignatureRefactoring {
       DefDef(mods, name, tparams, mergedVparamss, tpt, rhs) replaces orig
     }
   }
-  
+
   override def applyRefactoring(params: RefactoringParameters) = transform {
     case apply @ Apply(fun, args) => {
       val originalTree = findOriginalTree(apply)
@@ -53,9 +53,9 @@ abstract class MergeParameterLists extends MethodSignatureRefactoring {
       }
     }
   }
-  
+
   override def traverseApply(t: ⇒ Transformation[X, X]) = bottomup(t)
-  
+
   override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: DefInfo): RefactoringParameters = {
     val originalNrParamLists = selectedMethod.vparamss.size
     val currentNrParamLists = toRefactor.nrParamLists

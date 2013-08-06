@@ -14,20 +14,20 @@ import tools.nsc.symtab.Flags
  * methods in subclasses.
  */
 trait DependentSymbolExpanders {
-  
+
   this: Indexes with common.CompilerAccess =>
-  
+
   import global._
-  
+
   /**
    * The basic trait that is extended by the
    * concrete expanders.
    */
-  trait SymbolExpander {    
+  trait SymbolExpander {
     def expand(s: Symbol): List[Symbol] = List(s)
   }
-  
-  trait ExpandGetterSetters extends SymbolExpander {    
+
+  trait ExpandGetterSetters extends SymbolExpander {
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
       case s if s.hasFlag(Flags.ACCESSOR) =>
         s.accessed :: Nil
@@ -37,13 +37,13 @@ trait DependentSymbolExpanders {
         Nil
     })
   }
-  
+
   trait SuperConstructorParameters extends SymbolExpander {
-    
+
     this: IndexLookup =>
-        
+
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
-      
+
       case s if s != NoSymbol && s.owner.isClass && s.hasFlag(Flags.ACCESSOR) =>
 
         (declaration(s.owner) collect {
@@ -59,26 +59,26 @@ trait DependentSymbolExpanders {
     case _ => Nil
     })
   }
-  
-  trait Companion extends SymbolExpander {    
+
+  trait Companion extends SymbolExpander {
     abstract override def expand(s: Symbol) = {
       s.companionSymbol :: super.expand(s)
     }
   }
-  
-  trait LazyValAccessor extends SymbolExpander {    
+
+  trait LazyValAccessor extends SymbolExpander {
     abstract override def expand(s: Symbol) = s match {
       case ts: TermSymbol if ts.isLazy =>
         ts.lazyAccessor :: super.expand(s)
-      case _ => 
+      case _ =>
         super.expand(s)
     }
   }
-  
+
   trait OverridesInClassHierarchy extends SymbolExpander {
-    
+
     this: IndexLookup =>
-    
+
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
       case s @ (_: global.TypeSymbol | _: global.TermSymbol) if s.owner.isClass => {
 
@@ -101,7 +101,7 @@ trait DependentSymbolExpanders {
       case _ => Nil
     })
   }
-    
+
   trait SameSymbolPosition extends SymbolExpander {
     this: IndexLookup =>
 
@@ -117,7 +117,7 @@ trait DependentSymbolExpanders {
       }
       sameRange && sameFileName && sameStringRep
     }
-      
+
     abstract override def expand(s: Symbol) = super.expand(s) ++ (allSymbols collect {
       case sym if sameSymbol(sym, s) && !sym.pos.isTransparent =>
         sym

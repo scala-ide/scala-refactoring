@@ -10,17 +10,17 @@ import org.junit.Test
 import language.reflectiveCalls
 
 class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
-    
+
   def organize(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
     val options = List(ExpandImports, SortImports, GroupImports(groups))
     val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute)
   }.mkChanges
-  
+
   val source = """
       import scala.collection.mutable.ListBuffer
       import java.util.BitSet
-      import scala.xml.Comment
+      import scala.io.Source
       import java.util.AbstractList
       import org.xml.sax.Attributes
       import scala.collection.mutable.HashMap
@@ -29,10 +29,10 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
         // we need some code that use the imports
         val x: (ListBuffer[Int], HashMap[String, Int])
         val y: (AbstractList[Int], BitSet)
-        val z: (Attributes, Comment)
+        val z: (Attributes, Source)
       }
     """
-  
+
   @Test
   def noGrouping = new FileSet {
     source becomes
@@ -42,24 +42,24 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
       import org.xml.sax.Attributes
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
-      import scala.xml.Comment
+      import scala.io.Source
 
       trait Temp {
         // we need some code that use the imports
         val x: (ListBuffer[Int], HashMap[String, Int])
         val y: (AbstractList[Int], BitSet)
-        val z: (Attributes, Comment)
+        val z: (Attributes, Source)
       }
     """
   } applyRefactoring organize(List())
-  
+
   @Test
   def oneScalaGroup = new FileSet {
     source becomes
     """
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
-      import scala.xml.Comment
+      import scala.io.Source
 
       import java.util.AbstractList
       import java.util.BitSet
@@ -69,18 +69,18 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
         // we need some code that use the imports
         val x: (ListBuffer[Int], HashMap[String, Int])
         val y: (AbstractList[Int], BitSet)
-        val z: (Attributes, Comment)
+        val z: (Attributes, Source)
       }
     """
   } applyRefactoring organize(List("scala"))
-  
+
   @Test
   def scalaAndJavaGroup = new FileSet {
     source becomes
     """
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
-      import scala.xml.Comment
+      import scala.io.Source
 
       import java.util.AbstractList
       import java.util.BitSet
@@ -91,11 +91,11 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
         // we need some code that use the imports
         val x: (ListBuffer[Int], HashMap[String, Int])
         val y: (AbstractList[Int], BitSet)
-        val z: (Attributes, Comment)
+        val z: (Attributes, Source)
       }
     """
   } applyRefactoring organize(List("scala", "java"))
-  
+
   @Test
   def severalScalaGroups = new FileSet {
     source becomes
@@ -106,7 +106,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
 
-      import scala.xml.Comment
+      import scala.io.Source
 
       import org.xml.sax.Attributes
 
@@ -114,11 +114,11 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
         // we need some code that use the imports
         val x: (ListBuffer[Int], HashMap[String, Int])
         val y: (AbstractList[Int], BitSet)
-        val z: (Attributes, Comment)
+        val z: (Attributes, Source)
       }
     """
-  } applyRefactoring organize(List("java", "scala.collection", "scala.xml"))
-  
+  } applyRefactoring organize(List("java", "scala.collection", "scala.io"))
+
   @Test
   def emptyGroups = new FileSet {
     source becomes
@@ -130,17 +130,17 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.ListBuffer
 
       import org.xml.sax.Attributes
-      import scala.xml.Comment
+      import scala.io.Source
 
       trait Temp {
         // we need some code that use the imports
         val x: (ListBuffer[Int], HashMap[String, Int])
         val y: (AbstractList[Int], BitSet)
-        val z: (Attributes, Comment)
+        val z: (Attributes, Source)
       }
     """
-  } applyRefactoring organize(List("java", "scala.collection", "scala.tools")) 
-  
+  } applyRefactoring organize(List("java", "scala.collection", "scala.tools"))
+
   @Test
   def packagesNeedToMatchCompletely = new FileSet {
     source becomes
@@ -150,13 +150,13 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
       import org.xml.sax.Attributes
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
-      import scala.xml.Comment
+      import scala.io.Source
 
       trait Temp {
         // we need some code that use the imports
         val x: (ListBuffer[Int], HashMap[String, Int])
         val y: (AbstractList[Int], BitSet)
-        val z: (Attributes, Comment)
+        val z: (Attributes, Source)
       }
     """
   } applyRefactoring organize(List("javava", "sca"))

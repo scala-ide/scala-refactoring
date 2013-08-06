@@ -16,11 +16,11 @@ trait TreePrintingTraversals {
     printer =>
 
     def dispatchToPrinter(t: Tree, ctx: PrintingContext): Fragment = context("Printing Tree "+ getSimpleClassName(t)) {
-      
+
       trace("current indentation set to %s", ctx.ind.current)
-      
+
       implicit val newCtx = ctx.copy(parent = t)
-      
+
       val code = t match {
         case tree @ PackageDef(pid, stats) => printer.PackageDef(tree, pid, stats)
         case tree @ ClassDef(ModifierTree(mods), name, tparams, impl) => printer.ClassDef(tree, mods, name, tparams, impl)
@@ -139,7 +139,7 @@ trait TreePrintingTraversals {
     def SourceLayoutTree(tree: SourceLayoutTree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def NameTree(tree: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
     def NamedArgument(tree: Tree, name: NameTree, rhs: Tree)(implicit ctx: PrintingContext): Fragment = default(tree)
-    
+
     def printIndentedSingleTree(
       tree: Tree,
       before: Requisite,
@@ -151,55 +151,55 @@ trait TreePrintingTraversals {
        * */
       printSingleTree(tree, before, after)(ctx.copy(ind = ctx.ind.incrementDefault))
     }
-    
+
     def p(
-      tree: Tree, 
-      before: Requisite = NoRequisite, 
+      tree: Tree,
+      before: Requisite = NoRequisite,
       after: Requisite = NoRequisite)(implicit ctx: PrintingContext)
       = printSingleTree(tree, before, after)
-      
+
     def pi(
-      tree: Tree, 
-      before: Requisite = NoRequisite, 
-      after: Requisite = NoRequisite)(implicit ctx: PrintingContext) 
+      tree: Tree,
+      before: Requisite = NoRequisite,
+      after: Requisite = NoRequisite)(implicit ctx: PrintingContext)
       = printIndentedSingleTree(tree, before, after)
-    
+
     def pp(
       trees: List[Tree],
       separator: Requisite = NoRequisite,
       before: Requisite = NoRequisite,
       after: Requisite = NoRequisite)(implicit ctx: PrintingContext)
       = printManyTrees(trees, separator, before, after)
-      
+
     def ppi(
-      trees: List[Tree], 
-      before: Requisite = NoRequisite, 
-      separator: Requisite = NoRequisite, 
+      trees: List[Tree],
+      before: Requisite = NoRequisite,
+      separator: Requisite = NoRequisite,
       after: Requisite = NoRequisite)(implicit ctx: PrintingContext)
-      = printIndentedManyTrees(trees, separator, before, after) 
-  
+      = printIndentedManyTrees(trees, separator, before, after)
+
     def printSingleTree(
       tree: Tree,
       before: Requisite,
       after: Requisite)(implicit ctx: PrintingContext): Fragment = {
-  
+
       import ctx._
-  
+
       val newIndent = ind.setTo(getChildrenIndentation(parent, tree) getOrElse ind.current)
-  
+
       val newCtx = ctx copy (ind = newIndent)
-      
+
       print(tree, newCtx) ifNotEmpty (_ ++ (after, before))
     }
-  
+
     def printIndentedManyTrees(
       trees: List[Tree],
       separator: Requisite,
       before: Requisite,
       after: Requisite)(implicit ctx: PrintingContext): Fragment = {
-  
+
       import ctx._
-      
+
       val fixedIndentationSeparator = {
         if (parent.hasExistingCode && (
             separator.getLayout.asText.startsWith("\n") ||
@@ -210,38 +210,38 @@ trait TreePrintingTraversals {
           separator
         }
       }
-      
-      trees.map { t => 
+
+      trees.map { t =>
         t -> printIndentedSingleTree(t, NoRequisite, NoRequisite)
       }.filter(_._2.asText != "").zipWithIndex.map {
- 
-        case ((tree, fragment), 0) 
+
+        case ((tree, fragment), 0)
             if tree.pos == NoPosition && separator.getLayout.contains("\n") && parent.isInstanceOf[Template] =>
-          
+
           if(trees.size > 1 && trees(trees.indexOf(tree) + 1).pos.isRange ) {
-            fragment ++ Layout(fixedIndentationSeparator.getLayout.asText)
+            fragment ++ Layout(separator.getLayout.asText)
           } else {
             fragment
           }
-          
-        case ((_, fragment), 0) => 
+
+        case ((_, fragment), 0) =>
           fragment
-        
-        case ((tree, fragment), _) if tree.pos.isRange => 
+
+        case ((tree, fragment), _) if tree.pos.isRange =>
           fragment
-          
-        case ((_, fragment), _) 
+
+        case ((_, fragment), _)
             if separator.getLayout.contains("\n") && parent.isInstanceOf[Template] =>
-          Layout(fixedIndentationSeparator.getLayout.asText + fixedIndentationSeparator.getLayout.asText) ++ fragment 
-          
+          Layout(ctx.newline + fixedIndentationSeparator.getLayout.asText) ++ fragment
+
         case ((_, fragment), _) =>
           fragment
-           
+
       }.foldRight(EmptyFragment: Fragment) {
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
-  
+
           val lr = l.post(l.center ++ l.trailing, NoLayout)
           val rr = r.pre(NoLayout, r.leading ++ r.center)
           val mid: Layout = (lr ++ fixedIndentationSeparator ++ rr).toLayout
@@ -257,57 +257,39 @@ trait TreePrintingTraversals {
         }
       }
     }
-  
+
     def printManyTrees(
       trees: List[Tree],
       separator: Requisite,
       before: Requisite,
       after: Requisite)(implicit ctx: PrintingContext): Fragment = {
-      
-      trees.map { t => 
-        t -> printSingleTree(t, NoRequisite, NoRequisite)
-      }.filter(_._2.asText != "").zipWithIndex.map {
-        
-        case ((_, fragment), 0) => 
-          fragment
-        
-        case ((tree, fragment), _) if tree.pos.isRange => 
-          fragment
-          
-        case ((_: Import | _: PackageDef, fragment), _) =>
-          fragment
-        
-        case ((_, fragment), _) if separator.getLayout.contains("\n") =>
-          Layout(separator.getLayout.asText + separator.getLayout.asText) ++ fragment
-          
-        case ((_, fragment), _) =>
-          fragment
-           
-      }.foldRight(EmptyFragment: Fragment) { 
+
+      trees.map { t =>
+        printSingleTree(t, NoRequisite, NoRequisite)
+      }.filterNot(_.isEmpty).foldRight(EmptyFragment: Fragment) {
         case (l, r) if l.asText == "" => r
         case (l, r) if r.asText == "" => l
         case (l, r) =>
-  
+
           val lr = l.post(l.center ++ l.trailing, NoLayout)
           val rr = r.pre(NoLayout, r.leading ++ r.center)
           val mid: Layout = (lr ++ separator ++ rr).toLayout
           Fragment(l.leading, mid, r.trailing) ++ (r.post, l.pre)
       } ifNotEmpty (_ ++ (after, before))
-
     }
-  
+
     def getChildrenIndentation(parent: Tree, t: Tree): Option[String] = {
       if (parent.hasExistingCode) {
-  
+
         val childrenOnNewLine = children(parent) filter (_.pos.isRange) filter (_.pos.line != parent.pos.line)
-  
+
         if (childrenOnNewLine exists (_ samePos t)) {
           Some(indentationString(t))
         } else {
           childrenOnNewLine.headOption map indentationString
         }
-  
+
       } else None
-    } 
+    }
   }
 }

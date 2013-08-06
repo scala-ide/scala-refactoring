@@ -12,15 +12,15 @@ import tests.util.TestRefactoring
 import language.reflectiveCalls
 
 class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTest {
-    
+
   def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.DropScalaPackage))
   }.mkChanges
-  
+
   def organizePrependScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.PrependScalaPackage))
   }.mkChanges
-  
+
   @Test
   def dropScalaPackageWildcardImport = new FileSet {
     """
@@ -44,7 +44,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     }
     """
   } applyRefactoring organizeDropScalaPackage
-  
+
   @Test
   def prependScalaPackageWildcardImport = new FileSet {
     """
@@ -80,7 +80,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package tests.importing
-    
+
     import collection.mutable.{ListBuffer => LB}
 
     object Main {val lb = LB(1) }
@@ -118,14 +118,14 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
       }
     """
   } applyRefactoring organizeDropScalaPackage
-  
+
   @Test
   def fromMixedToUniformDrop = new FileSet {
     """
     package fromMixedToUniformDrop
     import collection.immutable
     import scala.collection.mutable
-    
+
     class Foo {
       val m = new mutable.HashSet[String]
       val n = new immutable.HashSet[String]
@@ -133,24 +133,24 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
-    
+
     import collection.immutable
     import collection.mutable
-    
+
     class Foo {
       val m = new mutable.HashSet[String]
       val n = new immutable.HashSet[String]
     }
     """
   } applyRefactoring organizeDropScalaPackage
-  
+
   @Test
   def fromMixedToUniformPrepend = new FileSet {
     """
     package fromMixedToUniformDrop
     import collection.immutable
     import scala.collection.mutable
-    
+
     class Foo {
       val m = new mutable.HashSet[String]
       val n = new immutable.HashSet[String]
@@ -158,10 +158,10 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
-    
+
     import scala.collection.immutable
     import scala.collection.mutable
-    
+
     class Foo {
       val m = new mutable.HashSet[String]
       val n = new immutable.HashSet[String]

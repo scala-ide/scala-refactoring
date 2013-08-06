@@ -13,17 +13,17 @@ import language.reflectiveCalls
 class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
 
   outer =>
-    
+
   // We are experiencing instable test runs, maybe it helps when we
   // use a fresh compiler for each test case:
-  
+
   override val global = (new CompilerInstance).compiler
-  
+
   @After
   def shutdownCompiler {
     global.askShutdown
   }
-    
+
   def generateHashcodeAndEquals(params: (Boolean, String => Boolean, Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new GenerateHashcodeAndEquals with SilentTracing {
       val global = outer.global
@@ -47,14 +47,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.singleValParam.Foo]
         }
-        
+
         override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.singleValParam.Foo => that.canEqual(Foo.this) && param == that.param
             case _ => false
           }
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime + param.hashCode
@@ -77,14 +77,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.twoValParams.Foo]
         }
-        
+
         override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.twoValParams.Foo => that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime * (prime + p1.hashCode) + p2.hashCode
@@ -107,14 +107,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.excludeNonPublicParams.Foo]
         }
-        
+
         override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.excludeNonPublicParams.Foo => that.canEqual(Foo.this) && p2 == that.p2
             case _ => false
           }
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime + p2.hashCode
@@ -129,19 +129,19 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       package generateHashcodeAndEquals.keepExistingEquals
 
       class /*(*/Foo/*)*/(var p1: String, val p2: List[Int]) {
-        override def equals(other: Any) = false 
+        override def equals(other: Any) = false
       }
     """ becomes
     """
       package generateHashcodeAndEquals.keepExistingEquals
 
       class /*(*/Foo/*)*/(var p1: String, val p2: List[Int]) extends Equals {
-        override def equals(other: Any) = false 
-        
+        override def equals(other: Any) = false
+
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.keepExistingEquals.Foo]
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime * (prime + p1.hashCode) + p2.hashCode
@@ -156,7 +156,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       package generateHashcodeAndEquals.dropExistingHashCode
 
       class /*(*/Foo/*)*/(var p1: String, val p2: List[Int]) {
-        override def hashCode() = 57 
+        override def hashCode() = 57
       }
     """ becomes
       """
@@ -166,14 +166,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.dropExistingHashCode.Foo]
         }
-        
+
         override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.dropExistingHashCode.Foo => that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime * (prime + p1.hashCode) + p2.hashCode
@@ -181,7 +181,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring (generateHashcodeAndEquals((false, _ => true, false)))
-  
+
   @Test
   def keepExistingCanEqual = new FileSet {
     """
@@ -196,14 +196,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
 
       class /*(*/Foo/*)*/ extends Equals {
         def canEqual(that: Any) = false
-        
+
         override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.keepExistingCanEqual.Foo => that.canEqual(Foo.this)
             case _ => false
           }
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime
@@ -216,24 +216,24 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   def selectByName = new FileSet {
     """
     package generateHashcodeAndEquals.selectByName
-    
+
     class /*(*/Foo/*)*/(val p1: String, val p2: List[Int], var p3: Boolean, val p4: List[Boolean])
     """ becomes
       """
     package generateHashcodeAndEquals.selectByName
-    
+
     class /*(*/Foo/*)*/(val p1: String, val p2: List[Int], var p3: Boolean, val p4: List[Boolean]) extends Equals {
       def canEqual(other: Any) = {
         other.isInstanceOf[generateHashcodeAndEquals.selectByName.Foo]
       }
-      
+
       override def equals(other: Any) = {
         other match {
           case that: generateHashcodeAndEquals.selectByName.Foo => that.canEqual(Foo.this) && p2 == that.p2 && p3 == that.p3
           case _ => false
         }
       }
-      
+
       override def hashCode() = {
         val prime = 41
         prime * (prime + p2.hashCode) + p3.hashCode
@@ -262,14 +262,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.callSuper.Foo]
         }
-        
+
         override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.callSuper.Foo => Foo.super.equals(that) && that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime * (prime * Foo.super.hashCode() + p1.hashCode) + p2.hashCode
@@ -284,7 +284,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       package generateHashcodeAndEquals.emptyClassBody
 
       class /*(*/Foo/*)*/(val p1: String, val p2: List[Int]) {
-    
+
       }
     """ becomes
       """
@@ -294,14 +294,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
         def canEqual(other: Any) = {
           other.isInstanceOf[generateHashcodeAndEquals.emptyClassBody.Foo]
         }
-        
+
         override def equals(other: Any) = {
           other match {
             case that: generateHashcodeAndEquals.emptyClassBody.Foo => Foo.super.equals(that) && that.canEqual(Foo.this) && p1 == that.p1 && p2 == that.p2
             case _ => false
           }
         }
-        
+
         override def hashCode() = {
           val prime = 41
           prime * (prime * Foo.super.hashCode() + p1.hashCode) + p2.hashCode
@@ -309,7 +309,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring (generateHashcodeAndEquals((true, _ => true, true)))
-  
+
   @Test
   def noParams = new FileSet {
     """
@@ -323,14 +323,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       def canEqual(other: Any) = {
         other.isInstanceOf[generateHashcodeAndEquals.noParams.Foo]
       }
-      
+
       override def equals(other: Any) = {
         other match {
           case that: generateHashcodeAndEquals.noParams.Foo => that.canEqual(Foo.this)
           case _ => false
         }
       }
-      
+
       override def hashCode() = {
         val prime = 41
         prime
@@ -338,7 +338,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
-  
+
   @Test(expected = classOf[PreparationException])
   def traitFails = new FileSet {
     """
@@ -347,7 +347,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     """ becomes
     ""
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
-  
+
   @Test
   def replaceHashcodeVal = new FileSet {
     """
@@ -362,14 +362,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       def canEqual(other: Any) = {
         other.isInstanceOf[generateHashcodeAndEquals.replaceHashcodeVal.Foo]
       }
-      
+
       override def equals(other: Any) = {
         other match {
           case that: generateHashcodeAndEquals.replaceHashcodeVal.Foo => that.canEqual(Foo.this)
           case _ => false
         }
       }
-      
+
       override def hashCode() = {
         val prime = 41
         prime
@@ -377,7 +377,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
-  
+
   @Test
   def dontExtendEqualsTwice = new FileSet {
     """
@@ -388,14 +388,14 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     """
     class /*(*/Foo/*)*/ extends Equals {
       def canEqual(that: Any) = false
-      
+
       override def equals(other: Any) = {
         other match {
           case that: Foo => that.canEqual(Foo.this)
           case _ => false
         }
       }
-      
+
       override def hashCode() = {
         val prime = 41
         prime
@@ -403,31 +403,31 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, true)))
-  
+
   @Test
   def traitWithExistingSuperConstructorCall = new FileSet {
     """
     package traitWithExistingSuperConstructorCall
-    
+
     class Point(val x: Int)
     class /*(*/ColoredPoint/*)*/(override val x: Int) extends Point(x)
     """ becomes
     """
     package traitWithExistingSuperConstructorCall
-    
+
     class Point(val x: Int)
     class /*(*/ColoredPoint/*)*/(override val x: Int) extends Point(x) with Equals {
       def canEqual(other: Any) = {
         other.isInstanceOf[traitWithExistingSuperConstructorCall.ColoredPoint]
       }
-      
+
       override def equals(other: Any) = {
         other match {
           case that: traitWithExistingSuperConstructorCall.ColoredPoint => that.canEqual(ColoredPoint.this)
           case _ => false
         }
       }
-      
+
       override def hashCode() = {
         val prime = 41
         prime

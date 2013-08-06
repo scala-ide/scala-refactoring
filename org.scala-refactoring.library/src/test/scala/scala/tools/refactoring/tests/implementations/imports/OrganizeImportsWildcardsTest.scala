@@ -10,57 +10,57 @@ import org.junit.Test
 import language.reflectiveCalls
 
 class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
-  
+
   def organize(groups: Set[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
     val options = List(AlwaysUseWildcards(groups), ExpandImports, SortImports)
     val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute)
   }.mkChanges
-  
+
   val source = """
-    import scala.xml.Comment
+    import scala.collection.mutable.Set
     import org.xml.sax.Attributes
-    import Comment._
+    import Set._
 
     trait Temp {
       // we need some code that use the imports
-      val z: (Attributes, Comment)
+      val z: (Attributes, Set[String])
       println(apply(""))
     }
     """
-  
+
   @Test
   def noGrouping = new FileSet {
     source becomes
     """
     import org.xml.sax.Attributes
-    import scala.xml.Comment
-    import scala.xml.Comment.apply
+    import scala.collection.mutable.Set
+    import scala.collection.mutable.Set.apply
 
     trait Temp {
       // we need some code that use the imports
-      val z: (Attributes, Comment)
+      val z: (Attributes, Set[String])
       println(apply(""))
     }
     """
   } applyRefactoring organize(Set())
-  
+
   @Test
   def simpleWildcard = new FileSet {
     source becomes
     """
     import org.xml.sax.Attributes
-    import scala.xml.Comment
-    import scala.xml.Comment._
+    import scala.collection.mutable.Set
+    import scala.collection.mutable.Set._
 
     trait Temp {
       // we need some code that use the imports
-      val z: (Attributes, Comment)
+      val z: (Attributes, Set[String])
       println(apply(""))
     }
     """
-  } applyRefactoring organize(Set("scala.xml.Comment"))
-  
+  } applyRefactoring organize(Set("scala.collection.mutable.Set"))
+
   @Test
   def renamedImport = new FileSet {
     """
@@ -86,7 +86,7 @@ class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize(Set("java.lang.Integer"))
-  
+
   @Test
   def multipleImportsOneWildcard = new FileSet {
     """
@@ -111,5 +111,5 @@ class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize(Set("java.lang.Integer"))
-  
+
 }

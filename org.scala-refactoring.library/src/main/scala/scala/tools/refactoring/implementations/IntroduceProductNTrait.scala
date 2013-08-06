@@ -15,8 +15,8 @@ import scala.tools.refactoring.transformation.TreeFactory
 abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
 
   import global._
-  
-  
+
+
   override def sourceGeneration(selectedParams: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters) = {
     val superGeneration = super.sourceGeneration(selectedParams, preparationResult, refactoringParams)
 
@@ -28,14 +28,14 @@ abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
 
       selectedParams.zipWithIndex.map(t => makeElemProjection(t._1, t._2 + 1))
     }
-    
+
     def addProductTrait = transform ({
       case t @ Template(_, _, body) => t.copy(body = projections:::body) replaces t
     })
-    
+
     superGeneration &> addProductTrait
   }
-  
+
   override def newParentNames(classDef: ClassDef, selectedParams: List[ValDef]) = {
     val arity = selectedParams.length
     val paramsTypenames = selectedParams.map(v => v.tpt.nameString)

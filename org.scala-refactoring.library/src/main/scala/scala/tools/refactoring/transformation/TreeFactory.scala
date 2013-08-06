@@ -49,12 +49,12 @@ trait TreeFactory {
     typeTree setType newType
     typeTree setPos t.pos
   }
-  
+
   def mkImportFromStrings(qualifier: String, name: String) = {
     def mapPackageNames(qualifier: String) = {
       newTermName(qualifier.split("\\.").map(s => escapeScalaKeywordsForImport(newTermName(s))).mkString("."))
     }
-    
+
     new Import(Ident(mapPackageNames(qualifier)), new ImportSelector(newTermName(name), -1, newTermName(name), -1) :: Nil)
   }
 
@@ -72,10 +72,10 @@ trait TreeFactory {
   }
 
   def mkValDef(name: String, rhs: Tree): ValDef = {
-    
+
     val valDef = ValDef(NoMods, newTermName(name), new TypeTree, rhs)
     def valDefForFunction = ValDef(NoMods, newTermName(name), new TypeTree, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
-    
+
     rhs match {
       case rhs: Select if rhs.symbol.isMethod =>
         rhs.symbol.tpe match {
@@ -100,7 +100,7 @@ trait TreeFactory {
       case Nil => call
       case returns =>
 
-        // 'val (a, b) =' is represented by various trees, so we cheat and create the assignment in the name of the value: 
+        // 'val (a, b) =' is represented by various trees, so we cheat and create the assignment in the name of the value:
         val valName = returns match {
           case x :: Nil => x.name.toString
           case xs => "(" + (xs map (_.name) mkString ", ") + ")"
@@ -117,26 +117,26 @@ trait TreeFactory {
       else
         parameters map (_ map (s => new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(s.tpe), EmptyTree)))
     }
-    
+
     DefDef(mods withPosition (Flags.METHOD, NoPosition), newTermName(name), typeParameters, formalParameters, returnType.getOrElse(TypeTree(body.last.tpe)), mkBlock(body))
   }
-  
+
   def mkApply(mods: Modifiers = NoMods, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree], typeParameters: List[TypeDef] = Nil) = {
     mkDefDef(mods = mods, name = "apply", parameters = parameters, body = body, typeParameters, None)
   }
-  
+
   def mkHashcode(classSymbol: Symbol, classParamsForHashcode: List[ValDef], callSuper: Boolean, prime: Int = 41) = {
     def mkSingleParamPart(param: ValDef, primeName: TermName, inner: Tree) = {
       val mult = Apply(Select(Ident(primeName), nme.MUL), List(inner))
       Apply(Select(mult, nme.PLUS), List(Select(Ident(param.name), nme.hashCode_)))
     }
-    
+
     def mkFold(init: Tree, primeName: TermName, paramsForHashcode: List[ValDef]) = {
       paramsForHashcode.foldLeft(init)((inner, param) => {
         mkSingleParamPart(param, primeName, inner)
       })
     }
-    
+
     val primeVal = mkValDef("prime", Literal(Constant(prime)))
     val oneLiteral = Literal(Constant(1))
     val (startFactor, remainingParams): (Tree, List[ValDef]) = if(callSuper) {
@@ -144,14 +144,14 @@ trait TreeFactory {
     } else {
       classParamsForHashcode match {
         case Nil => (Ident(primeVal.name), Nil)
-        case p::ps => 
+        case p::ps =>
           (Apply(Select(Ident(primeVal.name), nme.PLUS), List(Select(Ident(p.name), nme.hashCode_))), ps)
       }
     }
     val computation = mkFold(startFactor, primeVal.name, remainingParams)
     mkDefDef((NoMods withPosition(Flags.OVERRIDE, NoPosition)) | Flags.OVERRIDE, "hashCode", body = List(primeVal, computation))
   }
-  
+
   def mkCanEqual(classSymbol: Symbol) = {
     val paramStr = newTermName("other")
     val otherParamSymbol = NoSymbol.newValue(paramStr)
@@ -159,7 +159,7 @@ trait TreeFactory {
     val instanceCheck = TypeApply(Select(Ident(paramStr), nme.isInstanceOf_), List(TypeTree(classSymbol.tpe)))
     mkDefDef(NoMods, "canEqual", parameters = List(List(otherParamSymbol)), body = List(instanceCheck))
   }
-  
+
   def mkEquals(classSymbol: Symbol, classParamsForEqual: List[ValDef], callSuper: Boolean) = {
     val paramStr = newTermName("other")
     val otherParamSymbol = NoSymbol.newValue(paramStr)
@@ -237,7 +237,7 @@ trait TreeFactory {
 
     mkClass(mods withPosition (Flags.CASE, NoPosition), name, tparams, argss, body, parents, superArgs)
   }
-  
+
   implicit class CopyTypeFromOtherTree(t1: Tree) {
     def typeFrom(t2: Tree) = {
       t1.setType(t2.tpe)
@@ -247,30 +247,30 @@ trait TreeFactory {
   /**
    * Creates a function call `fun` on the selector and passes a function with
    * a single parameter `param` and the body `body`.
-   * 
+   *
    * Example:
-   *  
+   *
    *  someExpr becomes someExpr fun (param => body)
-   * 
+   *
    */
   def mkFunctionCallWithFunctionArgument(selector: Tree, fun: String, param: TermName, body: Tree) = {
     Apply(
-      Select(selector, newTermName(fun)), 
+      Select(selector, newTermName(fun)),
       List(Function(List(ValDef(Modifiers(Flags.PARAM), param, EmptyTree, EmptyTree)), body))
     ) typeFrom body
   }
-  
+
   /**
    * Creates a function call `fun` on the selector and passes a function with
    * no parameter and the body `body`.
-   * 
+   *
    * Example:
-   *  
+   *
    *  someExpr becomes someExpr fun (body)
    */
   def mkFunctionCallWithZeroArgFunctionArgument(selector: Tree, fun: String, body: Tree) = {
     Apply(
-      Select(selector, newTermName(fun)), 
+      Select(selector, newTermName(fun)),
       List(Function(Nil, body))
     ) typeFrom body
   }
@@ -301,12 +301,12 @@ trait TreeFactory {
 
         // copy the tree and delete all positions so the full path will be written
         val newExpr = topdown(setNoPosition &> removeThisTrees) apply expr.duplicate getOrElse expr
-        
+
         val typeName = select.symbol match {
           case NoSymbol => name.toChars.mkString
           case symbol => symbol.nameString
         }
-        
+
         Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else newTypeName(typeName), -1, name, -1))))
     }
   }

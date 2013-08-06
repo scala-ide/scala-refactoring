@@ -11,23 +11,23 @@ import common.Change
  * into a new trait.
  */
 abstract class ExtractTrait extends MultiStageRefactoring with common.InteractiveScalaCompiler with analysis.Indexes with ImportsHelper {
-  
+
   import global._
-  
+
   case class PreparationResult(classDef: ClassDef, extractableMembers: List[ValOrDefDef])
-  
+
   case class RefactoringParameters(traitName: String, defFilter: ValOrDefDef => Boolean)
-  
+
   override def prepare(s: Selection) = {
     def isDefDefExtractable(defdef: DefDef) = {
-      defdef.hasSymbol && !(defdef.symbol.isPrivate || defdef.symbol.isConstructor) && 
+      defdef.hasSymbol && !(defdef.symbol.isPrivate || defdef.symbol.isConstructor) &&
       !defdef.mods.hasFlag(Flags.ACCESSOR) && !defdef.mods.isParamAccessor
     }
-    
+
     def isValDefExtractable(valdef: ValDef) = {
       valdef.hasSymbol && !valdef.mods.isParamAccessor
     }
-    
+
     s.findSelectedOfType[ClassDef] match {
       case None => Left(PreparationError("no class def selected"))
       case Some(classDef) => {
@@ -40,9 +40,9 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
       }
     }
   }
-  
+
   override def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    
+
     def getsExtracted(defFilter: ValOrDefDef => Boolean)(tree: Tree) = tree match {
       case valOrDefDef: ValOrDefDef if !valOrDefDef.mods.isParamAccessor => defFilter(valOrDefDef)
       case _ => false
@@ -50,20 +50,20 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
     val extracted = prep.classDef.impl.body filter getsExtracted(params.defFilter)
     val extractedVariables = extracted collect { case valdef: ValDef => valdef }
     val extractedMethods = extracted collect { case defdef: DefDef => defdef }
-    
+
     val extractedVariablesNames = extractedVariables.map(_.nameString)
-  
+
     val (traitBody, classBody) = prep.classDef.impl.body.partition(valOrDefDef => valOrDefDef match {
       case valdef: ValDef => extractedVariables contains valdef
       case defdef: DefDef if defdef.mods.hasFlag(Flags.ACCESSOR) => extractedVariablesNames contains defdef.nameString.stripSuffix("_=")
       case defdef: DefDef => extractedMethods contains defdef
       case _ => false
     })
-    
+
     val classDef = prep.classDef
-    
+
     def symbols(trees: List[Tree]) = trees collect { case t: Tree if t.hasSymbol => t.symbol}
-    
+
     val classMembers = symbols(classBody)
     val traitMembers = symbols(traitBody)
     val arePrivateClassMembersAccessed = areSymbolsAccessed(traitBody, classMembers.filter(_.isPrivate))
@@ -72,53 +72,53 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
     if(!isExtractionWellDefined) {
       return Left(RefactoringError("can't reference private class members from extracted trait or private trait members from class"))
     }
-    
+
     val enclosingPackages = findEnclosingPackages(selection.root, classDef.pos)
     val enclosing = enclosingPackages.headOption getOrElse selection.root
-    
+
     val sourceFileChanges = refactorClass(classBody, enclosing, params.traitName, classDef)
-    
+
     val traitNeedsSelfType = areSymbolsAccessed(traitBody, classMembers.filter(!_.isPrivate))
     val traitFileChanges = refactorTrait(traitBody, traitNeedsSelfType, enclosing, enclosingPackages, params.traitName, classDef)
-    
+
     Right(sourceFileChanges:::traitFileChanges)
   }
-  
+
   private def refactorClass(classBody: List[Tree], enclosing: Tree, traitName: String, classDef: ClassDef) = {
     val addTrait = {
       val extractedTrait = mkIdent(traitName, classDef.tparams)
       transform {
         case t @ Template(parents, self, body) => {
           val impl = Template(parents:::List(extractedTrait), self, classBody)
-          impl replaces t 
+          impl replaces t
         }
       }
     }
-    
+
     val templateFilter = filter {
       case classDef.impl => true
     }
-    
+
     val classRefactoring = topdown {
       matchingChildren {
         templateFilter &> addTrait
       }
     } &> addRequiredImports(None, None)
-    
+
     refactor(classRefactoring(enclosing/*enclosingPackages.head*/).toList)
   }
-  
+
   private def refactorTrait(
-      traitBody: List[Tree], 
-      needsSelfTypeAnnotation: Boolean, 
-      enclosing: Tree, 
-      enclosingPackages: List[PackageDef], 
-      traitName: String, 
+      traitBody: List[Tree],
+      needsSelfTypeAnnotation: Boolean,
+      enclosing: Tree,
+      enclosingPackages: List[PackageDef],
+      traitName: String,
       classDef: ClassDef) = {
     val traitRefactoring = {
       transform {
         case pkg: PackageDef => {
-          val imports = pkg.stats.collect {case importTree: Import => importTree}
+          val imports = pkg.stats.collect {case importTree: Import => importTree.copy()}
           val selfType = if(needsSelfTypeAnnotation) {
             val classIdent = mkIdent(classDef.nameString, classDef.tparams)
             ValDef(Modifiers(Flags.SYNTHETIC), newTermName("this"), CompoundTypeTree(Template(List(classIdent), emptyValDef, Nil)), EmptyTree)
@@ -141,10 +141,10 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
         }
       } &> addRequiredImports(None, None)
     }
-    
+
     refactor(traitRefactoring(enclosing).toList).map(_.toNewFile(""))
   }
-  
+
   private def areSymbolsAccessed(accessors: List[Tree], targets: List[Symbol]) = {
     def collectReferences(trees: List[Tree], symbols: List[Symbol]) = {
       def symbolsFilter(symbols: List[Symbol])(tree: Tree): Boolean = tree match {
@@ -156,14 +156,14 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
       val hits = symbolsTraverser.hits.toList
       hits
     }
-    
+
     val references = collectReferences(accessors, targets)
-    
+
     !references.isEmpty
   }
-  
+
   private def flattenPkgPids(packages: List[PackageDef]) = {
-    
+
     def flattenPkgPidsHelper(inner: Tree, outer: Tree): Select = inner match {
       case Ident(name) => Select(outer, name)
       case Select(qualifier, name) => Select(flattenPkgPidsHelper(qualifier, outer), name)
@@ -172,19 +172,19 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
 
     val flattenedPkgPid = packages match {
       case Nil => Ident("")
-      case pkg :: pkgs => 
+      case pkg :: pkgs =>
         // Copy the tree so it doesn't drag layout from the original file to the new one.
         val newPid = shallowDuplicate(pkg.pid) setPos NoPosition
         pkgs.foldLeft(newPid: RefTree)((outer, innerPkg) => flattenPkgPidsHelper(innerPkg.pid, outer))
     }
-    
+
     flattenedPkgPid
   }
-  
+
   private def findEnclosingPackages(root: Tree, pos: Position) = root collect {
     case pkg @ PackageDef(pid, stats) if pkg.pos.properlyIncludes(pos) => pkg
   }
-  
+
   private def mkIdent(name: String, typeParams: List[TypeDef]) = {
     val tparams = typeParams match {
       case Nil => ""
@@ -192,5 +192,5 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
     }
     Ident(newTermName(name + tparams))
   }
-  
+
 }

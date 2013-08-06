@@ -10,48 +10,48 @@ import tests.util.TestHelper
 
 class UnusedImportsFinderTest extends TestHelper {
   outer =>
-    
+
   def findUnusedImports(expected: String, src: String) {
-    
+
    val unuseds = global.ask { () =>
       new UnusedImportsFinder {
-  
+
         val global = outer.global
-        
+
         val unit = global.unitOfFile(addToCompiler(randomFileName(), src))
-        
+
         def compilationUnitOfFile(f: AbstractFile) = Some(unit)
-        
+
         val unuseds = findUnusedImports(unit)
       }.unuseds
-    } 
-    
+    }
+
    org.junit.Assert.assertEquals(expected, unuseds.mkString(", "))
   }
-    
+
   @Test
   def simpleUnusedType() = findUnusedImports(
-    "(ListBuffer,2)", 
+    "(ListBuffer,2)",
     """
       import scala.collection.mutable.ListBuffer
-  
+
       object Main {val s: String = "" }
     """
   )
-    
+
   @Test
   def typeIsUsedAsVal() = findUnusedImports(
-    "", 
+    "",
     """
       import scala.collection.mutable.ListBuffer
-  
+
       object Main {val s = new ListBuffer[Int] }
     """
   )
-    
+
   @Test
   def typeIsImportedFrom() = findUnusedImports(
-    "", 
+    "",
     """
       class Forest {
         class Tree
@@ -64,10 +64,10 @@ class UnusedImportsFinderTest extends TestHelper {
       }
     """
   )
-    
+
   @Test
   def wildcardImports() = findUnusedImports(
-    "", 
+    "",
     """
       import scala.util.control.Exception._
 
@@ -78,10 +78,10 @@ class UnusedImportsFinderTest extends TestHelper {
       }
     """
   )
-    
+
   @Test
   def wildcardImportsFromValsAreIgnored() = findUnusedImports(
-    "", 
+    "",
     """
       object ScalaPlugin {
         var plugin: String = _
@@ -94,10 +94,10 @@ class UnusedImportsFinderTest extends TestHelper {
       }
     """
   )
-    
+
   @Test
   def importFromJavaClass() = findUnusedImports(
-    "", 
+    "",
     """
       import java.util.Date
 
@@ -107,10 +107,10 @@ class UnusedImportsFinderTest extends TestHelper {
       }
     """
   )
-    
+
   @Test
   def ignoreImportIsNeverunused() = findUnusedImports(
-    "", 
+    "",
     """
       import java.util.{Date => _, _}
 
@@ -119,6 +119,6 @@ class UnusedImportsFinderTest extends TestHelper {
       }
     """
   )
-  
+
   // more tests are in organize imports
 }

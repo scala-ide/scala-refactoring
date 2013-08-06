@@ -8,11 +8,11 @@ package common
 import PartialFunction.cond
 
 trait TreeExtractors {
-  
+
   this: common.CompilerAccess =>
-  
+
   import global._
-  
+
   object Names {
     lazy val scala = newTermName("scala")
     lazy val pkg = newTermName("package")
@@ -25,7 +25,7 @@ trait TreeExtractors {
     lazy val ::  = newTermName("$colon$colon")
     lazy val List  = newTermName("List")
   }
-  
+
   /**
    * An extractor for the Some constructor.
    */
@@ -35,7 +35,7 @@ trait TreeExtractors {
       case _ => None
     }
   }
-  
+
   /**
    * A boolean extractor for the None constructor.
    */
@@ -44,23 +44,23 @@ trait TreeExtractors {
       case Select(Ident(Names.scala), Names.None) => true
     }
   }
-  
+
   /**
    * An extractor for the List constructor `List` or ::
    */
   object ListExpr {
     def unapply(t: Tree): Option[Tree] = t match {
       case Block(
-            (ValDef(_, v1, _, arg)) :: Nil, Apply(TypeApply(Select(Select(This(Names.immutable), Names.Nil), Names.::), (_: TypeTree) :: Nil), 
+            (ValDef(_, v1, _, arg)) :: Nil, Apply(TypeApply(Select(Select(This(Names.immutable), Names.Nil), Names.::), (_: TypeTree) :: Nil),
             Ident(v2) :: Nil)) if v1 == v2 =>
-        Some(arg) 
-      case Apply(TypeApply(Select(Select(This(Names.immutable), Names.List), Names.apply), (_: TypeTree) :: Nil), arg :: Nil) => 
         Some(arg)
-      case _ => 
+      case Apply(TypeApply(Select(Select(This(Names.immutable), Names.List), Names.apply), (_: TypeTree) :: Nil), arg :: Nil) =>
+        Some(arg)
+      case _ =>
         None
     }
   }
-  
+
   /**
    * A boolean extractor for the Nil object.
    */
@@ -78,26 +78,26 @@ trait TreeExtractors {
       case Literal(c) => c.tag == UnitTag
     }
   }
-  
+
   /**
    * An extractor that returns the name of a tree's
    * type as a String.
    */
   object HasType {
-    
+
     def getTypeName(t: Type): Option[String] = t match {
-      case TypeRef(_, sym, _) => 
+      case TypeRef(_, sym, _) =>
         Some(sym.nameString)
-      case ConstantType(value) =>  
+      case ConstantType(value) =>
         getTypeName(value.tpe)
       case _ => None
     }
-    
+
     def unapply(t: Tree) = {
       getTypeName(t.tpe)
     }
   }
-  
+
   /**
    * True if the tree's type is Unit
    */
@@ -105,34 +105,34 @@ trait TreeExtractors {
     case TypeRef(_, sym, _) => sym == definitions.UnitClass
     case _ => false
   }
-  
+
   /**
    * An extractor that matches on a Some/None pattern match.
-   * 
+   *
    * The match is only successful if there's exactly one Some
    * and one None case (or a default case that results in `None`),
    * with no guards.
-   * 
+   *
    * The result is a triple with the name bound that was bound
    * to the content of Some and the bodies of both cases.
    */
   object MatchOnSomeAndNone {
-    
+
     object NoneCaseDef {
-                
+
       def unapply(t: Tree): Option[Tree] = t match {
         case CaseDef(Select(Ident(Names.scala), Names.None), EmptyTree, body) => Some(body)
         case CaseDef(_, EmptyTree, body @ NoneExpr()) => Some(body)
         case _ => None
       }
     }
-    
+
     object SomeCaseDef {
       def unapply(t: Tree): Option[(TermName, Tree)] = t match {
         case CaseDef(Apply(tt: TypeTree, bind :: _), EmptyTree, body) =>
-    
+
           tt.original match {
-            case Select(Ident(Names.scala), Names.Some) =>           
+            case Select(Ident(Names.scala), Names.Some) =>
               bind match {
                 case Bind(name: TermName, Ident(nme.WILDCARD)) => Some(Pair(name, body))
                 case Ident(name: TermName)   => Some(Pair(name, body))
@@ -140,20 +140,20 @@ trait TreeExtractors {
               }
             case _ => None
           }
-        case _ => None    
+        case _ => None
       }
     }
-    
+
     def unapply(ts: List[Tree]): Option[Triple[TermName, Tree, Tree]] = {
-      
+
       ts match {
         case  SomeCaseDef(name, someBody) :: NoneCaseDef(noneBody) :: Nil =>
           Some(Triple(name, someBody, noneBody))
-          
+
         case NoneCaseDef(noneBody) :: SomeCaseDef(name, someBody) :: Nil =>
           Some(Triple(name, someBody, noneBody))
-        
-        case _ => 
+
+        case _ =>
           None
       }
     }

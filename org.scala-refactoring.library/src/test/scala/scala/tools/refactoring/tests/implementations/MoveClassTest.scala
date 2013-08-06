@@ -10,7 +10,7 @@ import tests.util.TestHelper
 import language.reflectiveCalls
 
 class MoveClassTest extends TestHelper with TestRefactoring {
-    
+
   private def createRefactoring(pro: FileSet) = {
     new TestRefactoringImpl(pro) {
       val refactoring = new MoveClass with SilentTracing with TestProjectIndex
@@ -54,7 +54,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class /*(*/ToMove/*)*/ {
    } """
   } applyRefactoring(moveTo("hehe"))
-  
+
   @Test
   def moveFromDefaultPackage = new FileSet {
     """
@@ -68,7 +68,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class ToMove
     """
   } applyRefactoring(moveTo("a.b"))
-  
+
   @Test
   def moveToParent = new FileSet {
     """
@@ -111,7 +111,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       object ObjectToMove
     """
   } applyRefactoring(moveTo("x.y"))
-  
+
   @Test
   def moveBetweenNestedPackages = new FileSet {
     """
@@ -125,7 +125,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class ToMove
     """
   } applyRefactoring(moveTo("x.y"))
-  
+
   @Test
   def moveBetweenSubPackage = new FileSet {
     """
@@ -139,7 +139,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class ToMove
     """
   } applyRefactoring(moveTo("org.com.other"))
-  
+
   @Test
   def moveToSuperPackage = new FileSet {
     """
@@ -309,7 +309,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(moveTo("ch.misto"))
-  
+
   @Test
   def wildcardsNotExpanded = new FileSet {
     """
@@ -332,7 +332,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(moveTo("ch.misto"))
-  
+
   @Test
   def moveClassWithImports = new FileSet {
     """
@@ -362,7 +362,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     ;
     NewFile becomes """
       package ch.misto
-      
+
       import scala.collection.mutable.ListBuffer
 
       class /*(*/ToMove/*)*/ {
@@ -370,13 +370,13 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(moveTo("ch.misto"))
-  
+
   @Test
   def moveClassThatExtendsFromRequiredImport = new FileSet {
     """
       package org.com
       package pkg
-      
+
       import scala.collection.mutable.ListBuffer
       import java.util.Comparator
 
@@ -391,7 +391,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
       package org.com
       package pkg
-      
+
       import scala.collection.mutable.ListBuffer
       import java.util.Comparator
 
@@ -402,7 +402,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     ;
     NewFile becomes """
       package ch.misto
-      
+
       import java.util.Comparator
 
       class /*(*/AlwaysEquals/*)*/ extends Comparator[Int] {
@@ -410,7 +410,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(moveTo("ch.misto"))
-  
+
   @Test
   def moveClassWithDepOnCurrentPackage = new FileSet {
     """
@@ -431,7 +431,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     NewFile becomes """
       package org.com
       package other
-      
+
       import org.com.pkg.A
 
       trait /*(*/B/*)*/ extends A
@@ -460,7 +460,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     NewFile becomes """
       // Copyright 2012 ..
       package ch.hsr
-      
+
       import org.com.pkg.A
 
       class /*(*/B/*)*/(a: A)
@@ -546,7 +546,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package x.y
-      
+
       import a.b.c.X
 
       trait /*(*/ToMove/*)*/ {
@@ -614,7 +614,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     ;
     NewFile becomes """
     package a.b.c.d
-    
+
     import arith.TmZero
 
     class /*(*/ArithParser/*)*/ {
@@ -664,7 +664,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package a.b.c
-      
+
       import x.y.ToMove
 
       class User extends ToMove
@@ -750,13 +750,13 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   def moveMultipleClassesWithInterdependencies = new FileSet {
     """
     package org.scala-refactoring-library
-    
+
     class A {
       val B = new {
         val y = 2
       }
     }
-    
+
     object C {
       def m(x: A) {
         import x._
@@ -766,13 +766,13 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     package org.scala-refactoring
-    
+
     class A {
       val B = new {
         val y = 2
       }
     }
-    
+
     object C {
       def m(x: A) {
         import x._
@@ -781,20 +781,20 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(moveTo("org.scala-refactoring"))
-  
+
   @Test
   def moveToDefaultPackage = new FileSet {
     """
     package ctes
-    
+
     object Ctes {
       val A = 2
       val B = 3
     }
     """ becomes
     """
-    
-    
+    ▒
+
     object Ctes {
       val A = 2
       val B = 3
@@ -810,12 +810,12 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     package bff
-    
+
     object /*(*/BFF/*)*/
     class BFF
     """
   } applyRefactoring(moveTo("bff"))
-  
+
   @Ignore
   @Test
   def moveCompanionObjectAlong = new FileSet {
@@ -829,7 +829,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
     NewFile becomes """""""
   } applyRefactoring(moveTo("bff"))
-  
+
   @Test
   def moveFromDefaultPackageNoImports = new FileSet {
     """
@@ -840,7 +840,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     package ctes
-    
+
     object Ctes {
       val A = 2
       val B = 3
@@ -854,37 +854,37 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     object Bar64 {
       val instance = new Bar64
     }
-    
+
     class Bar64
     """ becomes
     """
     package bar
-    
+
     object Bar64 {
       val instance = new Bar64
     }
-    
+
     class Bar64
     """
     """
     class Foo64 {
       import Bar64.instance
-      
+
       def foo = instance.toString
       def bar = Bar64.instance.toString
     }
     """ becomes """
     import bar.Bar64
-    
+
     class Foo64 {
       import Bar64.instance
-      
+
       def foo = instance.toString
       def bar = Bar64.instance.toString
     }
     """
   } applyRefactoring(moveTo("bar"))
-  
+
   @Test
   def nestedPackageAndImports = new FileSet {
     """
@@ -932,7 +932,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     """
       package a.b
       package c
-      
+
       import x.y.ToMove
 
       trait Xy {
@@ -1012,7 +1012,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       class X extends Cc with x.y.Bb
     """
   } applyRefactoring(moveTo("x.y"))
-  
+
   @Test
   def moveObject = new FileSet {
     """package arith
@@ -1023,7 +1023,7 @@ case object TmTrue extends Term
 case object TmFalse extends Term
 
 object /*(*/Arith/*)*/ extends scala.util.parsing.combinator.JavaTokenParsers {
-  
+
   def isVal(t: Term) : Boolean = t match {
     case TmTrue | TmFalse => true
     case _ => false
@@ -1044,7 +1044,7 @@ import arith.TmFalse
 import arith.TmTrue
 
 object /*(*/Arith/*)*/ extends scala.util.parsing.combinator.JavaTokenParsers {
-  
+
   def isVal(t: Term) : Boolean = t match {
     case TmTrue | TmFalse => true
     case _ => false

@@ -7,13 +7,13 @@ package implementations
 abstract class SplitParameterLists extends MethodSignatureRefactoring {
 
   import global._
-  
+
   type SplitPositions = List[Int]
   /**
-   * Split positions must be provided for every parameter list of the method (though they can be Nil) 
+   * Split positions must be provided for every parameter list of the method (though they can be Nil)
    */
   type RefactoringParameters = List[SplitPositions]
-  
+
   override def checkRefactoringParams(prep: PreparationResult, affectedDefs: AffectedDefs, params: RefactoringParameters) = {
     def checkRefactoringParamsHelper(vparamss: List[List[ValDef]], sectionss: List[SplitPositions]): Boolean = {
       val sortedSections = sectionss.map(Set(_: _*).toList.sorted)
@@ -26,10 +26,10 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
         (vparamsRanges zip sectionRanges).foldLeft(true)((b, ranges) => b && (ranges._1 containsSlice ranges._2))
       }
     }
-    
+
     checkRefactoringParamsHelper(prep.defdef.vparamss, params)
   }
-  
+
   def splitSingleParamList[T](origVparams: List[T], positions: SplitPositions): List[List[T]] = {
     val nrParamsPerList = (positions:::List(origVparams.length) zip 0::positions) map (t => t._1 - t._2)
     nrParamsPerList.foldLeft((Nil: List[List[T]] , origVparams))((acc, nrParams) => {
@@ -37,19 +37,19 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
       (acc._1:::List(currentCurriedParamList), remainingOrigParams)
     })._1
   }
-    
+
   def makeSplitApply(baseFun: Tree, vparamss: List[List[Tree]]) = {
     val firstApply = Apply(baseFun, vparamss.headOption.getOrElse(throw new IllegalArgumentException("can't handle empty vparamss")))
     vparamss.tail.foldLeft(firstApply)((fun, vparams) => Apply(fun, vparams))
   }
-    
+
   override def defdefRefactoring(params: RefactoringParameters) = transform {
     case orig @ DefDef(mods, name, tparams, vparamss, tpt, rhs) => {
       val split = (vparamss zip params) flatMap (l => splitSingleParamList(l._1, l._2))
       DefDef(mods, name, tparams, split, tpt, rhs) replaces orig
     }
   }
-    
+
   override def applyRefactoring(params: RefactoringParameters) = transform {
     case apply @ Apply(fun, args) => {
       val originalTree = findOriginalTree(apply)
@@ -59,9 +59,9 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
       splitApply replaces apply
     }
   }
-    
+
   override def traverseApply(t: ⇒ Transformation[X, X]) = bottomup(t)
-  
+
   override def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: DefInfo): RefactoringParameters = {
     val toDrop = originalParams.size - toRefactor.nrParamLists
     val preparedParams = originalParams.drop(toDrop)
@@ -70,8 +70,8 @@ abstract class SplitParameterLists extends MethodSignatureRefactoring {
       case Nil => preparedParams
       case _ => noSplitters.map(_ => Nil):::preparedParams
     }
-    
-    
+
+
   }
-  
+
 }

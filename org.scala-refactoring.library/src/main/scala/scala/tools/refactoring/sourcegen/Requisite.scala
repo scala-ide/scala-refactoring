@@ -7,9 +7,9 @@ package sourcegen
 
 trait Requisite {
   self =>
-  
+
   def isRequired(l: Layout, r: Layout): Boolean
-  
+
   def apply(l: Layout, r: Layout): Layout = {
     if(isRequired(l, r)) {
       insertBetween(l, r)
@@ -17,11 +17,11 @@ trait Requisite {
       l ++ r
     }
   }
-  
+
   protected def insertBetween(l: Layout, r: Layout) = l ++ getLayout ++ r
-  
+
   def getLayout: Layout
-  
+
   def ++(other: Requisite): Requisite = (self, other) match {
     case (r, NoRequisite) => r
     case (NoRequisite, r) => r
@@ -38,9 +38,9 @@ trait Requisite {
 }
 
 object Requisite {
-    
+
   def allowSurroundingWhitespace(req: String, toPrint: String): Requisite = {
-    
+
     val regexSafeString = req flatMap {
       case '(' => "\\("
       case ')' => "\\)"
@@ -50,40 +50,40 @@ object Requisite {
       case ']' => "\\]"
       case c => c.toString
     }
-    
+
     new Requisite {
       def isRequired(l: Layout, r: Layout) = {
-        val isInLeft = l.matches("(?ms).*\\s*"+ regexSafeString +"\\s*$") 
+        val isInLeft = l.matches("(?ms).*\\s*"+ regexSafeString +"\\s*$")
         val isInRight = r.matches("(?ms)^\\s*"+ regexSafeString + ".*")
         !isInLeft && !isInRight
       }
       def getLayout = Layout(toPrint)
-    }    
+    }
   }
-  
+
   def allowSurroundingWhitespace(str: String): Requisite = {
     allowSurroundingWhitespace(str, str)
   }
-  
+
   def anywhere(s: String): Requisite = anywhere(s, s)
-  
+
   def anywhere(req: String, print: String): Requisite = new Requisite {
     def isRequired(l: Layout, r: Layout) = {
       !(l.contains(req) || r.contains(req))
     }
     def getLayout = Layout(print)
   }
-  
+
   val Blank = new Requisite {
     def isRequired(l: Layout, r: Layout) = {
       val _1 = l.matches(".*\\s+$")
       val _2 = r.matches("^\\s+.*")
-      
+
       !(_1 || _2)
     }
     val getLayout = Layout(" ")
   }
-  
+
   def newline(indentation: String, nl: String, force: Boolean = false) = new Requisite {
     def isRequired(l: Layout, r: Layout) = {
       val _1 = l.matches("(?ms).*\r?\n\\s*$")

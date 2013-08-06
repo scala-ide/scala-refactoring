@@ -14,82 +14,82 @@ import language.reflectiveCalls
 
 class EliminateMatchTest extends TestHelper with TestRefactoring {
   outer =>
-  
+
   def elim(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new EliminateMatch with SilentTracing with common.InteractiveScalaCompiler {
       val global = outer.global
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters)
   }.changes
-    
+
   val some = Some("s"): Option[String]
   val none = None: Option[String]
 
   @Test
   def eliminateOptionMap {
-    
+
     def f1(x: Option[String]) = x match {
       case Some(s) => Some(s * 2)
       case None => None
     }
-    
+
     def f2(x: Option[String]) = x map (s => s * 2)
-    
+
     assertEquals(f1(some), f2(some))
     assertEquals(f1(none), f2(none))
   }
-  
+
   @Test
   def eliminateOptionExists {
-    
+
     def f1(x: Option[String]) = x match {
       case Some(s) => s contains "a"
       case None => false
     }
-    
+
     def f2(x: Option[String]) = x exists (s => s contains "a")
-    
+
     assertEquals(f1(some), f2(some))
     assertEquals(f1(none), f2(none))
   }
-  
+
   @Test
   def eliminateOptionIsDefined {
-    
+
     def f1(x: Option[String]) = x match {
       case Some(_) => true
       case None => false
     }
-    
+
     def f2(x: Option[String]) = x.isDefined
-    
+
     assertEquals(f1(some), f2(some))
     assertEquals(f1(none), f2(none))
   }
-  
+
   @Test
   def eliminateOptionForeach {
-    
+
     var x1 = 0
     var x2 = 0
-    
+
     def f1(x: Option[String]) = x match {
       case Some(s) => x1 += 1
-      case None => 
+      case None =>
     }
-    
+
     def f2(x: Option[String]) = x foreach (s => x2 += 1)
-    
+
     assertEquals(f1(some), f2(some))
     assertEquals(f1(none), f2(none))
     assertEquals(1, x1)
     assertEquals(1, x2)
   }
-  
+
   @Test
   def eliminateIsDefined = new FileSet {
     """
-    object EliminiateWithoutSelection {    
+    object EliminiateWithoutSelection {
       def f1(x: Option[String]) = x /*(*/ match /*)*/ {
         case Some(_) => true
         case None => false
@@ -97,12 +97,12 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
     }
     """ becomes
     """
-    object EliminiateWithoutSelection {    
+    object EliminiateWithoutSelection {
       def f1(x: Option[String]) = x /*(*/isDefined
     }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def flatMapElimination = new FileSet {
     """
@@ -123,7 +123,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def flatMapElimination2 = new FileSet {
     """
@@ -144,7 +144,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def simpleExistsElimination = new FileSet {
     """
@@ -163,7 +163,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def isDefinedElimination = new FileSet {
     """
@@ -182,7 +182,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def existsEliminationDifferentOrder = new FileSet {
     """
@@ -201,7 +201,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test // TODO: could be more beautiful
   def existsEliminationWithBody = new FileSet {
     """
@@ -235,7 +235,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def mapEliminationSimple = new FileSet {
     """
@@ -254,7 +254,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def mapEliminationNoneSome = new FileSet {
     """
@@ -273,7 +273,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def mapEliminationNoCapture = new FileSet {
     """
@@ -292,7 +292,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def mapEliminationNoNone = new FileSet {
     """
@@ -311,7 +311,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def mapEliminationWithChainedCall = new FileSet {
     """
@@ -330,7 +330,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def mapEliminationWithBlock = new FileSet {
     """
@@ -341,7 +341,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
             case Some(s) =>
               val x = 5
               Some(s * x)
-            case None => 
+            case None =>
               None
           }
         }
@@ -357,7 +357,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def foreachEliminationWithExplicitUnit = new FileSet {
     """
@@ -378,7 +378,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def foreachEliminationWithUnit = new FileSet {
     """
@@ -387,7 +387,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
         def m(x: Option[Int]) = {
           x /*(*/ match /*)*/ {
             case Some(s) => println(s)
-            case None => 
+            case None =>
           }
         }
       }
@@ -399,7 +399,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def flattenElimination = new FileSet {
     """
@@ -420,7 +420,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def isEmptyElimination = new FileSet {
     """
@@ -441,7 +441,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def forallElimination = new FileSet {
     """
@@ -462,7 +462,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def orElseElimination = new FileSet {
     """
@@ -483,7 +483,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def orElseEliminationAlt = new FileSet {
     """
@@ -506,7 +506,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def getOrElseElimination = new FileSet {
     """
@@ -527,7 +527,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def toListElimination = new FileSet {
     """
@@ -548,7 +548,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def toListEliminationAlt = new FileSet {
     """
@@ -569,7 +569,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-  
+
   @Test
   def foreachInBlock = new FileSet {
     """
@@ -588,7 +588,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
           // a comment
           somethingElse /*(*/ match /*)*/ {
             case Some(x) => println(x)
-            case None => 
+            case None =>
           }
         }
       }
@@ -612,7 +612,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(elim)
-    
+
   @Test(expected=classOf[PreparationException])
   def cannotEliminateWithBinding = new FileSet {
     """

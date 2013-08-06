@@ -14,14 +14,14 @@ import language.reflectiveCalls
 
 class ExtractLocalTest extends TestHelper with TestRefactoring {
   outer =>
-    
+
   def extract(param: ExtractLocal#RefactoringParameters)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractLocal with SilentTracing with TestProjectIndex
     }
     testRefactoring.performRefactoring(param)
   }
-  
+
   @Test
   def extracPartOfChainedCalls = new FileSet {
     """
@@ -29,7 +29,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       object Demo {
         def update(platform: String) {
           val x = new collection.mutable.ListBuffer[String]
-     /*(*/x.toList/*)*/ mkString ","         
+     /*(*/x.toList/*)*/ mkString ","
         }
       }
     """ becomes
@@ -38,13 +38,13 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       object Demo {
         def update(platform: String) {
           val x = new collection.mutable.ListBuffer[String]
-     /*(*/  val asList = x.toList/*)*/ 
-            asList mkString ","         
+     /*(*/  val asList = x.toList/*)*/ ▒
+            asList mkString ","
         }
       }
     """
   } applyRefactoring(extract("asList"))
-  
+
   @Test
   def extractIfCond = new FileSet {
     """
@@ -71,14 +71,14 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("isMacOs"))
-  
+
   @Test
   def extractLocal = new FileSet {
     """
       package extractLocal
       object Demo {
         def printVolume(r: Double, h: Double) {
-          
+
           val v = /*(*/3.14 * r * r/*)*/ * h
 
           println("volume is: "+ v)
@@ -89,8 +89,8 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       package extractLocal
       object Demo {
         def printVolume(r: Double, h: Double) {
-          val gr = 3.14 * r * r/*)*/ 
-          
+          val gr = 3.14 * r * r/*)*/ ▒
+
           val v = /*(*/gr* h
 
           println("volume is: "+ v)
@@ -98,7 +98,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("gr"))
-  
+
   @Test
   def extractFromElseWithoutParens = new FileSet {
     """
@@ -107,7 +107,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         def printSum(l: List[Int]) {
 
           println("Printing the sum..")
-          
+
           if(l.isEmpty) {
             println("is empty :-(")
           } else
@@ -123,7 +123,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         def printSum(l: List[Int]) {
 
           println("Printing the sum..")
-          
+
           if(l.isEmpty) {
             println("is empty :-(")
           } else {
@@ -136,7 +136,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("sum"))
-  
+
   @Test
   def extractValRhs = new FileSet {
     """
@@ -155,7 +155,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("plt"))
-  
+
   @Test
   def extractValRhs2 = new FileSet {
     """
@@ -174,7 +174,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("six"))
-  
+
   @Test
   def extractFilter = new FileSet {
     """
@@ -182,7 +182,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         def m {
           val list = (1 to 10) toList
 
-     /*(*/list filter (_ > 3)/*)*/ filter (_ < 6)
+     /*(*/list filter (_ > 3)/*)*/filter (_ < 6)
         }
       }
     """ becomes
@@ -191,13 +191,13 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         def m {
           val list = (1 to 10) toList
 
-     /*(*/  val largerThree = list filter (_ > 3)/*)*/ 
+     /*(*/  val largerThree = list filter (_ > 3)/*)*/
             largerThree filter (_ < 6)
         }
       }
     """
   } applyRefactoring(extract("largerThree"))
-  
+
   @Test
   def extractPartOfACondition = new FileSet {
     """
@@ -222,7 +222,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("part2"))
-  
+
   @Test
   def extractFromCaseWithMultipleStatements = new FileSet {
     """
@@ -247,7 +247,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("six"))
-  
+
   @Test
   def extractFromCaseWithSingleStatement = new FileSet {
     """
@@ -262,29 +262,29 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         Nil match {
           case Nil =>
-            val six = 5 + 1/*)*/ 
+            val six = 5 + 1/*)*/ ▒
             /*(*/six toString
         }
       }
     """
   } applyRefactoring(extract("six"))
-  
+
   @Test
   def extractFromCaseWithTwoStatements = new FileSet {
     """
       class Extr2 {
-        /*(*/5 + 1/*)*/ toString
+        /*(*/5 + 1/*)*/toString
       }
     """ becomes
     """
       class Extr2 {
-        val six = 5 + 1/*)*/ 
-        
+        val six = 5 + 1/*)*/
+
         /*(*/six toString
       }
     """
   } applyRefactoring(extract("six"))
-  
+
   @Test
   def extractFromTry = new FileSet {
     """
@@ -299,13 +299,13 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         try {
           val a = List(1,2,3)
-          val largerThanTwo = a filter (_> 2)/*)*/ 
+          val largerThanTwo = a filter (_> 2)/*)*/ ▒
           /*(*/largerThanTwo mkString ", "
         }
       }
     """
   } applyRefactoring(extract("largerThanTwo"))
-  
+
   @Test
   def extractFromTrySingleStatement = new FileSet {
     """
@@ -318,13 +318,13 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         try {
-          val largerThanTwo = List(1,2,3) filter (_> 2)/*)*/ 
+          val largerThanTwo = List(1,2,3) filter (_> 2)/*)*/ ▒
           /*(*/largerThanTwo mkString ", "
         }
       }
     """
   } applyRefactoring(extract("largerThanTwo"))
-  
+
   @Test
   def extractMethod = new FileSet {
     """
@@ -335,12 +335,12 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         val filterList = List(1,2,3) filter/*)*/ _
-        
+
         /*(*/filterList(_> 2) mkString ", "
       }
     """
   } applyRefactoring(extract("filterList"))
-  
+
   @Test
   def extractFromFunctionWithCurlyBraces = new FileSet {
     """
@@ -353,13 +353,13 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         List(1,2,3) filter { it =>
-          val isOdd = it + 1 % 2/*)*/ 
+          val isOdd = it + 1 % 2/*)*/ ▒
           /*(*/isOdd== 0
         }
       }
     """
   } applyRefactoring(extract("isOdd"))
-  
+
   @Test
   def extractFromFunction = new FileSet {
     """
@@ -370,15 +370,15 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         List(1,2,3) filter (i => {
-          val isOdd = i + 1 % 2/*)*/ 
+          val isOdd = i + 1 % 2/*)*/ ▒
           /*(*/isOdd== 0
         })
       }
     """
   } applyRefactoring(extract("isOdd"))
-  
+
   @Test
-  def extractFromValBlock = new FileSet { 
+  def extractFromValBlock = new FileSet {
       """
       class Extr2 {
         val a = {
@@ -390,14 +390,14 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         val a = {
           val i = 1
-          val addTwo = 
+          val addTwo = ▒
           /*(*/i + 2/*)*/
           addTwo
         }
       }
     """
   } applyRefactoring extract("addTwo")
-  
+
   @Test
   def extractFromThen = new FileSet {
     """
@@ -410,13 +410,13 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         if(true) {
-          val ab = "a" + "b"/*)*/ 
+          val ab = "a" + "b"/*)*/ ▒
           /*(*/ab+ "c"
         }
       }
     """
   } applyRefactoring(extract("ab"))
-  
+
   @Test
   def extractFromThenWithoutParent = new FileSet {
     """
@@ -428,54 +428,54 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 {
         if(true) {
-          val ab = "a" + "b"/*)*/ 
+          val ab = "a" + "b"/*)*/ ▒
           /*(*/ab+ "c"
         }
       }
     """
   } applyRefactoring(extract("ab"))
-  
+
   @Test
   def extractFromElse = new FileSet {
     """
- 
+
     object ExtractLocal1 {
-    
+
       def main(args: Array[String]) {
-    
+
         println("Detecting OS..")
-        
+
         if(System.getProperties.get("os.name") == "Linux") {
           println("We're on Linux!")
         } else {
           println(/*(*/"We're not on Linux!"/*)*/)
         }
-          
+
         println("Done.")
       }
     }
     """ becomes
     """
- 
+
     object ExtractLocal1 {
-    
+
       def main(args: Array[String]) {
-    
+
         println("Detecting OS..")
-        
+
         if(System.getProperties.get("os.name") == "Linux") {
           println("We're on Linux!")
         } else {
           val msg = /*(*/"We're not on Linux!"
           println(msg/*)*/)
         }
-          
+
         println("Done.")
       }
     }
     """
   } applyRefactoring(extract("msg"))
-  
+
   @Test
   def extractFromSimpleMethod = new FileSet {
     """
@@ -494,7 +494,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("ab"))
-  
+
   @Test
   def extractFromMethod = new FileSet {
     """
@@ -515,14 +515,14 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(extract("ab"))
-  
+
   @Test
   def extractFromMethod2 = new FileSet {
     """
 object ExtractMethod2 {
-        
+
   def main(args: Array[String]) {
-       
+
     val a = 1
     val b = /*(*/1/*)*/ //a
       val c=1 //comment
@@ -533,9 +533,9 @@ object ExtractMethod2 {
     """ becomes
     """
 object ExtractMethod2 {
-        
+
   def main(args: Array[String]) {
-       
+
     val a = 1
     val ab = /*(*/1
     val b = ab/*)*/ //a
@@ -546,7 +546,7 @@ object ExtractMethod2 {
 }
     """
   } applyRefactoring(extract("ab"))
-  
+
   @Test
   @Ignore
   def extractFromFunction2 = new FileSet {
@@ -557,7 +557,7 @@ object ExtractMethod2 {
     """ becomes
     """"""
   } applyRefactoring(extract("isOdd"))
-  
+
   @Test
   def extractFromCaseClause = new FileSet {
     """
@@ -570,14 +570,14 @@ object ExtractMethod2 {
     """
       class Extr2 {
         List() match {
-          case Nil => 
+          case Nil => ▒
             val isFalse = false
             true && /*(*/isFalse/*)*/
         }
       }
     """
   } applyRefactoring(extract("isFalse"))
-  
+
   @Test
   def extractFromMatch = new FileSet {
     """
@@ -590,14 +590,14 @@ object ExtractMethod2 {
     """
       class Extr2 {
         val l = List(1,2,3)/*)*/
-        
+
         /*(*/l match {
           case Nil => true
         }
       }
     """
   } applyRefactoring(extract("l"))
-  
+
   @Test
   def extractFunctionFromMethodCall = new FileSet {
     """
@@ -620,7 +620,7 @@ object ExtractMethod2 {
       }
     """
   } applyRefactoring(extract("cc"))
-  
+
   @Test
   def extractLastExpressionInUnitMethod = new FileSet {
     """
@@ -637,26 +637,26 @@ object ExtractMethod2 {
       }
     }"""
   } applyRefactoring(extract("t"))
-  
+
   @Test
   def extractFromUpdateMethod = new FileSet {
     """
-    object ExtractLocalBugTest extends App{ 
+    object ExtractLocalBugTest extends App{
       val List(one, three, eight) = List(1,3,8);
       printf("%d %d %d\n", one, three, eight)
-  
+
       val strings = Array("One", "Second")
       strings(1) = /*(*/"Two"/*)*/
       for( str <- strings) println(str)
     }
     """ becomes
     """
-    object ExtractLocalBugTest extends App { 
+    object ExtractLocalBugTest extends App {
       val List(one, three, eight) = List(1,3,8);
       printf("%d %d %d\n", one, three, eight)
-  
+
       val strings = Array("One", "Second")
-      
+
       val two = /*(*/"Two"
       strings(1) = two/*)*/
       for( str <- strings) println(str)
@@ -667,19 +667,19 @@ object ExtractMethod2 {
   @Test
   def extractWithoutSelection = new FileSet {
     """
-    object ExtractLocal { 
+    object ExtractLocal {
       def x() {
         1/*(*//*)*/ + 1
-        val test = "hello" 
+        val test = "hello"
       }
     }
     """ becomes
     """
-    object ExtractLocal { 
+    object ExtractLocal {
       def x() {
         val one = 1
         1/*(*//*)*/ + one
-        val test = "hello" 
+        val test = "hello"
       }
     }
     """
@@ -689,7 +689,7 @@ object ExtractMethod2 {
   def extractFromFor = new FileSet {
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
 
       for (i <- 0 until /*(*/l.length/*)*/) yield i
@@ -697,9 +697,9 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
-      
+
       val len = l.length
 
       for (i <- 0 until /*(*/len) yield i
@@ -711,7 +711,7 @@ object ExtractMethod2 {
   def extractFromForFilter = new FileSet {
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
 
       for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield i
@@ -719,9 +719,9 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
-      
+
       val len = "abc".length
 
       for (i <- List(1,2) if i == /*(*/len) yield i
@@ -733,7 +733,7 @@ object ExtractMethod2 {
   def extractFromForFilterYieldWithBody = new FileSet {
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
 
       for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield {
@@ -743,9 +743,9 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
-      
+
       val len = "abc".length
 
       for (i <- List(1,2) if i == /*(*/len) yield {
@@ -759,7 +759,7 @@ object ExtractMethod2 {
   def extractFromForFilterYieldWithSameLineBody = new FileSet {
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
 
       for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield { i * i }
@@ -767,9 +767,9 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
-      
+
       val len = "abc".length
 
       for (i <- List(1,2) if i == /*(*/len) yield { i * i }
@@ -781,7 +781,7 @@ object ExtractMethod2 {
   def extractFromForFilterYieldWithBlockBody = new FileSet {
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
 
       for (i <- List(1,2) if i == /*(*/"abc".length/*)*/) yield {
@@ -792,9 +792,9 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-  
+
       val l = List(1,2)
-      
+
       val len = "abc".length
 
       for (i <- List(1,2) if i == /*(*/len) yield {
@@ -815,12 +815,12 @@ object ExtractMethod2 {
     """
     object ExtractFromFor {
       val plusOne = /*(*/(_:Int)+1
-      
+
       val inc = plusOne/*)*/
     }
     """
   } applyRefactoring(extract("plusOne"))
-  
+
  @Test
  def extractList = new FileSet {
    """
@@ -831,18 +831,18 @@ object ExtractMethod2 {
    """
    class ExtractList {
      val extracted = /*(*/1::Nil
-     
+
      val list = extracted/*)*/
    }
    """
  } applyRefactoring(extract("extracted"))
-  
+
  @Test
  def extractFromConstructor = new FileSet {
    """
    object ExtractFromHere {
      import java.net.URL
-     
+
      val pluginXmlUrl = {
        new URL(/*(*/""/*)*/)
      }
@@ -851,16 +851,16 @@ object ExtractMethod2 {
    """
    object ExtractFromHere {
      import java.net.URL
-     
+
      val url = /*(*/""
-     
+
      val pluginXmlUrl = {
        new URL(url/*)*/)
      }
    }
    """
  } applyRefactoring(extract("url"))
-  
+
   @Test
   def plusAssignRhs = new FileSet {
    """

@@ -12,33 +12,33 @@ import common.Selections
 class SelectionsTest extends TestHelper {
 
   import global._
-  
+
   private def getIndexedSelection(src: String) = {
     val tree = treeFrom(src)
     val start = commentSelectionStart(src)
     val end   = commentSelectionEnd(src)
     FileSelection(tree.pos.source.file, tree, start, end)
   }
-  
+
   def selectedLocalVariable(expected: String, src: String) = {
-    
+
     val selection = getIndexedSelection(src)
-    
+
     assertEquals(expected, selection.selectedSymbolTree.get.symbol.name.toString)
   }
-  
+
   def assertSelection(expectedTrees: String, expectedSymbols: String, src: String) = {
-    
+
     val selection = getIndexedSelection(src)
-    
+
     assertEquals(expectedTrees, selection.allSelectedTrees map (_.getClass.getSimpleName) mkString ", ")
     assertEquals(expectedSymbols, selection.selectedSymbols mkString ", ")
   }
-  
+
   @Test
   def findValDefInMethod() = {
     assertSelection(
-        "ValDef, Apply, Select, Ident, Ident", 
+        "ValDef, Apply, Select, Ident, Ident",
         "value b, method +, value a, value i", """
       package findValDefInMethod
       class A {
@@ -50,8 +50,8 @@ class SelectionsTest extends TestHelper {
         }
       }
     """)
-  }  
-  
+  }
+
   @Test
   def findIdentInMethod() = {
     assertSelection("Ident", "value i", """
@@ -66,7 +66,7 @@ class SelectionsTest extends TestHelper {
       }
     """)
   }
-  
+
   @Test
   def findInMethodArguments() = {
     assertSelection("ValDef, TypeTree", "value i", """
@@ -78,11 +78,11 @@ class SelectionsTest extends TestHelper {
       }
     """)
   }
-  
+
   @Test
   def findWholeMethod() = {
     assertSelection(
-        "DefDef, ValDef, TypeTree, Apply, Select, Ident, Literal", 
+        "DefDef, ValDef, TypeTree, Apply, Select, Ident, Literal",
         "method addThree, value i, method *, value i", """
       package findWholeMethod
       class A {
@@ -93,7 +93,7 @@ class SelectionsTest extends TestHelper {
 /*)*/
       }
     """)
-    
+
   }
   @Test
   def findNothing() = {
@@ -107,7 +107,7 @@ class SelectionsTest extends TestHelper {
       }
     """)
   }
-  
+
   @Test
   def findSelectedLocal() = {
     selectedLocalVariable("copy", """
@@ -120,7 +120,7 @@ class SelectionsTest extends TestHelper {
       }
     """)
   }
-  
+
   @Test
   def selectedTheFirstCompleteSymbol() = {
     selectedLocalVariable("i", """
@@ -132,8 +132,8 @@ class SelectionsTest extends TestHelper {
         }
       }
     """)
-  }  
-  
+  }
+
   @Test
   def selectedTheFirstSymbol() = {
     selectedLocalVariable("copy", """

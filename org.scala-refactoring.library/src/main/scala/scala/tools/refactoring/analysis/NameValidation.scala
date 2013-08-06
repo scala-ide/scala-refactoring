@@ -17,11 +17,11 @@ import scala.reflect.internal.util.BatchSourceFile
 trait NameValidation {
 
   self: Indexes with common.Selections with common.CompilerAccess =>
-  
+
   import global._
-  
+
   /**
-   * Returns true if this name is a valid identifier, 
+   * Returns true if this name is a valid identifier,
    * as accepted by the Scala compiler.
    */
   def isValidIdentifier(name: String): Boolean = {
@@ -30,43 +30,43 @@ trait NameValidation {
       val cu = new global.CompilationUnit(new BatchSourceFile("", name))
       val scanner = new UnitScanner(cu)
     }.scanner
-    
+
     try {
       scanner.init()
       val firstTokenIsIdentifier = Tokens.isIdentifier(scanner.token)
-      
+
       scanner.nextToken()
       val secondTokenIsEOF = scanner.token == Tokens.EOF
-      
+
       firstTokenIsIdentifier && secondTokenIsEOF
     } catch {
       case NonFatal(_) => false
     }
   }
-  
+
   /**
    * Returns all symbols that might collide with the new name
    * at the given symbol's location.
-   * 
+   *
    * For example, if the symbol is a method, it is checked if
    * there already exists a method with this name in the full
    * class hierarchy of that method's class.
-   * 
+   *
    * The implemented checks are only an approximation and not
    * necessarily correct.
    */
   def doesNameCollide(name: String, s: Symbol): List[Symbol] = {
-    
+
     def isNameAlreadyUsedInLocalScope: List[Symbol] = {
       (index declaration s.owner map TreeSelection).toList flatMap {
         _.selectedSymbols.filter(_.nameString == name)
-      } 
+      }
     }
-    
+
     def isNameAlreadyUsedInClassHierarchy = {
       index completeClassHierarchy s.owner flatMap (_.tpe.members) filter (_.nameString == name)
     }
-    
+
     def isNameAlreadyUsedInPackageHierarchy = {
       index completePackageHierarchy s.owner flatMap (_.tpe.members) filter (_.nameString == name)
     }

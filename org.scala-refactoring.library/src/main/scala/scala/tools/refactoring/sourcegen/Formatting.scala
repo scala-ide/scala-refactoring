@@ -13,11 +13,11 @@ trait Formatting {
    * The characters that are used to indent changed code.
    */
   def defaultIndentationStep = "  "
-    
+
   /**
    * The characters that surround an import with multiple
    * import selectors inside the braces:
-   * 
+   *
    *   import a.{*name*}
    */
   def spacingAroundMultipleImports = ""

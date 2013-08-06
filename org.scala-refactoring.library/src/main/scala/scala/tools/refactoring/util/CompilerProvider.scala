@@ -16,11 +16,11 @@ import scala.reflect.internal.util.SourceFile
 import scala.reflect.internal.util.Position
 
 class CompilerInstance {
-  
+
   def additionalClassPathEntry: Option[String] = None
-  
+
   lazy val compiler = {
-    
+
     val settings = new Settings
 
     // find the jar that has class `className`
@@ -38,7 +38,7 @@ class CompilerInstance {
       val origBootclasspath = settings.bootclasspath.value
       settings.bootclasspath.value = ((origBootclasspath :: libraryJars) ::: additionalClassPathEntry.toList) mkString File.pathSeparator
     }
-    
+
     val compiler = new Global(settings, new ConsoleReporter(settings) {
       override def printMessage(pos: Position, msg: String) {
         //throw new Exception(pos.source.file.name + pos.show + msg)
@@ -54,41 +54,41 @@ class CompilerInstance {
 }
 
 trait TreeCreationMethods {
-  
+
   val global: scala.tools.nsc.interactive.Global
-  
+
   val randomFileName = {
     val r = new java.util.Random
     () => "file"+ r.nextInt
   }
-    
+
   def treeFrom(src: String): global.Tree = {
     val file = new BatchSourceFile(randomFileName(), src)
     treeFrom(file)
   }
-  
+
   def treeFrom(file: SourceFile): global.Tree = {
-    
+
     val response = new Response[global.Tree]
-    
+
     global.ask(() => global.askLoadedTyped(file, response))
-    
+
     response.get match {
       case Left(tree) => tree
       case Right(ex) => throw ex
     }
   }
-  
+
   /**
    * Add a source file with the given name and content to this compiler instance.
-   * 
+   *
    * @param name the name of the file; adding different files with the same name can lead to problems
    */
   def addToCompiler(name: String, src: String): AbstractFile = {
     val file = new BatchSourceFile(name, src)
     treeFrom(file) // use the side effect
     file.file
-  } 
+  }
 }
 
 object CompilerInstance extends CompilerInstance
@@ -96,16 +96,16 @@ object CompilerInstance extends CompilerInstance
 trait CompilerProvider extends TreeCreationMethods {
 
   val global = CompilerInstance.compiler
-  
+
   private [refactoring] def resetPresentationCompiler() {
-        
+
     global.unitOfFile.values.foreach { cu =>
       global.removeUnitOf(cu.source)
       assert(global.getUnitOf(cu.source).isEmpty)
     }
 
     global.askReset
-    
+
     global.checkNoResponsesOutstanding
   }
 }

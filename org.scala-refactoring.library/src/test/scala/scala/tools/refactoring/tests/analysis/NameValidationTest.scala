@@ -14,7 +14,7 @@ import language.{reflectiveCalls, implicitConversions}
 class NameValidationTest extends TestHelper with NameValidation with GlobalIndexes {
 
   var index: IndexLookup = null
-  
+
   @Test
   def validIdentifiers() {
     assertTrue(isValidIdentifier("x"))
@@ -30,7 +30,7 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     assertTrue(isValidIdentifier("_y"))
     assertTrue(isValidIdentifier("dot_product_*"))
   }
-  
+
   @Test
   def invalidIdentifiers() {
     assertFalse(isValidIdentifier("a b"))
@@ -39,7 +39,7 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     assertFalse(isValidIdentifier("_"))
     assertFalse(isValidIdentifier("`"))
   }
-  
+
   implicit def treeFinder(t: global.Tree) = new {
     def find(name: String) = {
       TreeSelection(t).allSelectedTrees find {
@@ -48,10 +48,10 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
       }
     }
   }
-  
+
   def nameAlreadyUsed(t: global.Tree, r: global.Tree): String => Boolean = {
     index = global.ask {() => GlobalIndex(r)}
-    s => 
+    s =>
       global.ask { () =>
         !doesNameCollide(s, t.symbol).isEmpty
       }
@@ -70,11 +70,11 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
       }
     }
     """)
-    
+
     val valA = tree.find("a").get
-    
+
     val alreadyUsed = nameAlreadyUsed(valA, tree)
-    
+
     assertFalse(alreadyUsed("c"))
     assertFalse(alreadyUsed("Whatever"))
     assertFalse("x is not visible from a", alreadyUsed("x"))
@@ -85,7 +85,7 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
     assertTrue (alreadyUsed("a"))
     assertTrue (alreadyUsed("method1"))
   }
-  
+
   @Test
   def methodNameCollision() {
     val tree = treeFrom("""
@@ -112,27 +112,27 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
 
     class D(val aString: String) extends A
     """)
-    
+
     val method1InA = tree.find("method1").get
-    
+
     val alreadyUsed = nameAlreadyUsed(method1InA, tree)
-    
+
     assertFalse(alreadyUsed("blabla"))
     assertFalse(alreadyUsed("method4"))
-    
+
     assertTrue(alreadyUsed("aString"))
     assertTrue(alreadyUsed("method3"))
     assertTrue(alreadyUsed("method1"))
     assertTrue(alreadyUsed("method2"))
   }
-  
+
   @Test
   def collisionInPackage() {
     val tree = treeFrom("""
     package justapackage1
-    
+
     class C1
-   
+
     package p2 {
       class A
       class C4
@@ -145,11 +145,11 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
       class Ok2
     }
     """)
-    
+
     val valA = tree.find("A").get
-    
-    val alreadyUsed = nameAlreadyUsed(valA, tree) 
-    
+
+    val alreadyUsed = nameAlreadyUsed(valA, tree)
+
     assertFalse(alreadyUsed("Ok1"))
     assertFalse(alreadyUsed("Ok2"))
     assertFalse(alreadyUsed("B"))

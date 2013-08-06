@@ -12,7 +12,7 @@ trait FreshCompilerForeachTest extends TestHelper {
   // We are experiencing instable test runs, maybe it helps when we
   // use a fresh compiler for each test case:
   override val global = (new CompilerInstance).compiler
-  
+
   @After
   def shutdownCompiler {
     global.askShutdown

@@ -13,7 +13,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     val refactoring = new MoveConstructorToCompanionObject with SilentTracing with TestProjectIndex
     val changes = performRefactoring(new refactoring.RefactoringParameters)
   }.changes
-  
+
   @Test
   def moveConstructorToExistingCompanion = new FileSet {
     """
@@ -37,7 +37,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       class /*(*/Foo/*)*/(val p: Int)
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def existingCompanionWithMethods = new FileSet {
     """
@@ -58,7 +58,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
         def apply(p: Int) = {
           new Foo(p)
         }
-        
+
         def bar(a: Int) = {
           a * 57
         }
@@ -67,26 +67,27 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       class /*(*/Foo/*)*/(val p: Int)
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def withoutExistingCompanion = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanion
-      
+
       class /*(*/Foo/*)*/(val p: Int)
     """ becomes
     """
       package moveConstructorToCompanion.withoutExistingCompanion
+
       object Foo {
         def apply(p: Int) = {
           new Foo(p)
         }
       }
-      
+
       class /*(*/Foo/*)*/(val p: Int)
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def withoutExistingCompanionWithEnclosingClass = new FileSet {
     """
@@ -107,14 +108,14 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
             new Inner(p)
           }
         }
-        
+
         class /*(*/Inner/*)*/(val p: Int) {
 
         }
       }
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def withoutExistingCompanionWithEnclosingObject = new FileSet {
     """
@@ -135,14 +136,14 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
             new Inner(p)
           }
         }
-        
+
         class /*(*/Inner/*)*/(val p: Int) {
 
         }
       }
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def withoutExistingCompanionWithEnclosingMethod = new FileSet {
     """
@@ -171,7 +172,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       }
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def withoutExistingCompanionWithEnclosingVal = new FileSet {
     """
@@ -200,7 +201,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       }
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def withTypeParams = new FileSet {
     """
@@ -222,7 +223,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       class /*(*/Foo/*)*/[A, B, C](a: A, b: B, c: C)
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def curriedConstructor = new FileSet {
     """
@@ -244,7 +245,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       class /*(*/Foo/*)*/[A, B, C](a: A)(b: B)(c: C)
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def constructorWithoutParameters = new FileSet {
     """
@@ -255,6 +256,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """ becomes
     """
       package moveConstructorToCompanion.emptyConstructor
+
       object Foo {
         def apply() = {
           new Foo()
@@ -265,7 +267,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       }
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
   @Test
   def replaceConstructorCallsWithoutExistingCompanion = new FileSet {
     """
@@ -279,6 +281,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """ becomes
     """
       package moveConstructorToCompanion.replaceConstructorCallsWithoutExistingCompanion
+
       object Foo {
         def apply(p: Int) = {
           new Foo(p)
@@ -292,7 +295,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
       }
     """
   } applyRefactoring(moveConstructorToCompanion)
-  
+
 
   @Test
   def replaceConstructorCallsInObject = new FileSet {
@@ -307,6 +310,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
     """ becomes
     """
       package moveConstructorToCompanion.replaceConstructorCallsInObject
+
       object Foo {
         def apply(p: Int) = {
           new Foo(p)

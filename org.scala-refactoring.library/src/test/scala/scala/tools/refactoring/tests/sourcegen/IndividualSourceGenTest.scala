@@ -18,109 +18,109 @@ import tools.nsc.ast.parser.Tokens
 import language.{postfixOps, implicitConversions}
 
 class IndividualSourceGenTest extends TestHelper with SilentTracing {
-  
+
   import global._
-  
+
   def generateText(t: Tree): String = global.ask { () =>
     createText(t, sourceFile = Some(t.pos.source))
   }
-  
+
   implicit def treeToPrettyPrint(original: Tree) = new {
     def prettyPrintsTo(expected: String) = assertEquals(expected, generateText(cleanTree(original)))
   }
-  
+
   def getFirstMethod(source: String) = treeFrom(source) match {
     case PackageDef(_, ClassDef(_, _, _, Template(_, _, (d: DefDef) :: _)) :: _) => d
     case _ => Assert.fail(); throw new Exception("unreachable")
   }
-  
+
   def testDefDefWithNoPositionAndOriginalPosition(src: String, exp1: String, exp2: String) = global.ask { () =>
-    
+
     val originalDefDef = getFirstMethod(src)
-    
+
     val newDefDef = originalDefDef.copy()
-        
+
     assertEquals(exp1, generate(newDefDef, sourceFile = Some(originalDefDef.pos.source)).asText)
 
     newDefDef.setPos(originalDefDef.pos)
-    
-    assertEquals(exp2, generate(newDefDef, sourceFile = Some(originalDefDef.pos.source)).asText)    
+
+    assertEquals(exp2, generate(newDefDef, sourceFile = Some(originalDefDef.pos.source)).asText)
   }
-  
+
   @Test
   def testNewDefDefWithOriginalContent1() = {
-    
+
     testDefDefWithNoPositionAndOriginalPosition(
     """
     trait A {
       def someMethod: Unit
     }
-    """, 
+    """,
     """def someMethod: Unit {
-}""", 
+}""",
     """
       def someMethod: Unit""")
   }
-  
+
   @Test
   def testNewDefDefWithOriginalContent2() = {
-    
+
     testDefDefWithNoPositionAndOriginalPosition(
     """
     trait A {
       def someMethod(): String
     }
-    """, 
+    """,
     """def someMethod(): String {
-}""", 
+}""",
     """
       def someMethod(): String""")
   }
-  
+
   @Test
   def testNewDefDefWithOriginalContent3() = {
-    
+
     testDefDefWithNoPositionAndOriginalPosition(
     """
     trait A {
       def someMethod[T](): T
     }
-    """, 
+    """,
     """def someMethod[T](): T {
-}""", 
+}""",
     """
       def someMethod[T](): T""")
   }
-  
+
   @Test
   def testNewDefDefWithOriginalContent4() = {
-    
+
     testDefDefWithNoPositionAndOriginalPosition(
     """
     trait A {
       protected def someMethod[T](param1: Int, param2: T)(param3: => T)
     }
-    """, 
+    """,
     """protected def someMethod[T](param1: Int, param2: T)(param3: => T) {
-}""", 
+}""",
     """
       protected def someMethod[T](param1: Int, param2: T)(param3: => T)""")
   }
-  
+
   @Test
   def selfTypeAnnotation {
     val src = """
 trait tr[A] {
-  self: List[A] => 
-  
+  self: List[A] =>
+
   def asd() {
   }
 }
 """
-    val ast = treeFrom(src)    
+    val ast = treeFrom(src)
     val defdef = mkDefDef(name = "member", body = List(Ident(newTermName("()"))))
-    
-    val result = global.ask {() => 
+
+    val result = global.ask {() =>
       topdown {
         matchingChildren {
           transform {
@@ -129,34 +129,34 @@ trait tr[A] {
         }
       } apply ast
     }
-    
+
     assertEquals("""
 trait tr[A] {
-  self: List[A] => 
-  
+  self: List[A] =>
+
   def asd() {
   }
-  
+
   def member() = {
     ()
   }
 }
 """, generateText(result.get))
   }
-  
+
   @Test
   def addMethodToEmptyTraitWithSelfTypeAnnotation {
     val src = """
 trait tr[A] {
-  self: List[A] => 
+  self: List[A] =>
 
 }
 """
     val ast = treeFrom(src)
-    
+
     val defdef = mkDefDef(name = "member", body = List(Ident(newTermName("()"))))
-    
-    val result = global.ask{ () => 
+
+    val result = global.ask{ () =>
       topdown {
         matchingChildren {
           transform {
@@ -165,10 +165,10 @@ trait tr[A] {
         }
       } apply ast
     }
-    
+
     assertEquals("""
 trait tr[A] {
-  self: List[A] => 
+  self: List[A] =>
   def member() = {
     ()
   }
@@ -176,10 +176,10 @@ trait tr[A] {
 }
 """, generateText(result.get))
   }
-  
+
   @Test
   def misprintedFunctionDefinition {
-        
+
     val ast = treeFrom("""
       package generated
 
@@ -193,8 +193,8 @@ trait tr[A] {
         }
       }
     """)
-    
-    val result = global.ask {() => 
+
+    val result = global.ask {() =>
       topdown {
         matchingChildren {
           transform {
@@ -204,44 +204,44 @@ trait tr[A] {
       } apply ast
     }
 
-    val changes = global.ask {() =>  
+    val changes = global.ask {() =>
       refactor(result.toList)
     }
-    
+
     assertEquals("""if (li.emptyp) false
 else {
   (a equals li.car) || member(a, li.cdr)
 """, changes.head.text)
   }
-  
+
   @Test
   def valDefRhsAlone(): Unit = {
-    
+
     val tree = treeFrom("""
     object O {
       val a = {4 + 3  }
     }
     """)
-    
+
     val valDef = tree match {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: ValDef) :: _)) :: _) => v
       case _ => Assert.fail(); emptyValDef // too bad fail does not return Nothing
     }
-        
+
     global.ask { () =>
-      
+
       assertEquals("""val a = {4 + 3  }""", generate(valDef, sourceFile = Some(tree.pos.source)).center.asText)
-            
+
       assertEquals("""{4 + 3  }""", generate(valDef.rhs, sourceFile = Some(tree.pos.source)).asText)
-            
+
       assertEquals(0, createChanges(List(valDef)).size)
     }
   }
-  
+
   @Test
   @Ignore
   def newWith(): Unit = {
-    
+
     val ast = treeFrom("""
     class A(x: Int)
     trait B
@@ -249,28 +249,28 @@ else {
       val ab = new A(10)
     }
     """)
-    
+
     val result = global.ask {() =>
       topdown {
         matchingChildren {
           transform {
-            case t: ValDef if t.name.toString == "ab " => 
-  
+            case t: ValDef if t.name.toString == "ab " =>
+
               val newRhs = Block(
                 mkClass(
-                  name = "$anon", 
+                  name = "$anon",
                   parents = Ident(newTermName("A")) :: Ident(newTermName("B")) :: Nil,
                   superArgs = Literal(Constant(5)) :: Nil
-                ), 
+                ),
                 Apply(Select(New(Ident(newTermName("$anon"))), nme.CONSTRUCTOR), Nil)
               )
-              
+
               t.copy(rhs = newRhs)
           }
         }
       } apply ast
     }
-    
+
     assertEquals("""
     class A(x: Int)
     trait B
@@ -279,10 +279,10 @@ else {
     }
     """, generateText(result.get))
   }
-  
+
   @Test
   def modifiedDefDef(): Unit = global.ask { () =>
-    
+
     val originalDefDef = treeFrom("""
     object Account {
        def amethod(v: Int, a: Account): Unit = {
@@ -293,7 +293,7 @@ else {
        // before value
        var value = 4
        // after value
-    
+
        def add(v: Int) {
          value += v
        }
@@ -302,38 +302,38 @@ else {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
       case _ => Assert.fail(); sys.error("") // too bad fail does not return Nothing
     }
-    
+
     val newRHS1 = Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(shallowDuplicate(originalDefDef.rhs) setPos NoPosition))
-    
+
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
-        
+
     assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", generate(newDefDef1, sourceFile = Some(originalDefDef.pos.source)).center.asText)
-   
+
     assertEquals("""
        def amethod(v: Int, a: Account): Unit = com.synchronized(a.add(v))""", createFragment(newDefDef1).asText)
-   
+
     val newRHS2 = Apply(Select(Ident(newTermName("com")), newTermName("synchronized")), List(originalDefDef.rhs))
-    
+
     val newDefDef2 = originalDefDef copy (rhs = newRHS2) setPos originalDefDef.pos
-        
+
     assertEquals("""def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
        })""", generate(newDefDef2, sourceFile = Some(originalDefDef.pos.source)).center.asText)
-          
+
     assertEquals("""
        def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
        })""", createFragment(newDefDef2).asText)
- 
-       
+
+
     assertEquals(1, createChanges(List(newDefDef1)).size)
-    
+
     assertEquals(1, createChanges(List(newDefDef2)).size)
   }
-  
+
   @Test
   def modifiedDefDefWithFor(): Unit = {
-    
+
     val originalDefDef = treeFrom("""
     object Account1 {
       def addInterest(accounts: Array[Account1], rate: Float) {
@@ -346,7 +346,7 @@ else {
        // before value
        var value = 4
        // after value
-    
+
        def add(v: Int) {
          value += v
        }
@@ -355,11 +355,11 @@ else {
       case PackageDef(_, ModuleDef(_, _, Template(_, _, _ :: (v: DefDef) :: _)) :: _) => v
       case _ => Assert.fail(); sys.error("") // too bad fail does not return Nothing
     }
-    
+
     val newRHS1 = new Block(List(Apply(Select(Ident(newTermName("com")),newTermName("synchronized")), List(originalDefDef.rhs))), EmptyTree)
-    
+
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
-    
+
     assertEquals("""
       def addInterest(accounts: Array[Account1], rate: Float) {
         com.synchronized({
@@ -370,30 +370,30 @@ else {
       }""", global.ask(() => createFragment(newDefDef1).asText))
 
   }
-  
+
   @Test
   def manyParentheses(): Unit = {
-    
+
     val tree = treeFrom("""
     class VBox[T](i: Int)
     class Test {
      var box = new VBox[Int]({ 2 + 4 })
     }
     """)
-      
+
     assertEquals("""
     class VBox[T](i: Int)
     class Test {
      var box = new VBox[Int]({ 2 + 4 })
     }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def bracesAndComments(): Unit = {
-    
+
     val tree = treeFrom("""
 package com.megaannum.test
 
@@ -408,7 +408,7 @@ class Foo3 {
    def setIdFoo(id: Int) = idFoo = id
 }
     """)
-      
+
     assertEquals("""
 package com.megaannum.test
 
@@ -423,13 +423,13 @@ class Foo3 {
    def setIdFoo(id: Int) = idFoo = id
 }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def bracesAndComments2(): Unit = {
-    
+
     val tree = treeFrom("""
 package com.megaannum.test
 
@@ -439,7 +439,7 @@ class Foo3 {
    // after idFoo
 }
     """)
-      
+
     assertEquals("""
 package com.megaannum.test
 
@@ -449,33 +449,33 @@ class Foo3 {
    // after idFoo
 }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def missingDot(): Unit = {
-    
+
     val tree = treeFrom("""
 class Foo3 {
    var _idFoo = 7
    this._idFoo = 5
 }
     """)
-      
+
     assertEquals("""
 class Foo3 {
    var _idFoo = 7
    this._idFoo = 5
 }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def doubledName(): Unit = {
-    
+
     val tree = treeFrom("""
 class Account2 {
    var value = 0
@@ -484,7 +484,7 @@ class Account2 {
    }
 }
     """)
-      
+
     assertEquals("""
 class Account2 {
    var value = 0
@@ -493,111 +493,111 @@ class Account2 {
    }
 }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def extraParens(): Unit = {
-    
+
     val tree = treeFrom("""
 object Acco {
-   def amethod(v: Int, a: Int) = 
+   def amethod(v: Int, a: Int) =
      synchronized({
        v + a
      })
 }
     """)
-      
+
     assertEquals("""
 object Acco {
-   def amethod(v: Int, a: Int) = 
+   def amethod(v: Int, a: Int) =
      synchronized({
        v + a
      })
 }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def namedArgs(): Unit = {
-    
+
     val tree = treeFrom("""
     object NamedArguments {
       def p(i: Int, before: String, separator: String, after: String) = ()
- 
-      p(5, separator = ", ", before = "\\{", after = "\\}")  
+
+      p(5, separator = ", ", before = "\\{", after = "\\}")
     }
     """)
-      
+
     assertEquals("""
     object NamedArguments {
       def p(i: Int, before: String, separator: String, after: String) = ()
- 
-      p(5, separator = ", ", before = "\\{", after = "\\}")  
+
+      p(5, separator = ", ", before = "\\{", after = "\\}")
     }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def namedArg(): Unit = {
-    
+
     val tree = treeFrom("""
     object NamedArg {
       def p(first: String, second: Int) = ()
- 
+
       def callP = {
         p(second = 42, first = "-")
       }
     }
     """)
-      
+
     assertEquals("""
     object NamedArg {
       def p(first: String, second: Int) = ()
- 
+
       def callP = {
         p(second = 42, first = "-")
       }
     }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def namedArgWithDefault(): Unit = {
-    
+
     val tree = treeFrom("""
     object NamedArgWithDefault {
       def p(first: String = "default", second: Int) = ()
- 
+
       def callP = {
         p(second = 42)
       }
     }
     """)
-      
+
     assertEquals("""
     object NamedArgWithDefault {
       def p(first: String = "default", second: Int) = ()
- 
+
       def callP = {
         p(second = 42)
       }
     }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def patternMatch(): Unit = {
-    
+
     val tree = treeFrom("""
     object O {
       case class ModuleDef(i: Int, s: String)
@@ -610,7 +610,7 @@ object Acco {
       }
     }
     """)
-      
+
     assertEquals("""
     object O {
       case class ModuleDef(i: Int, s: String)
@@ -623,13 +623,13 @@ object Acco {
       }
     }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def patternMatchOnTupel(): Unit = {
-    
+
     val tree = treeFrom("""
     object O {
       (42, "foo") match {
@@ -638,7 +638,7 @@ object Acco {
       }
     }
     """)
-      
+
     assertEquals("""
     object O {
       (42, "foo") match {
@@ -647,35 +647,35 @@ object Acco {
       }
     }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def newObject(): Unit = {
-    
+
     val tree = treeFrom("""
     object Foo {
        def apply() = new Foo
     }
-    
+
     class Foo
     """)
-      
+
     assertEquals("""
     object Foo {
        def apply() = new Foo
     }
-    
+
     class Foo
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def newParameterizedObject(): Unit = {
-    
+
     val tree = treeFrom("""
 object Foo4 {
    def apply[T](name: String) = new Foo4[T](name)
@@ -685,7 +685,7 @@ class Foo4[T](name: String) {
    def echo[T](t: T):T = t
 }
     """)
-      
+
     assertEquals("""
 object Foo4 {
    def apply[T](name: String) = new Foo4[T](name)
@@ -695,37 +695,37 @@ class Foo4[T](name: String) {
    def echo[T](t: T):T = t
 }
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def newParameterizedObject2(): Unit = {
-    
+
     val tree = treeFrom("""
 object Foo5 {
    def apply() = { new Foo5 }
 }
 class Foo5
     """)
-      
+
     assertEquals("""
 object Foo5 {
    def apply() = { new Foo5 }
 }
 class Foo5
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
-  } 
+  }
 
   @Test
   def annotation(): Unit = {
-    
+
     val tree = treeFrom("""
 import java.lang.String
 import scala.annotation.StaticAnnotation
-        
+
 class RunWith(c: Class[_]) extends StaticAnnotation
 
 /*(*/  /*)*/
@@ -733,11 +733,11 @@ class RunWith(c: Class[_]) extends StaticAnnotation
 @RunWith(classOf[String])
 class Test
     """)
-      
+
     assertEquals("""
 import java.lang.String
 import scala.annotation.StaticAnnotation
-        
+
 class RunWith(c: Class[_]) extends StaticAnnotation
 
 /*(*/  /*)*/
@@ -745,10 +745,10 @@ class RunWith(c: Class[_]) extends StaticAnnotation
 @RunWith(classOf[String])
 class Test
     """, generateText(tree))
-    
+
     assertEquals(0, createChanges(List(tree)).size)
   }
-  
+
   @Test
   def testFunctionArg() {
     val ast = treeFrom(
@@ -763,7 +763,7 @@ def fun[A, B, C](fu: (A, B, C) => A): A
 }
 """, generateText(ast))
   }
-  
+
   @Test
   def testClassParameter() {
     val ast = treeFrom("""
@@ -775,7 +775,7 @@ class A(a: Int) {
 }
 """, generateText(ast))
     }
-  
+
   @Test
   def testPrintParentheses() {
 
@@ -808,12 +808,12 @@ class A(a: Int) {
     }
     """, generateText(result.get))
   }
-  
+
   @Test
   def testPrintNoParentheses() {
 
     val ast = treeFrom("""
-    trait tr {      
+    trait tr {
       def bar(s: String) = s
       def foo() {
         bar("ASD")
@@ -832,7 +832,7 @@ class A(a: Int) {
     }
 
     assertEquals("""
-    trait tr {      
+    trait tr {
       def bar(s: String) = s
       def foo() {
         bar
@@ -846,9 +846,9 @@ class A(a: Int) {
 
     val str = """
     class MyList[T] {
-      //transformation works correctly when parentheses are missing here 
+      //transformation works correctly when parentheses are missing here
       def emptyp() = false
-    }        
+    }
     trait tr[A] {
       self: KIVList[A] =>
       def every[A1](p: (A1) => Boolean, li: MyList[A]): Boolean = {
@@ -859,7 +859,7 @@ class A(a: Int) {
     val ast = treeFrom(str)
 
     val res = global.ask { () =>
-            
+
       var valDef: ValDef = null
       topdown {
         matchingChildren {
@@ -870,7 +870,7 @@ class A(a: Int) {
           }
         }
       } apply (ast)
-      
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -883,12 +883,12 @@ class A(a: Int) {
 
       common.Change.applyChanges(refactor(result.toList), str)
     }
-    
+
     assertEquals("""
     class MyList[T] {
-      //transformation works correctly when parentheses are missing here 
+      //transformation works correctly when parentheses are missing here
       def emptyp() = false
-    }        
+    }
     trait tr[A] {
       self: KIVList[A] =>
       def every[A1](p: (A1) => Boolean, li: MyList[A]): Boolean = {
@@ -897,7 +897,7 @@ class A(a: Int) {
     }
     """, res)
   }
-  
+
     @Test
   def changeMethodInvocation() {
 
@@ -905,7 +905,7 @@ class A(a: Int) {
     package abc
     object primitive {
       def mapcar[A, B](fu: (A) => B, li: List[A]): List[B] = {
-        
+
       }
       def asd() = {
         mapcar(((x: String) => x.isEmpty()), List(""))
@@ -927,7 +927,7 @@ class A(a: Int) {
           }
         }
       } apply (ast)
-  
+
       common.Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -935,7 +935,7 @@ class A(a: Int) {
     package abc
     object primitive {
       def mapcar[A, B](fu: (A) => B, li: List[A]): List[B] = {
-        
+
       }
       def asd() = {
         List("").mapcar(((x: String) => x.isEmpty()))
@@ -951,15 +951,15 @@ class A(a: Int) {
     package abc
     object primitive {
       def append[A](li1: List[A], li2: List[A]) = Nil
-  
+
       append(List("asd"), {
           val x = 1
           List("Def")
       })
-      
+
     }
     """
-    
+
     val ast = treeFrom(src)
 
     val result = global.ask { () =>
@@ -975,21 +975,21 @@ class A(a: Int) {
         }
       } apply (ast)
     }
-    
+
     assertEquals("""
     package abc
     object primitive {
       def append[A](li1: List[A], li2: List[A]) = Nil
-  
+
       {
           val x = 1
           List("Def")
       }.append(List("asd"))
-      
+
     }
     """, generateText(result.get))
-  }   
-  
+  }
+
   @Test
   def testRemoveAnArgument() {
 
@@ -1000,11 +1000,11 @@ class A(a: Int) {
       }
     }
     """
-      
+
     val ast = treeFrom(src)
 
     val res = global.ask { () =>
-    
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -1014,7 +1014,7 @@ class A(a: Int) {
           }
         }
       } apply (ast)
-  
+
       Change.applyChanges(refactor(result.toList), src)
     }
     assertEquals("""
@@ -1025,10 +1025,10 @@ class A(a: Int) {
     }
     """, res)
   }
-  
+
    @Test
   def testParentheses() {
-     
+
     val ast = treeFrom("""
     package abc
     trait tr[T] {
@@ -1037,7 +1037,7 @@ class A(a: Int) {
       }
     }
     """)
-    
+
     val result = global.ask { () =>
       topdown {
         matchingChildren {
@@ -1058,7 +1058,7 @@ class A(a: Int) {
     }
     """, generateText(result.get))
   }
-   
+
    @Test
   def testFullQualifiedName() {
     val str = """
@@ -1073,7 +1073,7 @@ class A(a: Int) {
     val ast = treeFrom(str)
 
     val res = global.ask { () =>
-      
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -1088,10 +1088,10 @@ class A(a: Int) {
           }
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(result.toList), str)
     }
-    
+
     assertEquals("""
     package asd
     object primitive {
@@ -1105,7 +1105,7 @@ class A(a: Int) {
     }
     """, res)
   }
-   
+
   @Test
   def changeMethodInvocation3() {
 
@@ -1117,7 +1117,7 @@ class A(a: Int) {
           , List("Def"))
     }
     """)
- 
+
     val result = global.ask { () =>
       topdown {
         matchingChildren {
@@ -1130,22 +1130,22 @@ class A(a: Int) {
               val fun1 = Select(
                 name = newTermName(a.fun.symbol.nameString),
                 qualifier = arg)
-              a.copy(args = buf.toList, fun = fun1) setPos a.pos
+              a.copy(args = buf.toList, fun = fun1) replaces a
           }
         }
       } apply (ast)
     }
 
-    assertEquals("""
+    assertEquals(stripWhitespacePreservers("""
     package abc
     object primitive {
       def append[A](li1: List[A], li2: List[A]) = Nil
-      
+      ▒
       List("Def").append(List("asd"))
     }
-    """, generateText(result.get))
+    """), generateText(result.get))
   }
-  
+
   @Test
   def testCopy() {
     val str = """
@@ -1169,7 +1169,7 @@ class A(a: Int) {
           }
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -1185,7 +1185,7 @@ class A(a: Int) {
     }
     """, res)
   }
-  
+
   @Test
   def testCopy2() {
     val str = """
@@ -1201,17 +1201,17 @@ class A(a: Int) {
     }
     """
     val ast = treeFrom(str)
-    
+
     val res = global.ask { () =>
 
       var defdef: Tree = null
- 
+
       topdown(matchingChildren(
         transform {
           case t: DefDef if (t.name == newTermName("divide")) =>
             defdef = t; t
         })) apply ast
-  
+
       val res = topdown(matchingChildren(
         transform {
           case t: TypeTree if (t.nameString == "A") =>
@@ -1219,7 +1219,7 @@ class A(a: Int) {
           case t: TypeDef if (t.nameString == "A") =>
             mkRenamedSymTree(t, "A1")
         })) apply defdef
-  
+
       val result = topdown(matchingChildren(
         transform {
           case c: ClassDef if (c.name == newTypeName("tr")) =>
@@ -1227,7 +1227,7 @@ class A(a: Int) {
             val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
             c.copy(impl = templ) setPos c.pos
         })) apply ast
-        
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -1247,7 +1247,7 @@ class A(a: Int) {
     }
     """, res)
   }
-  
+
   @Test
   def testCopy3() {
     val str = """
@@ -1263,17 +1263,17 @@ class A(a: Int) {
     }
     """
     val ast = treeFrom(str)
-    
+
     val res = global.ask { () =>
 
       var defdef: Tree = null
-  
+
       topdown(matchingChildren(
         transform {
           case t: DefDef if (t.name == newTermName("member_test")) =>
             defdef = t; t
         })) apply ast
-  
+
       val res = topdown(matchingChildren(
         transform {
           case t: TypeTree if (t.nameString == "B") =>
@@ -1281,7 +1281,7 @@ class A(a: Int) {
           case t: TypeDef if (t.nameString == "B") =>
             mkRenamedSymTree(t, "B1")
         })) apply defdef
-  
+
       val result = topdown(matchingChildren(
         transform {
           case c: ClassDef if (c.name == newTypeName("tr")) =>
@@ -1289,7 +1289,7 @@ class A(a: Int) {
             val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
             c.copy(impl = templ) setPos c.pos
         })) apply ast
-      
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -1309,7 +1309,7 @@ class A(a: Int) {
     }
     """, res)
   }
-   
+
   @Test
   def testCopy4() {
     val str = """
@@ -1329,7 +1329,7 @@ class A(a: Int) {
         transform {
           case t: Apply if (t.fun.nameString == "fail") => t.copy()
         })) apply ast
-        
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -1360,7 +1360,7 @@ class A(a: Int) {
     val ast = treeFrom(str)
 
     val result = global.ask { () =>
-      
+
       val result = topdown(matchingChildren(
         transform {
           case t: DefDef => t.copy()
@@ -1371,13 +1371,13 @@ class A(a: Int) {
               val select = Select(
                 qualifier = Ident(name = newTypeName(qual)),
                 name = t.fun.asInstanceOf[Select].name)
-              t.copy(fun = select) setPos t.pos 
+              t.copy(fun = select) setPos t.pos
             } else {
               t
             }
           case t => t
         })) apply ast
-        
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -1385,7 +1385,7 @@ class A(a: Int) {
     package abc
     object primitive {
       def fail() = {true}
-      
+
       def foo(f: Int): Boolean = {
       if((f == 0)) abc.primitive.fail()
       else false
@@ -1393,7 +1393,7 @@ class A(a: Int) {
     }
     """, result)
   }
-  
+
   @Test
   def testCopy5() {
     val str = """
@@ -1443,7 +1443,7 @@ class A(a: Int) {
             val templ = c.impl.copy(body = t.body ::: List(res.get)) setPos t.pos
             c.copy(impl = templ) setPos c.pos
         })) apply ast
-        
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -1465,7 +1465,7 @@ class A(a: Int) {
     }
     """, result)
   }
-  
+
   @Test
   def changeMethodInvocation4() {
 
@@ -1503,7 +1503,7 @@ class A(a: Int) {
     }
     """, generateText(result.get))
   }
-  
+
   @Test
   def changeMethodInvocation5() {
 
@@ -1517,7 +1517,7 @@ class A(a: Int) {
     val ast = treeFrom(str)
 
     val result = global.ask { () =>
-     
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -1543,10 +1543,10 @@ class A(a: Int) {
           }
         }
       } apply (ast)
-      
+
       common.Change.applyChanges(refactor(result.toList), str)
     }
-   
+
     assertEquals("""
     package abc
     object primitive {
@@ -1572,14 +1572,14 @@ class A(a: Int) {
     val ast = treeFrom(src).asInstanceOf[PackageDef]
     val toInline = ast.stats(0).asInstanceOf[ModuleDef]
       .impl.body(2).asInstanceOf[DefDef]
-    
+
     def mkPattern(varName: String, className: String, guard: Tree, rhs: Tree): CaseDef = {
       CaseDef(Bind(newTermName("t"),
         if (className != "") Typed(Ident(newTermName("")), Ident(newTermName(className)))
         else EmptyTree),
         guard, rhs)
     }
-    
+
     val result = global.ask { () =>
       val result = topdown {
         matchingChildren {
@@ -1606,7 +1606,7 @@ class A(a: Int) {
   }
     """, result)
   }
-  
+
   @Test
   def patternMatchTest2() {
     val src = """
@@ -1654,7 +1654,7 @@ class A(a: Int) {
           }
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(result.toList), src)
     }
 
@@ -1689,7 +1689,7 @@ class A(a: Int) {
   }
   """, result)
   }
-  
+
   @Test
   def patternMatchTest3() {
     val src = """
@@ -1737,7 +1737,7 @@ object acmatch {
           }
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(result.toList), src)
     }
 
@@ -1763,7 +1763,7 @@ object acmatch {
   }
   """, result)
   }
-  
+
   @Test
   def patternMatchTest4() {
     val src = """
@@ -1776,7 +1776,7 @@ object acmatch {
     }
     def subst_expr(obj: Abstraction): (List[Mvmatch]) => Abstraction = {
       if (obj.abstractionmvp) compile_apply_substitution_on_abstractionmv(obj)
-      else fail 
+      else fail
     }
     abstract class Abstraction {
       def abstractionmvp = false
@@ -1812,7 +1812,7 @@ object acmatch {
           }
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(result.toList), src)
     }
 
@@ -1840,7 +1840,7 @@ object acmatch {
   }
   """, result)
   }
-  
+
   @Test
   def changeMethodInvocation7() {
 
@@ -1849,16 +1849,16 @@ object acmatch {
     object primitive {
       def length[A](li: List[A]) = 0
       def reduce[A, B](li: List[B], fu: (A, B) => A, init: A): A = throw new Exception("ASD")
-      def foo[A](li: List[Int], li2: List[Int]) = {  
+      def foo[A](li: List[Int], li2: List[Int]) = {
         reduce(li, (a: Int, b: Int) => {
         length(li2) + b}, 0)
       }
     }
     """
     val ast = treeFrom(str)
-    
+
     val result = global.ask { () =>
-    
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -1873,7 +1873,7 @@ object acmatch {
           }
         }
       } apply (ast)
-      
+
       Change.applyChanges(refactor(result.toList), str)
     }
     assertEquals("""
@@ -1881,14 +1881,14 @@ object acmatch {
     object primitive {
       def length[A](li: List[A]) = 0
       def reduce[A, B](li: List[B], fu: (A, B) => A, init: A): A = throw new Exception("ASD")
-      def foo[A](li: List[Int], li2: List[Int]) = {  
+      def foo[A](li: List[Int], li2: List[Int]) = {
         li.reduce((a: Int, b: Int) => {
         li2.length() + b}, 0)
       }
     }
     """, result)
   }
-  
+
   @Test
   def changeMethodInvocation8() {
 
@@ -1896,14 +1896,14 @@ object acmatch {
     object primitive {
       def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
       def asd(li: List[Int]) = {
-        reduce(((_:Int) + (_:Int)),li, 0) 
+        reduce(((_:Int) + (_:Int)),li, 0)
       }
     }
     """
     val ast = treeFrom(str)
 
     val result = global.ask { () =>
-      
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -1918,20 +1918,20 @@ object acmatch {
           }
         }
       } apply (ast)
-    
+
       Change.applyChanges(refactor(result.toList), str)
     }
-    
+
     assertEquals("""
     object primitive {
       def reduce[A, B](fu: (A, B) => A, li: List[B], init: A): A = init
       def asd(li: List[Int]) = {
-        li.reduce(((_:Int) + (_:Int)), 0) 
+        li.reduce(((_:Int) + (_:Int)), 0)
       }
     }
     """, result)
   }
-    
+
   @Test
   def testAddSealed() {
     val str = """
@@ -1940,9 +1940,9 @@ object acmatch {
     class XY
     """
     val ast = treeFrom(str)
-    
+
     val result = global.ask { () =>
-    
+
       val res = once {
         transform {
           case t: PackageDef =>
@@ -1963,7 +1963,7 @@ object acmatch {
     sealed class XY
     """, result)
   }
-  
+
   @Test
   def testRemoveSealed() {
     val str = """
@@ -1972,9 +1972,9 @@ object acmatch {
     sealed class XY
     """
     val ast = treeFrom(str)
-    
+
     val result = global.ask { () =>
-      
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -1982,7 +1982,7 @@ object acmatch {
           }
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
@@ -1992,7 +1992,7 @@ object acmatch {
     class XY
     """, result)
   }
-      
+
   @Test
   def testAddSealedPP() {
     val str = """
@@ -2013,18 +2013,18 @@ object acmatch {
             t.copy(stats = st) setPos t.pos
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(res.toList), str)
     }
 
     assertEquals("""
     abstract sealed class asd {
     }
-    
+
     sealed class XY
     """, result)
   }
-  
+
   @Test
   def testRemoveSealedPP() {
     val str = """
@@ -2034,7 +2034,7 @@ object acmatch {
     """
     val ast = treeFrom(str)
     val result = global.ask { () =>
-      
+
       val result = topdown {
         matchingChildren {
           transform {
@@ -2042,33 +2042,33 @@ object acmatch {
           }
         }
       } apply ast
-      
+
       Change.applyChanges(refactor(result.toList), str)
     }
 
     assertEquals("""
     class asd {
     }
-    
+
     class XY
     """, result)
   }
-  
+
   @Test
   def insertPlainString() {
     val source = """
     class InsertHere {
       def method = {
-        val list = List(1,2,3) 
+        val list = List(1,2,3)
         list map (i => i * 2)
       }
     }
     """
-    
+
     val ast = treeFrom(source)
-    
+
     val result = global.ask { () =>
-      
+
       val transformed = topdown {
         matchingChildren {
           transform {
@@ -2079,19 +2079,19 @@ object acmatch {
                  |) yield {
                  |  i * 2
                  |}""".stripMargin)
-              
+
               t.copy(expr = string)
           }
         }
        } apply ast
-       
+
        Change.applyChanges(refactor(transformed.toList), source)
     }
 
     assertEquals("""
     class InsertHere {
       def method = {
-        val list = List(1,2,3) 
+        val list = List(1,2,3)
         for (
           i <- list
         ) yield {

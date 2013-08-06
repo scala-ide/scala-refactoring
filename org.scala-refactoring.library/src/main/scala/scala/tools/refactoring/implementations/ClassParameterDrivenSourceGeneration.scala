@@ -12,12 +12,12 @@ import common.Change
 abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactoring with common.InteractiveScalaCompiler {
 
   import global._
-  
+
   case class PreparationResult(
-      classDef: ClassDef, 
-      classParams: List[(ValDef, Boolean)], 
+      classDef: ClassDef,
+      classParams: List[(ValDef, Boolean)],
       existingEqualityMethods: List[ValOrDefDef])
-  
+
   /** A function that takes a class parameter name and decides
    *  whether this parameter should be used in equals/hashCode
    *  computations, a boolean that indicates whether calls
@@ -26,10 +26,10 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
    *  should be kept or replaced.
    */
   case class RefactoringParameters(
-      callSuper: Boolean = true, 
-      paramsFilter: ValDef => Boolean, 
+      callSuper: Boolean = true,
+      paramsFilter: ValDef => Boolean,
       keepExistingEqualityMethods: Boolean)
-  
+
   def prepare(s: Selection) = {
     val notAClass = Left(PreparationError("No class definition selected."))
     s.findSelectedOfType[ClassDef] match {
@@ -44,27 +44,27 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
       }
     }
   }
-  
+
   def failsBecause(classDef: ClassDef): Option[String]
-  
+
   def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     val selectedParams = prep.classParams.map(_._1) filter params.paramsFilter
-    
+
     val classSymbol = prep.classDef.symbol
-    
+
     val templateFilter = filter {
       case prep.classDef.impl => true
-    } 
-    
+    }
+
     val refactoring = topdown {
       matchingChildren {
         templateFilter &> sourceGeneration(selectedParams, prep, params)
       }
     }
-    
+
     Right(transformFile(selection.file, refactoring))
   }
-  
+
   def sourceGeneration(params: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters): Transformation[Tree, Tree]
-    
+
 }

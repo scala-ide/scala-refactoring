@@ -20,13 +20,13 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   def simpleSplitting = new FileSet {
     """
       package splitParameterLists.simpleSplitting
-	  class A {
+    class A {
         def /*(*/add/*)*/(first: Int, second: Int) = first + second
       }
     """ becomes
       """
       package splitParameterLists.simpleSplitting
-	  class A {
+    class A {
         def /*(*/add/*)*/(first: Int)(second: Int) = first + second
       }
     """
@@ -36,13 +36,13 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   def multipleParamListSplitting = new FileSet {
     """
       package splitParameterLists.multipleParamListSplitting
-	  class A {
+    class A {
         def /*(*/add/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = first + second
       }
     """ becomes
       """
       package splitParameterLists.multipleParamListSplitting
-	  class A {
+    class A {
         def /*(*/add/*)*/(first: Int)(second: Int)(a: String)(b: String)(c: String) = first + second
       }
     """
@@ -52,20 +52,20 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   def splittingWithMethodCall = new FileSet {
     """
       package splitParameterLists.splittingWithMethodCall
-	  class A {
+    class A {
         def /*(*/add/*)*/(first: Int, second: Int)(a: String, b: String, c: String) = first + second
       }
-	  class B {
+    class B {
         val a = new A
         val b = a.add(1, 2)("a", "b", "c")
       }
     """ becomes
       """
       package splitParameterLists.splittingWithMethodCall
-	  class A {
+    class A {
         def /*(*/add/*)*/(first: Int)(second: Int)(a: String, b: String)(c: String) = first + second
       }
-	  class B {
+    class B {
         val a = new A
         val b = a.add(1)(2)("a", "b")("c")
       }
@@ -530,7 +530,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
       def alias(a: Int, b: Int) = curriedAdd4(a, b) _
       val ten = alias(1, 2)(3, 4)
     }
-    
+
     class B {
       val a = new A()
       val result = a.alias(10, 20)(30, 40)
@@ -543,7 +543,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
       def alias(a: Int, b: Int) = curriedAdd4(a, b) _
       val ten = alias(1, 2)(3)(4)
     }
-    
+
     class B {
       val a = new A()
       val result = a.alias(10, 20)(30)(40)

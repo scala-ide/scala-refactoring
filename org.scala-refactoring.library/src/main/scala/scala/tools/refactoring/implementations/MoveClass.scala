@@ -50,9 +50,9 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
     }
 
     val topLevelImpls = topLevelImplDefs(s)
-    
+
     def hasSingleTopLevelImpl = topLevelImpls.size == 1
-    
+
     def hasToplevelClassAndCompanion = topLevelImpls match {
       case fst :: snd :: Nil =>
         fst.symbol.companionSymbol == snd.symbol
@@ -76,10 +76,10 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
         Left(PreparationError("Files with multiple packages cannot be moved."))
     }
   }
-  
+
   /**
    * Returns all the statements that will be moved in this refactoring.
-   * 
+   *
    * Note: it will also return Import trees, not just ImplDefs.
    */
   def statsToMove(selection: Selection, parameters: RefactoringParameters) = {
@@ -138,7 +138,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
   private def addRequiredImportsForExtractedClass(toMove: Tree, targetPackageName: String) = {
     addRequiredImports(Some(toMove), Some(targetPackageName))
   }
-  
+
   /**
    * Returns a transformation that creates the contents of the target file.
    * */
@@ -238,7 +238,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
       // `moved` can contain duplicates, e.g. a class and its companion object
       val distinctImplsToMove = moved.groupBy(_.nameString).mapValues(_.head).values.toList.sortBy(_.nameString)
-      
+
       val referencesPerFile = collection.mutable.Map[SourceFile, List[(ImplDef, List[Tree])]]()
 
       def addToMap(impl: ImplDef) {
@@ -259,7 +259,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       toMove map (List(_)) getOrElse topLevelImplDefs(selection)
     } flatMap {
       case (sourceFile, entries) => entries.toList map {
-        case (implDef, references) => 
+        case (implDef, references) =>
           (sourceFile, implDef, references)
       }
     }

@@ -14,12 +14,12 @@ import scala.tools.refactoring.implementations.ExpandCaseClassBinding
 import language.reflectiveCalls
 
 class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
-  
+
   def expand(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExpandCaseClassBinding with SilentTracing with TestProjectIndex
     val changes = performRefactoring(new refactoring.RefactoringParameters)
   }.changes
-  
+
   @Test
   def expandSome = new FileSet {
     """
@@ -39,7 +39,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(expand)
-  
+
   @Test
   def expandSomeWithReference = new FileSet {
     """
@@ -59,7 +59,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(expand)
-  
+
   @Test
   def expandWithMultipleParams = new FileSet {
     """
@@ -67,7 +67,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       case class Abc(a: String, b: Int, c: Double)
       object Demo {
         Abc("", 5, 5.0) match {
-          case /*(*/whatever/*)*/ => 
+          case /*(*/whatever/*)*/ =>
         }
       }
     """ becomes
@@ -76,30 +76,30 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       case class Abc(a: String, b: Int, c: Double)
       object Demo {
         Abc("", 5, 5.0) match {
-          case /*(*/Abc(a, b, c)/*)*/ => 
+          case /*(*/Abc(a, b, c)/*)*/ =>
         }
       }
     """
   } applyRefactoring(expand)
-  
+
   @Test
   def expandTuple = new FileSet {
     """
       object Demo {
         ("", 5, 5.0) match {
-          case /*(*/whatever/*)*/ => 
+          case /*(*/whatever/*)*/ =>
         }
       }
     """ becomes
     """
       object Demo {
         ("", 5, 5.0) match {
-          case /*(*/(_1, _2, _3)/*)*/ => 
+          case /*(*/(_1, _2, _3)/*)*/ =>
         }
       }
     """
   } applyRefactoring(expand)
-  
+
   @Test
   def expandNested = new FileSet {
     """
@@ -119,7 +119,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(expand)
-  
+
   @Test
   def expandInnerNested = new FileSet {
     """
@@ -139,13 +139,13 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(expand)
-  
+
   @Test(expected=classOf[PreparationException])
   def illegalExpansion = new FileSet {
     """
       package illegalExpansion
       object /*(*/Xy/*)*/ {
-        
+
       }
     """ becomes
     """"""

@@ -15,15 +15,15 @@ import language.reflectiveCalls
 
 class AddImportStatementTest extends TestHelper {
   outer =>
-  
+
   def addImport(imp: (String, String), src: String, expected: String) = {
-        
+
     val refactoring = new AddImportStatement with SilentTracing {
       val global = outer.global
       val file = addToCompiler(randomFileName(), src)
       val change = global.ask(()=> addImport(file, imp._1 + "." + imp._2))
     }
-    
+
     assertEquals(expected, Change.applyChanges(refactoring.change, src))
   }
 
@@ -34,14 +34,14 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       import whatever.`type`.Bla
-      
+
       object Main
     """)
   }
-  
+
   @Test
   def importAnnotationOnClassWithoutPackage = {
-    addImport(("scala.annotation.unchecked", "uncheckedStable"), 
+    addImport(("scala.annotation.unchecked", "uncheckedStable"),
     """
       @uncheckedStable
       class T
@@ -51,10 +51,10 @@ class AddImportStatementTest extends TestHelper {
 class T
     """)
   }
-  
+
   @Test
   def importAnnotationOnObjectWithoutPackage = {
-    addImport(("scala.annotation.unchecked", "uncheckedStable"), 
+    addImport(("scala.annotation.unchecked", "uncheckedStable"),
     """
       @uncheckedStable
       object T
@@ -64,7 +64,7 @@ class T
 object T
     """)
   }
-  
+
   @Test
   def importWithPackageObject = {
     addImport(("java.util", "ArrayList"), """
@@ -81,7 +81,7 @@ object T
       }
     """)
   }
-  
+
   @Test
   def importWithPackageObjectAndExistingImport = {
     addImport(("java.util", "ArrayList"), """
@@ -98,7 +98,7 @@ object T
       }
     """)
   }
-  
+
   @Test
   def importInEmpty = {
     addImport(("collection.mutable", "ListBuffer"), """
@@ -106,23 +106,23 @@ object T
     """,
     """
       import collection.mutable.ListBuffer
-      
+
       object Main {val lb = ListBuffer(1)}
     """)
   }
-  
+
   @Test
   def importInEmptyWithPackage = {
     addImport(("collection.mutable", "ListBuffer"), """
       package xy
-      
+
       object Main {val lb = ListBuffer(1)}
     """,
     """
       package xy
-      
+
       import collection.mutable.ListBuffer
-      
+
       object Main {val lb = ListBuffer(1)}
     """)
   }
@@ -219,7 +219,7 @@ object T
     """,
     """
       package just.some.pkg
-      
+
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -239,7 +239,7 @@ object T
       package just
       package some
       package pkg
-      
+
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -261,7 +261,7 @@ object T
       package just
       package some
       package pkg {
-      
+
       import collection.mutable.ListBuffer
 
       object Main {val lb = ListBuffer(1)}
@@ -289,7 +289,7 @@ object T
     """
       package just
       package some
-      
+
       import collection.mutable.ListBuffer
       package pkg1 {
 

@@ -48,13 +48,13 @@ class Main {
 object Main
 class Main {
   def existingMethod = "this is an existing method"
-  
+
   def method = {
     ???
   }
 }""")
   }
-  
+
   @Test
   def addMethodWithParametersAndReturnType = {
     addMethod("Main", "method", List(List("a" -> "Any", "b" -> "Int"), List("c" -> "Double")), Some("String"), AddToClass, "class Main",
@@ -104,7 +104,7 @@ trait Main {
   }
 }""")
   }
-  
+
   @Test
   def addMethodByClosestPosition = {
     addMethod("Main", "method", Nil, None, AddToClosest(30), """

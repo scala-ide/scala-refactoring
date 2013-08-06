@@ -11,15 +11,15 @@ import language.reflectiveCalls
 class MergeParameterListsTest extends TestHelper with TestRefactoring {
 
   outer =>
-    
+
   import outer.global._
-  
+
   def mergeParameterLists(mergePositions: List[Int])(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new MergeParameterLists with SilentTracing with TestProjectIndex
     val changes = performRefactoring(mergePositions)
   }.changes
-  
-  
+
+
   @Test(expected=classOf[RefactoringException])
   def tooSmallMergePosition = new FileSet {
     """
@@ -35,7 +35,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(0::1::Nil))
-  
+
   @Test(expected=classOf[RefactoringException])
   def tooBigMergePosition = new FileSet {
     """
@@ -51,7 +51,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test(expected=classOf[RefactoringException])
   def unsortedMergePositions = new FileSet {
     """
@@ -67,7 +67,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(2::1::Nil))
-  
+
   @Test(expected=classOf[RefactoringException])
   def repeatedMergePosition = new FileSet {
     """
@@ -83,8 +83,8 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::1::2::Nil))
-  
-  
+
+
   @Test
   def mergeAllLists = new FileSet {
     """
@@ -100,7 +100,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::2::3::Nil))
-  
+
   @Test
   def mergeSomeLists = new FileSet {
     """
@@ -116,7 +116,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test
   def mergeWithCall = new FileSet {
     """
@@ -134,7 +134,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test
   def mergeMethodSubclass = new FileSet {
     """
@@ -154,9 +154,9 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     class Child extends Parent {
       override def method(first:Int, second: Int)(a: Int, b: Int, c: Int) = a + b + c
     }
-    """ 
+    """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test
   def mergeMethodSuperclass = new FileSet {
     """
@@ -176,9 +176,9 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     class Child extends Parent {
       override def /*(*/method/*)*/(first:Int, second: Int)(a: Int, b: Int, c: Int) = a + b + c
     }
-    """ 
+    """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test
   def mergeMethodAliased = new FileSet {
     """
@@ -198,7 +198,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::2::Nil))
-  
+
   @Test
   def mergePartiallyApplied= new FileSet {
     """
@@ -218,7 +218,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test
   def repeatedlyPartiallyApplied = new FileSet {
     """
@@ -242,7 +242,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::3::5::7::Nil))
-  
+
   @Test
   def aliasToVal = new FileSet {
     """
@@ -262,7 +262,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test
   def repeatedlyPartiallyAppliedVal = new FileSet {
     """
@@ -284,7 +284,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(mergeParameterLists(1::3::5::Nil))
-  
+
   @Test
   def partialsWithBody = new FileSet {
     """
@@ -326,7 +326,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(List(1, 3, 5, 6, 8)))
-  
+
   @Test
   def partialValsWithBody = new FileSet {
     """
@@ -368,7 +368,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(List(1, 3, 5, 6, 8)))
-  
+
   @Test(expected=classOf[RefactoringException])
   def mergePointUsedForCurrying = new FileSet {
     """
@@ -386,7 +386,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::2::Nil))
-  
+
   @Test
   def partiallyAppliedMethodUsage = new FileSet {
     """
@@ -396,7 +396,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
         def alias(a: Int, b: Int) = curriedAdd4(a)(b) _
         val ten = alias(1, 2)(3)(4)
       }
-    """ becomes 
+    """ becomes
     """
       package splitParameterLists.partiallyAppliedMethodUsage
       class A {
@@ -406,7 +406,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(mergeParameterLists(1::3::Nil))
-  
+
   @Test
   def partiallyAppliedMethodUsage2 = new FileSet {
     """
@@ -428,5 +428,5 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
       }
     """
   } applyRefactoring(mergeParameterLists(1::3::5::Nil))
-  
+
 }
