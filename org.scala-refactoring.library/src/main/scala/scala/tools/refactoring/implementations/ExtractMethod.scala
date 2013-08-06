@@ -86,7 +86,9 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
 
     val insertMethodCall = transform {
       case tpl @ Template(_, _, body) =>
-        tpl copy(body = body ::: newDef :: Nil) replaces tpl
+        val p = selectedMethod.pos.point
+        val (before, after) = body.span(_.pos.point <= p)
+        tpl copy(body = before ::: newDef :: after) replaces tpl
     }
 
     val extractMethod = topdown {
