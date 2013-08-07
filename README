@@ -19,8 +19,8 @@ The examples directory contains two demos:
  - editor is a simple swing editor that integrates the refactorings.
 
 ├── pom.xml
-├── build.sh
-├── build_p2_repo.sh
+├── build-2.10.sh
+├── build-2.11.sh
 ├── org.scala-refactoring.library
 │   ├── build.properties
 │   ├── META-INF
@@ -72,7 +72,7 @@ The examples directory contains two demos:
 
 We use Maven to build the project:
 
-> ./build.sh
+> ./build-2.10.sh
 
 creates all the artifacts, except for the documentation, which needs to be
 built separately. For different versions of Scala, take a look at the build.sh
