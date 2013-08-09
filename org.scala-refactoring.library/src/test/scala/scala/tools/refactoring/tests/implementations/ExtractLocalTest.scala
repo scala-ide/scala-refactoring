@@ -707,6 +707,44 @@ object ExtractMethod2 {
   } applyRefactoring(extract("len"))
 
   @Test
+  def extractFromForEntireRhs = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        for (i <- /*(*/List()/*)*/) println(i)
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val extractedValue = List()
+        for (i <- /*(*/extractedValue) println(i)
+      }
+    }
+    """
+  } applyRefactoring(extract("extractedValue"))
+
+  @Test
+  def extractFromForEntireRhsYield = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        println(for (i <- /*(*/List()/*)*/) yield i)
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val extractedValue = List()
+        println(for (i <- /*(*/extractedValue) yield i)
+      }
+    }
+    """
+  } applyRefactoring(extract("extractedValue"))
+
+  @Test
   def extractFromForFilter = new FileSet {
     """
     object ExtractFromFor {
