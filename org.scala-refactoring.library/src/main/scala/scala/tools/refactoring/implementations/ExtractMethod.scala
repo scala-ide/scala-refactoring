@@ -37,7 +37,16 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
 
     val (call, newDef) = {
 
-      val deps = inboundLocalDependencies(selection, selectedMethod.symbol)
+      val deps = {
+        val inboundDeps = inboundLocalDependencies(selection, selectedMethod.symbol)
+        selection.selectedTopLevelTrees match {
+          /* extracting the condition of a for-expression */
+          case List(t: Function) if t.pos.isTransparent =>
+            t.vparams.map(_.symbol) ::: inboundDeps
+          case _ =>
+            inboundDeps
+        }
+      }
 
       val parameters = {
         if(deps.isEmpty)

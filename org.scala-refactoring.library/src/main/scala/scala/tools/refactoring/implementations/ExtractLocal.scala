@@ -27,13 +27,7 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
         case t @ (_: SymTree | _: TermTree) =>
           (t.pos sameRange s.pos) && !hasUnitType(t)
         case _ => false
-      } map {
-        case t @ TypeApply(fun: Select, args) if fun.pos.eq(t.pos) && fun.pos.eq(fun.qualifier.pos) =>
-          fun.qualifier
-        case t @ Select(qualifier, nme) if t.pos.eq(qualifier.pos) && nme.toTermName.toString == "withFilter" =>
-          qualifier
-        case t => t
-      }
+      } map skipForExpressionTrees
     }) toRight (PreparationError("Selection can't be extracted into a val."))
   }
 

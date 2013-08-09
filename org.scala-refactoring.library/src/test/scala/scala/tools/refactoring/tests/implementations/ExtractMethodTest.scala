@@ -1026,6 +1026,72 @@ class PathSeparator {
     """
   } applyRefactoring extract("three")
 
+  @Test
+  def extractFromWithinForExpr = new FileSet {
+    """
+    class ExtractFromAnonClass {
+      def method {
+        println(for (i <- /*(*/ List(1,2) /*)*/ ) yield i)
+      }
+    }
+    """ becomes
+    """
+    class ExtractFromAnonClass {
+      def method {
+        println(for (i <- /*(*/ lst) yield i)
+      }
+
+      private def lst: List[Int] = {
+        List(1,2)
+      }
+    }
+    """
+  } applyRefactoring extract("lst")
+
+  @Test
+  def extractFromWithinForExprFilter = new FileSet {
+    """
+    class ExtractFromAnonClass {
+      def method {
+        println(for (i <- List(1,2) if /*(*/ i == 2 /*)*/ ) yield i)
+      }
+    }
+    """ becomes
+    """
+    class ExtractFromAnonClass {
+      def method {
+        println(for (i <- List(1,2) if test(i)) yield i)
+      }
+
+      private def test(i: Int): Boolean = {
+        i == 2
+      }
+    }
+    """
+  } applyRefactoring extract("test")
+
+  @Test
+  def extractFromWithinForExprBody = new FileSet {
+    """
+    class ExtractFromAnonClass {
+      def method {
+        println(for (i <- List(1,2)) yield /*(*/ i + 2 /*)*/ )
+      }
+    }
+    """ becomes
+    """
+    class ExtractFromAnonClass {
+      def method {
+        println(for (i <- List(1,2)) yield addTwo(i) /*)*/ )
+      }
+
+      private def addTwo(i: Int): Int = {
+        i + 2
+      }
+    }
+    """
+  } applyRefactoring extract("addTwo")
+
   @Test(expected=classOf[PreparationException])
   def extractionNeedsSelection = new FileSet {
     """

@@ -44,7 +44,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
             super.traverse(t)
         }
       }.traverse(root)
-      hits.toList
+      hits.toList map skipForExpressionTrees
     }
 
     /**
@@ -113,6 +113,14 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       p2.includes(p1) &&
       p1.source == p2.source
     }
+  }
+
+  def skipForExpressionTrees(t: Tree) = t match {
+    case t @ TypeApply(fun: Select, args) if fun.pos.eq(t.pos) && fun.pos.eq(fun.qualifier.pos) =>
+      fun.qualifier
+    case t @ Select(qualifier, nme) if t.pos.eq(qualifier.pos) && nme.toTermName.toString == "withFilter" =>
+      qualifier
+    case t => t
   }
 
   case class FileSelection(file: tools.nsc.io.AbstractFile, root: Tree, from: Int, to: Int) extends Selection {

@@ -463,7 +463,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          * We discover this pattern by the transparent function with a position
          * smaller than the preceding (in the AST) Apply call. */
         case (generator, (f @ Function(arg :: _, body)) :: Nil)
-          if f.pos.isTransparent &&
+          if f.pos.isTransparent && generator.pos != NoPosition &&
              arg.pos.startOrPoint < generator.pos.startOrPoint &&
              between(arg, generator)(tree.pos.source).contains("<-") =>
 
