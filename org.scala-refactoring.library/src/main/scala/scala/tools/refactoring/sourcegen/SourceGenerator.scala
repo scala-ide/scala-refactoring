@@ -141,7 +141,7 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
         // also has a space leading up to it. In that case, we drop the leading space from the
         // replacement fragment.
         val replacementWithoutLeadingDuplicateSpace = {
-          if(pos.start > 0 && source.content(pos.start - 1) == ' ' && f.center.asText.startsWith(" ")) {
+          if(pos.start > 0 && source.content(pos.start - 1) == ' ' && f.center.matches("(?ms) [^ ].*")) {
             Fragment(f.center.asText.tail)
           } else {
             f

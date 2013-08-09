@@ -65,8 +65,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           val indentedLeadingLayout = ctx.ind.fixIndentation(leadingParent.asText, originalIndentation)
           val indentedCode = ctx.ind.fixIndentation(printedFragment.asText, originalIndentation)
           Fragment(indentedLeadingLayout, indentedCode, trailingParent)
-        } else
+        } else {
           Fragment(leadingParent, printedFragment.toLayout, trailingParent)
+        }
       } \\ (trace("Result "+ getSimpleClassName(t) +": %s", _))
 
       indentedFragment
@@ -358,7 +359,23 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
 
     override def TypeApply(tree: TypeApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
-      val _fun = p(fun)
+      val _fun = fun match {
+        /*
+         * We have to check if the TypeApply is the generator of a for-comprehension.
+         * There are several indicators: equal position of the fun and the TypeApply,
+         * the name and if the name is not at the expected position in the source code,
+         * then we assume that this is a for comprehension and only print the qualifier
+         * of the function.
+         * */
+        case global.Select(qual, nme) if fun.pos.eq(tree.pos) && fun.pos.isRange && {
+            nme == global.nme.foreach || nme == global.nme.map || nme == global.nme.flatMap
+          } && {
+            val nmeInSource = layout(fun.pos.point, fun.pos.end)(fun.pos.source).asText
+            nmeInSource != nme.toTermName.toString
+          }    => p(qual)
+        case _ => p(fun)
+      }
+
       val _args = pp(args, separator = ", ", before = "[", after = "]")
 
       l ++ _fun.dropTrailingLayout ++ balanceParens('[', ']')(_fun.trailing ++ _args ++ r)
@@ -412,6 +429,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           }
           l ++ _fun ++ _args ++ r
 
+        // ifs in for comprehensions:
+        case (fun: Select, arg :: Nil) if keepTree(fun.qualifier) && fun.name.toString == "withFilter" =>
+          l ++ p(fun.qualifier) ++ " if " ++ p(arg) ++ r
+
         case (fun: Select, arg :: Nil) if keepTree(fun.qualifier) /*has receiver*/
             || fun.name.toString.endsWith("$eq") /*assigns*/ =>
 
@@ -446,19 +467,56 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
              arg.pos.startOrPoint < generator.pos.startOrPoint &&
              between(arg, generator)(tree.pos.source).contains("<-") =>
 
+          val src = layout(tree.pos.start, tree.pos.point)(tree.pos.source)
+
+          val layoutAfterGenerator = {
+            /*
+             * Handle 3 ways to write for-comprehensions:
+             *
+             * for {
+             *   ...
+             * } ...
+             *
+             * for { ... }
+             *
+             * for ( ... )
+             *
+             * */
+            if(src.matches("""(?ms).*\{\s*\n.*""")) {
+              indentedNewline ++ "}"
+            } else if (src.contains("{")) {
+              allowSurroundingWhitespace("}")
+            } else {
+              allowSurroundingWhitespace(")")
+            }
+          }
+
           /* We only regenerate the code of the generator and the body, this will fail
            * to pick up any changes in the `arg`!
            *
            * Generic layout handling will remove a closing `)`, so we re-add it */
-          val gen = p(generator, after = ")")
-          if(between(generator, body)(tree.pos.source).matches("""(?ms).*\{\s*$""")) {
+          val generator_ = p(generator, after = layoutAfterGenerator)
+
+          val isUnit = generator match {
+            case generator: TypeApply =>
+              generator.tpe match {
+                case MethodType(_, TypeRef(_, sym, _)) =>
+                  sym.name == tpnme.Unit
+                case _ => false
+              }
+            case _ => false
+          }
+
+          val bodyPrefix = if(isUnit) " " else " yield "
+
+          if(body.pos.isRange && between(generator, body)(tree.pos.source).matches("""(?ms).*\{\s*$""")) {
             val nextLine = if(body.pos.line > generator.pos.line) {
               ctx.newline + ctx.ind.incrementDefault.current
             } else " "
 
-            l ++ gen ++ p(body, before = " yield {"+nextLine) ++ r
+            l ++ generator_ ++ p(body, before = bodyPrefix + "{"+nextLine) ++ r
           } else {
-            l ++ gen ++ p(body, before = " yield ") ++ r
+            l ++ generator_ ++ p(body, before = bodyPrefix) ++ r
           }
 
         case (fun, Nil) =>
@@ -970,11 +1028,16 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       if(stats.size > 1 && allTreesOnSameLine(stats)) {
         l ++ pp(stats) ++ r
       } else {
-        val rest = ppi(stats, separator = newline) ++ r
-        if(l.contains("{") && !stats.head.hasExistingCode)
+        if(l.contains("{") && !stats.head.hasExistingCode) {
+          val rest = ppi(stats, separator = newline) ++ r
           l ++ Requisite.newline(ctx.ind.current, ctx.newline, force = true) ++ rest
-        else
-          l ++ rest
+
+        } else if (stats.size == 2 && !stats(0).hasExistingCode && stats(1).hasExistingCode) {
+          val stats_ = pp(stats, separator = indentedNewline)
+          l ++ stats_ ++ r
+        } else {
+          l ++ ppi(stats, separator = newline) ++ r
+        }
       }
     }
   }

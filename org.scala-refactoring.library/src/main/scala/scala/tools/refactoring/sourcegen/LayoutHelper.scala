@@ -345,7 +345,7 @@ trait LayoutHelper {
             }
 
           case (l, parent: ValOrDefDef, r) if r.samePos(parent.rhs) && layout.contains("=") =>
-            val EndOfParameterList = """(?ms)(.*?)\)(\s*=.*)""".r
+            val EndOfParameterList = """(?ms)(.*?)\)\s*=[ ]?(.*)""".r
             layout match {
               case EndOfParameterList(l, r) => (l, r, "EndOfParameterList after ValOrDefDef")
               case Equals(l, r) => (l, r, "Equals after ValOrDefDef")

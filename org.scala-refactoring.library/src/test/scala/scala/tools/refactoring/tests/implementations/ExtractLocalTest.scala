@@ -38,8 +38,8 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       object Demo {
         def update(platform: String) {
           val x = new collection.mutable.ListBuffer[String]
-     /*(*/  val asList = x.toList/*)*/ ▒
-            asList mkString ","
+     /*(*/val asList = x.toList/*)*/ ▒
+          asList mkString ","
         }
       }
     """
@@ -191,8 +191,8 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         def m {
           val list = (1 to 10) toList
 
-     /*(*/  val largerThree = list filter (_ > 3)/*)*/
-            largerThree filter (_ < 6)
+     /*(*/val largerThree = list filter (_ > 3)/*)*/
+          largerThree filter (_ < 6)
         }
       }
     """
@@ -390,8 +390,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         val a = {
           val i = 1
-          val addTwo = ▒
-          /*(*/i + 2/*)*/
+          val addTwo = /*(*/i + 2/*)*/
           addTwo
         }
       }
@@ -489,7 +488,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         def method {
           val ab = /*(*/"Hello World"
-          println(ab)
+          println(ab/*)*/)
         }
       }
     """
@@ -884,4 +883,215 @@ object ExtractMethod2 {
    """
   } applyRefactoring(extract("result_of_g"))
 
+  @Test
+  def fromForExpressionReturningUnit = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() {
+        for (x <- /*(*/List(1,2,3,4)/*)*/) println(x)
+      }
+    }
+   """ becomes
+   """
+    class ExtractfromForExpression {
+      def f() {
+        val lst = List(1,2,3,4)
+        for (x <- /*(*/lst) println(x)
+      }
+    }
+   """
+  } applyRefactoring(extract("lst"))
+
+  @Test
+  def fromForExpression = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() {
+        for (x <- /*(*/List(1,2,3,4)/*)*/) yield x
+      }
+    }
+   """ becomes
+   """
+    class ExtractfromForExpression {
+      def f() {
+        val lst = List(1,2,3,4)
+        for (x <- /*(*/lst) yield x
+      }
+    }
+   """
+  } applyRefactoring(extract("lst"))
+
+  @Test
+  def fromForExpressionNoEnclosingBlock = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() = for (x <- /*(*/List(1,2,3,4)/*)*/) yield x
+    }
+   """ becomes
+   """
+    class ExtractfromForExpression {
+      def f() = {
+        val lst = List(1,2,3,4)
+        for (x <- /*(*/lst) yield x
+      }
+    }
+   """
+  } applyRefactoring(extract("lst"))
+
+  @Test
+  def fromForExpressionCurlyOneLiner = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() = {
+        for { x <- /*(*/List(1,2,3,4)/*)*/} yield x
+      }
+    }
+   """ becomes
+   """
+    class ExtractfromForExpression {
+      def f() = {
+        val lst = List(1,2,3,4)
+        for { x <- /*(*/lst} yield x
+      }
+    }
+   """
+  } applyRefactoring(extract("lst"))
+
+  @Test
+  def fromForExpressionWithFilter = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() {
+        for (x <- /*(*/List(1,2,3,4)/*)*/ if x == 2) yield {
+          "found it"
+        }
+      }
+    }
+   """ becomes
+   """
+    class ExtractfromForExpression {
+      def f() {
+        val lst = List(1,2,3,4)
+        for (x <- /*(*/lst if x == 2) yield {
+          "found it"
+        }
+      }
+    }
+   """
+  } applyRefactoring(extract("lst"))
+
+  @Test
+  def fromForExpressionCurly = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() {
+        for {
+          x <- /*(*/List(1,2,3,4)/*)*/
+        } yield {
+          "found it"
+        }
+      }
+    }
+   """ becomes
+   """
+    class ExtractfromForExpression {
+      def f() {
+        val lst = List(1,2,3,4)
+        for {
+          x <- /*(*/lst
+        } yield {
+          "found it"
+        }
+      }
+    }
+   """
+  } applyRefactoring(extract("lst"))
+
+  /* It would be nice to get this to work, but without
+   * proper support for for-expressions in the AST it's
+   * going to be very difficult. */
+  @Test
+  @Ignore
+  def fromForExpressionMultiple = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() {
+        for {
+          x <- /*(*/List(1,2,3,4)/*)*/
+          y <- List(1,2,3,4)
+        } yield {
+          x + y
+        }
+      }
+    }
+   """ becomes
+   """"""
+  } applyRefactoring(extract("lst"))
+
+  @Test
+  def fromForBlockBody = new FileSet {
+   """
+    class ExtractfromForExpression {
+      def f() {
+        for {
+          y <- List(1,2,3,4)
+        } yield {
+          println("this is the body")
+          /*(*/y * 3/*)*/
+        }
+      }
+    }
+   """ becomes
+   """
+    class ExtractfromForExpression {
+      def f() {
+        for {
+          y <- List(1,2,3,4)
+        } yield {
+          println("this is the body")
+          val lst = /*(*/y * 3/*)*/
+          lst
+        }
+      }
+    }
+   """
+  } applyRefactoring(extract("lst"))
+
+  @Test
+  def extractFromForEntireRhs = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        for (i <- /*(*/List()/*)*/) println(i)
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val extractedValue = List()
+        for (i <- /*(*/extractedValue) println(i)
+      }
+    }
+    """
+  } applyRefactoring(extract("extractedValue"))
+
+  @Test
+  def extractFromForEntireRhsYield = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        println(for (i <- /*(*/List()/*)*/) yield i)
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val extractedValue = List()
+        println(for (i <- /*(*/extractedValue) yield i)
+      }
+    }
+    """
+  } applyRefactoring(extract("extractedValue"))
 }

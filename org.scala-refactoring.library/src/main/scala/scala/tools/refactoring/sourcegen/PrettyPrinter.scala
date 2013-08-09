@@ -530,9 +530,20 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       val valName = if(tree.symbol.isThisSym && name.toString == "_") { // this: ... =>
         "this"
-      } else name.toString.trim
+      } else {
+        name.toString.trim
+      }
 
-      Fragment(mods_ + valName) ++ p(tpt, before = ": ") ++ p(rhs, before = " = ")
+      val rhs_ = p(rhs, before = " = ")
+
+      val RhsOnNewLine = "(?ms)\\s*(?:= )?\r?\n\\s*(.*)".r
+
+      val rhsWithNewlineFix = rhs_.leading.asText match {
+        case RhsOnNewLine(withoutLeadingSpace) => Layout(" = ") ++ withoutLeadingSpace ++ rhs_.dropLeadingLayout
+        case _ => rhs_
+      }
+
+      Fragment(mods_ + valName) ++ p(tpt, before = ": ") ++ rhsWithNewlineFix
     }
 
     override def DefDef(tree: DefDef, mods: List[ModifierTree], name: Name, tparams: List[Tree], vparamss: List[List[ValDef]], tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext) = {
@@ -635,7 +646,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       if(stats.size > 1 && !stats.head.hasExistingCode && stats.tail.exists(_.hasExistingCode)) {
 
         val firstWithExistingCode = stats.find(_.hasExistingCode).get
-        val printed = p(firstWithExistingCode)
+        val printed = pi(firstWithExistingCode)
         if(printed.leading.matches("(?ms).*\\{.*")) {
 
           val ExtractOpeningBrace = new scala.util.matching.Regex("(?ms)(.*\\{.*?)(\r?\n.*)")

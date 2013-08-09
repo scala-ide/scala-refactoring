@@ -17,7 +17,6 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
   type RefactoringParameters = String
 
   def prepare(s: Selection) = {
-
     (if(s.pos.start == s.pos.end) {
       s.root.filter {
         case t @ (_: SymTree | _: TermTree) if t.pos.isRange => t.pos.start > s.pos.start
@@ -28,8 +27,14 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
         case t @ (_: SymTree | _: TermTree) =>
           (t.pos sameRange s.pos) && !hasUnitType(t)
         case _ => false
+      } map {
+        case t @ TypeApply(fun: Select, args) if fun.pos.eq(t.pos) && fun.pos.eq(fun.qualifier.pos) =>
+          fun.qualifier
+        case t @ Select(qualifier, nme) if t.pos.eq(qualifier.pos) && nme.toTermName.toString == "withFilter" =>
+          qualifier
+        case t => t
       }
-    }) toRight (PreparationError("no term selected"))
+    }) toRight (PreparationError("Selection can't be extracted into a val."))
   }
 
   def perform(selection: Selection, selectedExpression: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
@@ -108,7 +113,7 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
         t copy (block = mkBlock(newVal :: block :: Nil)) replaces t
 
       case t @ DefDef(_, _, _, _, _, NoBlock(rhs)) =>
-        val newRhs = shallowDuplicate(rhs) setPos NoPosition
+        val newRhs = shallowDuplicate(rhs) replaces rhs
         t copy (rhs = mkBlock(newVal :: newRhs :: Nil)) replaces t
 
       case t @ Function(_, NoBlock(body)) =>

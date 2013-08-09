@@ -509,14 +509,14 @@ object Acco {
 }
     """)
 
-    assertEquals("""
+    assertEquals(stripWhitespacePreservers("""
 object Acco {
-   def amethod(v: Int, a: Int) =
+   def amethod(v: Int, a: Int) = ▒
      synchronized({
        v + a
      })
 }
-    """, generateText(tree))
+    """), generateText(tree))
 
     assertEquals(0, createChanges(List(tree)).size)
   }
