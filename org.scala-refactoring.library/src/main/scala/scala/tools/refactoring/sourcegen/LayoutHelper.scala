@@ -59,7 +59,16 @@ trait LayoutHelper {
   }
 
   def layout(start: Int, end: Int)(implicit s: SourceFile) = Layout(s, start, end)
-  def between(l: Tree, r: Tree)(implicit s: SourceFile) = layout(l.pos.end, r.pos.start)(s)
+
+  def betweenEndAndPoint(t1: Tree, t2: Tree) = Layout(t1.pos.source, t1.pos.end, t2.pos.point)
+
+  def betweenStartAndPoint(t1: Tree) = Layout(t1.pos.source, t1.pos.start, t1.pos.point)
+
+  def betweenStartAndEnd(t1: Tree) = Layout(t1.pos.source, t1.pos.start, t1.pos.end)
+
+  def betweenPointAndEnd(t1: Tree) = Layout(t1.pos.source, t1.pos.point, t1.pos.end)
+
+  def between(l: Tree, r: Tree) = Layout(l.pos.source, l.pos.end, r.pos.start)
 
   def layoutForCompilationUnitRoot(t: Tree): (Layout, Layout) = {
     val leading = Layout(t.pos.source, 0, t.pos.start)
@@ -191,7 +200,7 @@ trait LayoutHelper {
           case None => return t
         }
 
-        if(childBeforeRhs.pos.isRange && rhs.pos.isRange && between(childBeforeRhs, rhs)(t.pos.source).contains("{")) {
+        if(childBeforeRhs.pos.isRange && rhs.pos.isRange && between(childBeforeRhs, rhs).contains("{")) {
 
           val offsetToClosing = layout(rhs.pos.end, t.pos.source.length)(t.pos.source).asText.takeWhile(_ != '}').length
           val ct = t.copy().copyAttrs(t)
@@ -315,11 +324,11 @@ trait LayoutHelper {
 
       case (NoImportSelectorTree(l), r: ImportSelectorTree) =>
         // All the layout, like '.' and '{' belongs to the selector.
-        between(l, r)(l.pos.source) → NoLayout
+        between(l, r) → NoLayout
 
       case (l, r) =>
 
-        val source = between(l, r)(left.pos.source).toString
+        val source = between(l, r).toString
         val (layout, comments) = CommentsUtils.splitComment(source)
 
         val (ll, lr, rule) = (l, parent, r) match {

@@ -71,10 +71,10 @@ trait TreeFactory {
       }
   }
 
-  def mkValDef(name: String, rhs: Tree): ValDef = {
+  def mkValDef(name: String, rhs: Tree, tpt: TypeTree = new TypeTree): ValDef = {
 
-    val valDef = ValDef(NoMods, newTermName(name), new TypeTree, rhs)
-    def valDefForFunction = ValDef(NoMods, newTermName(name), new TypeTree, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
+    def valDef = ValDef(NoMods, newTermName(name), tpt, rhs)
+    def valDefForFunction = ValDef(NoMods, newTermName(name), tpt, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
 
     rhs match {
       case rhs: Select if rhs.symbol.isMethod =>

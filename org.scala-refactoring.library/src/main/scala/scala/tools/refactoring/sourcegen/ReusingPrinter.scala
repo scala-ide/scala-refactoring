@@ -291,7 +291,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           val betweenQualifierAndName = {
             val name = nameOf(s)
             if(qual.pos.isRange && name.pos.isRange)
-              between(qual, name)(tree.pos.source)
+              between(qual, name)
             else NoLayout
           }
 
@@ -334,14 +334,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
               val sn: global.Name = s.name
               val nt = new NameTree(sn).setPos(s.namePosition)
 
-              val b = between(qual, nt)(qual.pos.source)
+              val b = between(qual, nt)
               !b.contains(".")
             case _ => false
           }
 
           def hasClosingParensBetweenQualifierAndSelector = {
             qualifier.pos.isRange && nameOrig.pos.isRange && {
-              between(qualifier, nameOrig)(tree.pos.source).contains(")")
+              between(qualifier, nameOrig).contains(")")
             }
           }
           if(qualifier.pos.isRange && tree.pos.start < qualifier.pos.start && nameOrig.nameString.endsWith(":")) {
@@ -370,7 +370,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case global.Select(qual, nme) if fun.pos.eq(tree.pos) && fun.pos.isRange && {
             nme == global.nme.foreach || nme == global.nme.map || nme == global.nme.flatMap
           } && {
-            val nmeInSource = layout(fun.pos.point, fun.pos.end)(fun.pos.source).asText
+            val nmeInSource = betweenPointAndEnd(fun).asText
             nmeInSource != nme.toTermName.toString
           }    => p(qual)
         case _ => p(fun)
@@ -413,7 +413,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
         // handle e.g. a += 1 which is a = (a + 1)
         case (_: Select, ((arg1: Apply) :: _)) if tree.pos.sameRange(arg1.pos) && arg1.pos.isTransparent =>
-          l ++ p(fun) ++ between(fun, arg1.args.head)(tree.pos.source) ++ pp(arg1.args) ++ r
+          l ++ p(fun) ++ between(fun, arg1.args.head) ++ pp(arg1.args) ++ r
 
         // x :: xs in pattern match:
         case (EmptyTree, ((_: Bind) :: ( _: Bind) :: _)) if tree.tpe.toString.contains("::") =>
@@ -442,7 +442,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           l ++ p(fun) ++ p(arg) ++ r
 
         case (fun @ TypeApply(receiver: Select, _), NoFunction(arg) :: Nil) if receiver != null && keepTree(fun) =>
-          if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
+
+          val isReceiverMethodCallWithDot = {
+            receiver.qualifier.pos.isRange && betweenEndAndPoint(receiver.qualifier, receiver).contains(".")
+          }
+
+          if (isReceiverMethodCallWithDot) {
+            l ++ p(fun) ++ p(arg, before = Requisite.anywhere("("), after = Requisite.anywhere(")")) ++ r
+          } else if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
             l ++ p(fun) ++ p(arg) ++ r
           } else {
             l ++ p(fun) ++ p(arg, before = Requisite.anywhere("("), after = Requisite.anywhere(")")) ++ r
@@ -465,9 +472,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case (generator, (f @ Function(arg :: _, body)) :: Nil)
           if f.pos.isTransparent && generator.pos != NoPosition &&
              arg.pos.startOrPoint < generator.pos.startOrPoint &&
-             between(arg, generator)(tree.pos.source).contains("<-") =>
+             between(arg, generator).contains("<-") =>
 
-          val src = layout(tree.pos.start, tree.pos.point)(tree.pos.source)
+          val src = betweenStartAndPoint(tree)
 
           val layoutAfterGenerator = {
             /*
@@ -509,7 +516,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
           val bodyPrefix = if(isUnit) " " else " yield "
 
-          if(body.pos.isRange && between(generator, body)(tree.pos.source).matches("""(?ms).*\{\s*$""")) {
+          if(body.pos.isRange && between(generator, body).matches("""(?ms).*\{\s*$""")) {
             val nextLine = if(body.pos.line > generator.pos.line) {
               ctx.newline + ctx.ind.incrementDefault.current
             } else " "
@@ -784,7 +791,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
         if(elseBranchAlreadyExisted) {
 
-          val layout = between(o.thenp, o.elsep)(o.pos.source).asText
+          val layout = between(o.thenp, o.elsep).asText
           val l = Requisite.anywhere(layout.replaceAll("(?ms)else\\s*?\r?\n\\s*$", "else "))
 
           val curlyBracesAlreadyExist = layout.contains("{")
@@ -823,7 +830,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           case block: Block =>
             p(block)
           case _ if keepTree(o.thenp) && o.thenp.pos.isRange =>
-            val layout = between(o.cond, o.thenp)(o.pos.source).asText
+            val layout = between(o.cond, o.thenp).asText
             val printedThen = pi(thenp)
 
             if(layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
@@ -934,7 +941,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         val originalDefDef = orig(tree)
         (originalDefDef :: children(originalDefDef)).filter(_.pos.isRange).reverse match {
           case last :: secondlast :: _ =>
-            between(secondlast, last)(last.pos.source).contains("=")
+            between(secondlast, last).contains("=")
           case _ => false
         }
       }
@@ -982,7 +989,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         val escaped = value.stringValue.replace("""\""", """\\""")
         l ++ Fragment("\""+ escaped +"\"")  ++ r
       } else if (value.isNumeric) {
-        Fragment((l ++ layout(tree.pos.start, tree.pos.end)(tree.pos.source) ++ r).asText)
+        Fragment((l ++ betweenStartAndEnd(tree) ++ r).asText)
       } else if (charAtTreeStartPos(tree) == Some('{') && charBeforeTreeEndPos(tree) == Some('}')) {
         /*
          * Scala 2.9:
@@ -990,7 +997,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          * Empty RHS of DefDefs are Literals
          * */
         trace("Literal tree is empty { }")
-        Fragment((l ++ layout(tree.pos.start, tree.pos.end)(tree.pos.source) ++ r).asText)
+        Fragment((l ++ betweenStartAndEnd(tree) ++ r).asText)
       } else if(isClassTag(value)) {
         val tpe = value.tpe match {
           case TypeRef(_, _, arg :: Nil) =>

@@ -813,7 +813,7 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-      val plusOne = /*(*/(_:Int)+1
+      val plusOne: Int => Int = /*(*/(_:Int)+1
 
       val inc = plusOne/*)*/
     }
@@ -1094,4 +1094,107 @@ object ExtractMethod2 {
     }
     """
   } applyRefactoring(extract("extractedValue"))
+
+  @Test
+  def missingTypeNeedsAnnotation = new FileSet {
+    """
+    object ExtractmissingTypeNeedsAnnotation {
+      def foo {
+        Nil.filter(/*(*/{ case _ => true }/*)*/)
+      }
+    }
+    """ becomes
+    """
+    object ExtractmissingTypeNeedsAnnotation {
+      def foo {
+        val pred: Nothing => Boolean = /*(*/{ case _ => true }
+        Nil.filter(pred/*)*/)
+      }
+    }
+    """
+  } applyRefactoring(extract("pred"))
+
+  @Test
+  def extractAnonFunctionWithoutTypeAscriptions = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        List(1, 2, 3).reduceLeft(/*(*/_ + _/*)*/)
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val sum: (Int, Int) => Int = /*(*/_ + _
+        List(1, 2, 3).reduceLeft(sum/*)*/)
+      }
+    }
+    """
+  } applyRefactoring(extract("sum"))
+
+  @Test
+  def extractAnonFunctionWithoutTypeAscription = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        List(1, 2, 3).map(/*(*/_ + 1/*)*/)
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val addOne: Int => Int = /*(*/_ + 1
+        List(1, 2, 3).map(addOne/*)*/)
+      }
+    }
+    """
+  } applyRefactoring(extract("addOne"))
+
+  @Test
+  def extractMatchBodyOperatorMap = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        List(1, 2, 3) map /*(*/{
+          case x => 1
+        }/*)*/
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val toOne: Int => Int = {
+          case x => 1
+        }
+        List(1, 2, 3) map /*(*/toOne/*)*/
+      }
+    }
+    """
+  } applyRefactoring(extract("toOne"))
+
+  @Test
+  def extractMatchBody = new FileSet {
+    """
+    object ExtractFromFor {
+      def foo {
+        List(1, 2, 3).map /*(*/{
+          case x => 1
+        }/*)*/
+      }
+    }
+    """ becomes
+    """
+    object ExtractFromFor {
+      def foo {
+        val toOne: Int => Int = {
+          case x => 1
+        }
+        List(1, 2, 3).map /*(*/(toOne)/*)*/
+      }
+    }
+    """
+  } applyRefactoring(extract("toOne"))
 }

@@ -42,10 +42,17 @@ abstract class ExtractLocal extends MultiStageRefactoring with TreeFactory with 
          * */
         case t: Ident if t.symbol.isMethod =>
           mkValDef(name, Apply(selectedExpression, Ident("_") :: Nil))
+        /*
+         * To be safe, we add a type annotation when extracting a function
+         * with a synthetic parameter
+         * */
+        case Function(args, body) if args.exists(_.symbol.isSynthetic) =>
+          mkValDef(name, selectedExpression, TypeTree(selectedExpression.tpe))
         case _ =>
           mkValDef(name, selectedExpression)
       }
     }
+
     val valRef = Ident(name)
 
     def findBlockInsertionPosition(root: Tree, near: Tree) = {
