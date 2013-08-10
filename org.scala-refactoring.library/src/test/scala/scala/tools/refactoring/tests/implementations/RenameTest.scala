@@ -144,6 +144,26 @@ class RenameTest extends TestHelper with TestRefactoring {
   } applyRefactoring(renameTo("c"))
 
   @Test
+  def renameParameterWithoutSelection = new FileSet {
+    """
+    package renameParameter
+    class A {
+      def rename(a/*<-*/: String) {
+        println(a)
+      }
+    }
+    """ becomes
+    """
+    package renameParameter
+    class A {
+      def rename(b/*<-*/: String) {
+        println(b)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("b"))
+
+  @Test
   def renameParameter = new FileSet {
     """
     package renameParameter

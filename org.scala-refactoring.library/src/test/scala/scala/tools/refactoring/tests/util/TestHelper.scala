@@ -105,17 +105,22 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   }
 
   val startPattern = "/*(*/"
-  val endPattern = "/*)*/"
+  val endPattern   = "/*)*/"
+  val emptyPattern = "/*<-*/"
 
   def findMarkedNodes(r: Selections with InteractiveScalaCompiler)(src: String, tree: r.global.Tree): Option[r.Selection] = {
 
     val start = commentSelectionStart(src)
     val end   = commentSelectionEnd(src)
+    val emptySelection = src.indexOf(emptyPattern)
 
-    if(start >= 0 && end >= 0)
+    if(start >= 0 && end >= 0) {
       Some(r.FileSelection(tree.pos.source.file, tree, start, end))
-    else
+    } else if (emptySelection >= 0) {
+      Some(r.FileSelection(tree.pos.source.file, tree, emptySelection, emptySelection))
+    } else {
       None
+    }
   }
 
   def cleanTree(t: global.Tree) = {
