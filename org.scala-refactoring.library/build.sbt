@@ -45,5 +45,6 @@ credentials += Credentials(Path.userHome / ".m2" / "credentials")
 
 libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.10.1"
 
-libraryDependencies += "com.novocode" % "junit-interface" % "0.10-M3" % "test"
+libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
+parallelExecution in Test := false

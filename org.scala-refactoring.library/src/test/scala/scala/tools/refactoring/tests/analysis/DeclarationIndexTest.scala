@@ -223,25 +223,8 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       """)
   }
 
-  @ScalaVersion(matches="2.10.0")
   @Test
-  def referencesToLazyVal210() = {
-    val tree =  """
-      object L {
-        def go = {
-          lazy val x = 5
-
-          /*(*/ x /*)*/
-        }
-      }
-      """
-    assertReferencesOfSelection("""x (79, 80)""", tree)
-    assertDeclarationOfSelection("""lazy var x$lzy: Int = 5""", tree)
-  }
-
-  @ScalaVersion(matches="2.11")
-  @Test
-  def referencesToLazyVal211() = {
+  def referencesToLazyVal() = {
     val tree =  """
       object L {
         def go = {
