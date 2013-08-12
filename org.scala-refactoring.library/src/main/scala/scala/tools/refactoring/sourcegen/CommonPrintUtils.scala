@@ -24,32 +24,26 @@ trait CommonPrintUtils {
   def typeToString(tree: TypeTree, t: Type)(implicit ctx: PrintingContext): String = {
     t match {
       case tpe if tpe == EmptyTree.tpe => ""
-      case tpe: ConstantType => tpe.underlying.toString
+      case tpe: ConstantType =>
+        tpe.typeSymbol.tpe.toString
       case tpe: TypeRef if tree.original != null && tpe.sym.nameString.matches("Tuple\\d+") =>
         tpe.toString
-      case tpe if tree.original != null && !tpe.isInstanceOf[TypeRef]=>
+      case tpe if tree.original != null && !tpe.isInstanceOf[TypeRef] =>
         print(tree.original, ctx).asText
-      case r @ RefinedType(parents, _) =>
-        parents map {
-          case NamedType(name, _)      => name.toString
-          case t @ TypeRef(pre, sym, args) => t.toString
-          case RefinedType(parents, _) => parents mkString " with "
-          case t => throw new Exception("Unhandled type "+ getSimpleClassName(t))
-        } mkString " with "
-      case typeRef @ TypeRef(tpe, sym, arg1 :: ret :: Nil) if definitions.isFunctionType(typeRef) =>
-        typeToString(tree, arg1) +" => "+ typeToString(tree, ret)
-      case tpe: TypeRef =>
-        tpe.toString
+      case tpe: RefinedType =>
+        tpe.typeSymbol.tpe.toString
+      case typeRef @ TypeRef(_, _, arg1 :: ret :: Nil) if definitions.isFunctionType(typeRef) =>
+        typeToString(tree, arg1) + " => " + typeToString(tree, ret)
       case MethodType(params, result) =>
         val printedParams = params.map(s => typeToString(tree, s.tpe)).mkString(", ")
         val printedResult = typeToString(tree, result)
 
-        if(params.size < 1) {
-                               "() => "+ printedResult
-        } else if(params.size > 1) {
-          "(" + printedParams + ") => "+ printedResult
+        if (params.size < 1) {
+          "() => " + printedResult
+        } else if (params.size > 1) {
+          "(" + printedParams + ") => " + printedResult
         } else {
-                printedParams +  " => "+ printedResult
+          printedParams + " => " + printedResult
         }
 
       case tpe =>
@@ -61,11 +55,11 @@ trait CommonPrintUtils {
     val txt = f.toLayout.withoutComments // TODO also without strings, etc.
     val opening = txt.count(_ == open)
     val closing = txt.count(_ == close)
-    if(opening > closing && closing > 0) {
+    if (opening > closing && closing > 0) {
       f.asText.reverse.replaceFirst("\\" + close, ("" + close) * (opening - closing + 1)).reverse
-    } else if(opening > closing) {
+    } else if (opening > closing) {
       f.asText + (("" + close) * (opening - closing))
-    } else if(opening < closing) {
+    } else if (opening < closing) {
       (("" + open) * (closing - opening)) + f.asText
     } else {
       f.asText
@@ -81,7 +75,7 @@ trait CommonPrintUtils {
    * @param p The position to adapt. This does not have to be the position of t.
    */
   def adjustedStartPosForSourceExtraction(t: Tree, p: Position): Position = t match {
-    case _: Select | _: New  if t.pos.isRange && t.pos.start > t.pos.point =>
+    case _: Select | _: New if t.pos.isRange && t.pos.start > t.pos.point =>
       p withStart (p.start min p.point)
     case _ =>
       p
