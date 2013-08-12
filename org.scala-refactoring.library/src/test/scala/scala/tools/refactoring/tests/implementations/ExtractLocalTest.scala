@@ -91,7 +91,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
         def printVolume(r: Double, h: Double) {
           val gr = 3.14 * r * r/*)*/ ▒
 
-          val v = /*(*/gr* h
+          val v = /*(*/gr * h
 
           println("volume is: "+ v)
         }
@@ -354,7 +354,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         List(1,2,3) filter { it =>
           val isOdd = it + 1 % 2/*)*/ ▒
-          /*(*/isOdd== 0
+          /*(*/isOdd == 0
         }
       }
     """
@@ -371,7 +371,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         List(1,2,3) filter (i => {
           val isOdd = i + 1 % 2/*)*/ ▒
-          /*(*/isOdd== 0
+          /*(*/isOdd == 0
         })
       }
     """
@@ -410,7 +410,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         if(true) {
           val ab = "a" + "b"/*)*/ ▒
-          /*(*/ab+ "c"
+          /*(*/ab + "c"
         }
       }
     """
@@ -428,7 +428,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         if(true) {
           val ab = "a" + "b"/*)*/ ▒
-          /*(*/ab+ "c"
+          /*(*/ab + "c"
         }
       }
     """

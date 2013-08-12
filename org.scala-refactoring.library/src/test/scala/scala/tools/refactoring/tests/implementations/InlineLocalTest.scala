@@ -97,7 +97,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       object Demo {
         def printVolume(r: Double, h: Double) {
 
-          val v = 3.14 * r * r* h
+          val v = 3.14 * r * r * h
 
           println("volume is: "+ v)
         }
@@ -185,7 +185,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       class Extr2 {
         def m {
           val list = (1 to 10) toList
-          list filter (_ > 3)filter (_ < 6)
+          list filter (_ > 3) filter (_ < 6)
         }
       }
     """
@@ -379,7 +379,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       class Extr2 { def m {
         try {
           val a = List(1,2,3)
-          a filter (_> 2)mkString ", "
+          a filter (_> 2) mkString ", "
         }
       }}
     """
@@ -399,7 +399,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       class Extr2 { def m {
         List(1,2,3) filter { it =>
           /*(*/
-          it + 1 % 2== 0
+          it + 1 % 2 == 0
         }
       }}
     """
@@ -439,7 +439,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
       class Extr2 { def m {
         if(true) {
-          "a" + "b"+ "c"
+          "a" + "b" + "c"
         }
       }}
     """
@@ -544,6 +544,25 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
          val concatenated = List(1, 2):::List(3, 4)
        }
      }
+    """
+  } applyRefactoring(inline)
+
+  @Test
+  def preserveSomeWhitespace = new FileSet {
+    """
+object Test extends App {
+  def f() {
+    val x/*<-*/ = 5
+    val y = x       + 3
+  }
+}
+    """ becomes
+    """
+object Test extends App {
+  def f() {
+    val y = 5 + 3
+  }
+}
     """
   } applyRefactoring(inline)
 }

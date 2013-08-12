@@ -325,8 +325,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             !between.contains(" ") && !between.contains(".")
           }
 
-          def startsWithChar = _q.asText.matches(".*\\w$")
-          def endsWithChar   = _n.asText.matches("^\\w.*")
+          def startsWithChar = _q.asText.matches(".*[^ ]$")
+          def endsWithChar   = _n.asText.matches("^[^ ].*")
 
           def qualifierHasNoDot = qualifier match {
             case Apply(s @ global.Select(qual, name), _) if s.pos.isRange && qual.pos.isRange =>
