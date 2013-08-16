@@ -565,4 +565,16 @@ object Test extends App {
 }
     """
   } applyRefactoring(inline)
+
+  @Test(expected=classOf[RefactoringException])
+  def dontStartInlineFromRhs = new FileSet {
+    """
+    object Test extends App {
+      def f() {
+        val x = 5
+        val y = /*(*/2 + 3/*)*/
+      }
+    }
+    """ becomes ""
+  } applyRefactoring(inline)
 }

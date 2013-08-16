@@ -57,9 +57,10 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
       }
     }
 
+    val references = index references selectedValue.symbol
+
     val replaceReferenceWithRhs = {
 
-      val references = index references selectedValue.symbol
 
       val replacement = selectedValue.rhs match {
         // inlining `list.filter _` should not include the `_`
@@ -74,6 +75,10 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
       }
     }
 
-    Right(transformFile(selection.file, topdown(matchingChildren(removeSelectedValue &> topdown(matchingChildren(replaceReferenceWithRhs))))))
+    if(references.isEmpty) {
+      Left(RefactoringError("No references to selected val found."))
+    } else {
+      Right(transformFile(selection.file, topdown(matchingChildren(removeSelectedValue &> topdown(matchingChildren(replaceReferenceWithRhs))))))
+    }
   }
 }
