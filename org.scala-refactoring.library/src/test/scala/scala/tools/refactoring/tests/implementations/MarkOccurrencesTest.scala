@@ -13,7 +13,7 @@ import org.junit.Ignore
 class MarkOccurrencesTest extends TestHelper {
   outer =>
 
-  def markOccurrences(original: String, expected: String) {
+  def markOccurrences(original: String, expected: String) = global.ask { () =>
 
     val tree = treeFrom(original)
 

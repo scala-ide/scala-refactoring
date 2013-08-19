@@ -21,7 +21,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
 
   import global._
 
-  def generateText(t: Tree): String = global.ask { () =>
+  def generateText(t: => Tree): String = global.ask { () =>
     createText(t, sourceFile = Some(t.pos.source))
   }
 
@@ -48,7 +48,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewDefDefWithOriginalContent1() = {
+  def testNewDefDefWithOriginalContent1() = global.ask { () =>
 
     testDefDefWithNoPositionAndOriginalPosition(
     """
@@ -63,7 +63,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewDefDefWithOriginalContent2() = {
+  def testNewDefDefWithOriginalContent2() = global.ask { () =>
 
     testDefDefWithNoPositionAndOriginalPosition(
     """
@@ -78,7 +78,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewDefDefWithOriginalContent3() = {
+  def testNewDefDefWithOriginalContent3() = global.ask { () =>
 
     testDefDefWithNoPositionAndOriginalPosition(
     """
@@ -93,7 +93,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewDefDefWithOriginalContent4() = {
+  def testNewDefDefWithOriginalContent4() = global.ask { () =>
 
     testDefDefWithNoPositionAndOriginalPosition(
     """
@@ -108,7 +108,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def selfTypeAnnotation {
+  def selfTypeAnnotation = global.ask { () =>
     val src = """
 trait tr[A] {
   self: List[A] =>
@@ -145,7 +145,7 @@ trait tr[A] {
   }
 
   @Test
-  def addMethodToEmptyTraitWithSelfTypeAnnotation {
+  def addMethodToEmptyTraitWithSelfTypeAnnotation = global.ask { () =>
     val src = """
 trait tr[A] {
   self: List[A] =>
@@ -178,7 +178,7 @@ trait tr[A] {
   }
 
   @Test
-  def misprintedFunctionDefinition {
+  def misprintedFunctionDefinition = global.ask { () =>
 
     val ast = treeFrom("""
       package generated
@@ -215,7 +215,7 @@ else {
   }
 
   @Test
-  def valDefRhsAlone(): Unit = {
+  def valDefRhsAlone(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     object O {
@@ -240,7 +240,7 @@ else {
 
   @Test
   @Ignore
-  def newWith(): Unit = {
+  def newWith(): Unit = global.ask { () =>
 
     val ast = treeFrom("""
     class A(x: Int)
@@ -332,7 +332,7 @@ else {
   }
 
   @Test
-  def modifiedDefDefWithFor(): Unit = {
+  def modifiedDefDefWithFor(): Unit = global.ask { () =>
 
     val originalDefDef = treeFrom("""
     object Account1 {
@@ -372,7 +372,7 @@ else {
   }
 
   @Test
-  def manyParentheses(): Unit = {
+  def manyParentheses(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     class VBox[T](i: Int)
@@ -392,7 +392,7 @@ else {
   }
 
   @Test
-  def bracesAndComments(): Unit = {
+  def bracesAndComments(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 package com.megaannum.test
@@ -428,7 +428,7 @@ class Foo3 {
   }
 
   @Test
-  def bracesAndComments2(): Unit = {
+  def bracesAndComments2(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 package com.megaannum.test
@@ -454,7 +454,7 @@ class Foo3 {
   }
 
   @Test
-  def missingDot(): Unit = {
+  def missingDot(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 class Foo3 {
@@ -474,7 +474,7 @@ class Foo3 {
   }
 
   @Test
-  def doubledName(): Unit = {
+  def doubledName(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 class Account2 {
@@ -498,7 +498,7 @@ class Account2 {
   }
 
   @Test
-  def extraParens(): Unit = {
+  def extraParens(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 object Acco {
@@ -522,7 +522,7 @@ object Acco {
   }
 
   @Test
-  def namedArgs(): Unit = {
+  def namedArgs(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     object NamedArguments {
@@ -544,7 +544,7 @@ object Acco {
   }
 
   @Test
-  def namedArg(): Unit = {
+  def namedArg(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     object NamedArg {
@@ -570,7 +570,7 @@ object Acco {
   }
 
   @Test
-  def namedArgWithDefault(): Unit = {
+  def namedArgWithDefault(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     object NamedArgWithDefault {
@@ -596,7 +596,7 @@ object Acco {
   }
 
   @Test
-  def patternMatch(): Unit = {
+  def patternMatch(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     object O {
@@ -628,7 +628,7 @@ object Acco {
   }
 
   @Test
-  def patternMatchOnTupel(): Unit = {
+  def patternMatchOnTupel(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     object O {
@@ -652,7 +652,7 @@ object Acco {
   }
 
   @Test
-  def newObject(): Unit = {
+  def newObject(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
     object Foo {
@@ -674,7 +674,7 @@ object Acco {
   }
 
   @Test
-  def newParameterizedObject(): Unit = {
+  def newParameterizedObject(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 object Foo4 {
@@ -700,7 +700,7 @@ class Foo4[T](name: String) {
   }
 
   @Test
-  def newParameterizedObject2(): Unit = {
+  def newParameterizedObject2(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 object Foo5 {
@@ -720,7 +720,7 @@ class Foo5
   }
 
   @Test
-  def annotation(): Unit = {
+  def annotation(): Unit = global.ask { () =>
 
     val tree = treeFrom("""
 import java.lang.String
@@ -750,7 +750,7 @@ class Test
   }
 
   @Test
-  def testFunctionArg() {
+  def testFunctionArg = global.ask { () =>
     val ast = treeFrom(
 """
 class A {
@@ -765,7 +765,7 @@ def fun[A, B, C](fu: (A, B, C) => A): A
   }
 
   @Test
-  def testClassParameter() {
+  def testClassParameter = global.ask { () =>
     val ast = treeFrom("""
 class A(a: Int) {
 }
@@ -777,7 +777,7 @@ class A(a: Int) {
     }
 
   @Test
-  def testPrintParentheses() {
+  def testPrintParentheses = global.ask { () =>
 
     val ast = treeFrom("""
     trait tr {
@@ -810,7 +810,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testPrintNoParentheses() {
+  def testPrintNoParentheses = global.ask { () =>
 
     val ast = treeFrom("""
     trait tr {
@@ -842,7 +842,7 @@ class A(a: Int) {
   }
 
   @Test
-  def replaceWithThis() {
+  def replaceWithThis = global.ask { () =>
 
     val str = """
     class MyList[T] {
@@ -899,7 +899,7 @@ class A(a: Int) {
   }
 
     @Test
-  def changeMethodInvocation() {
+  def changeMethodInvocation = global.ask { () =>
 
     val str = """
     package abc
@@ -945,7 +945,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation2() {
+  def changeMethodInvocation2 = global.ask { () =>
 
     val src = """
     package abc
@@ -991,7 +991,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testRemoveAnArgument() {
+  def testRemoveAnArgument = global.ask { () =>
 
     val src = """
     trait tr {
@@ -1027,7 +1027,7 @@ class A(a: Int) {
   }
 
    @Test
-  def testParentheses() {
+  def testParentheses = global.ask { () =>
 
     val ast = treeFrom("""
     package abc
@@ -1060,7 +1060,7 @@ class A(a: Int) {
   }
 
    @Test
-  def testFullQualifiedName() {
+  def testFullQualifiedName = global.ask { () =>
     val str = """
     package asd
     object primitive {
@@ -1107,7 +1107,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation3() {
+  def changeMethodInvocation3 = global.ask { () =>
 
     val ast = treeFrom("""
     package abc
@@ -1147,7 +1147,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy() {
+  def testCopy = global.ask { () =>
     val str = """
     object primitive {
       def member[A](a:A, li:List[A]):Boolean = {
@@ -1187,7 +1187,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy2() {
+  def testCopy2 = global.ask { () =>
     val str = """
     package abc
     case class Pair[A, B](a: A, b: B)
@@ -1249,7 +1249,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy3() {
+  def testCopy3 = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1311,7 +1311,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy4() {
+  def testCopy4 = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1346,7 +1346,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy4Variation() {
+  def testCopy4Variation = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1395,7 +1395,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy5() {
+  def testCopy5 = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1467,7 +1467,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation4() {
+  def changeMethodInvocation4 = global.ask { () =>
 
     val ast = treeFrom("""
     package abc
@@ -1505,7 +1505,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation5() {
+  def changeMethodInvocation5 = global.ask { () =>
 
    val str = """
     package abc
@@ -1557,7 +1557,7 @@ class A(a: Int) {
   }
 
   @Test
-  def patternMatchTest() {
+  def patternMatchTest = global.ask { () =>
     val src = """
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1608,7 +1608,7 @@ class A(a: Int) {
   }
 
   @Test
-  def patternMatchTest2() {
+  def patternMatchTest2 = global.ask { () =>
     val src = """
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1691,7 +1691,7 @@ class A(a: Int) {
   }
 
   @Test
-  def patternMatchTest3() {
+  def patternMatchTest3 = global.ask { () =>
     val src = """
 object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1765,7 +1765,7 @@ object acmatch {
   }
 
   @Test
-  def patternMatchTest4() {
+  def patternMatchTest4 = global.ask { () =>
     val src = """
 object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1842,7 +1842,7 @@ object acmatch {
   }
 
   @Test
-  def changeMethodInvocation7() {
+  def changeMethodInvocation7 = global.ask { () =>
 
     val str = """
     package abc
@@ -1890,7 +1890,7 @@ object acmatch {
   }
 
   @Test
-  def changeMethodInvocation8() {
+  def changeMethodInvocation8 = global.ask { () =>
 
     val str = """
     object primitive {
@@ -1933,7 +1933,7 @@ object acmatch {
   }
 
   @Test
-  def testAddSealed() {
+  def testAddSealed = global.ask { () =>
     val str = """
     abstract class asd {
     }
@@ -1965,7 +1965,7 @@ object acmatch {
   }
 
   @Test
-  def testRemoveSealed() {
+  def testRemoveSealed = global.ask { () =>
     val str = """
     abstract sealed class asd {
     }
@@ -1994,7 +1994,7 @@ object acmatch {
   }
 
   @Test
-  def testAddSealedPP() {
+  def testAddSealedPP = global.ask { () =>
     val str = """
     abstract class asd {
     }
@@ -2026,7 +2026,7 @@ object acmatch {
   }
 
   @Test
-  def testRemoveSealedPP() {
+  def testRemoveSealedPP = global.ask { () =>
     val str = """
     abstract sealed class asd {
     }
@@ -2055,7 +2055,7 @@ object acmatch {
   }
 
   @Test
-  def insertPlainString() {
+  def insertPlainString = global.ask { () =>
     val source = """
     class InsertHere {
       def method = {

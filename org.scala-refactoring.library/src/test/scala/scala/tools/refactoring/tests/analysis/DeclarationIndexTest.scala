@@ -22,9 +22,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
 
     val tree = treeFrom(testSource)
 
-    index = global.ask { () =>
-      GlobalIndex(List(CompilationUnitIndex(tree)))
-    }
+    index = GlobalIndex(List(CompilationUnitIndex(tree)))
 
     val firstSelected = {
       val start = commentSelectionStart(src)
@@ -40,28 +38,30 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     }
   }
 
-  def assertDeclarationOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
-    case t @ (_: TypeTree | _: RefTree) =>
-      index.declaration(t.symbol).head.toString
+  def assertDeclarationOfSelection(expected: String, src: String) = global.ask{ () =>
+    mapAndCompareSelectedTrees(expected, src) {
+      case t @ (_: TypeTree | _: RefTree) =>
+        index.declaration(t.symbol).head.toString
+    }
   }
 
-  def assertReferencesOfSelection(expected: String, src: String) = mapAndCompareSelectedTrees(expected, src) {
+  def assertReferencesOfSelection(expected: String, src: String) = global.ask{ () =>
+    mapAndCompareSelectedTrees(expected, src) {
 
-    def refs(s: Symbol): String = {
-       val ranges = global.ask { () =>
-         index.references(s).toList filter (_.pos.isRange) sortBy(_.pos.start)
-       }
-       val strings = ranges map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
-       strings mkString ", "
-    }
+      def refs(s: Symbol): String = {
+         val ranges = index.references(s).toList filter (_.pos.isRange) sortBy(_.pos.start)
+         val strings = ranges map ( ref => ref.toString +" ("+ ref.pos.start +", "+ ref.pos.end +")" )
+         strings mkString ", "
+      }
 
-    t => t match {
-      case t @ (_: TypeTree | _: DefTree) =>
-        refs(t.symbol)
-      case t: Ident =>
-        val syms = index.positionToSymbol(t.pos)
-        val allRefs = syms map refs
-        allRefs.distinct mkString ", "
+      t => t match {
+        case t @ (_: TypeTree | _: DefTree) =>
+          refs(t.symbol)
+        case t: Ident =>
+          val syms = index.positionToSymbol(t.pos)
+          val allRefs = syms map refs
+          allRefs.distinct mkString ", "
+      }
     }
   }
 

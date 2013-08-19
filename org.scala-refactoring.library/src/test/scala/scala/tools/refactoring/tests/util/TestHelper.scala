@@ -22,6 +22,9 @@ import language.{postfixOps, implicitConversions}
 
 trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
 
+  @Before
+  def cleanup() = resetPresentationCompiler()
+
   type Test = org.junit.Test
   type Ignore = org.junit.Ignore
   type AbstractFile = tools.nsc.io.AbstractFile

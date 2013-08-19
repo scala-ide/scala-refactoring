@@ -16,9 +16,6 @@ import org.junit.Before
 
 trait TestRefactoring extends TestHelper {
 
-  @Before
-  def cleanup() = resetPresentationCompiler()
-
   class PreparationException(cause: String) extends Exception(cause)
   class RefactoringException(cause: String) extends Exception(cause)
 

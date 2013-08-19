@@ -54,7 +54,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testPrintParens() {
+  def testPrintParens() = global.ask { () =>
 
     val ast = treeFrom("""
     trait tr {
@@ -74,7 +74,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testPrintSelfType() {
+  def testPrintSelfType() = global.ask { () =>
 
     val ast = treeFrom("""
     package generated
@@ -92,7 +92,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSimpleIndentation() = {
+  def testSimpleIndentation() = global.ask { () =>
 
     val tree = treeFrom("""
     object Functions {
@@ -111,7 +111,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testIndentationOfNestedBlocks() = {
+  def testIndentationOfNestedBlocks() = global.ask { () =>
 
     val nestDefs = transform {
       case t @ DefDef(_, _, _, _, _, rhs @ Block(stats, expr)) => t copy (rhs = new Block(t :: stats, expr) setPos rhs.pos) setPos t.pos
@@ -141,7 +141,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNew() = {
+  def testNew() = global.ask { () =>
 
     val tree = treeFrom("""
     object Functions {
@@ -163,7 +163,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testThrow() = {
+  def testThrow() = global.ask { () =>
 
     val tree = treeFrom("""
     class Throw1 {
@@ -191,7 +191,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testAnnotation() = {
+  def testAnnotation() = global.ask { () =>
 
     val tree = treeFrom("""
     import scala.reflect.BeanProperty
@@ -213,7 +213,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def allNeededParenthesesArePrinted() = {
+  def allNeededParenthesesArePrinted() = global.ask { () =>
 
     val tree = treeFrom("""
     class Test {
@@ -229,7 +229,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def literalIdentifier() = {
+  def literalIdentifier() = global.ask { () =>
 
     val tree = treeFrom("""
     class Test {
@@ -249,7 +249,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def multipleAssignmentWithAnnotatedTree() = {
+  def multipleAssignmentWithAnnotatedTree() = global.ask { () =>
 
     val tree = treeFrom("""
     class Test {
@@ -283,7 +283,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testExistential() = {
+  def testExistential() = global.ask { () =>
 
     val tree = treeFrom("""
     class A(l: List[_])
@@ -299,7 +299,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testMissingParentheses() = {
+  def testMissingParentheses() = global.ask { () =>
 
     val tree = treeFrom("""
     package com.somedomain.test
@@ -345,7 +345,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testCompoundTypeTree() = {
+  def testCompoundTypeTree() = global.ask { () =>
 
     val tree = treeFrom("""
     trait A
@@ -365,7 +365,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSingletonTypeTree() = {
+  def testSingletonTypeTree() = global.ask { () =>
 
     val tree = treeFrom("""
     trait A {
@@ -381,7 +381,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSelectFromTypeTree() = {
+  def testSelectFromTypeTree() = global.ask { () =>
 
     val tree = treeFrom("""
     trait A {
@@ -401,7 +401,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSelfTypesWithThis() = {
+  def testSelfTypesWithThis() = global.ask { () =>
 
     val tree = treeFrom("""
     package common {
@@ -427,7 +427,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testWhileLoop() = {
+  def testWhileLoop() = global.ask { () =>
 
     val tree = treeFrom("""
     trait WhileLoop {
@@ -479,7 +479,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testDoWhileLoop() = {
+  def testDoWhileLoop() = global.ask { () =>
 
     val tree = treeFrom("""
     trait WhileLoop {
@@ -513,7 +513,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testPlusEquals() = {
+  def testPlusEquals() = global.ask { () =>
     val tree = treeFrom("""
       trait Demo2 {
         var assignee = 1
@@ -530,7 +530,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNegativeNumber() = {
+  def testNegativeNumber() = global.ask { () =>
     val tree = treeFrom("""
       trait NegativeNumber {
         val i = -1
@@ -551,7 +551,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testAssign() = {
+  def testAssign() = global.ask { () =>
     val tree = treeFrom("""
       trait Demo1 {
         def method {
@@ -572,7 +572,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def updateMethod() = {
+  def updateMethod() = global.ask { () =>
     val tree = treeFrom("""
       class Updateable { def update(args: Int*) = 0 }
       trait Demo1 {
@@ -595,7 +595,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSetters() = {
+  def testSetters() = global.ask { () =>
     val tree = treeFrom("""
       package oneFromMany
       class Demo(val a: String,  /*(*/private var _i: Int/*)*/  ) {
@@ -616,7 +616,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def typeParametersAreSeparatedByComma() = {
+  def typeParametersAreSeparatedByComma() = global.ask { () =>
     val tree = treeFrom("""
       class MethodWithTypeParam {
         def foo[A, B, C] = 1
@@ -631,7 +631,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testClassConstructorParams() = {
+  def testClassConstructorParams() = global.ask { () =>
     val tree = treeFrom("""
       class Demo1(a: String, b: Int)
       class Demo2(a: String, b: Int)
@@ -644,7 +644,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testMatches() = {
+  def testMatches() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       List(1,2) match {
@@ -713,7 +713,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testReturn() = {
+  def testReturn() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       def test: Int = {
@@ -732,7 +732,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testVarArgs() = {
+  def testVarArgs() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       def test(args: String*) = args.toList
@@ -747,7 +747,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testStar() = {
+  def testStar() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       "abcde".toList match {
@@ -766,7 +766,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSuper() = {
+  def testSuper() = global.ask { () =>
     val tree = treeFrom("""
     trait Root {
       def x = "Root"
@@ -800,7 +800,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
     """, generateText(tree))
   }
   @Test
-  def testThis() = {
+  def testThis() = global.ask { () =>
     val tree = treeFrom("""
     class Root {
       class Inner {
@@ -821,7 +821,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testUnapply() = {
+  def testUnapply() = global.ask { () =>
     val tree = treeFrom("""
     object Extractor {
       def unapply(i: Int) = Some(i)
@@ -846,7 +846,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testPackages() = {
+  def testPackages() = global.ask { () =>
     val tree = treeFrom("""
     package a
     package b.c
@@ -869,7 +869,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testIf() = {
+  def testIf() = global.ask { () =>
 
     val tree = treeFrom("""
     object Functions {
@@ -895,7 +895,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testIfs() = {
+  def testIfs() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
 
@@ -944,7 +944,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testFunctions() = {
+  def testFunctions() = global.ask { () =>
 
     val tree = treeFrom("""
     object Functions {
@@ -966,7 +966,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testTypeDefNoLowerBound() = {
+  def testTypeDefNoLowerBound() = global.ask { () =>
 
     val tree = treeFrom("""
     trait Types {
@@ -982,7 +982,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testTypeDefNoUpperBound() = {
+  def testTypeDefNoUpperBound() = global.ask { () =>
 
     val tree = treeFrom("""
     trait Types {
@@ -998,7 +998,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testTypeDefs() = {
+  def testTypeDefs() = global.ask { () =>
 
     val tree = treeFrom("""
     trait Types {
@@ -1022,7 +1022,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testTypes() = {
+  def testTypes() = global.ask { () =>
 
     val tree = treeFrom("""
     object Rename1 {
@@ -1048,7 +1048,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testObjectTemplate() = {
+  def testObjectTemplate() = global.ask { () =>
 
     val tree = treeFrom("""
     object Obj extends java.lang.Object {
@@ -1064,7 +1064,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testValOrDefDefModifiers() = {
+  def testValOrDefDefModifiers() = global.ask { () =>
 
     val tree = treeFrom("""
     class A {
@@ -1084,7 +1084,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testClassModifiers() = {
+  def testClassModifiers() = global.ask { () =>
 
     val tree = treeFrom("""
     package xy
@@ -1094,9 +1094,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
     protected sealed class D9
     """)
 
-    val modTree = global.ask { () =>
-      (topdown(changeSomeModifiers)) apply tree get
-    }
+    val modTree = (topdown(changeSomeModifiers)) apply tree get
 
     assertEquals("""
     package xy
@@ -1108,7 +1106,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSelfTypes() = {
+  def testSelfTypes() = global.ask { () =>
 
     val tree = treeFrom("""
     trait ATrait {
@@ -1136,7 +1134,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testClassTemplates() = {
+  def testClassTemplates() = global.ask { () =>
 
     val tree = treeFrom("""
     trait ATrait
@@ -1160,7 +1158,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSuperClass() = {
+  def testSuperClass() = global.ask { () =>
 
     val tree = treeFrom("""
     class ASuperClass(x: Int, val d: String)
@@ -1178,7 +1176,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def thisConstructorCall() = {
+  def thisConstructorCall() = global.ask { () =>
 
     val tree = treeFrom("""
     class Config(sourcePaths: Set[String], outputDir: String = null) {
@@ -1194,7 +1192,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testTry() = {
+  def testTry() = global.ask { () =>
 
     val tree = treeFrom("""
     import java.io._
@@ -1255,7 +1253,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
 
   @Ignore // FIXME: https://issues.scala-lang.org/browse/SI-5603
   @Test
-  def testEarlyDef() = {
+  def testEarlyDef() = global.ask { () =>
     val tree = treeFrom("""
     trait Greeting {
       val name: String
@@ -1283,7 +1281,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
 
   @Test
   @Ignore // doesn't work when run from the IDE (parser combinators missing)
-  def testWildcardNames() = {
+  def testWildcardNames() = global.ask { () =>
     val src = """
     package arith
 
@@ -1311,7 +1309,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testApplyWithNewlineInArgumentsList() = {
+  def testApplyWithNewlineInArgumentsList() = global.ask { () =>
 
     val tree = treeFrom("""
     object testApplyWithNewlineInArgumentsList {
@@ -1419,7 +1417,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testImports() = {
+  def testImports() = global.ask { () =>
     val tree = treeFrom("""
     import java.lang.{String => S}
     import java.lang.Object
@@ -1436,7 +1434,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testMethods() = {
+  def testMethods() = global.ask { () =>
 
     val tree = treeFrom("""
       trait ATest
@@ -1480,7 +1478,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testVals() = {
+  def testVals() = global.ask { () =>
     val tree = treeFrom("""
     /*a*/package /*b*/xyz/*c*/ {
       // now a class
@@ -1513,7 +1511,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testContextBounds() = {
+  def testContextBounds() = global.ask { () =>
     val tree = treeFrom("""
       object RenameWithContextBound {
         val blubb = new Blubb
