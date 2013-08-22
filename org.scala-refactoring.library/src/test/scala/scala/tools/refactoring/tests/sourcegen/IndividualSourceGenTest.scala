@@ -692,7 +692,7 @@ object Foo4 {
 }
 
 class Foo4[T](name: String) {
-   def echo[T](t: T):T = t
+   def echo[T](t: T): T = t
 }
     """, generateText(tree))
 
@@ -1175,7 +1175,7 @@ class A(a: Int) {
 
     assertEquals("""
     object primitive {
-      def member[A](a:A, li:List[A]):Boolean = {
+      def member[A](a:A, li:List[A]): Boolean = {
         def f[B](li: List[B]) = {
         true
         }
@@ -1458,7 +1458,7 @@ class A(a: Int) {
     }
     trait tr[A] {
       self: List[A] =>
-      def enumerate[A1](li:List[A1]):List[Int] = {
+      def enumerate[A1](li:List[A1]): List[Int] = {
         abc.primitive.length[A1](li)
       Nil
       }

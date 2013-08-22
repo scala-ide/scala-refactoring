@@ -904,7 +904,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         if(vparamss == List(List()) && modsAndName.asText.endsWith("(")) {
           Fragment(")")
         } else {
-          tree.explicitVParamss.map(vparams => pp(vparams, before = "(", separator = ", ", after = Requisite.anywhere(")"))).foldLeft(EmptyFragment: Fragment)(_ ++ _)
+          tree.explicitVParamss.map { vparams =>
+            pp(vparams, before = "(", separator = ", ", after = ")")
+          }.foldLeft(EmptyFragment: Fragment)(_ ++ _)
         }
       }
 
@@ -929,13 +931,19 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             EmptyFragment
         }
 
-        mergeTypeParameters(tree.tparamsWithContextBounds) ifNotEmpty {
+        val _tparams = mergeTypeParameters(tree.tparamsWithContextBounds) ifNotEmpty {
           _ ++ (before = "[", after = Requisite.anywhere("]"))
+        }
+
+        if(parameters.isEmpty && !_tparams.isEmpty && _tparams.trailing.contains("(")) {
+          _tparams.toLayout ++ Requisite.anywhere(")")
+        } else {
+          _tparams
         }
       }
 
       val body = p(rhs)
-      val resultType = p(tpt, before = Requisite.anywhere(":", ": "))
+      val resultType = p(tpt, before = Requisite.allowSurroundingWhitespace(":", ": "))
 
       def hasEqualInSource = {
         val originalDefDef = orig(tree)

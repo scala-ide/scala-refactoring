@@ -39,7 +39,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     implicit def allowSurroundingWhitespace(s: String) = Requisite.allowSurroundingWhitespace(s)
 
-    def printParameterList(vparamss: List[List[ValDef]], alreadyHasParensInLayout: => Boolean)(implicit ctx: PrintingContext) = vparamss match {
+    def printParameterList(vparamss: List[List[ValDef]], existingLayout: String)(implicit ctx: PrintingContext) = vparamss match {
       // no parameter list, not even an empty one
       case Nil =>
         NoLayout
@@ -51,11 +51,18 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             } mkString "" // ?
         )
 
-        // we want to at least empty parens, the case without any parameters is handled above
-        if(layout.asText.isEmpty && !alreadyHasParensInLayout)
+        val hasOpenCloseParens = existingLayout.matches(".*\\(.*\\).*")
+        val hasOpenParens = !hasOpenCloseParens && existingLayout.matches(".*\\(.*")
+
+        if (layout.asText.isEmpty && hasOpenParens) {
+          Layout(")")
+        } else if (layout.asText.isEmpty && !hasOpenCloseParens) {
+          // we want to at least empty parens, the case without any parameters is handled above
           Layout("()")
-        else
+        } else {
           layout
+        }
+
     }
 
     def printTemplate(tpl: Template, printExtends: Boolean)(implicit ctx: PrintingContext) = tpl match {
@@ -89,7 +96,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
               ppi(body, before = newlineIndentedToChildren, separator = newlineIndentedToChildren, after = indentedNewline ++ "}")
           }
 
-          val params_ = printParameterList(params, true)
+          val params_ = printParameterList(params, "()")
 
           params_ ++ sup ++ self_
       }
@@ -566,7 +573,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
 
       // if there's existing layout, the type parameter's layout might already contain "()"
-      val params_ = printParameterList(vparamss, tparams_.asText.matches(".*\\(.*\\).*"))
+      val params_ = printParameterList(vparamss, tparams_.asText)
 
       val rhs = if(tree.rhs == EmptyTree && !tree.symbol.isDeferred) {
         Fragment(" {"+ ctx.newline + ctx.ind.current +"}")

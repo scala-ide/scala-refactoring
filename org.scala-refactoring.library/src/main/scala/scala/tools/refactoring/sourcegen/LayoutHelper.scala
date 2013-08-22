@@ -360,6 +360,13 @@ trait LayoutHelper {
               case Equals(l, r) => (l, r, "Equals after ValOrDefDef")
             }
 
+          case (l, parent: ValOrDefDef, r) if r.samePos(parent.tpt) && layout.contains(":") =>
+            val EndOfParameterList = """(?ms)(.*?)\)\s*:[ ]?(.*)""".r
+            layout match {
+              case EndOfParameterList(l, r) => (l, r, "EndOfParameterList after ValOrDefDef")
+              case _ => split(layout)
+            }
+
           case (l, parent: ValOrDefDef, NoBlock(r)) if r.samePos(parent.rhs) && layout.contains("{") =>
             layout match {
               case OpeningCurlyBrace(l, r) => (l, "{"+ r, "OpeningCurlyBrace after ValOrDefDef")
