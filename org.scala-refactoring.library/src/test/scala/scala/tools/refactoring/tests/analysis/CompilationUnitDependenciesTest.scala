@@ -21,12 +21,12 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n"))
   }
 
-  def assertNeededImports(expected: String, src: String) {
-    assertTrees(expected, src, tree => global.ask(() => neededImports(tree)))
+  def assertNeededImports(expected: String, src: String): Unit = global.ask { () =>
+    assertTrees(expected, src, neededImports)
   }
 
-  def assertDependencies(expected: String, src: String) {
-    assertTrees(expected, src, tree => global.ask(() => dependencies(tree)))
+  def assertDependencies(expected: String, src: String): Unit = global.ask { () =>
+    assertTrees(expected, src, dependencies)
   }
 
   @Test

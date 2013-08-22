@@ -17,8 +17,6 @@ import scala.reflect.internal.util.Position
 
 class CompilerInstance {
 
-  def additionalClassPathEntry: Option[String] = None
-
   lazy val compiler = {
 
     val settings = new Settings
@@ -26,17 +24,22 @@ class CompilerInstance {
     // find the jar that has class `className`
     def codeSource(className: String) = Class.forName(className).getProtectionDomain.getCodeSource
 
-    val scalaObjectSource  = codeSource("scala.Unit")
+    val scalaLibrarySource  = codeSource("scala.Unit")
 
     // is null in Eclipse/OSGI but luckily we don't need it there
-    if(scalaObjectSource != null) {
-      val scalaXmlSource     = codeSource("scala.xml.Elem")
-      val scalaParsingSource = codeSource("scala.util.parsing.combinator.JavaTokenParsers")
-      val compilerSource     = codeSource("scala.tools.nsc.Interpreter")
+    if(scalaLibrarySource != null) {
+      val scalaXmlSource      = codeSource("scala.xml.Elem")
+      val scalaParsingSource  = codeSource("scala.util.parsing.combinator.JavaTokenParsers")
+      val scalaCompilerSource = codeSource("scala.tools.nsc.Global")
 
-      val libraryJars = List(compilerSource, scalaObjectSource, scalaXmlSource, scalaParsingSource).map(_.getLocation).distinct // distinct to drop duplicate jars in non-modularized Scala verions (as of 2.11.0-M4, xml and util.parsing are in separate jars)
-      val origBootclasspath = settings.bootclasspath.value
-      settings.bootclasspath.value = ((origBootclasspath :: libraryJars) ::: additionalClassPathEntry.toList) mkString File.pathSeparator
+      assert((new File(scalaCompilerSource.getLocation.toURI)).exists, s"File ${scalaCompilerSource.getLocation.toExternalForm} does not exist")
+
+      val libraryJars = List(scalaCompilerSource, scalaLibrarySource, scalaXmlSource, scalaParsingSource).map(_.getLocation.toExternalForm).distinct // distinct to drop duplicate jars in non-modularized Scala verions (as of 2.11.0-M4, xml and util.parsing are in separate jars)
+
+      libraryJars foreach { jarLocation =>
+        settings.classpath.append(jarLocation)
+        settings.bootclasspath.append(jarLocation)
+      }
     }
 
     val compiler = new Global(settings, new ConsoleReporter(settings) {

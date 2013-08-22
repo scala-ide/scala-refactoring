@@ -13,12 +13,14 @@ class AddMethodTest extends TestHelper {
   outer =>
 
   def addMethod(className: String, methodName: String, parameters: List[List[(String, String)]], returnType: Option[String], target: AddMethodTarget, src: String, expected: String) = {
-    val refactoring = new AddMethod with SilentTracing {
-      val global = outer.global
-      val file = addToCompiler(randomFileName(), src)
-      val change = global.ask(() => addMethod(file, className, methodName, parameters, returnType, target))
+    global.ask { () =>
+      val refactoring = new AddMethod with SilentTracing {
+        val global = outer.global
+        val file = addToCompiler(randomFileName(), src)
+        val change = addMethod(file, className, methodName, parameters, returnType, target)
+      }
+      assertEquals(expected, Change.applyChanges(refactoring.change, src))
     }
-    assertEquals(expected, Change.applyChanges(refactoring.change, src))
   }
 
   @Test
