@@ -14,6 +14,7 @@ import scala.tools.nsc.reporters.ConsoleReporter
 import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.internal.util.SourceFile
 import scala.reflect.internal.util.Position
+import scala.reflect.internal.MissingRequirementError
 
 class CompilerInstance {
 
@@ -24,12 +25,12 @@ class CompilerInstance {
     // find the jar that has class `className`
     def codeSource(className: String) = Class.forName(className).getProtectionDomain.getCodeSource
 
-    val scalaLibrarySource  = codeSource("scala.Unit")
+    val scalaLibrarySource = codeSource("scala.Unit")
 
     // is null in Eclipse/OSGI but luckily we don't need it there
-    if(scalaLibrarySource != null) {
-      val scalaXmlSource      = codeSource("scala.xml.Elem")
-      val scalaParsingSource  = codeSource("scala.util.parsing.combinator.JavaTokenParsers")
+    if (scalaLibrarySource != null) {
+      val scalaXmlSource = codeSource("scala.xml.Elem")
+      val scalaParsingSource = codeSource("scala.util.parsing.combinator.JavaTokenParsers")
       val scalaCompilerSource = codeSource("scala.tools.nsc.Global")
 
       assert((new File(scalaCompilerSource.getLocation.toURI)).exists, s"File ${scalaCompilerSource.getLocation.toExternalForm} does not exist")
@@ -48,8 +49,18 @@ class CompilerInstance {
       }
     })
 
-    compiler.ask { () =>
-      new compiler.Run
+    try {
+      compiler.ask { () =>
+        new compiler.Run
+      }
+    } catch {
+      case e: MissingRequirementError =>
+        val msg = s"""Could not initialize the compiler!
+                     |  ${settings.userSetSettings.mkString("\n  ")}
+                     |  ${settings.classpath}
+                     |  ${settings.bootclasspath}
+                     |  ${settings.javabootclasspath}""".stripMargin
+        throw new Exception(msg, e)
     }
 
     compiler
@@ -62,7 +73,7 @@ trait TreeCreationMethods {
 
   val randomFileName = {
     val r = new java.util.Random
-    () => "file"+ r.nextInt
+    () => "file" + r.nextInt
   }
 
   def treeFrom(src: String): global.Tree = {
@@ -100,7 +111,7 @@ trait CompilerProvider extends TreeCreationMethods {
 
   val global = CompilerInstance.compiler
 
-  private [refactoring] def resetPresentationCompiler() = global.ask { () =>
+  private[refactoring] def resetPresentationCompiler() = global.ask { () =>
 
     global.unitOfFile.values.foreach { cu =>
       global.removeUnitOf(cu.source)
