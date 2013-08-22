@@ -23,6 +23,8 @@ class CompilerInstance {
 
     val settings = new Settings
 
+    settings.Ylogcp.value = true
+
     // find the jar that has class `className`
     def codeSource(className: String) = Class.forName(className).getProtectionDomain.getCodeSource
 
