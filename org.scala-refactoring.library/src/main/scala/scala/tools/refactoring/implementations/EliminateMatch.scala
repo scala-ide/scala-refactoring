@@ -9,7 +9,7 @@ import common.Change
 import tools.nsc.symtab.Flags
 import transformation.TreeFactory
 
-abstract class EliminateMatch extends MultiStageRefactoring with common.TreeExtractors with TreeFactory {
+abstract class EliminateMatch extends MultiStageRefactoring with ParameterlessRefactoring with common.TreeExtractors with TreeFactory {
 
   this: common.CompilerAccess =>
 
@@ -30,8 +30,6 @@ abstract class EliminateMatch extends MultiStageRefactoring with common.TreeExtr
   }
 
   type PreparationResult = (Elimination.Value, Position, Transformation[Tree, Tree])
-
-  class RefactoringParameters
 
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
 
@@ -148,7 +146,7 @@ abstract class EliminateMatch extends MultiStageRefactoring with common.TreeExtr
     } toRight(PreparationError("No elimination candidate found."))
   }
 
-  def perform(selection: Selection, preparationResult: PreparationResult, name: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, preparationResult: PreparationResult): Either[RefactoringError, List[Change]] = {
 
     val (_, _, transformation) = preparationResult
 

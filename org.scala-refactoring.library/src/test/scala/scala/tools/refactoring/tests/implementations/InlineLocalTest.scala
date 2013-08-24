@@ -17,7 +17,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
 
   def inline(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new InlineLocal with SilentTracing with TestProjectIndex
-    val changes = performRefactoring(new refactoring.RefactoringParameters)
+    val changes = performRefactoring()
   }.changes
 
   @Test

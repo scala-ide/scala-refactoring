@@ -19,7 +19,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
     val refactoring = new EliminateMatch with SilentTracing with common.InteractiveScalaCompiler {
       val global = outer.global
     }
-    val changes = performRefactoring(new refactoring.RefactoringParameters)
+    val changes = performRefactoring()
   }.changes
 
   val some = Some("s"): Option[String]

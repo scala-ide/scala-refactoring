@@ -10,15 +10,13 @@ import tools.nsc.symtab.Flags
 import transformation.TreeFactory
 import scala.tools.refactoring.analysis.GlobalIndexes
 
-abstract class ExpandCaseClassBinding extends MultiStageRefactoring with GlobalIndexes {
+abstract class ExpandCaseClassBinding extends MultiStageRefactoring with ParameterlessRefactoring with GlobalIndexes {
 
   this: common.CompilerAccess =>
 
   import global._
 
   case class PreparationResult(bind: Bind, sym: ClassSymbol, body: Tree)
-
-  class RefactoringParameters
 
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
 
@@ -38,7 +36,7 @@ abstract class ExpandCaseClassBinding extends MultiStageRefactoring with GlobalI
     res getOrElse failure
   }
 
-  def perform(selection: Selection, preparationResult: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, preparationResult: PreparationResult): Either[RefactoringError, List[Change]] = {
 
     val PreparationResult(bind, sym, body) = preparationResult
 

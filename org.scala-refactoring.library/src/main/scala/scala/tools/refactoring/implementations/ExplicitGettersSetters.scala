@@ -9,13 +9,11 @@ import common.Change
 import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.nsc.symtab.Flags
 
-abstract class ExplicitGettersSetters extends MultiStageRefactoring with common.InteractiveScalaCompiler {
+abstract class ExplicitGettersSetters extends MultiStageRefactoring with ParameterlessRefactoring with common.InteractiveScalaCompiler {
 
   import global._
 
   type PreparationResult = ValDef
-
-  class RefactoringParameters
 
   def prepare(s: Selection) = {
     s.findSelectedOfType[ValDef] match {
@@ -24,7 +22,7 @@ abstract class ExplicitGettersSetters extends MultiStageRefactoring with common.
     }
   }
 
-  override def perform(selection: Selection, selectedValue: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  override def perform(selection: Selection, selectedValue: PreparationResult): Either[RefactoringError, List[Change]] = {
 
     val template = selection.findSelectedOfType[Template].getOrElse {
       return Left(RefactoringError("no template found"))

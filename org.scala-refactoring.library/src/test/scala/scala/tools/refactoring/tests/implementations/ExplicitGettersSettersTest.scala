@@ -19,7 +19,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
     val refactoring = new ExplicitGettersSetters with SilentTracing {
       val global = outer.global
     }
-    val changes = performRefactoring(new refactoring.RefactoringParameters)
+    val changes = performRefactoring()
   }.changes
 
   @Test

@@ -11,7 +11,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
 
   def moveConstructorToCompanion(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new MoveConstructorToCompanionObject with SilentTracing with TestProjectIndex
-    val changes = performRefactoring(new refactoring.RefactoringParameters)
+    val changes = performRefactoring()
   }.changes
 
   @Test

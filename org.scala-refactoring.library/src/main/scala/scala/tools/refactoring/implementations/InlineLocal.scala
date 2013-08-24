@@ -9,13 +9,11 @@ import common.Change
 import transformation.TreeFactory
 import analysis.Indexes
 
-abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with Indexes with common.InteractiveScalaCompiler  {
+abstract class InlineLocal extends MultiStageRefactoring with ParameterlessRefactoring with TreeFactory with Indexes with common.InteractiveScalaCompiler  {
 
   import global._
 
   type PreparationResult = ValDef
-
-  class RefactoringParameters
 
   def prepare(s: Selection) = {
 
@@ -39,7 +37,7 @@ abstract class InlineLocal extends MultiStageRefactoring with TreeFactory with I
     }
   }
 
-  def perform(selection: Selection, selectedValue: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  def perform(selection: Selection, selectedValue: PreparationResult): Either[RefactoringError, List[Change]] = {
 
     trace("Selected: %s", selectedValue)
 

@@ -43,6 +43,10 @@ trait TestRefactoring extends TestHelper {
       refactoring.prepare(selection(refactoring, project))
     }
 
+    def performRefactoring(): List[Change] = {
+      performRefactoring(null.asInstanceOf[refactoring.RefactoringParameters])
+    }
+
     def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = global.ask { () =>
       preparationResult match {
         case Right(prepare) =>

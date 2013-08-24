@@ -9,12 +9,11 @@ import transformation.TreeFactory
  * constructor of the selected class. All calls to the primary constructor
  * are redirected the the newly generated apply-method.
  */
-abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring with common.InteractiveScalaCompiler with analysis.Indexes {
+abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring with ParameterlessRefactoring with common.InteractiveScalaCompiler with analysis.Indexes {
 
   import global._
 
   type PreparationResult = ClassDef
-  class RefactoringParameters
 
   def prepare(s: Selection) = {
     s.findSelectedOfType[ClassDef] match {
@@ -23,7 +22,7 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
     }
   }
 
-  override def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  override def perform(selection: Selection, prep: PreparationResult): Either[RefactoringError, List[Change]] = {
     val constructors = prep.impl.body.collect{case d: DefDef if d.symbol.isConstructor => d}
     val primaryConstructor = prep.impl.primaryConstructor.headOption
     val constructor = primaryConstructor.getOrElse(constructors.head)
