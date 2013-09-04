@@ -24,7 +24,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     """)
 
   @Test
-  def classHasNoRightSibling() {
+  def classHasNoRightSibling() = global.ask { () =>
 
     val c = tree.find(_.isInstanceOf[ClassDef]).get
 
@@ -33,7 +33,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
   }
 
   @Test
-  def templateNoSiblings() {
+  def templateNoSiblings() = global.ask { () =>
 
     val c = tree.find(_.isInstanceOf[Template]).get
 
