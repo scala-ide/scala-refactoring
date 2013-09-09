@@ -210,6 +210,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           val x = (l ++ p(pat) ++ p(guard)) ++ "=>"
           x ++ Fragment(ctx.newline + indentation) ++ ppi(body, separator = indentedNewline) ++ r
 
+        case _ if tree.pos.isTransparent =>
+          EmptyFragment
+
         case _ =>
           printChildren(tree)
       }
@@ -450,7 +453,12 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           if (isReceiverMethodCallWithDot) {
             l ++ p(fun) ++ p(arg, before = Requisite.anywhere("("), after = Requisite.anywhere(")")) ++ r
           } else if(keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")"))  {
-            l ++ p(fun) ++ p(arg) ++ r
+            val arg_ = p(arg)
+            if(arg_.asText.matches("""(?ms)\s*\{.*""") && !arg_.asText.matches("""(?ms).*\}\s*""")) {
+              l ++ p(fun) ++ arg_ ++ indentedNewline ++ "}" ++ r
+            } else {
+              l ++ p(fun) ++ arg_ ++ r
+            }
           } else {
             l ++ p(fun) ++ p(arg, before = Requisite.anywhere("("), after = Requisite.anywhere(")")) ++ r
           }

@@ -978,17 +978,17 @@ trait PimpedTrees {
 
     def unapply(t: Block) = {
 
-      def fixNamedArgumentCall(block: Block): Tree = block match {
+      def fixNamedArgumentCall(t: Tree): Tree = t match {
         case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if apply.pos.isRange && emptyArgs.size == stats.size && emptyArgs.forall(i => isEmptyTree(i) || !i.pos.isRange) =>
 
           val allValDefs = stats forall {
             case t: ValDef => t.pos.isRange && t.pos.start > apply.pos.start
-            case _ => return block
+            case _ => return t
           }
 
           val argumentSymbols = fun.tpe match {
             case tpe: MethodType => tpe.params
-            case _ => return block
+            case _ => return t
           }
 
           // The arguments of apply all have an offset position, so they
@@ -1000,11 +1000,11 @@ trait PimpedTrees {
               case Block(_, Apply(_, args)) => args
               case Apply(_, args) => args
             }
-          } getOrElse (return block)
+          } getOrElse (return t)
 
           val syntheticNameToSymbol = argumentsFromOriginalTree.map {
             case a: Ident => a.name
-            case _ => return block
+            case _ => return t
           }.zip(argumentSymbols).toMap
 
           val startOffset = apply.pos.point
@@ -1033,10 +1033,23 @@ trait PimpedTrees {
 
           Apply(fun, newValDefs) setPos apply.pos
 
-        case _ => block
+        case _ => t
       }
 
-      fixNamedArgumentCall(t) match {
+      /*
+       * The new pattern matcher represents partial functions as instances of anonymous
+       * classes. This trips up our code generation so we reduce the Block with just the
+       * pattern match. 
+       * */
+      def removeNewPatternMatchingCruft(b: Block) = b match {
+        case Block(List(c: ClassDef), Apply(Select(New(Ident(nme1)), nme.CONSTRUCTOR), Nil)) if nme1.toString == nme.ANON_FUN_NAME.toString =>
+          c.impl.body.collect {
+            case DefDef(_, nme.applyOrElse, _, _, _, rhs) => rhs
+          }.headOption getOrElse b
+        case b => b
+      }
+
+      fixNamedArgumentCall(removeNewPatternMatchingCruft(t)) match {
         case t: Block =>
 
           val trees = if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))

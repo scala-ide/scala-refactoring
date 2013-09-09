@@ -526,6 +526,7 @@ abstract class C(val a: A with B) {
 class B(t: A#T)"""
   }
 
+  @Ignore
   @Test
   def testSelfTypesWithThis() = {
 

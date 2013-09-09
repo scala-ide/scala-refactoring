@@ -16,12 +16,12 @@ import language.reflectiveCalls
 class AddImportStatementTest extends TestHelper {
   outer =>
 
-  def addImport(imp: (String, String), src: String, expected: String) = {
+  def addImport(imp: (String, String), src: String, expected: String) = global.ask { () =>
 
     val refactoring = new AddImportStatement with SilentTracing {
       val global = outer.global
       val file = addToCompiler(randomFileName(), src)
-      val change = global.ask(()=> addImport(file, imp._1 + "." + imp._2))
+      val change = addImport(file, imp._1 + "." + imp._2)
     }
 
     assertEquals(expected, Change.applyChanges(refactoring.change, src))
