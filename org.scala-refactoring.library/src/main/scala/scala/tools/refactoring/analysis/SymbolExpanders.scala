@@ -28,6 +28,8 @@ trait DependentSymbolExpanders {
   }
 
   trait ExpandGetterSetters extends SymbolExpander {
+    this: IndexLookup =>
+
     abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
       case s if s.hasFlag(Flags.ACCESSOR) =>
         s.accessed :: Nil
@@ -95,6 +97,17 @@ trait DependentSymbolExpanders {
         val overrides = (subClasses map (s overridingSymbol _)) ++ s.allOverriddenSymbols
 
         overrides
+      }
+      case _ => Nil
+    })
+  }
+
+  trait OverridesInSuperClasses extends SymbolExpander {
+    this : IndexLookup =>
+
+    abstract override def expand(s: Symbol): List[Symbol] = super.expand(s) ++ (s match {
+      case s @ (_: global.TypeSymbol | _: global.TermSymbol) if s.owner.isClass => {
+        s.allOverriddenSymbols
       }
       case _ => Nil
     })

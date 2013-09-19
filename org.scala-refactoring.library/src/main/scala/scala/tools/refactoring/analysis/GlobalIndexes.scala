@@ -20,6 +20,7 @@ import annotation.tailrec
 trait GlobalIndexes extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes with common.PimpedTrees with common.InteractiveScalaCompiler with common.TreeTraverser {
 
   import global._
+  import scala.tools.refactoring.util.UnionFind
 
   object GlobalIndex {
 
@@ -29,9 +30,43 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           SuperConstructorParameters with
           Companion with
           LazyValAccessor with
-          OverridesInClassHierarchy {
-        val cus = compilationUnits
-      }
+          OverridesInSuperClasses {
+
+            val cus = compilationUnits
+
+            def linkSymbols(syms:List[Symbol], seen:HashSet[Symbol]): Unit = {
+              if (syms.nonEmpty){
+                val nextSymbols = ListBuffer[Symbol]()
+                for (s <- syms) {
+                  for (es <- expand(s) filterNot (_ == NoSymbol)){
+                    uf.union(s, es)
+                    if (!seen(es)) nextSymbols += es
+                  }
+                  seen += s
+                }
+                linkSymbols(nextSymbols.toList, seen)
+              }
+            }
+
+            /**
+             *  A Union-Find for the symbol graph, defined as essentially a lazy
+             *  val with custom initialization to link symbols related through
+             *  expansion right from the start.
+             */
+            @volatile var symbolsMapReady: Boolean = false
+            private var uf: UnionFind[Symbol] = _
+            private def symbolsMapInitialization() = {
+              uf = new UnionFind()
+              linkSymbols(allSymbols, new HashSet[Symbol]())
+              symbolsMapReady = true
+              uf
+            }
+
+            def symbolsUF() = if (symbolsMapReady) uf else symbolsMapInitialization()
+
+            override def expandSymbol(s: Symbol): List[Symbol] = symbolsUF().equivalenceClass(s)
+
+          }
 
     def apply(t: Tree): IndexLookup = apply(List(CompilationUnitIndex(t)))
   }
