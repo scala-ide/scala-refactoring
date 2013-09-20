@@ -39,6 +39,9 @@
     <tycho.version>0.15.0</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
+    <scala.binary.version>2.11.0-M5</scala.binary.version>
+    <scala.xml.version>1.0.0-RC4</scala.xml.version>
+    <scala.parser-combinators.version>1.0.0-RC2</scala.parser-combinators.version>
   </properties>
   <modules>
     <module>org.scala-refactoring.library</module>
@@ -361,6 +364,18 @@
           <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-211x</url>
         </repository>
       </repositories>
+      <dependencies>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-xml_${scala.binary.version}</artifactId>
+          <version>${scala.xml.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-parser-combinators_${scala.binary.version}</artifactId>
+          <version>${scala.parser-combinators.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>scala-virtualized-trunk</id>
