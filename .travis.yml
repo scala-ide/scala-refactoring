@@ -1,1 +1,7 @@
-script: ./build-2.11.sh
+language: scala
+scala:
+  - "2.10.2"
+jdk:
+  - oraclejdk7
+  - openjdk7
+script: ./build-2.10.sh
