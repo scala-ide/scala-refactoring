@@ -1008,7 +1008,7 @@ class A(a: Int) {
       val result = topdown {
         matchingChildren {
           transform {
-            case t: DefDef if (t.vparamss(0).size > 0) =>
+            case t: DefDef if (t.vparamss(0).nonEmpty) =>
               val vparamss = List(List(t.vparamss(0).head))
               t.copy(vparamss = vparamss) setPos t.pos
           }
@@ -1946,11 +1946,11 @@ object acmatch {
       val res = once {
         transform {
           case t: PackageDef =>
-            val st = t.stats.map(a => a match {
+            val st = t.stats.map {
               case x: ClassDef =>
                 x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition)) setPos x.pos
               case x => x
-            })
+            }
             t.copy(stats = st) setPos t.pos
         }} apply ast
 
@@ -2005,11 +2005,11 @@ object acmatch {
       val res = once {
         transform {
           case t: PackageDef =>
-            val st = t.stats.map(a => a match {
+            val st = t.stats.map {
               case x: ClassDef =>
                 x.copy(mods = x.mods.withPosition(Flags.SEALED, NoPosition))
               case x => x
-            })
+            }
             t.copy(stats = st) setPos t.pos
         }
       } apply ast
