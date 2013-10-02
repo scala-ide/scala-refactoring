@@ -402,7 +402,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       (fun, args) match {
 
-        case (global.Select(select: Select, nme.update), args) if fun.pos == select.pos && args.size > 0 =>
+        case (global.Select(select: Select, nme.update), args) if fun.pos == select.pos && args.nonEmpty =>
 
           args match {
             case arg :: Nil =>

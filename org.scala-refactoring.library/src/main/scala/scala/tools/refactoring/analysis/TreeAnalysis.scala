@@ -37,7 +37,7 @@ trait TreeAnalysis {
    * a list of all symbols that are defined inside the selection and
    * used outside of it.
    */
-  def outboundLocalDependencies(selection: Selection, currentOwner: global.Symbol): List[global.Symbol] = {
+  def outboundLocalDependencies(selection: Selection): List[global.Symbol] = {
 
     val declarationsInTheSelection = selection.selectedSymbols filter (s => index.declaration(s).map(selection.contains) getOrElse false)
 

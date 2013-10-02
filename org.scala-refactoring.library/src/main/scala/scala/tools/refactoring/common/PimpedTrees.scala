@@ -1052,7 +1052,7 @@ trait PimpedTrees {
       fixNamedArgumentCall(removeNewPatternMatchingCruft(t)) match {
         case t: Block =>
 
-          val trees = if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
+          val trees = if(t.expr.pos.isRange && t.stats.nonEmpty && (t.expr.pos precedes t.stats.head.pos))
             t.expr :: t.stats
           else
             t.stats ::: t.expr :: Nil

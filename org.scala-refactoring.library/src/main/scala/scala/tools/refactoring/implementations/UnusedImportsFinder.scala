@@ -56,7 +56,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
 
   def wildcardImport(i: ImportSelector) = i.name == nme.WILDCARD
 
-  def isWildcardImportNeeded(unit: CompilationUnit, dependentModules: List[Symbol], expr: Tree, s: ImportSelector): Boolean = {
+  def isWildcardImportNeeded(dependentModules: List[Symbol], expr: Tree): Boolean = {
 
     /*
      * Because we cannot yet detect unused wildcard imports from a value,
@@ -108,7 +108,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
     } else {
       val dependentModules = computeDependentModules(unit)
 
-      (wildcardImport(s) && isWildcardImportNeeded(unit, dependentModules, expr, s)) ||
+      (wildcardImport(s) && isWildcardImportNeeded(dependentModules, expr)) ||
       dependentModules.exists(m => m.name.toString == s.name.toString) ||
       importSelectorImportsFromNeededPackageObject(unit, expr)
     }

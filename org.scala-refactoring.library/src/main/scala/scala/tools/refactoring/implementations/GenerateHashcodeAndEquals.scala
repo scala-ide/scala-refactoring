@@ -28,10 +28,8 @@ abstract class GenerateHashcodeAndEquals extends ClassParameterDrivenSourceGener
     def addEqualityMethods = transform {
       case t @ Template(parents, self, body) => {
         val existing = preparationResult.existingEqualityMethods
-        val bodyFilter: Tree => Boolean = refactoringParams.keepExistingEqualityMethods match {
-          case true => (t: Tree) => true
-          case false => (t: Tree) => !isEqualityMethod(t)
-        }
+        val bodyFilter: Tree => Boolean = if (refactoringParams.keepExistingEqualityMethods)
+           (t: Tree) => true else (t: Tree) => !isEqualityMethod(t)
         val filteredBody = body.filter(bodyFilter)
         val equalityMethodsInBody = filteredBody collect {case d: ValOrDefDef if equalityMethodNames contains d.nameString => d.name }
         val filteredEqualityMethods = equalityMethods.filter(e => !(equalityMethodsInBody contains e.name))

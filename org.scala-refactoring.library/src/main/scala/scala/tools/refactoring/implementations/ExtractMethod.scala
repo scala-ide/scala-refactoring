@@ -24,7 +24,7 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
 
   def prepare(s: Selection) = {
     s.findSelectedOfType[DefDef] match {
-      case _ if s.selectedTopLevelTrees.size == 0 =>
+      case _ if s.selectedTopLevelTrees.isEmpty =>
         Left(PreparationError("No expressions or statements selected."))
       case Some(tree) =>
         Right(tree)
@@ -55,7 +55,7 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
           deps :: Nil // single argument list with all parameters
       }
 
-      val returns = outboundLocalDependencies(selection, selectedMethod.symbol)
+      val returns = outboundLocalDependencies(selection)
 
       val returnStatement = if(returns.isEmpty) Nil else mkReturn(returns) :: Nil
 
@@ -80,7 +80,7 @@ abstract class ExtractMethod extends MultiStageRefactoring with TreeAnalysis wit
     val replaceBlockOfStatements = topdown {
       matchingChildren {
         transform {
-          case block @ BlockExtractor(stats) if stats.size > 0 => {
+          case block @ BlockExtractor(stats) if stats.nonEmpty => {
             val newStats = stats.replaceSequence(selection.selectedTopLevelTrees, call :: Nil)
             mkBlock(newStats) replaces block
           }
