@@ -53,12 +53,12 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
 
     val extractedVariablesNames = extractedVariables.map(_.nameString)
 
-    val (traitBody, classBody) = prep.classDef.impl.body.partition(valOrDefDef => valOrDefDef match {
+    val (traitBody, classBody) = prep.classDef.impl.body.partition {
       case valdef: ValDef => extractedVariables contains valdef
       case defdef: DefDef if defdef.mods.hasFlag(Flags.ACCESSOR) => extractedVariablesNames contains defdef.nameString.stripSuffix("_=")
       case defdef: DefDef => extractedMethods contains defdef
       case _ => false
-    })
+    }
 
     val classDef = prep.classDef
 

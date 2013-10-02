@@ -218,7 +218,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
           if(neededSelectors.size == selectors.size && (exprIsAllRangePos || invisiblePartIsDefaultImported)) {
             Some(imp)
-          } else if(neededSelectors.size > 0) {
+          } else if(neededSelectors.nonEmpty) {
 
             /* Imports from the scala package don't have to start with `scala`,
              * and we don't want to enforce this, so we just keep the expr as
@@ -251,7 +251,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
             additionallyImportedTypes.contains(s.name.toString)
           }
 
-          if(neededSelectors.size > 0) {
+          if(neededSelectors.nonEmpty) {
             Import(stripPositions(expr), neededSelectors)
           } else {
             Import(EmptyTree, Nil)
