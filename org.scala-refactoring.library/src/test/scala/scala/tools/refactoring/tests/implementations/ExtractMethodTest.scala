@@ -41,7 +41,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def prntln: Int = {
-/*(*/   val a = {
+        /*(*/   val a = {
           val b = 1
           b * 5
         }   /*)*/
@@ -71,7 +71,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def myOwnPrint: Unit = {
-/*(*/   println("hello")/*)*/
+        /*(*/   println("hello")/*)*/
       }
     }
     """
@@ -100,7 +100,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def prntln: Unit = {
-/*(*/   println("hello")/*)*/
+        /*(*/   println("hello")/*)*/
       }
     }
 
@@ -131,7 +131,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def prntln(a: Int): Unit = {
-/*(*/   println(a)  /*)*/
+        /*(*/   println(a)  /*)*/
       }
     }
     """
@@ -167,7 +167,6 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
 
         private def prntln(sumList: Seq[Int] => Int, values: scala.collection.immutable.Range.Inclusive): Int = {
-
           /*(*/val sum = sumList(values)/*)*/   // the sum
           sum
         }
@@ -201,7 +200,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def prntln(d: Int, a: Int, b: Int, c: Int): Unit = {
-/*(*/   println(a + b + c + d)  /*)*/
+        /*(*/   println(a + b + c + d)  /*)*/
       }
     }
     """
@@ -227,7 +226,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def prntln: Int = {
-/*(*/   val a = 1  /*)*/
+        /*(*/   val a = 1  /*)*/
         a
       }
     }
@@ -255,7 +254,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def prntln: (Int, Int) = {
-/*(*/   val a = 1
+        /*(*/   val a = 1
         val b = 1  /*)*/
         (a, b)
       }
@@ -290,7 +289,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def prntln(a: Int, c: Int): (Int, Int) = {
-/*(*/   val d = a + c
+        /*(*/   val d = a + c
         val e = d + a  /*)*/
         (d, e)
       }
@@ -317,7 +316,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def inc(a: Int): Int = {
-/*(*/   a + 1    /*)*/
+        /*(*/   a + 1    /*)*/
       }
     }
     """
@@ -341,7 +340,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def inc: Int = {
-/*(*/   val a = 1
+        /*(*/   val a = 1
         a + 1    /*)*/
       }
     }
@@ -372,7 +371,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
 
       private def test: Boolean = {
-         /*(*/ true == true /*)*/
+        /*(*/ true == true /*)*/
       }
     }
     """
@@ -494,7 +493,7 @@ object ExtractMethod3 {
       }
 
       private def test: Boolean = {
- /*(*/    true
+        /*(*/    true
       }
     }
     """
@@ -592,7 +591,7 @@ object ExtractMethod3 {
       }
 
       private def test: Boolean = {
-         /*(*/  true
+        /*(*/  true
       }
     }
     """
@@ -652,7 +651,7 @@ object ExtractMethod3 {
       }
 
       private def certainlyTrue(invert: Boolean => Boolean, a: Boolean): Boolean = {
-/*(*/   val b = invert(a)    /*)*/
+        /*(*/   val b = invert(a)    /*)*/
         b
       }
     }
@@ -688,7 +687,7 @@ object ExtractMethod3 {
       }
 
       private def magic(sumList: Seq[Int] => Int, prodList: Seq[Int] => Int, values: List[Int]): (Int, Int) = {
-    /*(*/    val     sum = sumList(values)   // the sum
+        /*(*/    val     sum = sumList(values)   // the sum
         val product = prodList(values) /*)*/ // the product
         (sum, product)
       }
@@ -921,7 +920,7 @@ class A {
   }
 
   private def call(i: Int): Int = {
-      /*(*/val j = i * 2;
+    /*(*/val j = i * 2;
     j/*)*/
   }
 }
@@ -959,7 +958,6 @@ class PathSeparator {
   }
 
   private def mkTuple: (Int, Int) = {
-
     /*(*/5 -> 10/*)*/
   }
 }
@@ -990,7 +988,7 @@ class PathSeparator {
   }
 
   private def sayHello: Unit = {
-      /*(*/println("hello")/*)*/
+    /*(*/println("hello")/*)*/
   }
 }
     """

@@ -679,11 +679,12 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
         if(printed.leading.matches("(?ms).*\\{.*")) {
           ppi(stats, separator = newlineIndentedToChildren, after = indentedNewline ++ "}")
-        } else
-          printWithEnclosing
-      } else
+        } else {
+          printWithEnclosing.dropLeadingIndentation
+        }
+      } else {
         printWithEnclosing
-
+      }
     }
   }
 
