@@ -53,12 +53,12 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
 
     val extractedVariablesNames = extractedVariables.map(_.nameString)
 
-    val (traitBody, classBody) = prep.classDef.impl.body.partition(valOrDefDef => valOrDefDef match {
+    val (traitBody, classBody) = prep.classDef.impl.body.partition {
       case valdef: ValDef => extractedVariables contains valdef
       case defdef: DefDef if defdef.mods.hasFlag(Flags.ACCESSOR) => extractedVariablesNames contains defdef.nameString.stripSuffix("_=")
       case defdef: DefDef => extractedMethods contains defdef
       case _ => false
-    })
+    }
 
     val classDef = prep.classDef
 
@@ -126,13 +126,13 @@ abstract class ExtractTrait extends MultiStageRefactoring with common.Interactiv
             emptyValDef
           }
           // remove `override` modifiers
-          val preparedTraitBody = traitBody.map(t => t match {
+          val preparedTraitBody = traitBody.map {
             case d @ DefDef(mods, name, tparams, vparamss, tpt, rhs) if mods.hasFlag(Flags.OVERRIDE) => {
               val withoutOverride = mods &~ Flags.OVERRIDE
               DefDef(withoutOverride, name, tparams, vparamss, tpt, rhs) replaces d
             }
-            case _ => t
-          })
+            case t@_ => t
+          }
           val impl = Template(Nil, selfType, preparedTraitBody)
           val mods = Modifiers(Flags.TRAIT).withPosition(Flags.TRAIT, NoPosition)
           val extractedTrait = ClassDef(mods, newTypeName(traitName), classDef.tparams, impl)

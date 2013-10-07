@@ -38,7 +38,7 @@ trait CommonPrintUtils {
         val printedParams = params.map(s => typeToString(tree, s.tpe)).mkString(", ")
         val printedResult = typeToString(tree, result)
 
-        if (params.size < 1) {
+        if (params.isEmpty) {
           "() => " + printedResult
         } else if (params.size > 1) {
           "(" + printedParams + ") => " + printedResult

@@ -24,6 +24,14 @@ trait Fragment {
     override val post = self.post
   }
 
+  def dropLeadingIndentation: Fragment = new Fragment {
+    val leading  = Layout(self.leading.asText.replaceFirst("""^\s*""", ""))
+    val center   = self.center
+    val trailing = self.trailing
+    override val pre  = self.pre
+    override val post = self.post
+  }
+
   def dropTrailingLayout: Fragment = new Fragment {
     val leading  = self.leading
     val center   = self.center

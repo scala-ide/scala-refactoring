@@ -15,6 +15,7 @@ import scala.tools.refactoring.sourcegen.Fragment
 import scala.tools.refactoring.sourcegen.AbstractPrinter
 import scala.tools.refactoring.sourcegen.Layout
 import scala.reflect.internal.util.RangePosition
+import scala.annotation.tailrec
 
 import language.implicitConversions
 
@@ -104,9 +105,17 @@ trait PimpedTrees {
     }
     // There are sometimes multiple candidate symbols with the correct name; e.g. a class and an object symbol.
     // This picks one which is most useful for semantic highlighting:
-    (candidates find { _.isCase }) orElse
-      (candidates find { s => s.isClass || s.isTrait }) orElse
-      candidates.headOption
+    // a Case class symbol, failing that a Class or Trait symbol, failing that the first in the list
+    @tailrec
+    def findPrioritizedSymbol(l: List[Symbol], buffer: Option[Symbol], bufferIsClassOrTrait: Boolean): Option[Symbol] = l match {
+      case x::xs => if (x.isCase) Some(x) else
+        if (!bufferIsClassOrTrait && (x.isClass || x.isTrait)) findPrioritizedSymbol(xs, Some(x), true)
+        else findPrioritizedSymbol(xs, buffer, bufferIsClassOrTrait)
+      case Nil => buffer
+    }
+
+    val headIsClassOrTrait = candidates.nonEmpty && (candidates.head.isClass || candidates.head.isTrait)
+    findPrioritizedSymbol(candidates, candidates.headOption, headIsClassOrTrait)
   }
 
   /**
@@ -143,12 +152,22 @@ trait PimpedTrees {
 
       // TODO convert to an extractor, but there seems to be a strange problem with 2.10
       def findAllBinds(ts: List[Tree]): List[Tree] = {
-        ts.collect {
-          case b: Bind => List(b)
-          case UnApply(_, args) => findAllBinds(args)
-          case Apply(_, args) => findAllBinds(args)
-          case _ => Nil
-        }.flatten
+        @tailrec
+        def findAllBinds_aux(ts: List[List[Tree]], res: List[Tree]): List[Tree] =
+          ts match {
+            case Nil => res
+            case x :: xs => x match {
+              case Nil => findAllBinds_aux(xs, res)
+              case y :: ys => y match {
+                case b: Bind => findAllBinds_aux(ys :: xs, b :: res)
+                case UnApply(_, args) => findAllBinds_aux(ys :: args :: xs, res)
+                case Apply(_, args) => findAllBinds_aux(ys :: args :: xs, res)
+                case _ => findAllBinds_aux(ys :: xs, res)
+              }
+            }
+          }
+
+        findAllBinds_aux(List(ts), Nil)
       }
 
       def hasSingleBindWithTransparentPosition(ts: List[Tree]) = {
@@ -383,13 +402,11 @@ trait PimpedTrees {
     Memoized.on ((t: Tree) => (t, t.pos)) { tree =>
 
       def find(t: Tree): List[Tree] = {
-        (if(t samePos tree)
-          t :: Nil
-        else
-          Nil) ::: children(t).map(find).flatten
+        val l = children(t).flatMap(find)
+        if(t samePos tree) t :: l else l
       }
 
-      cuRoot(tree.pos).map(find).toList.flatten
+      cuRoot(tree.pos).map(find).getOrElse(Nil)
     }
   }
 
@@ -1039,7 +1056,7 @@ trait PimpedTrees {
       /*
        * The new pattern matcher represents partial functions as instances of anonymous
        * classes. This trips up our code generation so we reduce the Block with just the
-       * pattern match. 
+       * pattern match.
        * */
       def removeNewPatternMatchingCruft(b: Block) = b match {
         case Block(List(c: ClassDef), Apply(Select(New(Ident(nme1)), nme.CONSTRUCTOR), Nil)) if nme1.toString == nme.ANON_FUN_NAME.toString =>
@@ -1052,7 +1069,7 @@ trait PimpedTrees {
       fixNamedArgumentCall(removeNewPatternMatchingCruft(t)) match {
         case t: Block =>
 
-          val trees = if(t.expr.pos.isRange && t.stats.size > 0 && (t.expr.pos precedes t.stats.head.pos))
+          val trees = if(t.expr.pos.isRange && t.stats.nonEmpty && (t.expr.pos precedes t.stats.head.pos))
             t.expr :: t.stats
           else
             t.stats ::: t.expr :: Nil

@@ -242,8 +242,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
     """
   } applyRefactoring (generateHashcodeAndEquals(false, (name: String) =>
       name match {
-        case "p2" => true
-        case "p3" => true
+        case "p2"|"p3" => true
         case _ => false
       }
   , false))

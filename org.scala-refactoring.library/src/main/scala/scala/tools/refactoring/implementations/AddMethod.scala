@@ -39,10 +39,10 @@ abstract class AddMethod extends Refactoring with InteractiveScalaCompiler {
       }
     }
 
-    addMethod(file, className, methodName, parameters, returnType, classOrObjectDef.get)
+    addMethod(methodName, parameters, returnType, classOrObjectDef.get)
   }
 
-  private def addMethod(file: AbstractFile, className: String, methodName: String, parameters: List[List[(String, String)]], returnTypeOpt: Option[String], classOrObjectDef: Tree): List[TextChange] = {
+  private def addMethod(methodName: String, parameters: List[List[(String, String)]], returnTypeOpt: Option[String], classOrObjectDef: Tree): List[TextChange] = {
     val nscParameters = for (paramList <- parameters) yield for ((paramName, typeName) <- paramList) yield {
       val paramSymbol = NoSymbol.newValue(newTermName(paramName))
       paramSymbol.setInfo(newType(typeName))
