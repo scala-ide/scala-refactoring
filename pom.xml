@@ -297,6 +297,18 @@
       <properties>
         <version.suffix>2_11</version.suffix>
       </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-xml_${scala.binary.version}</artifactId>
+          <version>${scala.xml.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-parser-combinators_${scala.binary.version}</artifactId>
+          <version>${scala.parser-combinators.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>scala-virtualized-trunk</id>
