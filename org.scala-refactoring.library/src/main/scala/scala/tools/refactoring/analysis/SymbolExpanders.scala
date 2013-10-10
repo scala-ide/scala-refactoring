@@ -90,11 +90,9 @@ trait DependentSymbolExpanders {
         }
         val containingClass = s.owner
 
-        val superClasses = containingClass.ancestors
-
         val subClasses = allSubClasses(containingClass)
 
-        val overrides = (subClasses map (s overridingSymbol _)) ++ (superClasses map (s overriddenSymbol _))
+        val overrides = (subClasses map (s overridingSymbol _)) ++ s.allOverriddenSymbols
 
         overrides
       }
@@ -102,25 +100,4 @@ trait DependentSymbolExpanders {
     })
   }
 
-  trait SameSymbolPosition extends SymbolExpander {
-    this: IndexLookup =>
-
-    def sameSymbol(s1: Symbol, s2: Symbol) = {
-      def sameFileName = {
-        s1.pos.source.file.name == s2.pos.source.file.name
-      }
-      def sameRange = {
-        s1.pos.sameRange(s2.pos)
-      }
-      def sameStringRep = {
-        s1.toString == s2.toString
-      }
-      sameRange && sameFileName && sameStringRep
-    }
-
-    abstract override def expand(s: Symbol) = super.expand(s) ++ (allSymbols collect {
-      case sym if sameSymbol(sym, s) && !sym.pos.isTransparent =>
-        sym
-    })
-   }
 }
