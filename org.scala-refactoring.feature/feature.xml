@@ -54,8 +54,8 @@ SUCH DAMAGE.
 
 
    <requires>
-      <import plugin="org.scala-ide.scala.library"/>
-      <import plugin="org.scala-ide.scala.compiler"/>
+      <import plugin="org.scala-lang.scala-library"/>
+      <import plugin="org.scala-lang.scala-compiler"/>
    </requires>
 
    <plugin
