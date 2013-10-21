@@ -53,5 +53,7 @@ import util._
     classOf[TreeAnalysisTest],
     classOf[TreeChangesDiscovererTest],
     classOf[TreeTransformationsTest],
-    classOf[UnusedImportsFinderTest]))
+    classOf[UnusedImportsFinderTest],
+    classOf[UnionFindInitTest],
+    classOf[UnionFindTest]))
 class RefactoringTestSuite {}

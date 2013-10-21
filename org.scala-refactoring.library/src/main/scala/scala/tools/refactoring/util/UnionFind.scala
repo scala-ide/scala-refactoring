@@ -17,6 +17,8 @@ import scala.collection.mutable.HashMap
  * Amortized time for a sequence of m {union, find} operations
  * is O(m * InvAckermann(n)) where n is the number of elements
  * and InvAckermann is the inverse of the Ackermann function.
+ *
+ * Not thread-safe.
  */
 
 class UnionFind[T]() {

@@ -34,7 +34,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
 
             val cus = compilationUnits
 
-            def linkSymbols(syms:List[Symbol], seen:HashSet[Symbol]): Unit = {
+            @tailrec
+            def linkSymbols(uf: UnionFind[Symbol], syms:List[Symbol], seen:HashSet[Symbol]): UnionFind[Symbol] = {
               if (syms.nonEmpty){
                 val nextSymbols = ListBuffer[Symbol]()
                 for (s <- syms) {
@@ -44,27 +45,13 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
                   }
                   seen += s
                 }
-                linkSymbols(nextSymbols.toList, seen)
-              }
+                linkSymbols(uf,nextSymbols.toList, seen)
+              } else uf
             }
 
-            /**
-             *  A Union-Find for the symbol graph, defined as essentially a lazy
-             *  val with custom initialization to link symbols related through
-             *  expansion right from the start.
-             */
-            @volatile var symbolsMapReady: Boolean = false
-            private var uf: UnionFind[Symbol] = _
-            private def symbolsMapInitialization() = {
-              uf = new UnionFind()
-              linkSymbols(allSymbols, new HashSet[Symbol]())
-              symbolsMapReady = true
-              uf
-            }
+            private lazy val symbolsUF: UnionFind[Symbol] = linkSymbols(new UnionFind(), allSymbols(), new HashSet[Symbol]())
 
-            def symbolsUF() = if (symbolsMapReady) uf else symbolsMapInitialization()
-
-            override def expandSymbol(s: Symbol): List[Symbol] = symbolsUF().equivalenceClass(s)
+            override def expandSymbol(s: Symbol): List[Symbol] = symbolsUF.equivalenceClass(s)
 
           }
 
