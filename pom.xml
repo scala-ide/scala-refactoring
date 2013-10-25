@@ -39,6 +39,9 @@
     <tycho.version>0.15.0</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
+    <scala.binary.version>2.11.0-M5</scala.binary.version>
+    <scala.xml.version>1.0.0-RC5</scala.xml.version>
+    <scala.parser-combinators.version>1.0.0-RC3</scala.parser-combinators.version>
   </properties>
   <modules>
     <module>org.scala-refactoring.library</module>
@@ -55,6 +58,11 @@
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-reflect</artifactId>
       <version>${scala.version}</version>
     </dependency>
     <dependency>
@@ -272,90 +280,35 @@
   </reporting>
   <profiles>
     <profile>
-      <id>release-ide-29</id>
-      <properties>
-        <scalac.options>-Ydependent-method-types</scalac.options>
-        <version.suffix>2_09</version.suffix>
-      </properties>
-      <repositories>
-        <repository>
-          <id>scala-toolchain-scalaide-2.0</id>
-          <name>Scala Toolchain for Scala IDE p2 repository</name>
-          <layout>p2</layout>
-          <url>http://download.scala-ide.org/incoming-release-29/dependencies/osgi-toolchain</url>
-        </repository>
-      </repositories>
-    </profile>
-    <profile>
-      <id>release-ide-210</id>
-      <properties>
-        <version.suffix>2_10</version.suffix>
-      </properties>
-      <repositories>
-        <repository>
-          <id>scala-toolchain-scalaide-2.0</id>
-          <name>Scala Toolchain for Scala IDE p2 repository</name>
-          <layout>p2</layout>
-          <url>http://download.scala-ide.org/incoming-release-210/dependencies/osgi-toolchain</url>
-        </repository>
-      </repositories>
-    </profile>
-    <profile>
-      <id>release-ide-211</id>
-      <properties>
-        <version.suffix>2_11</version.suffix>
-      </properties>
-      <repositories>
-        <repository>
-          <id>scala-toolchain-scalaide-2.0</id>
-          <name>Scala Toolchain for Scala IDE p2 repository</name>
-          <layout>p2</layout>
-          <url>http://download.scala-ide.org/incoming-release-211/dependencies/osgi-toolchain</url>
-        </repository>
-      </repositories>
-    </profile>
-    <profile>
       <id>scala-2.9.x</id>
       <properties>
         <scalac.options>-Ydependent-method-types</scalac.options>
         <version.suffix>2_09</version.suffix>
       </properties>
-      <repositories>
-        <repository>
-          <id>scala-toolchain-2.9.x</id>
-          <name>Scala Toolchain 2.9.x p2 repository</name>
-          <layout>p2</layout>
-          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-29x</url>
-        </repository>
-      </repositories>
     </profile>
     <profile>
       <id>scala-2.10.x</id>
       <properties>
         <version.suffix>2_10</version.suffix>
       </properties>
-      <repositories>
-        <repository>
-          <id>scala-toolchain-2.10.x</id>
-          <name>Scala Toolchain trunk p2 repository</name>
-          <layout>p2</layout>
-          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-210x</url>
-        </repository>
-      </repositories>
     </profile>
     <profile>
       <id>scala-2.11.x</id>
       <properties>
         <version.suffix>2_11</version.suffix>
       </properties>
-      <repositories>
-        <repository>
-          <id>scala-toolchain-2.11.x</id>
-          <name>Scala Toolchain trunk p2 repository</name>
-          <layout>p2</layout>
-          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-211x</url>
-        </repository>
-      </repositories>
+      <dependencies>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-xml_${scala.binary.version}</artifactId>
+          <version>${scala.xml.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-parser-combinators_${scala.binary.version}</artifactId>
+          <version>${scala.parser-combinators.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
     <profile>
       <id>scala-virtualized-trunk</id>
@@ -368,14 +321,6 @@
           <value>2.10.0-virtualized-SNAPSHOT</value>
         </property>
       </activation>
-      <repositories>
-        <repository>
-          <id>scala-toolchain-trunk</id>
-          <name>Scala Toolchain virtualized p2 repository</name>
-          <layout>p2</layout>
-          <url>${repo.scala-ide}/scala-eclipse-toolchain-osgi-virtualized</url>
-        </repository>
-      </repositories>
     </profile>
     <profile>
       <id>release-sign-artifacts</id>
