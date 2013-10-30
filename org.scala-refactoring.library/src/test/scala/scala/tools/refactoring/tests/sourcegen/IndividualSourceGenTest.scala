@@ -1338,7 +1338,7 @@ class A(a: Int) {
     object primitive {
       def fail() = {true}
       def foo(f: Int): Boolean = {
-        if((f == 0)) fail()
+        if(f == 0) fail()
         else false
       }
     }
@@ -1387,7 +1387,7 @@ class A(a: Int) {
       def fail() = {true}
 
       def foo(f: Int): Boolean = {
-      if((f == 0)) abc.primitive.fail()
+      if(f == 0) abc.primitive.fail()
       else false
       }
     }
@@ -1601,7 +1601,7 @@ class A(a: Int) {
     def acmatch_expr(x: Any) = x match {
       case t: List[_] => toInline()
       case false => fail
-      case t: ASD => if ((null equals null)) true else fail
+      case t: ASD => if (null equals null) true else fail
     }
   }
     """, result)
@@ -1752,7 +1752,7 @@ object acmatch {
     }
 
     def subst_expr(obj: Expr): Expr = obj match {
-      case t: Until => subst_tlop2(obj, ((_: Expr).fma1), ((_: Expr).fma2))
+      case t: Until => subst_tlop2(obj, ((_: Expr).fma1), (_: Expr).fma2)
     }
     abstract class Expr(val fma1: Expr, val fma2: Expr) {
       def untilp = false
