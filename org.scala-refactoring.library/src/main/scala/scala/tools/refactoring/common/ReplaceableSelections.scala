@@ -32,8 +32,13 @@ trait ReplaceableSelections extends Selections {
       newSelTree.flatMap(expandTo(_))
     }
 
+    private def selectionMatchesFirstTree =
+      selection.selectedTopLevelTrees.headOption.map { firstTree =>
+        firstTree.pos.start == selection.pos.start && firstTree.pos.end == selection.pos.end
+      }.getOrElse(false)
+
     def expand: Option[Selection] =
-      if (selection.selectedTopLevelTrees.length == 1) {
+      if (selectionMatchesFirstTree) {
         Some(selection)
       } else {
         selection.findSelectedOfType[Tree].flatMap { enclosing =>
@@ -49,6 +54,7 @@ trait ReplaceableSelections extends Selections {
           expandTo(posOfPartiallySelectedTrees(enclosing.children))
         }
       }
+      
   }
 
   implicit class ReplaceableSelection(selection: Selection) {
