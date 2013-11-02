@@ -93,6 +93,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * If multiple trees of the type are found, the last one (i.e. the deepest child) is returned.
      */
     def findSelectedWithPredicate(predicate: Tree => Boolean): Option[Tree] = {
+
       val filterer = new FilterTreeTraverser(cond(_) {
         case t => predicate(t) && isPosContainedIn(pos, t.pos)
       })
@@ -102,35 +103,15 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       filterer.hits.lastOption
     }
 
-    def filterSelectedWithPredicate(predicate: Tree => Boolean): List[Tree] = {
-      val filterer = new FilterTreeTraverser(cond(_) {
-        case t => t.pos.includes(pos) && predicate(t)
-      })
-
-      filterer.traverse(root)
-
-      filterer.hits.toList
-    }
-
-    def collectSelected[B](fn: Tree => Option[B]): List[B] = {
-      def pf = new PartialFunction[Tree, B] {
-        def isDefinedAt(t: Tree) = t.pos.includes(pos) && fn(t).isDefined
-        def apply(t: Tree) = fn(t).get
-      }
-      val collector = new CollectTreeTraverser(pf)
-      collector.traverse(root)
-      collector.results.toList
-    }
-
     private[refactoring] lazy val allSelectedTrees: List[Tree] = {
       selectedTopLevelTrees flatMap (_ filter (t => t.pos.isRange && pos.includes(t.pos)))
     }
 
     private def isPosContainedIn(p1: Position, p2: Position) = {
       p1.isOpaqueRange &&
-        p2.isOpaqueRange &&
-        p2.includes(p1) &&
-        p1.source == p2.source
+      p2.isOpaqueRange &&
+      p2.includes(p1) &&
+      p1.source == p2.source
     }
   }
 
@@ -159,7 +140,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
 
   case class TreeSelection(root: Tree) extends Selection {
 
-    if (!root.pos.isRange)
+    if(!root.pos.isRange)
       error("Position not a range.")
 
     val pos = root.pos.asInstanceOf[RangePosition]
