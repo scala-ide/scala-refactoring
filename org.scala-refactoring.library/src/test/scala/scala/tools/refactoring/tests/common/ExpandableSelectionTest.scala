@@ -23,9 +23,10 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
           def toBecome(expectedSrc: String) = {
             expectedSrc.withSelection { expectedSel =>
               expectedSel.allSelectedTrees.zip(expandedSel.allSelectedTrees).foreach { p =>
-                global.ask { () =>
-                  assertEquals(p._1.toString, p._2.toString)
+                val (expected, actual) = global.ask { () =>
+                  (p._1.toString, p._2.toString)
                 }
+                assertEquals(expected, actual)
               }
             }
           }
@@ -150,4 +151,36 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
     }
     """
     }
+
+  @Test
+  def expandWithNothingSelected =
+    """
+    class C{
+      val a = 1/*(*//*)*/
+    }
+    """.assertExpansion(_.expand.get).toBecome{
+      """
+    class C{
+      val a = /*(*/1/*)*/
+    }
+    """
+    }
+
+  @Test
+  def expandValidSelection =
+    """
+    class C{
+      val a = /*(*/1/*)*/
+    }
+    """.assertExpansion(_.expand.get).toRemain
+
+  @Test
+  def expandValidSelectionOfBlock =
+    """
+    class C{
+      val a = /*(*/{
+        1
+      }/*)*/
+    }
+    """.assertExpansion(_.expand.get).toRemain
 }

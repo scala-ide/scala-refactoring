@@ -32,20 +32,23 @@ trait ReplaceableSelections extends Selections {
       newSelTree.flatMap(expandTo(_))
     }
 
-    def expand: Option[Selection] = {
-      selection.findSelectedOfType[Tree].flatMap { enclosing =>
-        def posOfPartiallySelectedTrees(trees: List[Tree], newPos: Position = selection.pos): Position =
-          trees match {
-            case t :: rest if !t.pos.isRange || t.pos.end < selection.pos.start || t.pos.start > selection.pos.end =>
-              posOfPartiallySelectedTrees(rest, newPos)
-            case t :: rest =>
-              posOfPartiallySelectedTrees(rest, newPos union t.pos)
-            case Nil => newPos
-          }
+    def expand: Option[Selection] =
+      if (selection.selectedTopLevelTrees.length == 1) {
+        Some(selection)
+      } else {
+        selection.findSelectedOfType[Tree].flatMap { enclosing =>
+          def posOfPartiallySelectedTrees(trees: List[Tree], newPos: Position = selection.pos): Position =
+            trees match {
+              case t :: rest if !t.pos.isRange || t.pos.end < selection.pos.start || t.pos.start > selection.pos.end =>
+                posOfPartiallySelectedTrees(rest, newPos)
+              case t :: rest =>
+                posOfPartiallySelectedTrees(rest, newPos union t.pos)
+              case Nil => newPos
+            }
 
-        expandTo(posOfPartiallySelectedTrees(enclosing.children))
+          expandTo(posOfPartiallySelectedTrees(enclosing.children))
+        }
       }
-    }
   }
 
   implicit class ReplaceableSelection(selection: Selection) {
