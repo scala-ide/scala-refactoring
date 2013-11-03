@@ -36,7 +36,7 @@
   <properties>
     <scala.version>2.9.2</scala.version>
     <version.suffix>2_09</version.suffix>
-    <tycho.version>0.15.0</tycho.version>
+    <tycho.version>0.18.1</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
     <scala.binary.version>2.11.0-M5</scala.binary.version>
