@@ -133,7 +133,7 @@ class A(a: Int, b: Int){
   def visibilityInBlocks = assertVisibilities(
     selectionSees {
       "BlockScope(value s)" sees {
-        "BlockScope(value a, value b, value d)" sees {
+        "BlockScope(value a, value b, value d, value e)" sees {
           "TemplateScope(constructor A)" sees {
             "PackageScope(class A)"
           }
@@ -149,9 +149,11 @@ class A{
       println(c)
     }
     val d = 3
-    {
+    val e = {
       val s = "another block"
       /*(*/println(a * b * d)/*)*/
+      val t = "not visible"
+      s
     }
   }
 }
@@ -188,6 +190,23 @@ class A{
     j <- /*(*/List(1, 2, 3)/*)*/
   }{   
     println(i * j)
+  }
+}
+""")
+
+  @Test
+  def visibilityFromValDef = assertVisibilities(
+    selectionSees(
+      "BlockScope()" sees (
+        "MethodScope()" sees (
+          "TemplateScope(constructor A, method fn)" sees (
+            "PackageScope(class A)")))))(
+      """
+class A{
+  def fn = {
+    /*(*/val a = 1/*)*/
+    val b = 2
+    a * b
   }
 }
 """)
