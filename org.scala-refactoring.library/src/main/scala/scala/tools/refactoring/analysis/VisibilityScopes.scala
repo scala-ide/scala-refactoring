@@ -103,7 +103,7 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
     val enclosing: Template,
     val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
 
-    def insertAfter(pos: Position, t: Tree) = {
+    def insertAfter(pos: Position)(t: Tree) = {
       val isBefore = (other: Position) => other.isRange && other.start <= pos.start
       descendToAndThen(enclosing) {
         transform {
