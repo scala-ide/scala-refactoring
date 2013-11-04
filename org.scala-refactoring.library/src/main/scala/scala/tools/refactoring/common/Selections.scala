@@ -57,6 +57,14 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     }
 
     /**
+     * Returns the tree that encloses the whole selection.
+     */
+    lazy val enclosingTree =
+      findSelectedWithPredicate {
+        case t => t != selectedTopLevelTrees.headOption.getOrElse(null)
+      }.getOrElse(root)
+
+    /**
      * Returns true if the given Tree is fully contained in the selection.
      */
     def contains(t: Tree) = isPosContainedIn(t.pos, pos)

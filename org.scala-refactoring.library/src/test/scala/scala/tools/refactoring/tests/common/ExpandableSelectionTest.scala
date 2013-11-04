@@ -96,7 +96,7 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
       }
       val last = 1
     }
-    """.assertExpansion(_.expand.get).toBecome {
+    """.assertExpansion(_.expand).toBecome {
       """
     class C{
       val first = 1
@@ -122,7 +122,7 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
       val b = 2/*)*/
       val c = 3
     }
-    """.assertExpansion(_.expand.get).toBecome {
+    """.assertExpansion(_.expand).toBecome {
       """
     class C{
       /*(*/def fn = {
@@ -141,7 +141,7 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
     class C{
       val a = 1/*(*//*)*/
     }
-    """.assertExpansion(_.expand.get).toBecome {
+    """.assertExpansion(_.expand).toBecome {
       """
     class C{
       val a = /*(*/1/*)*/
@@ -155,7 +155,7 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
     class C{
       val a = /*(*/1/*)*/
     }
-    """.assertExpansion(_.expand.get).toRemain
+    """.assertExpansion(_.expand).toRemain
 
   @Test
   def expandValidSelectionOfBlock =
@@ -166,7 +166,7 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
         b
       }/*)*/
     }
-    """.assertExpansion(_.expand.get).toRemain
+    """.assertExpansion(_.expand).toRemain
 
   @Test
   def expandMethodCalls =
@@ -175,7 +175,7 @@ class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
       val s = "abc"
       s./*(*/mkString(", ")/*)*/
     }
-    """.assertExpansion(_.expand.get).toBecome {
+    """.assertExpansion(_.expand).toBecome {
       """
     class C{
       val s = "abc"

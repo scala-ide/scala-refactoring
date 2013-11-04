@@ -38,20 +38,27 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
         firstTree.pos.start == selection.pos.start && firstTree.pos.end == selection.pos.end
       }.getOrElse(false)
 
-    def expand: Option[Selection] =
+    private def intersectingPositions(p1: Position, p2: Position) =
+      p1.isRange && p2.isRange && {
+        val (first, second) =
+          if (p1.start <= p2.start) (p1, p2) else (p2, p1)
+        first.end > second.start
+      }
+
+    def expand: Selection =
       if (selectionMatchesFirstTree) {
-        Some(selection)
+        selection
       } else {
         def posOfPartiallySelectedTrees(trees: List[Tree], newPos: Position = selection.pos): Position =
           trees match {
-            case t :: rest if !t.pos.isRange || t.pos.end < selection.pos.start || t.pos.start > selection.pos.end =>
-              posOfPartiallySelectedTrees(rest, newPos)
-            case t :: rest =>
+            case t :: rest if t.pos overlaps selection.pos =>
               posOfPartiallySelectedTrees(rest, newPos union t.pos)
+            case t :: rest =>
+              posOfPartiallySelectedTrees(rest, newPos)
             case Nil => newPos
           }
 
-        expandTo(posOfPartiallySelectedTrees(selection.enclosingTree.children))
+        expandTo(posOfPartiallySelectedTrees(selection.enclosingTree.children)).getOrElse(selection)
       }
 
   }
@@ -64,11 +71,6 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
     lazy val definesNonValue = selection.selectedTopLevelTrees.exists(cond(_) {
       case t: DefTree => !t.symbol.isType
     })
-
-    lazy val enclosingTree =
-      selection.findSelectedWithPredicate {
-        case t => t != selection.selectedTopLevelTrees.head
-      }.getOrElse(selection.root)
   }
 
   implicit class ReplaceableSelection(selection: Selection) {
