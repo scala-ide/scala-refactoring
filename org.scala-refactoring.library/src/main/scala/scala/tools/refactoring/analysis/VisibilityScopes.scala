@@ -4,8 +4,10 @@ import scala.tools.refactoring.common.CompilerAccess
 import scala.tools.refactoring.common.Selections
 import scala.reflect.internal.Flags
 import PartialFunction._
+import scala.tools.refactoring.common.ReplaceableSelections
+import scala.tools.refactoring.transformation.TreeTransformations
 
-trait VisibilityScopes { self: CompilerAccess with Selections =>
+trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { self: CompilerAccess =>
   import global._
 
   /**
@@ -70,26 +72,91 @@ trait VisibilityScopes { self: CompilerAccess with Selections =>
       }
   }
 
+  private[analysis] def insertInSequence(stats: List[Tree], isBeforeInsertionPoint: Position => Boolean, t: Tree) = {
+    val (before, after) = stats.span((t: Tree) => isBeforeInsertionPoint(t.pos))
+    before ::: t :: after ::: Nil
+  }
+  
+  private[analysis] def insertInRhs(rhs: Tree, t: Tree) = {
+    rhs match {
+      case Block(stats, expr) =>
+        mkBlock(insertInSequence(stats :+ expr, _ => true, t))
+      case _ =>
+        mkBlock(t :: rhs :: Nil)
+    }
+  }
+
+  private[analysis] def descendToAndThen(t: Tree)(trans: Transformation[Tree, Tree]) =
+    topdown {
+      matchingChildren {
+        predicate { (other: Tree) =>
+          t.samePosAndType(other)
+        } &> trans
+      }
+    }
+
   class PackageScope(
     val enclosing: PackageDef,
     val visibleScopes: List[VisibilityScope]) extends VisibilityScope
 
   class TemplateScope(
     val enclosing: Template,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
+
+    def insertAfter(pos: Position, t: Tree) = {
+      val isBefore = (other: Position) => other.isRange && other.start <= pos.start
+      descendToAndThen(enclosing) {
+        transform {
+          case t @ Template(_, _, body) =>
+            t copy (body = insertInSequence(body, isBefore, t))
+        }
+      }
+    }
+  }
 
   class MethodScope(
     val enclosing: DefDef,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
+
+    def insertAtBeginningOfRhs(t: Tree) = {
+      descendToAndThen(enclosing) {
+        transform {
+          case t @ DefDef(_, _, _, _, _, rhs) =>
+            t copy (rhs = insertInRhs(rhs, t))
+        }
+      }
+    }
+  }
 
   class FunctionScope(
     val enclosing: Function,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
+
+    def insertAtBeginningOfRhs(t: Tree) = {
+      descendToAndThen(enclosing) {
+        transform {
+          case t @ Function(_, body) =>
+            t copy (body = insertInRhs(body, t))
+        }
+      }
+    }
+  }
 
   class BlockScope(
     val enclosing: Block,
     val visibleScopes: List[VisibilityScope],
-    override val declarations: List[DefTree]) extends VisibilityScope
+    override val declarations: List[DefTree]) extends VisibilityScope {
+
+    def insertAfterDeclaration(t: Tree) = {
+      val isBefore = (other: Position) => other.isRange && other.start <= pos.start
+      descendToAndThen(enclosing) {
+        transform {
+          case t @ Template(_, _, body) =>
+            t copy (body = insertInSequence(body, isBefore, t))
+        }
+      }
+    }
+  }
 
   object VisibilityScope {
     def apply(s: Selection) = {
@@ -126,16 +193,6 @@ trait VisibilityScopes { self: CompilerAccess with Selections =>
         }
 
       children(enclosingTrees).head
-    }
-  }
-  
-  implicit class ExtendedSelection(selection: Selection){
-    lazy val inboundDependencies = {
-      val usedSymbols = selection.selectedSymbols
-      val definedSymbols = selection.allSelectedTrees.collect{
-        case t: DefTree => t.symbol
-      }
-      usedSymbols.diff(definedSymbols)
     }
   }
 
