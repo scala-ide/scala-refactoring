@@ -10,21 +10,21 @@ trait VisibilityScopes { self: CompilerAccess with Selections =>
 
   /**
    * A data structure that represents all visible symbols at a given position.
-   * 
+   *
    * ```
    * class A(cp: Int){
    *   def a = 1
    *   def b(p: Int) = {
    *     val x = 2
    *     val y = 3
-   *     p * x * y // <-- reference position
+   *     /*(*/p * x * y/*)*/ // <-- reference selection
    *   }
    *   def c = 4
    * }
    * ```
-   * 
+   *
    * ```
-   * reference position -sees->
+   * reference selection -sees->
    *   Block(value y) -sees->
    *     Block(value x) -sees->
    *       DefDef(value p) -sees->
@@ -32,13 +32,15 @@ trait VisibilityScopes { self: CompilerAccess with Selections =>
    *          PackageDef(class A)
    * ```
    */
-  case class VisibilityScope(
-    /** The tree that encloses the visibility scope */
-    enclosing: Tree, 
-    /** All declarations in the visibility scope */
-    declarations: List[DefTree], 
+  trait VisibilityScope {
+    /** All declarations in this visibility scope */
+    val declarations: List[DefTree] = collectDeclarations
+
     /** The visibility scopes visible from this scope */
-    visibleScopes: List[VisibilityScope]) {
+    val visibleScopes: List[VisibilityScope]
+
+    /** The tree that encloses this visibility scope */
+    val enclosing: Tree
 
     /** All symbols declared in this visibility scope */
     lazy val symbols =
@@ -48,77 +50,92 @@ trait VisibilityScopes { self: CompilerAccess with Selections =>
     lazy val allVisibleSymbols: List[Symbol] =
       symbols ::: visibleScopes.flatMap(_.allVisibleSymbols)
 
-    /** Removes visibility scopes that contains neither symbol declarations
-     *  nor more than one child tree from the visibility tree.
-     *  This method is only used for tree construction.
-     */
-    def condense: VisibilityScope = this match {
-      case VisibilityScope(_, Nil, child :: Nil) =>
-        child.condense
-      case VisibilityScope(_, _, EmptyVisibilityTree :: Nil) =>
-        this copy (visibleScopes = Nil)
-      case _ =>
-        this copy (visibleScopes = visibleScopes.map(_.condense))
-    }
+    /** Position that includes all declarations in this visibility scope */
+    lazy val pos: Position =
+      declarations.foldRight[Position](NoPosition) { (t, pos) =>
+        pos union t.pos
+      }
 
     override def toString = {
-      enclosing.getClass().getSimpleName() + symbols.mkString("(", ", ", ")") + visibleScopes.mkString("{ ", ", ", " }")
-    }
-  }
-
-  private val EmptyVisibilityTree = VisibilityScope(EmptyTree, Nil, Nil)
-
-  def mkVisibilityScope(root: Tree, refPos: Position): VisibilityScope = {
-    val enclosingTrees = {
-      val traverser = new FilterTreeTraverser(cond(_) {
-        case t => t.pos.includes(refPos)
-      })
-      traverser.traverse(root)
-      traverser.hits.toList.reverse
+      getClass().getSimpleName() + symbols.mkString("(", ", ", ")") + visibleScopes.mkString("{ ", ", ", " }")
     }
 
-    def childrenFromBlock(block: Block, childTrees: List[VisibilityScope]): VisibilityScope = {
-      def inner(stats: List[Tree]): List[VisibilityScope] = stats match {
-        case (t: DefTree) :: rest if t.pos.point <= refPos.point =>
-          VisibilityScope(block, t :: Nil, inner(rest)) :: Nil
-        case _ :: rest => inner(rest)
-        case Nil => childTrees
-      }
-
-      inner((block.stats ::: block.expr :: Nil).reverse).headOption.getOrElse(EmptyVisibilityTree)
-    }
-
-    val exclusionFlags =
+    private[analysis] def exclusionFlags =
       Flags.ACCESSOR
 
-    def declarations(enclosing: Tree): List[DefTree] =
-      enclosing match {
-        case t: Tree =>
-          t.children.collect {
-            case dt: DefTree if !dt.symbol.hasFlag(exclusionFlags) && dt.symbol != NoSymbol => dt
-          }
-        case _ => Nil
+    private[analysis] def collectDeclarations =
+      enclosing.children.collect {
+        case dt: DefTree if !dt.symbol.hasFlag(exclusionFlags) && dt.symbol != NoSymbol =>
+          dt
       }
-
-    def children(enclosingTrees: List[Tree]): List[VisibilityScope] =
-      enclosingTrees match {
-        case (b: Block) :: rest =>
-          childrenFromBlock(b, children(rest)) :: Nil
-        case t :: rest =>
-          VisibilityScope(t, declarations(t), children(rest)) :: Nil
-        case Nil =>
-          EmptyVisibilityTree :: Nil
-      }
-    
-    children(enclosingTrees).head.condense
   }
 
-  /**
-   * Enriches selections with easy access to visibility scopes.
-   */
-  implicit class SelectionWithVisibility(selection: Selection) {
-    def visibilityScope() = {
-      mkVisibilityScope(selection.root, selection.pos)
+  class PackageScope(
+    val enclosing: PackageDef,
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+
+  class TemplateScope(
+    val enclosing: Template,
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+
+  class MethodScope(
+    val enclosing: DefDef,
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+
+  class FunctionScope(
+    val enclosing: Function,
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+
+  class BlockScope(
+    val enclosing: Block,
+    val visibleScopes: List[VisibilityScope],
+    override val declarations: List[DefTree]) extends VisibilityScope
+
+  object VisibilityScope {
+    def apply(s: Selection) = {
+      val enclosingTrees = {
+        val traverser = new FilterTreeTraverser(cond(_) {
+          case t => t.pos.includes(s.pos) && !t.pos.sameRange(s.pos)
+        })
+        traverser.traverse(s.root)
+        traverser.hits.toList.reverse
+      }
+
+      def childrenFromBlock(block: Block, childTrees: List[VisibilityScope]): VisibilityScope = {
+        def inner(stats: List[Tree]): List[VisibilityScope] = stats match {
+          case (t: DefTree) :: rest if t.pos.point <= s.pos.point =>
+            new BlockScope(block, inner(rest), t :: Nil) :: Nil
+          case _ :: rest => inner(rest)
+          case Nil => childTrees
+        }
+
+        inner((block.stats ::: block.expr :: Nil).reverse).head
+      }
+
+      def children(enclosingTrees: List[Tree]): List[VisibilityScope] =
+        enclosingTrees match {
+          case t :: rest => t match {
+            case t: PackageDef => new PackageScope(t, children(rest)) :: Nil
+            case t: Template => new TemplateScope(t, children(rest)) :: Nil
+            case t: DefDef => new MethodScope(t, children(rest)) :: Nil
+            case t: Function => new FunctionScope(t, children(rest)) :: Nil
+            case t: Block => childrenFromBlock(t, children(rest)) :: Nil
+            case _ => children(rest)
+          }
+          case Nil => Nil
+        }
+
+      children(enclosingTrees).head
+    }
+  }
+  
+  implicit class ExtendedSelection(selection: Selection){
+    lazy val inboundDependencies = {
+      val usedSymbols = selection.selectedSymbols
+      val definedSymbols = selection.allSelectedTrees.collect{
+        case t: DefTree => t.symbol
+      }
+      usedSymbols.diff(definedSymbols)
     }
   }
 

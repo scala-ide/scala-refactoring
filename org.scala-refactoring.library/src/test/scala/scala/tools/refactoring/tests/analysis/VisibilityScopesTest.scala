@@ -8,18 +8,18 @@ import sun.security.util.Length
 
 class VisibilityScopesTest extends TestHelper with VisibilityScopes {
   import global._
-  
-  case class Expectation(scope: String, children: List[Expectation]){
+
+  case class Expectation(scope: String, children: List[Expectation]) {
     override def toString =
       scope + children.mkString("{ ", ", ", " }")
   }
 
   def selectionSees(expected: => Expectation) = expected
-  
+
   implicit def toExpectation(scope: String) =
     Expectation(scope, Nil)
-  
-  implicit class ExpectationBuilder(scope: String){
+
+  implicit class ExpectationBuilder(scope: String) {
     def sees(childScope: Expectation) =
       Expectation(scope, childScope :: Nil)
   }
@@ -33,7 +33,7 @@ class VisibilityScopesTest extends TestHelper with VisibilityScopes {
   def assertVisibilities(expected: Expectation)(src: String) = {
     val tree = treeFrom(src)
     val selection = findMarkedNodes(src, tree)
-    val vt = selection.visibilityScope
+    val vt = VisibilityScope(selection)
 
     assertEquals(expected.toString(), vt.toString())
   }
@@ -41,9 +41,9 @@ class VisibilityScopesTest extends TestHelper with VisibilityScopes {
   @Test
   def testVisibility = assertVisibilities(
     selectionSees {
-      "Block(value c)" sees {
-        "Template(constructor A, value a, value b)" sees {
-          "PackageDef(class A)"
+      "BlockScope(value c)" sees {
+        "TemplateScope(constructor A, value a, value b)" sees {
+          "PackageScope(class A)"
         }
       }
     }) {
@@ -61,8 +61,8 @@ class A{
   @Test
   def visibilityOfOuterTypes = assertVisibilities(
     selectionSees {
-      "Template(constructor A)" sees {
-        "PackageDef(object O, class A, trait T)"
+      "TemplateScope(constructor A)" sees {
+        "PackageScope(object O, class A, trait T)"
       }
     })(
       """
@@ -80,8 +80,10 @@ trait T
   @Test
   def visibilityOfMethods = assertVisibilities(
     selectionSees {
-      "Template(constructor O, method a, method b, method c)" sees {
-        { "PackageDef(object O)" }
+      "MethodScope()" sees {
+        "TemplateScope(constructor O, method a, method b, method c)" sees {
+          "PackageScope(object O)"
+        }
       }
     })(
       """
@@ -97,10 +99,10 @@ object O{
   @Test
   def visibilityOfMethodParameters = assertVisibilities(
     selectionSees {
-      "Block(value c)" sees {
-        "DefDef(value a, value b)" sees {
-          "Template(constructor O, method b)" sees {
-            "PackageDef(object O)"
+      "BlockScope(value c)" sees {
+        "MethodScope(value a, value b)" sees {
+          "TemplateScope(constructor O, method b)" sees {
+            "PackageScope(object O)"
           }
         }
       }
@@ -117,8 +119,8 @@ object O{
   @Test
   def visibilityOfConstructorParameters = assertVisibilities(
     selectionSees {
-      "Template(value a, value b, constructor A)" sees {
-        "PackageDef(class A)"
+      "TemplateScope(value a, value b, constructor A)" sees {
+        "PackageScope(class A)"
       }
     })(
       """
@@ -130,10 +132,12 @@ class A(a: Int, b: Int){
   @Test
   def visibilityInBlocks = assertVisibilities(
     selectionSees {
-      "Block(value d)" sees {
-        "Block(value b)" sees {
-          "Block(value a)" sees {
-            "Template(constructor A)" sees { "PackageDef(class A)" }
+      "BlockScope(value d)" sees {
+        "BlockScope(value b)" sees {
+          "BlockScope(value a)" sees {
+            "TemplateScope(constructor A)" sees {
+              "PackageScope(class A)"
+            }
           }
         }
       }
@@ -154,15 +158,12 @@ class A{
 
   @Test
   def visibilityInForComprehensions = assertVisibilities(
-    selectionSees {
-      "Block(value p)" sees {
-        "Function(value j)" sees {
-          "Function(value i)" sees {
-            "Template(constructor A)" sees { "PackageDef(class A)" }
-          }
-        }
-      }
-    })(
+    selectionSees(
+      "BlockScope(value p)" sees (
+        "FunctionScope(value j)" sees (
+          "FunctionScope(value i)" sees (
+            "TemplateScope(constructor A)" sees (
+              "PackageScope(class A)"))))))(
       """
 class A{
   for(i <- 1 to 10; j <- 1 to 10){
@@ -174,13 +175,11 @@ class A{
 
   @Test
   def visibilityInForEnumerator = assertVisibilities(
-    selectionSees {
-      "Function(value j)" sees {
-        "Function(value i)" sees {
-          "Template(constructor A)" sees { "PackageDef(class A)" }
-        }
-      }
-    })(
+    selectionSees(
+      "FunctionScope(value j)" sees (
+        "FunctionScope(value i)" sees (
+          "TemplateScope(constructor A)" sees (
+            "PackageScope(class A)")))))(
       """
 class A{
   for{
