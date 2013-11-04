@@ -20,9 +20,9 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
     val afterSelection = (pos: Position) => {
       !pos.isRange || pos.start < selection.pos.start
     }
-    
+
     val afterDeclarations = (pos: Position) => {
-      !pos.isRange || !scope.pos.isRange || pos.start <= scope.pos.start
+      scope.pos.isRange && (!pos.isRange || pos.start <= scope.pos.start)
     }
 
     def insertInSeq(stats: List[Tree], insertion: Tree, isBeforeInsertionPoint: Position => Boolean) = {
@@ -30,7 +30,7 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
       before ::: insertion :: after ::: Nil
     }
 
-    def findScopeAndThen(trans: Transformation[Tree, Tree]) = topdown {
+    def descendToScopeAndThen(trans: Transformation[Tree, Tree]) = topdown {
       matchingChildren {
         predicate((t: Tree) => t.samePosAndType(scope.enclosing)) &>
           trans
@@ -38,7 +38,7 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
     }
 
     def insert(insertion: Tree) =
-      findScopeAndThen {
+      descendToScopeAndThen {
         transform {
           case t @ Template(_, _, body) =>
             t copy (body = insertInSeq(body, insertion, afterSelection)) replaces t
@@ -52,23 +52,31 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
       }
   }
 
-  class ExtractionScopePredicate(val p: ExtractionScope => Boolean) {
+  class ExtractionScopePredicate(val p: ExtractionScope => Boolean, val str: String = "<unknown>") {
     def &&(q: ExtractionScopePredicate) =
-      new ExtractionScopePredicate(s => p(s) && q.p(s))
+      new ExtractionScopePredicate(s => p(s) && q.p(s), "(" + str + " && " + q.str + ")")
+    
     def ||(q: ExtractionScopePredicate) =
-      new ExtractionScopePredicate(s => p(s) || q.p(s))
+      new ExtractionScopePredicate(s => p(s) || q.p(s), "(" + str + " || " + q.str + ")")
+    
     def unary_! =
-      new ExtractionScopePredicate(s => !p(s))
+      new ExtractionScopePredicate(s => !p(s), "!" + str)
+    
     def apply(es: ExtractionScope) = p(es)
+    
+    override def toString = str
   }
 
   def isA[T <: VisibilityScope](implicit m: Manifest[T]) =
-    new ExtractionScopePredicate(s => m.runtimeClass.isInstance(s.scope))
+    new ExtractionScopePredicate(s => m.runtimeClass.isInstance(s.scope), "isA[" + m.runtimeClass.getSimpleName() + "]")
 
   def hasNoUndefinedDependencies =
-    new ExtractionScopePredicate(s => s.undefinedDependencies.isEmpty)
+    new ExtractionScopePredicate(s => s.undefinedDependencies.isEmpty, "noUndefinedDeps")
 
-  def collectExtractionScopes(selection: Selection, pred: ExtractionScopePredicate) = {
+  def allScopes =
+    new ExtractionScopePredicate(_ => true)
+
+  def collectExtractionScopes(selection: Selection, pred: ExtractionScopePredicate = allScopes) = {
     val vs = VisibilityScope(selection)
     val inboundDeps = {
       val usedSymbols = selection.selectedSymbols
@@ -77,11 +85,11 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
       }
       usedSymbols.diff(definedSymbols)
     }
-    
+
     val shouldUseScope = pred && !isA[PackageScope]
 
     def inner(vs: VisibilityScope, undefinedDeps: List[Symbol]): List[ExtractionScope] = {
-      val definedInVs = vs.symbols
+      val definedInVs = vs.symbols intersect inboundDeps
       val es = ExtractionScope(selection, vs, inboundDeps diff undefinedDeps, undefinedDeps)
       val scopes = if (shouldUseScope(es)) es :: Nil else Nil
       vs.visibleScopes match {

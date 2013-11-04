@@ -69,16 +69,16 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
     })
 
     lazy val definesNonValue = selection.selectedTopLevelTrees.exists(cond(_) {
-      case t: DefTree => !t.symbol.isType
+      case t: DefTree => t.symbol.isType
     })
   }
 
   implicit class ReplaceableSelection(selection: Selection) {
-    private def descendToEnclosingTreeAndThen(trans: Transformation[Tree, Tree]) =
+    def descendToEnclosingTreeAndThen(trans: Transformation[Tree, Tree]) =
       topdown {
         matchingChildren {
           predicate { (t: Tree) =>
-            t == selection.enclosingTree
+            t.samePosAndType(selection.enclosingTree)
           } &> trans
         }
       }
@@ -105,13 +105,31 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
       }
     }
 
-    def replaceBy(replacement: Tree) =
+    def replaceBy(replacement: Tree) = {
       descendToEnclosingTreeAndThen {
         if (selection.selectedTopLevelTrees.length == 1)
           replaceSingleStatementBy(replacement)
         else
           replaceSequenceBy(replacement)
       }
+    }
+  }
 
+  implicit class TreeToSelections(tree: Tree) {
+    def toSelection(rootTree: Tree) =
+      new Selection {
+        val root = rootTree
+        val file = rootTree.pos.source.file
+        val pos = tree.pos.asInstanceOf[RangePosition]
+      }
+  }
+
+  implicit class TreesToSelections(trees: List[Tree]) {
+    def toSelection(rootTree: Tree) =
+      new Selection {
+        val root = rootTree
+        val file = rootTree.pos.source.file
+        val pos = trees.foldRight[Position](NoPosition)((t, pos) => pos union t.pos).asInstanceOf[RangePosition]
+      }
   }
 }

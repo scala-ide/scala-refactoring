@@ -77,6 +77,24 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
       }
     }
     """)
+    
+  @Test
+  def insertInBlockBeforeFirstDeclaration = """
+    object O{
+      def fn = {
+        /*(*/val a = 1/*)*/
+        println(a)
+      }
+    }
+    """.findFirstScope(isA[BlockScope]).assertInsertion(_.insert(tprint123)).toBecome("""
+    object O{
+      def fn = {
+        println(123)
+        val a = 1
+        println(a)
+      }
+    }
+    """)
   
   @Test
   def insertInMethodBody = """

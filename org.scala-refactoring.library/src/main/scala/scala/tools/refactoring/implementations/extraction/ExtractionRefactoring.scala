@@ -6,7 +6,7 @@ import scala.tools.refactoring.common.ReplaceableSelections
 import scala.tools.refactoring.analysis.VisibilityScopes
 import scala.tools.refactoring.analysis.TreeAnalysis
 
-trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with ExtractionScopes {
+trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with ExtractionScopes with Abstractions {
   import global._
 
   def prepareReplacementByValueAbstraction(s: Selection): Either[PreparationError, Selection] =

@@ -70,6 +70,24 @@ trait TreeFactory {
         case t => t
       }
   }
+  
+  def mkAssignmentToCall(call: Tree, returns: List[Symbol]) = {
+    returns match {
+      case Nil => call
+      case returns =>
+        // 'val (a, b) =' is represented by various trees, so we cheat and create the assignment in the name of the value:
+        val valName = returns match {
+          case x :: Nil => x.name.toString
+          case xs => "(" + (xs map (_.name) mkString ", ") + ")"
+        }
+        ValDef(NoMods, newTermName(valName), new TypeTree(), call)
+    }
+  }
+  
+  def mkCallValDef(name: String, returns: List[Symbol] = Nil): Tree = {
+    val call = Ident(name)
+    mkAssignmentToCall(call, returns)
+  }
 
   def mkValDef(name: String, rhs: Tree, tpt: TypeTree = new TypeTree): ValDef = {
 
@@ -96,18 +114,7 @@ trait TreeFactory {
     else
       Apply(Select(This(nme.EMPTY.toTypeName) setPos Invisible, name), args)
 
-    returns match {
-      case Nil => call
-      case returns =>
-
-        // 'val (a, b) =' is represented by various trees, so we cheat and create the assignment in the name of the value:
-        val valName = returns match {
-          case x :: Nil => x.name.toString
-          case xs => "(" + (xs map (_.name) mkString ", ") + ")"
-        }
-
-        ValDef(NoMods, newTermName(valName), new TypeTree(), call)
-    }
+    mkAssignmentToCall(call, returns)
   }
 
   def mkDefDef(mods: Modifiers = NoMods, name: String, parameters: List[List[Symbol]] = Nil :: Nil, body: List[Tree], typeParameters: List[TypeDef] = Nil, returnTypeOpt: Option[TypeTree] = None): DefDef = {
