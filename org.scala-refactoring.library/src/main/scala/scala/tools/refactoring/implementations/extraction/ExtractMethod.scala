@@ -2,10 +2,7 @@ package scala.tools.refactoring.implementations.extraction
 
 import scala.tools.refactoring.common.CompilerAccess
 
-/**
- * Introduces a new val definition for a piece of code.
- */
-abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
+abstract class ExtractMethod extends ExtractionRefactoring with CompilerAccess {
   import global._
 
   case class PreparationResult(
@@ -15,7 +12,7 @@ abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
   def prepare(s: Selection) = {
     for {
       selection <- prepareValueExpressionsExtraction(s.expand).right
-      scopes <- prepareExtractionScopes(selection, hasNoUndefinedDependencies).right
+      scopes <- prepareExtractionScopes(selection).right
     } yield {
       PreparationResult(selection, scopes)
     }
@@ -23,10 +20,11 @@ abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
 
   case class RefactoringParameters(
     name: String,
-    selectedScope: ExtractionScope)
+    selectedScope: ExtractionScope,
+    selectedParameters: List[Symbol])
 
   def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
-    val abstraction = ValueAbstraction(params.name, preparation.selection, params.selectedScope)
+    val abstraction = MethodAbstraction(params.name, preparation.selection, params.selectedScope, params.selectedParameters)
 
     Right(transformFile(s.file, abstraction.extractionTransformation))
   }

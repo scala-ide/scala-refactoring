@@ -9,7 +9,7 @@ import scala.tools.refactoring.analysis.TreeAnalysis
 trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with ExtractionScopes with Abstractions {
   import global._
 
-  def prepareReplacementByValueAbstraction(s: Selection): Either[PreparationError, Selection] =
+  def prepareValueExpressionsExtraction(s: Selection): Either[PreparationError, Selection] =
     if (s.definesNonLocal)
       Left(PreparationError("Cannot replace selection that defines non local fields."))
     else if (s.definesNonValue)
@@ -17,7 +17,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
     else
       Right(s)
 
-  def prepareExtractionScopes(s: Selection, p: ExtractionScopePredicate): Either[PreparationError, List[ExtractionScope]] = {
+  def prepareExtractionScopes(s: Selection, p: ExtractionScopePredicate = allScopes): Either[PreparationError, List[ExtractionScope]] = {
     val scopes = collectExtractionScopes(s, p)
     if (scopes.isEmpty)
       Left(PreparationError("No position to insert extraction found."))

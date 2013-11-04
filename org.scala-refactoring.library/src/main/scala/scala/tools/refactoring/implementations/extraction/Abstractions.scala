@@ -40,4 +40,23 @@ trait Abstractions extends ExtractionScopes with TreeAnalysis with Indexes { sel
       case stmts => mkValDef(name, mkBlock(stmts))
     }
   }
+
+  case class MethodAbstraction(
+    name: String,
+    selection: Selection,
+    extractionScope: ExtractionScope,
+    selectedParameters: List[Symbol]) extends Abstraction {
+
+    val parameters = (extractionScope.undefinedDependencies union selectedParameters) :: Nil
+
+    val call = mkCallDefDef(name, parameters, outboundDeps)
+
+    val returnStatements =
+      if (outboundDeps.isEmpty) Nil
+      else mkReturn(outboundDeps) :: Nil
+
+    val statements = selection.selectedTopLevelTrees ::: returnStatements
+
+    val abstraction = mkDefDef(NoMods, name, parameters, statements)
+  }
 }

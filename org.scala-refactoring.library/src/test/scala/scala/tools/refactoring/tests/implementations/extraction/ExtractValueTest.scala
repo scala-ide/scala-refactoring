@@ -5,7 +5,6 @@ import implementations.extraction.ExtractValue
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
-import language.reflectiveCalls
 import scala.tools.refactoring.implementations.extraction.ExtractionScopes
 
 class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionScopes {
@@ -66,6 +65,36 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
       }
     """
   } applyRefactoring (extract("c", isA[BlockScope]))
+
+  @Test
+  def extractWithOutboundDependencies = new FileSet {
+    """
+      object Demo {
+        def fn(a: Int) = {
+          /*(*/val b = a + 1
+          val c = a + 2
+          println(b*c)
+          val d = a + 3/*)*/
+          println(c * d)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn(a: Int) = {
+          val e = {
+            /*(*/val b = a + 1
+            val c = a + 2
+            println(b*c)
+            val d = a + 3/*)*/
+            (c, d)
+          }
+          val (c, d) = e
+          println(c * d)
+        }
+      }
+    """
+  } applyRefactoring (extract("e", isA[BlockScope]))
 
   @Test
   def extractToTemplateScope = new FileSet {
