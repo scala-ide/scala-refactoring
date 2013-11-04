@@ -132,12 +132,10 @@ class A(a: Int, b: Int){
   @Test
   def visibilityInBlocks = assertVisibilities(
     selectionSees {
-      "BlockScope(value d)" sees {
-        "BlockScope(value b)" sees {
-          "BlockScope(value a)" sees {
-            "TemplateScope(constructor A)" sees {
-              "PackageScope(class A)"
-            }
+      "BlockScope(value s)" sees {
+        "BlockScope(value a, value b, value d)" sees {
+          "TemplateScope(constructor A)" sees {
+            "PackageScope(class A)"
           }
         }
       }
@@ -151,7 +149,10 @@ class A{
       println(c)
     }
     val d = 3
-    /*(*/println(a * b * d)/*)*/
+    {
+      val s = "another block"
+      /*(*/println(a * b * d)/*)*/
+    }
   }
 }
 """)

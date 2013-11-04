@@ -34,7 +34,7 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
    *          PackageDef(class A)
    * ```
    */
-  trait VisibilityScope {
+  sealed trait VisibilityScope {
     /** All declarations in this visibility scope */
     val declarations: List[DefTree] = collectDeclarations
 
@@ -144,8 +144,7 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
 
   class BlockScope(
     val enclosing: Block,
-    val visibleScopes: List[VisibilityScope],
-    override val declarations: List[DefTree]) extends VisibilityScope {
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
 
     def insertAfterDeclaration(t: Tree) = {
       val isBefore = (other: Position) => other.isRange && other.start <= pos.start
@@ -168,17 +167,6 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
         traverser.hits.toList.reverse
       }
 
-      def childrenFromBlock(block: Block, childTrees: List[VisibilityScope]): VisibilityScope = {
-        def inner(stats: List[Tree]): List[VisibilityScope] = stats match {
-          case (t: DefTree) :: rest if t.pos.point <= s.pos.point =>
-            new BlockScope(block, inner(rest), t :: Nil) :: Nil
-          case _ :: rest => inner(rest)
-          case Nil => childTrees
-        }
-
-        inner((block.stats ::: block.expr :: Nil).reverse).head
-      }
-
       def children(enclosingTrees: List[Tree]): List[VisibilityScope] =
         enclosingTrees match {
           case t :: rest => t match {
@@ -186,7 +174,7 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
             case t: Template => new TemplateScope(t, children(rest)) :: Nil
             case t: DefDef => new MethodScope(t, children(rest)) :: Nil
             case t: Function => new FunctionScope(t, children(rest)) :: Nil
-            case t: Block => childrenFromBlock(t, children(rest)) :: Nil
+            case t: Block => new BlockScope(t, children(rest)) :: Nil
             case _ => children(rest)
           }
           case Nil => Nil
