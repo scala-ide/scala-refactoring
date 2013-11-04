@@ -16,6 +16,12 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
       Left(PreparationError("Cannot replace selection that defines non value symbols."))
     else
       Right(s)
-      
-  def prepareExtractionScopes(s: Selection): Either[PreparationError, List[ExtractionScope]] = ???
+
+  def prepareExtractionScopes(s: Selection, p: ExtractionScopePredicate): Either[PreparationError, List[ExtractionScope]] = {
+    val scopes = collectExtractionScopes(s, p)
+    if (scopes.isEmpty)
+      Left(PreparationError("No position to insert extraction found."))
+    else
+      Right(scopes)
+  }
 }
