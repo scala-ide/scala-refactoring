@@ -55,7 +55,7 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
     /** Position that includes all declarations in this visibility scope */
     lazy val pos: Position =
       declarations.foldRight[Position](NoPosition) { (t, pos) =>
-        pos union t.pos
+        t.pos union pos
       }
 
     override def toString = {
@@ -76,86 +76,26 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
     val (before, after) = stats.span((t: Tree) => isBeforeInsertionPoint(t.pos))
     before ::: t :: after ::: Nil
   }
-  
-  private[analysis] def insertInRhs(rhs: Tree, t: Tree) = {
-    rhs match {
-      case Block(stats, expr) =>
-        mkBlock(insertInSequence(stats :+ expr, _ => true, t))
-      case _ =>
-        mkBlock(t :: rhs :: Nil)
-    }
-  }
 
-  private[analysis] def descendToAndThen(t: Tree)(trans: Transformation[Tree, Tree]) =
-    topdown {
-      matchingChildren {
-        predicate { (other: Tree) =>
-          t.samePosAndType(other)
-        } &> trans
-      }
-    }
-
-  class PackageScope(
+  case class PackageScope(
     val enclosing: PackageDef,
     val visibleScopes: List[VisibilityScope]) extends VisibilityScope
 
-  class TemplateScope(
+  case class TemplateScope(
     val enclosing: Template,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-
-    def insertAfter(pos: Position)(t: Tree) = {
-      val isBefore = (other: Position) => other.isRange && other.start <= pos.start
-      descendToAndThen(enclosing) {
-        transform {
-          case t @ Template(_, _, body) =>
-            t copy (body = insertInSequence(body, isBefore, t))
-        }
-      }
-    }
-  }
-
-  class MethodScope(
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope 
+    
+  case class MethodScope(
     val enclosing: DefDef,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-
-    def insertAtBeginningOfRhs(t: Tree) = {
-      descendToAndThen(enclosing) {
-        transform {
-          case t @ DefDef(_, _, _, _, _, rhs) =>
-            t copy (rhs = insertInRhs(rhs, t))
-        }
-      }
-    }
-  }
-
-  class FunctionScope(
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope 
+    
+  case class FunctionScope(
     val enclosing: Function,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-
-    def insertAtBeginningOfRhs(t: Tree) = {
-      descendToAndThen(enclosing) {
-        transform {
-          case t @ Function(_, body) =>
-            t copy (body = insertInRhs(body, t))
-        }
-      }
-    }
-  }
-
-  class BlockScope(
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope 
+    
+  case class BlockScope(
     val enclosing: Block,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-
-    def insertAfterDeclaration(t: Tree) = {
-      val isBefore = (other: Position) => other.isRange && other.start <= pos.start
-      descendToAndThen(enclosing) {
-        transform {
-          case t @ Template(_, _, body) =>
-            t copy (body = insertInSequence(body, isBefore, t))
-        }
-      }
-    }
-  }
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope 
 
   object VisibilityScope {
     def apply(s: Selection) = {
