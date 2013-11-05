@@ -3,7 +3,7 @@ package scala.tools.refactoring.implementations.extraction
 import scala.tools.refactoring.analysis.VisibilityScopes
 import scala.tools.refactoring.common.CompilerAccess
 
-trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
+trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: CompilerAccess =>
   import global._
 
   /**
@@ -14,56 +14,29 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
   case class ExtractionScope(
     selection: Selection,
     scope: VisibilityScope,
+    insertionPoint: InsertionPoint,
     definedDependencies: List[Symbol],
     undefinedDependencies: List[Symbol]) {
 
-    val afterSelection = (pos: Position) => {
-      !pos.isRange || pos.start < selection.pos.start
+    def insert(insertion: Tree) = {
+      val enclosingSelection = selection.expandTo(scope.enclosing).get
+      val enclosingWithInsertion = insertionPoint(scope.enclosing)(insertion)
+      enclosingSelection.replaceBy(enclosingWithInsertion)
     }
-
-    val afterDeclarations = (pos: Position) => {
-      scope.pos.isRange && (!pos.isRange || pos.start <= scope.pos.start)
-    }
-
-    def insertInSeq(stats: List[Tree], insertion: Tree, isBeforeInsertionPoint: Position => Boolean) = {
-      val (before, after) = stats.span((t: Tree) => isBeforeInsertionPoint(t.pos))
-      before ::: insertion :: after ::: Nil
-    }
-
-    def descendToScopeAndThen(trans: Transformation[Tree, Tree]) = topdown {
-      matchingChildren {
-        predicate((t: Tree) => t.samePosAndType(scope.enclosing)) &>
-          trans
-      }
-    }
-
-    def insert(insertion: Tree) =
-      descendToScopeAndThen {
-        transform {
-          case t @ Template(_, _, body) =>
-            t copy (body = insertInSeq(body, insertion, afterSelection)) replaces t
-          case t @ DefDef(_, _, _, _, _, rhs) =>
-            t copy (rhs = mkBlock(insertion :: rhs :: Nil)) replaces t
-          case t @ Function(_, body) =>
-            t copy (body = mkBlock(insertion :: body :: Nil)) replaces t
-          case t @ Block(stats, expr) =>
-            mkBlock(insertInSeq(stats :+ expr, insertion, afterDeclarations)) replaces t
-        }
-      }
   }
 
   class ExtractionScopePredicate(val p: ExtractionScope => Boolean, val str: String = "<unknown>") {
     def &&(q: ExtractionScopePredicate) =
       new ExtractionScopePredicate(s => p(s) && q.p(s), "(" + str + " && " + q.str + ")")
-    
+
     def ||(q: ExtractionScopePredicate) =
       new ExtractionScopePredicate(s => p(s) || q.p(s), "(" + str + " || " + q.str + ")")
-    
+
     def unary_! =
       new ExtractionScopePredicate(s => !p(s), "!" + str)
-    
+
     def apply(es: ExtractionScope) = p(es)
-    
+
     override def toString = str
   }
 
@@ -76,7 +49,7 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
   def allScopes =
     new ExtractionScopePredicate(_ => true)
 
-  def collectExtractionScopes(selection: Selection, pred: ExtractionScopePredicate = allScopes) = {
+  def collectExtractionScopes(selection: Selection, ip: InsertionPoint, pred: ExtractionScopePredicate = allScopes) = {
     val vs = VisibilityScope(selection)
     val inboundDeps = {
       val usedSymbols = selection.selectedSymbols
@@ -90,7 +63,7 @@ trait ExtractionScopes extends VisibilityScopes { self: CompilerAccess =>
 
     def inner(vs: VisibilityScope, undefinedDeps: List[Symbol]): List[ExtractionScope] = {
       val definedInVs = vs.symbols intersect inboundDeps
-      val es = ExtractionScope(selection, vs, inboundDeps diff undefinedDeps, undefinedDeps)
+      val es = ExtractionScope(selection, vs, ip, inboundDeps diff undefinedDeps, undefinedDeps)
       val scopes = if (shouldUseScope(es)) es :: Nil else Nil
       vs.visibleScopes match {
         case Nil => scopes

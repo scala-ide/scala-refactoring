@@ -6,8 +6,14 @@ import scala.tools.refactoring.common.ReplaceableSelections
 import scala.tools.refactoring.analysis.VisibilityScopes
 import scala.tools.refactoring.analysis.TreeAnalysis
 
-trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with ExtractionScopes with Abstractions {
+trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with ExtractionScopes with Abstractions with InsertionPoints {
   import global._
+
+  def mkDefaultExtractionPoint(s: Selection) =
+    s.beforeSelectionInBlock orElse
+      s.afterSelectionInTemplate orElse
+      atBeginningOfDefDef orElse
+      atBeginningOfFunction
 
   def prepareValueExpressionsExtraction(s: Selection): Either[PreparationError, Selection] =
     if (s.definesNonLocal)
@@ -18,7 +24,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
       Right(s)
 
   def prepareExtractionScopes(s: Selection, p: ExtractionScopePredicate = allScopes): Either[PreparationError, List[ExtractionScope]] = {
-    val scopes = collectExtractionScopes(s, p)
+    val scopes = collectExtractionScopes(s, mkDefaultExtractionPoint(s), p)
     if (scopes.isEmpty)
       Left(PreparationError("No position to insert extraction found."))
     else

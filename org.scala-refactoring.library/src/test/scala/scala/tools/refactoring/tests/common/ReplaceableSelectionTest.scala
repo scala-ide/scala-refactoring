@@ -49,6 +49,17 @@ class ReplaceableSelectionTest extends TestHelper with ReplaceableSelections {
     """)
 
   @Test
+  def replaceSingleStatementInArgument = """
+    object O{
+      println(/*(*/1/*)*/)
+    }
+    """.assertReplacement(_.replaceBy(t123)).toBecome("""
+    object O{
+      println(123)
+    }
+    """)
+
+  @Test
   def replaceSequence = """
     object O{
       def f = {

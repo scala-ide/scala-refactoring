@@ -40,7 +40,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with ExtractionS
           def extracted(a: Int): Int = {
             /*(*/a * b
           }
-          println(extracted(a)/*)*/)
+          println(/*(*/extracted(a)/*)*/)
         }
       }
     """

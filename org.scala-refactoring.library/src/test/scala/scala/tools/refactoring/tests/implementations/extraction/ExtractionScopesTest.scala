@@ -18,9 +18,14 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
       val end = commentSelectionEnd(src)
       FileSelection(root.pos.source.file, root, start, end)
     }
+    val extractionPoint =
+      selection.beforeSelectionInBlock orElse
+        selection.afterSelectionInTemplate orElse
+        atBeginningOfDefDef orElse
+        atBeginningOfFunction
 
     def findFirstScope(p: ExtractionScopePredicate) = {
-      val scope = collectExtractionScopes(selection, p).head
+      val scope = collectExtractionScopes(selection, extractionPoint, p).head
 
       new {
         def assertInsertion(mkTrans: ExtractionScope => Transformation[Tree, Tree]) = {
@@ -42,7 +47,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
       }
     }
   }
-  
+
   @Test
   def insertInTemplate = """
     object O{
@@ -59,7 +64,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
       def fm = println(2)
     }
     """)
-  
+
   @Test
   def insertInBlock = """
     object O{
@@ -77,7 +82,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
       }
     }
     """)
-    
+
   @Test
   def insertInBlockBeforeFirstDeclaration = """
     object O{
@@ -95,7 +100,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
       }
     }
     """)
-  
+
   @Test
   def insertInMethodBody = """
     object O{
@@ -109,7 +114,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
       }
     }
     """)
-  
+
   @Test
   def insertInFunctionBody = """
     object O{
