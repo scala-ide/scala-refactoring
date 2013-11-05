@@ -103,8 +103,11 @@ trait TreeTransformations extends Transformations with TreeFactory {
     /**
      * Same as replaceSequence except that the positions of replaced trees
      * are copied to the new trees.
+     * Note: The replacement must be smaller or of equal length than the sequence to replace
      */
     def replaceSequencePreservingPositions(seqToReplace: List[Tree], replacement: List[Tree]): List[Tree] = {
+      assert(seqToReplace.length >= replacement.length)
+      
       def inner(originalSeq: List[Tree], seqToReplace: List[Tree], replacement: List[Tree]): List[Tree] =
         (originalSeq, seqToReplace, replacement) match {
           case (Nil, _, _) => Nil
