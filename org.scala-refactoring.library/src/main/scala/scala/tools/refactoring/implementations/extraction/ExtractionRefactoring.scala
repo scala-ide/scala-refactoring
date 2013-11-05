@@ -23,8 +23,8 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
     else
       Right(s)
 
-  def prepareExtractionScopes(s: Selection, p: ExtractionScopePredicate = allScopes): Either[PreparationError, List[ExtractionScope]] = {
-    val scopes = collectExtractionScopes(s, mkDefaultExtractionPoint(s), p)
+  def prepareExtractionScopes(s: Selection, f: ExtractionScope.Filter = ExtractionScope.allScopes): Either[PreparationError, List[ExtractionScope]] = {
+    val scopes = collectExtractionScopes(s, mkDefaultExtractionPoint(s), f)
     if (scopes.isEmpty)
       Left(PreparationError("No position to insert extraction found."))
     else

@@ -30,31 +30,27 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
     }
   }
 
-  class ExtractionScopePredicate(val p: ExtractionScope => Boolean, val str: String = "<unknown>") {
-    def &&(q: ExtractionScopePredicate) =
-      new ExtractionScopePredicate(s => p(s) && q.p(s), "(" + str + " && " + q.str + ")")
+  object ExtractionScope {
+    type Filter = PartialFunction[ExtractionScope, ExtractionScope]
 
-    def ||(q: ExtractionScopePredicate) =
-      new ExtractionScopePredicate(s => p(s) || q.p(s), "(" + str + " || " + q.str + ")")
+    def isA[T <: VisibilityScope](implicit m: Manifest[T]): Filter = {
+      case s if m.runtimeClass.isInstance(s.scope) => s
+    }
 
-    def unary_! =
-      new ExtractionScopePredicate(s => !p(s), "!" + str)
+    val hasNoUndefinedDependencies: Filter = {
+      case s @ ExtractionScope(_, _, _, _, Nil) => s
+    }
 
-    def apply(es: ExtractionScope) = p(es)
+    val allScopes: Filter = {
+      case s => s
+    }
 
-    override def toString = str
+    def matchesInsertionPoint(ip: InsertionPoint): Filter = {
+      case s if ip.isDefinedAt(s.scope.enclosing) => s
+    }
   }
 
-  def isA[T <: VisibilityScope](implicit m: Manifest[T]) =
-    new ExtractionScopePredicate(s => m.runtimeClass.isInstance(s.scope), "isA[" + m.runtimeClass.getSimpleName() + "]")
-
-  def hasNoUndefinedDependencies =
-    new ExtractionScopePredicate(s => s.undefinedDependencies.isEmpty, "noUndefinedDeps")
-
-  def allScopes =
-    new ExtractionScopePredicate(_ => true)
-
-  def collectExtractionScopes(selection: Selection, ip: InsertionPoint, pred: ExtractionScopePredicate = allScopes) = {
+  def collectExtractionScopes(selection: Selection, ip: InsertionPoint, filter: ExtractionScope.Filter) = {
     val vs = VisibilityScope(selection)
     val inboundDeps = {
       val usedSymbols = selection.selectedSymbols
@@ -64,12 +60,15 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
       usedSymbols.diff(definedSymbols)
     }
 
-    val shouldUseScope = pred && !isA[PackageScope]
+    val scopeFilter = filter andThen ExtractionScope.matchesInsertionPoint(ip)
 
     def inner(vs: VisibilityScope, undefinedDeps: List[Symbol]): List[ExtractionScope] = {
       val definedInVs = vs.symbols intersect inboundDeps
       val es = ExtractionScope(selection, vs, ip, inboundDeps diff undefinedDeps, undefinedDeps)
-      val scopes = if (shouldUseScope(es)) es :: Nil else Nil
+      val scopes =
+        if (scopeFilter.isDefinedAt(es))
+          es :: Nil
+        else Nil
       vs.visibleScopes match {
         case Nil => scopes
         case children => scopes ::: children.flatMap(inner(_, undefinedDeps union definedInVs))

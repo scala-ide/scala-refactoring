@@ -15,7 +15,7 @@ abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
   def prepare(s: Selection) = {
     for {
       selection <- prepareValueExpressionsExtraction(s.expand).right
-      scopes <- prepareExtractionScopes(selection, hasNoUndefinedDependencies).right
+      scopes <- prepareExtractionScopes(selection, ExtractionScope.hasNoUndefinedDependencies).right
     } yield {
       PreparationResult(selection, scopes)
     }

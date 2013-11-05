@@ -24,8 +24,8 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
         atBeginningOfDefDef orElse
         atBeginningOfFunction
 
-    def findFirstScope(p: ExtractionScopePredicate) = {
-      val scope = collectExtractionScopes(selection, extractionPoint, p).head
+    def findFirstScope(f: ExtractionScope.Filter) = {
+      val scope = collectExtractionScopes(selection, extractionPoint, f).head
 
       new {
         def assertInsertion(mkTrans: ExtractionScope => Transformation[Tree, Tree]) = {
@@ -55,7 +55,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
     
       def fm = println(2)
     }
-    """.findFirstScope(isA[TemplateScope]).assertInsertion(_.insert(tprint123)).toBecome("""
+    """.findFirstScope(ExtractionScope.isA[TemplateScope]).assertInsertion(_.insert(tprint123)).toBecome("""
     object O{
       def fn = println(1)
         
@@ -73,7 +73,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
         /*(*/println(a)/*)*/
       }
     }
-    """.findFirstScope(isA[BlockScope]).assertInsertion(_.insert(tprint123)).toBecome("""
+    """.findFirstScope(ExtractionScope.isA[BlockScope]).assertInsertion(_.insert(tprint123)).toBecome("""
     object O{
       def fn = {
         val a = 1
@@ -91,7 +91,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
         println(a)
       }
     }
-    """.findFirstScope(isA[BlockScope]).assertInsertion(_.insert(tprint123)).toBecome("""
+    """.findFirstScope(ExtractionScope.isA[BlockScope]).assertInsertion(_.insert(tprint123)).toBecome("""
     object O{
       def fn = {
         println(123)
@@ -106,7 +106,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
     object O{
       def fn(a: Int) = /*(*/println(a)/*)*/
     }
-    """.findFirstScope(isA[MethodScope]).assertInsertion(_.insert(tprint123)).toBecome("""
+    """.findFirstScope(ExtractionScope.isA[MethodScope]).assertInsertion(_.insert(tprint123)).toBecome("""
     object O{
       def fn(a: Int) = {
         println(123)
@@ -120,7 +120,7 @@ class ExtractionScopesTest extends TestHelper with ExtractionScopes {
     object O{
       val fn = (a: Int) => /*(*/println(a)/*)*/
     }
-    """.findFirstScope(isA[FunctionScope]).assertInsertion(_.insert(tprint123)).toBecome("""
+    """.findFirstScope(ExtractionScope.isA[FunctionScope]).assertInsertion(_.insert(tprint123)).toBecome("""
     object O{
       val fn = (a: Int) => {
         println(123)
