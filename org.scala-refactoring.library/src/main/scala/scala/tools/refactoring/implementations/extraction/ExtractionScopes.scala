@@ -19,9 +19,14 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
     undefinedDependencies: List[Symbol]) {
 
     def insert(insertion: Tree) = {
-      val enclosingSelection = selection.expandTo(scope.enclosing).get
-      val enclosingWithInsertion = insertionPoint(scope.enclosing)(insertion)
-      enclosingSelection.replaceBy(enclosingWithInsertion)
+      topdown {
+        matchingChildren {
+          transform {
+            case t if t.samePosAndType(scope.enclosing) =>
+              insertionPoint(t)(insertion) replaces t
+          }
+        }
+      }
     }
   }
 

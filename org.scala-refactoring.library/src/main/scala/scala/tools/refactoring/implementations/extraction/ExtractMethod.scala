@@ -26,6 +26,6 @@ abstract class ExtractMethod extends ExtractionRefactoring with CompilerAccess {
   def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
     val abstraction = MethodAbstraction(params.name, preparation.selection, params.selectedScope, params.selectedParameters)
 
-    Right(transformFile(s.file, abstraction.extractionTransformation))
+    Right(transformFile(s.file, abstraction.extractionTransformations))
   }
 }

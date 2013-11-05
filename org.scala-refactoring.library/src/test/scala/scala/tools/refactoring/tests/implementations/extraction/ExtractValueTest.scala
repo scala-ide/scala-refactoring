@@ -43,6 +43,31 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
   } applyRefactoring (extract("c", isA[BlockScope]))
 
   @Test
+  def extractSimpleSequence = new FileSet {
+    """
+      object Demo {
+        def fn(a: Int) = {
+          val b = 2
+          /*(*/println(a)
+          println(b)/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn(a: Int) = {
+          val b = 2
+          val c = {
+            /*(*/println(a)
+            println(b)/*)*/
+          }
+          c
+        }
+      }
+    """
+  } applyRefactoring (extract("c", isA[BlockScope]))
+
+  @Test
   def extractWithOutboundDependency = new FileSet {
     """
       object Demo {

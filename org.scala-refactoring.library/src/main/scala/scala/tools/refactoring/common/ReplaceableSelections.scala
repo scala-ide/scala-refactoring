@@ -85,14 +85,9 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
 
     private def replaceSingleStatementBy(replacement: Tree) = {
       val original = selection.selectedTopLevelTrees.head
-      val substitution = transform{
+      transform {
         case t if t.samePosAndType(original) =>
-          replacement replaces original
-      }
-      substitution |> topdown {
-        matchingChildren {
-          substitution
-        }
+          replacement replaces t
       }
     }
 
@@ -103,7 +98,7 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
           if (allStats.length == selection.selectedTopLevelTrees.length) {
             replacement replaces block
           } else {
-            val newStats = (stats :+ expr).replaceSequence(selection.selectedTopLevelTrees, replacement :: Nil)
+            val newStats = allStats.replaceSequencePreservingPositions(selection.selectedTopLevelTrees, replacement :: Nil)
             mkBlock(newStats) replaces block
           }
       }

@@ -28,6 +28,6 @@ abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
   def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
     val abstraction = ValueAbstraction(params.name, preparation.selection, params.selectedScope)
 
-    Right(transformFile(s.file, abstraction.extractionTransformation))
+    Right(transformFile(s.file, abstraction.extractionTransformations))
   }
 }

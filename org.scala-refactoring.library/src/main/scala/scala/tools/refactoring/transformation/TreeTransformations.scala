@@ -49,7 +49,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
 
           // if only the original tree has been transformed, we have to create
           // a new TypeTree instance so the old and new ones are not `eq`.
-          if(transformedTypeTree.eq(t) && !transformedOriginal.eq(t.original)) {
+          if (transformedTypeTree.eq(t) && !transformedOriginal.eq(t.original)) {
             new TypeTree().copyAttrs(t).setOriginal(transformedOriginal)
           } else {
             transformedTypeTree.setOriginal(transformedOriginal)
@@ -99,6 +99,25 @@ trait TreeTransformations extends Transformations with TreeFactory {
     }
   }
 
+  implicit class AdditionalTreeListMethods(l: List[Tree]) {
+    /**
+     * Same as replaceSequence except that the positions of replaced trees
+     * are copied to the new trees.
+     */
+    def replaceSequencePreservingPositions(seqToReplace: List[Tree], replacement: List[Tree]): List[Tree] = {
+      def inner(originalSeq: List[Tree], seqToReplace: List[Tree], replacement: List[Tree]): List[Tree] =
+        (originalSeq, seqToReplace, replacement) match {
+          case (Nil, _, _) => Nil
+          case (xs, Nil, Nil) => xs
+          case (x :: xs, y :: ys, z :: zs) if x == y =>
+            (z replaces x) :: inner(xs, ys, zs)
+          case (x :: xs, y :: ys, Nil) => inner(xs, ys, Nil)
+          case (x :: xs, _, _) => x :: inner(xs, seqToReplace, replacement)
+        }
+      inner(l, seqToReplace, replacement)
+    }
+  }
+
   /**
    * Locates the imports in a PackageDef. If we have nested packages, it will only match in the innermost.
    */
@@ -128,7 +147,6 @@ trait TreeTransformations extends Transformations with TreeFactory {
       }
     } transform orig
   }.asInstanceOf[T]
-
 
   val setNoPosition = transform {
     case t: global.Tree => t.pos = global.NoPosition; t

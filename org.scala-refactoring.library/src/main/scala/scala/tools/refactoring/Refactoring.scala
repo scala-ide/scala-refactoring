@@ -40,6 +40,25 @@ trait Refactoring extends Selections with TreeTransformations with SilentTracing
   def transformFile(file: AbstractFile, transformation: Transformation[global.Tree, global.Tree]): List[TextChange] = {
     refactor(transformation(abstractFileToTree(file)).toList)
   }
+  
+  /**
+   * Creates changes by applying several transformations to the root tree
+   * of an abstract file.
+   * Each transformation creates a new root tree that is used as input of
+   * the next transformation.
+   */
+  def transformFile(file: AbstractFile, transformations: List[Transformation[global.Tree, global.Tree]]): List[TextChange] = {
+    def inner(root: global.Tree, ts: List[Transformation[global.Tree, global.Tree]]): Option[global.Tree] = ts match {
+      case t :: rest =>
+        t(root) match{
+          case Some(newRoot) => inner(newRoot, rest)
+          case None => None
+        }
+      case Nil => Some(root)
+    }
+    
+    refactor(inner(abstractFileToTree(file), transformations).toList)
+  }
 
   /**
    * Makes a generated change as small as possible by eliminating the

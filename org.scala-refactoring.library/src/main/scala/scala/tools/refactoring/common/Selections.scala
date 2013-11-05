@@ -61,7 +61,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      */
     lazy val enclosingTree =
       findSelectedWithPredicate {
-        case t => t != selectedTopLevelTrees.headOption.getOrElse(null)
+        case t => t.pos.includes(pos)
       }.getOrElse(root)
 
     /**

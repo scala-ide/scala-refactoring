@@ -44,7 +44,7 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
     private def isBeforeSelectionIn(enclosing: Tree)(pos: Position) = {
       val startOfTopLevelTree = enclosing.children.find{
         case t => t.pos.includes(selection.pos)
-      }.map(_.pos.start).getOrElse(0)
+      }.map(_.pos.start).getOrElse(selection.pos.start)
       !pos.isRange || pos.start < startOfTopLevelTree
     }
 

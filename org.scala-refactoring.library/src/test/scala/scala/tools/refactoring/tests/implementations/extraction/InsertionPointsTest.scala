@@ -59,7 +59,7 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
     
       def fm = println(2)
     }
-    """.inScope(_.enclosingTree).atPosition(_.afterSelectionInTemplate)
+    """.inScope(_.expandTo[Template].get.enclosingTree).atPosition(_.afterSelectionInTemplate)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       def fn = println(1)
@@ -78,7 +78,7 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
         /*(*/println(a)/*)*/
       }
     }
-    """.inScope(_.enclosingTree).atPosition(_.beforeSelectionInBlock)
+    """.inScope(_.expandTo[Block].get.enclosingTree).atPosition(_.beforeSelectionInBlock)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       def fn = {
@@ -97,7 +97,7 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
         println(a)
       }
     }
-    """.inScope(_.enclosingTree).atPosition(_.beforeSelectionInBlock)
+    """.inScope(_.expandTo[Block].get.enclosingTree).atPosition(_.beforeSelectionInBlock)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       def fn = {
@@ -116,7 +116,7 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
         println(/*(*/a/*)*/)
       }
     }
-    """.inScope(_.expandTo[Block].get.selectedTopLevelTrees(0))
+    """.inScope(_.expandTo[Block].get.enclosingTree)
     .atPosition(_.beforeSelectionInBlock)
     .insertionOf(tprint123).shouldBecome("""
     object O{
@@ -133,7 +133,7 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
     object O{
       def fn(a: Int) = /*(*/println(a)/*)*/
     }
-    """.inScope(_.enclosingTree).atPosition(_ => atBeginningOfDefDef)
+    """.inScope(_.expandTo[DefDef].get.enclosingTree).atPosition(_ => atBeginningOfDefDef)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       def fn(a: Int) = {
@@ -148,7 +148,7 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
     object O{
       val fn = (a: Int) => /*(*/println(a)/*)*/
     }
-    """.inScope(_.enclosingTree).atPosition(_ => atBeginningOfFunction)
+    """.inScope(_.expandTo[Function].get.enclosingTree).atPosition(_ => atBeginningOfFunction)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       val fn = (a: Int) => {
