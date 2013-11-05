@@ -1389,12 +1389,12 @@ class SourceGenTest extends TestHelper with SilentTracing {
       Predef.assert(                  // additional (
           !list3.isEmpty)
 
-      assert(
-          (!list4.isEmpty)
+      assert((
+          !list4.isEmpty)
           )
 
-      Predef.assert(                  // additional (
-          (!list4.isEmpty)
+      Predef.assert((                  // additional (
+          !list4.isEmpty)
           )
 
       assert(
@@ -1543,6 +1543,28 @@ class SourceGenTest extends TestHelper with SilentTracing {
       trait Bar[A]
       class Blubb
     """, generateText(tree))
+  }
+
+  @Test
+  def testExprInRequiredParens = global.ask { () =>
+    val code = """
+      object Main{
+        (1 to 10).foreach(println(_))
+      }
+    """
+
+    assertEquals(code, generateText(treeFrom(code)))
+  }
+
+  @Test
+  def testExprInOptionalParens = global.ask { () =>
+    val code = """
+      object Main{
+        (List(1)).foreach(println(_))
+      }
+    """
+
+    assertEquals(code, generateText(treeFrom(code)))
   }
 }
 

@@ -7,6 +7,19 @@ package sourcegen
 
 object CommentsUtils {
 
+  def stripFromCode(source: String, c: Char) = {
+
+    val (rest, comments) = splitComment(source)
+
+    (rest zip comments) map {
+      case (' ', _1) => ""+ _1
+      case (`c`, _ ) => ""
+      case (_1, ' ') => ""+ _1
+      case ('\n', '\n') => "\n"
+      case _ => assert(false)
+    } mkString
+  }
+
   def stripComment(source: String): String = splitComment(source.toCharArray)._1
 
   def stripComment(source: Array[Char]): String = splitComment(source)._1
@@ -14,9 +27,9 @@ object CommentsUtils {
   def splitComment(source: String): (String, String) = splitComment(source.toCharArray)
 
   private def splitComment(source: Array[Char]): (String, String) = {
-    if(source.isEmpty) {
+    if (source.isEmpty) {
       ("", "")
-    } else if(source.length == 1) {
+    } else if (source.length == 1) {
       (source(0).toString, " ")
     } else {
       var nestingLevel = 0
@@ -33,14 +46,14 @@ object CommentsUtils {
 
       var i = 0
       val src = source ++ " "
-      while(i < source.length) {
+      while (i < source.length) {
 
         val _1 = src(i)
 
-        if(nextToComment) {
+        if (nextToComment) {
           nextToComment = false
           add(_1, ' ')
-        } else if (_1 == '/' && src(i+1) == '/' && !lineComment && nestingLevel == 0 ) {
+        } else if (_1 == '/' && src(i + 1) == '/' && !lineComment && nestingLevel == 0) {
           lineComment = true
           nextToComment = true
           add('/', ' ')
@@ -50,11 +63,11 @@ object CommentsUtils {
         } else if (_1 == '\n') {
           lineComment = false
           add('\n', '\n')
-        } else if (_1 == '/' && src(i+1) == '*' && !lineComment) {
+        } else if (_1 == '/' && src(i + 1) == '*' && !lineComment) {
           nestingLevel += 1
           nextToComment = true
           add('/', ' ')
-        } else if (_1 == '*' && src(i+1) == '/' && !lineComment && nestingLevel > 0) {
+        } else if (_1 == '*' && src(i + 1) == '/' && !lineComment && nestingLevel > 0) {
           nestingLevel -= 1
           nextToComment = true
           add('*', ' ')

@@ -51,6 +51,10 @@ trait CommonPrintUtils {
     }
   }
 
+  def balanceParensInLayout(open: Char, close: Char, l: Layout) = {
+    balanceParens(open, close)(Fragment(l.asText)).toLayout
+  }
+
   def balanceParens(open: Char, close: Char)(f: Fragment) = Fragment {
     val txt = f.toLayout.withoutComments // TODO also without strings, etc.
     val opening = txt.count(_ == open)

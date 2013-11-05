@@ -76,9 +76,13 @@ object Layout {
       case Some(i) => copy(end = i) → copy(start = i)
     }
 
-    private def splitFromLeft(cs: Seq[Char]): Option[Int] = split(cs, c => withoutComments.indexOf(c))
+    private def splitFromLeft(cs: Seq[Char]): Option[Int] = {
+      split(cs, c => withoutComments.indexOf(c))
+    }
 
-    private def splitFromRight(cs: Seq[Char]): Option[Int] = split(cs, c => withoutComments.lastIndexOf(c))
+    private def splitFromRight(cs: Seq[Char]): Option[Int] = {
+      split(cs, c => withoutComments.lastIndexOf(c))
+    }
 
     private def split(cs: Seq[Char], findIndex: Char => Int): Option[Int] = cs.toList match {
       case Nil =>

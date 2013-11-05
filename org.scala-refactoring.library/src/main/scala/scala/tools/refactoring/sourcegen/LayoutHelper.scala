@@ -25,7 +25,18 @@ trait LayoutHelper {
       case (Some(left), Some(p), Some(right)) => layoutForEnclosedChild(t, left, right, parent = p) \\ (_ => trace("enclosed child"))
     }
 
-    val (leadingLayoutFromParent, trailingLayoutFromParent) = layoutFromParent()
+    val (leadingLayoutFromParent, trailingLayoutFromParent) = layoutFromParent() match {
+      case (l, r) if l.contains("(") && !l.contains("@") =>
+
+        // Annotations are not part of the AST, so they are not rewritten,
+        // therefore we have to skip them here otherwise we have no chance
+        // to re-introduce missing (
+
+        val left = Layout(CommentsUtils.stripFromCode(l.asText, '('))
+
+        (left, r)
+      case (l, r) => (l, r)
+    }
 
     trace("parent leading:  %s", leadingLayoutFromParent.toString)
     trace("parent trailing: %s", trailingLayoutFromParent.toString)
