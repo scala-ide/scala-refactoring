@@ -28,7 +28,7 @@ abstract class ExtractMethod extends ExtractionRefactoring with CompilerAccess {
       params.name,
       preparation.selection,
       params.selectedParameters union params.selectedExtraction.undefinedDependencies,
-      params.selectedExtraction.outboundLocalDeps)
+      preparation.selection.outboundLocalDeps)
     val transformations = params.selectedExtraction.extractionTransformations(abstraction.call, abstraction.abstraction)
 
     Right(transformFile(s.file, transformations))

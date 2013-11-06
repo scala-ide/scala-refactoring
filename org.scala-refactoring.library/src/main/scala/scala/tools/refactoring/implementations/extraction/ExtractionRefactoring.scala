@@ -31,7 +31,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
       Left(PreparationError("Cannot extract selection that defines non local fields."))
     else if (expanded.definesNonValue)
       Left(PreparationError("Cannot extract selection that defines non value symbols."))
-    else if (expanded.containsImportStatement)
+    else if (expanded.containsImportStatements)
       Left(PreparationError("Cannot extract selection that contains import statements."))
     else
       Right(expanded)

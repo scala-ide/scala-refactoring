@@ -76,9 +76,24 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
       case t: DefTree => t.symbol.isType
     })
 
-    lazy val containsImportStatement = selection.selectedTopLevelTrees.exists(cond(_) {
+    lazy val containsImportStatements = selection.selectedTopLevelTrees.exists(cond(_) {
       case t: Import => true
     })
+
+    lazy val outboundLocalDeps: List[Symbol] = {
+      val allDefs = selection.selectedTopLevelTrees.collect({
+        case t: DefTree => t.symbol
+      })
+      val childrenOfEnclosingTree = selection.expandToNextEnclosingTree.collect {
+        case s if s.enclosingTree.isInstanceOf[Block] => s.enclosingTree.children
+      }.getOrElse(Nil)
+      childrenOfEnclosingTree.flatMap { child =>
+        child.collect {
+          case t: RefTree if !selection.pos.includes(t.pos) && allDefs.contains(t.symbol) =>
+            t.symbol
+        }
+      }.distinct
+    }
   }
 
   implicit class ReplaceableSelection(selection: Selection) {

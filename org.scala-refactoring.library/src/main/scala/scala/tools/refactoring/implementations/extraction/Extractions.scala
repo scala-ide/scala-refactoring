@@ -26,28 +26,7 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
     abstractionPosition: InsertionPosition,
     definedDependencies: List[Symbol],
     undefinedDependencies: List[Symbol]) {
-
-    /**
-     * Searches all outbound local dependencies of `selection`
-     * without using any indexes.
-     */
-    lazy val outboundLocalDeps: List[Symbol] = {
-      val allDefs = selection.selectedTopLevelTrees.collect({
-        case t: DefTree => t.symbol
-      })
-      val blockEnclosingSelection = selection.expandToNextEnclosingTree.collect {
-        case s if s.enclosingTree.isInstanceOf[Block] => s.enclosingTree
-      }
-      blockEnclosingSelection.map { b =>
-        b.children.flatMap { t =>
-          t.collect {
-            case t: RefTree if t.pos.isRange && t.pos.start > selection.pos.end && allDefs.contains(t.symbol) =>
-              t.symbol
-          }
-        }.distinct
-      }.getOrElse(Nil)
-    }
-
+    
     def insert(insertion: Tree) = {
       topdown {
         matchingChildren {
