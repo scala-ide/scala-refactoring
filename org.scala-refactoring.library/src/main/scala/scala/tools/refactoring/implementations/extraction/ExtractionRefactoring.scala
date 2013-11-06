@@ -9,22 +9,40 @@ import scala.tools.refactoring.analysis.TreeAnalysis
 trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with ExtractionScopes with Abstractions with InsertionPoints {
   import global._
 
-  val useDefaultInsertionPoints = (s: Selection) =>
+  /**
+   * Creates an insertion position that inserts local values
+   * before the selection `s` and class members after the
+   * method that contains the selection.
+   */
+  val useDefaultInsertionPositions = (s: Selection) =>
     s.beforeSelectionInBlock orElse
       s.afterSelectionInTemplate orElse
       atBeginningOfDefDef orElse
       atBeginningOfFunction
 
-  def prepareValueExpressionsExtraction(s: Selection): Either[PreparationError, Selection] =
-    if (s.definesNonLocal)
-      Left(PreparationError("Cannot replace selection that defines non local fields."))
-    else if (s.definesNonValue)
-      Left(PreparationError("Cannot replace selection that defines non value symbols."))
+  /**
+   * Tries to find a valid selection that is replaceable by a expression.
+   * Returns either a message why the selection is not valid or a selection
+   * that has all required properties.
+   */
+  def prepareExtractionOfExpressions(s: Selection): Either[PreparationError, Selection] = {
+    val expanded = s.expand
+    if (expanded.definesNonLocal)
+      Left(PreparationError("Cannot extract selection that defines non local fields."))
+    else if (expanded.definesNonValue)
+      Left(PreparationError("Cannot extract selection that defines non value symbols."))
+    else if (expanded.containsImportStatement)
+      Left(PreparationError("Cannot extract selection that contains import statements."))
     else
-      Right(s)
+      Right(expanded)
+  }
 
+  /**
+   * Tries to find possible extraction scopes that matches the given insertion position
+   * and fulfill all filter predicates.
+   */
   def prepareExtractionScopes(s: Selection,
-    ip: Selection => InsertionPosition = useDefaultInsertionPoints,
+    ip: Selection => InsertionPosition = useDefaultInsertionPositions,
     f: ExtractionScope.Filter = ExtractionScope.allScopes): Either[PreparationError, List[ExtractionScope]] = {
     val scopes = collectExtractionScopes(s, ip(s), f)
     if (scopes.isEmpty)

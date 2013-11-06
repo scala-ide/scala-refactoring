@@ -71,6 +71,10 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
     lazy val definesNonValue = selection.selectedTopLevelTrees.exists(cond(_) {
       case t: DefTree => t.symbol.isType
     })
+    
+    lazy val containsImportStatement = selection.selectedTopLevelTrees.exists(cond(_) {
+      case t: Import => true
+    })
   }
 
   implicit class ReplaceableSelection(selection: Selection) {
