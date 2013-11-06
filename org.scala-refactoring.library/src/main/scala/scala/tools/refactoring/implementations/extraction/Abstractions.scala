@@ -15,14 +15,6 @@ trait Abstractions extends ExtractionScopes with TreeAnalysis with Indexes { sel
     val extractionScope: ExtractionScope
 
     val outboundDeps = outboundLocalDependencies(selection)
-
-    lazy val extractionTransformations = {
-      // Do the refactoring in to transformation steps in order to simplify
-      // the transformations
-      selection.replaceBy(call) ::
-        extractionScope.insert(abstraction) ::
-        Nil
-    }
   }
 
   case class ValueAbstraction(

@@ -24,7 +24,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
       Right(s)
 
   def prepareExtractionScopes(s: Selection,
-    ip: Selection => InsertionPoint = useDefaultInsertionPoints,
+    ip: Selection => InsertionPosition = useDefaultInsertionPoints,
     f: ExtractionScope.Filter = ExtractionScope.allScopes): Either[PreparationError, List[ExtractionScope]] = {
     val scopes = collectExtractionScopes(s, ip(s), f)
     if (scopes.isEmpty)

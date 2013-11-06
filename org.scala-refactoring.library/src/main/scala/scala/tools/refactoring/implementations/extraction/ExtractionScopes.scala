@@ -14,7 +14,7 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
   case class ExtractionScope(
     selection: Selection,
     scope: VisibilityScope,
-    insertionPoint: InsertionPoint,
+    insertionPoint: InsertionPosition,
     definedDependencies: List[Symbol],
     undefinedDependencies: List[Symbol]) {
 
@@ -27,6 +27,14 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
           }
         }
       }
+    }
+    
+    def extractionTransformations(call: Tree, abstraction: Tree) = {
+      // Do the refactoring in two transformation steps in order to simplify
+      // the extraction transformation
+      selection.replaceBy(call) ::
+        insert(abstraction) ::
+        Nil
     }
   }
 
@@ -43,12 +51,12 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
 
     val allScopes: Filter = _ => true
 
-    def matchesInsertionPoint(ip: InsertionPoint): Filter = { s =>
+    def matchesInsertionPoint(ip: InsertionPosition): Filter = { s =>
       ip.isDefinedAt(s.scope.enclosing)
     }
   }
 
-  def collectExtractionScopes(selection: Selection, ip: InsertionPoint, filter: ExtractionScope.Filter) = {
+  def collectExtractionScopes(selection: Selection, ip: InsertionPosition, filter: ExtractionScope.Filter) = {
     val vs = VisibilityScope(selection)
     val inboundDeps = {
       val usedSymbols = selection.selectedSymbols

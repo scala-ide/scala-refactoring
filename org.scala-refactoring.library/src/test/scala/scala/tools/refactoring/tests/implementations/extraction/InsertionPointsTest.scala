@@ -23,7 +23,7 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
     def inScope(mkScope: Selection => Tree) = {
       val scope = mkScope(selection)
       new {
-        def atPosition(mkIp: Selection => InsertionPoint) = {
+        def atPosition(mkIp: Selection => InsertionPosition) = {
           val ip = mkIp(selection)
           new {
             def insertionOf(inserted: Tree) =
