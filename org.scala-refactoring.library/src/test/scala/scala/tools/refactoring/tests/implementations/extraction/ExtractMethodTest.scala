@@ -13,7 +13,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with ExtractionS
   def extract(name: String, f: ExtractionScope.Filter, selectedParams: List[String])(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
-      val scope = preparationResult.right.get.potentialScopes.filter(s => f.isDefinedAt(s.asInstanceOf[ExtractionScope])).head
+      val scope = preparationResult.right.get.potentialScopes.filter(f.asInstanceOf[refactoring.ExtractionScope.Filter]).head
       val params = new refactoring.RefactoringParameters(
         name,
         scope,

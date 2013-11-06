@@ -15,7 +15,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
       val refactoring = new ExtractValue with SilentTracing with TestProjectIndex
       val params = new refactoring.RefactoringParameters(
         name,
-        preparationResult.right.get.potentialScopes.filter(s => f.isDefinedAt(s.asInstanceOf[ExtractionScope])).head)
+        preparationResult.right.get.potentialScopes.filter(f.asInstanceOf[refactoring.ExtractionScope.Filter]).head)
     }
     testRefactoring.performRefactoring(testRefactoring.params)
   }

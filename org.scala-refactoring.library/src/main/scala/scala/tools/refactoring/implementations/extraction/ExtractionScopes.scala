@@ -31,22 +31,20 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
   }
 
   object ExtractionScope {
-    type Filter = PartialFunction[ExtractionScope, ExtractionScope]
+    type Filter = ExtractionScope => Boolean
 
-    def isA[T <: VisibilityScope](implicit m: Manifest[T]): Filter = {
-      case s if m.runtimeClass.isInstance(s.scope) => s
+    def isA[T <: VisibilityScope](implicit m: Manifest[T]): Filter = { s =>
+      m.runtimeClass.isInstance(s.scope)
     }
 
-    val hasNoUndefinedDependencies: Filter = {
-      case s @ ExtractionScope(_, _, _, _, Nil) => s
+    val hasNoUndefinedDependencies: Filter = { s =>
+      s.undefinedDependencies.isEmpty
     }
 
-    val allScopes: Filter = {
-      case s => s
-    }
+    val allScopes: Filter = _ => true
 
-    def matchesInsertionPoint(ip: InsertionPoint): Filter = {
-      case s if ip.isDefinedAt(s.scope.enclosing) => s
+    def matchesInsertionPoint(ip: InsertionPoint): Filter = { s =>
+      ip.isDefinedAt(s.scope.enclosing)
     }
   }
 
@@ -60,13 +58,15 @@ trait ExtractionScopes extends VisibilityScopes with InsertionPoints { self: Com
       usedSymbols.diff(definedSymbols)
     }
 
-    val scopeFilter = filter andThen ExtractionScope.matchesInsertionPoint(ip)
+    val scopeFilter = { s: ExtractionScope =>
+      filter(s) && ExtractionScope.matchesInsertionPoint(ip)(s)
+    }
 
     def inner(vs: VisibilityScope, undefinedDeps: List[Symbol]): List[ExtractionScope] = {
       val definedInVs = vs.symbols intersect inboundDeps
       val es = ExtractionScope(selection, vs, ip, inboundDeps diff undefinedDeps, undefinedDeps)
       val scopes =
-        if (scopeFilter.isDefinedAt(es))
+        if (scopeFilter(es))
           es :: Nil
         else Nil
       vs.visibleScopes match {
