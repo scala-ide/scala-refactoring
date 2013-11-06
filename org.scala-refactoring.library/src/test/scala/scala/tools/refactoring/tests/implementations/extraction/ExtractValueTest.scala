@@ -5,17 +5,17 @@ import implementations.extraction.ExtractValue
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
-import scala.tools.refactoring.implementations.extraction.ExtractionScopes
+import scala.tools.refactoring.implementations.extraction.Extractions
 
-class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionScopes {
+class ExtractValueTest extends TestHelper with TestRefactoring with Extractions {
   outer =>
 
-  def extract(name: String, f: ExtractionScope.Filter)(pro: FileSet) = {
+  def extract(name: String, f: Extraction.Filter)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractValue with SilentTracing with TestProjectIndex
       val params = new refactoring.RefactoringParameters(
         name,
-        preparationResult.right.get.potentialScopes.filter(f.asInstanceOf[refactoring.ExtractionScope.Filter]).head)
+        preparationResult.right.get.possibleExtractions.filter(f.asInstanceOf[refactoring.Extraction.Filter]).head)
     }
     testRefactoring.performRefactoring(testRefactoring.params)
   }
@@ -39,7 +39,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
         }
       }
     """
-  } applyRefactoring (extract("c", ExtractionScope.isA[BlockScope]))
+  } applyRefactoring (extract("c", Extraction.isA[BlockScope]))
 
   @Test
   def extractSimpleSequence = new FileSet {
@@ -64,7 +64,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
         }
       }
     """
-  } applyRefactoring (extract("c", ExtractionScope.isA[BlockScope]))
+  } applyRefactoring (extract("c", Extraction.isA[BlockScope]))
 
   @Test
   def extractWithOutboundDependency = new FileSet {
@@ -88,7 +88,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
         }
       }
     """
-  } applyRefactoring (extract("c", ExtractionScope.isA[BlockScope]))
+  } applyRefactoring (extract("c", Extraction.isA[BlockScope]))
 
   @Test
   def extractWithOutboundDependencies = new FileSet {
@@ -118,7 +118,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
         }
       }
     """
-  } applyRefactoring (extract("e", ExtractionScope.isA[BlockScope]))
+  } applyRefactoring (extract("e", Extraction.isA[BlockScope]))
 
   @Test
   def extractToTemplateScope = new FileSet {
@@ -142,5 +142,5 @@ class ExtractValueTest extends TestHelper with TestRefactoring with ExtractionSc
         def fm = 7
       }
     """
-  } applyRefactoring (extract("c", ExtractionScope.isA[TemplateScope]))
+  } applyRefactoring (extract("c", Extraction.isA[TemplateScope]))
 }

@@ -61,6 +61,10 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
         expandTo(posOfPartiallySelectedTrees(selection.enclosingTree.children)).getOrElse(selection)
       }
 
+    def expandToNextEnclosingTree: Option[Selection] =
+      expandTo(selection.findSelectedWithPredicate { t =>
+        t.pos.includes(selection.pos) && !t.samePos(selection.pos)
+      }.map(_.pos).getOrElse(NoPosition))
   }
 
   implicit class SelectionProperties(selection: Selection) {
@@ -71,7 +75,7 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
     lazy val definesNonValue = selection.selectedTopLevelTrees.exists(cond(_) {
       case t: DefTree => t.symbol.isType
     })
-    
+
     lazy val containsImportStatement = selection.selectedTopLevelTrees.exists(cond(_) {
       case t: Import => true
     })

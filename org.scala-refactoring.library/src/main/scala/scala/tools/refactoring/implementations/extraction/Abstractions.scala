@@ -2,25 +2,23 @@ package scala.tools.refactoring.implementations.extraction
 
 import scala.tools.refactoring.common.CompilerAccess
 import scala.tools.refactoring.analysis.TreeAnalysis
-import scala.tools.refactoring.analysis.Indexes
+import scala.tools.refactoring.common.Selections
+import scala.tools.refactoring.transformation.TreeFactory
+import scala.tools.refactoring.transformation.TreeTransformations
 
-trait Abstractions extends ExtractionScopes with TreeAnalysis with Indexes { self: CompilerAccess =>
+trait Abstractions extends Selections with TreeFactory with TreeTransformations { self: CompilerAccess =>
   import global._
 
   trait Abstraction {
     val call: Tree
     val abstraction: Tree
-
     val selection: Selection
-    val extractionScope: ExtractionScope
-
-    val outboundDeps = outboundLocalDependencies(selection)
   }
 
   case class ValueAbstraction(
     name: String,
     selection: Selection,
-    extractionScope: ExtractionScope) extends Abstraction {
+    outboundDeps: List[Symbol]) extends Abstraction {
 
     val call = mkCallValDef(name, outboundDeps)
 
@@ -39,12 +37,10 @@ trait Abstractions extends ExtractionScopes with TreeAnalysis with Indexes { sel
   case class MethodAbstraction(
     name: String,
     selection: Selection,
-    extractionScope: ExtractionScope,
-    selectedParameters: List[Symbol]) extends Abstraction {
-
-    val parameters = (extractionScope.undefinedDependencies union selectedParameters) :: Nil
-
-    val call = mkCallDefDef(name, parameters, outboundDeps)
+    parameters: List[Symbol],
+    outboundDeps: List[Symbol]) extends Abstraction {
+    
+    val call = mkCallDefDef(name, parameters :: Nil, outboundDeps)
 
     val returnStatements =
       if (outboundDeps.isEmpty) Nil
@@ -52,6 +48,6 @@ trait Abstractions extends ExtractionScopes with TreeAnalysis with Indexes { sel
 
     val statements = selection.selectedTopLevelTrees ::: returnStatements
 
-    val abstraction = mkDefDef(NoMods, name, parameters, statements)
+    val abstraction = mkDefDef(NoMods, name, parameters :: Nil, statements)
   }
 }

@@ -6,7 +6,7 @@ import scala.tools.refactoring.common.ReplaceableSelections
 import scala.tools.refactoring.analysis.VisibilityScopes
 import scala.tools.refactoring.analysis.TreeAnalysis
 
-trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with ExtractionScopes with Abstractions with InsertionPoints {
+trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with Extractions with Abstractions with InsertionPoints {
   import global._
 
   /**
@@ -38,13 +38,13 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
   }
 
   /**
-   * Tries to find possible extraction scopes that matches the given insertion position
+   * Tries to find possible extractions that matches the given insertion position
    * and fulfill all filter predicates.
    */
-  def prepareExtractionScopes(s: Selection,
-    ip: Selection => InsertionPosition = useDefaultInsertionPositions,
-    f: ExtractionScope.Filter = ExtractionScope.allScopes): Either[PreparationError, List[ExtractionScope]] = {
-    val scopes = collectExtractionScopes(s, ip(s), f)
+  def prepareExtractions(s: Selection, 
+    ip: Selection => InsertionPosition = useDefaultInsertionPositions, 
+    f: Extraction.Filter = Extraction.allScopes): Either[PreparationError, List[Extraction]] = {
+    val scopes = collectExtractions(s, ip(s), f)
     if (scopes.isEmpty)
       Left(PreparationError("No position to insert extraction found."))
     else

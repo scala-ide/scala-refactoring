@@ -10,15 +10,15 @@ abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
 
   case class PreparationResult(
     selection: Selection,
-    potentialScopes: List[ExtractionScope])
+    possibleExtractions: List[Extraction])
 
   def prepare(s: Selection) = {
     for {
       selection <- prepareExtractionOfExpressions(s).right
-      scopes <- prepareExtractionScopes(
+      scopes <- prepareExtractions(
           selection,
           useDefaultInsertionPositions,
-          ExtractionScope.hasNoUndefinedDependencies).right
+          Extraction.hasNoUndefinedDependencies).right
     } yield {
       PreparationResult(selection, scopes)
     }
@@ -26,11 +26,14 @@ abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
 
   case class RefactoringParameters(
     name: String,
-    selectedScope: ExtractionScope)
+    selectedExtraction: Extraction)
 
   def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
-    val abstraction = ValueAbstraction(params.name, preparation.selection, params.selectedScope)
-    val transformations = params.selectedScope.extractionTransformations(abstraction.call, abstraction.abstraction)
+    val abstraction = ValueAbstraction(
+        params.name, 
+        preparation.selection, 
+        params.selectedExtraction.outboundLocalDeps)
+    val transformations = params.selectedExtraction.extractionTransformations(abstraction.call, abstraction.abstraction)
 
     Right(transformFile(s.file, transformations))
   }
