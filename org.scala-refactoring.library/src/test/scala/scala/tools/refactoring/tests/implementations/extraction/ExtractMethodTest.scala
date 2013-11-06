@@ -43,7 +43,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions
         }
       }
     """
-  } applyRefactoring (extract("extracted", Extraction.isA[BlockScope], "a" :: Nil))
+  } applyRefactoring (extract("extracted", Extraction.takesPlaceInA[BlockScope], "a" :: Nil))
 
   @Test
   def extractComplexMethod = new FileSet {
@@ -86,5 +86,5 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions
         def fm(p: Int) = p + 1
       }
     """
-  } applyRefactoring (extract("extracted", Extraction.isA[TemplateScope], "na" :: Nil))
+  } applyRefactoring (extract("extracted", Extraction.takesPlaceInA[TemplateScope], "na" :: Nil))
 }

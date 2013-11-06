@@ -39,7 +39,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with Extractions 
         }
       }
     """
-  } applyRefactoring (extract("c", Extraction.isA[BlockScope]))
+  } applyRefactoring (extract("c", Extraction.takesPlaceInA[BlockScope]))
 
   @Test
   def extractSimpleSequence = new FileSet {
@@ -64,7 +64,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with Extractions 
         }
       }
     """
-  } applyRefactoring (extract("c", Extraction.isA[BlockScope]))
+  } applyRefactoring (extract("c", Extraction.takesPlaceInA[BlockScope]))
 
   @Test
   def extractWithOutboundDependency = new FileSet {
@@ -88,7 +88,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with Extractions 
         }
       }
     """
-  } applyRefactoring (extract("c", Extraction.isA[BlockScope]))
+  } applyRefactoring (extract("c", Extraction.takesPlaceInA[BlockScope]))
 
   @Test
   def extractWithOutboundDependencies = new FileSet {
@@ -118,7 +118,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with Extractions 
         }
       }
     """
-  } applyRefactoring (extract("e", Extraction.isA[BlockScope]))
+  } applyRefactoring (extract("e", Extraction.takesPlaceInA[BlockScope]))
 
   @Test
   def extractToTemplateScope = new FileSet {
@@ -142,5 +142,5 @@ class ExtractValueTest extends TestHelper with TestRefactoring with Extractions 
         def fm = 7
       }
     """
-  } applyRefactoring (extract("c", Extraction.isA[TemplateScope]))
+  } applyRefactoring (extract("c", Extraction.takesPlaceInA[TemplateScope]))
 }

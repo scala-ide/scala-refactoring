@@ -26,7 +26,7 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
     abstractionPosition: InsertionPosition,
     definedDependencies: List[Symbol],
     undefinedDependencies: List[Symbol]) {
-    
+
     def insert(insertion: Tree) = {
       topdown {
         matchingChildren {
@@ -50,7 +50,7 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
   object Extraction {
     type Filter = Extraction => Boolean
 
-    def isA[T <: VisibilityScope](implicit m: Manifest[T]): Filter = { s =>
+    def takesPlaceInA[T <: VisibilityScope](implicit m: Manifest[T]): Filter = { s =>
       m.runtimeClass.isInstance(s.scope)
     }
 
@@ -68,20 +68,17 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
   def collectExtractions(selection: Selection, ip: InsertionPosition, filter: Extraction.Filter) = {
     val vs = VisibilityScope(selection)
 
-    val scopeFilter = { s: Extraction =>
+    val extractionFilter = { s: Extraction =>
       filter(s) && Extraction.matchesInsertionPoint(ip)(s)
     }
 
     def inner(vs: VisibilityScope, undefinedDeps: List[Symbol]): List[Extraction] = {
       val definedInVs = vs.symbols intersect selection.inboundDeps
-      val es = Extraction(selection, vs, ip, selection.inboundDeps diff undefinedDeps, undefinedDeps)
-      val scopes =
-        if (scopeFilter(es))
-          es :: Nil
-        else Nil
+      val e = Extraction(selection, vs, ip, selection.inboundDeps diff undefinedDeps, undefinedDeps)
+      val extraction = if (extractionFilter(e)) e :: Nil else Nil
       vs.visibleScopes match {
-        case Nil => scopes
-        case children => scopes ::: children.flatMap(inner(_, undefinedDeps union definedInVs))
+        case Nil => extraction
+        case children => extraction ::: children.flatMap(inner(_, undefinedDeps union definedInVs))
       }
     }
 
