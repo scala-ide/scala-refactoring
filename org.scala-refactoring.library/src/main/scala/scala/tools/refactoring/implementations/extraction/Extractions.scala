@@ -67,21 +67,14 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
 
   def collectExtractions(selection: Selection, ip: InsertionPosition, filter: Extraction.Filter) = {
     val vs = VisibilityScope(selection)
-    val inboundDeps = {
-      val usedSymbols = selection.selectedSymbols
-      val definedSymbols = selection.allSelectedTrees.collect {
-        case t: DefTree => t.symbol
-      }
-      usedSymbols.diff(definedSymbols)
-    }
 
     val scopeFilter = { s: Extraction =>
       filter(s) && Extraction.matchesInsertionPoint(ip)(s)
     }
 
     def inner(vs: VisibilityScope, undefinedDeps: List[Symbol]): List[Extraction] = {
-      val definedInVs = vs.symbols intersect inboundDeps
-      val es = Extraction(selection, vs, ip, inboundDeps diff undefinedDeps, undefinedDeps)
+      val definedInVs = vs.symbols intersect selection.inboundDeps
+      val es = Extraction(selection, vs, ip, selection.inboundDeps diff undefinedDeps, undefinedDeps)
       val scopes =
         if (scopeFilter(es))
           es :: Nil

@@ -45,4 +45,29 @@ class SelectionPropertiesTest extends TestHelper with ReplaceableSelections {
       """.selection
     assertEquals("", sel.outboundLocalDeps.mkString(", "))
   }
+  
+  @Test
+  def outboundDepsInParameterLists = {
+    val sel = """
+      object O{
+        def fn(/*(*/c: Int, d: Int/*)*/) = {
+          c
+        }
+      }
+      """.selection
+    assertEquals("value c", sel.outboundLocalDeps.mkString(", "))
+  }
+  
+  @Test
+  def outboundDepsInTemplateScope = {
+    val sel = """
+      object O{
+        def fn = fm
+        /*(*/def fm = 1
+        def fo = 2/*)*/
+        def fq = fo
+      }
+      """.selection
+    assertEquals("method fm, method fo", sel.outboundLocalDeps.mkString(", "))
+  }
 }

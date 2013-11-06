@@ -79,13 +79,31 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
     lazy val containsImportStatements = selection.selectedTopLevelTrees.exists(cond(_) {
       case t: Import => true
     })
+    
+    /**
+     * Returns a list of symbols that are used inside the selection
+     * but defined outside of it.
+     */
+    lazy val inboundDeps: List[Symbol] = {
+      val usedSymbols = selection.selectedSymbols
+      val definedSymbols = selection.allSelectedTrees.collect {
+        case t: DefTree => t.symbol
+      }
+      usedSymbols.diff(definedSymbols)
+    }
 
+    /**
+     * Returns a list of symbols that are defined inside the selection
+     * and used outside of it.
+     * This implementation does not use index lookups and therefore returns
+     * only outbound dependencies that are used in the same compilation unit.
+     */
     lazy val outboundLocalDeps: List[Symbol] = {
       val allDefs = selection.selectedTopLevelTrees.collect({
         case t: DefTree => t.symbol
       })
       val childrenOfEnclosingTree = selection.expandToNextEnclosingTree.collect {
-        case s if s.enclosingTree.isInstanceOf[Block] => s.enclosingTree.children
+        case s => s.enclosingTree.children
       }.getOrElse(Nil)
       childrenOfEnclosingTree.flatMap { child =>
         child.collect {
