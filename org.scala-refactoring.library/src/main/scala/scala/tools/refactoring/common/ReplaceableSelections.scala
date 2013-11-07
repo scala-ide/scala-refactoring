@@ -79,18 +79,27 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
     lazy val containsImportStatements = selection.selectedTopLevelTrees.exists(cond(_) {
       case t: Import => true
     })
-    
+
     /**
      * Returns a list of symbols that are used inside the selection
      * but defined outside of it.
      */
     lazy val inboundDeps: List[Symbol] = {
-      val usedSymbols = selection.selectedSymbols
+      val usedSymbols = selection.selectedSymbols.distinct
       val definedSymbols = selection.allSelectedTrees.collect {
         case t: DefTree => t.symbol
       }
       usedSymbols.diff(definedSymbols)
     }
+
+    /**
+     * Returns only the inbound dependencies that directly or indirectly owned
+     * by `owner`.
+     */
+    def inboundDepsOwnedBy(owner: Symbol): List[Symbol] =
+      inboundDeps.filter { s =>
+        s.ownerChain.contains(owner)
+      }
 
     /**
      * Returns a list of symbols that are defined inside the selection
@@ -110,7 +119,7 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
           case t: RefTree if !selection.pos.includes(t.pos) && allDefs.contains(t.symbol) =>
             t.symbol
         }
-      }.distinct
+      }
     }
   }
 

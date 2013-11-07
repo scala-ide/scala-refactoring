@@ -17,6 +17,58 @@ class SelectionPropertiesTest extends TestHelper with ReplaceableSelections {
   }
 
   @Test
+  def inboundDeps = {
+    val sel = """
+      object O{
+        val i = 1
+        def fn(p: Int) = {
+          /*(*/val a = p * i
+          println(a)/*)*/
+          a
+        }
+      }
+      """.selection
+    assertEquals("method *, value p, value i, method println", sel.inboundDeps.mkString(", "))
+  }
+
+  @Test
+  def inboundTypeDeps = {
+    val sel = """
+      class A(i: Int)
+      
+      object N{
+        def apply() = 1
+      }
+      
+      object O{
+        val i = 1
+        def fn = {
+          /*(*/new A(N())/*)*/
+        }
+      }
+      """.selection
+    assertEquals("constructor A, class A, method apply, object N", sel.inboundDeps.mkString(", "))
+  }
+
+  @Test
+  def inboundTypeDepsByOwner = {
+    val sel = """
+      object N{
+        def apply() = 1
+      }
+      
+      object O{
+        val i = 1
+        def fn = {
+          /*(*/N() * i/*)*/
+        }
+      }
+      """.selection
+    val symO = sel.expandTo[DefDef].get.enclosingTree.symbol.ownerChain.find(_.isType).get
+    assertEquals("value i", sel.inboundDepsOwnedBy(symO).mkString(", "))
+  }
+
+  @Test
   def outboundLocalDeps = {
     val sel = """
       object O{
@@ -45,7 +97,7 @@ class SelectionPropertiesTest extends TestHelper with ReplaceableSelections {
       """.selection
     assertEquals("", sel.outboundLocalDeps.mkString(", "))
   }
-  
+
   @Test
   def outboundDepsInParameterLists = {
     val sel = """
@@ -57,7 +109,7 @@ class SelectionPropertiesTest extends TestHelper with ReplaceableSelections {
       """.selection
     assertEquals("value c", sel.outboundLocalDeps.mkString(", "))
   }
-  
+
   @Test
   def outboundDepsInTemplateScope = {
     val sel = """
