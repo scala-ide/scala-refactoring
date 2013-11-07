@@ -34,7 +34,7 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
    *          PackageDef(class A)
    * ```
    */
-  sealed trait VisibilityScope {
+  sealed trait VisibilityScope extends Traversable[VisibilityScope] {
     /** All declarations in this visibility scope */
     val declarations: List[DefTree] = collectDeclarations
 
@@ -70,6 +70,16 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
         case dt: DefTree if !dt.symbol.hasFlag(exclusionFlags) && dt.symbol != NoSymbol =>
           dt
       }
+
+    /**
+     * Enables depth first traversing of visibility scopes.
+     */
+    def foreach[U](f: VisibilityScope => U): Unit = {
+      f(this)
+      for (child <- visibleScopes) {
+        child.foreach(f)
+      }
+    }
   }
 
   private[analysis] def insertInSequence(stats: List[Tree], isBeforeInsertionPoint: Position => Boolean, t: Tree) = {
@@ -83,20 +93,20 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
 
   case class TemplateScope(
     val enclosing: Template,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope 
-    
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+
   case class MethodScope(
     val enclosing: DefDef,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope 
-    
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+
   case class FunctionScope(
     val enclosing: Function,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope 
-    
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+
   case class BlockScope(
     val enclosing: Block,
     val visibleScopes: List[VisibilityScope],
-    override val declarations: List[DefTree]) extends VisibilityScope 
+    override val declarations: List[DefTree]) extends VisibilityScope
 
   object VisibilityScope {
     def apply(s: Selection) = {
@@ -107,10 +117,10 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
         traverser.traverse(s.root)
         traverser.hits.toList.reverse
       }
-      
+
       def findDeclarationsInBlock(b: Block) = {
         val stats = b.stats :+ b.expr
-        stats.collect{
+        stats.collect {
           case t: DefTree if t.pos.start < s.pos.start => t
         }
       }
