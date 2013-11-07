@@ -43,7 +43,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
    */
   def prepareExtractions(s: Selection, 
     ip: Selection => InsertionPosition = useDefaultInsertionPositions, 
-    f: Extraction.Filter = Extraction.allScopes): Either[PreparationError, List[Extraction]] = {
+    f: Extraction.Filter = Extraction.allExtractions): Either[PreparationError, List[Extraction]] = {
     val scopes = collectExtractions(s, ip(s), f)
     if (scopes.isEmpty)
       Left(PreparationError("No position to insert extraction found."))

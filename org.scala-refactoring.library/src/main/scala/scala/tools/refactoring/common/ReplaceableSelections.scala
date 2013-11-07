@@ -89,7 +89,7 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
       val definedSymbols = selection.allSelectedTrees.collect {
         case t: DefTree => t.symbol
       }
-      usedSymbols.diff(definedSymbols)
+      usedSymbols.diff(definedSymbols).distinct
     }
 
     /**
@@ -119,7 +119,7 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
           case t: RefTree if !selection.pos.includes(t.pos) && allDefs.contains(t.symbol) =>
             t.symbol
         }
-      }
+      }.distinct
     }
   }
 

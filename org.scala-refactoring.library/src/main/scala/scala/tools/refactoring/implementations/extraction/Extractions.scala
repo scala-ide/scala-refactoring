@@ -9,24 +9,30 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
   /**
    * An Extraction collects the required information to perform an extraction.
    * Use collectExtractions for construction of extractions.
-   *
-   * @param selection The selected code that should be extracted
-   * @param scope The visibility scope in which the extraction takes place
-   *   and the new abstractions is going to be inserted
-   * @param abstractionPosition The relative position in the visibility scope
-   *   where the new abstraction is going to be inserted. E.g. before the selection
-   * @param definedDependencies Inbound dependencies to the selected code that are visible
-   *   in the visibility scope
-   * @param undefinedDependencies Inbound dependencies that are not visible in the
-   *   visibility scope
    */
-  case class Extraction(
-    selection: Selection,
-    scope: VisibilityScope,
-    abstractionPosition: InsertionPosition,
-    definedDependencies: List[Symbol],
-    undefinedDependencies: List[Symbol]) {
+  trait Extraction {
+    /** The selected code to extract */
+    val selection: Selection
+    
+    /** The scope in which the extraction takes place */
+    val scope: VisibilityScope
+    
+    /** The position where the new abstraction is going to be inserted */
+    val abstractionPosition: InsertionPosition
+    
+    /** Inbound dependencies that are defined in this scope.
+     *  This does not mean that those symbols are also visible
+     *  from `abstractionPosition`. E.g. in block scopes
+     */
+    val definedDependencies: List[Symbol]
 
+    /** Inbound dependencies that are not visible from this scope. */
+    val undefinedDependencies = selection.inboundDeps diff definedDependencies
+
+    /**
+     * Transformation that inserts `insertion` in this scope at
+     * `abstractionPosition`.
+     */
     def insert(insertion: Tree) = {
       topdown {
         matchingChildren {
@@ -38,6 +44,11 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
       }
     }
 
+    /**
+     * A list of transformations that perform the extraction by
+     * replacing the selected code by `call` and insert `abstraction`
+     * at `abstractionPosition`.
+     */
     def extractionTransformations(call: Tree, abstraction: Tree) = {
       // Do the refactoring in two transformation steps in order to simplify
       // the extraction transformation
@@ -58,30 +69,39 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
       s.undefinedDependencies.isEmpty
     }
 
-    val allScopes: Filter = _ => true
+    val allExtractions: Filter = _ => true
 
-    def matchesInsertionPoint(ip: InsertionPosition): Filter = { s =>
+    def insertionPositionApplicable(ip: InsertionPosition): Filter = { s =>
       ip.isDefinedAt(s.scope.enclosing)
     }
   }
 
-  def collectExtractions(selection: Selection, ip: InsertionPosition, filter: Extraction.Filter) = {
+  /**
+   * Collects all extractions for `selection` that are applicable at
+   * position `ip` and matches the requirements of `filter`.
+   */
+  def collectExtractions(selection: Selection, ip: InsertionPosition, filter: Extraction.Filter): List[Extraction] = {
+    class ExtractionImpl(
+      val selection: Selection,
+      val scope: VisibilityScope,
+      val abstractionPosition: InsertionPosition,
+      val definedDependencies: List[Symbol]) extends Extraction
+
     val vs = VisibilityScope(selection)
 
-    val extractionFilter = { s: Extraction =>
-      filter(s) && Extraction.matchesInsertionPoint(ip)(s)
+    val extractionFilter = { e: Extraction =>
+      if (filter(e) && Extraction.insertionPositionApplicable(ip)(e)) Some(e)
+      else None
     }
 
-    def inner(vs: VisibilityScope, undefinedDeps: List[Symbol]): List[Extraction] = {
-      val definedInVs = vs.symbols intersect selection.inboundDeps
-      val e = Extraction(selection, vs, ip, selection.inboundDeps diff undefinedDeps, undefinedDeps)
-      val extraction = if (extractionFilter(e)) e :: Nil else Nil
+    def inner(vs: VisibilityScope, definedDeps: List[Symbol]): List[Extraction] = {
+      val extraction = extractionFilter(new ExtractionImpl(selection, vs, ip, definedDeps))
       vs.visibleScopes match {
-        case Nil => extraction
-        case children => extraction ::: children.flatMap(inner(_, undefinedDeps union definedInVs))
+        case Nil => extraction.toList
+        case children => extraction.toList ::: children.flatMap(inner(_, definedDeps diff vs.symbols))
       }
     }
-
-    inner(vs, Nil)
+    
+    inner(vs, selection.inboundDeps)
   }
 }
