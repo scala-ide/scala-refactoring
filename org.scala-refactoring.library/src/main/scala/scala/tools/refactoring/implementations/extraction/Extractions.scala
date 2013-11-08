@@ -75,33 +75,4 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
       ip.isDefinedAt(s.scope.enclosing)
     }
   }
-
-  /**
-   * Collects all extractions for `selection` that are applicable at
-   * position `ip` and matches the requirements of `filter`.
-   */
-  def collectExtractions(selection: Selection, ip: InsertionPosition, filter: Extraction.Filter): List[Extraction] = {
-    class ExtractionImpl(
-      val selection: Selection,
-      val scope: VisibilityScope,
-      val abstractionPosition: InsertionPosition,
-      val definedDependencies: List[Symbol]) extends Extraction
-
-    val vs = VisibilityScope(selection)
-
-    val extractionFilter = { e: Extraction =>
-      if (filter(e) && Extraction.insertionPositionApplicable(ip)(e)) Some(e)
-      else None
-    }
-
-    def inner(vs: VisibilityScope, definedDeps: List[Symbol]): List[Extraction] = {
-      val extraction = extractionFilter(new ExtractionImpl(selection, vs, ip, definedDeps))
-      vs.visibleScopes match {
-        case Nil => extraction.toList
-        case children => extraction.toList ::: children.flatMap(inner(_, definedDeps diff vs.symbols))
-      }
-    }
-    
-    inner(vs, selection.inboundDeps)
-  }
 }

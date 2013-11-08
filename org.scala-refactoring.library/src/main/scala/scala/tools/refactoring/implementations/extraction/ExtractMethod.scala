@@ -11,8 +11,8 @@ abstract class ExtractMethod extends ExtractionRefactoring with CompilerAccess {
 
   def prepare(s: Selection) = {
     for {
-      selection <- prepareExtractionOfExpressions(s).right
-      scopes <- prepareExtractions(selection).right
+      selection <- ensureExpressionsSelected(s).right
+      scopes <- collectExtractions(selection, defaultInsertionPositionFor(selection)).right
     } yield {
       PreparationResult(selection, scopes)
     }

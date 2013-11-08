@@ -8,7 +8,7 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
   import global._
 
   /**
-   * An insertion point is a function that may be defined for
+   * An insertion position is a function that may be defined for
    * an enclosing tree. When defined, it returns an instance of
    * an InsertionPoint.
    */
@@ -30,6 +30,9 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
     before ::: insertion :: after ::: Nil
   }
 
+  /**
+   * Inserts trees as the first statement in a method body.
+   */
   lazy val atBeginningOfDefDef: InsertionPosition = {
     case enclosing @ DefDef(_, _, _, _, _, Block(stats, expr)) =>
       InsertionPoint(enclosing, { insertion =>
@@ -41,6 +44,9 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
       })
   }
 
+  /**
+   * Inserts trees as the first statement in a function body.
+   */
   lazy val atBeginningOfFunction: InsertionPosition = {
     case enclosing @ Function(_, Block(stats, expr)) =>
       InsertionPoint(enclosing, { insertion =>
@@ -52,6 +58,9 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
       })
   }
 
+  /**
+   * Inserts trees as additional method parameters.
+   */
   lazy val atEndOfParameterList: InsertionPosition = ???
 
   implicit class SelectionDependentInsertionPoints(selection: Selection) {
@@ -66,6 +75,9 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
       !pos.isRange || pos.start < selection.pos.end
     }
 
+    /**
+     * Inserts trees in the enclosing tree right before the selection.
+     */
     lazy val beforeSelectionInBlock: InsertionPosition = {
       case enclosing @ Block(stats, expr) =>
         InsertionPoint(enclosing, { insertion =>
@@ -73,7 +85,10 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
         })
     }
 
-    def afterSelectionInTemplate: InsertionPosition = {
+    /**
+     * Inserts trees in the enclosing tree right after the selection.
+     */
+    lazy val afterSelectionInTemplate: InsertionPosition = {
       case enclosing @ Template(_, _, body) =>
         InsertionPoint(enclosing, { insertion =>
           enclosing copy (body = insertInSeq(body, insertion, isBeforeEndOfSelection))

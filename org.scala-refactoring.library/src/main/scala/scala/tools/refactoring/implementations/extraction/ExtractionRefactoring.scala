@@ -14,7 +14,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
    * before the selection `s` and class members after the
    * method that contains the selection.
    */
-  val useDefaultInsertionPositions = (s: Selection) =>
+  val defaultInsertionPositionFor = (s: Selection) =>
     s.beforeSelectionInBlock orElse
       s.afterSelectionInTemplate orElse
       atBeginningOfDefDef orElse
@@ -25,7 +25,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
    * Returns either a message why the selection is not valid or a selection
    * that has all required properties.
    */
-  def prepareExtractionOfExpressions(s: Selection): Either[PreparationError, Selection] = {
+  def ensureExpressionsSelected(s: Selection): Either[PreparationError, Selection] = {
     val expanded = s.expand
     if (expanded.definesNonLocal)
       Left(PreparationError("Cannot extract selection that defines non local fields."))
@@ -38,16 +38,41 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
   }
 
   /**
-   * Tries to find possible extractions that matches the given insertion position
-   * and fulfill all filter predicates.
+   * Collects all extractions for `s` that are applicable at insertion position `ip`.
    */
-  def prepareExtractions(s: Selection, 
-    ip: Selection => InsertionPosition = useDefaultInsertionPositions, 
-    f: Extraction.Filter = Extraction.allExtractions): Either[PreparationError, List[Extraction]] = {
-    val scopes = collectExtractions(s, ip(s), f)
-    if (scopes.isEmpty)
-      Left(PreparationError("No position to insert extraction found."))
-    else
-      Right(scopes)
+  def collectExtractions(s: Selection, ip: InsertionPosition): Either[PreparationError, List[Extraction]] = {
+    class ExtractionImpl(
+      val selection: Selection,
+      val scope: VisibilityScope,
+      val abstractionPosition: InsertionPosition,
+      val definedDependencies: List[Symbol]) extends Extraction
+
+    val vs = VisibilityScope(s)
+
+    def inner(vs: VisibilityScope, definedDeps: List[Symbol]): List[Extraction] = {
+      val extraction = if (ip.isDefinedAt(vs.enclosing))
+        Some(new ExtractionImpl(s, vs, ip, definedDeps))
+      else
+        None
+      vs.visibleScopes match {
+        case Nil => extraction.toList
+        case children => extraction.toList ::: children.flatMap(inner(_, definedDeps diff vs.symbols))
+      }
+    }
+
+    inner(vs, s.inboundDeps) match {
+      case Nil => Left(PreparationError("No insertion points found."))
+      case es => Right(es)
+    }
+  }
+
+  /**
+   * Filters all extraction scopes that have undefined dependencies.
+   */
+  def ensureNoUndefinedDependencies(es: List[Extraction]): Either[PreparationError, List[Extraction]] = {
+    es.filter(_.undefinedDependencies.isEmpty) match {
+      case Nil => Left(PreparationError("Selection has dependencies that are not visible from any insertion points."))
+      case es => Right(es)
+    }
   }
 }
