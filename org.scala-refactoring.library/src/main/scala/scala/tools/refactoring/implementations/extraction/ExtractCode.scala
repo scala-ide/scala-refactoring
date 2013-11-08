@@ -24,7 +24,7 @@ abstract class ExtractCode extends ExtractionRefactoring {
   def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
     val ps = params.selectedExtraction.undefinedDependencies union params.selectedParameters
     val abstraction =
-      if (ps.isEmpty)
+      if (ps.isEmpty && !preparation.selection.mayHaveSideEffects)
         ValueAbstraction(params.name, preparation.selection, preparation.selection.outboundLocalDeps)
       else
         MethodAbstraction(params.name, preparation.selection, ps, preparation.selection.outboundLocalDeps)

@@ -110,4 +110,43 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       }
     """
   } applyRefactoring (extract("extracted", _.isInstanceOf[BlockScope], Nil))
+  
+  @Test
+  def extractUnitExpressionToDef = new FileSet {
+    """
+      object Demo {
+        /*(*/println("hello world")/*)*/
+      }
+    """ becomes
+      """
+      object Demo {
+      extracted
+
+        def extracted(): Unit = {
+               /*(*/println("hello world")/*)*/
+             }
+      }
+    """
+  } applyRefactoring (extract("extracted", _.isInstanceOf[TemplateScope], Nil))
+
+  @Test
+  def extractCodeInCase = new FileSet {
+    """
+      object Demo {
+        val s = 1 match {
+          case a: String =>
+            /*(*/a + "is not supposed to be a string"/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        1 match {
+          case a: String =>
+            val complaint = /*(*/a + "is not supposed to be a string"/*)*/
+            complaint
+        }
+      }
+    """
+  } applyRefactoring (extract("complaint", _.isInstanceOf[TemplateScope], Nil))
 }

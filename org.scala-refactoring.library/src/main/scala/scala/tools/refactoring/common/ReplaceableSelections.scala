@@ -81,6 +81,20 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
     })
 
     /**
+     * Tries to determine if the selected code contains side effects.
+     * Caution: `mayHaveSideEffects == false` does not guarantee that selection
+     * has no side effects.
+     *
+     * The current implementation does check if the selection contains
+     * a reference to a symbol that has a type that is somehow related to Unit.
+     */
+    lazy val mayHaveSideEffects = {
+      selection.allSelectedTrees.exists(cond(_) {
+        case t: RefTree => t.symbol.tpe.exists(_.toString == "Unit")
+      })
+    }
+
+    /**
      * Returns a list of symbols that are used inside the selection
      * but defined outside of it.
      */
