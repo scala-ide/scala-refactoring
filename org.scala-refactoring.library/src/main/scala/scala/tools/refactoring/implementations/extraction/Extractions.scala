@@ -57,22 +57,4 @@ trait Extractions extends VisibilityScopes with InsertionPoints { self: Compiler
         Nil
     }
   }
-
-  object Extraction {
-    type Filter = Extraction => Boolean
-
-    def takesPlaceInA[T <: VisibilityScope](implicit m: Manifest[T]): Filter = { s =>
-      m.runtimeClass.isInstance(s.scope)
-    }
-
-    val hasNoUndefinedDependencies: Filter = { s =>
-      s.undefinedDependencies.isEmpty
-    }
-
-    val allExtractions: Filter = _ => true
-
-    def insertionPositionApplicable(ip: InsertionPosition): Filter = { s =>
-      ip.isDefinedAt(s.scope.enclosing)
-    }
-  }
 }

@@ -10,10 +10,10 @@ import scala.tools.refactoring.implementations.extraction.Extractions
 class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions {
   outer =>
 
-  def extract(name: String, f: Extraction.Filter, selectedParams: List[String])(pro: FileSet) = {
+  def extract(name: String, f: Extraction => Boolean, selectedParams: List[String])(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
-      val scope = preparationResult.right.get.possibleExtractions.filter(f.asInstanceOf[refactoring.Extraction.Filter]).head
+      val scope = preparationResult.right.get.possibleExtractions.filter(e => f(e.asInstanceOf[Extraction])).head
       val params = new refactoring.RefactoringParameters(
         name,
         scope,
@@ -43,7 +43,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions
         }
       }
     """
-  } applyRefactoring (extract("extracted", Extraction.takesPlaceInA[BlockScope], "a" :: Nil))
+  } applyRefactoring (extract("extracted", e => e.scope.isInstanceOf[BlockScope], "a" :: Nil))
 
   @Test
   def extractComplexMethod = new FileSet {
@@ -86,5 +86,5 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions
         def fm(p: Int) = p + 1
       }
     """
-  } applyRefactoring (extract("extracted", Extraction.takesPlaceInA[TemplateScope], "na" :: Nil))
+  } applyRefactoring (extract("extracted", e => e.scope.isInstanceOf[TemplateScope], "na" :: Nil))
 }
