@@ -22,7 +22,7 @@ abstract class ExtractCode extends ExtractionRefactoring {
     selectedParameters: List[Symbol])
 
   def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
-    val ps = params.selectedParameters union params.selectedExtraction.undefinedDependencies
+    val ps = params.selectedExtraction.undefinedDependencies union params.selectedParameters
     val abstraction =
       if (ps.isEmpty)
         ValueAbstraction(params.name, preparation.selection, preparation.selection.outboundLocalDeps)

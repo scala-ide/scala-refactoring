@@ -25,7 +25,7 @@ abstract class ExtractMethod extends ExtractionRefactoring {
     val abstraction = MethodAbstraction(
       params.name,
       preparation.selection,
-      params.selectedParameters union params.selectedExtraction.undefinedDependencies,
+      params.selectedExtraction.undefinedDependencies union params.selectedParameters,
       preparation.selection.outboundLocalDeps)
     val transformations = params.selectedExtraction.extractionTransformations(abstraction.call, abstraction.abstraction)
 

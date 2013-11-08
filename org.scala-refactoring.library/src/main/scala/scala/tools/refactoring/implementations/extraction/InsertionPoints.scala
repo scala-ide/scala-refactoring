@@ -76,7 +76,7 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
     }
 
     /**
-     * Inserts trees in the enclosing tree right before the selection.
+     * Inserts trees in the enclosing block right before the selection.
      */
     lazy val beforeSelectionInBlock: InsertionPosition = {
       case enclosing @ Block(stats, expr) =>
@@ -86,7 +86,7 @@ trait InsertionPoints extends Selections with TreeTransformations { self: Compil
     }
 
     /**
-     * Inserts trees in the enclosing tree right after the selection.
+     * Inserts trees in the enclosing template right after the selection.
      */
     lazy val afterSelectionInTemplate: InsertionPosition = {
       case enclosing @ Template(_, _, body) =>

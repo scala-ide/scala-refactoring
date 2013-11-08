@@ -50,6 +50,9 @@ trait Abstractions extends Selections with TreeFactory with TreeTransformations 
     val statements = selection.selectedTopLevelTrees ::: returnStatements
 
     val abstraction = {
+      /* We implement a simpler version of mkDefDef in order to address
+       * issues with symbols that are treated as by name parameters
+       */
       def symbolToParam(s: Symbol) = {
         /* The type of a symbol referencing class fields is "=> T"
        * and therefore converted to a by name parameter. But in most cases

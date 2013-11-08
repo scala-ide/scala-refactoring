@@ -56,7 +56,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
     def extractionTransformations(call: Tree, abstraction: Tree) = {
       // Do the refactoring in two transformation steps in order to simplify
       // the extraction transformation
-      selection.replaceBy(call) ::
+      selection.replaceBy(call, preserveHierarchy = true) ::
         insert(abstraction) ::
         Nil
     }

@@ -80,10 +80,10 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
       object Demo {
         def fn(a: Int) = {
           val c = {
-            /*(*/val b = a + 1/*)*/
-            b
-          }
-          val b = c
+                 /*(*/val b = a + 1/*)*/
+                 b
+               }
+          /*(*/val b = c/*)*/
           println(b)
         }
       }
@@ -107,13 +107,13 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
       object Demo {
         def fn(a: Int) = {
           val e = {
-            /*(*/val b = a + 1
-            val c = a + 2
-            println(b*c)
-            val d = a + 3/*)*/
-            (c, d)
-          }
-          val (c, d) = e
+                 /*(*/val b = a + 1
+                 val c = a + 2
+                 println(b*c)
+                 val d = a + 3/*)*/
+                 (c, d)
+               }
+          /*(*/val (c, d) = e
           println(c * d)
         }
       }

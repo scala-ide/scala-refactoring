@@ -57,4 +57,57 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       }
     """
   } applyRefactoring (extract("extracted", _.isInstanceOf[TemplateScope], "a" :: Nil))
+
+  @Test
+  def extractCodeWithUnknownDependencies = new FileSet {
+    """
+      object Demo {
+        val a = 1
+        val b = {
+          val c = 2
+          /*(*/a * c/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        val a = 1
+        val b = {
+          val c = 2
+          /*(*/extracted(c)/*)*/
+        }
+
+        def extracted(c: Int): Int = {
+          /*(*/a * c/*)*/
+        }
+      }
+    """
+  } applyRefactoring (extract("extracted", _.isInstanceOf[TemplateScope], Nil))
+
+  @Test
+  def extractMultipleExpressions = new FileSet {
+    """
+      object Demo {
+        val a = 1
+        val b = {
+          /*(*/val c = 2
+          val d = a
+          d * c/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        val a = 1
+        val b = {
+          val extracted = {
+                 /*(*/val c = 2
+                 val d = a
+                 d * c/*)*/
+               }
+          extracted
+        }
+      }
+    """
+  } applyRefactoring (extract("extracted", _.isInstanceOf[BlockScope], Nil))
 }
