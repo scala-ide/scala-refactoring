@@ -1,11 +1,11 @@
-package scala.tools.refactoring.tests.implementations.extraction
+package scala.tools.refactoring.tests.common
 
 import scala.tools.refactoring.tests.util.TestHelper
-import scala.tools.refactoring.implementations.extraction.InsertionPoints
+import scala.tools.refactoring.common.InsertionPositions
 import org.junit.Assert._
 import scala.tools.refactoring.common.ReplaceableSelections
 
-class InsertionPointsTest extends TestHelper with InsertionPoints with ReplaceableSelections {
+class InsertionPositionsTest extends TestHelper with InsertionPositions with ReplaceableSelections {
   import global._
 
   val t123 = Literal(Constant(123))

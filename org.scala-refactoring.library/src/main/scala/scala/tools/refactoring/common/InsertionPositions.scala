@@ -1,10 +1,8 @@
-package scala.tools.refactoring.implementations.extraction
+package scala.tools.refactoring.common
 
-import scala.tools.refactoring.common.CompilerAccess
-import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.transformation.TreeTransformations
 
-trait InsertionPoints extends Selections with TreeTransformations { self: CompilerAccess =>
+trait InsertionPositions extends Selections with TreeTransformations { self: CompilerAccess =>
   import global._
 
   /**

@@ -4,10 +4,8 @@ import scala.tools.refactoring.common.CompilerAccess
 import scala.tools.refactoring.common.Selections
 import scala.reflect.internal.Flags
 import PartialFunction._
-import scala.tools.refactoring.common.ReplaceableSelections
-import scala.tools.refactoring.transformation.TreeTransformations
 
-trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { self: CompilerAccess =>
+trait VisibilityScopes extends Selections { self: CompilerAccess =>
   import global._
 
   /**
