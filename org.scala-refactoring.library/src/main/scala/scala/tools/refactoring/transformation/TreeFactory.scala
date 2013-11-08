@@ -7,6 +7,7 @@ package transformation
 
 import tools.nsc.symtab.Flags
 import common.PimpedTrees
+import scala.tools.nsc.ast.parser.Tokens
 
 trait TreeFactory {
 
@@ -80,7 +81,7 @@ trait TreeFactory {
           case x :: Nil => x.name.toString
           case xs => "(" + (xs map (_.name) mkString ", ") + ")"
         }
-        ValDef(NoMods, newTermName(valName), new TypeTree(), call)
+        ValDef(NoMods withPosition(Tokens.VAL, NoPosition), newTermName(valName), new TypeTree(), call)
     }
   }
   
