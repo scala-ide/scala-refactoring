@@ -33,6 +33,10 @@ class ReplaceableSelectionTest extends TestHelper with ReplaceableSelections {
           }
           assertEquals(expected, actual)
         }
+
+        def toBecomeTreeWith(assertion: Tree => Unit) = {
+          assertion(result.get)
+        }
       }
     }
   }
@@ -91,4 +95,22 @@ class ReplaceableSelectionTest extends TestHelper with ReplaceableSelections {
       def f = println(123)
     }
     """)
+
+  @Test
+  def replaceAllExpressionsInBlockPreservingHierarchy = """
+    object O{
+      def f = {
+        /*(*/println(1)
+        println(2)
+        println(3)/*)*/
+      }
+    }
+    """.assertReplacement(_.replaceBy(tprint123, preserveHierarchy = true)).toBecomeTreeWith { t =>
+    val preservedBlock = t.find {
+      // the new block must have an empty tree as its last expression
+      case Block(stats, EmptyTree) => true
+      case _ => false
+    }
+    assertTrue(preservedBlock.isDefined)
+  }
 }
