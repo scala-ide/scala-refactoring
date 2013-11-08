@@ -210,4 +210,18 @@ class A{
   }
 }
 """)
+
+  @Test
+  def visibilityFromCase = assertVisibilities(
+    selectionSees(
+      "CaseScope(value p, value x, value y)" sees (
+          "TemplateScope(constructor A)" sees (
+            "PackageScope(class A)"))))(
+      """
+class A{
+  (1, 1) match {
+    case p @ (x, y) => /*(*/println(x * y)/*)*/
+  }
+}
+""")
 }

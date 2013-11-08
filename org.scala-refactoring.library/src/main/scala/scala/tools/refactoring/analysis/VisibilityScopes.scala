@@ -108,6 +108,11 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
     val visibleScopes: List[VisibilityScope],
     override val declarations: List[DefTree]) extends VisibilityScope
 
+  case class CaseScope(
+    val enclosing: CaseDef,
+    val visibleScopes: List[VisibilityScope],
+    override val declarations: List[DefTree]) extends VisibilityScope
+
   object VisibilityScope {
     def apply(s: Selection) = {
       val enclosingTrees = {
@@ -124,6 +129,13 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
           case t: DefTree if t.pos.start < s.pos.start => t
         }
       }
+      
+      def findBindingsInPattern(pat: Tree) = {
+        pat.collect{
+          case b: Bind =>
+            b
+        }
+      }
 
       def children(enclosingTrees: List[Tree]): List[VisibilityScope] =
         enclosingTrees match {
@@ -133,6 +145,7 @@ trait VisibilityScopes extends ReplaceableSelections with TreeTransformations { 
             case t: DefDef => new MethodScope(t, children(rest)) :: Nil
             case t: Function => new FunctionScope(t, children(rest)) :: Nil
             case t: Block => new BlockScope(t, children(rest), findDeclarationsInBlock(t)) :: Nil
+            case t @ CaseDef(pat, _, _) => new CaseScope(t, children(rest), findBindingsInPattern(pat)) :: Nil
             case _ => children(rest)
           }
           case Nil => Nil
