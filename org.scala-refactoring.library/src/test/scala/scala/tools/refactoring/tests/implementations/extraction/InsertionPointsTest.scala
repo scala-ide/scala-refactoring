@@ -157,4 +157,22 @@ class InsertionPointsTest extends TestHelper with InsertionPoints with Replaceab
       }
     }
     """)
+
+  @Test
+  def insertInCaseBody = """
+    object O{
+      val i = 1 match {
+        case i: Int => /*(*/i/*)*/
+      }
+    }
+    """.inScope(_.expandTo[CaseDef].get.enclosingTree).atPosition(_ => atBeginningOfCaseBody)
+    .insertionOf(tprint123).shouldBecome("""
+    object O{
+      val i = 1 match {
+        case i: Int => 
+          println(123)
+          i
+      }
+    }
+    """)
 }

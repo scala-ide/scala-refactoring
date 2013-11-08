@@ -133,20 +133,19 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
   def extractCodeInCase = new FileSet {
     """
       object Demo {
-        val s = 1 match {
-          case a: String =>
-            /*(*/a + "is not supposed to be a string"/*)*/
+        val p = (1, 1) match {
+          case (x: Int, y: Int) => /*(*/x * y/*)*/
         }
       }
     """ becomes
       """
       object Demo {
-        1 match {
-          case a: String =>
-            val complaint = /*(*/a + "is not supposed to be a string"/*)*/
-            complaint
+        val p = (1, 1) match {
+          case (x: Int, y: Int) => 
+            val extracted = /*(*/x * y
+            extracted/*)*/
         }
       }
     """
-  } applyRefactoring (extract("complaint", _.isInstanceOf[TemplateScope], Nil))
+  } applyRefactoring (extract("extracted", _.isInstanceOf[CaseScope], Nil))
 }

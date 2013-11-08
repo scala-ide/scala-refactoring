@@ -71,7 +71,8 @@ trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess wi
     s.beforeSelectionInBlock orElse
       s.afterSelectionInTemplate orElse
       atBeginningOfDefDef orElse
-      atBeginningOfFunction
+      atBeginningOfFunction orElse
+      atBeginningOfCaseBody
 
   /**
    * Tries to find a valid selection that is replaceable by a expression.
