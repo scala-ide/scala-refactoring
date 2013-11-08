@@ -1,6 +1,6 @@
 package scala.tools.refactoring.implementations.extraction
 
-abstract class ExtractMethod extends ExtractionRefactoring {
+abstract class ExtractCode extends ExtractionRefactoring {
   import global._
 
   case class PreparationResult(
@@ -22,11 +22,13 @@ abstract class ExtractMethod extends ExtractionRefactoring {
     selectedParameters: List[Symbol])
 
   def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
-    val abstraction = MethodAbstraction(
-      params.name,
-      preparation.selection,
-      params.selectedParameters union params.selectedExtraction.undefinedDependencies,
-      preparation.selection.outboundLocalDeps)
+    val ps = params.selectedParameters union params.selectedExtraction.undefinedDependencies
+    val abstraction =
+      if (ps.isEmpty)
+        ValueAbstraction(params.name, preparation.selection, preparation.selection.outboundLocalDeps)
+      else
+        MethodAbstraction(params.name, preparation.selection, ps, preparation.selection.outboundLocalDeps)
+
     val transformations = params.selectedExtraction.extractionTransformations(abstraction.call, abstraction.abstraction)
 
     Right(transformFile(s.file, transformations))

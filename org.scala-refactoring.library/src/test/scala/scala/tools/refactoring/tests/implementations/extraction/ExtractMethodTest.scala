@@ -8,8 +8,6 @@ import org.junit.Assert._
 import scala.tools.refactoring.analysis.VisibilityScopes
 
 class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityScopes {
-  outer =>
-
   def extract(name: String, f: VisibilityScope => Boolean, selectedParams: List[String])(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
@@ -71,12 +69,12 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityS
         def fn(p: Int) = {
           for(i <- 1 to p) {
             val a = p * i
-            val (b, c, d) = extracted(a, p, na)
+            /*(*/val (b, c, d) = extracted(p, a, na)
             println(b * b * c * d * d)
           }
         }
 
-        def extracted(a: Int, p: Int, na: => Int): (Int, Int, Int) = {
+        def extracted(p: Int, a: Int, na: Int): (Int, Int, Int) = {
           /*(*/val b = p * a
           val c = a * na
           val d = fm(a)/*)*/

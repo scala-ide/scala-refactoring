@@ -1,11 +1,9 @@
 package scala.tools.refactoring.implementations.extraction
 
-import scala.tools.refactoring.common.CompilerAccess
-
 /**
  * Introduces a new val definition for a piece of code.
  */
-abstract class ExtractValue extends ExtractionRefactoring with CompilerAccess {
+abstract class ExtractValue extends ExtractionRefactoring {
   import global._
 
   case class PreparationResult(
