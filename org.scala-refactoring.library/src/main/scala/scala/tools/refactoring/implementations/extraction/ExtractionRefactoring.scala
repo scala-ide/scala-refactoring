@@ -6,8 +6,7 @@ import scala.tools.refactoring.common.ReplaceableSelections
 import scala.tools.refactoring.analysis.VisibilityScopes
 import scala.tools.refactoring.analysis.TreeAnalysis
 
-trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with Abstractions with InsertionPoints
-  with VisibilityScopes {
+trait ExtractionRefactoring extends MultiStageRefactoring with CompilerAccess with Abstractions with InsertionPoints with VisibilityScopes {
   import global._
 
   /**

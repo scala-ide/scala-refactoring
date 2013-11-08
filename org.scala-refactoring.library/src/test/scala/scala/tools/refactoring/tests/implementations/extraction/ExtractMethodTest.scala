@@ -5,15 +5,15 @@ import implementations.extraction.ExtractMethod
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
-import scala.tools.refactoring.implementations.extraction.Extractions
+import scala.tools.refactoring.analysis.VisibilityScopes
 
-class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions {
+class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityScopes {
   outer =>
 
-  def extract(name: String, f: Extraction => Boolean, selectedParams: List[String])(pro: FileSet) = {
+  def extract(name: String, f: VisibilityScope => Boolean, selectedParams: List[String])(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
-      val scope = preparationResult.right.get.possibleExtractions.filter(e => f(e.asInstanceOf[Extraction])).head
+      val scope = preparationResult.right.get.possibleExtractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head
       val params = new refactoring.RefactoringParameters(
         name,
         scope,
@@ -43,7 +43,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions
         }
       }
     """
-  } applyRefactoring (extract("extracted", e => e.scope.isInstanceOf[BlockScope], "a" :: Nil))
+  } applyRefactoring (extract("extracted", v => v.isInstanceOf[BlockScope], "a" :: Nil))
 
   @Test
   def extractComplexMethod = new FileSet {
@@ -86,5 +86,5 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with Extractions
         def fm(p: Int) = p + 1
       }
     """
-  } applyRefactoring (extract("extracted", e => e.scope.isInstanceOf[TemplateScope], "na" :: Nil))
+  } applyRefactoring (extract("extracted", v => v.isInstanceOf[TemplateScope], "na" :: Nil))
 }
