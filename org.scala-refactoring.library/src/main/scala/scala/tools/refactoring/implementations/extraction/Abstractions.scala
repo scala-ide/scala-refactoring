@@ -5,6 +5,7 @@ import scala.tools.refactoring.analysis.TreeAnalysis
 import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.transformation.TreeFactory
 import scala.tools.refactoring.transformation.TreeTransformations
+import scala.reflect.internal.Flags
 
 trait Abstractions extends Selections with TreeFactory with TreeTransformations { self: CompilerAccess =>
   import global._
@@ -39,7 +40,7 @@ trait Abstractions extends Selections with TreeFactory with TreeTransformations 
     selection: Selection,
     parameters: List[Symbol],
     outboundDeps: List[Symbol]) extends Abstraction {
-    
+
     val call = mkCallDefDef(name, parameters :: Nil, outboundDeps)
 
     val returnStatements =
@@ -48,6 +49,29 @@ trait Abstractions extends Selections with TreeFactory with TreeTransformations 
 
     val statements = selection.selectedTopLevelTrees ::: returnStatements
 
-    val abstraction = mkDefDef(NoMods, name, parameters :: Nil, statements)
+    val abstraction = {
+      def symbolToParam(s: Symbol) = {
+        /* The type of a symbol referencing class fields is "=> T"
+       * and therefore converted to a by name parameter. But in most cases
+       * it is preferred to pass it as a by value parameter.
+       */
+        val tpe = if (s.tpe.toString.startsWith("=>"))
+          s.tpe.baseTypeSeq(0)
+        else
+          s.tpe
+        new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(tpe), EmptyTree)
+      }
+
+      val ps = parameters.map(symbolToParam) :: Nil
+
+      val returnTpe = statements.last match {
+        case t: Function if t.pos.isTransparent =>
+          TypeTree(t.body.tpe)
+        case t =>
+          TypeTree(t.tpe)
+      }
+
+      DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(name), Nil, ps, returnTpe, mkBlock(statements))
+    }
   }
 }
