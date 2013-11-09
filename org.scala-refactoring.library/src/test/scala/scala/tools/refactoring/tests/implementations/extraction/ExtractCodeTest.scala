@@ -31,12 +31,12 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       """
       object Demo {
         val a = 1
-        val b = extracted/*)*/
+        val b = extracted
 
-        val extracted = /*(*/a * a
+        val extracted = a * a
       }
     """
-  } applyRefactoring (extract("extracted", _.isInstanceOf[TemplateScope], Nil))
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
 
   @Test
   def extractCodeWithoutUnknownDependenciesAndParams = new FileSet {
@@ -49,14 +49,14 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       """
       object Demo {
         val a = 1
-        val b = /*(*/extracted(a)/*)*/
+        val b = extracted(a)
 
         def extracted(a: Int): Int = {
-          /*(*/a * a
+          a * a
         }
       }
     """
-  } applyRefactoring (extract("extracted", _.isInstanceOf[TemplateScope], "a" :: Nil))
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], "a" :: Nil)).assertEqualTree
 
   @Test
   def extractCodeWithUnknownDependencies = new FileSet {
@@ -74,15 +74,15 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         val a = 1
         val b = {
           val c = 2
-          /*(*/extracted(c)/*)*/
+          extracted(c)
         }
 
         def extracted(c: Int): Int = {
-          /*(*/a * c/*)*/
+          a * c
         }
       }
     """
-  } applyRefactoring (extract("extracted", _.isInstanceOf[TemplateScope], Nil))
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
 
   @Test
   def extractMultipleExpressions = new FileSet {
@@ -101,15 +101,15 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         val a = 1
         val b = {
           val extracted = {
-                 /*(*/val c = 2
-                 val d = a
-                 d * c/*)*/
-               }
+            val c = 2
+            val d = a
+            d * c
+          }
           extracted
         }
       }
     """
-  } applyRefactoring (extract("extracted", _.isInstanceOf[BlockScope], Nil))
+  }.performRefactoring(extract("extracted", _.isInstanceOf[BlockScope], Nil)).assertEqualTree
   
   @Test
   def extractUnitExpressionToDef = new FileSet {
@@ -120,14 +120,14 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
     """ becomes
       """
       object Demo {
-      extracted
+        extracted
 
         def extracted(): Unit = {
-               /*(*/println("hello world")/*)*/
-             }
+          println("hello world")
+        }
       }
     """
-  } applyRefactoring (extract("extracted", _.isInstanceOf[TemplateScope], Nil))
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
 
   @Test
   def extractCodeInCase = new FileSet {
@@ -142,10 +142,74 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       object Demo {
         val p = (1, 1) match {
           case (x: Int, y: Int) => 
-            val extracted = /*(*/x * y
-            extracted/*)*/
+            val extracted = x * y
+            extracted
         }
       }
     """
-  } applyRefactoring (extract("extracted", _.isInstanceOf[CaseScope], Nil))
+  }.performRefactoring(extract("extracted", _.isInstanceOf[CaseScope], Nil)).assertEqualTree
+
+  @Test
+  @Ignore("Todo...")
+  def extractFunction = new FileSet {
+    """
+      object Demo {
+        val a = (1 to 10).map{ /*(*/i =>
+          i + 100/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        val a = (1 to 10).map(extracted)
+        val extracted = (i: Int) => i + 100
+      }
+    """
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
+  
+  @Test
+  def extractCodeWithPotentialSideEffects = new FileSet{
+    """
+      object Demo {
+        val a = {
+          /*(*/println("calculate answer...")
+          6 * 7/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        val a = extracted
+
+        def extracted(): Int = {
+          println("calculate answer...")
+          6 * 7
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
+  
+  @Test
+  def extractCodeWithPotentialSideEffectsOnVar = new FileSet{
+    """
+      object Demo {
+        var c = 1
+        val a = {
+          /*(*/c += 1
+          6 * 7/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        var c = 1
+        val a = extracted
+
+        def extracted(): Int = {
+          c += 1
+          6 * 7
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
 }

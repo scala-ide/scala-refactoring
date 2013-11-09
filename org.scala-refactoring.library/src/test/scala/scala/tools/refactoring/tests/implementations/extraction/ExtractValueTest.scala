@@ -39,7 +39,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  } applyRefactoring (extract("c", _.isInstanceOf[BlockScope]))
+  }.performRefactoring(extract("c", _.isInstanceOf[BlockScope])).assertEqualTree
 
   @Test
   def extractSimpleSequence = new FileSet {
@@ -64,7 +64,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  } applyRefactoring (extract("c", _.isInstanceOf[BlockScope]))
+  }.performRefactoring(extract("c", _.isInstanceOf[BlockScope])).assertEqualTree
 
   @Test
   def extractWithOutboundDependency = new FileSet {
@@ -88,7 +88,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  } applyRefactoring (extract("c", _.isInstanceOf[BlockScope]))
+  }.performRefactoring(extract("c", _.isInstanceOf[BlockScope])).assertEqualTree
 
   @Test
   def extractWithOutboundDependencies = new FileSet {
@@ -118,7 +118,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  } applyRefactoring (extract("e", _.isInstanceOf[BlockScope]))
+  }.performRefactoring(extract("e", _.isInstanceOf[BlockScope])).assertEqualTree
 
   @Test
   def extractToTemplateScope = new FileSet {
@@ -142,5 +142,5 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         def fm = 7
       }
     """
-  } applyRefactoring (extract("c", _.isInstanceOf[TemplateScope]))
+  }.performRefactoring(extract("c", _.isInstanceOf[TemplateScope])).assertEqualTree
 }

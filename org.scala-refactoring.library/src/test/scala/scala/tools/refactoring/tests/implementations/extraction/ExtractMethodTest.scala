@@ -41,7 +41,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityS
         }
       }
     """
-  } applyRefactoring (extract("extracted", v => v.isInstanceOf[BlockScope], "a" :: Nil))
+  }.performRefactoring(extract("extracted", v => v.isInstanceOf[BlockScope], "a" :: Nil)).assertEqualTree
 
   @Test
   def extractComplexMethod = new FileSet {
@@ -84,5 +84,5 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityS
         def fm(p: Int) = p + 1
       }
     """
-  } applyRefactoring (extract("extracted", v => v.isInstanceOf[TemplateScope], "na" :: Nil))
+  }.performRefactoring(extract("extracted", v => v.isInstanceOf[TemplateScope], "na" :: Nil)).assertEqualTree
 }
