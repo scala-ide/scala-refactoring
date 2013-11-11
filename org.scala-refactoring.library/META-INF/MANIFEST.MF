@@ -9,6 +9,7 @@ Export-Package: scala.tools.refactoring,
  scala.tools.refactoring.analysis,
  scala.tools.refactoring.common,
  scala.tools.refactoring.implementations,
+ scala.tools.refactoring.implementations.extraction,
  scala.tools.refactoring.sourcegen,
  scala.tools.refactoring.transformation,
  scala.tools.refactoring.util
