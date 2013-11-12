@@ -212,4 +212,46 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
+  
+  @Test
+  def extractForEnumerator = new FileSet{
+    """
+      object Demo {
+        for{
+          i <- /*(*/1 to 100/*)*/
+        } println(i)
+      }
+    """ becomes
+      """
+      object Demo {
+        for{
+          i <- extracted
+        } println(i)
+    
+        val extracted = 1 to 100
+      }
+    """
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
+  
+  @Test
+  def extractFromForBody = new FileSet{
+    """
+      object Demo {
+        for{
+          i <- 1 to 100
+        } /*(*/println(i)/*)*/
+      }
+    """ becomes
+      """
+      object Demo {
+        for{
+          i <- 1 to 100
+        } extracted(i)
+    
+        def extracted(i: Int): Unit = {
+          println(i)
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
 }
