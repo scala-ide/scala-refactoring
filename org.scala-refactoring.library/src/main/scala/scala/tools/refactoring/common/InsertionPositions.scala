@@ -46,22 +46,22 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
    * Inserts trees as the first statement in a function body.
    */
   lazy val atBeginningOfFunction: InsertionPosition = {
-    case enclosing @ Function(_, Block(stats, expr)) =>
+    case enclosing @ Function(_, Block(stats, expr)) if enclosing.pos.isOpaqueRange =>
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertInSeq(stats :+ expr, insertion, _ => false)))
       })
-    case enclosing @ Function(_, body) =>
+    case enclosing @ Function(_, body) if enclosing.pos.isOpaqueRange =>
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertion :: body :: Nil))
       })
   }
-  
+
   /**
    * Inserts trees as the first statement in a case body (rhs).
    */
   lazy val atBeginningOfCaseBody: InsertionPosition = {
     case enclosing @ CaseDef(_, _, body) =>
-      InsertionPoint(enclosing, {insertion =>
+      InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertion :: body :: Nil))
       })
   }
