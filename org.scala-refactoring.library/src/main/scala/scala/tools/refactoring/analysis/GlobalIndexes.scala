@@ -112,7 +112,14 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           val src = t.pos.source.content.slice(t.pos.start, t.pos.end).mkString
           src != "super"
 
-        case t => t.pos.isOpaqueRange
+        case t if t.pos.isTransparent =>
+          // We generally want to skip transparent positions,
+          // so if one of the children is an opaque range, we
+          // skip this tree.
+          children(t).exists(_.pos.isOpaqueRange)
+
+        case t =>
+          t.pos.isOpaqueRange
       }.distinct
     }
 

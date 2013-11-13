@@ -1438,4 +1438,30 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("getContent"))
+
+  @Test
+  def renameApplyCall = new FileSet {
+    """
+    package renameApplyCall
+    object Foo {
+      val /*(*/xs/*)*/ = List(1,2,3)
+      def bar(): Unit = {
+        println(xs(0))
+        println(xs)
+
+      }
+    }
+    """ becomes
+    """
+    package renameApplyCall
+    object Foo {
+      val /*(*/list/*)*/ = List(1,2,3)
+      def bar(): Unit = {
+        println(list(0))
+        println(list)
+
+      }
+    }
+    """
+  } applyRefactoring(renameTo("list"))
 }
