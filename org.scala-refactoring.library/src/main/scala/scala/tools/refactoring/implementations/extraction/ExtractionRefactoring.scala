@@ -72,7 +72,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring
    */
   val defaultInsertionPositionFor = (s: Selection) =>
     s.beforeSelectionInBlock orElse
-      s.afterSelectionInTemplate orElse
+      s.beforeSelectionInTemplate orElse
       atBeginningOfDefDef orElse
       atBeginningOfFunction orElse
       atBeginningOfCaseBody

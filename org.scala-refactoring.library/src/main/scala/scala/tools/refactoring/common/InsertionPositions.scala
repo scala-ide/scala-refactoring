@@ -72,17 +72,6 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
   lazy val atEndOfParameterList: InsertionPosition = ???
 
   implicit class SelectionDependentInsertionPoints(selection: Selection) {
-    private def isBeforeSelectionIn(enclosing: Tree)(pos: Position) = {
-      val startOfTopLevelTree = enclosing.children.find {
-        case t => t.pos.includes(selection.pos)
-      }.map(_.pos.start).getOrElse(selection.pos.start)
-      !pos.isRange || pos.start < startOfTopLevelTree
-    }
-
-    private def isBeforeEndOfSelection(pos: Position) = {
-      !pos.isRange || pos.start < selection.pos.end
-    }
-
     /**
      * Inserts trees in the enclosing block right before the selection.
      */
@@ -101,6 +90,27 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
         InsertionPoint(enclosing, { insertion =>
           enclosing copy (body = insertInSeq(body, insertion, isBeforeEndOfSelection))
         })
+    }
+
+    /**
+     * Inserts trees in the enclosing template right before the selection.
+     */
+    lazy val beforeSelectionInTemplate: InsertionPosition = {
+      case enclosing @ Template(_, _, body) =>
+        InsertionPoint(enclosing, { insertion =>
+          enclosing copy (body = insertInSeq(body, insertion, isBeforeSelectionIn(enclosing)))
+        })
+    }
+
+    private def isBeforeSelectionIn(enclosing: Tree)(pos: Position) = {
+      val startOfTopLevelTree = enclosing.children.find {
+        case t => t.pos.includes(selection.pos)
+      }.map(_.pos.start).getOrElse(selection.pos.start)
+      !pos.isRange || pos.start < startOfTopLevelTree
+    }
+
+    private def isBeforeEndOfSelection(pos: Position) = {
+      !pos.isRange || pos.start < selection.pos.end
     }
   }
 }

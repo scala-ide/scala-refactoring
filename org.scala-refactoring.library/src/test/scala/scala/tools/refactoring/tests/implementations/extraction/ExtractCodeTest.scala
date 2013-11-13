@@ -31,9 +31,8 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       """
       object Demo {
         val a = 1
-        val b = extracted
-
         val extracted = a * a
+        val b = extracted
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
@@ -49,11 +48,12 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       """
       object Demo {
         val a = 1
-        val b = extracted(a)
 
         def extracted(a: Int): Int = {
           a * a
         }
+
+        val b = extracted(a)
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], "a" :: Nil)).assertEqualTree
@@ -72,13 +72,14 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       """
       object Demo {
         val a = 1
-        val b = {
-          val c = 2
-          extracted(c)
-        }
 
         def extracted(c: Int): Int = {
           a * c
+        }
+    
+        val b = {
+          val c = 2
+          extracted(c)
         }
       }
     """
@@ -120,11 +121,11 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
     """ becomes
       """
       object Demo {
-        extracted
-
         def extracted(): Unit = {
           println("hello world")
         }
+
+        extracted
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
@@ -179,12 +180,12 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
     """ becomes
       """
       object Demo {
-        val a = extracted
-
         def extracted(): Int = {
           println("calculate answer...")
           6 * 7
         }
+    
+        val a = extracted
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
@@ -203,12 +204,13 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
       """
       object Demo {
         var c = 1
-        val a = extracted
 
         def extracted(): Int = {
           c += 1
           6 * 7
         }
+    
+        val a = extracted
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
@@ -224,11 +226,11 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
     """ becomes
       """
       object Demo {
+        val extracted = 1 to 100
+
         for{
           i <- extracted
         } println(i)
-    
-        val extracted = 1 to 100
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
@@ -244,13 +246,13 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
     """ becomes
       """
       object Demo {
-        for{
-          i <- 1 to 100
-        } extracted(i)
-    
         def extracted(i: Int): Unit = {
           println(i)
         }
+
+        for{
+          i <- 1 to 100
+        } extracted(i)
       }
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
