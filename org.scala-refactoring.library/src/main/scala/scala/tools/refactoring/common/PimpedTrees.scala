@@ -180,6 +180,7 @@ trait PimpedTrees {
       val pos = try {
         t match {
           case t if t.pos == NoPosition => NoPosition
+          case t if !t.pos.isRange => t.pos
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
@@ -281,6 +282,7 @@ trait PimpedTrees {
 
       pos match {
         case NoPosition => NoPosition
+        case _ if !pos.isRange => pos
         case _ =>
 
           // it might be a quoted literal:
