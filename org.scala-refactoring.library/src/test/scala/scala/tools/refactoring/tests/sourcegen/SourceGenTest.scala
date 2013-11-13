@@ -1566,5 +1566,16 @@ class SourceGenTest extends TestHelper with SilentTracing {
 
     assertEquals(code, generateText(treeFrom(code)))
   }
+
+  @Test
+  def testConsOperator = {
+    val code = """
+      object ConsClient{
+        val a = 1 :: 2 :: Nil
+      }
+    """
+
+    assertEquals(code, generateText(treeFrom(code)))
+  }
 }
 
