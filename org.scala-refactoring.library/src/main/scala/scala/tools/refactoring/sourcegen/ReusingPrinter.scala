@@ -510,7 +510,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
            * to pick up any changes in the `arg`!
            *
            * Generic layout handling will remove a closing `)`, so we re-add it */
-          val generator_ = p(generator, after = layoutAfterGenerator)
+          val _generator = p(generator, after = layoutAfterGenerator)
 
           val isUnit = generator match {
             case generator: TypeApply =>
@@ -529,9 +529,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
               ctx.newline + ctx.ind.incrementDefault.current
             } else " "
 
-            l ++ generator_ ++ p(body, before = bodyPrefix + "{"+nextLine) ++ r
+            l ++ _generator ++ p(body, before = bodyPrefix + "{"+nextLine) ++ r
           } else {
-            l ++ generator_ ++ p(body, before = bodyPrefix) ++ r
+            l ++ _generator ++ p(body, before = bodyPrefix) ++ r
           }
 
         case (fun, Nil) =>
