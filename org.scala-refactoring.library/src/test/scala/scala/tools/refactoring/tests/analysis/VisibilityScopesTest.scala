@@ -29,13 +29,42 @@ class VisibilityScopesTest extends TestHelper with VisibilityScopes {
     val end = commentSelectionEnd(src)
     FileSelection(tree.pos.source.file, tree, start, end)
   }
+  
+  def toSelection(src: String) ={
+    val tree = treeFrom(src)
+    findMarkedNodes(src, tree)
+  }
 
   def assertVisibilities(expected: Expectation)(src: String) = {
-    val tree = treeFrom(src)
-    val selection = findMarkedNodes(src, tree)
-    val vt = VisibilityScope(selection)
+    val vt = VisibilityScope(toSelection(src))
 
     assertEquals(expected.toString(), vt.toString())
+  }
+  
+  @Test
+  def scopeName = {
+    val selection = toSelection("""
+    package org.some.demo
+    
+    object Demo{
+      class A{
+        def fn = {
+          val a = {
+            1 match {
+              case 7 =>
+                /*(*/println("wow")/*)*/
+            }
+          }
+        }
+      }
+    }
+    """)
+    val expected = List("Case", "Block", "Method fn", "Class A", "Object Demo", "Package demo")
+    val actual = VisibilityScope(selection).map(_.scopeName).toList
+    
+    for(p <- expected.zip(actual)){
+      assertEquals(p._1, p._2)
+    }
   }
 
   @Test

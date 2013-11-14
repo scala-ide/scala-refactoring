@@ -56,6 +56,8 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
         t.pos union pos
       }
 
+    def scopeName: String
+
     override def toString = {
       getClass().getSimpleName() + symbols.mkString("(", ", ", ")") + visibleScopes.mkString("{ ", ", ", " }")
     }
@@ -87,29 +89,45 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
 
   case class PackageScope(
     val enclosing: PackageDef,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
+    def scopeName = s"Package ${enclosing.nameString}"
+  }
 
   case class TemplateScope(
+    val classOrModule: ImplDef,
     val enclosing: Template,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
+    def scopeName = classOrModule match {
+      case c: ClassDef => s"Class ${c.symbol.name.decode}"
+      case c: ModuleDef => s"Object ${c.symbol.name.decode}"
+    }
+  }
 
   case class MethodScope(
     val enclosing: DefDef,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
+    def scopeName = s"Method ${enclosing.nameString}"
+  }
 
   case class FunctionScope(
     val enclosing: Function,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope
+    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
+    def scopeName = s"Function"
+  }
 
   case class BlockScope(
     val enclosing: Block,
     val visibleScopes: List[VisibilityScope],
-    override val declarations: List[DefTree]) extends VisibilityScope
+    override val declarations: List[DefTree]) extends VisibilityScope {
+    def scopeName = "Block"
+  }
 
   case class CaseScope(
     val enclosing: CaseDef,
     val visibleScopes: List[VisibilityScope],
-    override val declarations: List[DefTree]) extends VisibilityScope
+    override val declarations: List[DefTree]) extends VisibilityScope {
+    def scopeName = "Case"
+  }
 
   object VisibilityScope {
     def apply(s: Selection) = {
@@ -127,9 +145,9 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
           case t: DefTree if t.pos.start < s.pos.start => t
         }
       }
-      
+
       def findBindingsInPattern(pat: Tree) = {
-        pat.collect{
+        pat.collect {
           case b: Bind =>
             b
         }
@@ -138,12 +156,12 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
       def children(enclosingTrees: List[Tree]): List[VisibilityScope] =
         enclosingTrees match {
           case t :: rest => t match {
-            case t: PackageDef => new PackageScope(t, children(rest)) :: Nil
-            case t: Template => new TemplateScope(t, children(rest)) :: Nil
-            case t: DefDef => new MethodScope(t, children(rest)) :: Nil
-            case t: Function => new FunctionScope(t, children(rest)) :: Nil
-            case t: Block => new BlockScope(t, children(rest), findDeclarationsInBlock(t)) :: Nil
-            case t @ CaseDef(pat, _, _) => new CaseScope(t, children(rest), findBindingsInPattern(pat)) :: Nil
+            case t: PackageDef => PackageScope(t, children(rest)) :: Nil
+            case impl: ImplDef => TemplateScope(impl, impl.impl, children(rest)) :: Nil
+            case t: DefDef => MethodScope(t, children(rest)) :: Nil
+            case t: Function => FunctionScope(t, children(rest)) :: Nil
+            case t: Block => BlockScope(t, children(rest), findDeclarationsInBlock(t)) :: Nil
+            case t @ CaseDef(pat, _, _) => CaseScope(t, children(rest), findBindingsInPattern(pat)) :: Nil
             case _ => children(rest)
           }
           case Nil => Nil
