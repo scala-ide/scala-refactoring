@@ -22,9 +22,9 @@ abstract class AddMethod extends Refactoring with InteractiveScalaCompiler {
 
         val classAndObjectDefs = astRoot.collect {
           case classDef: ClassDef if classDef.name.decode == className =>
-            UnknownDef(classDef, classDef.namePosition.offset.getOrElse(0))
+            UnknownDef(classDef, classDef.namePosition.point)
           case moduleDef: ModuleDef if moduleDef.name.decode == className =>
-            UnknownDef(moduleDef, moduleDef.namePosition.offset.getOrElse(0))
+            UnknownDef(moduleDef, moduleDef.namePosition.point)
         }
 
         //the class/object definition just before the given offset
