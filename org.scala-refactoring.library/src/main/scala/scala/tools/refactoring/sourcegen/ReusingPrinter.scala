@@ -348,7 +348,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             }
           }
           if(qualifier.pos.isRange && tree.pos.start < qualifier.pos.start && nameOrig.nameString.endsWith(":")) {
-            l ++ _n ++ _q ++ r
+            l ++ _n ++ " " ++ _q ++ r
           } else if(startsWithChar && endsWithChar && hasNoSeparator) {
             l ++ _q ++ " " ++ _n ++ r
           } else if (qualifierHasNoDot && _n.leading.contains(".")) {
@@ -510,7 +510,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
            * to pick up any changes in the `arg`!
            *
            * Generic layout handling will remove a closing `)`, so we re-add it */
-          val generator_ = p(generator, after = layoutAfterGenerator)
+          val _generator = p(generator, after = layoutAfterGenerator)
 
           val isUnit = generator match {
             case generator: TypeApply =>
@@ -529,9 +529,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
               ctx.newline + ctx.ind.incrementDefault.current
             } else " "
 
-            l ++ generator_ ++ p(body, before = bodyPrefix + "{"+nextLine) ++ r
+            l ++ _generator ++ p(body, before = bodyPrefix + "{"+nextLine) ++ r
           } else {
-            l ++ generator_ ++ p(body, before = bodyPrefix) ++ r
+            l ++ _generator ++ p(body, before = bodyPrefix) ++ r
           }
 
         case (fun, Nil) =>
@@ -895,10 +895,11 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       // Handle right-associate methods, where there's a synthetic value that holds
       // the argument that gets passed. Strange, but seems to work..
-      if(tree.symbol.isSynthetic && !tree.pos.includes(rhs.pos)) {
+      if(tree.symbol.isSynthetic && (!tree.pos.includes(rhs.pos) || tree.pos.point > tree.pos.end)) {
         p(tpt) ++ p(rhs) ++ r
       } else {
-        l ++ pp(modsAndName, separator = Requisite.Blank) ++ p(tpt) ++ p(rhs) ++ r
+        val mods_ = pp(modsAndName, separator = Requisite.Blank)
+        l ++ mods_ ++ p(tpt) ++ p(rhs) ++ r
       }
     }
 

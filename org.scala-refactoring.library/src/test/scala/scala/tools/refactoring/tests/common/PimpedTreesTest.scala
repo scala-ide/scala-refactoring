@@ -67,5 +67,21 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
     assertEquals(None, originalLeftSibling(v))
     assertEquals("private[this] val test2: Int = 42", originalRightSibling(v).get.toString)
   }
+
+  @Test
+  def namePositionOfFieldAccessor = {
+    val src = """
+    object O{
+      val field = 1
+    }
+    """
+    val root = treeFrom(src)
+
+    val accessor = root.collect{
+      case t: ValOrDefDef if t.name.decode == "field" => t
+    }.head
+
+    assertEquals(src.indexOf("field"), accessor.namePosition().point)
+  }
 }
 

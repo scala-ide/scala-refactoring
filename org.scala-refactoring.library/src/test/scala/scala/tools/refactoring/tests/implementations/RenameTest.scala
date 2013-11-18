@@ -1175,7 +1175,7 @@ class Blubb
       def /*(*/flatten/*)*/(list: List[Any]): List[Any] = list match {
         case (head@_::_)::tail => flatten(head) ++ flatten(tail)
         case Nil::tail => flatten(tail)
-        case head::tail => head::flatten(tail)
+        case head::tail => head :: flatten(tail)
         case Nil => Nil
       }
     }
@@ -1185,7 +1185,7 @@ class Blubb
       def /*(*/fltn/*)*/(list: List[Any]): List[Any] = list match {
         case (head@_::_)::tail => fltn(head) ++ fltn(tail)
         case Nil::tail => fltn(tail)
-        case head::tail => head::fltn(tail)
+        case head::tail => head :: fltn(tail)
         case Nil => Nil
       }
     }
@@ -1438,4 +1438,30 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("getContent"))
+
+  @Test
+  def renameApplyCall = new FileSet {
+    """
+    package renameApplyCall
+    object Foo {
+      val /*(*/xs/*)*/ = List(1,2,3)
+      def bar(): Unit = {
+        println(xs(0))
+        println(xs)
+
+      }
+    }
+    """ becomes
+    """
+    package renameApplyCall
+    object Foo {
+      val /*(*/list/*)*/ = List(1,2,3)
+      def bar(): Unit = {
+        println(list(0))
+        println(list)
+
+      }
+    }
+    """
+  } applyRefactoring(renameTo("list"))
 }

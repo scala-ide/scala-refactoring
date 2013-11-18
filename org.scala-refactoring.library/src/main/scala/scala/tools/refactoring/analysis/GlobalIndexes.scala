@@ -33,26 +33,6 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           OverridesInSuperClasses {
 
             val cus = compilationUnits
-
-            @tailrec
-            def linkSymbols(uf: UnionFind[Symbol], syms:List[Symbol], seen:HashSet[Symbol]): UnionFind[Symbol] = {
-              if (syms.nonEmpty){
-                val nextSymbols = ListBuffer[Symbol]()
-                for (s <- syms) {
-                  for (es <- expand(s) filterNot (_ == NoSymbol)){
-                    uf.union(s, es)
-                    if (!seen(es)) nextSymbols += es
-                  }
-                  seen += s
-                }
-                linkSymbols(uf,nextSymbols.toList, seen)
-              } else uf
-            }
-
-            private lazy val symbolsUF: UnionFind[Symbol] = linkSymbols(new UnionFind(), allSymbols(), new HashSet[Symbol]())
-
-            override def expandSymbol(s: Symbol): List[Symbol] = symbolsUF.equivalenceClass(s)
-
           }
 
     def apply(t: Tree): IndexLookup = apply(List(CompilationUnitIndex(t)))
@@ -86,24 +66,27 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
       }).distinct
     }
 
-    def expandSymbol(s: global.Symbol): List[global.Symbol] = {
-
-      @tailrec
-      def expandSymbols(res:ListBuffer[Symbol], seen: HashSet[Symbol], ss: List[Symbol], n:Int):List[Symbol] =
-        if (n == 0) res.toList else{
-          val nuS = ss flatMap expand filterNot (x => seen(x) || x == NoSymbol)
-          if (nuS.isEmpty) res.toList else {
-            nuS foreach { s =>
-              seen += s
-              res += s
-              }
-            expandSymbols(res, seen, nuS, n-1)
-            }
+    @tailrec
+    private def linkSymbols(uf: UnionFind[Symbol], syms:List[Symbol], seen:HashSet[Symbol]): UnionFind[Symbol] = {
+      if (syms.nonEmpty){
+        val nextSymbols = ListBuffer[Symbol]()
+        for (s <- syms) {
+          for (es <- expand(s) filterNot (_ == NoSymbol)){
+            uf.union(s, es)
+            if (!seen(es)) nextSymbols += es
           }
-
-      // we should probably do this until a fixpoint is reached. but for now, three times seems to be enough
-      expandSymbols(ListBuffer(s), HashSet(s), List(s), 3)
+          seen += s
+        }
+        linkSymbols(uf,nextSymbols.toList, seen)
+      } else uf
     }
+
+    /*
+     * This stores knows symbols into connected components, where the connection is to refer to the same symbol name
+     */
+    private lazy val symbolsUF: UnionFind[Symbol] = linkSymbols(new UnionFind(), allSymbols(), new HashSet[Symbol]())
+
+    def expandSymbol(s: Symbol): List[Symbol] = symbolsUF.equivalenceClass(s)
 
     def occurences(s: global.Symbol) = {
       val expandedSymbol = expandSymbol(s)
@@ -129,7 +112,14 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           val src = t.pos.source.content.slice(t.pos.start, t.pos.end).mkString
           src != "super"
 
-        case t => t.pos.isOpaqueRange
+        case t if t.pos.isTransparent =>
+          // We generally want to skip transparent positions,
+          // so if one of the children is an opaque range, we
+          // skip this tree.
+          children(t).exists(_.pos.isOpaqueRange)
+
+        case t =>
+          t.pos.isOpaqueRange
       }.distinct
     }
 

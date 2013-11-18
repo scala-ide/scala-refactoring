@@ -130,7 +130,7 @@ trait TreeFactory {
       body.last match {
         case t: Function if t.pos.isTransparent =>
           TypeTree(t.body.tpe)
-        case t => t
+        case t =>
           TypeTree(t.tpe)
       }
     }

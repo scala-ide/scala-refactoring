@@ -8,8 +8,6 @@ package tests.sourcegen
 import tests.util.TestHelper
 import org.junit.Assert._
 import sourcegen.CommentsUtils
-import tools.nsc.util.SourceFile
-import tools.nsc.util.BatchSourceFile
 
 class SourceHelperTest extends TestHelper {
 
