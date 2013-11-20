@@ -69,7 +69,8 @@ trait TreeCreationMethods {
     r1.get // we don't care about the result yet
     
     val r2 = new Response[global.Tree]
-    global.askType(file, false, r2)
+    global.ask(() => global.askLoadedTyped(file, true, r2))
+
     r2.get match {
       case Left(tree) => tree
       case Right(ex) => throw ex
