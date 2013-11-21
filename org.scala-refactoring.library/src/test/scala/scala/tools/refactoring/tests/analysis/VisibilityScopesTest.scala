@@ -59,7 +59,7 @@ class VisibilityScopesTest extends TestHelper with VisibilityScopes {
       }
     }
     """)
-    val expected = List("Case", "Block", "Method fn", "Class A", "Object Demo", "Package demo")
+    val expected = List("Local Scope", "Local Scope", "Method fn", "Class A", "Object Demo", "Package demo")
     val actual = VisibilityScope(selection).map(_.scopeName).toList
     
     for(p <- expected.zip(actual)){
@@ -253,4 +253,25 @@ class A{
   }
 }
 """)
+  
+  @Test
+  def dependenciesOfReferenceSelection = {
+    val selection = toSelection("""
+    object Demo{
+      val a = 1
+      def fn(p: Int) = {
+        val b = 2
+        /*(*/println(a*b*p)/*)*/
+      }
+    }
+    """)
+    val blockVs = VisibilityScope(selection)
+    assertEquals("List(method println, value a, value b, value p)", blockVs.definedDependencies.toString)
+    val fnVs = blockVs.visibleScopes.head
+    assertEquals("List(method println, value a, value p)", fnVs.definedDependencies.toString)
+    val templateVs = fnVs.visibleScopes.head
+    assertEquals("List(method println, value a)", templateVs.definedDependencies.toString)
+    val pkgVs = templateVs.visibleScopes.head
+    assertEquals("List(method println)", pkgVs.definedDependencies.toString)
+  }
 }

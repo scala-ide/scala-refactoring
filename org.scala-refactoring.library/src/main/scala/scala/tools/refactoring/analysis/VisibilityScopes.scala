@@ -9,7 +9,13 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
   import global._
 
   /**
-   * A data structure that represents all visible symbols at a given position.
+   * A data structure that represents the visible symbols at a given position.
+   * Currently imported symbols and symbols from super classes or traits are
+   * not tracked by the visibility scopes.
+   * 
+   * Visibility scopes keep also track of inbound dependencies of the reference
+   * selection that was used to build the visibility tree. See `definedDependencies`
+   * and `undefinedDependencies`.
    *
    * ```
    * class A(cp: Int){
@@ -25,22 +31,60 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
    *
    * ```
    * reference selection -sees->
-   *   Block(value y) -sees->
-   *     Block(value x) -sees->
-   *       DefDef(value p) -sees->
-   *        Template(constructor A, value a, value b, value c) -sees->
-   *          PackageDef(class A)
+   *   BlockScope(value y) -sees->
+   *     BlockScope(value x) -sees->
+   *       MethodScope(value p) -sees->
+   *        TemplateScope(constructor A, value a, value b, value c) -sees->
+   *          PackageScope(class A)
    * ```
    */
   sealed trait VisibilityScope extends Traversable[VisibilityScope] {
-    /** All declarations in this visibility scope */
-    val declarations: List[DefTree] = collectDeclarations
-
-    /** The visibility scopes visible from this scope */
-    val visibleScopes: List[VisibilityScope]
+    /** The selection that was used to build this scope */
+    val referenceSelection: Selection
 
     /** The tree that encloses this visibility scope */
     val enclosing: Tree
+
+    val allEnclosingTrees: List[Tree]
+
+    /**
+     * Inbound dependencies of `referenceSelection` that are visible from
+     * this scope.
+     */
+    val definedDependencies: List[Symbol]
+
+    /** Inbound dependencies that are not visible from this scope. */
+    val undefinedDependencies: List[Symbol] =
+      referenceSelection.inboundDeps diff definedDependencies
+
+    /** The visibility scopes visible from this scope */
+    lazy val visibleScopes: List[VisibilityScope] = {
+      val definedDepsWithoutSymbols =
+        definedDependencies filterNot {
+          case s if s.isAccessor => symbols.contains(s.accessed) || symbols.contains(s)
+          case s => symbols.contains(s)
+        }
+
+      VisibilityScope(referenceSelection, allEnclosingTrees.tail, definedDepsWithoutSymbols)
+    }
+
+    /** All declarations in this visibility scope */
+    val declarations: List[DefTree] = this match {
+      case BlockScope(_, enclosing, _, _) =>
+        val stats = enclosing.stats :+ enclosing.expr
+        stats.collect {
+          case t: DefTree if t.pos.start < referenceSelection.pos.start => t
+        }
+      case CaseScope(_, enclosing, _, _) =>
+        enclosing.pat.collect {
+          case b: Bind => b
+        }
+      case _ =>
+        enclosing.children.collect {
+          case dt: DefTree if !dt.symbol.hasFlag(Flags.ACCESSOR) && dt.symbol != NoSymbol =>
+            dt
+        }
+    }
 
     /** All symbols declared in this visibility scope */
     lazy val symbols =
@@ -56,20 +100,17 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
         t.pos union pos
       }
 
-    def scopeName: String
+    def scopeName = this match {
+      case _: PackageScope => s"Package ${enclosing.nameString}"
+      case TemplateScope(_, c: ClassDef, _, _, _) => s"Class ${c.symbol.name.decode}"
+      case TemplateScope(_, c: ModuleDef, _, _, _) => s"Object ${c.symbol.name.decode}"
+      case _: MethodScope => s"Method ${enclosing.nameString}"
+      case _ => "Local Scope"
+    }
 
     override def toString = {
       getClass().getSimpleName() + symbols.mkString("(", ", ", ")") + visibleScopes.mkString("{ ", ", ", " }")
     }
-
-    private[analysis] def exclusionFlags =
-      Flags.ACCESSOR
-
-    private[analysis] def collectDeclarations =
-      enclosing.children.collect {
-        case dt: DefTree if !dt.symbol.hasFlag(exclusionFlags) && dt.symbol != NoSymbol =>
-          dt
-      }
 
     /**
      * Enables depth first traversing of visibility scopes.
@@ -82,55 +123,45 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
     }
   }
 
-  private[analysis] def insertInSequence(stats: List[Tree], isBeforeInsertionPoint: Position => Boolean, t: Tree) = {
-    val (before, after) = stats.span((t: Tree) => isBeforeInsertionPoint(t.pos))
-    before ::: t :: after ::: Nil
-  }
-
   case class PackageScope(
+    val referenceSelection: Selection,
     val enclosing: PackageDef,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-    def scopeName = s"Package ${enclosing.nameString}"
-  }
+    val allEnclosingTrees: List[Tree],
+    val definedDependencies: List[Symbol]) extends VisibilityScope
 
   case class TemplateScope(
+    val referenceSelection: Selection,
     val classOrModule: ImplDef,
     val enclosing: Template,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-    def scopeName = classOrModule match {
-      case c: ClassDef => s"Class ${c.symbol.name.decode}"
-      case c: ModuleDef => s"Object ${c.symbol.name.decode}"
-    }
-  }
+    val allEnclosingTrees: List[Tree],
+    val definedDependencies: List[Symbol]) extends VisibilityScope
 
   case class MethodScope(
+    val referenceSelection: Selection,
     val enclosing: DefDef,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-    def scopeName = s"Method ${enclosing.nameString}"
-  }
+    val allEnclosingTrees: List[Tree],
+    val definedDependencies: List[Symbol]) extends VisibilityScope
 
   case class FunctionScope(
+    val referenceSelection: Selection,
     val enclosing: Function,
-    val visibleScopes: List[VisibilityScope]) extends VisibilityScope {
-    def scopeName = s"Function"
-  }
+    val allEnclosingTrees: List[Tree],
+    val definedDependencies: List[Symbol]) extends VisibilityScope
 
   case class BlockScope(
+    val referenceSelection: Selection,
     val enclosing: Block,
-    val visibleScopes: List[VisibilityScope],
-    override val declarations: List[DefTree]) extends VisibilityScope {
-    def scopeName = "Block"
-  }
+    val allEnclosingTrees: List[Tree],
+    val definedDependencies: List[Symbol]) extends VisibilityScope
 
   case class CaseScope(
+    val referenceSelection: Selection,
     val enclosing: CaseDef,
-    val visibleScopes: List[VisibilityScope],
-    override val declarations: List[DefTree]) extends VisibilityScope {
-    def scopeName = "Case"
-  }
+    val allEnclosingTrees: List[Tree],
+    val definedDependencies: List[Symbol]) extends VisibilityScope
 
   object VisibilityScope {
-    def apply(s: Selection) = {
+    def apply(s: Selection): VisibilityScope = {
       val enclosingTrees = {
         val traverser = new FilterTreeTraverser(cond(_) {
           case t => t.pos.includes(s.pos) && !t.pos.sameRange(s.pos)
@@ -139,36 +170,23 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
         traverser.hits.toList.reverse
       }
 
-      def findDeclarationsInBlock(b: Block) = {
-        val stats = b.stats :+ b.expr
-        stats.collect {
-          case t: DefTree if t.pos.start < s.pos.start => t
-        }
-      }
-
-      def findBindingsInPattern(pat: Tree) = {
-        pat.collect {
-          case b: Bind =>
-            b
-        }
-      }
-
-      def children(enclosingTrees: List[Tree]): List[VisibilityScope] =
-        enclosingTrees match {
-          case t :: rest => t match {
-            case t: PackageDef => PackageScope(t, children(rest)) :: Nil
-            case impl: ImplDef => TemplateScope(impl, impl.impl, children(rest)) :: Nil
-            case t: DefDef => MethodScope(t, children(rest)) :: Nil
-            case t: Function => FunctionScope(t, children(rest)) :: Nil
-            case t: Block => BlockScope(t, children(rest), findDeclarationsInBlock(t)) :: Nil
-            case t @ CaseDef(pat, _, _) => CaseScope(t, children(rest), findBindingsInPattern(pat)) :: Nil
-            case _ => children(rest)
-          }
-          case Nil => Nil
-        }
-
-      children(enclosingTrees).head
+      apply(s, enclosingTrees, s.inboundDeps).head
     }
+
+    def apply(s: Selection, enclosingTrees: List[Tree], definedDependencies: List[Symbol]): List[VisibilityScope] =
+      enclosingTrees match {
+        case t :: rest =>
+          t match {
+            case t: PackageDef => PackageScope(s, t, enclosingTrees, definedDependencies) :: Nil
+            case impl: ImplDef => TemplateScope(s, impl, impl.impl, enclosingTrees, definedDependencies) :: Nil
+            case t: DefDef => MethodScope(s, t, enclosingTrees, definedDependencies) :: Nil
+            case t: Function => FunctionScope(s, t, enclosingTrees, definedDependencies) :: Nil
+            case t: Block => BlockScope(s, t, enclosingTrees, definedDependencies) :: Nil
+            case t @ CaseDef(pat, _, _) => CaseScope(s, t, enclosingTrees, definedDependencies) :: Nil
+            case _ => apply(s, rest, definedDependencies)
+          }
+        case Nil => Nil
+      }
   }
 
 }
