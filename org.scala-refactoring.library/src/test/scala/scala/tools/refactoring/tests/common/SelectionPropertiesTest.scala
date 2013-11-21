@@ -28,7 +28,18 @@ class SelectionPropertiesTest extends TestHelper with ReplaceableSelections {
         }
       }
       """.selection
-    assertEquals("method *, value p, value i, method println", sel.inboundDeps.mkString(", "))
+    assertEquals("value p, value i, method println", sel.inboundDeps.mkString(", "))
+  }
+
+  @Test
+  def inboundDepsDoesNotIncludeCalledMethods = {
+    val sel = """
+      object O{
+        val i = 1
+        /*(*/println(i.toInt*i*i.toInt)/*)*/
+      }
+      """.selection
+    assertEquals("method println, value i", sel.inboundDeps.mkString(", "))
   }
 
   @Test
@@ -47,7 +58,7 @@ class SelectionPropertiesTest extends TestHelper with ReplaceableSelections {
         }
       }
       """.selection
-    assertEquals("constructor A, class A, method apply, object N", sel.inboundDeps.mkString(", "))
+    assertEquals("constructor A, class A, object N", sel.inboundDeps.mkString(", "))
   }
 
   @Test

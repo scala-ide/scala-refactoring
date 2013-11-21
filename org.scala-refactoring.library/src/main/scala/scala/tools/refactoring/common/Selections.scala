@@ -117,9 +117,58 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
 
     private def isPosContainedIn(p1: Position, p2: Position) = {
       p1.isOpaqueRange &&
-      p2.isOpaqueRange &&
-      p2.includes(p1) &&
-      p1.source == p2.source
+        p2.isOpaqueRange &&
+        p2.includes(p1) &&
+        p1.source == p2.source
+    }
+
+    /**
+     * Returns a list of symbols that are used inside the selection
+     * but defined outside of it.
+     */
+    lazy val inboundDeps: List[Symbol] = {
+      val refs = allSelectedTrees.collect{
+        case t: RefTree => t
+      }
+      val usedSymbols = refs.collect{
+        case t: RefTree if !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
+      }.distinct
+      val definedSymbols = allSelectedTrees.collect {
+        case t: DefTree => t.symbol
+      }
+      usedSymbols.diff(definedSymbols)
+    }
+
+    /**
+     * Returns only the inbound dependencies that directly or indirectly owned
+     * by `owner`.
+     */
+    def inboundDepsOwnedBy(owner: Symbol): List[Symbol] =
+      inboundDeps.filter { s =>
+        s.ownerChain.contains(owner)
+      }
+
+    /**
+     * Returns a list of symbols that are defined inside the selection
+     * and used outside of it.
+     * This implementation does not use index lookups and therefore returns
+     * only outbound dependencies that are used in the same compilation unit.
+     */
+    lazy val outboundLocalDeps: List[Symbol] = {
+      val allDefs = selectedTopLevelTrees.collect({
+        case t: DefTree => t.symbol
+      })
+
+      val nextEnclosingTree = findSelectedWithPredicate {
+        case t => t.pos.includes(pos) && !t.pos.sameRange(pos)
+      }.getOrElse(root)
+
+      nextEnclosingTree.children.flatMap { child =>
+        child.collect {
+          case t: RefTree if !pos.includes(t.pos) && allDefs.contains(t.symbol) =>
+            t.symbol
+        }
+      }.distinct
     }
   }
 
@@ -148,7 +197,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
 
   case class TreeSelection(root: Tree) extends Selection {
 
-    if(!root.pos.isRange)
+    if (!root.pos.isRange)
       error("Position not a range.")
 
     val pos = root.pos.asInstanceOf[RangePosition]
