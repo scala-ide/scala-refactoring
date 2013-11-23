@@ -1,10 +1,10 @@
 package scala.tools.refactoring.tests.common
 
 import scala.tools.refactoring.tests.util.TestHelper
-import scala.tools.refactoring.common.ReplaceableSelections
 import org.junit.Assert._
+import scala.tools.refactoring.common.Selections
 
-class ExpandableSelectionTest extends TestHelper with ReplaceableSelections {
+class ExpandableSelectionTest extends TestHelper with Selections {
   import global._
 
   implicit class StringToSel(src: String) {

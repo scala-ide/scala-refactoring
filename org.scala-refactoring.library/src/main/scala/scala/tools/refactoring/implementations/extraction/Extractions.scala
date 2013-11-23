@@ -1,10 +1,10 @@
 package scala.tools.refactoring.implementations.extraction
 
 import scala.tools.refactoring.common.CompilerAccess
-import scala.tools.refactoring.common.ReplaceableSelections
 import scala.tools.refactoring.transformation.TransformableScopes
+import scala.tools.refactoring.transformation.TransformableSelections
 
-trait Extractions extends TransformableScopes with ReplaceableSelections with Abstractions { self: CompilerAccess =>
+trait Extractions extends TransformableScopes with TransformableSelections with Abstractions { self: CompilerAccess =>
   import global._
 
   trait Extraction {

@@ -1,10 +1,10 @@
-package scala.tools.refactoring.tests.common
+package scala.tools.refactoring.tests.transformation
 
 import scala.tools.refactoring.tests.util.TestHelper
-import scala.tools.refactoring.common.ReplaceableSelections
 import org.junit.Assert._
+import scala.tools.refactoring.transformation.TransformableSelections
 
-class ReplaceableSelectionTest extends TestHelper with ReplaceableSelections {
+class TransformableSelectionTest extends TestHelper with TransformableSelections {
   import global._
 
   val t123 = Literal(Constant(123))

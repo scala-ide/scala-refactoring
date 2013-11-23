@@ -1,14 +1,15 @@
-package scala.tools.refactoring.common
+package scala.tools.refactoring.transformation
 
 import scala.reflect.internal.util.RangePosition
-import scala.tools.refactoring.transformation.TreeTransformations
+import scala.tools.refactoring.common.Selections
+import scala.tools.refactoring.common.CompilerAccess
 
-trait ReplaceableSelections extends Selections with TreeTransformations {
+trait TransformableSelections extends Selections with TreeTransformations {
   self: CompilerAccess =>
 
   import global._
 
-  implicit class ReplaceableSelection(selection: Selection) {
+  implicit class TransformableSelection(selection: Selection) {
     def descendToEnclosingTreeAndThen(trans: Transformation[Tree, Tree]) =
       topdown {
         matchingChildren {
