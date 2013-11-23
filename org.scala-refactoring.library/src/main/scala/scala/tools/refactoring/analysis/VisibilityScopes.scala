@@ -100,7 +100,7 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
         t.pos union pos
       }
 
-    def scopeName = this match {
+    def name = this match {
       case _: PackageScope => s"Package ${enclosing.nameString}"
       case TemplateScope(_, c: ClassDef, _, _, _) => s"Class ${c.symbol.name.decode}"
       case TemplateScope(_, c: ModuleDef, _, _, _) => s"Object ${c.symbol.name.decode}"

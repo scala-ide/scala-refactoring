@@ -1,7 +1,6 @@
-package scala.tools.refactoring.implementations.extraction
+package scala.tools.refactoring.transformation
 
 import scala.tools.refactoring.analysis.VisibilityScopes
-import scala.tools.refactoring.transformation.TreeTransformations
 import scala.tools.refactoring.common.CompilerAccess
 import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.common.InsertionPositions
@@ -24,8 +23,8 @@ trait TransformableScopes extends VisibilityScopes with InsertionPositions with 
       topdown {
         matchingChildren {
           transform {
-            case t if t.samePosAndType(scope.enclosing) =>
-              defaultInsertionPosition(scope.enclosing)(tree) replaces t
+            case e if e.samePosAndType(scope.enclosing) =>
+              defaultInsertionPosition(e)(tree) replaces e
           }
         }
       }

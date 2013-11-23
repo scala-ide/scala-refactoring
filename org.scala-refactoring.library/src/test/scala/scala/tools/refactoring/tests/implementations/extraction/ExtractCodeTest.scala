@@ -8,14 +8,11 @@ import org.junit.Assert._
 import scala.tools.refactoring.analysis.VisibilityScopes
 
 class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilityScopes {
-  def extract(name: String, f: VisibilityScope => Boolean, selectedParams: List[String])(pro: FileSet) = {
+  def extract(name: String, f: VisibilityScope => Boolean)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractCode with SilentTracing with TestProjectIndex
-      val scope = preparationResult.right.get.possibleExtractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head
-      val params = new refactoring.RefactoringParameters(
-        name,
-        scope,
-        scope.definedDependencies.filter(sym => selectedParams.contains(sym.nameString)))
+      val e = preparationResult.right.get.extractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head
+      val params = refactoring.RefactoringParameters(e, name)
     }
     testRefactoring.performRefactoring(testRefactoring.params)
   }
@@ -35,28 +32,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         val b = extracted
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
-
-  @Test
-  def extractCodeWithoutUnknownDependenciesAndParams = new FileSet {
-    """
-      object Demo {
-        val a = 1
-        val b = /*(*/a * a/*)*/
-      }
-    """ becomes
-      """
-      object Demo {
-        val a = 1
-
-        def extracted(a: Int): Int = {
-          a * a
-        }
-
-        val b = extracted(a)
-      }
-    """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], "a" :: Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
 
   @Test
   def extractCodeWithUnknownDependencies = new FileSet {
@@ -83,7 +59,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         }
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
 
   @Test
   def extractMultipleExpressions = new FileSet {
@@ -110,8 +86,8 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         }
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[BlockScope], Nil)).assertEqualTree
-  
+  }.performRefactoring(extract("extracted", _.isInstanceOf[BlockScope])).assertEqualTree
+
   @Test
   def extractUnitExpressionToDef = new FileSet {
     """
@@ -128,7 +104,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         extracted
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
 
   @Test
   def extractCodeInCase = new FileSet {
@@ -148,7 +124,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         }
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[CaseScope], Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", _.isInstanceOf[CaseScope])).assertEqualTree
 
   @Test
   @Ignore("Todo...")
@@ -166,10 +142,10 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         val extracted = (i: Int) => i + 100
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
-  
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
+
   @Test
-  def extractCodeWithPotentialSideEffects = new FileSet{
+  def extractCodeWithPotentialSideEffects = new FileSet {
     """
       object Demo {
         val a = {
@@ -188,10 +164,10 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         val a = extracted
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
-  
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
+
   @Test
-  def extractCodeWithPotentialSideEffectsOnVar = new FileSet{
+  def extractCodeWithPotentialSideEffectsOnVar = new FileSet {
     """
       object Demo {
         var c = 1
@@ -213,10 +189,10 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         val a = extracted
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
-  
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
+
   @Test
-  def extractForEnumerator = new FileSet{
+  def extractForEnumerator = new FileSet {
     """
       object Demo {
         for{
@@ -233,10 +209,10 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         } println(i)
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
-  
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
+
   @Test
-  def extractFromForBody = new FileSet{
+  def extractFromForBody = new FileSet {
     """
       object Demo {
         for{
@@ -255,5 +231,19 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
         } extracted(i)
       }
     """
-  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope], Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
+
+  @Test(expected = classOf[Exception])
+  def extractCase = {
+    new FileSet {
+      """
+      object Demo {
+        1 match {
+	      /*(*/case _ => println(1)/*)*/
+        }
+      }
+    """ becomes ""
+    }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope]))
+    ()
+  }
 }

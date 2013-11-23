@@ -11,11 +11,11 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityS
   def extract(name: String, f: VisibilityScope => Boolean, selectedParams: List[String])(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
-      val scope = preparationResult.right.get.possibleExtractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head
+      val e = preparationResult.right.get.extractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head
       val params = new refactoring.RefactoringParameters(
+        e,
         name,
-        scope,
-        scope.definedDependencies.filter(sym => selectedParams.contains(sym.nameString)))
+        e.scope.definedDependencies.filter(sym => selectedParams.contains(sym.nameString)))
     }
     testRefactoring.performRefactoring(testRefactoring.params)
   }

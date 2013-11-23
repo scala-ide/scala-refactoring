@@ -60,7 +60,7 @@ class VisibilityScopesTest extends TestHelper with VisibilityScopes {
     }
     """)
     val expected = List("Local Scope", "Local Scope", "Method fn", "Class A", "Object Demo", "Package demo")
-    val actual = VisibilityScope(selection).map(_.scopeName).toList
+    val actual = VisibilityScope(selection).map(_.name).toList
     
     for(p <- expected.zip(actual)){
       assertEquals(p._1, p._2)

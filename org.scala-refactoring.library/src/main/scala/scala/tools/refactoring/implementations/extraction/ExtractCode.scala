@@ -3,34 +3,14 @@ package scala.tools.refactoring.implementations.extraction
 abstract class ExtractCode extends ExtractionRefactoring {
   import global._
 
-  case class PreparationResult(
-    selection: Selection,
-    possibleExtractions: List[Extraction])
+  type E = Extraction
 
-  def prepare(s: Selection) = {
-    for {
-      selection <- ensureExpressionsSelected(s).right
-      scopes <- collectExtractions(selection, defaultInsertionPositionFor(selection)).right
-    } yield {
-      PreparationResult(selection, scopes)
-    }
-  }
+  val collector = AutoExtraction
 
   case class RefactoringParameters(
-    name: String,
-    selectedExtraction: Extraction,
-    selectedParameters: List[Symbol])
+    selectedExtraction: E,
+    name: String)
 
-  def perform(s: Selection, preparation: PreparationResult, params: RefactoringParameters) = {
-    val ps = params.selectedExtraction.undefinedDependencies union params.selectedParameters
-    val abstraction =
-      if (ps.isEmpty && !preparation.selection.mayHaveSideEffects)
-        ValueAbstraction(params.name, preparation.selection, preparation.selection.outboundLocalDeps)
-      else
-        MethodAbstraction(params.name, preparation.selection, ps, preparation.selection.outboundLocalDeps)
-
-    val transformations = params.selectedExtraction.extractionTransformations(abstraction.call, abstraction.abstraction)
-
-    Right(transformFile(s.file, transformations))
-  }
+  def perform(s: Selection, prepared: PreparationResult, params: RefactoringParameters) =
+    perform(params.selectedExtraction, params.name)
 }

@@ -13,9 +13,9 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
   def extract(name: String, f: VisibilityScope => Boolean)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractValue with SilentTracing with TestProjectIndex
-      val params = new refactoring.RefactoringParameters(
-        name,
-        preparationResult.right.get.possibleExtractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head)
+      val params = refactoring.RefactoringParameters(
+        preparationResult.right.get.extractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head,
+        name)
     }
     testRefactoring.performRefactoring(testRefactoring.params)
   }
