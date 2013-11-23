@@ -56,7 +56,7 @@ trait Extractions extends TransformableScopes with ReplaceableSelections with Ab
 
   trait ValueExtraction extends Extraction {
     val name = scope match {
-      case t: TemplateScope => s"Extract value member to ${t.name}"
+      case t: TemplateScope => s"Extract Value to ${t.name}"
       case _ => s"Extract Local Value"
     }
 
@@ -85,7 +85,7 @@ trait Extractions extends TransformableScopes with ReplaceableSelections with Ab
 
   trait MethodExtraction extends Extraction {
     val name = scope match {
-      case t: TemplateScope => s"Extract method member to ${t.name}"
+      case t: TemplateScope => s"Extract Method to ${t.name}"
       case _ => s"Extract Local Method"
     }
 

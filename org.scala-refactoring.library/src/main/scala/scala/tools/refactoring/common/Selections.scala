@@ -127,10 +127,10 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * but defined outside of it.
      */
     lazy val inboundDeps: List[Symbol] = {
-      val refs = allSelectedTrees.collect{
+      val refs = allSelectedTrees.collect {
         case t: RefTree => t
       }
-      val usedSymbols = refs.collect{
+      val usedSymbols = refs.collect {
         case t: RefTree if !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
       }.distinct
       val definedSymbols = allSelectedTrees.collect {
@@ -170,6 +170,71 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         }
       }.distinct
     }
+
+    /**
+     * Expands the selection in such a way, that partially selected
+     * trees are completely selected.
+     *
+     * A selection like `val /*(*/a = 1/*)*/`
+     * is expanded to 	`/*(*/val a = 1/*)*/`
+     */
+    def expand: Selection =
+      if (selectionMatchesFirstTree) {
+        this
+      } else {
+        def posOfPartiallySelectedTrees(trees: List[Tree], newPos: Position = pos): Position =
+          trees match {
+            case t :: rest if t.pos overlaps pos =>
+              posOfPartiallySelectedTrees(rest, newPos union t.pos)
+            case t :: rest =>
+              posOfPartiallySelectedTrees(rest, newPos)
+            case Nil => newPos
+          }
+
+        expandTo(posOfPartiallySelectedTrees(enclosingTree.children)).get
+      }
+
+    private def selectionMatchesFirstTree =
+      selectedTopLevelTrees.headOption.map { firstTree =>
+        firstTree.pos.start == pos.start && firstTree.pos.end == pos.end
+      }.getOrElse(false)
+
+    /**
+     * Tries to expand the selection to a tree that fully contains
+     * the selection but is not equal to the selection.
+     */
+    def expandToNextEnclosingTree: Option[Selection] =
+      expandTo(findSelectedWithPredicate { t =>
+        t.pos.includes(pos) && !t.samePos(pos)
+      }.map(_.pos).getOrElse(NoPosition))
+
+    /**
+     * Tries to expand the selection to `newPos`.
+     */
+    def expandTo(newPos: Position): Option[Selection] = {
+      if (newPos.isRange && newPos.includes(pos)) {
+        val outer = this
+        Some(new Selection {
+          val root = outer.root
+          val file = outer.file
+          val pos = newPos.asInstanceOf[RangePosition]
+        })
+      } else
+        None
+    }
+
+    /**
+     * Tries to expand the selection to `tree` if the current
+     * selection contains only subtrees of `tree`.
+     */
+    def expandTo(tree: Tree): Option[Selection] =
+      expandTo(tree.pos)
+
+    /**
+     * Expands to a specific type of tree.
+     */
+    def expandTo[T <: Tree](implicit m: Manifest[T]): Option[Selection] =
+      findSelectedOfType[T].flatMap(expandTo(_))
   }
 
   def skipForExpressionTrees(t: Tree) = t match {
