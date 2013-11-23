@@ -133,4 +133,18 @@ class SelectionPropertiesTest extends TestHelper with ReplaceableSelections {
       """.selection
     assertEquals("method fm, method fo", sel.outboundLocalDeps.mkString(", "))
   }
+
+  @Test
+  @Ignore
+  def outboundImportedDeps = {
+    val sel = """
+      object O{
+        def fn = {
+          /*(*/import scala.math.Pi/*)*/
+    	  Pi
+        }
+      }
+      """.selection
+    assertEquals("value Pi", sel.outboundLocalDeps.mkString(", "))
+  }
 }

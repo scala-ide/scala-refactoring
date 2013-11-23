@@ -151,13 +151,18 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     /**
      * Returns a list of symbols that are defined inside the selection
      * and used outside of it.
+     *
      * This implementation does not use index lookups and therefore returns
      * only outbound dependencies that are used in the same compilation unit.
+     * However, this affects only class member definitions.
+     *
+     * It also does not cover outbound dependencies that are imported through
+     * an import statement in the selected code.
      */
     lazy val outboundLocalDeps: List[Symbol] = {
-      val allDefs = selectedTopLevelTrees.collect({
+      val allDefs = selectedTopLevelTrees.collect {
         case t: DefTree => t.symbol
-      })
+      }
 
       val nextEnclosingTree = findSelectedWithPredicate {
         case t => t.pos.includes(pos) && !t.pos.sameRange(pos)
@@ -235,6 +240,59 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      */
     def expandTo[T <: Tree](implicit m: Manifest[T]): Option[Selection] =
       findSelectedOfType[T].flatMap(expandTo(_))
+    /**
+     * Is true if the selected code could by replaced by a value.
+     * 
+     * E.g. the selected code represents a value although it consists
+     * of more than one expression:
+     * ```
+     * def fn = {
+     *   /*(*/val a = 2
+     *   a * 100/*)*/
+     * }
+     * ```
+     * it is replaceable by `200` without changing the methods return value.
+     * 
+     * Note, that this implementation does not check if the code has
+     * any side effects.
+     */
+    lazy val representsValue = {
+      def isValue(t: Tree) = t match {
+        case rt: RefTree => rt.isTerm
+        case tt: TermTree => tt match {
+          case _: Star | _: Alternative | _: UnApply => false
+          case _ => true
+        }
+        case _ => false
+      }
+
+      selectedTopLevelTrees match {
+        case t :: Nil if t.isTerm => isValue(t)
+        case ts => outboundLocalDeps.isEmpty && isValue(ts.last)
+      }
+    }
+
+    /**
+     * Is true if the selected code contains only value definitions.
+     */
+    lazy val representsValueDefinitions =
+      !outboundLocalDeps.isEmpty &&
+        !outboundLocalDeps.exists(_.isType)
+
+    /**
+     * Tries to determine if the selected code contains side effects.
+     * 
+     * Caution: `mayHaveSideEffects == false` does not guarantee that selection
+     * has no side effects.
+     *
+     * The current implementation does check if the selection contains
+     * a reference to a symbol that has a type that is somehow related to Unit.
+     */
+    lazy val mayHaveSideEffects = {
+      allSelectedTrees.exists(cond(_) {
+        case t: RefTree => t.symbol.tpe.exists(_.toString == "Unit")
+      })
+    }
   }
 
   def skipForExpressionTrees(t: Tree) = t match {

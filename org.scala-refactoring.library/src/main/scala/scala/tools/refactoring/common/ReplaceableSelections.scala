@@ -7,35 +7,6 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
   self: CompilerAccess =>
 
   import global._
-  import PartialFunction._
-
-  implicit class SelectionProperties(selection: Selection) {
-    lazy val definesNonLocal = selection.selectedTopLevelTrees.exists(cond(_) {
-      case t: DefTree => !t.symbol.isLocal
-    })
-
-    lazy val definesNonValue = selection.selectedTopLevelTrees.exists(cond(_) {
-      case t: DefTree => t.symbol.isType
-    })
-
-    lazy val containsImportStatements = selection.selectedTopLevelTrees.exists(cond(_) {
-      case t: Import => true
-    })
-
-    /**
-     * Tries to determine if the selected code contains side effects.
-     * Caution: `mayHaveSideEffects == false` does not guarantee that selection
-     * has no side effects.
-     *
-     * The current implementation does check if the selection contains
-     * a reference to a symbol that has a type that is somehow related to Unit.
-     */
-    lazy val mayHaveSideEffects = {
-      selection.allSelectedTrees.exists(cond(_) {
-        case t: RefTree => t.symbol.tpe.exists(_.toString == "Unit")
-      })
-    }
-  }
 
   implicit class ReplaceableSelection(selection: Selection) {
     def descendToEnclosingTreeAndThen(trans: Transformation[Tree, Tree]) =
@@ -88,23 +59,5 @@ trait ReplaceableSelections extends Selections with TreeTransformations {
           replaceSequenceBy(replacement, preserveHierarchy)
       }
     }
-  }
-
-  implicit class TreeToSelections(tree: Tree) {
-    def toSelection(rootTree: Tree) =
-      new Selection {
-        val root = rootTree
-        val file = rootTree.pos.source.file
-        val pos = tree.pos.asInstanceOf[RangePosition]
-      }
-  }
-
-  implicit class TreesToSelections(trees: List[Tree]) {
-    def toSelection(rootTree: Tree) =
-      new Selection {
-        val root = rootTree
-        val file = rootTree.pos.source.file
-        val pos = trees.foldRight[Position](NoPosition)((t, pos) => pos union t.pos).asInstanceOf[RangePosition]
-      }
   }
 }

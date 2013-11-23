@@ -40,21 +40,9 @@ trait Extractions extends TransformableScopes with ReplaceableSelections with Ab
         extractions <- inner(validSelection).right
       } yield extractions
     }
-
-    def prepareExtractionOfExpression(s: Selection) = {
-      val expanded = s.expand
-      if (expanded.definesNonLocal)
-        Left("Cannot extract selection that defines non local fields.")
-      else if (expanded.definesNonValue)
-        Left("Cannot extract selection that defines non value symbols.")
-      else if (expanded.containsImportStatements)
-        Left("Cannot extract selection that contains import statements.")
-      else
-        Right(expanded)
-    }
   }
 
-  trait ValueExtraction extends Extraction {
+  case class ValueExtraction(extractionSource: Selection, scope: VisibilityScope) extends Extraction {
     val name = scope match {
       case t: TemplateScope => s"Extract Value to ${t.name}"
       case _ => s"Extract Local Value"
@@ -69,11 +57,12 @@ trait Extractions extends TransformableScopes with ReplaceableSelections with Ab
   }
 
   object ValueExtraction extends ExtractionCollector[ValueExtraction] {
-    def prepareExtractionSource(s: Selection) = prepareExtractionOfExpression(s)
-
-    def apply(s: Selection, vs: VisibilityScope) = new ValueExtraction {
-      val extractionSource = s
-      val scope = vs
+    def prepareExtractionSource(s: Selection) = {
+      val expanded = s.expand
+      if (expanded.representsValue || expanded.representsValueDefinitions)
+        Right(expanded)
+      else
+        Left("Cannot extract selection")
     }
 
     def prepareExtraction(s: Selection, vs: VisibilityScope) = vs match {
@@ -83,7 +72,7 @@ trait Extractions extends TransformableScopes with ReplaceableSelections with Ab
     }
   }
 
-  trait MethodExtraction extends Extraction {
+  case class MethodExtraction(extractionSource: Selection, scope: VisibilityScope) extends Extraction {
     val name = scope match {
       case t: TemplateScope => s"Extract Method to ${t.name}"
       case _ => s"Extract Local Method"
@@ -105,11 +94,12 @@ trait Extractions extends TransformableScopes with ReplaceableSelections with Ab
   }
 
   object MethodExtraction extends ExtractionCollector[MethodExtraction] {
-    def prepareExtractionSource(s: Selection) = prepareExtractionOfExpression(s)
-
-    def apply(s: Selection, vs: VisibilityScope) = new MethodExtraction {
-      val extractionSource = s
-      val scope = vs
+    def prepareExtractionSource(s: Selection) = {
+      val expanded = s.expand
+      if (expanded.representsValue || expanded.representsValueDefinitions)
+        Right(expanded)
+      else
+        Left("Cannot extract selection")
     }
 
     def prepareExtraction(s: Selection, vs: VisibilityScope) = vs match {
@@ -120,7 +110,8 @@ trait Extractions extends TransformableScopes with ReplaceableSelections with Ab
   }
 
   object AutoExtraction extends ExtractionCollector[Extraction] {
-    def prepareExtractionSource(s: Selection) = prepareExtractionOfExpression(s)
+    def prepareExtractionSource(s: Selection) =
+      MethodExtraction.prepareExtractionSource(s)
 
     def prepareExtraction(s: Selection, vs: VisibilityScope) = vs match {
       case _: TemplateScope | _: MethodScope | _: FunctionScope | _: BlockScope | _: CaseScope =>
