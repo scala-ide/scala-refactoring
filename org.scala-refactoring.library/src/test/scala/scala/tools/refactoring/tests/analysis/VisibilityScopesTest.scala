@@ -274,4 +274,24 @@ class A{
     val pkgVs = templateVs.visibleScopes.head
     assertEquals("List(method println)", pkgVs.definedDependencies.toString)
   }
+  
+  @Test
+  def nameCollisions = {
+    val selection = toSelection("""
+    object Demo{
+      val a = 1
+      def fn(p: Int) = {
+        val b = 2
+        /*(*/println(a*b*p)/*)*/
+      }
+    }
+    """)
+    val blockVs = VisibilityScope(selection)
+    assertFalse(blockVs.termNameCollisions("b").isEmpty)
+    assertFalse(blockVs.termNameCollisions("a").isEmpty)
+    assertFalse(blockVs.termNameCollisions("fn").isEmpty)
+    assertFalse(blockVs.termNameCollisions("Demo").isEmpty)
+    
+    assertTrue(blockVs.termNameCollisions("x").isEmpty)
+  }
 }

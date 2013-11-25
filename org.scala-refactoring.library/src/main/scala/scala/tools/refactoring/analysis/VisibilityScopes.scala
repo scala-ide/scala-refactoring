@@ -12,7 +12,7 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
    * A data structure that represents the visible symbols at a given position.
    * Currently imported symbols and symbols from super classes or traits are
    * not tracked by the visibility scopes.
-   * 
+   *
    * Visibility scopes keep also track of inbound dependencies of the reference
    * selection that was used to build the visibility tree. See `definedDependencies`
    * and `undefinedDependencies`.
@@ -39,10 +39,14 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
    * ```
    */
   sealed trait VisibilityScope extends Traversable[VisibilityScope] {
-    /** The selection that was used to build this scope */
+    /**
+     * The selection that was used to build this scope
+     */
     val referenceSelection: Selection
 
-    /** The tree that encloses this visibility scope */
+    /**
+     * The tree that encloses this visibility scope
+     */
     val enclosing: Tree
 
     val allEnclosingTrees: List[Tree]
@@ -53,11 +57,15 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
      */
     val definedDependencies: List[Symbol]
 
-    /** Inbound dependencies that are not visible from this scope. */
+    /**
+     * Inbound dependencies that are not visible from this scope.
+     */
     val undefinedDependencies: List[Symbol] =
       referenceSelection.inboundDeps diff definedDependencies
 
-    /** The visibility scopes visible from this scope */
+    /**
+     * The visibility scopes visible from this scope
+     */
     lazy val visibleScopes: List[VisibilityScope] = {
       val definedDepsWithoutSymbols =
         definedDependencies filterNot {
@@ -68,8 +76,10 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
       VisibilityScope(referenceSelection, allEnclosingTrees.tail, definedDepsWithoutSymbols)
     }
 
-    /** All declarations in this visibility scope */
-    val declarations: List[DefTree] = this match {
+    /**
+     * All declarations in this visibility scope
+     */
+    private val declarations: List[DefTree] = this match {
       case BlockScope(_, enclosing, _, _) =>
         val stats = enclosing.stats :+ enclosing.expr
         stats.collect {
@@ -86,21 +96,31 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
         }
     }
 
-    /** All symbols declared in this visibility scope */
+    /**
+     * All symbols declared in this visibility scope
+     */
     lazy val symbols =
       for (decl <- declarations) yield decl.symbol
 
-    /** All symbols that are visible from this visibility scope */
+    /**
+     * All symbols that are visible from this visibility scope
+     */
     lazy val allVisibleSymbols: List[Symbol] =
       symbols ::: visibleScopes.flatMap(_.allVisibleSymbols)
 
-    /** Position that includes all declarations in this visibility scope */
-    lazy val pos: Position =
-      declarations.foldRight[Position](NoPosition) { (t, pos) =>
-        t.pos union pos
+    /**
+     * Gets all symbols with the name `name`
+     */
+    def termNameCollisions(name: String): List[Symbol] = this match {
+      case _ => allVisibleSymbols.filter { vsym =>
+        vsym.isTerm && vsym.name.decode.trim == name
       }
+    }
 
-    def name = this match {
+    /**
+     * A meaningful, short description of this scope
+     */
+    lazy val name = this match {
       case _: PackageScope => s"Package ${enclosing.nameString}"
       case TemplateScope(_, c: ClassDef, _, _, _) => s"Class ${c.symbol.name.decode}"
       case TemplateScope(_, c: ModuleDef, _, _, _) => s"Object ${c.symbol.name.decode}"
@@ -108,6 +128,9 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
       case _ => "Local Scope"
     }
 
+    /**
+     * Describes what kind of scope it is and which symbols are defined in this scope
+     */
     override def toString = {
       getClass().getSimpleName() + symbols.mkString("(", ", ", ")") + visibleScopes.mkString("{ ", ", ", " }")
     }
@@ -160,6 +183,9 @@ trait VisibilityScopes extends Selections { self: CompilerAccess =>
     val allEnclosingTrees: List[Tree],
     val definedDependencies: List[Symbol]) extends VisibilityScope
 
+  /**
+   * VisibilityScope constructors
+   */
   object VisibilityScope {
     def apply(s: Selection): VisibilityScope = {
       val enclosingTrees = {
