@@ -66,19 +66,19 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityS
       object Demo {
         val na = 1
 
-        def extracted(p: Int, a: Int, na: Int): (Int, Int, Int) = {
-          /*(*/val b = p * a
-          val c = a * na
-          val d = fm(a)/*)*/
-          (b, c, d)
-        }
-
         def fn(p: Int) = {
           for(i <- 1 to p) {
             val a = p * i
             /*(*/val (b, c, d) = extracted(p, a, na)
             println(b * b * c * d * d)
           }
+        }
+
+        def extracted(p: Int, a: Int, na: Int): (Int, Int, Int) = {
+          /*(*/val b = p * a
+          val c = a * na
+          val d = fm(a)/*)*/
+          (b, c, d)
         }
 
         def fm(p: Int) = p + 1

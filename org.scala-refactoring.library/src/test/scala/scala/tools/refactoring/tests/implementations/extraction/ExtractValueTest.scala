@@ -133,11 +133,11 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
     """ becomes
       """
       object Demo {
-        val c = /*(*/1 + 2
-
         def fn(a: Int) = {
           val b = c/*)*/
         }
+
+        val c = /*(*/1 + 2
 
         def fm = 7
       }

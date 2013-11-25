@@ -129,13 +129,20 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     lazy val inboundDeps: List[Symbol] = {
       val refs = allSelectedTrees.collect {
         case t: RefTree => t
+        // also treat applications of implicit conversion as inbound dependencies
+        case t: Apply if t.symbol.isImplicit => t
       }
+      
       val usedSymbols = refs.collect {
+        // objects methods are not inbound deps if the object is a dependency itself
         case t: RefTree if !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
+        case t: Apply => t.symbol
       }.distinct
+      
       val definedSymbols = allSelectedTrees.collect {
         case t: DefTree => t.symbol
       }
+      
       usedSymbols.diff(definedSymbols)
     }
 
@@ -240,6 +247,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      */
     def expandTo[T <: Tree](implicit m: Manifest[T]): Option[Selection] =
       findSelectedOfType[T].flatMap(expandTo(_))
+
     /**
      * Is true if the selected code could by replaced by a value.
      * 
@@ -253,8 +261,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * ```
      * it is replaceable by `200` without changing the methods return value.
      * 
-     * Note, that this implementation does not check if the code has
-     * any side effects.
+     * Note, this implementation assumes that the code has no side effects.
      */
     lazy val representsValue = {
       def isValue(t: Tree) = t match {

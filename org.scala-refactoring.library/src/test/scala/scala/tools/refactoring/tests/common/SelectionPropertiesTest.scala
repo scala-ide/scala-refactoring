@@ -43,6 +43,20 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
+  def inboundImplicitDeps = {
+    val sel = """
+      object O{
+        implicit def wrapInt(i: Int) = new {
+          def extension = i * 2
+        }
+      
+        val i = /*(*/2.extension/*)*/
+      }
+      """.selection
+    assertEquals("method wrapInt", sel.inboundDeps.mkString(", "))
+  }
+
+  @Test
   def inboundTypeDeps = {
     val sel = """
       class A(i: Int)
