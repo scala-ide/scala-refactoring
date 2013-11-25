@@ -17,21 +17,21 @@ trait TransformableScopes extends VisibilityScopes with InsertionPositions with 
      * Inserts `tree` in the visibility scope.
      * It is guaranteed, that the tree is inserted at a position,
      * from which all symbols in `scope.allVisibleSymbols` are
-     * accessible.
+     * accessible if `defaultInsertionPosition` is used.
      */
-    def insert(tree: Tree): Transformation[Tree, Tree] =
+    def insert(tree: Tree, ip: InsertionPosition = defaultInsertionPosition): Transformation[Tree, Tree] =
       topdown {
         matchingChildren {
           transform {
             case e if e.samePosAndType(scope.enclosing) =>
-              defaultInsertionPosition(e)(tree) replaces e
+              ip(e)(tree) replaces e
           }
         }
       }
 
     val defaultInsertionPosition =
       scope.referenceSelection.beforeSelectionInBlock orElse
-        scope.referenceSelection.beforeSelectionInTemplate orElse
+        scope.referenceSelection.afterSelectionInTemplate orElse
         atBeginningOfDefDef orElse
         atBeginningOfFunction orElse
         atBeginningOfCaseBody
