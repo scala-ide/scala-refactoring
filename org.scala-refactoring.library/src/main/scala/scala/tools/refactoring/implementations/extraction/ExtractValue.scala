@@ -37,11 +37,9 @@ trait ValueExtractions extends Extractions {
 
   object ValueExtraction extends ExtractionCollector[ValueExtraction] {
     def prepareExtractionSource(s: Selection) = {
-      val expanded = s.expand
-      if (expanded.representsValue || expanded.representsValueDefinitions)
-        Right(expanded)
-      else
-        Left("Cannot extract selection")
+      findExtractionSource(s.expand){ s =>
+        (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
+      }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
     }
 
     def prepareExtraction(s: Selection, vs: VisibilityScope) = vs match {

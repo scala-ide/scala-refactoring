@@ -132,17 +132,17 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         // also treat applications of implicit conversion as inbound dependencies
         case t: Apply if t.symbol.isImplicit => t
       }
-      
+
       val usedSymbols = refs.collect {
         // objects methods are not inbound deps if the object is a dependency itself
         case t: RefTree if !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
         case t: Apply => t.symbol
       }.distinct
-      
+
       val definedSymbols = allSelectedTrees.collect {
         case t: DefTree => t.symbol
       }
-      
+
       usedSymbols.diff(definedSymbols)
     }
 
@@ -186,27 +186,37 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     /**
      * Expands the selection in such a way, that partially selected
      * trees are completely selected.
-     *
-     * A selection like `val /*(*/a = 1/*)*/`
-     * is expanded to 	`/*(*/val a = 1/*)*/`
      */
-    def expand: Selection =
-      if (selectionMatchesFirstTree) {
-        this
-      } else {
-        def posOfPartiallySelectedTrees(trees: List[Tree], newPos: Position = pos): Position =
-          trees match {
-            case t :: rest if t.pos overlaps pos =>
-              posOfPartiallySelectedTrees(rest, newPos union t.pos)
-            case t :: rest =>
-              posOfPartiallySelectedTrees(rest, newPos)
-            case Nil => newPos
-          }
-
-        expandTo(posOfPartiallySelectedTrees(enclosingTree.children)).get
+    def expand: Selection = {
+      def posOfPartiallySelectedTrees(trees: List[Tree], newPos: Position = pos): Position = {
+        trees match {
+          case t :: rest if t.pos overlaps pos =>
+            posOfPartiallySelectedTrees(rest, newPos union t.pos)
+          case t :: rest =>
+            posOfPartiallySelectedTrees(rest, newPos)
+          case Nil => newPos
+        }
       }
 
-    private def selectionMatchesFirstTree =
+      // some trees have to be selected as a whole if more than one child
+      // is selected. For example if a method parameter and the body is selected,
+      // we select the DefDef as a whole to get a complete selection. 
+      def expandToParentIfRequired(s: Selection) =
+        s.selectedTopLevelTrees match {
+          case _ =>
+            s.enclosingTree match {
+              case _: DefDef | _: Function | _: If | _: Match | _: Try =>
+                s.expandTo(s.enclosingTree).get
+              case _ => s
+            }
+        }
+
+      expandToParentIfRequired(
+        expandTo(
+          posOfPartiallySelectedTrees(enclosingTree.children)).get)
+    }
+    
+    lazy val isSingleTree =
       selectedTopLevelTrees.headOption.map { firstTree =>
         firstTree.pos.start == pos.start && firstTree.pos.end == pos.end
       }.getOrElse(false)
@@ -249,8 +259,8 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       findSelectedOfType[T].flatMap(expandTo(_))
 
     /**
-     * Is true if the selected code could by replaced by a value.
-     * 
+     * Is true if the selected code could be replaced by a value.
+     *
      * E.g. the selected code represents a value although it consists
      * of more than one expression:
      * ```
@@ -260,7 +270,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * }
      * ```
      * it is replaceable by `200` without changing the methods return value.
-     * 
+     *
      * Note, this implementation assumes that the code has no side effects.
      */
     lazy val representsValue = {
@@ -273,10 +283,12 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         case _ => false
       }
 
-      selectedTopLevelTrees match {
-        case t :: Nil if t.isTerm => isValue(t)
-        case ts => outboundLocalDeps.isEmpty && isValue(ts.last)
-      }
+      (isSingleTree || !representsArgument) &&
+        (selectedTopLevelTrees match {
+          case Nil => false
+          case t :: Nil if t.isTerm => isValue(t)
+          case ts => outboundLocalDeps.isEmpty && isValue(ts.last)
+        })
     }
 
     /**
@@ -286,9 +298,32 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       !outboundLocalDeps.isEmpty &&
         !outboundLocalDeps.exists(_.isType)
 
+    lazy val representsArgument = {
+      (enclosingTree match {
+        case _: Apply => true
+        case _ => false
+      })
+    }
+
+    lazy val representsParameter = {
+      def posIn(ts: List[Tree]) =
+        ts.foldLeft[Position](NoPosition) { (pos, t) =>
+          t.pos union pos
+        }.includes(pos)
+
+      enclosingTree match {
+        case t: ValDef => t.symbol.isValueParameter
+        case _@ DefDef(_, _, _, params, _, _) =>
+          posIn(params.flatten)
+        case _@ Function(params, _) =>
+          posIn(params)
+        case _ => false
+      }
+    }
+
     /**
      * Tries to determine if the selected code contains side effects.
-     * 
+     *
      * Caution: `mayHaveSideEffects == false` does not guarantee that selection
      * has no side effects.
      *

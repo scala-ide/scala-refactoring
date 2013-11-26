@@ -233,7 +233,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
     """
   }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope])).assertEqualTree
 
-  @Test(expected = classOf[Exception])
+  @Test
   def extractCase = {
     new FileSet {
       """
@@ -242,7 +242,15 @@ class ExtractCodeTest extends TestHelper with TestRefactoring with VisibilitySco
 	      /*(*/case _ => println(1)/*)*/
         }
       }
-    """ becomes ""
+    """ becomes """
+      object Demo {
+        extracted
+    
+    	val extracted = 1 match {
+	      /*(*/case _ => println(1)/*)*/
+        }
+      }
+    """
     }.performRefactoring(extract("extracted", _.isInstanceOf[TemplateScope]))
     ()
   }

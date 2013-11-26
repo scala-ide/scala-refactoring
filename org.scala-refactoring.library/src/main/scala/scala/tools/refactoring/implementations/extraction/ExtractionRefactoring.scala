@@ -92,5 +92,11 @@ trait Extractions extends TransformableScopes with TransformableSelections with 
      * `scope`.
      */
     def prepareExtraction(s: Selection, scope: VisibilityScope): List[E]
+    
+    def findExtractionSource(s: Selection)(pred: Selection => Boolean): Option[Selection] =
+      if (pred(s))
+        Some(s)
+      else
+        s.expandToNextEnclosingTree.flatMap(findExtractionSource(_)(pred))
   }
 }
