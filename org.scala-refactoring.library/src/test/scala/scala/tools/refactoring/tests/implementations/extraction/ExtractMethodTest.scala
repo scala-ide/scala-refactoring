@@ -2,20 +2,18 @@ package scala.tools.refactoring
 package tests.implementations.extraction
 
 import implementations.extraction.ExtractMethod
-import tests.util.TestRefactoring
 import tests.util.TestHelper
-import org.junit.Assert._
-import scala.tools.refactoring.analysis.VisibilityScopes
+import tests.util.TestRefactoring
 
-class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityScopes {
-  def extract(name: String, f: VisibilityScope => Boolean, selectedParams: List[String])(pro: FileSet) = {
+class ExtractMethodTest extends TestHelper with TestRefactoring {
+  def extract(name: String, extractionIdx: Int, selectedParams: List[String])(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
-      val e = preparationResult.right.get.extractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head
+      val e = preparationResult.right.get.extractions(extractionIdx)
       val params = new refactoring.RefactoringParameters(
         e,
         name,
-        e.scope.definedDependencies.filter(sym => selectedParams.contains(sym.nameString)))
+        e.optionalParameters.filter(sym => selectedParams.contains(sym.nameString)))
     }
     testRefactoring.performRefactoring(testRefactoring.params)
   }
@@ -41,7 +39,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityS
         }
       }
     """
-  }.performRefactoring(extract("extracted", v => v.isInstanceOf[BlockScope], "a" :: Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", 0, "a" :: Nil)).assertEqualTree
 
   @Test
   def extractComplexMethod = new FileSet {
@@ -84,5 +82,5 @@ class ExtractMethodTest extends TestHelper with TestRefactoring with VisibilityS
         def fm(p: Int) = p + 1
       }
     """
-  }.performRefactoring(extract("extracted", v => v.isInstanceOf[TemplateScope], "na" :: Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", 2, "na" :: Nil)).assertEqualTree
 }

@@ -20,11 +20,20 @@ trait AutoExtractions extends MethodExtractions with ValueExtractions {
     def prepareExtractionSource(s: Selection) =
       MethodExtraction.prepareExtractionSource(s)
 
-    def prepareExtraction(s: Selection, vs: VisibilityScope) =
-      if (vs.undefinedDependencies.isEmpty && !vs.referenceSelection.mayHaveSideEffects) {
-        ValueExtraction.prepareExtraction(s, vs)
-      } else {
-        MethodExtraction.prepareExtraction(s, vs)
-      }
+    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+      val valueTargets =
+        if (source.mayHaveSideEffects) Nil
+        else ValueExtraction.validTargets(source, targets)
+      val methodTargets =
+        MethodExtraction.validTargets(source, targets diff valueTargets)
+
+      if (valueTargets.isEmpty && methodTargets.isEmpty)
+        Left(noExtractionMsg)
+      else
+        Right(
+          valueTargets.map(ValueExtraction(source, _)) :::
+            methodTargets.map(MethodExtraction(source, _)))
+    }
+
   }
 }

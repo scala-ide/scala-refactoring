@@ -36,10 +36,24 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     val sel = """
       object O{
         val i = 1
-        /*(*/println(i.toInt*i*i.toInt)/*)*/
+        /*(*/println(i.toInt*i*i.toInt)
+        println(i.*(2)*(3))/*)*/
       }
       """.selection
     assertEquals("method println, value i", sel.inboundDeps.mkString(", "))
+  }
+
+  @Test
+  def inboundDepsDoesNotIncludeMembersOfLiterals = {
+    val sel = """
+      object O{
+        /*(*/
+    	1 + 2
+    	1.toInt.toInt.toInt
+    	/*)*/
+      }
+      """.selection
+    assertEquals("", sel.inboundDeps.mkString(", "))
   }
 
   @Test
@@ -91,6 +105,18 @@ class SelectionDependenciesTest extends TestHelper with Selections {
       """.selection
     val symO = sel.expandTo[DefDef].get.enclosingTree.symbol.ownerChain.find(_.isType).get
     assertEquals("value i", sel.inboundDepsOwnedBy(symO).mkString(", "))
+  }
+
+  @Test
+  def inboundDepsOfWildcardsInMatch = {
+    val sel = """
+      object O{
+        /*(*/1 match{
+    	  case _ => println(1)
+        }/*)*/
+      }
+      """.selection
+    assertEquals("method println", sel.inboundDeps.mkString(", "))
   }
 
   @Test

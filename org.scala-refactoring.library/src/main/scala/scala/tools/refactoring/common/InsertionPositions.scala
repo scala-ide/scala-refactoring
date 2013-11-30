@@ -15,7 +15,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
   /**
    * A concrete position for tree insertions.
    */
-  case class InsertionPoint(enclosing: Tree, mkEnclosing: Tree => Tree) extends (Tree => Tree) {
+  case class InsertionPoint(enclosing: Tree, mkEnclosing: Tree => Tree, pos: Position) extends (Tree => Tree) {
     /**
      * Returns a new tree that contains every tree of enclosing
      * and insertion inserted at the appropriate position.
@@ -33,13 +33,14 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
    */
   lazy val atBeginningOfDefDef: InsertionPosition = {
     case enclosing @ DefDef(_, _, _, _, _, Block(stats, expr)) =>
+      val pos = (stats :+ expr).head.pos
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (rhs = mkBlock(insertInSeq(stats :+ expr, insertion, _ => false)))
-      })
+      }, pos)
     case enclosing @ DefDef(_, _, _, _, _, rhs) =>
       InsertionPoint(enclosing, { insertion: Tree =>
         enclosing copy (rhs = mkBlock(insertion :: rhs :: Nil))
-      })
+      }, rhs.pos)
   }
 
   /**
@@ -47,13 +48,14 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
    */
   lazy val atBeginningOfFunction: InsertionPosition = {
     case enclosing @ Function(_, Block(stats, expr)) if enclosing.pos.isOpaqueRange =>
+      val pos = (stats :+ expr).head.pos
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertInSeq(stats :+ expr, insertion, _ => false)))
-      })
+      }, pos)
     case enclosing @ Function(_, body) if enclosing.pos.isOpaqueRange =>
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertion :: body :: Nil))
-      })
+      }, body.pos)
   }
 
   /**
@@ -63,7 +65,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
     case enclosing @ CaseDef(_, _, body) =>
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertion :: body :: Nil))
-      })
+      }, body.pos)
   }
 
   /**
@@ -79,7 +81,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
       case enclosing @ Block(stats, expr) =>
         InsertionPoint(enclosing, { insertion =>
           mkBlock(insertInSeq(stats :+ expr, insertion, isBeforeSelectionIn(enclosing)))
-        })
+        }, posOfSelectedTreeIn(enclosing))
     }
 
     /**
@@ -89,7 +91,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
       case enclosing @ Template(_, _, body) =>
         InsertionPoint(enclosing, { insertion =>
           enclosing copy (body = insertInSeq(body, insertion, isBeforeEndOfSelection))
-        })
+        }, posOfSelectedTreeIn(enclosing))
     }
 
     /**
@@ -99,7 +101,12 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
       case enclosing @ Template(_, _, body) =>
         InsertionPoint(enclosing, { insertion =>
           enclosing copy (body = insertInSeq(body, insertion, isBeforeSelectionIn(enclosing)))
-        })
+        }, posOfSelectedTreeIn(enclosing))
+    }
+
+    private def posOfSelectedTreeIn(enclosing: Tree) = {
+      enclosing.children.filter((t: Tree) => isBeforeEndOfSelection(t.pos)).lastOption
+        .map(_.pos).getOrElse(selection.pos)
     }
 
     private def isBeforeSelectionIn(enclosing: Tree)(pos: Position) = {
