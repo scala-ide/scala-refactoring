@@ -21,33 +21,35 @@ trait ExtractValue extends ExtractionRefactoring with ValueExtractions {
 trait ValueExtractions extends Extractions {
   import global._
 
-  case class ValueExtraction(extractionSource: Selection, scope: VisibilityScope) extends Extraction {
-    val name = scope match {
-      case t: TemplateScope => s"Extract Value to ${t.name}"
-      case _ => s"Extract Local Value"
+  case class ValueExtraction(extractionSource: Selection, extractionTarget: ExtractionTarget) extends Extraction {
+    val name = extractionTarget.enclosing match {
+      case _: Template => "Extract Member Value"
+      case _ => "Extract Local Value"
     }
 
     def perform(abstractionName: String) = {
       val abstr = ValueAbstraction(abstractionName, extractionSource, extractionSource.outboundLocalDeps)
       extractionSource.replaceBy(abstr.call, preserveHierarchy = true) ::
-        scope.insert(abstr.abstraction) ::
+        extractionTarget.insert(abstr.abstraction) ::
         Nil
     }
   }
 
   object ValueExtraction extends ExtractionCollector[ValueExtraction] {
     def prepareExtractionSource(s: Selection) = {
-      findExtractionSource(s.expand){ s =>
+      findExtractionSource(s.expand) { s =>
         (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
       }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
     }
 
-    def prepareExtraction(s: Selection, vs: VisibilityScope) = vs match {
-      case _: TemplateScope | _: MethodScope | _: FunctionScope | _: BlockScope | _: CaseScope if vs.undefinedDependencies.isEmpty =>
-        ValueExtraction(s, vs) :: Nil
-      case ms: MethodScope if !ms.enclosing.rhs.isInstanceOf[Block] =>
-        ValueExtraction(s, vs) :: Nil
-      case _ => Nil
+    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) =
+      validTargets(source, targets) match {
+        case Nil => Left(noExtractionMsg)
+        case ts => Right(ts.map(t => ValueExtraction(source, t)))
+      }
+
+    def validTargets(source: Selection, targets: List[ExtractionTarget]) = targets.takeWhile { t =>
+      source.inboundDeps.forall(t.scope.sees(_))
     }
   }
 }

@@ -2,19 +2,17 @@ package scala.tools.refactoring
 package tests.implementations.extraction
 
 import implementations.extraction.ExtractValue
-import tests.util.TestRefactoring
 import tests.util.TestHelper
-import org.junit.Assert._
-import scala.tools.refactoring.analysis.VisibilityScopes
+import tests.util.TestRefactoring
 
-class ExtractValueTest extends TestHelper with TestRefactoring with VisibilityScopes {
+class ExtractValueTest extends TestHelper with TestRefactoring {
   outer =>
 
-  def extract(name: String, f: VisibilityScope => Boolean)(pro: FileSet) = {
+  def extract(name: String, extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractValue with SilentTracing with TestProjectIndex
       val params = refactoring.RefactoringParameters(
-        preparationResult.right.get.extractions.filter(e => f(e.scope.asInstanceOf[VisibilityScope])).head,
+        preparationResult.right.get.extractions(extractionIdx),
         name)
     }
     testRefactoring.performRefactoring(testRefactoring.params)
@@ -39,7 +37,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  }.performRefactoring(extract("c", _.isInstanceOf[BlockScope])).assertEqualTree
+  }.performRefactoring(extract("c", 0)).assertEqualTree
 
   @Test
   def extractSimpleSequence = new FileSet {
@@ -64,7 +62,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  }.performRefactoring(extract("c", _.isInstanceOf[BlockScope])).assertEqualTree
+  }.performRefactoring(extract("c", 0)).assertEqualTree
 
   @Test
   def extractWithOutboundDependency = new FileSet {
@@ -88,7 +86,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  }.performRefactoring(extract("c", _.isInstanceOf[BlockScope])).assertEqualTree
+  }.performRefactoring(extract("c", 0)).assertEqualTree
 
   @Test
   def extractWithOutboundDependencies = new FileSet {
@@ -118,7 +116,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         }
       }
     """
-  }.performRefactoring(extract("e", _.isInstanceOf[BlockScope])).assertEqualTree
+  }.performRefactoring(extract("e", 0)).assertEqualTree
 
   @Test
   def extractToTemplateScope = new FileSet {
@@ -142,5 +140,5 @@ class ExtractValueTest extends TestHelper with TestRefactoring with VisibilitySc
         def fm = 7
       }
     """
-  }.performRefactoring(extract("c", _.isInstanceOf[TemplateScope])).assertEqualTree
+  }.performRefactoring(extract("c", 2)).assertEqualTree
 }

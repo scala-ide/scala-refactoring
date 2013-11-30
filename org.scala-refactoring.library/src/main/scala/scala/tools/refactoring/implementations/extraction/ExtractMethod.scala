@@ -18,9 +18,9 @@ abstract class ExtractMethod extends ExtractionRefactoring with MethodExtraction
 trait MethodExtractions extends Extractions {
   import global._
 
-  case class MethodExtraction(extractionSource: Selection, scope: VisibilityScope) extends Extraction {
-    val name = scope match {
-      case t: TemplateScope => s"Extract Method to ${t.name}"
+  case class MethodExtraction(extractionSource: Selection, extractionTarget: ExtractionTarget) extends Extraction {
+    val name = extractionTarget.enclosing match {
+      case t: Template => s"Extract Member Method"
       case _ => s"Extract Local Method"
     }
 
@@ -30,19 +30,21 @@ trait MethodExtractions extends Extractions {
     def perform(abstractionName: String, selectedParameters: List[Symbol]) = {
       val abstr = MethodAbstraction(
         abstractionName, extractionSource,
-        scope.undefinedDependencies union selectedParameters,
+        requiredParameters union selectedParameters,
         extractionSource.outboundLocalDeps)
 
       extractionSource.replaceBy(abstr.call, preserveHierarchy = true) ::
-        scope.insert(abstr.abstraction) ::
+        extractionTarget.insert(abstr.abstraction) ::
         Nil
     }
 
     lazy val requiredParameters =
-      scope.undefinedDependencies
+      extractionSource.inboundValueDeps.filterNot { dep =>
+        extractionTarget.scope.sees(dep)
+      }
 
     lazy val optionalParameters =
-      scope.definedDependencies.filter(isAllowedAsParameter(_))
+      extractionSource.inboundValueDeps diff requiredParameters
   }
 
   object MethodExtraction extends ExtractionCollector[MethodExtraction] {
@@ -51,21 +53,22 @@ trait MethodExtractions extends Extractions {
         (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
       }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
     }
+    
+    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) =
+      validTargets(source, targets) match {
+        case Nil => Left(noExtractionMsg)
+        case ts => Right(ts.map(t => MethodExtraction(source, t)))
+      }
 
-    def prepareExtraction(s: Selection, vs: VisibilityScope) =
-      if (vs.undefinedDependencies.forall(isAllowedAsParameter(_)))
-        vs match {
-          case _: TemplateScope | _: FunctionScope | _: BlockScope | _: CaseScope =>
-            MethodExtraction(s, vs) :: Nil
-          case ms: MethodScope if !ms.enclosing.rhs.isInstanceOf[Block] =>
-            MethodExtraction(s, vs) :: Nil
-          case _ => Nil
-        }
-      else
-        Nil
+    def validTargets(source: Selection, targets: List[ExtractionTarget]) = {
+      targets.takeWhile{ t =>
+        source.inboundDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
+      }
+    }
   }
 
   def isAllowedAsParameter(s: Symbol) =
+    s.isValue &&
     !s.name.isOperatorName &&
       !s.isImplicit
 }

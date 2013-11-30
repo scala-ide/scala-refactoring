@@ -101,14 +101,17 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * If multiple trees of the type are found, the last one (i.e. the deepest child) is returned.
      */
     def findSelectedWithPredicate(predicate: Tree => Boolean): Option[Tree] = {
+      filterSelected(predicate).lastOption
+    }
 
+    def filterSelected(predicate: Tree => Boolean): List[Tree] = {
       val filterer = new FilterTreeTraverser(cond(_) {
         case t => predicate(t) && isPosContainedIn(pos, t.pos)
       })
 
       filterer.traverse(root)
 
-      filterer.hits.lastOption
+      filterer.hits.toList
     }
 
     private[refactoring] lazy val allSelectedTrees: List[Tree] = {
@@ -128,13 +131,13 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      */
     lazy val inboundDeps: List[Symbol] = {
       val refs = allSelectedTrees.collect {
-        case t: RefTree => t
+        case t: RefTree if t.symbol != NoSymbol => t
         // also treat applications of implicit conversion as inbound dependencies
         case t: Apply if t.symbol.isImplicit => t
+        case t: Literal => t
       }
 
       val usedSymbols = refs.collect {
-        // objects methods are not inbound deps if the object is a dependency itself
         case t: RefTree if !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
         case t: Apply => t.symbol
       }.distinct
@@ -145,9 +148,15 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
 
       usedSymbols.diff(definedSymbols)
     }
+    
+    def inboundValueDeps =
+      inboundDeps.filter(_.isValue)
+    
+    def inboundTypeDeps =
+      inboundDeps.filter(_.isType)
 
     /**
-     * Returns only the inbound dependencies that directly or indirectly owned
+     * Returns only the inbound dependencies that are directly or indirectly owned
      * by `owner`.
      */
     def inboundDepsOwnedBy(owner: Symbol): List[Symbol] =
@@ -215,7 +224,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         expandTo(
           posOfPartiallySelectedTrees(enclosingTree.children)).get)
     }
-    
+
     lazy val isSingleTree =
       selectedTopLevelTrees.headOption.map { firstTree =>
         firstTree.pos.start == pos.start && firstTree.pos.end == pos.end
