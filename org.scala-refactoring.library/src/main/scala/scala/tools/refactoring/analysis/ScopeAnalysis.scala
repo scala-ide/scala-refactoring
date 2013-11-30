@@ -9,7 +9,7 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
   /**
    *
    */
-  trait ScopeTree {
+  sealed trait ScopeTree {
     /**
      * A tree that fully encloses this scope.
      */
@@ -50,6 +50,23 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
      * Is `s` visible in this scope, but not in `outerScope`?
      */
     def introducedInThisScope(s: Symbol): Boolean
+
+    /**
+     * Returns a list of visible symbols whose name is equal
+     * to `name`.
+     * TODO: Handle symbols from other CUs
+     */
+    def nameCollisions(name: String): List[Symbol] = (this match {
+      case _@ ImportScope(_, Import(_, selectors), _, _) =>
+        if (selectors.exists(_.rename.decode == name))
+          NoSymbol :: Nil
+        else
+          Nil
+      case _ =>
+        enclosing.children.collect {
+          case t: DefTree => t
+        }.map(_.symbol).filter(_.decodedName == name)
+    }) ::: outerScope.map(_.nameCollisions(name)).getOrElse(Nil)
 
     /**
      * Traverses the scope tree from inner to outer and returns
@@ -172,9 +189,7 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
       }
     }
 
-    private val importStrs = imp.selectors.map(importSel2ImportString(imp, _))
-
-    private def importSel2ImportString(imp: Import, sel: ImportSelector) = {
+    private val importStrs = imp.selectors.map { sel =>
       imp.expr.toString() + "." + sel.name.decode
     }
 
