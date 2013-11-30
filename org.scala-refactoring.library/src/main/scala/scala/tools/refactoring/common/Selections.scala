@@ -138,7 +138,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       }
 
       val usedSymbols = refs.collect {
-        case t: RefTree if !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
+        case t: RefTree if t.qualifier.isEmpty || !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
         case t: Apply => t.symbol
       }.distinct
 

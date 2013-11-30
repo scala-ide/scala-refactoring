@@ -44,6 +44,16 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
+  def inboundDepsIncludesMethodArguments = {
+    val sel = """
+      object O{
+        def fn(i: Int) = /*(*/8.*(i)/*)*/
+      }
+      """.selection
+    assertEquals("value i", sel.inboundDeps.mkString(", "))
+  }
+
+  @Test
   def inboundDepsDoesNotIncludeMembersOfLiterals = {
     val sel = """
       object O{
