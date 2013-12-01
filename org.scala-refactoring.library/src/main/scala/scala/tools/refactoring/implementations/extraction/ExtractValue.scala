@@ -23,7 +23,7 @@ trait ValueExtractions extends Extractions {
 
   case class ValueExtraction(extractionSource: Selection, extractionTarget: ExtractionTarget) extends Extraction {
     val name = extractionTarget.enclosing match {
-      case _: Template => "Extract Member Value"
+      case t: Template => s"Extract Value to ${t.symbol.owner.decodedName}"
       case _ => "Extract Local Value"
     }
 

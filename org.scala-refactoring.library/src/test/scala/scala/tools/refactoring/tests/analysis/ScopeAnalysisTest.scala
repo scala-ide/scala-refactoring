@@ -119,6 +119,25 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
+  def nestedClassScopes = {
+    val s = toSelection("""
+      object Demo {
+        def fn(p: Int) = {
+          class A {
+            val a = /*(*/p/*)*/
+          }
+        
+          new A.a
+        }
+      }
+      """)
+
+    assertEquals(
+      "MemberScope(A) -> LocalScope(p) -> MemberScope(Demo) -> MemberScope(<empty>)",
+      ScopeTree.build(s).toString())
+  }
+
+  @Test
   def visibility = {
     val s = toSelection("""
       package demo
@@ -251,13 +270,13 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
     	val c = 3
       }
     """)
-    
+
     val scopes = ScopeTree.build(s.root, s.selectedTopLevelTrees.head)
-    
+
     val valA = s.root.find(t => t.isInstanceOf[ValDef] && t.symbol.nameString == "a").get
     val valB = s.root.find(t => t.isInstanceOf[ValDef] && t.symbol.nameString == "b").get
     val valC = s.root.find(t => t.isInstanceOf[ValDef] && t.symbol.nameString == "c").get
-    
+
     assertEquals("MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(valA).toString())
     assertEquals("MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(valB).toString())
     assertEquals("MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(valC).toString())
@@ -276,13 +295,13 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
         }
       }
     """)
-    
+
     val scopes = ScopeTree.build(s.root, s.selectedTopLevelTrees.head)
-    
+
     val block = s.findSelectedOfType[Block].get
     val defFn = s.findSelectedOfType[DefDef].get
     val template = s.findSelectedOfType[Template].get
-    
+
     assertEquals("LocalScope(a) -> MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(block.children.head).toString())
     assertEquals("LocalScope(a) -> MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(block).toString())
     assertEquals("MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(defFn).toString())
@@ -296,20 +315,46 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
         for(i <- 1 to 10) /*(*/println(i)/*)*/
       }
     """)
-    
+
     val scopes = ScopeTree.build(s.root, s.selectedTopLevelTrees.head)
-    
+
     val template = s.findSelectedOfType[Template].get
-    val applyForeach = template.children.collectFirst{
+    val applyForeach = template.children.collectFirst {
       case d: Apply if d.symbol.nameString == "foreach" => d
     }.get
-    val applyPrintln = template.collect{
+    val applyPrintln = template.collect {
       case d: RefTree if d.symbol.nameString == "println" => d
     }.head
-    
+
     assertEquals("MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(template).toString())
     assertEquals("MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(applyForeach).toString())
     assertEquals("LocalScope(i) -> MemberScope(Demo) -> MemberScope(<empty>)", scopes.findScopeFor(applyPrintln).toString())
+  }
+
+  @Test
+  def scopeLookupInNestedClasses = {
+    val s = toSelection("""
+      class Outer {
+        def fn(p: Int) = {
+          class Inner {
+            val a = /*(*/p/*)*/
+          }
+        
+          new A.a
+        }
+      }
+    """)
+
+    val scopes = ScopeTree.build(s.root, s.selectedTopLevelTrees.head)
+
+    val inner = s.findSelectedOfType[Template].get
+    val outer = s.findSelectedWithPredicate{
+      case t: Template if t != inner => true
+      case _ => false
+    }.get
+
+    assertEquals("MemberScope(Outer) -> MemberScope(<empty>)", scopes.findScopeFor(outer).toString())
+    assertEquals("MemberScope(Inner) -> LocalScope(p) -> MemberScope(Outer) -> MemberScope(<empty>)", scopes.findScopeFor(inner).toString())
   }
 
   def findMarkedNodes(src: String, tree: Tree) = {

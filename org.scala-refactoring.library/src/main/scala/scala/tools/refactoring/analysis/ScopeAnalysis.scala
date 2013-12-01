@@ -146,10 +146,15 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
       decls.exists(_.symbol == s)
 
     override def findScopeFor(pos: Position) =
-      if (enclosing.pos.includes(pos) && pos.startOrPoint > decls.head.pos.startOrPoint)
+      if (enclosing.pos.includes(pos) && pos.startOrPoint > declPos.startOrPoint)
         this
       else
         super.findScopeFor(pos)
+
+    val declPos = decls match {
+      case Nil => enclosing.pos
+      case d :: _ => d.pos
+    }
 
     def copy(outerScope: Option[ScopeTree], knownSymbols: List[Symbol]) =
       LocalScope(enclosing, decls, outerScope, knownSymbols)

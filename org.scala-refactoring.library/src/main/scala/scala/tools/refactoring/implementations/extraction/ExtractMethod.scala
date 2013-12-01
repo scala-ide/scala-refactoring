@@ -20,7 +20,7 @@ trait MethodExtractions extends Extractions {
 
   case class MethodExtraction(extractionSource: Selection, extractionTarget: ExtractionTarget) extends Extraction {
     val name = extractionTarget.enclosing match {
-      case t: Template => s"Extract Member Method"
+      case t: Template => s"Extract Method to ${t.symbol.owner.decodedName}"
       case _ => s"Extract Local Method"
     }
 
