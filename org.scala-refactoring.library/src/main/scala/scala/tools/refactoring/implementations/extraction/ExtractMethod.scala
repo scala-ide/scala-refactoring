@@ -39,12 +39,12 @@ trait MethodExtractions extends Extractions {
     }
 
     lazy val requiredParameters =
-      extractionSource.inboundValueDeps.filterNot { dep =>
+      extractionSource.inboundLocalDeps.filterNot { dep =>
         extractionTarget.scope.sees(dep)
       }
 
     lazy val optionalParameters =
-      extractionSource.inboundValueDeps diff requiredParameters
+      extractionSource.inboundLocalDeps diff requiredParameters
   }
 
   object MethodExtraction extends ExtractionCollector[MethodExtraction] {

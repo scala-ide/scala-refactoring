@@ -8,6 +8,7 @@ package common
 import collection.mutable.ListBuffer
 import tools.nsc.Global
 import scala.reflect.internal.util.RangePosition
+import scala.reflect.internal.Flags
 
 trait Selections extends TreeTraverser with common.PimpedTrees {
 
@@ -130,39 +131,42 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * but defined outside of it.
      */
     lazy val inboundDeps: List[Symbol] = {
-      val refs = allSelectedTrees.collect {
-        case t: RefTree if t.symbol != NoSymbol => t
-        // also treat applications of implicit conversion as inbound dependencies
-        case t: Apply if t.symbol.isImplicit => t
-        case t: Literal => t
-      }
-
-      val usedSymbols = refs.collect {
-        case t: RefTree if t.qualifier.isEmpty || !refs.exists(_.symbol == t.qualifier.symbol) => t.symbol
-        case t: Apply => t.symbol
+      val usedSymbols = selectedTopLevelTrees.flatMap { t =>
+        t.collect {
+          case t: RefTree if t.symbol != NoSymbol => t.symbol
+        }
       }.distinct
 
-      val definedSymbols = allSelectedTrees.collect {
-        case t: DefTree => t.symbol
-      }
+      val definedSymbols = selectedTopLevelTrees.flatMap { t =>
+        t.collect {
+          case t: DefTree => t.symbol
+        }
+      }.distinct
 
-      usedSymbols.diff(definedSymbols)
+      usedSymbols diff definedSymbols
     }
-    
-    def inboundValueDeps =
-      inboundDeps.filter(_.isValue)
-    
-    def inboundTypeDeps =
-      inboundDeps.filter(_.isType)
 
     /**
-     * Returns only the inbound dependencies that are directly or indirectly owned
+     * Returns only inbound dependencies that are directly or indirectly owned
      * by `owner`.
      */
     def inboundDepsOwnedBy(owner: Symbol): List[Symbol] =
       inboundDeps.filter { s =>
-        s.ownerChain.contains(owner)
+        s.ownerChain.exists(_.fullName == owner.fullName)
       }
+
+    /**
+     * Returns inbound dependencies that are owned by the outmost enclosing class
+     * or object in the CU.
+     */
+    lazy val inboundLocalDeps = {
+      val outmostOwnerInCU = filterSelected {
+        case t: ImplDef => true
+        case _ => false
+      }.head.symbol
+
+      inboundDepsOwnedBy(outmostOwnerInCU)
+    }
 
     /**
      * Returns a list of symbols that are defined inside the selection

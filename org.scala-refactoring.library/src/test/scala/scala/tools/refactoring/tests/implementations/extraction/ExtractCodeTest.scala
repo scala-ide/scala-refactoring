@@ -269,4 +269,28 @@ class ExtractCodeTest extends TestHelper with TestRefactoring{
       }
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
+
+  @Test
+  @Ignore
+  def extractImportedValue = new FileSet {
+    """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+	  	  /*(*/Pi/*)*/
+	    }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+    	  extracted(Pi)
+        }
+    
+        def extracted(Pi: Double) =
+          Pi
+      }
+    """
+  }.performRefactoring(extract("extracted", 2)).assertEqualTree
 }

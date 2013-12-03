@@ -58,7 +58,7 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
      */
     def nameCollisions(name: String): List[Symbol] = (this match {
       case _@ ImportScope(_, Import(_, selectors), _, _) =>
-        if (selectors.exists(_.rename.decode == name))
+        if (selectors.exists(s => s.rename != null && s.rename.decode == name))
           NoSymbol :: Nil
         else
           Nil
@@ -178,15 +178,17 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
       // if one matches, it's likely the symbol has been imported by `imp`
       val symImpStrs = {
         val parts = s.ownerChain.collect {
-          case s if !s.isConstructor && !s.isRoot => s.nameString
+          case s if !s.isConstructor && !s.isRoot && !s.isPackageObject =>
+            s.nameString
         }
 
-        List(
+        val imps = List(
           // explicit import
-          parts.reverse,
+          s.nameString :: parts,
           // wildcard import
-          parts.tail.::(ImportSelector.wild.name).reverse)
-          .map(_.mkString("."))
+          ImportSelector.wild.name :: parts)
+
+        imps.map(_.reverse.mkString("."))
       }
 
       importStrs.exists {

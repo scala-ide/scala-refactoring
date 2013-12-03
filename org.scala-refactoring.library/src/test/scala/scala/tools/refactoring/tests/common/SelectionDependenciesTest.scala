@@ -28,7 +28,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
         }
       }
       """.selection
-    assertEquals("value p, value i, method println", sel.inboundDeps.mkString(", "))
+    assertEquals("value p, value i", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -40,7 +40,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
         println(i.*(2)*(3))/*)*/
       }
       """.selection
-    assertEquals("method println, value i", sel.inboundDeps.mkString(", "))
+    assertEquals("value i", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -50,7 +50,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
         def fn(i: Int) = /*(*/8.*(i)/*)*/
       }
       """.selection
-    assertEquals("value i", sel.inboundDeps.mkString(", "))
+    assertEquals("value i", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -63,7 +63,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     	/*)*/
       }
       """.selection
-    assertEquals("", sel.inboundDeps.mkString(", "))
+    assertEquals("", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -77,7 +77,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
         val i = /*(*/2.extension/*)*/
       }
       """.selection
-    assertEquals("method wrapInt", sel.inboundDeps.mkString(", "))
+    assertEquals("method extension, method wrapInt", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -96,7 +96,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
         }
       }
       """.selection
-    assertEquals("constructor A, class A, object N", sel.inboundDeps.mkString(", "))
+    assertEquals("", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -122,11 +122,24 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     val sel = """
       object O{
         /*(*/1 match{
-    	  case _ => println(1)
+    	  case _ => ()
         }/*)*/
       }
       """.selection
-    assertEquals("method println", sel.inboundDeps.mkString(", "))
+    assertEquals("", sel.inboundLocalDeps.mkString(", "))
+  }
+
+  @Test
+  def inboundDepsOfImported = {
+    val sel = """
+      object O{
+        import scala.math.Pi
+    	import scala.collection.mutable
+      
+    	/*(*/(Pi, new mutable.LinkedList)/*)*/
+      }
+      """.selection
+    assertEquals("", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -183,9 +196,23 @@ class SelectionDependenciesTest extends TestHelper with Selections {
       """.selection
     assertEquals("method fm, method fo", sel.outboundLocalDeps.mkString(", "))
   }
+  
+  @Test
+  def outboundDepsOfVars = {
+    val sel = """
+      object O{
+        def fn = {
+          var a = 1
+          {
+            def inner = /*(*/a += 1/*)*/
+          }
+    	  a
+        }
+      }
+      """
+  }
 
   @Test
-  @Ignore
   def outboundImportedDeps = {
     val sel = """
       object O{
@@ -195,6 +222,6 @@ class SelectionDependenciesTest extends TestHelper with Selections {
         }
       }
       """.selection
-    assertEquals("value Pi", sel.outboundLocalDeps.mkString(", "))
+    assertEquals("", sel.outboundLocalDeps.mkString(", "))
   }
 }
