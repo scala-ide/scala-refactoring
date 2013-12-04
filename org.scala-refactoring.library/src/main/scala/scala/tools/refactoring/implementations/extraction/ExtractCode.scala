@@ -7,12 +7,10 @@ abstract class ExtractCode extends ExtractionRefactoring with AutoExtractions {
 
   val collector = AutoExtraction
 
-  case class RefactoringParameters(
-    selectedExtraction: E,
-    name: String)
+  type RefactoringParameters = E
 
-  def perform(s: Selection, prepared: PreparationResult, params: RefactoringParameters) =
-    perform(params.selectedExtraction, params.name)
+  def perform(s: Selection, prepared: PreparationResult, extraction: RefactoringParameters) =
+    perform(extraction)
 }
 
 trait AutoExtractions extends MethodExtractions with ValueExtractions {

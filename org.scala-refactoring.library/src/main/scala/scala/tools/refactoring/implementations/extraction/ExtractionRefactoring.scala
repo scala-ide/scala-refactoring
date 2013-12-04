@@ -28,8 +28,8 @@ trait ExtractionRefactoring extends MultiStageRefactoring with Extractions {
       .left.map(PreparationError(_))
       .right.map(PreparationResult(_))
 
-  def perform(selectedExtraction: E, name: String) = {
-    val transformations = selectedExtraction.perform(name)
+  def perform(selectedExtraction: E) = {
+    val transformations = selectedExtraction.perform()
     Right(transformFile(selectedExtraction.extractionSource.file, transformations))
   }
 }
@@ -50,7 +50,9 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
 
     val name: String
 
-    def perform(abstractionName: String): List[Transformation[Tree, Tree]]
+    def perform(): List[Transformation[Tree, Tree]]
+    
+    def withAbstractionName(name: String): this.type
   }
 
   case class ExtractionTarget(scope: ScopeTree, enclosing: Tree, ip: InsertionPosition) {

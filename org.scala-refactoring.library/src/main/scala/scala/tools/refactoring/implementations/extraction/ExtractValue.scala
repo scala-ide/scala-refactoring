@@ -10,26 +10,31 @@ trait ExtractValue extends ExtractionRefactoring with ValueExtractions {
 
   val collector = ValueExtraction
 
-  case class RefactoringParameters(
-    selectedExtraction: E,
-    name: String)
+  type RefactoringParameters = E
 
-  def perform(s: Selection, prepared: PreparationResult, params: RefactoringParameters) =
-    perform(params.selectedExtraction, params.name)
+  def perform(s: Selection, prepared: PreparationResult, extraction: RefactoringParameters) =
+    perform(extraction)
 }
 
 trait ValueExtractions extends Extractions {
   import global._
 
-  case class ValueExtraction(extractionSource: Selection, extractionTarget: ExtractionTarget) extends Extraction {
+  case class ValueExtraction(
+    extractionSource: Selection,
+    extractionTarget: ExtractionTarget,
+    abstractionName: String = "") extends Extraction {
+
     val name = extractionTarget.enclosing match {
       case t: Template => s"Extract Value to ${t.symbol.owner.decodedName}"
       case _ => "Extract Local Value"
     }
 
-    def perform(abstractionName: String) = {
+    def withAbstractionName(name: String) =
+      copy(abstractionName = name).asInstanceOf[this.type]
+
+    def perform() = {
       val outboundDeps = extractionSource.outboundLocalDeps
-      val call = mkCallValDef(name, outboundDeps)
+      val call = mkCallValDef(abstractionName, outboundDeps)
 
       val returnStatements =
         if (outboundDeps.isEmpty) Nil

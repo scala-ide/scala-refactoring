@@ -10,12 +10,10 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
       val e = preparationResult.right.get.extractions(extractionIdx)
-      val params = new refactoring.RefactoringParameters(
-        e,
-        name,
-        e.optionalParameters.filter(sym => selectedParams.contains(sym.nameString)))
+      val extraction = e.copy(abstractionName = name,
+        selectedParameters = e.optionalParameters.filter(sym => selectedParams.contains(sym.nameString)))
     }
-    testRefactoring.performRefactoring(testRefactoring.params)
+    testRefactoring.performRefactoring(testRefactoring.extraction)
   }
 
   @Test

@@ -5,9 +5,6 @@ import scala.tools.refactoring.common.CompilerAccess
 trait ImportAnalysis extends CompilerAccess {
   import global._
 
-  /**
-   *
-   */
   trait ImportTree extends Traversable[ImportTree]{
     val enclosing: Tree
     

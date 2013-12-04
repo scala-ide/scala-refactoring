@@ -5,14 +5,14 @@ import implementations.extraction.ExtractCode
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 
-class ExtractCodeTest extends TestHelper with TestRefactoring{
+class ExtractCodeTest extends TestHelper with TestRefactoring {
   def extract(name: String, extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractCode with SilentTracing with TestProjectIndex
       val e = preparationResult.right.get.extractions(extractionIdx)
-      val params = refactoring.RefactoringParameters(e, name)
+        .withAbstractionName(name)
     }
-    testRefactoring.performRefactoring(testRefactoring.params)
+    testRefactoring.performRefactoring(testRefactoring.e)
   }
 
   @Test

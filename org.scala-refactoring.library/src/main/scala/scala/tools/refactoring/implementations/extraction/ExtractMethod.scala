@@ -9,31 +9,45 @@ abstract class ExtractMethod extends ExtractionRefactoring with MethodExtraction
 
   val collector = MethodExtraction
 
-  case class RefactoringParameters(selectedExtraction: E, name: String, selectedParameters: List[Symbol])
+  type RefactoringParameters = E
 
-  def perform(s: Selection, prepared: PreparationResult, params: RefactoringParameters) = {
-    val transformations = params.selectedExtraction.perform(params.name, params.selectedParameters)
-    Right(transformFile(s.file, transformations))
-  }
+  def perform(s: Selection, prepared: PreparationResult, extraction: RefactoringParameters) =
+    perform(extraction)
 }
 
 trait MethodExtractions extends Extractions {
   import global._
 
-  case class MethodExtraction(extractionSource: Selection, extractionTarget: ExtractionTarget) extends Extraction {
+  case class MethodExtraction(
+    extractionSource: Selection,
+    extractionTarget: ExtractionTarget,
+    abstractionName: String = "",
+    selectedParameters: List[Symbol] = Nil) extends Extraction {
+
     val name = extractionTarget.enclosing match {
       case t: Template => s"Extract Method to ${t.symbol.owner.decodedName}"
       case _ => s"Extract Local Method"
     }
 
-    def perform(abstractionName: String) =
-      perform(abstractionName, Nil)
+    lazy val requiredParameters =
+      extractionSource.inboundLocalDeps.filterNot { dep =>
+        extractionTarget.scope.sees(dep)
+      }
 
-    def perform(abstractionName: String, selectedParameters: List[Symbol]) = {
+    lazy val optionalParameters =
+      extractionSource.inboundLocalDeps diff requiredParameters
+
+    def withAbstractionName(name: String) =
+      copy(abstractionName = name).asInstanceOf[this.type]
+
+    def withSelectedParameters(params: List[Symbol]) =
+      copy(selectedParameters = params)
+
+    def perform() = {
       val parameters = requiredParameters union selectedParameters
       val outboundDeps = extractionSource.outboundLocalDeps
 
-      val call = mkCallDefDef(name, parameters :: Nil, outboundDeps)
+      val call = mkCallDefDef(abstractionName, parameters :: Nil, outboundDeps)
 
       val returnStatements =
         if (outboundDeps.isEmpty) Nil
@@ -66,21 +80,13 @@ trait MethodExtractions extends Extractions {
             TypeTree(t.tpe)
         }
 
-        DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(name), Nil, ps, returnTpe, mkBlock(statements))
+        DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(abstractionName), Nil, ps, returnTpe, mkBlock(statements))
       }
 
       extractionSource.replaceBy(call, preserveHierarchy = true) ::
         extractionTarget.insert(abstraction) ::
         Nil
     }
-
-    lazy val requiredParameters =
-      extractionSource.inboundLocalDeps.filterNot { dep =>
-        extractionTarget.scope.sees(dep)
-      }
-
-    lazy val optionalParameters =
-      extractionSource.inboundLocalDeps diff requiredParameters
   }
 
   object MethodExtraction extends ExtractionCollector[MethodExtraction] {
