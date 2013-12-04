@@ -56,17 +56,11 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
      * to `name`.
      * TODO: Handle symbols from other CUs
      */
-    def nameCollisions(name: String): List[Symbol] = (this match {
-      case _@ ImportScope(_, Import(_, selectors), _, _) =>
-        if (selectors.exists(s => s.rename != null && s.rename.decode == name))
-          NoSymbol :: Nil
-        else
-          Nil
-      case _ =>
-        enclosing.children.collect {
-          case t: DefTree => t
-        }.map(_.symbol).filter(_.decodedName == name)
-    }) ::: outerScope.map(_.nameCollisions(name)).getOrElse(Nil)
+    def nameCollisions(name: String): List[Symbol] =
+      (enclosing.children.collect {
+        case t: DefTree => t
+      }.map(_.symbol).filter(_.decodedName == name)) :::
+        outerScope.map(_.nameCollisions(name)).getOrElse(Nil)
 
     /**
      * Traverses the scope tree from inner to outer and returns
@@ -163,56 +157,6 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
       toString("LocalScope", decls.map(_.symbol.decodedName).mkString(", "))
   }
 
-  /**
-   * `import` statements are transformed to ImportScopes.
-   *
-   * Unlike members of packages, symbols imported by an `import` statement
-   * are not visible in the enclosing block before the `import` statement.
-   */
-  case class ImportScope(enclosing: Tree, imp: Import, outerScope: Option[ScopeTree], knownSymbols: List[Symbol] = Nil) extends ScopeTree {
-
-    def introducedInThisScope(s: Symbol) = {
-      // this one's a dirty one
-      // we build a string of how an import of this symbol would look like
-      // and compare it to strings we have for each import selector.
-      // if one matches, it's likely the symbol has been imported by `imp`
-      val symImpStrs = {
-        val parts = s.ownerChain.collect {
-          case s if !s.isConstructor && !s.isRoot && !s.isPackageObject =>
-            s.nameString
-        }
-
-        val imps = List(
-          // explicit import
-          s.nameString :: parts,
-          // wildcard import
-          ImportSelector.wild.name :: parts)
-
-        imps.map(_.reverse.mkString("."))
-      }
-
-      importStrs.exists {
-        imp => symImpStrs.contains(imp)
-      }
-    }
-
-    private val importStrs = imp.selectors.map { sel =>
-      imp.expr.toString() + "." + sel.name.decode
-    }
-
-    override def findScopeFor(pos: Position) =
-      if (enclosing.pos.includes(pos) && pos.startOrPoint > imp.pos.startOrPoint)
-        this
-      else
-        super.findScopeFor(pos)
-
-    def copy(outerScope: Option[ScopeTree], knownSymbols: List[Symbol]) =
-      ImportScope(enclosing, imp, outerScope, knownSymbols)
-
-    override def toString =
-      toString("ImportScope", imp.toString().replaceFirst("import ", ""))
-  }
-
   object ScopeTree {
     /**
      * Constructs a scope tree from `root` towards `ref`.
@@ -276,9 +220,6 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
           t match {
             case d: DefTree if d.symbol.isLocal && !d.symbol.isValueParameter =>
               build(ref, rest, Some(LocalScope(enclosing, d :: Nil, outerScope)), enclosing)
-
-            case i: Import =>
-              build(ref, rest, Some(ImportScope(enclosing, i, outerScope)), enclosing)
 
             case _ =>
               build(ref, rest, outerScope, enclosing)

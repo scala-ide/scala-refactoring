@@ -172,4 +172,15 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   }
 
   def stripWhitespacePreservers(s: String) = s.replaceAll("▒", "")
+
+  def findMarkedNodes(src: String, tree: global.Tree) = {
+    val start = commentSelectionStart(src)
+    val end = commentSelectionEnd(src)
+    FileSelection(tree.pos.source.file, tree, start, end)
+  }
+
+  def toSelection(src: String) = {
+    val tree = treeFrom(src)
+    findMarkedNodes(src, tree)
+  }
 }

@@ -1,5 +1,7 @@
 package scala.tools.refactoring.implementations.extraction
 
+import scala.reflect.internal.Flags
+
 abstract class ExtractMethod extends ExtractionRefactoring with MethodExtractions {
   import global._
 
@@ -28,13 +30,47 @@ trait MethodExtractions extends Extractions {
       perform(abstractionName, Nil)
 
     def perform(abstractionName: String, selectedParameters: List[Symbol]) = {
-      val abstr = MethodAbstraction(
-        abstractionName, extractionSource,
-        requiredParameters union selectedParameters,
-        extractionSource.outboundLocalDeps)
+      val parameters = requiredParameters union selectedParameters
+      val outboundDeps = extractionSource.outboundLocalDeps
 
-      extractionSource.replaceBy(abstr.call, preserveHierarchy = true) ::
-        extractionTarget.insert(abstr.abstraction) ::
+      val call = mkCallDefDef(name, parameters :: Nil, outboundDeps)
+
+      val returnStatements =
+        if (outboundDeps.isEmpty) Nil
+        else mkReturn(outboundDeps) :: Nil
+
+      val statements = extractionSource.selectedTopLevelTrees ::: returnStatements
+
+      val abstraction = {
+        /* We implement a simpler version of mkDefDef in order to address
+         * issues with symbols that are treated as by name parameters
+         */
+        def symbolToParam(s: Symbol) = {
+          /* The type of a symbol referencing class fields is "=> T"
+           * and therefore converted to a by name parameter. But in most cases
+           * it is preferred to pass it by value.
+           */
+          val tpe = if (s.tpe.toString.startsWith("=>"))
+            s.tpe.baseTypeSeq(0)
+          else
+            s.tpe
+          new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(tpe), EmptyTree)
+        }
+
+        val ps = parameters.map(symbolToParam) :: Nil
+
+        val returnTpe = statements.last match {
+          case t: Function if t.pos.isTransparent =>
+            TypeTree(t.body.tpe)
+          case t =>
+            TypeTree(t.tpe)
+        }
+
+        DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(name), Nil, ps, returnTpe, mkBlock(statements))
+      }
+
+      extractionSource.replaceBy(call, preserveHierarchy = true) ::
+        extractionTarget.insert(abstraction) ::
         Nil
     }
 
@@ -53,7 +89,7 @@ trait MethodExtractions extends Extractions {
         (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
       }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
     }
-    
+
     def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) =
       validTargets(source, targets) match {
         case Nil => Left(noExtractionMsg)
@@ -61,14 +97,14 @@ trait MethodExtractions extends Extractions {
       }
 
     def validTargets(source: Selection, targets: List[ExtractionTarget]) = {
-      targets.takeWhile{ t =>
-        source.inboundDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
+      targets.takeWhile { t =>
+        source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
       }
     }
   }
 
   def isAllowedAsParameter(s: Symbol) =
     s.isValue &&
-    !s.name.isOperatorName &&
+      !s.name.isOperatorName &&
       !s.isImplicit
 }

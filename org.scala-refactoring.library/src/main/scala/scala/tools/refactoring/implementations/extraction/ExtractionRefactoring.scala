@@ -37,7 +37,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with Extractions {
 /**
  * Base trait for modules that offer a specific kind of extractions.
  */
-trait Extractions extends ScopeAnalysis with TransformableSelections with Abstractions with InsertionPositions with CompilerAccess {
+trait Extractions extends ScopeAnalysis with TransformableSelections with InsertionPositions with CompilerAccess {
   import global._
 
   /**
@@ -86,7 +86,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Abstra
           .flatMap { enclosing =>
             mkTarget(enclosing)
           }
-        
+
         prepareExtractions(source, targets)
       }
 

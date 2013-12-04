@@ -28,9 +28,22 @@ trait ValueExtractions extends Extractions {
     }
 
     def perform(abstractionName: String) = {
-      val abstr = ValueAbstraction(abstractionName, extractionSource, extractionSource.outboundLocalDeps)
-      extractionSource.replaceBy(abstr.call, preserveHierarchy = true) ::
-        extractionTarget.insert(abstr.abstraction) ::
+      val outboundDeps = extractionSource.outboundLocalDeps
+      val call = mkCallValDef(name, outboundDeps)
+
+      val returnStatements =
+        if (outboundDeps.isEmpty) Nil
+        else mkReturn(outboundDeps) :: Nil
+
+      val statements = extractionSource.selectedTopLevelTrees ::: returnStatements
+
+      val abstraction = statements match {
+        case expr :: Nil => mkValDef(abstractionName, expr)
+        case stmts => mkValDef(abstractionName, mkBlock(stmts))
+      }
+
+      extractionSource.replaceBy(call, preserveHierarchy = true) ::
+        extractionTarget.insert(abstraction) ::
         Nil
     }
   }
@@ -49,7 +62,7 @@ trait ValueExtractions extends Extractions {
       }
 
     def validTargets(source: Selection, targets: List[ExtractionTarget]) = targets.takeWhile { t =>
-      source.inboundDeps.forall(t.scope.sees(_))
+      source.inboundLocalDeps.forall(t.scope.sees(_))
     }
   }
 }

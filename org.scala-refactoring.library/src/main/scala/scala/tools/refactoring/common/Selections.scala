@@ -161,6 +161,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      */
     lazy val inboundLocalDeps = {
       val outmostOwnerInCU = filterSelected {
+        case t: PackageDef => true
         case t: ImplDef => true
         case _ => false
       }.head.symbol

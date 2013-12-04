@@ -50,30 +50,6 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def importScopes = {
-    val s = toSelection("""
-      import scala.collection.mutable
-        
-      class Demo{
-        import mutable.{LinkedList => LL}
-        import scala.math._
-        
-        def local = {
-          import mutable.Stack
-    	  /*(*/1/*)*/
-        }
-
-        import mutable.Set
-      }
-      """)
-
-    assertEquals(
-      "ImportScope(scala.collection.mutable.Stack) -> ImportScope(scala.math._) -> ImportScope(scala.collection.mutable.{LinkedList=>LL}) " +
-        "-> MemberScope(Demo) -> ImportScope(scala.collection.mutable) -> MemberScope(<empty>)",
-      ScopeTree.build(s.root, s.selectedTopLevelTrees.head).toString())
-  }
-
-  @Test
   def LocalScopes = {
     val s = toSelection("""
       class Demo(cp: Int){
@@ -355,16 +331,5 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
     assertEquals("MemberScope(Outer) -> MemberScope(<empty>)", scopes.findScopeFor(outer).toString())
     assertEquals("MemberScope(Inner) -> LocalScope(p) -> MemberScope(Outer) -> MemberScope(<empty>)", scopes.findScopeFor(inner).toString())
-  }
-
-  def findMarkedNodes(src: String, tree: Tree) = {
-    val start = commentSelectionStart(src)
-    val end = commentSelectionEnd(src)
-    FileSelection(tree.pos.source.file, tree, start, end)
-  }
-
-  def toSelection(src: String) = {
-    val tree = treeFrom(src)
-    findMarkedNodes(src, tree)
   }
 }

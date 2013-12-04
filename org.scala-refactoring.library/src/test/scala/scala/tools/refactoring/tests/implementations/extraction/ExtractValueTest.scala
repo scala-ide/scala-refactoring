@@ -141,4 +141,26 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("c", 2)).assertEqualTree
+
+  @Test
+  def extractImportedDependency = new FileSet {
+    """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+	  	  /*(*/Pi/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+	  	  /*(*/Pi/*)*/
+        }
+    
+    	val extracted = scala.math.Pi
+      }
+    """
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 }
