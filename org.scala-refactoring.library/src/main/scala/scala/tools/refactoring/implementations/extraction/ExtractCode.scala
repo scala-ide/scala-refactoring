@@ -24,13 +24,15 @@ trait AutoExtractions extends MethodExtractions with ValueExtractions {
         else ValueExtraction.validTargets(source, targets)
       val methodTargets =
         MethodExtraction.validTargets(source, targets diff valueTargets)
+        
+      val imports = buildImportTree(source.root)
 
       if (valueTargets.isEmpty && methodTargets.isEmpty)
         Left(noExtractionMsg)
       else
         Right(
-          valueTargets.map(ValueExtraction(source, _)) :::
-            methodTargets.map(MethodExtraction(source, _)))
+          valueTargets.map(ValueExtraction(source, _, imports)) :::
+            methodTargets.map(MethodExtraction(source, _, imports)))
     }
 
   }

@@ -96,7 +96,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
         }
       }
       """.selection
-    assertEquals("", sel.inboundLocalDeps.mkString(", "))
+    assertEquals("constructor A, class A, method apply, object N", sel.inboundLocalDeps.mkString(", "))
   }
 
   @Test

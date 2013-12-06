@@ -1,6 +1,7 @@
 package scala.tools.refactoring.implementations.extraction
 
 import scala.reflect.internal.Flags
+import scala.tools.refactoring.analysis.ImportAnalysis
 
 abstract class ExtractMethod extends ExtractionRefactoring with MethodExtractions {
   import global._
@@ -15,12 +16,13 @@ abstract class ExtractMethod extends ExtractionRefactoring with MethodExtraction
     perform(extraction)
 }
 
-trait MethodExtractions extends Extractions {
+trait MethodExtractions extends Extractions with ImportAnalysis {
   import global._
 
   case class MethodExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
+    imports: ImportTree,
     abstractionName: String = "",
     selectedParameters: List[Symbol] = Nil) extends Extraction {
 
@@ -53,7 +55,9 @@ trait MethodExtractions extends Extractions {
         if (outboundDeps.isEmpty) Nil
         else mkReturn(outboundDeps) :: Nil
 
-      val statements = extractionSource.selectedTopLevelTrees ::: returnStatements
+      val importStatements = extractionSource.selectedTopLevelTrees.flatMap(imports.findRequiredImports(_, extractionSource.pos, extractionTarget.enclosing.pos)).distinct
+
+      val statements = importStatements ::: extractionSource.selectedTopLevelTrees ::: returnStatements
 
       val abstraction = {
         /* We implement a simpler version of mkDefDef in order to address
@@ -96,11 +100,14 @@ trait MethodExtractions extends Extractions {
       }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
     }
 
-    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) =
+    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+      val imports = buildImportTree(source.root)
+
       validTargets(source, targets) match {
         case Nil => Left(noExtractionMsg)
-        case ts => Right(ts.map(t => MethodExtraction(source, t)))
+        case ts => Right(ts.map(t => MethodExtraction(source, t, imports)))
       }
+    }
 
     def validTargets(source: Selection, targets: List[ExtractionTarget]) = {
       targets.takeWhile { t =>

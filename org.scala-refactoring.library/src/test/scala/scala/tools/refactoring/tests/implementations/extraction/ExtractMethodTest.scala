@@ -81,4 +81,29 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 2, "na" :: Nil)).assertEqualTree
+
+  @Test
+  def extractImportedDependency = new FileSet {
+    """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+	  	  /*(*/Pi/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+	  	  extracted()
+        }
+    
+    	def extracted() = {
+    	  import scala.math.Pi
+    	  Pi
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", 2, Nil)).assertEqualTree
 }

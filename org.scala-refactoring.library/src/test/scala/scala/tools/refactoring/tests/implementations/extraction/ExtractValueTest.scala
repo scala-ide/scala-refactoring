@@ -155,11 +155,86 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       object Demo {
         def fn = {
           import scala.math.Pi
-	  	  /*(*/Pi/*)*/
+	  	  extracted
         }
     
-    	val extracted = scala.math.Pi
+    	val extracted = {
+    	  import scala.math.Pi
+          Pi
+        }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract("extracted", 2)).assertEqualTree
+
+  @Test
+  def extractImportedDependencyInSubtree = new FileSet {
+    """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+	  	  /*(*/100 * Pi/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn = {
+          import scala.math.Pi
+	  	  extracted
+        }
+    
+    	val extracted = {
+          import scala.math.Pi
+          100 * Pi
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", 2)).assertEqualTree
+
+  @Test
+  def extractImportedCtor = new FileSet {
+    """
+      object Demo {
+        def fn = {
+          import scala.collection.mutable.LinkedList
+	  	  /*(*/LinkedList(1)/*)*/
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn = {
+          import scala.collection.mutable.LinkedList
+    	  extracted
+        }
+    
+    	val extracted = {
+          import scala.collection.mutable.LinkedList
+          scala.collection.mutable.LinkedList(1)
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", 2)).assertEqualTree
+
+  @Test
+  def extractImportedCtorWithImportedQualifiers = new FileSet {
+    """
+      import scala.collection.mutable.LinkedList
+      object Demo {
+        def fn = {
+	  	  /*(*/LinkedList(1)/*)*/
+        }
+      }
+    """ becomes
+      """
+      import scala.collection.mutable.LinkedList
+      object Demo {
+        def fn = extracted
+
+        val extracted = {
+	  	  /*(*/LinkedList(1)/*)*/
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", 1)).assertEqualSource
 }

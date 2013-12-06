@@ -1,5 +1,7 @@
 package scala.tools.refactoring.implementations.extraction
 
+import scala.tools.refactoring.analysis.ImportAnalysis
+
 /**
  * Extracts one or more expressions into a new val definition.
  */
@@ -16,12 +18,13 @@ trait ExtractValue extends ExtractionRefactoring with ValueExtractions {
     perform(extraction)
 }
 
-trait ValueExtractions extends Extractions {
+trait ValueExtractions extends Extractions with ImportAnalysis {
   import global._
 
   case class ValueExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
+    imports: ImportTree,
     abstractionName: String = "") extends Extraction {
 
     val name = extractionTarget.enclosing match {
@@ -40,7 +43,9 @@ trait ValueExtractions extends Extractions {
         if (outboundDeps.isEmpty) Nil
         else mkReturn(outboundDeps) :: Nil
 
-      val statements = extractionSource.selectedTopLevelTrees ::: returnStatements
+      val importStatements = extractionSource.selectedTopLevelTrees.flatMap(imports.findRequiredImports(_, extractionSource.pos, extractionTarget.enclosing.pos)).distinct
+
+      val statements = importStatements ::: extractionSource.selectedTopLevelTrees ::: returnStatements
 
       val abstraction = statements match {
         case expr :: Nil => mkValDef(abstractionName, expr)
@@ -60,11 +65,14 @@ trait ValueExtractions extends Extractions {
       }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
     }
 
-    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) =
+    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+      val imports = buildImportTree(source.root)
+
       validTargets(source, targets) match {
         case Nil => Left(noExtractionMsg)
-        case ts => Right(ts.map(t => ValueExtraction(source, t)))
+        case ts => Right(ts.map(t => ValueExtraction(source, t, imports)))
       }
+    }
 
     def validTargets(source: Selection, targets: List[ExtractionTarget]) = targets.takeWhile { t =>
       source.inboundLocalDeps.forall(t.scope.sees(_))
