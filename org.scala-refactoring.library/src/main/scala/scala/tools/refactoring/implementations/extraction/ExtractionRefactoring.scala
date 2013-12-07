@@ -56,6 +56,11 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
   }
 
   case class ExtractionTarget(scope: ScopeTree, enclosing: Tree, ip: InsertionPosition) {
+    /**
+     * Approximated position where new trees are inserted.
+     */
+    lazy val pos = ip(enclosing).pos
+    
     def insert(t: Tree): Transformation[Tree, Tree] =
       topdown {
         matchingChildren {

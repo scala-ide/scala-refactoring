@@ -55,7 +55,7 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
         if (outboundDeps.isEmpty) Nil
         else mkReturn(outboundDeps) :: Nil
 
-      val importStatements = extractionSource.selectedTopLevelTrees.flatMap(imports.findRequiredImports(_, extractionSource.pos, extractionTarget.enclosing.pos)).distinct
+      val importStatements = extractionSource.selectedTopLevelTrees.flatMap(imports.findRequiredImports(_, extractionSource.pos, extractionTarget.pos))
 
       val statements = importStatements ::: extractionSource.selectedTopLevelTrees ::: returnStatements
 
