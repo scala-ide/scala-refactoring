@@ -37,7 +37,9 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
       }
 
     lazy val optionalParameters =
-      extractionSource.inboundLocalDeps diff requiredParameters
+      extractionSource.inboundLocalDeps filter { s =>
+        isAllowedAsParameter(s)
+      } diff requiredParameters
 
     def withAbstractionName(name: String) =
       copy(abstractionName = name).asInstanceOf[this.type]
@@ -117,7 +119,5 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
   }
 
   def isAllowedAsParameter(s: Symbol) =
-    s.isValue &&
-      !s.name.isOperatorName &&
-      !s.isImplicit
+    s.isValue && (s.isVal || s.isAccessor)
 }
