@@ -3,26 +3,34 @@ package scala.tools.refactoring.implementations.extraction
 import scala.reflect.internal.Flags
 import scala.tools.refactoring.analysis.ImportAnalysis
 
-abstract class ExtractMethod extends ExtractionRefactoring with MethodExtractions {
-  import global._
-
-  type E = MethodExtraction
-
-  val collector = MethodExtraction
-
-  type RefactoringParameters = E
-
-  def perform(s: Selection, prepared: PreparationResult, extraction: RefactoringParameters) =
-    perform(extraction)
-}
+abstract class ExtractMethod extends ExtractionRefactoring with MethodExtractions
 
 trait MethodExtractions extends Extractions with ImportAnalysis {
   import global._
 
+  def prepareExtractionSource(s: Selection) = {
+    findExtractionSource(s.expand) { s =>
+      (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
+    }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
+  }
+
+  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    val validTargets = targets.takeWhile { t =>
+      source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
+    }
+
+    validTargets match {
+      case Nil => Left(noExtractionMsg)
+      case ts => Right(ts.map(t => MethodExtraction(source, t)))
+    }
+  }
+
+  def isAllowedAsParameter(s: Symbol) =
+    s.isValue && (s.isVal || s.isAccessor)
+
   case class MethodExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    imports: ImportTree,
     abstractionName: String = "",
     selectedParameters: List[Symbol] = Nil) extends Extraction {
 
@@ -39,11 +47,7 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
     lazy val optionalParameters =
       extractionSource.inboundLocalDeps diff requiredParameters
 
-    def withAbstractionName(name: String) =
-      copy(abstractionName = name).asInstanceOf[this.type]
-
-    def withSelectedParameters(params: List[Symbol]) =
-      copy(selectedParameters = params)
+    lazy val imports = buildImportTree(extractionSource.root)
 
     def perform() = {
       val parameters = requiredParameters union selectedParameters
@@ -91,31 +95,11 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
         extractionTarget.insert(abstraction) ::
         Nil
     }
+
+    def withAbstractionName(name: String) =
+      copy(abstractionName = name).asInstanceOf[this.type]
+
+    def withSelectedParameters(params: List[Symbol]) =
+      copy(selectedParameters = params)
   }
-
-  object MethodExtraction extends ExtractionCollector[MethodExtraction] {
-    def prepareExtractionSource(s: Selection) = {
-      findExtractionSource(s.expand) { s =>
-        (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
-      }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
-    }
-
-    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
-      val imports = buildImportTree(source.root)
-
-      validTargets(source, targets) match {
-        case Nil => Left(noExtractionMsg)
-        case ts => Right(ts.map(t => MethodExtraction(source, t, imports)))
-      }
-    }
-
-    def validTargets(source: Selection, targets: List[ExtractionTarget]) = {
-      targets.takeWhile { t =>
-        source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
-      }
-    }
-  }
-
-  def isAllowedAsParameter(s: Symbol) =
-    s.isValue && (s.isVal || s.isAccessor)
 }

@@ -57,6 +57,27 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
   }
 
   /**
+   * Inserts ValDef trees at the end of a parameter list.
+   */
+  lazy val atEndOfValueParameterList: InsertionPosition = {
+    case enclosing @ DefDef(_, _, _, vparamss, _, _) =>
+      val lastParamOpt = vparamss.lastOption.flatMap(_.lastOption)
+      lastParamOpt match {
+        case Some(lastParam) =>
+          mkParameterIp(enclosing, p => vparamss.init :+ (vparamss.last :+ p), lastParam.pos)
+        case None =>
+          mkParameterIp(enclosing, p => List(List(p)), enclosing.pos)
+      }
+  }
+
+  private def mkParameterIp(enclosing: DefDef, mkParams: ValDef => List[List[ValDef]], pos: Position) = {
+    InsertionPoint(enclosing, { insertion =>
+      assert(insertion.isInstanceOf[ValDef])
+      enclosing copy (vparamss = mkParams(insertion.asInstanceOf[ValDef]))
+    }, pos)
+  }
+
+  /**
    * Inserts trees as the first statement in a case body (rhs).
    */
   lazy val atBeginningOfCaseBody: InsertionPosition = {

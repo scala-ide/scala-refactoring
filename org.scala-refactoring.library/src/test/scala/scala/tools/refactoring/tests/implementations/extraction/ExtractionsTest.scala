@@ -6,7 +6,7 @@ import org.junit.Assert._
 
 class ExtractionsTest extends TestHelper with Extractions {
   @Test
-  def extractionTargets = {
+  def findExtractionTargets = {
     val s = toSelection("""
       object O{
         def fn = {
@@ -16,10 +16,10 @@ class ExtractionsTest extends TestHelper with Extractions {
       }
     """)
 
-    FakeCollector.collectExtractions(s)
-    assertEquals(2, FakeCollector.extractionTargets.length)
+    collectExtractions(s)
+    assertEquals(2, extractionTargets.length)
   }
-  
+
   @Test
   def noExtractionTargetsForSyntheticScopes = {
     val s = toSelection("""
@@ -29,18 +29,16 @@ class ExtractionsTest extends TestHelper with Extractions {
       }
     """)
 
-    FakeCollector.collectExtractions(s)
-    assertEquals(2, FakeCollector.extractionTargets.length)
+    collectExtractions(s)
+    assertEquals(2, extractionTargets.length)
   }
 
-  object FakeCollector extends ExtractionCollector[Extraction] {
-    var extractionTargets: List[ExtractionTarget] = Nil
+  var extractionTargets: List[ExtractionTarget] = Nil
 
-    def prepareExtractionSource(s: Selection): Either[PreparationError, Selection] = Right(s)
+  def prepareExtractionSource(s: Selection): Either[PreparationError, Selection] = Right(s)
 
-    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[PreparationError, List[Extraction]] = {
-      extractionTargets = targets
-      Left("")
-    }
+  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[PreparationError, List[Extraction]] = {
+    extractionTargets = targets
+    Left("")
   }
 }

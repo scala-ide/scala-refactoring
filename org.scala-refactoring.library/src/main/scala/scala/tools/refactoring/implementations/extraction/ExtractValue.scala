@@ -5,26 +5,31 @@ import scala.tools.refactoring.analysis.ImportAnalysis
 /**
  * Extracts one or more expressions into a new val definition.
  */
-trait ExtractValue extends ExtractionRefactoring with ValueExtractions {
-  import global._
-
-  type E = ValueExtraction
-
-  val collector = ValueExtraction
-
-  type RefactoringParameters = E
-
-  def perform(s: Selection, prepared: PreparationResult, extraction: RefactoringParameters) =
-    perform(extraction)
-}
+trait ExtractValue extends ExtractionRefactoring with ValueExtractions
 
 trait ValueExtractions extends Extractions with ImportAnalysis {
   import global._
 
+  def prepareExtractionSource(s: Selection) = {
+    findExtractionSource(s.expand) { s =>
+      (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
+    }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
+  }
+
+  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    val validTargets = targets.takeWhile { t =>
+      source.inboundLocalDeps.forall(t.scope.sees(_))
+    }
+
+    validTargets match {
+      case Nil => Left(noExtractionMsg)
+      case ts => Right(ts.map(t => ValueExtraction(source, t)))
+    }
+  }
+
   case class ValueExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    imports: ImportTree,
     abstractionName: String = "") extends Extraction {
 
     val name = extractionTarget.enclosing match {
@@ -34,6 +39,8 @@ trait ValueExtractions extends Extractions with ImportAnalysis {
 
     def withAbstractionName(name: String) =
       copy(abstractionName = name).asInstanceOf[this.type]
+    
+    lazy val imports = buildImportTree(extractionSource.root)
 
     def perform() = {
       val outboundDeps = extractionSource.outboundLocalDeps
@@ -55,27 +62,6 @@ trait ValueExtractions extends Extractions with ImportAnalysis {
       extractionSource.replaceBy(call, preserveHierarchy = true) ::
         extractionTarget.insert(abstraction) ::
         Nil
-    }
-  }
-
-  object ValueExtraction extends ExtractionCollector[ValueExtraction] {
-    def prepareExtractionSource(s: Selection) = {
-      findExtractionSource(s.expand) { s =>
-        (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
-      }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
-    }
-
-    def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
-      val imports = buildImportTree(source.root)
-
-      validTargets(source, targets) match {
-        case Nil => Left(noExtractionMsg)
-        case ts => Right(ts.map(t => ValueExtraction(source, t, imports)))
-      }
-    }
-
-    def validTargets(source: Selection, targets: List[ExtractionTarget]) = targets.takeWhile { t =>
-      source.inboundLocalDeps.forall(t.scope.sees(_))
     }
   }
 }

@@ -9,7 +9,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   def extract(name: String, extractionIdx: Int, selectedParams: List[String])(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
-      val e = preparationResult.right.get.extractions(extractionIdx)
+      val e = preparationResult.right.get.extractions(extractionIdx).asInstanceOf[refactoring.MethodExtraction]
       val extraction = e.copy(abstractionName = name,
         selectedParameters = e.optionalParameters.filter(sym => selectedParams.contains(sym.nameString)))
     }

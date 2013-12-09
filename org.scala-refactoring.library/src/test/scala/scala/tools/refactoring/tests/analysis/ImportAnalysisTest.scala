@@ -94,6 +94,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis{
   }
 
   @Test
+  @Ignore
   def importsOfValueMembers = {
     val s = toSelection("""
     package pkg
