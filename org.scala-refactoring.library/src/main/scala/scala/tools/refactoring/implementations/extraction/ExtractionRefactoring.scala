@@ -114,8 +114,8 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
     def prepareInsertionPosition(s: Selection): InsertionPosition = {
       s.beforeSelectionInBlock orElse
         s.afterSelectionInTemplate orElse
-        atBeginningOfDefDef orElse
-        atBeginningOfFunction orElse
+        atBeginningOfNewDefBody orElse
+        atBeginningOfNewFunctionBody orElse
         atBeginningOfCaseBody
     }
 

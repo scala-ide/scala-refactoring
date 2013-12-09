@@ -105,5 +105,5 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 2, Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", 1, Nil)).assertEqualTree
 }

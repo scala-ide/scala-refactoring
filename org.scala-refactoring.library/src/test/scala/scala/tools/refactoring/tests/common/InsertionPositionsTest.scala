@@ -136,7 +136,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
     object O{
       def fn(a: Int) = /*(*/println(a)/*)*/
     }
-    """.inScope(_.expandTo[DefDef].get.enclosingTree).atPosition(_ => atBeginningOfDefDef)
+    """.inScope(_.expandTo[DefDef].get.enclosingTree).atPosition(_ => atBeginningOfNewDefBody)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       def fn(a: Int) = {
@@ -151,7 +151,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
     object O{
       val fn = (a: Int) => /*(*/println(a)/*)*/
     }
-    """.inScope(_.expandTo[Function].get.enclosingTree).atPosition(_ => atBeginningOfFunction)
+    """.inScope(_.expandTo[Function].get.enclosingTree).atPosition(_ => atBeginningOfNewFunctionBody)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       val fn = (a: Int) => {

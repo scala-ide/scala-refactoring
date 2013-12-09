@@ -139,7 +139,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         def fm = 7
       }
     """
-  }.performRefactoring(extract("c", 2)).assertEqualTree
+  }.performRefactoring(extract("c", 1)).assertEqualTree
 
   @Test
   def extractImportedDependency = new FileSet {
@@ -164,7 +164,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 2)).assertEqualTree
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
   def extractImportedDependencyInSubtree = new FileSet {
@@ -189,7 +189,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 2)).assertEqualTree
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
   def extractImportedCtor = new FileSet {
@@ -214,7 +214,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 2)).assertEqualTree
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
   def extractImportedCtorWithImportedQualifiers = new FileSet {
