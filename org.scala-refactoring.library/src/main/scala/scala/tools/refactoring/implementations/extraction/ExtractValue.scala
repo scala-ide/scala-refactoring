@@ -39,7 +39,7 @@ trait ValueExtractions extends Extractions with ImportAnalysis {
 
     def withAbstractionName(name: String) =
       copy(abstractionName = name).asInstanceOf[this.type]
-    
+
     lazy val imports = buildImportTree(extractionSource.root)
 
     def perform() = {
@@ -55,7 +55,14 @@ trait ValueExtractions extends Extractions with ImportAnalysis {
       val statements = importStatements ::: extractionSource.selectedTopLevelTrees ::: returnStatements
 
       val abstraction = statements match {
-        case expr :: Nil => mkValDef(abstractionName, expr)
+        case expr :: Nil =>
+          expr match {
+            // Add explicit type annotations for extracted functions
+            case Function(args, body) =>
+              mkValDef(abstractionName, expr, TypeTree(expr.tpe))
+            case t =>
+              mkValDef(abstractionName, expr)
+          }
         case stmts => mkValDef(abstractionName, mkBlock(stmts))
       }
 

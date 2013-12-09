@@ -85,7 +85,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
       val scopes = ScopeTree.build(source)
       val mkTarget = prepareExtractionTarget(ip, scopes)_
       val targets = source
-        .filterSelected(_ => true)
+        .filterSelected(t => t.pos != source.pos)
         .reverse
         .flatMap { enclosing =>
           mkTarget(enclosing)

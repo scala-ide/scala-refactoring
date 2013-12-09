@@ -242,6 +242,23 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """
     }
 
+  @Test
+  def expandAnonFunWithWildcardParam =
+    """
+    class C{
+      List(1).map(/*(*/_ + 1/*)*/)
+    }
+    """.withSelection { orig =>
+      val expanded = orig.expand
+      val fn = orig.root.collect{
+        case t: Function => t
+      }.head
+      
+      assertEquals(fn, expanded.selectedTopLevelTrees.head)
+      assertTrue(fn.pos.sameRange(expanded.pos))
+      assertEquals(fn, expanded.enclosingTree)
+    }
+
   implicit class StringToSel(src: String) {
     def withSelection[T](fn: Selection => T) = {
       val tree = treeFrom(src)

@@ -60,10 +60,15 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     /**
      * Returns the tree that encloses the whole selection.
      */
-    lazy val enclosingTree =
+    lazy val enclosingTree = {
+      var headTraversed = false
       findSelectedWithPredicate {
-        case t => t.pos.includes(pos)
+        case t if t == selectedTopLevelTrees.headOption.getOrElse(EmptyTree) =>
+          headTraversed = true
+          t.pos.includes(pos)
+        case t => !headTraversed && t.pos.includes(pos)
       }.getOrElse(root)
+    }
 
     /**
      * Returns true if the given Tree is fully contained in the selection.
