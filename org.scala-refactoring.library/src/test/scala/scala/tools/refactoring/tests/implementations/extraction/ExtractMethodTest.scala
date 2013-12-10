@@ -106,4 +106,31 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 1, Nil)).assertEqualTree
+
+  @Test
+  @Ignore("Has to be handled in pretty printer")
+  def hideImportedQualifiersOfParameter = new FileSet {
+    """
+      import scala.collection.mutable.LinkedList
+      object Demo {
+        def fn = {
+          val l = new LinkedList[Int]
+          /*(*/l.length/*)*/
+        }
+      }
+    """ becomes
+      """
+      import scala.collection.mutable.LinkedList
+      object Demo {
+        def fn = {
+          val l = new LinkedList[Int]
+          extracted(l)
+        }
+
+        def extracted(l: LinkedList[Int]): Int = {
+          /*(*/l.length/*)*/
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", 1, Nil)).assertEqualSource
 }
