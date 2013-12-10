@@ -35,9 +35,9 @@ class ExtractionsTest extends TestHelper with Extractions {
 
   var extractionTargets: List[ExtractionTarget] = Nil
 
-  def prepareExtractionSource(s: Selection): Either[PreparationError, Selection] = Right(s)
+  def prepareExtractionSource(s: Selection): Either[ErrorMsg, Selection] = Right(s)
 
-  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[PreparationError, List[Extraction]] = {
+  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[ErrorMsg, List[Extraction]] = {
     extractionTargets = targets
     Left("")
   }

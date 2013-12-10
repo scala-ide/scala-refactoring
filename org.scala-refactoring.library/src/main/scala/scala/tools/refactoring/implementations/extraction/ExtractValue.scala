@@ -30,9 +30,9 @@ trait ValueExtractions extends Extractions with ImportAnalysis {
   case class ValueExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    abstractionName: String = "") extends Extraction {
+    abstractionName: String = defaultAbstractionName) extends Extraction {
 
-    val name = extractionTarget.enclosing match {
+    val dsiplayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Value to ${t.symbol.owner.decodedName}"
       case _ => "Extract Local Value"
     }

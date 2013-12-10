@@ -49,7 +49,10 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
 
     val extractionTarget: ExtractionTarget
 
-    val name: String
+    /**
+     * A brief description of the extraction.
+     */
+    val dsiplayName: String
 
     def perform(): List[Transformation[Tree, Tree]]
 
@@ -67,25 +70,27 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
         matchingChildren {
           transform {
             case e if e.samePosAndType(enclosing) =>
-              ip(e)(t) replaces e
+              ip(e)(t)
           }
         }
       }
   }
 
-  type PreparationError = String
+  type ErrorMsg = String
+  
+  val defaultAbstractionName = "extracted"
 
   /**
    * Collects a list of extractions that are applicable for selection `s`
    * If no extraction is applicable an appropriate error message is returned.
    */
-  def collectExtractions(s: Selection): Either[PreparationError, List[Extraction]] = {
+  def collectExtractions(s: Selection): Either[ErrorMsg, List[Extraction]] = {
     def inner(source: Selection) = {
       val ip = prepareInsertionPosition(source)
       val scopes = ScopeTree.build(source)
       val mkTarget = prepareExtractionTarget(ip, scopes)_
       val targets = source
-        .filterSelected(t => t.pos != source.pos)
+        .filterSelected(t => !t.pos.sameRange(source.pos))
         .reverse
         .flatMap { enclosing =>
           mkTarget(enclosing)
@@ -106,7 +111,13 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
    * Expands the selection `s` if necessary or returns an error message if no
    * extraction is not applicable.
    */
-  def prepareExtractionSource(s: Selection): Either[PreparationError, Selection]
+  def prepareExtractionSource(s: Selection): Either[ErrorMsg, Selection]
+
+  def findExtractionSource(s: Selection)(pred: Selection => Boolean): Option[Selection] =
+    if (pred(s))
+      Some(s)
+    else
+      s.expandToNextEnclosingTree.flatMap(findExtractionSource(_)(pred))
 
   def prepareInsertionPosition(s: Selection): InsertionPosition = {
     s.beforeSelectionInBlock orElse
@@ -125,11 +136,5 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
     }
   }
 
-  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[PreparationError, List[Extraction]]
-
-  def findExtractionSource(s: Selection)(pred: Selection => Boolean): Option[Selection] =
-    if (pred(s))
-      Some(s)
-    else
-      s.expandToNextEnclosingTree.flatMap(findExtractionSource(_)(pred))
+  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[ErrorMsg, List[Extraction]]
 }

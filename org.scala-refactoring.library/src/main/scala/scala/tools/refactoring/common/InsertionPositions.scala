@@ -17,15 +17,10 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
    */
   case class InsertionPoint(enclosing: Tree, mkEnclosing: Tree => Tree, pos: Position) extends (Tree => Tree) {
     /**
-     * Returns a new tree that contains every tree of enclosing
-     * and insertion inserted at the appropriate position.
+     * Returns a enclosing with insertion inserted at the
+     * appropriate position.
      */
     def apply(insertion: Tree) = mkEnclosing(insertion)
-  }
-
-  private def insertInSeq(stats: List[Tree], insertion: Tree, isBeforeInsertionPoint: Position => Boolean) = {
-    val (before, after) = stats.span((t: Tree) => isBeforeInsertionPoint(t.pos))
-    before ::: insertion :: after ::: Nil
   }
 
   /**
@@ -44,7 +39,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
 
   /**
    * Inserts trees as the first statement in a function body.
-   * Note: Functions of the form `_ + 1` are not treated as insertion position.
+   * Note: Functions of the form `_ + 1` are not treated as insertion positions.
    */
   lazy val atBeginningOfNewFunctionBody: InsertionPosition = {
     case enclosing @ Function(vparams, NoBlock(body)) if enclosing.pos.isOpaqueRange && !vparams.exists(_.symbol.isSynthetic) =>
@@ -54,6 +49,21 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
     case enclosing @ Function(_, body) if isSyntheticBlock(body) =>
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertion :: body :: Nil))
+      }, body.pos)
+  }
+
+  def isSyntheticBlock(t: Tree) = t match {
+    case Block((v: ValDef) :: Nil, _) if v.symbol.isSynthetic => true
+    case _ => false
+  }
+
+  /**
+   * Inserts trees as the first statement in a case body (rhs).
+   */
+  lazy val atBeginningOfCaseBody: InsertionPosition = {
+    case enclosing @ CaseDef(_, _, body) =>
+      InsertionPoint(enclosing, { insertion =>
+        enclosing copy (body = mkBlock(insertion :: body :: Nil)) replaces enclosing
       }, body.pos)
   }
 
@@ -74,29 +84,21 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
   private def mkParameterIp(enclosing: DefDef, mkParams: ValDef => List[List[ValDef]], pos: Position) = {
     InsertionPoint(enclosing, { insertion =>
       assert(insertion.isInstanceOf[ValDef])
-      enclosing copy (vparamss = mkParams(insertion.asInstanceOf[ValDef]))
+      val param = insertion.asInstanceOf[ValDef]
+
+      enclosing copy (vparamss = mkParams(param))
     }, pos)
   }
-
+  
   /**
-   * Inserts trees as the first statement in a case body (rhs).
+   * Inserts a tree at the end of an argument list.
    */
-  lazy val atBeginningOfCaseBody: InsertionPosition = {
-    case enclosing @ CaseDef(_, _, body) =>
+  lazy val atEndOfArgumentList: InsertionPosition = {
+    case enclosing @ Apply(fun, args) =>
       InsertionPoint(enclosing, { insertion =>
-        enclosing copy (body = mkBlock(insertion :: body :: Nil))
-      }, body.pos)
+          enclosing copy (args = args :+ insertion)
+      }, enclosing.pos)
   }
-
-  def isSyntheticBlock(t: Tree) = t match {
-    case Block((v: ValDef) :: Nil, _) if v.symbol.isSynthetic => true
-    case _ => false
-  }
-
-  /**
-   * Inserts trees as additional method parameters.
-   */
-  lazy val atEndOfParameterList: InsertionPosition = ???
 
   implicit class SelectionDependentInsertionPoints(selection: Selection) {
     /**
@@ -144,5 +146,10 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
     private def isBeforeEndOfSelection(pos: Position) = {
       !pos.isRange || pos.start < selection.pos.end
     }
+  }
+
+  private def insertInSeq(stats: List[Tree], insertion: Tree, isBeforeInsertionPoint: Position => Boolean) = {
+    val (before, after) = stats.span((t: Tree) => isBeforeInsertionPoint(t.pos))
+    before ::: insertion :: after ::: Nil
   }
 }

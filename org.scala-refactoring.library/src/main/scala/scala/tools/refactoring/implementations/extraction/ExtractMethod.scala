@@ -31,10 +31,10 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
   case class MethodExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    abstractionName: String = "",
+    abstractionName: String = defaultAbstractionName,
     selectedParameters: List[Symbol] = Nil) extends Extraction {
 
-    val name = extractionTarget.enclosing match {
+    val dsiplayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Method to ${t.symbol.owner.decodedName}"
       case _ => s"Extract Local Method"
     }
@@ -76,7 +76,7 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
             s.tpe.baseTypeSeq(0)
           else
             s.tpe
-          new ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(tpe), EmptyTree)
+          ValDef(Modifiers(Flags.PARAM), newTermName(s.nameString), TypeTree(tpe), EmptyTree)
         }
 
         val ps = parameters.map(symbolToParam) :: Nil

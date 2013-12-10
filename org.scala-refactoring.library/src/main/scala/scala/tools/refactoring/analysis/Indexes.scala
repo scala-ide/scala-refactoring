@@ -93,7 +93,7 @@ trait Indexes {
      * Returns all overrides of the symbol s.
      */
     def overridesInClasses(s: global.Symbol): List[global.Symbol] =
-      completeClassHierarchy(s.owner) map s.overridingSymbol  filter (_.pos.isDefined)
+      completeClassHierarchy(s.owner) map s.overridingSymbol filter (_.pos.isDefined)
 
     /**
      * From a position, returns the symbols that contain a tree
@@ -103,6 +103,18 @@ trait Indexes {
      * trees in the index.
      */
     def positionToSymbol(p: global.Position): List[global.Symbol]
+
+    /**
+     * Returns all Apply trees on method `s`.
+     */
+    def appliesOf(s: global.Symbol): List[global.Tree] = {
+      references(s) flatMap { ref =>
+        rootsOf(ref :: Nil).find {
+          case t @ global.Apply(fun, _) if fun == ref => true
+          case _ => false
+        }
+      }
+    }
 
     /**
      * Add more convenience functions here..

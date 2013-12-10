@@ -104,6 +104,10 @@ trait TreeFactory {
       case _ => valDef
     }
   }
+  
+  def mkParam(name: String, tpe: Type, defaultVal: Tree = EmptyTree): ValDef = {
+    ValDef(Modifiers(Flags.PARAM), newTermName(name), TypeTree(tpe), defaultVal)
+  }
 
   def mkCallDefDef(name: String, arguments: List[List[Symbol]] = Nil :: Nil, returns: List[Symbol] = Nil): Tree = {
 
