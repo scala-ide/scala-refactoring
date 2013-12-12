@@ -343,7 +343,7 @@ trait TreeTraverser {
             case _ => ()
           }
 
-        case t: This if t.pos.isRange =>
+        case t: This if t.pos.isOpaqueRange =>
           f(t.symbol, t)
 
         case _ => ()
