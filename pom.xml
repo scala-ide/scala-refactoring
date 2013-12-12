@@ -37,7 +37,6 @@
     <scala.version>2.10.4-SNAPSHOT</scala.version>
     <version.suffix>2_10</version.suffix>
     <tycho.version>0.18.1</tycho.version>
-    <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
     <scala.binary.version>2.11.0-M5</scala.binary.version>
     <scala.xml.version>1.0.0-RC5</scala.xml.version>
