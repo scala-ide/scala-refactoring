@@ -281,14 +281,13 @@
   <profiles>
     <profile>
       <id>scala-2.10.x</id>
-      <properties>
-        <version.suffix>2_10</version.suffix>
-      </properties>
+      <!-- default -->
     </profile>
     <profile>
       <id>scala-2.11.x</id>
       <properties>
         <version.suffix>2_11</version.suffix>
+        <scala.version>2.11.0-SNAPSHOT</scala.version>
       </properties>
       <dependencies>
         <dependency>
