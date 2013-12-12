@@ -34,8 +34,8 @@
     </developer>
   </developers>
   <properties>
-    <scala.version>2.9.2</scala.version>
-    <version.suffix>2_09</version.suffix>
+    <scala.version>2.10.4-SNAPSHOT</scala.version>
+    <version.suffix>2_10</version.suffix>
     <tycho.version>0.18.1</tycho.version>
     <repo.scala-ide>http://download.scala-ide.org</repo.scala-ide>
     <encoding>UTF-8</encoding>
@@ -279,13 +279,6 @@
     </plugins>
   </reporting>
   <profiles>
-    <profile>
-      <id>scala-2.9.x</id>
-      <properties>
-        <scalac.options>-Ydependent-method-types</scalac.options>
-        <version.suffix>2_09</version.suffix>
-      </properties>
-    </profile>
     <profile>
       <id>scala-2.10.x</id>
       <properties>
