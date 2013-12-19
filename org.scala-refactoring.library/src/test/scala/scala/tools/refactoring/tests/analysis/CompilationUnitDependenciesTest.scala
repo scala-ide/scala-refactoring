@@ -794,9 +794,16 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def implicitDef = assertDependencies(
-    """ClassTag.Byte
+    """scala.reflect.ClassTag
        scala.this.Predef.byteArrayOps""",
     """class ImplicitDef {
+
+      // In Scala 2.10.x, the macro expansion was seen in the presentation compiler
+      // and a dependency on ClassTag.Byte was detected. After the change in
+      // 2.11 to keep the macro expandee in the tree, this is no longer reported.
+      // Here, we add the implicit ourselves to make the test behave the same on
+      // both Scala versions.
+      implicit def byteClassTag: scala.reflect.ClassTag[Byte] = null
 
       val readBuffer = Array.ofDim[Byte](1024)
       val dataId: (Byte, Byte) = readBuffer.slice(0, 2)
