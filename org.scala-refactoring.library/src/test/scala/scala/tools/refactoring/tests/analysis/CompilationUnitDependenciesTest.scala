@@ -17,17 +17,15 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   private def assertTrees(expected: String, src: String, f: Tree => Seq[Tree]) {
     val tree = treeFrom(src)
-    val imports = f(tree).sortBy(_.toString).map(asString)
+    val imports = global.ask(() => f(tree).sortBy(_.toString).map(asString))
     assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n"))
   }
 
-  def assertNeededImports(expected: String, src: String): Unit = global.ask { () =>
+  def assertNeededImports(expected: String, src: String): Unit =
     assertTrees(expected, src, neededImports)
-  }
 
-  def assertDependencies(expected: String, src: String): Unit = global.ask { () =>
+  def assertDependencies(expected: String, src: String): Unit =
     assertTrees(expected, src, dependencies)
-  }
 
   @Test
   def evidenceNoImport = assertNeededImports(
