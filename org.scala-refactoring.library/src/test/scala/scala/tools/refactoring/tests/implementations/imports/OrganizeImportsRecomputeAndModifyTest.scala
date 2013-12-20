@@ -72,14 +72,14 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   @Test
   def removeOneFromMany = new FileSet {
     """
-    import java.lang.{String, Math}
+    import collection.mutable.{HashSet, Queue}
 
-    object Main {val s: String = ""}
+    object Main {val s: HashSet[_] = null}
     """ becomes
     """
-    import java.lang.String
+    import collection.mutable.HashSet
 
-    object Main {val s: String = ""}
+    object Main {val s: HashSet[_] = null}
     """
   } applyRefactoring organize
 

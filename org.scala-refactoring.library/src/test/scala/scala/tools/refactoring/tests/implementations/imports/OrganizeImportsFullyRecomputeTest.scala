@@ -157,29 +157,29 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   @Test
   def collapse = new FileSet {
     """
-    import java.lang.String
-    import java.lang.Object
+    import scala.collection.mutable.Set
+    import scala.collection.mutable.Queue
 
-    object Main {val s: String = ""; var o: Object = null}
+    object Main {val s: Set[_] = null; var q: Queue[_] = null}
     """ becomes
     """
-    import java.lang.{Object, String}
+    import scala.collection.mutable.{Queue, Set}
 
-    object Main {val s: String = ""; var o: Object = null}
+    object Main {val s: Set[_] = null; var q: Queue[_] = null}
     """
   } applyRefactoring organize
 
   @Test
   def sortSelectors = new FileSet {
     """
-    import java.lang.{String, Object}
+    import scala.collection.mutable.{Set, Queue}
 
-    object Main {val s: String = ""; var o: Object = null}
+    object Main {val s: Set[_] = null; var q: Queue[_] = null}
     """ becomes
     """
-    import java.lang.{Object, String}
+    import scala.collection.mutable.{Queue, Set}
 
-    object Main {val s: String = ""; var o: Object = null}
+    object Main {val s: Set[_] = null; var q: Queue[_] = null}
     """
   } applyRefactoring organize
 
@@ -187,45 +187,44 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   def sortAndCollapse = new FileSet {
     """
     import scala.collection.mutable.ListBuffer
-    import java.lang.String
-    import java.lang.Object
+    import scala.collection.mutable.Set
+    import scala.collection.mutable.Queue
 
-    object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
+    object Main {val s: Set[_] = null; var q: Queue[_] = null; val lb = ListBuffer(1)}
     """ becomes
     """
-    import java.lang.{Object, String}
-    import scala.collection.mutable.ListBuffer
+    import scala.collection.mutable.{ListBuffer, Queue, Set}
 
-    object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
+    object Main {val s: Set[_] = null; var q: Queue[_] = null; val lb = ListBuffer(1)}
     """
   } applyRefactoring organize
 
   @Test
   def collapseWithRename = new FileSet {
     """
-    import java.lang.{String => S}
-    import java.lang.{Object => Objekt}
+    import collection.mutable.{Set => S}
+    import collection.mutable.{Queue => Q}
 
-    object Main {val s: String = ""; var o: Objekt = null}
+    object Main {val s: S[_] = null; var o: Q[_] = null}
     """ becomes
     """
-    import java.lang.{Object => Objekt}
+    import scala.collection.mutable.{Queue => Q, Set => S}
 
-    object Main {val s: String = ""; var o: Objekt = null}
+    object Main {val s: S[_] = null; var o: Q[_] = null}
     """
   } applyRefactoring organize
 
   @Test
   def removeOneFromMany = new FileSet {
     """
-    import java.lang.{String, Math}
+    import collection.mutable.{HashSet, Queue}
 
-    object Main {val s: String = ""}
+    object Main {val s: HashSet[_] = null}
     """ becomes
     """
-    import java.lang.String
+    import scala.collection.mutable.HashSet
 
-    object Main {val s: String = ""}
+    object Main {val s: HashSet[_] = null}
     """
   } applyRefactoring organize
 
@@ -271,31 +270,30 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """
 
     import scala.collection.mutable.ListBuffer
-    import java.lang.String
+    import scala.collection.mutable.Seq
 
-    object Main { val s: String = ""; val lb = ListBuffer("") }
+    object Main { val s: Seq[_] = null; val lb = ListBuffer("") }
   """ becomes
   """
 
-    import java.lang.String
-    import scala.collection.mutable.ListBuffer
+    import scala.collection.mutable.{ListBuffer, Seq}
 
-    object Main { val s: String = ""; val lb = ListBuffer("") }
+    object Main { val s: Seq[_] = null; val lb = ListBuffer("") }
   """
   } applyRefactoring organize
 
   @Test
   def importAllWithRename = new FileSet {
     """
-    import java.lang._
-    import java.lang.{String => S}
+    import collection.mutable._
+    import collection.mutable.{Set => S}
 
-    object Main { val s: String = "" }
+    object Main { val s: Set[_] = null }
     """ becomes
     """
-    import java.lang.String
+    import scala.collection.mutable.Set
 
-    object Main { val s: String = "" }
+    object Main { val s: Set[_] = null }
     """
   } applyRefactoring organize
 
@@ -315,7 +313,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       }
     """ becomes
     """
-    import java.lang.String
     import scala.collection.mutable.ListBuffer
 
     object Main {
@@ -335,7 +332,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       val s: String = ""
       val s1 = valueOf(2);
     }    """ becomes """
-    import java.lang.String
     import java.lang.String.valueOf
 
     object Main {
