@@ -52,7 +52,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
     /**
      * A brief description of the extraction.
      */
-    val dsiplayName: String
+    val displayName: String
 
     def perform(): List[Transformation[Tree, Tree]]
 

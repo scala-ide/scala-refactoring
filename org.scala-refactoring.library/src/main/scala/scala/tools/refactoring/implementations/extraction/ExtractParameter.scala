@@ -29,7 +29,7 @@ trait ParameterExtractions extends Extractions with ImportAnalysis {
     extractionTarget: ExtractionTarget, 
     abstractionName: String = defaultAbstractionName) extends Extraction {
 
-    val dsiplayName = extractionTarget.enclosing match {
+    val displayName = extractionTarget.enclosing match {
       case t: DefDef => s"Extract Method Parameter to ${t.symbol.nameString}"
     }
     

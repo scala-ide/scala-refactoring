@@ -34,7 +34,7 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
     abstractionName: String = defaultAbstractionName,
     selectedParameters: List[Symbol] = Nil) extends Extraction {
 
-    val dsiplayName = extractionTarget.enclosing match {
+    val displayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Method to ${t.symbol.owner.decodedName}"
       case _ => s"Extract Local Method"
     }

@@ -67,11 +67,12 @@ trait TreeFactory {
     case x :: Nil => Ident(x) setType x.tpe
     case xs =>
       typer.typed(gen.mkTuple(xs map (s => Ident(s) setType s.tpe))) match {
-        case t: Apply => t.fun setPos Invisible; t //don't show the TupleX..
+        case t: Apply =>
+          t.fun setPos Invisible; t //don't show the TupleX..
         case t => t
       }
   }
-  
+
   def mkAssignmentToCall(call: Tree, returns: List[Symbol]) = {
     returns match {
       case Nil => call
@@ -81,10 +82,10 @@ trait TreeFactory {
           case x :: Nil => x.name.toString
           case xs => "(" + (xs map (_.name) mkString ", ") + ")"
         }
-        ValDef(NoMods withPosition(Tokens.VAL, NoPosition), newTermName(valName), new TypeTree(), call)
+        ValDef(NoMods withPosition (Tokens.VAL, NoPosition), newTermName(valName), new TypeTree(), call)
     }
   }
-  
+
   def mkCallValDef(name: String, returns: List[Symbol] = Nil): Tree = {
     val call = Ident(name)
     mkAssignmentToCall(call, returns)
@@ -104,7 +105,7 @@ trait TreeFactory {
       case _ => valDef
     }
   }
-  
+
   def mkParam(name: String, tpe: Type, defaultVal: Tree = EmptyTree): ValDef = {
     ValDef(Modifiers(Flags.PARAM), newTermName(name), TypeTree(tpe), defaultVal)
   }
@@ -160,17 +161,17 @@ trait TreeFactory {
 
     val primeVal = mkValDef("prime", Literal(Constant(prime)))
     val oneLiteral = Literal(Constant(1))
-    val (startFactor, remainingParams): (Tree, List[ValDef]) = if(callSuper) {
+    val (startFactor, remainingParams): (Tree, List[ValDef]) = if (callSuper) {
       (Apply(Select(Super(classSymbol, newTypeName("")), nme.hashCode_), Nil), classParamsForHashcode)
     } else {
       classParamsForHashcode match {
         case Nil => (Ident(primeVal.name), Nil)
-        case p::ps =>
+        case p :: ps =>
           (Apply(Select(Ident(primeVal.name), nme.PLUS), List(Select(Ident(p.name), nme.hashCode_))), ps)
       }
     }
     val computation = mkFold(startFactor, primeVal.name, remainingParams)
-    mkDefDef((NoMods withPosition(Flags.OVERRIDE, NoPosition)) | Flags.OVERRIDE, "hashCode", body = List(primeVal, computation))
+    mkDefDef((NoMods withPosition (Flags.OVERRIDE, NoPosition)) | Flags.OVERRIDE, "hashCode", body = List(primeVal, computation))
   }
 
   def mkCanEqual(classSymbol: Symbol) = {
@@ -213,14 +214,21 @@ trait TreeFactory {
   }
 
   def mkClass(
-    mods: Modifiers = NoMods,
-    name: String,
-    tparams: List[TypeDef] = Nil,
-    argss: List[List[(Modifiers, String, Tree)]] = Nil,
-    body: List[Tree] = Nil,
-    parents: List[Tree] = Nil,
+    mods: Modifiers = NoMods, 
+    name: String, 
+    tparams: List[TypeDef] = Nil, 
+    argss: List[List[(Modifiers, String, Tree)]] = Nil, 
+    body: List[Tree] = Nil, 
+    parents: List[Tree] = Nil, 
     superArgs: List[Tree] = Nil) = {
 
+    val template = mkTemplate(argss, superArgs, mods, parents, body)
+
+    ClassDef(
+      mods, newTypeName(name), tparams, template)
+  }
+
+  private def mkTemplate(argss: List[List[(Modifiers, String, Tree)]], superArgs: List[Tree], mods: Modifiers, parents: List[Tree], body: List[Tree]): Template = {
     val constructorArguments = argss map (_ map {
       case (mods, name, tpe) =>
         ValDef(mods | Flags.PARAMACCESSOR, newTermName(name), tpe, EmptyTree)
@@ -237,14 +245,17 @@ trait TreeFactory {
       DefDef(mods withPosition (Flags.METHOD, NoPosition), nme.CONSTRUCTOR, Nil, constructorArguments, TypeTree(NoType), mkBlock(body))
     }
 
-    ClassDef(
-      mods,
-      newTypeName(name),
-      tparams,
-      Template(
-        parents,
-        emptyValDef,
-        constructor :: constructorArguments.flatten ::: body))
+    val template = Template(
+      parents,
+      emptyValDef,
+      constructor :: constructorArguments.flatten ::: body)
+    template
+  }
+
+  def mkModule(mods: Modifiers = NoMods, name: String, body: List[Tree] = Nil, parents: List[Tree] = Nil) = {
+    val template = mkTemplate(Nil, Nil, NoMods, parents, body)
+    
+    ModuleDef(mods, newTermName(name), template)
   }
 
   def mkCaseClass(
@@ -277,8 +288,7 @@ trait TreeFactory {
   def mkFunctionCallWithFunctionArgument(selector: Tree, fun: String, param: TermName, body: Tree) = {
     Apply(
       Select(selector, newTermName(fun)),
-      List(Function(List(ValDef(Modifiers(Flags.PARAM), param, EmptyTree, EmptyTree)), body))
-    ) typeFrom body
+      List(Function(List(ValDef(Modifiers(Flags.PARAM), param, EmptyTree, EmptyTree)), body))) typeFrom body
   }
 
   /**
@@ -292,8 +302,7 @@ trait TreeFactory {
   def mkFunctionCallWithZeroArgFunctionArgument(selector: Tree, fun: String, body: Tree) = {
     Apply(
       Select(selector, newTermName(fun)),
-      List(Function(Nil, body))
-    ) typeFrom body
+      List(Function(Nil, body))) typeFrom body
   }
 
   def mkImportTrees(trees: List[Select], enclosingPackage: String) = {
@@ -328,7 +337,7 @@ trait TreeFactory {
           case symbol => symbol.nameString
         }
 
-        Some(Import(newExpr, List(new ImportSelector(if(typeName == name.toString) name else newTypeName(typeName), -1, name, -1))))
+        Some(Import(newExpr, List(new ImportSelector(if (typeName == name.toString) name else newTypeName(typeName), -1, name, -1))))
     }
   }
 }
