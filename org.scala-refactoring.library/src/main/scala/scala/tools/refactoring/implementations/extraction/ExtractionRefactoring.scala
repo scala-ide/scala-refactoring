@@ -48,6 +48,8 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
     val extractionSource: Selection
 
     val extractionTarget: ExtractionTarget
+    
+    val abstractionName: String
 
     /**
      * A brief description of the extraction.
