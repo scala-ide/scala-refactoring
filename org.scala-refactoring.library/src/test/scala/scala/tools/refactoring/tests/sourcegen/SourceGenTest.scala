@@ -846,6 +846,52 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
+  def testAlteredPattern = global.ask { () =>
+    val tree = treeFrom("""
+    object Demo {
+      5 match { case i => () }
+    }
+    """)
+
+    val alterPattern = topdown {
+      matchingChildren {
+        transform {
+          case b: Bind => Literal(Constant(5))
+        }
+      }
+    }
+
+    assertEquals("""
+    object Demo {
+      5 match { case 5=>() }
+    }
+    """, generateText(alterPattern(tree).get))
+  }
+
+  @Test
+  def testAlteredSubPattern = global.ask { () =>
+    val tree = treeFrom("""
+    object Demo {
+      5 match { case 1 | 2 => () }
+    }
+    """)
+
+    val alterPattern = topdown {
+      matchingChildren {
+        transform {
+          case a@ Alternative(a1 :: a2 :: Nil) => a copy (trees = a1 :: Literal(Constant(5)) :: Nil)
+        }
+      }
+    }
+
+    assertEquals("""
+    object Demo {
+      5 match { case 1 | 5=>() }
+    }
+    """, generateText(alterPattern(tree).get))
+  }
+
+  @Test
   def testPackages() = global.ask { () =>
     val tree = treeFrom("""
     package a

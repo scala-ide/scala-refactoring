@@ -25,12 +25,62 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         1 match {
-	  	  case i: Int => println(i)
+	  	  case Extracted(i) => println(i)
         }
     
         object Extracted {
           def unapply(x: Int): Option[Int] = x match {
     		case i: Int => Some(i)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractorWithMultipleBindings = new FileSet{
+    """
+      object Demo {
+        (1, 2) match {
+	  	  case /*(*/(x, y)/*)*/ => println(x*y)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        (1, 2) match {
+	  	  case Extracted(x, y) => println(x*y)
+        }
+    
+        object Extracted {
+          def unapply(x: (Int, Int)): Option[(Int, Int)] = x match {
+    		case (x, y) => Some(x, y)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractorWithoutBindings = new FileSet{
+    """
+      object Demo {
+        1 match {
+	  	  case /*(*/1/*)*/ => println(1)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        1 match {
+	  	  case Extracted() => println(1)
+        }
+    
+        object Extracted {
+          def unapply(x: Int): Option[Unit] = x match {
+    		case 1 => Some()
             case _ => None
           }
         }

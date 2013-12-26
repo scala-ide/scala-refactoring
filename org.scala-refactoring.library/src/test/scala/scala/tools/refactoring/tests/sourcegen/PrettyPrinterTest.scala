@@ -906,6 +906,29 @@ object User {
   }
 
   @Test
+  def testAlteredPattern = global.ask { () =>
+    val tree = treeFrom("""
+    object Demo {
+      5 match { case i => () }
+    }
+    """)
+
+    val alterPattern = topdown {
+      matchingChildren {
+        transform {
+          case b: Bind => Literal(Constant(5)) replaces b
+        }
+      }
+    }
+
+    alterPattern(tree).get prettyPrintsTo """object Demo {
+  5 match {
+    case 5 => ()
+  }
+}"""
+  }
+
+  @Test
   def testPackages() = {
     val tree = treeFrom("""
     package a
