@@ -29,7 +29,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         }
     
         object Extracted {
-          def unapply(x: Int): Option[Int] = x match {
+          def unapply(x: Int) = x match {
     		case i => Some(i)
             case _ => None
           }
@@ -54,7 +54,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         }
     
         object Extracted {
-          def unapply(x: (Int, Int)): Option[(Int, Int)] = x match {
+          def unapply(x: (Int, Int)) = x match {
     		case (x, y) => Some(x, y)
             case _ => None
           }
@@ -79,7 +79,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         }
     
         object Extracted {
-          def unapply(x: Int): Option[Unit] = x match {
+          def unapply(x: Int) = x match {
     		case 1 => Some()
             case _ => None
           }
@@ -104,8 +104,58 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         }
     
         object Extracted {
-          def unapply(x: Int): Option[Unit] = x match {
+          def unapply(x: Int) = x match {
     		case 1 => Some()
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractPatternWithGuard = new FileSet{
+    """
+      object Demo {
+        1 match {
+	  	  case /*(*/i if i < 10/*)*/ => println(1)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        1 match {
+	  	  case Extracted(i) => println(1)
+        }
+    
+        object Extracted {
+          def unapply(x: Int) = x match {
+    		case i if i < 10 => Some(i)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractWithoutGuard = new FileSet{
+    """
+      object Demo {
+        "abc" match {
+	  	  case /*(*/s/*)*/ if s.length < 10 => println(s)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        "abc" match {
+	  	  case /*(*/s/*)*/ if s.length < 10 => println(s)
+        }
+    
+        object Extracted {
+          def unapply(x: String) = x match {
+    		case s => Some(s)
             case _ => None
           }
         }
