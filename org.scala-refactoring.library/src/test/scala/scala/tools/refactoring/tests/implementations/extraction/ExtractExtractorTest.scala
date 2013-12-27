@@ -139,6 +139,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
+  @Ignore
   def extractWithoutGuard = new FileSet{
     """
       object Demo {
@@ -156,6 +157,31 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         object Extracted {
           def unapply(x: String) = x match {
     		case s => Some(s)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractListPattern = new FileSet{
+    """
+      object Demo {
+        List(1, 2, 3) match {
+	  	  case /*(*/1 :: rest/*)*/ => println(rest)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        List(1, 2, 3) match {
+	  	  case Extracted(rest) => println(rest)
+        }
+    
+        object Extracted {
+          def unapply(x: List[Int]) = x match {
+    		case 1 :: rest => Some(rest)
             case _ => None
           }
         }

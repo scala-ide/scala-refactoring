@@ -10,7 +10,8 @@ trait ExtractorExtractions extends Extractions {
   def prepareExtractionSource(s: Selection) = {
     findExtractionSource(s) { s =>
       s.selectedTopLevelTrees match {
-        case (_: CaseDef | ExtractablePattern(_)) :: Nil => true
+        case (_: CaseDef | ExtractablePattern(_)) :: Nil =>
+          s.findSelectedOfType[CaseDef].isDefined
         case _ => false
       }
     }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
@@ -38,19 +39,69 @@ trait ExtractorExtractions extends Extractions {
 
   object ExtractablePattern {
     def unapply(t: Tree): Option[Tree] = t match {
-      case t @ (_: Bind | _: Alternative | _: UnApply) =>
-        Some(t)
-      case t @ (_: Literal | _: Typed) =>
-        Some(t)
-      case t: RefTree if isConstantPatternName(t.nameString) =>
-        Some(t)
-      case t: Apply if t.fun.symbol.isCaseApplyOrUnapply =>
-        Some(t)
-      case _ => None
+      case _: Star => None
+      case t => Some(t)
+    }
+  }
+
+  /**
+   * Extracts an extractor based on a CaseDef. Reuses its pattern and guard.
+   */
+  case class CasePatternExtraction(
+    caseDef: CaseDef,
+    extractionSource: Selection,
+    extractionTarget: ExtractionTarget,
+    abstractionName: String = "Extracted") extends ExtractorExtraction {
+
+    val extractorDef = {
+      mkExtractor {
+        val cases =
+          caseDef.copy(body = matchedResult) ::
+            CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
+            Nil
+
+        Match(Ident(newTermName(unapplyParamName)), cases)
+      }
     }
 
-    private def isConstantPatternName(s: String) =
-      s.head >= 'A' && s.head <= 'Z'
+    val extractorCall = {
+      caseDef.copy(pat = mkUnapplyCall(), guard = EmptyTree)
+    }
+
+    def withAbstractionName(name: String) =
+      copy(abstractionName = name).asInstanceOf[this.type]
+  }
+
+  /**
+   * Extracts an extractor based on a pattern.
+   */
+  case class PatternExtraction(
+    pattern: Tree,
+    extractionSource: Selection,
+    extractionTarget: ExtractionTarget,
+    abstractionName: String = "Extracted") extends ExtractorExtraction {
+
+    val extractorDef = {
+      mkExtractor {
+        val patternFixedPos = pattern match{
+          case t: Apply => t
+          case t => t.duplicate.setPos(NoPosition)
+        }
+
+        val cases =
+          CaseDef(patternFixedPos, EmptyTree, matchedResult) ::
+            CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
+            Nil
+
+        Match(Ident(newTermName("x")), cases)
+      }
+    }
+
+    val extractorCall =
+      mkUnapplyCall()
+
+    def withAbstractionName(name: String) =
+      copy(abstractionName = name).asInstanceOf[this.type]
   }
 
   trait ExtractorExtraction extends Extraction {
@@ -101,60 +152,5 @@ trait ExtractorExtractions extends Extractions {
 
     def mkUnapplyCall() =
       PlainText.Raw(s"${abstractionName}(${boundNames.mkString(", ")})")
-  }
-
-  /**
-   * Extracts an extractor based on a CaseDef. Reuses its pattern and guard.
-   */
-  case class CasePatternExtraction(
-    caseDef: CaseDef,
-    extractionSource: Selection,
-    extractionTarget: ExtractionTarget,
-    abstractionName: String = "Extracted") extends ExtractorExtraction {
-
-    val extractorDef = {
-      mkExtractor {
-        val cases =
-          caseDef.copy(body = matchedResult) ::
-            CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
-            Nil
-
-        Match(Ident(newTermName("x")), cases)
-      }
-    }
-
-    val extractorCall = {
-      caseDef.copy(pat = mkUnapplyCall(), guard = EmptyTree)
-    }
-
-    def withAbstractionName(name: String) =
-      copy(abstractionName = name).asInstanceOf[this.type]
-  }
-
-  /**
-   * Extracts an extractor based on a pattern.
-   */
-  case class PatternExtraction(
-    pattern: Tree,
-    extractionSource: Selection,
-    extractionTarget: ExtractionTarget,
-    abstractionName: String = "Extracted") extends ExtractorExtraction {
-
-    val extractorDef = {
-      mkExtractor {
-        val cases =
-          CaseDef(pattern.duplicate.setPos(NoPosition), EmptyTree, matchedResult) ::
-            CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
-            Nil
-
-        Match(Ident(newTermName("x")), cases)
-      }
-    }
-
-    val extractorCall =
-      mkUnapplyCall()
-
-    def withAbstractionName(name: String) =
-      copy(abstractionName = name).asInstanceOf[this.type]
   }
 }
