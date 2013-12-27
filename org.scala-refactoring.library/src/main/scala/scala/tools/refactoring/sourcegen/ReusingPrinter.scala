@@ -228,7 +228,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
 
     override def Alternative(tree: Alternative, trees: List[Tree])(implicit ctx: PrintingContext) = {
-      l ++ pp(trees, separator = "|") ++ r
+      l ++ pp(trees, separator = " | ") ++ r
     }
 
     override def Bind(tree: Bind, name: Name, body: Tree)(implicit ctx: PrintingContext) = {
