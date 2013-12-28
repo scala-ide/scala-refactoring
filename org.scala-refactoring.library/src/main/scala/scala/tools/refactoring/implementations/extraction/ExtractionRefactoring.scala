@@ -20,9 +20,11 @@ trait ExtractionRefactoring extends MultiStageRefactoring with Extractions {
   case class PreparationResult(extractions: List[Extraction])
 
   type RefactoringParameters = Extraction
+  
+  val collector: ExtractionCollector[_ <: Extraction]
 
   def prepare(s: Selection) =
-    collectExtractions(s)
+    collector.collect(s)
       .left.map(PreparationError(_))
       .right.map(PreparationResult(_))
 
@@ -48,7 +50,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
     val extractionSource: Selection
 
     val extractionTarget: ExtractionTarget
-    
+
     val abstractionName: String
 
     /**
@@ -79,64 +81,50 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
   }
 
   type ErrorMsg = String
-  
+
   val defaultAbstractionName = "extracted"
 
-  /**
-   * Collects a list of extractions that are applicable for selection `s`
-   * If no extraction is applicable an appropriate error message is returned.
-   */
-  def collectExtractions(s: Selection): Either[ErrorMsg, List[Extraction]] = {
-    def inner(source: Selection) = {
-      val ip = prepareInsertionPosition(source)
-      val scopes = ScopeTree.build(source)
-      val mkTarget = prepareExtractionTarget(ip, scopes)_
-      val targets = source
-        .filterSelected(t => !t.pos.sameRange(source.pos))
-        .reverse
-        .flatMap { enclosing =>
-          mkTarget(enclosing)
-        }
+  trait ExtractionCollector[E <: Extraction] {
+    def collect(s: Selection): Either[ErrorMsg, List[E]] = {
+      s.expand.expandTo(isValidExtractionSource(_)).map { source =>
+        val mkTarget = prepareExtractionTargets(prepareInsertionPosition(source), ScopeTree.build(source))_
+        val targets = source
+          .filterSelected(isValidTargetTree(source, _))
+          .reverse
+          .flatMap { enclosing =>
+            mkTarget(enclosing)
+          }
 
-      prepareExtractions(source, targets)
+        Right(createExtractions(source, targets))
+      }.getOrElse(Left("No extraction for selection found."))
     }
 
-    for {
-      source <- prepareExtractionSource(s).right
-      extractions <- inner(source).right
-    } yield extractions
+    def isValidTargetTree(s: Selection, t: Tree) =
+      !t.pos.sameRange(s.pos) &&
+        (t match {
+          // If the selection selects parts of a case pattern or guard, the body is not a feasible target
+          // because it is not visible from guard or pattern
+          case CaseDef(pat, guard, _) if pat.pos.includes(s.pos) || guard.pos.includes(s.pos) => false
+          case _ => true
+        })
+
+    def isValidExtractionSource(s: Selection): Boolean
+
+    def prepareInsertionPosition(s: Selection): InsertionPosition =
+      s.beforeSelectionInBlock orElse
+        s.afterSelectionInTemplate orElse
+        atBeginningOfNewDefBody orElse
+        atBeginningOfNewFunctionBody orElse
+        atBeginningOfCaseBody
+
+    def prepareExtractionTargets(ip: InsertionPosition, scopes: ScopeTree)(t: Tree): List[ExtractionTarget] =
+      if (ip.isDefinedAt(t)) {
+        val scope = scopes.findScopeFor(ip(t).pos)
+        ExtractionTarget(scope, t, ip) :: Nil
+      } else {
+        Nil
+      }
+
+    def createExtractions(source: Selection, targets: List[ExtractionTarget]): List[E]
   }
-
-  val noExtractionMsg = "No insertion position found."
-
-  /**
-   * Expands the selection `s` if necessary or returns an error message if no
-   * extraction is not applicable.
-   */
-  def prepareExtractionSource(s: Selection): Either[ErrorMsg, Selection]
-
-  def findExtractionSource(s: Selection)(pred: Selection => Boolean): Option[Selection] =
-    if (pred(s))
-      Some(s)
-    else
-      s.expandToNextEnclosingTree.flatMap(findExtractionSource(_)(pred))
-
-  def prepareInsertionPosition(s: Selection): InsertionPosition = {
-    s.beforeSelectionInBlock orElse
-      s.afterSelectionInTemplate orElse
-      atBeginningOfNewDefBody orElse
-      atBeginningOfNewFunctionBody orElse
-      atBeginningOfCaseBody
-  }
-
-  def prepareExtractionTarget(ip: InsertionPosition, scopes: ScopeTree)(t: Tree): List[ExtractionTarget] = {
-    if (ip.isDefinedAt(t)) {
-      val scope = scopes.findScopeFor(ip(t).pos)
-      ExtractionTarget(scope, t, ip) :: Nil
-    } else {
-      Nil
-    }
-  }
-
-  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[ErrorMsg, List[Extraction]]
 }

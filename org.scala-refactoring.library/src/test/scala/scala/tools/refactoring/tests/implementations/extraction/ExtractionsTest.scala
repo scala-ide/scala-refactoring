@@ -16,8 +16,8 @@ class ExtractionsTest extends TestHelper with Extractions {
       }
     """)
 
-    collectExtractions(s)
-    assertEquals(2, extractionTargets.length)
+    TestCollector.collect(s)
+    assertEquals(2, TestCollector.extractionTargets.length)
   }
 
   @Test
@@ -29,16 +29,32 @@ class ExtractionsTest extends TestHelper with Extractions {
       }
     """)
 
-    collectExtractions(s)
-    assertEquals(2, extractionTargets.length)
+    TestCollector.collect(s)
+    assertEquals(2, TestCollector.extractionTargets.length)
   }
 
-  var extractionTargets: List[ExtractionTarget] = Nil
+  @Test
+  def noExtractionTargetsForCasesWithSelectedPattern = {
+    val s = toSelection("""
+      object O{
+        1 match {
+          case /*(*/i/*)*/ => i
+        }
+      }
+    """)
 
-  def prepareExtractionSource(s: Selection): Either[ErrorMsg, Selection] = Right(s)
+    TestCollector.collect(s)
+    assertEquals(1, TestCollector.extractionTargets.length)
+  }
 
-  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[ErrorMsg, List[Extraction]] = {
-    extractionTargets = targets
-    Left("")
+  object TestCollector extends ExtractionCollector[Extraction] {
+    var extractionTargets: List[ExtractionTarget] = Nil
+
+    def isValidExtractionSource(s: Selection) = true
+
+    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+      extractionTargets = targets
+      Nil
+    }
   }
 }

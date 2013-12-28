@@ -2,37 +2,30 @@ package scala.tools.refactoring.implementations.extraction
 
 import scala.reflect.internal.Flags
 
-abstract class ExtractExtractor extends ExtractionRefactoring with ExtractorExtractions
+abstract class ExtractExtractor extends ExtractionRefactoring with ExtractorExtractions {
+  val collector = ExtractorExtraction
+}
 
 trait ExtractorExtractions extends Extractions {
   import global._
 
-  def prepareExtractionSource(s: Selection) = {
-    findExtractionSource(s) { s =>
+  object ExtractorExtraction extends ExtractionCollector[ExtractorExtraction] {
+    def isValidExtractionSource(s: Selection) = {
       s.selectedTopLevelTrees match {
         case (_: CaseDef | ExtractablePattern(_)) :: Nil =>
           s.findSelectedOfType[CaseDef].isDefined
         case _ => false
       }
-    }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
-  }
-
-  override def prepareInsertionPosition(s: Selection) =
-    s.beforeSelectionInBlock orElse
-      s.afterSelectionInTemplate orElse
-      atBeginningOfNewDefBody orElse
-      atBeginningOfNewFunctionBody
-
-  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
-    val validTargets = targets.takeWhile { t =>
-      source.inboundDeps.forall(t.scope.sees(_))
     }
 
-    validTargets match {
-      case Nil => Left(noExtractionMsg)
-      case ts => source.selectedTopLevelTrees.head match {
-        case cd: CaseDef => Right(ts.map(t => CasePatternExtraction(cd, source, t)))
-        case pat => Right(ts.map(t => PatternExtraction(pat, source, t)))
+    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+      val validTargets = targets.takeWhile { t =>
+        source.inboundDeps.forall(t.scope.sees(_))
+      }
+
+      source.selectedTopLevelTrees.head match {
+        case cd: CaseDef => validTargets.map(CasePatternExtraction(cd, source, _))
+        case pat => validTargets.map(PatternExtraction(pat, source, _))
       }
     }
   }
@@ -53,19 +46,25 @@ trait ExtractorExtractions extends Extractions {
     extractionTarget: ExtractionTarget,
     abstractionName: String = "Extracted") extends ExtractorExtraction {
 
-    val extractorDef = {
-      mkExtractor {
-        val cases =
-          caseDef.copy(body = matchedResult) ::
-            CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
-            Nil
+    def perform() = {
+      val extractorDef = {
+        mkExtractor {
+          val cases =
+            caseDef.copy(body = matchedResult) ::
+              CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
+              Nil
 
-        Match(Ident(newTermName(unapplyParamName)), cases)
+          Match(Ident(newTermName(unapplyParamName)), cases)
+        }
       }
-    }
 
-    val extractorCall = {
-      caseDef.copy(pat = mkUnapplyCall(), guard = EmptyTree)
+      val extractorCall = {
+        caseDef.copy(pat = mkUnapplyCall(), guard = EmptyTree)
+      }
+
+      extractionSource.replaceBy(extractorCall) ::
+        extractionTarget.insert(extractorDef) ::
+        Nil
     }
 
     def withAbstractionName(name: String) =
@@ -81,42 +80,37 @@ trait ExtractorExtractions extends Extractions {
     extractionTarget: ExtractionTarget,
     abstractionName: String = "Extracted") extends ExtractorExtraction {
 
-    val extractorDef = {
-      mkExtractor {
-        val patternFixedPos = pattern match{
-          case t: Apply => t
-          case t => t.duplicate.setPos(NoPosition)
+    def perform() = {
+      val extractorDef = {
+        mkExtractor {
+          val patternFixedPos = pattern match {
+            case t: Apply => t
+            case t => t.duplicate.setPos(NoPosition)
+          }
+
+          val cases =
+            CaseDef(patternFixedPos, EmptyTree, matchedResult) ::
+              CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
+              Nil
+
+          Match(Ident(newTermName("x")), cases)
         }
-
-        val cases =
-          CaseDef(patternFixedPos, EmptyTree, matchedResult) ::
-            CaseDef(Ident(nme.WILDCARD), EmptyTree, notMatchedResult) ::
-            Nil
-
-        Match(Ident(newTermName("x")), cases)
       }
-    }
 
-    val extractorCall =
-      mkUnapplyCall()
+      val extractorCall =
+        mkUnapplyCall()
+
+      extractionSource.replaceBy(extractorCall) ::
+        extractionTarget.insert(extractorDef) ::
+        Nil
+    }
 
     def withAbstractionName(name: String) =
       copy(abstractionName = name).asInstanceOf[this.type]
   }
 
   trait ExtractorExtraction extends Extraction {
-
-    val extractorDef: Tree
-
-    val extractorCall: Tree
-
     val unapplyParamName = "x"
-
-    def perform() = {
-      extractionSource.replaceBy(extractorCall) ::
-        extractionTarget.insert(extractorDef) ::
-        Nil
-    }
 
     val displayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Extractor to ${t.symbol.owner.decodedName}"

@@ -3,30 +3,28 @@ package scala.tools.refactoring.implementations.extraction
 import scala.reflect.internal.Flags
 import scala.tools.refactoring.analysis.ImportAnalysis
 
-abstract class ExtractMethod extends ExtractionRefactoring with MethodExtractions
+abstract class ExtractMethod extends ExtractionRefactoring with MethodExtractions {
+  val collector = MethodExtraction
+}
 
 trait MethodExtractions extends Extractions with ImportAnalysis {
   import global._
 
-  def prepareExtractionSource(s: Selection) = {
-    findExtractionSource(s.expand) { s =>
+  object MethodExtraction extends ExtractionCollector[MethodExtraction] {
+    def isValidExtractionSource(s: Selection) =
       (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
-    }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
-  }
 
-  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]) = {
-    val validTargets = targets.takeWhile { t =>
-      source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
+    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+      val validTargets = targets.takeWhile { t =>
+        source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
+      }
+
+      validTargets.map(MethodExtraction(source, _))
     }
 
-    validTargets match {
-      case Nil => Left(noExtractionMsg)
-      case ts => Right(ts.map(t => MethodExtraction(source, t)))
-    }
+    def isAllowedAsParameter(s: Symbol) =
+      s.isValue && (s.isVal || s.isAccessor)
   }
-
-  def isAllowedAsParameter(s: Symbol) =
-    s.isValue && (s.isVal || s.isAccessor)
 
   case class MethodExtraction(
     extractionSource: Selection,

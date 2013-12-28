@@ -250,6 +250,15 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       }.map(_.pos).getOrElse(NoPosition))
 
     /**
+     * Expands the selection until `pred` evaluates to true.
+     */
+    def expandTo(pred: Selection => Boolean): Option[Selection] =
+      if (pred(this))
+        Some(this)
+      else
+        expandToNextEnclosingTree.flatMap(_.expandTo(pred))
+
+    /**
      * Tries to expand the selection to `newPos`.
      */
     def expandTo(newPos: Position): Option[Selection] = {

@@ -3,7 +3,9 @@ package scala.tools.refactoring.implementations.extraction
 import scala.tools.refactoring.analysis.ImportAnalysis
 import scala.tools.refactoring.analysis.Indexes
 
-abstract class ExtractParameter extends ExtractionRefactoring with ParameterExtractions
+abstract class ExtractParameter extends ExtractionRefactoring with ParameterExtractions {
+  val collector = ParameterExtraction
+}
 
 /**
  * Extracts a parameter
@@ -11,28 +13,27 @@ abstract class ExtractParameter extends ExtractionRefactoring with ParameterExtr
 trait ParameterExtractions extends Extractions with ImportAnalysis {
   import global._
 
-  override def prepareExtractionSource(s: Selection) = {
-    findExtractionSource(s) { s =>
+  object ParameterExtraction extends ExtractionCollector[ParameterExtraction] {
+    def isValidExtractionSource(s: Selection) =
       s.representsValue && !s.representsParameter
-    }.map(Right(_)).getOrElse(Left("Cannot extract selection"))
-  }
 
-  override def prepareInsertionPosition(s: Selection) =
-    atEndOfValueParameterList
+    override def prepareInsertionPosition(s: Selection) =
+      atEndOfValueParameterList
 
-  def prepareExtractions(source: Selection, targets: List[ExtractionTarget]): Either[ErrorMsg, List[Extraction]] = {
-    Right(targets.map(ParameterExtraction(source, _)))
+    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+      targets.map(ParameterExtraction(source, _))
+    }
   }
 
   case class ParameterExtraction(
-    extractionSource: Selection, 
-    extractionTarget: ExtractionTarget, 
+    extractionSource: Selection,
+    extractionTarget: ExtractionTarget,
     abstractionName: String = defaultAbstractionName) extends Extraction {
 
     val displayName = extractionTarget.enclosing match {
       case t: DefDef => s"Extract Method Parameter to ${t.symbol.nameString}"
     }
-    
+
     val functionOrDefDef = extractionTarget.enclosing
 
     def perform() = {
