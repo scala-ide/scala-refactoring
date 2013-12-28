@@ -284,4 +284,65 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
     }
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  
+  @Test
+  def extractConstantPattern = new FileSet{
+    """
+    object Demo {
+	  List(1) match {
+	    case List(/*(*/1/*)*/) => ()
+      }
+    }
+    """ becomes """
+    object Demo {
+	  List(1) match {
+	    case List(extracted) => ()
+      }
+    
+      val extracted = 1
+    }
+    """
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  
+  @Test
+  def dontExtractPatternsWithBindings = new FileSet{
+    """
+    case class Intish(i: Int)
+    object Demo {
+	  Intish(1) match {
+	    case /*(*/Intish(i)/*)*/ => i
+      }
+    }
+    """ becomes """
+    case class Intish(i: Int)
+    object Demo {
+      extracted
+
+	  val extracted = Intish(1) match {
+	    case Intish(i) => i
+      }
+    }
+    """
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  
+  @Test
+  def dontExtractWildcardPatterns = new FileSet{
+    """
+    case class Intish(i: Int)
+    object Demo {
+	  Intish(1) match {
+	    case /*(*/_/*)*/ => i
+      }
+    }
+    """ becomes """
+    case class Intish(i: Int)
+    object Demo {
+      extracted
+
+	  val extracted = Intish(1) match {
+	    case _ => i
+      }
+    }
+    """
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
 }

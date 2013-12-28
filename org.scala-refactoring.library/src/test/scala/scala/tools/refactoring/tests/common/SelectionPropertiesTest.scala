@@ -42,6 +42,27 @@ class SelectionPropertiesTest extends TestHelper with Selections {
       """.selection
     assertFalse(sel.representsValue)
   }
+  
+  @Test
+  def nonValuePatternsDoNotRepresentValues = {
+    val selWildcard = """object O { 1 match { case /*(*/_/*)*/ => () } }""".selection
+    assertFalse(selWildcard.representsValue)
+    
+    val selCtorPattern = """object O { Some(1) match { case /*(*/Some(i)/*)*/ => () } }""".selection
+    assertFalse(selCtorPattern.representsValue)
+    
+    val selBinding =  """object O { 1 match { case /*(*/i: Int/*)*/ => i } }""".selection
+    assertFalse(selBinding.representsValue)
+    
+    val selPatAndGuad = """object O { 1 match { case /*(*/i if i > 10/*)*/ => i } }""".selection
+    assertFalse(selPatAndGuad.representsValue)
+  }
+  
+  @Test
+  def valuePatternsDoRepresentValues = {
+    val selCtorPattern = """object O { Some(1) match { case /*(*/Some(1)/*)*/ => () } }""".selection
+    assertTrue(selCtorPattern.representsValue)
+  }
 
   @Test
   def argumentLists = {

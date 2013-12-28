@@ -109,6 +109,21 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
+  @Test(expected = classOf[IndexOutOfBoundsException])
+  def dontExtractWithInaccessibleDependencies = new FileSet {
+    """
+      object Demo {
+        def fn(a: Int) = {
+	      val b = 100
+          /*(*/b/*)*/
+        }
+    
+	  	fn(1)
+      }
+    """ becomes
+      """"""
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+
   @Test
   @Ignore
   def expandSelection = new FileSet {

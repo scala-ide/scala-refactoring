@@ -221,13 +221,10 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       // is selected. For example if a method parameter and the body is selected,
       // we select the DefDef as a whole to get a complete selection. 
       def expandToParentIfRequired(s: Selection) =
-        s.selectedTopLevelTrees match {
-          case _ =>
-            s.enclosingTree match {
-              case _: DefDef | _: Function | _: If | _: Match | _: Try =>
-                s.expandTo(s.enclosingTree).get
-              case _ => s
-            }
+        s.enclosingTree match {
+          case _: DefDef | _: Function | _: If | _: Match | _: Try | _: CaseDef =>
+            s.expandTo(s.enclosingTree).get
+          case _ => s
         }
 
       expandToParentIfRequired(
@@ -302,12 +299,18 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * Note, this implementation assumes that the code has no side effects.
      */
     lazy val representsValue = {
+      def isNonValuePattern(t: Tree): Boolean = t match {
+        case _: Star | _: Alternative | _: UnApply | _: Bind => true
+        case _: Typed => true
+        case Ident(nme.WILDCARD) => true
+        case Apply(_, args) => args.exists(isNonValuePattern(_))
+        case _ => false
+      }
+
       def isValue(t: Tree) = t match {
+        case Ident(nme.WILDCARD) => false
         case rt: RefTree => rt.isTerm
-        case tt: TermTree => tt match {
-          case _: Star | _: Alternative | _: UnApply => false
-          case _ => true
-        }
+        case tt: TermTree => !isNonValuePattern(tt)
         case _ => false
       }
 

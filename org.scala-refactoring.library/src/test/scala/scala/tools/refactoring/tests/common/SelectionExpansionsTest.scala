@@ -243,6 +243,24 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
+  def expandSelectedPatternWithGuard =
+    """
+    class C{
+      1 match{
+    	case /*(*/i if i > /*)*/0 => i
+      }
+    }
+    """.assertExpansion(_.expand).toBecome {
+      """
+    class C{
+      1 match{
+    	/*(*/case i if i > 0 => i/*)*/
+      }
+    }
+    """
+    }
+
+  @Test
   def expandAnonFunWithWildcardParam =
     """
     class C{
@@ -250,10 +268,10 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
     """.withSelection { orig =>
       val expanded = orig.expand
-      val fn = orig.root.collect{
+      val fn = orig.root.collect {
         case t: Function => t
       }.head
-      
+
       assertEquals(fn, expanded.selectedTopLevelTrees.head)
       assertTrue(fn.pos.sameRange(expanded.pos))
       assertEquals(fn, expanded.enclosingTree)

@@ -22,7 +22,11 @@ trait ParameterExtractions extends Extractions with ImportAnalysis {
       atEndOfValueParameterList
 
     def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
-      targets.map(ParameterExtraction(source, _))
+      val validTargets = targets.takeWhile { t =>
+        source.inboundLocalDeps.forall(t.scope.sees(_))
+      }
+      
+      validTargets.map(ParameterExtraction(source, _))
     }
   }
 
