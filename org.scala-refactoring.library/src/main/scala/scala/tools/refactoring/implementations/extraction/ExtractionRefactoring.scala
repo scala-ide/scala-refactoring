@@ -144,7 +144,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
         (t match {
           // If the selection selects parts of a case pattern or guard, the body is not a feasible target
           // because it is not visible from guard or pattern
-          case CaseDef(pat, guard, _) if pat.pos.includes(s.pos) || guard.pos.includes(s.pos) => false
+          case CaseDef(pat, guard, _) if (pat.pos union guard.pos).includes(s.pos) => false
           case _ => true
         })
 

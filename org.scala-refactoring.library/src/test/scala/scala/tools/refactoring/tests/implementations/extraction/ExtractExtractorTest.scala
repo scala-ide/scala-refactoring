@@ -139,7 +139,6 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  @Ignore
   def extractWithoutGuard = new FileSet{
     """
       object Demo {
@@ -151,7 +150,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         "abc" match {
-	  	  case /*(*/s/*)*/ if s.length < 10 => println(s)
+	  	  case Extracted(s) if s.length < 10 => println(s)
         }
     
         object Extracted {
@@ -182,6 +181,33 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         object Extracted {
           def unapply(x: List[Int]) = x match {
     		case 1 :: rest => Some(rest)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractConstructorPatternWithoutGuard = new FileSet{
+    """
+      case class TwoInts(a: Int, b: Int)
+      object Demo {
+        TwoInts(1, 2) match {
+	  	  case /*(*/TwoInts(a, b)/*)*/ if a * b == 42 => ()
+        }
+      }
+    """ becomes
+      """
+      case class TwoInts(a: Int, b: Int)
+      object Demo {
+        TwoInts(1, 2) match {
+	  	  case /*(*/Extracted(a, b)/*)*/ if a * b == 42 => ()
+        }
+    
+        object Extracted {
+          def unapply(x: TwoInts) = x match {
+    		case TwoInts(a, b) => Some(a, b)
             case _ => None
           }
         }

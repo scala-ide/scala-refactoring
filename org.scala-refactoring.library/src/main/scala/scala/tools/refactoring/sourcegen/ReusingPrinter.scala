@@ -204,10 +204,29 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
 
     override def CaseDef(tree: CaseDef, pat: Tree, guard: Tree, body: Tree)(implicit ctx: PrintingContext) = {
+      val arrowReq = new Requisite {
+        def isRequired(l: Layout, r: Layout) = {
+          !(l.contains("=>") || r.contains("=>") || p(body).asText.startsWith("=>"))
+        }
+
+        // It's just nice to have a whitespace before and after the arrow
+        def getLayout = Layout(" => ")
+      }
+      
+      val ifReq = new Requisite{
+        def isRequired(l: Layout, r: Layout) = {
+          !(l.contains("if") || r.contains("if"))
+        }
+
+        // Leading and trailing whitespace is required in some cases!
+        // e.g. `case i if i > 0 => ???` becomes `case iifi > 0 => ???` otherwise
+        def getLayout = Layout(" if ")
+      }
+
       body match {
 
         case b @ BlockExtractor(body) if !b.hasExistingCode =>
-          val x = (l ++ p(pat) ++ p(guard)) ++ "=>"
+          val x = (l ++ p(pat) ++ p(guard)) ++ arrowReq
           x ++ Fragment(ctx.newline + indentation) ++ ppi(body, separator = indentedNewline) ++ r
 
         case _ if tree.pos.isTransparent =>
@@ -216,14 +235,11 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ =>
           val patAndGuard =
             if (guard == EmptyTree)
-              l ++ p(pat, after = "=>")
+              l ++ p(pat, after = arrowReq)
             else
-              l ++ p(pat) ++ p(guard, before = "if", after = "=>")
+              l ++ p(pat) ++ p(guard, before = ifReq, after = arrowReq)
 
-          if (p(body).asText.startsWith("=>"))
-            printChildren(tree)
-          else
-            patAndGuard ++ pi(body) ++ r
+          patAndGuard ++ pi(body) ++ r
       }
     }
 

@@ -46,10 +46,10 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       case vparamss =>
 
         val layout = Layout(
-            vparamss map { vparams =>
-                pp(vparams, before = "(", after = anywhere(")"), separator = ("," ++ Requisite.Blank))
-            } mkString "" // ?
-        )
+          vparamss map { vparams =>
+            pp(vparams, before = "(", after = anywhere(")"), separator = ("," ++ Requisite.Blank))
+          } mkString "" // ?
+          )
 
         val hasOpenCloseParens = existingLayout.matches(".*\\(.*\\).*")
         val hasOpenParens = !hasOpenCloseParens && existingLayout.matches(".*\\(.*")
@@ -66,40 +66,40 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
 
     def printTemplate(tpl: Template, printExtends: Boolean)(implicit ctx: PrintingContext) = tpl match {
-        case TemplateExtractor(params, earlyBody, parents, self, body) =>
+      case TemplateExtractor(params, earlyBody, parents, self, body) =>
 
-          val sup = if(earlyBody.isEmpty) {
-            parents match {
-              case Nil => EmptyFragment
-              case parent :: traits =>
-                val superclass = {
-                  if(printExtends)
-                    p(parent, before = " extends ")
-                  else
-                    p(parent)
-                }
-                superclass ++ pp(traits, before = " with ", separator = " with ")
-            }
-          } else {
-            ppi(earlyBody, before = " extends {" ++
-                newlineIndentedToChildren, after = indentedNewline ++ "}", separator = newlineIndentedToChildren) ++
-                pp(parents, before = " with ", separator = " with ")
+        val sup = if (earlyBody.isEmpty) {
+          parents match {
+            case Nil => EmptyFragment
+            case parent :: traits =>
+              val superclass = {
+                if (printExtends)
+                  p(parent, before = " extends ")
+                else
+                  p(parent)
+              }
+              superclass ++ pp(traits, before = " with ", separator = " with ")
           }
+        } else {
+          ppi(earlyBody, before = " extends {" ++
+            newlineIndentedToChildren, after = indentedNewline ++ "}", separator = newlineIndentedToChildren) ++
+            pp(parents, before = " with ", separator = " with ")
+        }
 
-          val self_ = (self, body) match {
-            case (EmptyTree, body) =>
-              ppi(body, before = " {" ++ newlineIndentedToChildren, separator = newlineIndentedToChildren, after = indentedNewline ++ "}")
-            case (self, Nil) =>
-              pi(self, before = " {" ++ newlineIndentedToChildren, after = " =>" ++ indentedNewline ++ "}")
-            case (self, body) =>
-              pi(self, before = " {" ++ newlineIndentedToChildren, after = " =>") ++
+        val self_ = (self, body) match {
+          case (EmptyTree, body) =>
+            ppi(body, before = " {" ++ newlineIndentedToChildren, separator = newlineIndentedToChildren, after = indentedNewline ++ "}")
+          case (self, Nil) =>
+            pi(self, before = " {" ++ newlineIndentedToChildren, after = " =>" ++ indentedNewline ++ "}")
+          case (self, body) =>
+            pi(self, before = " {" ++ newlineIndentedToChildren, after = " =>") ++
               ppi(body, before = newlineIndentedToChildren, separator = newlineIndentedToChildren, after = indentedNewline ++ "}")
-          }
+        }
 
-          val params_ = printParameterList(params, "()")
+        val params_ = printParameterList(params, "()")
 
-          params_ ++ sup ++ self_
-      }
+        params_ ++ sup ++ self_
+    }
   }
 
   trait WhilePrinters {
@@ -124,7 +124,14 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
 
     override def CaseDef(tree: CaseDef, pat: Tree, guard: Tree, body: Tree)(implicit ctx: PrintingContext) = {
-      Layout("case ") ++ p(pat) ++ p(guard, before = " if ") ++ p(body, before = " => ")
+      // we have to get rid of the `if` if we print a case that had a guard before but not anymore
+      val patP = """(.*) if """.r
+      val patFrag = patP.findFirstIn(p(pat).asText) match {
+        case Some(patP(patStr)) if guard == EmptyTree => Fragment(patStr)
+        case _ => p(pat)
+      }
+
+      Layout("case ") ++ patFrag ++ p(guard, before = " if ") ++ p(body, before = " => ")
     }
 
     override def Alternative(tree: Alternative, trees: List[Tree])(implicit ctx: PrintingContext) = {
@@ -163,7 +170,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
 
       val afterSelector = {
-        if(leadingLayoutForFirstClause.asText.startsWith(" "))
+        if (leadingLayoutForFirstClause.asText.startsWith(" "))
           " match"
         else
           " match "
@@ -172,7 +179,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       val selector_ = p(selector, after = afterSelector)
 
       val beforeClauses = {
-        if(leadingLayoutForFirstClause.contains("{")) {
+        if (leadingLayoutForFirstClause.contains("{")) {
           NoRequisite
         } else {
           "{" ++ newlineIndentedToChildren
@@ -207,7 +214,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           Fragment(selector.toString)
 
         case _ =>
-          p(fun) ++ pp(args, before = "[", separator = ", ",  after = "]")
+          p(fun) ++ pp(args, before = "[", separator = ", ", after = "]")
       }
     }
 
@@ -246,7 +253,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
           val select_ = p(selector, after = Requisite.Blank) ++ fun.nameString
 
-          if(needsParensAroundArguments(arg)) {
+          if (needsParensAroundArguments(arg)) {
             select_ ++ p(arg, before = " (", after = ")")
           } else {
             select_ ++ p(arg, before = Requisite.Blank)
@@ -257,7 +264,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
             p(selector).toLayout
           }
 
-          if(t.withoutComments.endsWith(" "))
+          if (t.withoutComments.endsWith(" "))
             p(fun) ++ " (" ++ p(arg) ++ ")"
           else
             p(fun) ++ "(" ++ p(arg) ++ ")"
@@ -344,8 +351,8 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case vparam :: Nil if !keepTree(vparam.tpt) =>
           val _body = p(body)
 
-          if(_body.asText.startsWith("=>")) {
-            (p(vparam) ++ Fragment(" "),  _body)
+          if (_body.asText.startsWith("=>")) {
+            (p(vparam) ++ Fragment(" "), _body)
           } else {
             (p(vparam, before = "", after = " => "), _body)
           }
@@ -374,7 +381,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       def ss = (tree.selectors map { s =>
         escapeScalaKeywordsForImport(NameTransformer.decode(s.name.toString)) + {
-          if(renames(s))
+          if (renames(s))
             " => " + escapeScalaKeywordsForImport(NameTransformer.decode(s.rename.toString))
           else ""
         }
@@ -385,7 +392,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ if selectors.isEmpty => p(expr)
         case _ =>
           val sp = spacingAroundMultipleImports
-          val selectors_ = if(needsBraces) {
+          val selectors_ = if (needsBraces) {
             "{" + sp + ss + sp + "}"
           } else ss
 
@@ -408,7 +415,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def PackageDef(tree: PackageDef, pid: RefTree, stats: List[Tree])(implicit ctx: PrintingContext) = {
 
-      if(pid.name == nme.EMPTY_PACKAGE_NAME) {
+      if (pid.name == nme.EMPTY_PACKAGE_NAME) {
         pp(stats, separator = newline ++ indentedNewline)
       } else {
         pp(pid :: stats, before = "package ", separator = newline ++ indentedNewline)
@@ -421,10 +428,10 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def Try(tree: Try, block: Tree, catches: List[Tree], finalizer: Tree)(implicit ctx: PrintingContext) = {
 
-      val _block = if(block.isInstanceOf[Block]) {
+      val _block = if (block.isInstanceOf[Block]) {
         p(block, before = "try ")
       } else {
-        pi(block,before = "try {" ++ newlineIndentedToChildren, after = indentedNewline ++ "}")
+        pi(block, before = "try {" ++ newlineIndentedToChildren, after = indentedNewline ++ "}")
       }
 
       val _catches = ppi(catches, before = " catch {" ++ newlineIndentedToChildren, separator = newlineIndentedToChildren, after = indentedNewline ++ "}")
@@ -453,7 +460,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       //mods.annotations map traverse
       val mods_ = mods map (m => m.nameString + " ") mkString ""
 
-      val keyword = if(tree.mods.isTrait)
+      val keyword = if (tree.mods.isTrait)
         "" // "trait" is a modifier
       else
         "class "
@@ -501,7 +508,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
 
       val beforeElse = {
-        if(thenLeadingLayout_.contains("{"))
+        if (thenLeadingLayout_.contains("{"))
           indentedNewline ++ "} else "
         else
           allowSurroundingWhitespace(" else ")
@@ -520,22 +527,22 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       def needsKeyword(t: ValDef) =
         !t.mods.hasFlag(Flags.PARAM) &&
-        !t.mods.hasFlag(Flags.PARAMACCESSOR) &&
-        !t.mods.hasFlag(Flags.CASEACCESSOR) &&
-        !t.mods.hasFlag(Flags.SYNTHETIC) &&
-        !t.symbol.isSynthetic
+          !t.mods.hasFlag(Flags.PARAMACCESSOR) &&
+          !t.mods.hasFlag(Flags.CASEACCESSOR) &&
+          !t.mods.hasFlag(Flags.SYNTHETIC) &&
+          !t.symbol.isSynthetic
 
       //mods.annotations map traverse
       val mods_ = {
         val existingMods = mods map (m => m.nameString + " ") mkString ""
-        if(!tree.symbol.isMutable && needsKeyword(tree) && !existingMods.contains("val")) {
+        if (!tree.symbol.isMutable && needsKeyword(tree) && !existingMods.contains("val")) {
           existingMods + "val "
         } else {
           existingMods
         }
       }
 
-      val valName = if(tree.symbol.isThisSym && name.toString == "_") { // this: ... =>
+      val valName = if (tree.symbol.isThisSym && name.toString == "_") { // this: ... =>
         "this"
       } else {
         name.toString.trim
@@ -558,7 +565,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       val mods_ = {
         val existingMods = mods map (m => m.nameString + " ") mkString ""
-        if(tree.mods.hasFlag(Flags.STABLE)&& !existingMods.contains("val")) {
+        if (tree.mods.hasFlag(Flags.STABLE) && !existingMods.contains("val")) {
           existingMods + "val "
         } else {
           existingMods
@@ -569,14 +576,14 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         // Finalize this fragment so that the anywhere-requisite gets applied here
         // and does not match on ] that might come later (see testNewDefDefWithOriginalContent3
         // and testDefDefWithTypeParams).
-          pp(tparams, before = "[", after = anywhere("]"), separator = ", ").toLayout
+        pp(tparams, before = "[", after = anywhere("]"), separator = ", ").toLayout
       }
 
       // if there's existing layout, the type parameter's layout might already contain "()"
       val params_ = printParameterList(vparamss, tparams_.asText)
 
-      val rhs = if(tree.rhs == EmptyTree && !tree.symbol.isDeferred) {
-        Fragment(" {"+ ctx.newline + ctx.ind.current +"}")
+      val rhs = if (tree.rhs == EmptyTree && !tree.symbol.isDeferred) {
+        Fragment(" {" + ctx.newline + ctx.ind.current + "}")
       } else {
         p(tree.rhs, before = Requisite.allowSurroundingWhitespace("=", " = "))
       }
@@ -616,9 +623,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ => p(qual) // can this actually happen?
       }
 
-      val m = if(mix.toString == "") "" else "["+ mix + "]"
+      val m = if (mix.toString == "") "" else "[" + mix + "]"
 
-      q ++ Fragment("super"+ m)
+      q ++ Fragment("super" + m)
     }
   }
 
@@ -626,7 +633,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     this: TreePrinting with PrintingUtils =>
     override def Literal(tree: Literal, value: Constant)(implicit ctx: PrintingContext) = {
 
-      if(value.tag == StringTag) {
+      if (value.tag == StringTag) {
         Fragment(value.escapedStringValue)
       } else if (value.isNumeric) {
         val suffix = value.tag match {
@@ -650,11 +657,11 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       // FIXME don't code when tired..
 
-      if(stats.size > 1 && !stats.head.hasExistingCode && stats.tail.exists(_.hasExistingCode)) {
+      if (stats.size > 1 && !stats.head.hasExistingCode && stats.tail.exists(_.hasExistingCode)) {
 
         val firstWithExistingCode = stats.find(_.hasExistingCode).get
         val printed = pi(firstWithExistingCode)
-        if(printed.leading.matches("(?ms).*\\{.*")) {
+        if (printed.leading.matches("(?ms).*\\{.*")) {
 
           val ExtractOpeningBrace = new scala.util.matching.Regex("(?ms)(.*\\{.*?)(\r?\n.*)")
           val ExtractOpeningBrace(leading, rest) = printed.leading.asText
@@ -677,7 +684,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           p(stats.head)
         }
 
-        if(printed.leading.matches("(?ms).*\\{.*")) {
+        if (printed.leading.matches("(?ms).*\\{.*")) {
           ppi(stats, separator = newlineIndentedToChildren, after = indentedNewline ++ "}")
         } else {
           printWithEnclosing.dropLeadingIndentation
@@ -708,7 +715,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
 
     override def This(tree: This, qual: Name)(implicit ctx: PrintingContext) = {
-      Fragment((if(qual.toString == "") "" else qual.toString +".") + "this")
+      Fragment((if (qual.toString == "") "" else qual.toString + ".") + "this")
     }
 
     override def Ident(tree: Ident, name: Name)(implicit ctx: PrintingContext) = {

@@ -863,7 +863,30 @@ class SourceGenTest extends TestHelper with SilentTracing {
 
     assertEquals("""
     object Demo {
-      5 match { case 5=>() }
+      5 match { case 5 => () }
+    }
+    """, generateText(alterPattern(tree).get))
+  }
+
+  @Test
+  def testAlteredPatternWithGuard = global.ask { () =>
+    val tree = treeFrom("""
+    object Demo {
+      5 match { case i if true => () }
+    }
+    """)
+
+    val alterPattern = topdown {
+      matchingChildren {
+        transform {
+          case b: Bind => Literal(Constant(5))
+        }
+      }
+    }
+
+    assertEquals("""
+    object Demo {
+      5 match { case 5 if true => () }
     }
     """, generateText(alterPattern(tree).get))
   }
@@ -886,7 +909,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
 
     assertEquals("""
     object Demo {
-      5 match { case 1 | 5=>() }
+      5 match { case 1 | 5 => () }
     }
     """, generateText(alterPattern(tree).get))
   }
