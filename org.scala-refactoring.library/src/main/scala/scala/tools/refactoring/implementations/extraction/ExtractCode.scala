@@ -4,24 +4,29 @@ abstract class ExtractCode extends ExtractionRefactoring with AutoExtractions {
   val collector = AutoExtraction
 }
 
-trait AutoExtractions extends MethodExtractions with ValueExtractions with ExtractorExtractions {
+trait AutoExtractions extends MethodExtractions with ValueExtractions with ExtractorExtractions with ParameterExtractions {
   object AutoExtraction extends ExtractionCollector[Extraction] {
-    val collectors = ExtractorExtraction :: ValueOrMethodExtraction :: Nil
+    val collectors = ExtractorExtraction :: ValueOrMethodExtraction :: ParameterExtraction :: Nil
 
     override def collect(s: Selection) = {
-      var applicableCollector: Option[ExtractionCollector[_ <: Extraction]] = None
+      var applicableCollectors: List[ExtractionCollector[_ <: Extraction]] = Nil
       val sourceOpt = s.expand.expandTo { source: Selection =>
-        applicableCollector = collectors.find(_.isValidExtractionSource(source))
-        applicableCollector.isDefined
+        applicableCollectors = collectors.filter(_.isValidExtractionSource(source))
+        !applicableCollectors.isEmpty
       }
-      
-      applicableCollector.map{ collector =>
-        collector.collect(sourceOpt.get)
-      }.getOrElse(Left(""))
+
+      val extractions = applicableCollectors.flatMap { collector =>
+        collector.collect(sourceOpt.get).right.getOrElse(Nil)
+      }
+
+      if (extractions.isEmpty)
+        Left("No applicable extraction found.")
+      else
+        Right(extractions.sortBy(-_.extractionTarget.enclosing.pos.startOrPoint))
     }
-    
+
     def isValidExtractionSource(s: Selection) = ???
-    
+
     def createExtractions(source: Selection, targets: List[ExtractionTarget]) = ???
   }
 
