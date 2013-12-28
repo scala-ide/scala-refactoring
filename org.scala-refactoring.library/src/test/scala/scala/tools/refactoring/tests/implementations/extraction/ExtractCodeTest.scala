@@ -269,4 +269,29 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
+
+  @Test
+  def extractExtractor = new FileSet {
+    """
+      object Demo {
+        1 match {
+	  	  case /*(*/i: Int/*)*/ => println(i)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        1 match {
+	  	  case Extracted(i) => println(i)
+        }
+    
+        object Extracted {
+          def unapply(x: Int) = x match {
+    		case i => Some(i)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract("Extracted", 0)).assertEqualTree
 }

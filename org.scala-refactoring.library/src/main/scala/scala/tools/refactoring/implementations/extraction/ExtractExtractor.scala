@@ -12,8 +12,12 @@ trait ExtractorExtractions extends Extractions {
   object ExtractorExtraction extends ExtractionCollector[ExtractorExtraction] {
     def isValidExtractionSource(s: Selection) = {
       s.selectedTopLevelTrees match {
-        case (_: CaseDef | ExtractablePattern(_)) :: Nil =>
-          s.findSelectedOfType[CaseDef].isDefined
+        case (cd @ CaseDef(_, _, body)) :: Nil =>
+          !body.pos.includes(s.pos)
+        case ExtractablePattern(_) :: Nil =>
+          s.findSelectedOfType[CaseDef].map{ cd =>
+            !cd.body.pos.includes(s.pos)
+          }.getOrElse(false)
         case _ => false
       }
     }
