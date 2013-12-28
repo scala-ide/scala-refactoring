@@ -2,6 +2,9 @@ package scala.tools.refactoring.implementations.extraction
 
 import scala.reflect.internal.Flags
 
+/**
+ * Extracts patterns in case statements to new extractor objects.
+ */
 abstract class ExtractExtractor extends ExtractionRefactoring with ExtractorExtractions {
   val collector = ExtractorExtraction
 }
@@ -12,13 +15,19 @@ trait ExtractorExtractions extends Extractions {
   object ExtractorExtraction extends ExtractionCollector[ExtractorExtraction] {
     def isValidExtractionSource(s: Selection) = {
       s.selectedTopLevelTrees match {
-        case (cd @ CaseDef(_, _, body)) :: Nil =>
-          !body.pos.includes(s.pos)
-        case ExtractablePattern(_) :: Nil =>
-          s.findSelectedOfType[CaseDef].map{ cd =>
-            !cd.body.pos.includes(s.pos)
+        case (cd: CaseDef) :: Nil =>
+          true
+        case (_: Star) :: Nil =>
+          // Star patterns are only extractable as parts of other patterns
+          false
+        case _ :: Nil =>
+          // Trees that are part of a pattern in a CaseDef
+          // must be patterns and are therefore extractable
+          s.findSelectedOfType[CaseDef].map { cd =>
+            cd.pat.pos.includes(s.pos)
           }.getOrElse(false)
-        case _ => false
+        case _ =>
+          false
       }
     }
 
@@ -31,13 +40,6 @@ trait ExtractorExtractions extends Extractions {
         case cd: CaseDef => validTargets.map(CasePatternExtraction(cd, source, _))
         case pat => validTargets.map(PatternExtraction(pat, source, _))
       }
-    }
-  }
-
-  object ExtractablePattern {
-    def unapply(t: Tree): Option[Tree] = t match {
-      case _: Star => None
-      case t => Some(t)
     }
   }
 

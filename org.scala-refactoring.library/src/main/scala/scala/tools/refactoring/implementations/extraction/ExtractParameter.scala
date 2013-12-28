@@ -8,7 +8,8 @@ abstract class ExtractParameter extends ExtractionRefactoring with ParameterExtr
 }
 
 /**
- * Extracts a parameter
+ * Extracts an expression into a new parameter whose default value is 
+ * the extracted expression.
  */
 trait ParameterExtractions extends Extractions with ImportAnalysis {
   import global._
@@ -17,7 +18,7 @@ trait ParameterExtractions extends Extractions with ImportAnalysis {
     def isValidExtractionSource(s: Selection) =
       s.representsValue && !s.representsParameter
 
-    override def prepareInsertionPosition(s: Selection) =
+    override def createInsertionPosition(s: Selection) = 
       atEndOfValueParameterList
 
     def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
@@ -31,7 +32,7 @@ trait ParameterExtractions extends Extractions with ImportAnalysis {
     abstractionName: String = defaultAbstractionName) extends Extraction {
 
     val displayName = extractionTarget.enclosing match {
-      case t: DefDef => s"Extract Method Parameter to ${t.symbol.nameString}"
+      case t: DefDef => s"Extract Parameter to Method ${t.symbol.nameString}"
     }
 
     val functionOrDefDef = extractionTarget.enclosing

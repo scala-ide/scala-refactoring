@@ -7,6 +7,11 @@ abstract class ExtractMethod extends ExtractionRefactoring with MethodExtraction
   val collector = MethodExtraction
 }
 
+/**
+ * Extracts one or more expressions into a new method. Each inbound dependency
+ * to the extracted code that is not accessible from the target scope becomes
+ * a parameter to the new method.
+ */
 trait MethodExtractions extends Extractions with ImportAnalysis {
   import global._
 
@@ -29,26 +34,25 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
   case class MethodExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    abstractionName: String = defaultAbstractionName,
-    selectedParameters: List[Symbol] = Nil) extends Extraction {
+    abstractionName: String = defaultAbstractionName) extends Extraction {
 
     val displayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Method to ${t.symbol.owner.decodedName}"
       case _ => s"Extract Local Method"
     }
 
-    lazy val requiredParameters =
+    /**
+     * Inbound dependencies not defined in the target scope and therefore
+     * must become parameters to the new method.
+     */
+    lazy val parameters =
       extractionSource.inboundLocalDeps.filterNot { dep =>
         extractionTarget.scope.sees(dep)
       }
 
-    lazy val optionalParameters =
-      extractionSource.inboundLocalDeps diff requiredParameters
-
     lazy val imports = buildImportTree(extractionSource.root)
 
     def perform() = {
-      val parameters = requiredParameters union selectedParameters
       val outboundDeps = extractionSource.outboundLocalDeps
 
       val call = mkCallDefDef(abstractionName, parameters :: Nil, outboundDeps)
@@ -96,8 +100,5 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
 
     def withAbstractionName(name: String) =
       copy(abstractionName = name).asInstanceOf[this.type]
-
-    def withSelectedParameters(params: List[Symbol]) =
-      copy(selectedParameters = params)
   }
 }

@@ -20,7 +20,7 @@ trait ExtractionRefactoring extends MultiStageRefactoring with Extractions {
   case class PreparationResult(extractions: List[Extraction])
 
   type RefactoringParameters = Extraction
-  
+
   val collector: ExtractionCollector[_ <: Extraction]
 
   def prepare(s: Selection) =
@@ -43,32 +43,56 @@ trait ExtractionRefactoring extends MultiStageRefactoring with Extractions {
 trait Extractions extends ScopeAnalysis with TransformableSelections with InsertionPositions with CompilerAccess {
   import global._
 
+  type ErrorMsg = String
+
+  val defaultAbstractionName = "extracted"
+
   /**
    * A concrete and applicable extraction.
    */
   trait Extraction {
+    /**
+     * The code to extract
+     */
     val extractionSource: Selection
 
+    /**
+     * Where the new abstraction will be inserted.
+     */
     val extractionTarget: ExtractionTarget
 
+    /**
+     * Name of the new abstraction introduced by this extraction.
+     */
     val abstractionName: String
+
+    def withAbstractionName(name: String): this.type
 
     /**
      * A brief description of the extraction.
      */
     val displayName: String
 
+    /**
+     * Returns one or more transformations required to perform
+     * the extraction.
+     */
     def perform(): List[Transformation[Tree, Tree]]
-
-    def withAbstractionName(name: String): this.type
   }
 
+  /**
+   * Represents a target for extractions with the according scope for
+   * dependency lookups.
+   */
   case class ExtractionTarget(scope: ScopeTree, enclosing: Tree, ip: InsertionPosition) {
     /**
      * Approximated position where new trees are inserted.
      */
     lazy val pos = ip(enclosing).pos
 
+    /**
+     * Inserts `t` at the targeted position.
+     */
     def insert(t: Tree): Transformation[Tree, Tree] =
       topdown {
         matchingChildren {
@@ -80,14 +104,15 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
       }
   }
 
-  type ErrorMsg = String
-
-  val defaultAbstractionName = "extracted"
-
   trait ExtractionCollector[E <: Extraction] {
+    /**
+     * Expands selection `s` until it is applicable for extractions
+     * of type `E`. If an appropriate selection is found, it returns
+     * possible extractions for all target scopes.
+     */
     def collect(s: Selection): Either[ErrorMsg, List[E]] = {
       s.expand.expandTo(isValidExtractionSource(_)).map { source =>
-        val mkTarget = prepareExtractionTargets(prepareInsertionPosition(source), ScopeTree.build(source))_
+        val mkTarget = createExtractionTargets(createInsertionPosition(source), ScopeTree.build(source))_
         val targets = source
           .filterSelected(isValidTargetTree(source, _))
           .reverse
@@ -96,10 +121,25 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
           }
 
         Right(createExtractions(source, targets))
-      }.getOrElse(Left("No extraction for selection found."))
+      }.getOrElse(Left("No extraction for current selection found."))
     }
 
-    def isValidTargetTree(s: Selection, t: Tree) =
+    /**
+     * Does `s` represent code that is extractable by extractions
+     * constructed by this collector?
+     */
+    private[extraction] def isValidExtractionSource(s: Selection): Boolean
+
+    /**
+     * Creates extractions that extract code from `source` and inserts a
+     * new abstraction in a target from `targets`.
+     */
+    private[extraction] def createExtractions(source: Selection, targets: List[ExtractionTarget]): List[E]
+
+    /**
+     * Is `t` a feasible target for extracted abstractions?
+     */
+    private[extraction] def isValidTargetTree(s: Selection, t: Tree) =
       !t.pos.sameRange(s.pos) &&
         (t match {
           // If the selection selects parts of a case pattern or guard, the body is not a feasible target
@@ -108,23 +148,19 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
           case _ => true
         })
 
-    def isValidExtractionSource(s: Selection): Boolean
-
-    def prepareInsertionPosition(s: Selection): InsertionPosition =
+    private[extraction] def createInsertionPosition(s: Selection): InsertionPosition =
       s.beforeSelectionInBlock orElse
         s.afterSelectionInTemplate orElse
         atBeginningOfNewDefBody orElse
         atBeginningOfNewFunctionBody orElse
         atBeginningOfCaseBody
 
-    def prepareExtractionTargets(ip: InsertionPosition, scopes: ScopeTree)(t: Tree): List[ExtractionTarget] =
+    private[extraction] def createExtractionTargets(ip: InsertionPosition, scopes: ScopeTree)(t: Tree): List[ExtractionTarget] =
       if (ip.isDefinedAt(t)) {
         val scope = scopes.findScopeFor(ip(t).pos)
         ExtractionTarget(scope, t, ip) :: Nil
       } else {
         Nil
       }
-
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]): List[E]
   }
 }

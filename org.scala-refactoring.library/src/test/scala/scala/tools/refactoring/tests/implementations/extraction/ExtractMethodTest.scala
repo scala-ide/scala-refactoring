@@ -6,12 +6,11 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 
 class ExtractMethodTest extends TestHelper with TestRefactoring {
-  def extract(name: String, extractionIdx: Int, selectedParams: List[String])(pro: FileSet) = {
+  def extract(name: String, extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
       val e = preparationResult.right.get.extractions(extractionIdx).asInstanceOf[refactoring.MethodExtraction]
-      val extraction = e.copy(abstractionName = name,
-        selectedParameters = e.optionalParameters.filter(sym => selectedParams.contains(sym.nameString)))
+      val extraction = e.copy(abstractionName = name)
     }
     testRefactoring.performRefactoring(testRefactoring.extraction)
   }
@@ -30,14 +29,14 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       object Demo {
         def fn(a: Int) = {
           val b = 2
-          def extracted(a: Int): Int = {
+          def extracted(): Int = {
             /*(*/a * b
           }
-          println(/*(*/extracted(a)/*)*/)
+          println(/*(*/extracted()/*)*/)
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0, "a" :: Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
   def extractComplexMethod = new FileSet {
@@ -65,12 +64,12 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         def fn(p: Int) = {
           for(i <- 1 to p) {
             val a = p * i
-            /*(*/val (b, c, d) = extracted(p, a, na)
+            /*(*/val (b, c, d) = extracted(p, a)
             println(b * b * c * d * d)
           }
         }
 
-        def extracted(p: Int, a: Int, na: Int): (Int, Int, Int) = {
+        def extracted(p: Int, a: Int): (Int, Int, Int) = {
           /*(*/val b = p * a
           val c = a * na
           val d = fm(a)/*)*/
@@ -80,7 +79,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         def fm(p: Int) = p + 1
       }
     """
-  }.performRefactoring(extract("extracted", 2, "na" :: Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", 2)).assertEqualTree
 
   @Test
   def extractImportedDependency = new FileSet {
@@ -105,7 +104,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1, Nil)).assertEqualTree
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
   @Ignore("Has to be handled in pretty printer")
@@ -132,5 +131,5 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1, Nil)).assertEqualSource
+  }.performRefactoring(extract("extracted", 1)).assertEqualSource
 }
