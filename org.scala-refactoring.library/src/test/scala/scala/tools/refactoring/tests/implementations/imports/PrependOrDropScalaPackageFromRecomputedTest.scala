@@ -88,20 +88,6 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
   } applyRefactoring organizeDropScalaPackage
 
   @Test
-  def noScalaPackage = new FileSet {
-    """
-    import java.lang.{String, Math}
-
-    object Main {val s: String = ""}
-    """ becomes
-    """
-    import java.lang.String
-
-    object Main {val s: String = ""}
-    """
-  } applyRefactoring organizePrependScalaPackage
-
-  @Test
   def importFromPackageObject = new FileSet {
     """
     import scala.collection.breakOut

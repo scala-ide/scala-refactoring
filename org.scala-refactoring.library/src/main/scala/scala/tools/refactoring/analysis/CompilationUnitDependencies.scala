@@ -11,25 +11,15 @@ trait CompilationUnitDependencies {
 
   import global._
 
-  def isQualifierDefaultImported(t: Tree) = !isQualifierNotDefaultImported(t)
-
-  def isQualifierNotDefaultImported(t: Tree) = t match {
+  def isQualifierDefaultImported(t: Tree) = t match {
     case t: Select =>
       val Scala = newTypeName("scala")
-      val Java = newTypeName("java")
-      val `lang` = newTermName("lang")
       t.qualifier match {
-        case Ident(Names.scala) => false
-        case This(Scala) => false
-        case Select(This(Java), `lang`) => false
-        case Select(Ident(Names.scala), Names.pkg) => false
-        case Select(Ident(Names.scala), Names.Predef) => false
-        case Select(This(Scala), _) => false
-        case qual if qual.symbol.isSynthetic && !qual.symbol.isModule => false
-        case qual if qual.nameString == "ClassTag" => false
-        case _ => true
+        case Select(This(Scala), _) => true
+        case qual if qual.nameString == "ClassTag" => true
+        case q => q.symbol.isOmittablePrefix
       }
-    case _ => true
+    case _ => false
   }
 
   /**
