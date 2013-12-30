@@ -37,8 +37,10 @@ trait ExtractorExtractions extends Extractions {
       }
 
       source.selectedTopLevelTrees.head match {
-        case cd: CaseDef => validTargets.map(CasePatternExtraction(cd, source, _))
-        case pat => validTargets.map(PatternExtraction(pat, source, _))
+        case cd: CaseDef => 
+          validTargets.map(CasePatternExtraction(cd, source, _))
+        case pat => 
+          validTargets.map(PatternExtraction(pat, source, _))
       }
     }
   }
@@ -89,8 +91,11 @@ trait ExtractorExtractions extends Extractions {
     def perform() = {
       val extractorDef = {
         mkExtractor {
+          /* Remove pattern position in some cases in order
+           * to reprint the tree with pretty printer.
+           */
           val patternFixedPos = pattern match {
-            case t: Apply => t
+            case t @ (_: Apply | _: UnApply) => t
             case t => t.duplicate.setPos(NoPosition)
           }
 
@@ -115,7 +120,12 @@ trait ExtractorExtractions extends Extractions {
       copy(abstractionName = name).asInstanceOf[this.type]
   }
 
-  trait ExtractorExtraction extends Extraction {
+  /**
+   * Base trait of extractor extractions.
+   * Allows to create different extractors based on the
+   * selected pattern.
+   */
+  sealed trait ExtractorExtraction extends Extraction {
     val unapplyParamName = "x"
 
     val displayName = extractionTarget.enclosing match {
