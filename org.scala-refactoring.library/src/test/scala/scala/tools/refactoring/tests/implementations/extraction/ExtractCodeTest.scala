@@ -30,7 +30,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         val extracted = a * a
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
   def extractCodeWithUnknownDependencies = new FileSet {

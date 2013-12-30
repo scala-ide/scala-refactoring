@@ -139,7 +139,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         def fm = 7
       }
     """
-  }.performRefactoring(extract("c", 1)).assertEqualTree
+  }.performRefactoring(extract("c", 2)).assertEqualTree
 
   @Test
   def extractImportedDependency = new FileSet {
@@ -341,6 +341,22 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
 
 	  val extracted = Intish(1) match {
 	    case _ => i
+      }
+    }
+    """
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  
+  @Test
+  def extractIntoNewValBlock = new FileSet{
+    """
+    object Demo {
+	  val a = /*(*/"hello"/*)*/.toUpperCase
+    }
+    """ becomes """
+    object Demo {
+	  val a = {
+        val extracted = "hello"
+        extracted.toUpperCase
       }
     }
     """

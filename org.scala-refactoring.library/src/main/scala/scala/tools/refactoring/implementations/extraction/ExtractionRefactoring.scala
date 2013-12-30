@@ -153,7 +153,8 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
         s.afterSelectionInTemplate orElse
         atBeginningOfNewDefBody orElse
         atBeginningOfNewFunctionBody orElse
-        atBeginningOfCaseBody
+        atBeginningOfCaseBody orElse
+        atBeginningOfNewBlockInRhsOfVal
 
     private[extraction] def createExtractionTargets(ip: InsertionPosition, scopes: ScopeTree)(t: Tree): List[ExtractionTarget] =
       if (ip.isDefinedAt(t)) {
