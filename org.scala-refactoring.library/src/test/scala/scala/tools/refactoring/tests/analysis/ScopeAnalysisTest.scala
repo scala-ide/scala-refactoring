@@ -315,8 +315,6 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
           class Inner {
             val a = /*(*/p/*)*/
           }
-        
-          new A.a
         }
       }
     """)
@@ -331,5 +329,35 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
     assertEquals("MemberScope(Outer) -> MemberScope(<empty>)", scopes.findScopeFor(outer).toString())
     assertEquals("MemberScope(Inner) -> LocalScope(p) -> MemberScope(Outer) -> MemberScope(<empty>)", scopes.findScopeFor(inner).toString())
+  }
+
+  @Test
+  def scopeLookupInNestedClasses2 = {
+    val s = toSelection("""
+      class Outer {
+        class Inner {
+          val a = 1
+	      println(/*(*/a/*)*/
+        }
+      }
+    """)
+
+    val scopes = ScopeTree.build(s.root, s.selectedTopLevelTrees.head)
+
+    val inner = s.findSelectedOfType[Template].get
+    val outer = s.findSelectedWithPredicate{
+      case t: Template if t != inner => true
+      case _ => false
+    }.get
+    
+    val outerScope = scopes.findScopeFor(outer)
+
+    assertEquals("MemberScope(Outer) -> MemberScope(<empty>)", outerScope.toString())
+    assertEquals("MemberScope(Inner) -> MemberScope(Outer) -> MemberScope(<empty>)", scopes.toString())
+    
+    val aSym = s.inboundDeps.head
+    
+    assertTrue(scopes.sees(aSym))
+    assertFalse(outerScope.sees(aSym))
   }
 }

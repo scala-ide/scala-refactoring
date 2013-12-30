@@ -89,14 +89,14 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
       enclosing copy (vparamss = mkParams(param))
     }, pos)
   }
-  
+
   /**
    * Inserts a tree at the end of an argument list.
    */
   lazy val atEndOfArgumentList: InsertionPosition = {
     case enclosing @ Apply(fun, args) =>
       InsertionPoint(enclosing, { insertion =>
-          enclosing copy (args = args :+ insertion)
+        enclosing copy (args = args :+ insertion)
       }, enclosing.pos)
   }
 
@@ -116,9 +116,12 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
      */
     lazy val afterSelectionInTemplate: InsertionPosition = {
       case enclosing @ Template(_, _, body) =>
+        val selPos = posOfSelectedTreeIn(enclosing)
+        val approxPos = selPos.withStart(selPos.end).withEnd(selPos.end + 1)
+
         InsertionPoint(enclosing, { insertion =>
           enclosing copy (body = insertInSeq(body, insertion, isBeforeEndOfSelection))
-        }, posOfSelectedTreeIn(enclosing))
+        }, approxPos)
     }
 
     /**

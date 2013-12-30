@@ -105,6 +105,27 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  
+  @Test
+  def extractFromNestedClass = new FileSet {
+    """
+      object Demo {
+        trait T{
+          val a = 1
+          /*(*/a/*)*/
+	    }
+      }
+    """ becomes
+      """
+      object Demo {
+        trait T{
+          val a = 1
+          extracted(a)
+	    }
+    	def extracted(a: Int) = a
+      }
+    """
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
   @Ignore("Has to be handled in pretty printer")
