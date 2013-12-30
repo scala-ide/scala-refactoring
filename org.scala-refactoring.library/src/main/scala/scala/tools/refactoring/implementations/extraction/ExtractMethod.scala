@@ -83,14 +83,7 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
 
         val ps = parameters.map(symbolToParam) :: Nil
 
-        val returnTpe = statements.last match {
-          case t: Function if t.pos.isTransparent =>
-            TypeTree(t.body.tpe)
-          case t =>
-            TypeTree(t.tpe)
-        }
-
-        DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(abstractionName), Nil, ps, returnTpe, mkBlock(statements))
+        DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(abstractionName), Nil, ps, EmptyTree, mkBlock(statements))
       }
 
       extractionSource.replaceBy(call, preserveHierarchy = true) ::

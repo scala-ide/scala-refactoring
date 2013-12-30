@@ -29,7 +29,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       object Demo {
         def fn(a: Int) = {
           val b = 2
-          def extracted(): Int = {
+          def extracted() = {
             /*(*/a * b
           }
           println(/*(*/extracted()/*)*/)
@@ -69,7 +69,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
           }
         }
 
-        def extracted(p: Int, a: Int): (Int, Int, Int) = {
+        def extracted(p: Int, a: Int) = {
           /*(*/val b = p * a
           val c = a * na
           val d = fm(a)/*)*/
@@ -126,7 +126,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
           extracted(l)
         }
 
-        def extracted(l: LinkedList[Int]): Int = {
+        def extracted(l: LinkedList[Int]) = {
           /*(*/l.length/*)*/
         }
       }
