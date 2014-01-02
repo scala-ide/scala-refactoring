@@ -271,6 +271,27 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
   
   @Test
+  def extractFunctionWithBlockBody = new FileSet{
+    """
+    object Demo {
+      List(1, 2, 3).map{/*(*/i =>
+	  	val a = 1
+	  	i + a/*)*/
+	  }
+    }
+    """ becomes """
+    object Demo {
+      List(1, 2, 3).map(extracted)
+
+      val extracted: Int => Int = i => {
+    	val a = 1
+    	i + a
+      }
+    }
+    """
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  
+  @Test
   def extractFunctionWithWildcardParam = new FileSet{
     """
     object Demo {

@@ -74,7 +74,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
    * Inserts trees as the first statement in a case body (rhs).
    */
   lazy val atBeginningOfCaseBody: InsertionPosition = {
-    case enclosing @ CaseDef(_, _, body) =>
+    case enclosing @ CaseDef(_, _, NoBlock(body)) =>
       InsertionPoint(enclosing, { insertion =>
         enclosing copy (body = mkBlock(insertion :: body :: Nil)) replaces enclosing
       }, body.pos)

@@ -50,16 +50,25 @@ trait ValueExtractions extends Extractions with ImportAnalysis {
 
       val importStatements = extractionSource.selectedTopLevelTrees.flatMap(imports.findRequiredImports(_, extractionSource.pos, extractionTarget.pos))
 
-      val statements = importStatements ::: extractionSource.selectedTopLevelTrees ::: returnStatements
+      val extractedStatements = extractionSource.selectedTopLevelTrees match {
+        case (fn @ Function(vparams, Block(stmts, expr))) :: Nil =>
+          val tpe = fn.tpe
+          val newFn = fn copy (body = Block(stmts, expr))
+          newFn.tpe = tpe
+          newFn :: Nil
+        case ts => ts
+      }
+
+      val statements = importStatements ::: extractedStatements ::: returnStatements
 
       val abstraction = statements match {
         case expr :: Nil =>
           expr match {
             // Add explicit type annotations for extracted functions
-            case Function(args, body) =>
-              mkValDef(abstractionName, expr, TypeTree(expr.tpe))
+            case fn: Function =>
+              mkValDef(abstractionName, fn, TypeTree(fn.tpe))
             case t =>
-              mkValDef(abstractionName, expr)
+              mkValDef(abstractionName, t)
           }
         case stmts => mkValDef(abstractionName, mkBlock(stmts))
       }

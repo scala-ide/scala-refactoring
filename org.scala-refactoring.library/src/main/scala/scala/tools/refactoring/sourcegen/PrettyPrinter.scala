@@ -351,7 +351,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case vparam :: Nil if !keepTree(vparam.tpt) =>
           val _body = p(body)
 
-          if (_body.asText.startsWith("=>")) {
+          if (_body.asText.startsWith("=>") || p(vparam).asText.endsWith("=>")) {
             (p(vparam) ++ Fragment(" "), _body)
           } else {
             (p(vparam, before = "", after = " => "), _body)
