@@ -21,14 +21,14 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
 
     def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
       val validTargets = targets.takeWhile { t =>
-        source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || isAllowedAsParameter(dep))
+        source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || (isAllowedAsParameter(dep) && !source.reassignedDeps.contains(dep)))
       }
 
       validTargets.map(MethodExtraction(source, _))
     }
 
     def isAllowedAsParameter(s: Symbol) =
-      s.isValue && (s.isVal || s.isAccessor)
+      s.isValue && (s.isVal || s.isVar || s.isAccessor)
   }
 
   case class MethodExtraction(
@@ -82,8 +82,12 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
         }
 
         val ps = parameters.map(symbolToParam) :: Nil
+        val returnTpt = extractionSource.selectedTopLevelTrees match {
+          case (fn: Function) :: Nil => TypeTree(fn.tpe)
+          case _ => EmptyTree
+        }
 
-        DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(abstractionName), Nil, ps, EmptyTree, mkBlock(statements))
+        DefDef(NoMods withPosition (Flags.METHOD, NoPosition), newTermName(abstractionName), Nil, ps, returnTpt, mkBlock(statements))
       }
 
       extractionSource.replaceBy(call, preserveHierarchy = true) ::

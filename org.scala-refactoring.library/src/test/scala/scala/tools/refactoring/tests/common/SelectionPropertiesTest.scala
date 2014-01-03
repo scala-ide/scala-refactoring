@@ -105,4 +105,18 @@ class SelectionPropertiesTest extends TestHelper with Selections {
     assertTrue(sel.representsValueDefinitions)
     assertTrue(sel.representsParameter)
   }
+
+  @Test
+  def triggersSideEffects = {
+    val sel = """
+      object O{
+        var a = 1
+        /*(*/def fn = {
+    	  a += 1
+          a
+        }/*)*/
+      }
+      """.selection
+    assertTrue(sel.mayHaveSideEffects)
+  }
 }

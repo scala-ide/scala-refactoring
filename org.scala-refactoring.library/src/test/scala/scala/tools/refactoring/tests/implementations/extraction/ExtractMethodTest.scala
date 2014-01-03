@@ -153,4 +153,38 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 1)).assertEqualSource
+  
+  @Test(expected=classOf[IndexOutOfBoundsException])
+  def extractWithSideEffects = new FileSet {
+    """
+      object Demo {
+        def fn = {
+          var a = 1
+	  	  /*(*/a += 1/*)*/
+          a
+	    }
+      }
+    """ becomes
+      """"""
+  }.performRefactoring(extract("extracted", 1)).assertEqualSource
+  
+  @Test
+  def extractFunction = new FileSet {
+    """
+      object Demo {
+	  	def fn(a: Int) = {
+          List(1, 2).map{/*(*/i => i + a/*)*/}
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+	  	def fn(a: Int) = {
+          List(1, 2).map{ extracted(a) }
+        }
+    	def extracted(a: Int): Int => Int =
+    	  i => i + a
+      }
+    """
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 }

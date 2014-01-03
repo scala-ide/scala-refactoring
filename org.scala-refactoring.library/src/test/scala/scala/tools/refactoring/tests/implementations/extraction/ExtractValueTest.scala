@@ -382,4 +382,27 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
     }
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  
+  @Test
+  def extractMutable = new FileSet{
+    """
+    object Demo {
+	  def fn = {
+	    /*(*/var i = 1/*)*/
+	    i += 1
+	  }
+    }
+    """ becomes """
+    object Demo {
+	  def fn = {
+	    val extracted = {
+    	  var i = 1
+          i
+        }
+        var i = extracted
+        i += 1
+      }
+    }
+    """
+  }.performRefactoring(extract("extracted", 0)).assertEqualTree
 }

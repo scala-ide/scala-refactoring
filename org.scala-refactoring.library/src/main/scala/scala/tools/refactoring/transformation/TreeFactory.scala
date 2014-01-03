@@ -74,6 +74,12 @@ trait TreeFactory {
   }
 
   def mkAssignmentToCall(call: Tree, returns: List[Symbol]) = {
+    val mods =
+      if (returns.exists(_.isMutable))
+        NoMods withPosition (Tokens.VAR, NoPosition)
+      else
+        NoMods withPosition (Tokens.VAL, NoPosition)
+
     returns match {
       case Nil => call
       case returns =>
@@ -82,7 +88,7 @@ trait TreeFactory {
           case x :: Nil => x.name.toString
           case xs => "(" + (xs map (_.name) mkString ", ") + ")"
         }
-        ValDef(NoMods withPosition (Tokens.VAL, NoPosition), newTermName(valName), new TypeTree(), call)
+        ValDef(mods, newTermName(valName), new TypeTree(), call)
     }
   }
 
@@ -214,12 +220,12 @@ trait TreeFactory {
   }
 
   def mkClass(
-    mods: Modifiers = NoMods, 
-    name: String, 
-    tparams: List[TypeDef] = Nil, 
-    argss: List[List[(Modifiers, String, Tree)]] = Nil, 
-    body: List[Tree] = Nil, 
-    parents: List[Tree] = Nil, 
+    mods: Modifiers = NoMods,
+    name: String,
+    tparams: List[TypeDef] = Nil,
+    argss: List[List[(Modifiers, String, Tree)]] = Nil,
+    body: List[Tree] = Nil,
+    parents: List[Tree] = Nil,
     superArgs: List[Tree] = Nil) = {
 
     val template = mkTemplate(argss, superArgs, mods, parents, body)
@@ -254,7 +260,7 @@ trait TreeFactory {
 
   def mkModule(mods: Modifiers = NoMods, name: String, body: List[Tree] = Nil, parents: List[Tree] = Nil) = {
     val template = mkTemplate(Nil, Nil, NoMods, parents, body)
-    
+
     ModuleDef(mods, newTermName(name), template)
   }
 

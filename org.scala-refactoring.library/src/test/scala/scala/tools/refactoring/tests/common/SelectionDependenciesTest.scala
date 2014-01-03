@@ -224,4 +224,18 @@ class SelectionDependenciesTest extends TestHelper with Selections {
       """.selection
     assertEquals("", sel.outboundLocalDeps.mkString(", "))
   }
+
+  @Test
+  def reassignedVariablesAsOutboundDeps = {
+    val sel = """
+      object O{
+        def fn = {
+    	  var a = 1
+          /*(*/a += 1/*)*/
+    	  a
+        }
+      }
+      """.selection
+    assertEquals("variable a", sel.outboundLocalDeps.mkString(", "))
+  }
 }

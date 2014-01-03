@@ -188,6 +188,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     lazy val outboundLocalDeps: List[Symbol] = {
       val allDefs = selectedTopLevelTrees.collect {
         case t: DefTree => t.symbol
+        case Assign(t: Ident, _) => t.symbol
       }
 
       val nextEnclosingTree = findSelectedWithPredicate {
@@ -201,6 +202,13 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         }
       }.distinct
     }
+    
+    /**
+     * All inbound dependencies that are reassigned in the selected code and used
+     * afterwards.
+     */
+    lazy val reassignedDeps =
+      inboundLocalDeps intersect outboundLocalDeps
 
     /**
      * Expands the selection in such a way, that partially selected

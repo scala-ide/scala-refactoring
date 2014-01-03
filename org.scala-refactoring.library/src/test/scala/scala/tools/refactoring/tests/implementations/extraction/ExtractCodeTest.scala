@@ -125,24 +125,6 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  @Ignore("Todo...")
-  def extractFunction = new FileSet {
-    """
-      object Demo {
-        val a = (1 to 10).map{ /*(*/i =>
-          i + 100/*)*/
-        }
-      }
-    """ becomes
-      """
-      object Demo {
-        val a = (1 to 10).map(extracted)
-        val extracted = (i: Int) => i + 100
-      }
-    """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
-  @Test
   def extractCodeWithPotentialSideEffects = new FileSet {
     """
       object Demo {
