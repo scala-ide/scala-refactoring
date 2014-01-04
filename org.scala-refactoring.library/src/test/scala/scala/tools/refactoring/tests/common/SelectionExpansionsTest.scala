@@ -106,14 +106,6 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandWithNothingSelected =
-    """
-    class C{
-      val a = 1/*(*//*)*/
-    }
-    """.assertExpansion(_.expand).toRemain
-
-  @Test
   def expandValidSelection =
     """
     class C{
@@ -275,6 +267,38 @@ class SelectionExpansionsTest extends TestHelper with Selections {
       assertEquals(fn, expanded.selectedTopLevelTrees.head)
       assertTrue(fn.pos.sameRange(expanded.pos))
       assertEquals(fn, expanded.enclosingTree)
+    }
+
+  @Test
+  def expandEmptySelection =
+    """
+    object O{
+      1/*(*//*)*/
+    }
+    """.assertExpansion(_.expand).toBecome {
+      """
+    object O{
+      /*(*/1/*)*/
+    }
+    """
+    }
+
+  @Test
+  def expandEmptySelectionWithinTree =
+    """
+    object O{
+      123/*(*//*)*/
+    }
+    """.assertExpansion { orig =>
+      val offset = orig.pos.start - 6
+      val selIn123 = orig.withPos(orig.pos.withStart(offset).withEnd(offset))
+      selIn123.expand
+    }.toBecome {
+      """
+    object O{
+      /*(*/123/*)*/
+    }
+    """
     }
 
   implicit class StringToSel(src: String) {

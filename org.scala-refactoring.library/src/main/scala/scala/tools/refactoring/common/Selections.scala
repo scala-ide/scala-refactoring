@@ -202,7 +202,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         }
       }.distinct
     }
-    
+
     /**
      * All inbound dependencies that are reassigned in the selected code and used
      * afterwards.
@@ -225,25 +225,28 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         }
       }
 
+      def nearestTree = enclosingTree.children match {
+        case Nil => enclosingTree
+        case ts => ts.minBy(_.distanceTo(pos))
+      }
+
       // some trees have to be selected as a whole if more than one child
       // is selected. For example if a method parameter and the body is selected,
       // we select the DefDef as a whole to get a complete selection. 
       def expandToParentIfRequired(s: Selection) =
         s.enclosingTree match {
-          case _: DefDef | _: Function | _: If | _: Match | _: Try | _: CaseDef =>
-            s.expandTo(s.enclosingTree).get
+          case t @ (_: DefDef | _: Function | _: If | _: Match | _: Try | _: CaseDef) =>
+            s.expandTo(t).get
           case _ => s
         }
 
-      expandToParentIfRequired(
-        expandTo(
-          posOfPartiallySelectedTrees(enclosingTree.children)).get)
+      if (selectedTopLevelTrees.isEmpty)
+        withPos(nearestTree.pos)
+      else
+        expandToParentIfRequired(
+          expandTo(
+            posOfPartiallySelectedTrees(enclosingTree.children)).get)
     }
-
-    lazy val isSingleTree =
-      selectedTopLevelTrees.headOption.map { firstTree =>
-        firstTree.pos.start == pos.start && firstTree.pos.end == pos.end
-      }.getOrElse(false)
 
     /**
      * Tries to expand the selection to a tree that fully contains
@@ -266,16 +269,19 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     /**
      * Tries to expand the selection to `newPos`.
      */
-    def expandTo(newPos: Position): Option[Selection] = {
-      if (newPos.isRange && newPos.includes(pos)) {
-        val outer = this
-        Some(new Selection {
-          val root = outer.root
-          val file = outer.file
-          val pos = newPos.asInstanceOf[RangePosition]
-        })
-      } else
+    def expandTo(newPos: Position): Option[Selection] =
+      if (newPos.isRange && newPos.includes(pos))
+        Some(withPos(newPos))
+      else
         None
+
+    def withPos(newPos: Position): Selection = {
+      val outer = this
+      new Selection {
+        val root = outer.root
+        val file = outer.file
+        val pos = newPos.asInstanceOf[RangePosition]
+      }
     }
 
     /**
@@ -329,6 +335,11 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
           case ts => outboundLocalDeps.isEmpty && isValue(ts.last)
         })
     }
+
+    lazy val isSingleTree =
+      selectedTopLevelTrees.headOption.map { firstTree =>
+        firstTree.pos.start == pos.start && firstTree.pos.end == pos.end
+      }.getOrElse(false)
 
     /**
      * Is true if the selected code contains only value definitions.

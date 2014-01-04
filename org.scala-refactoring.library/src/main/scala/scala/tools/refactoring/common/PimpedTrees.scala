@@ -45,7 +45,7 @@ trait PimpedTrees {
     def Selectors(ss: List[global.ImportSelector] = t.selectors) = ss map { imp: global.ImportSelector =>
 
       val pos = {
-        if(!t.pos.isDefined || imp.namePos  < 0)
+        if (!t.pos.isDefined || imp.namePos < 0)
           NoPosition
         else
           new RangePosition(t.pos.source, imp.namePos, imp.namePos, imp.namePos + imp.name.length)
@@ -55,7 +55,7 @@ trait PimpedTrees {
 
       val name = NameTree(imp.name) setPos pos
 
-      if(imp.renamePos < 0 || imp.name == imp.rename) {
+      if (imp.renamePos < 0 || imp.name == imp.rename) {
         ImportSelectorTree(
           name,
           global.EmptyTree) setPos name.pos
@@ -63,7 +63,7 @@ trait PimpedTrees {
         val newName = NameTree(imp.rename)
         val newTree = ImportSelectorTree(name, newName)
 
-        if(t.pos.isRange) {
+        if (t.pos.isRange) {
           newName setPos new RangePosition(t.pos.source, imp.renamePos, imp.renamePos, imp.renamePos + imp.rename.length)
           newTree setPos (name.pos withPoint newName.pos.start withEnd newName.pos.end)
         }
@@ -83,12 +83,12 @@ trait PimpedTrees {
    * Takes a name and wraps it in `` if the name corresponds to a Scala keyword.
    */
   def escapeScalaKeywordsForImport(n: Name) = {
-    if(global.nme.keywords.contains(n.toTermName) && n != nme.USCOREkw) "`"+ n.toString +"`" else n.toString
+    if (global.nme.keywords.contains(n.toTermName) && n != nme.USCOREkw) "`" + n.toString + "`" else n.toString
   }
 
   def escapeScalaKeywordsForImport(n: String) = {
     val name = newTermName(n)
-    if(global.nme.keywords.contains(name) && name != nme.USCOREkw) "`"+ n +"`" else n
+    if (global.nme.keywords.contains(name) && name != nme.USCOREkw) "`" + n + "`" else n
   }
   /**
    * Searches for a Symbol of a name in the type members of a tree.
@@ -108,9 +108,8 @@ trait PimpedTrees {
     // a Case class symbol, failing that a Class or Trait symbol, failing that the first in the list
     @tailrec
     def findPrioritizedSymbol(l: List[Symbol], buffer: Option[Symbol], bufferIsClassOrTrait: Boolean): Option[Symbol] = l match {
-      case x::xs => if (x.isCase) Some(x) else
-        if (!bufferIsClassOrTrait && (x.isClass || x.isTrait)) findPrioritizedSymbol(xs, Some(x), true)
-        else findPrioritizedSymbol(xs, buffer, bufferIsClassOrTrait)
+      case x :: xs => if (x.isCase) Some(x) else if (!bufferIsClassOrTrait && (x.isClass || x.isTrait)) findPrioritizedSymbol(xs, Some(x), true)
+      else findPrioritizedSymbol(xs, buffer, bufferIsClassOrTrait)
       case Nil => buffer
     }
 
@@ -131,6 +130,16 @@ trait PimpedTrees {
     def samePosAndType(o: Tree): Boolean = {
       samePos(o.pos) && (o.getClass.getName == t.getClass.getName)
     }
+
+    def distanceTo(pos: Position) =
+      if (!t.pos.isRange)
+        Int.MaxValue
+      else if (t.pos.includes(pos) || pos.includes(t.pos))
+        0
+      else {
+        val List(first, second) = List(t.pos, pos).sortBy(_.start)
+        second.start - first.end
+      }
 
     def collect[T](f: PartialFunction[Tree, T]) = {
       val hits = new ListBuffer[T]
@@ -182,11 +191,11 @@ trait PimpedTrees {
           case t if t.pos == NoPosition => NoPosition
           case t if !t.pos.isRange => t.pos
           case t: ModuleDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-          case t: ClassDef  => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
-          case t: TypeDef   => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case t: ClassDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
+          case t: TypeDef => t.pos withStart t.pos.point withEnd (t.pos.point + t.name.toString.trim.length)
           case t: DefDef if t.name.toString == "<init>" =>
             t.pos withStart t.pos.point withEnd (t.pos.point + "this".length)
-          case ValDef(_, _, _, Match(_, CaseDef(unapply: UnApply , _, _) :: Nil)) if hasSingleBindWithTransparentPosition(unapply.args) =>
+          case ValDef(_, _, _, Match(_, CaseDef(unapply: UnApply, _, _) :: Nil)) if hasSingleBindWithTransparentPosition(unapply.args) =>
             // modify the position to remove the transparency..
             val b = findAllBinds(unapply.args).head
             b.pos withEnd b.namePosition.end
@@ -217,12 +226,12 @@ trait PimpedTrees {
              */
             lazy val src = t.pos.source.content.slice(t.pos.start, t.pos.point).mkString("")
 
-            val pos = if(t.pos.point - t.pos.start == name.length && src == name)
+            val pos = if (t.pos.point - t.pos.start == name.length && src == name)
               t.pos withEnd t.pos.point
             else
               new RangePosition(t.pos.source, t.pos.point, t.pos.point, t.pos.point + name.length)
 
-            if(t.mods.isSynthetic && t.pos.isTransparent)
+            if (t.mods.isSynthetic && t.pos.isTransparent)
               pos.makeTransparent
             else
               pos
@@ -246,7 +255,7 @@ trait PimpedTrees {
               t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
             } else if (qualifier.pos == NoPosition) {
               t.pos
-            /*the name contains symbols:*/
+              /*the name contains symbols:*/
             } else if (t.name.decode != t.name.toString) {
               t.pos withEnd (t.pos.start + nameString.length)
             } else {
@@ -288,7 +297,7 @@ trait PimpedTrees {
           // it might be a quoted literal:
           val pos2 = {
             val src = pos.source.content
-            if(pos.start >= 0 && pos.start < src.length && src(pos.start) == '`') {
+            if (pos.start >= 0 && pos.start < src.length && src(pos.start) == '`') {
               val startSearchForClosingTick = pos.start + 1
               val literalLength = src.slice(startSearchForClosingTick, src.length).takeWhile(_ != '`').length
               pos withEnd (pos.start + literalLength + "``".length)
@@ -297,7 +306,7 @@ trait PimpedTrees {
 
           // set all points to the start, keeping wrong points
           // around leads to the calculation of wrong lines
-          if(pos2.isTransparent)
+          if (pos2.isTransparent)
             pos2.withPoint(pos2.start).makeTransparent
           else
             pos2.withPoint(pos2.start)
@@ -313,7 +322,7 @@ trait PimpedTrees {
     def nameString: String = {
 
       def extractName(name: Name) = {
-        if(name.toString == "<empty>")
+        if (name.toString == "<empty>")
           ""
         else if (t.symbol.isSynthetic && name.toString.contains("$"))
           "_"
@@ -331,10 +340,10 @@ trait PimpedTrees {
       t match {
         case t: DefDef if t.name.toString == "<init>" =>
           "this"
-        case t: Select if t.name.toString endsWith "_$eq"=>
+        case t: Select if t.name.toString endsWith "_$eq" =>
           val n = extractName(t.name)
           n.substring(0, n.length - "_=".length)
-        case t: Select if t.name.toString startsWith "unary_"=>
+        case t: Select if t.name.toString startsWith "unary_" =>
           t.symbol.nameString.substring("unary_".length)
         case t: Select if t.symbol != NoSymbol =>
           t.symbol.nameString
@@ -345,7 +354,7 @@ trait PimpedTrees {
         case t: NameTree => t.nameString
         case t: TypeTree => t.symbol.nameString // FIXME: use something better
         case ImportSelectorTree(NameTree(name), _) => name.toString
-        case _ => sys.error("Tree "+ getSimpleClassName(t) +" does not have a name.")
+        case _ => sys.error("Tree " + getSimpleClassName(t) + " does not have a name.")
       }
     }
   }
@@ -358,14 +367,14 @@ trait PimpedTrees {
    */
   def endPositionAtEndOfSourceFile(pos: Position, otherWise: Option[Int] = None) = {
     val lastCharInFile = pos.source.content(pos.end)
-    if(pos.source.length -1 == pos.end
-        && lastCharInFile != '\n'
-        && lastCharInFile != '}'
-        && lastCharInFile != ')'
-        && lastCharInFile != ']')
-       pos.end + 1
-     else
-       otherWise getOrElse pos.end
+    if (pos.source.length - 1 == pos.end
+      && lastCharInFile != '\n'
+      && lastCharInFile != '}'
+      && lastCharInFile != ')'
+      && lastCharInFile != ']')
+      pos.end + 1
+    else
+      otherWise getOrElse pos.end
   }
 
   /**
@@ -401,11 +410,11 @@ trait PimpedTrees {
   }
 
   val findAllTreesWithTheSamePosition: Tree => Iterable[Tree] = {
-    Memoized.on ((t: Tree) => (t, t.pos)) { tree =>
+    Memoized.on((t: Tree) => (t, t.pos)) { tree =>
 
       def find(t: Tree): List[Tree] = {
         val l = children(t).flatMap(find)
-        if(t samePos tree) t :: l else l
+        if (t samePos tree) t :: l else l
       }
 
       cuRoot(tree.pos).map(find).getOrElse(Nil)
@@ -430,11 +439,10 @@ trait PimpedTrees {
 
     def contextBounds: List[Tree] = {
       defdef.vparamss.lastOption.toList.flatten collect {
-        case ValDef(mods, name, tpt: TypeTree, _)
-          if mods.hasFlag(Flags.IMPLICIT)
+        case ValDef(mods, name, tpt: TypeTree, _) if mods.hasFlag(Flags.IMPLICIT)
           && name.toString.startsWith(nme.EVIDENCE_PARAM_PREFIX)
           && tpt.original.isInstanceOf[AppliedTypeTree] =>
-            tpt.original.asInstanceOf[AppliedTypeTree].tpt
+          tpt.original.asInstanceOf[AppliedTypeTree].tpt
       }
     }
 
@@ -443,7 +451,7 @@ trait PimpedTrees {
     }
 
     def explicitVParamss: List[List[Tree]] = {
-      if(contextBounds.isEmpty)
+      if (contextBounds.isEmpty)
         defdef.vparamss
       else
         defdef.vparamss.init
@@ -456,7 +464,7 @@ trait PimpedTrees {
      * Returns all constructor parameters from the template body.
      */
     def constructorParameters = t.body.collect {
-      case vd @ ValDef(mods, _, _, _) if (mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR) ) => vd
+      case vd @ ValDef(mods, _, _, _) if (mods.hasFlag(Flags.CASEACCESSOR) || mods.hasFlag(Flags.PARAMACCESSOR)) => vd
     }
 
     /**
@@ -564,7 +572,7 @@ trait PimpedTrees {
           }
 
           val constructorParameters = pimpedTpl.constructorParameters
-          if(primaryConstructorArgs.sum != constructorParameters.size) {
+          if (primaryConstructorArgs.sum != constructorParameters.size) {
             List(constructorParameters)
           } else {
             groupPrimaryConstructorArgs(primaryConstructorArgs, constructorParameters)
@@ -588,16 +596,16 @@ trait PimpedTrees {
           case t => t.pos.isRange || t.pos == NoPosition
         }
 
-        val self = if(isEmptyTree(tpl.self)) EmptyTree else {
+        val self = if (isEmptyTree(tpl.self)) EmptyTree else {
 
-          if(tpl.pos.isRange) {
+          if (tpl.pos.isRange) {
 
-            val selfNameTree = if(tpl.self.name.toString == "_") {
+            val selfNameTree = if (tpl.self.name.toString == "_") {
               NameTree("this") setPos (tpl.self.pos withEnd (tpl.self.pos.start + "this".length))
             } else {
               NameTree(tpl.self.name) setPos {
                 val p = tpl.self.pos
-                p withEnd (if(p.start == p.point) p.end else p.point)
+                p withEnd (if (p.start == p.point) p.end else p.point)
               }
             }
 
@@ -641,7 +649,7 @@ trait PimpedTrees {
         mods ::: (NameTree(name) setPos t.namePosition) :: t.tparamsWithContextBounds ::: t.explicitVParamss.flatten ::: tpt :: rhs :: Nil
 
       case t: TypeTree =>
-        if(t.original != null) t.original :: Nil else Nil
+        if (t.original != null) t.original :: Nil else Nil
 
       case AppliedTypeTree(tpt, args) =>
         tpt :: args
@@ -657,7 +665,7 @@ trait PimpedTrees {
       case Apply(fun, args) =>
         fun :: args
 
-      case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_")=>
+      case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_") =>
         (NameTree(t.nameString) setPos t.namePosition) :: qualifier :: Nil
 
       case t @ Select(qualifier: This, selector) if qualifier.pos == NoPosition && t.pos.isRange && t.pos.start == t.pos.point =>
@@ -722,7 +730,7 @@ trait PimpedTrees {
         elem :: Nil
 
       case Try(block, catches, finalizer) =>
-        block :: catches ::: finalizer  :: Nil
+        block :: catches ::: finalizer :: Nil
 
       case Throw(expr) =>
         expr :: Nil
@@ -778,18 +786,16 @@ trait PimpedTrees {
 
       val (values, rest) = trailingTrees splitAt numberOfAssignments
 
-      val valDefs = values collect {case v: ValDef => v copy (mods = Modifiers(Flags.SYNTHETIC)) setPos v.pos}
+      val valDefs = values collect { case v: ValDef => v copy (mods = Modifiers(Flags.SYNTHETIC)) setPos v.pos }
 
       MultipleAssignment(extractor, valDefs, rhs).setPos(pos) :: removeCompilerTreesForMultipleAssignment(rest)
     }
 
     body match {
-       case (v @ ValDef(_, _, _, Match(Typed(rhs, _), (c @ CaseDef(_: Apply, EmptyTree, body)) :: Nil))) :: xs
-          if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
+      case (v @ ValDef(_, _, _, Match(Typed(rhs, _), (c @ CaseDef(_: Apply, EmptyTree, body)) :: Nil))) :: xs if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
         mkMultipleAssignment(EmptyTree, body.tpe, v.pos, rhs, xs)
 
-      case (v @ ValDef(_, _, _, Match(Typed(rhs, _), (c @ CaseDef(extractor: UnApply, EmptyTree, body)) :: Nil))) :: xs
-          if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
+      case (v @ ValDef(_, _, _, Match(Typed(rhs, _), (c @ CaseDef(extractor: UnApply, EmptyTree, body)) :: Nil))) :: xs if v.symbol.isSynthetic && (c.pos.isTransparent || c.pos == NoPosition) =>
         mkMultipleAssignment(extractor, body.tpe, v.pos, rhs, xs)
 
       case x :: xs => x :: removeCompilerTreesForMultipleAssignment(xs)
@@ -803,7 +809,7 @@ trait PimpedTrees {
       def find(parent: Tree): Option[Tree] = {
         val cs = children(parent)
 
-        if(cs.exists(_ samePosAndType tree))
+        if (cs.exists(_ samePosAndType tree))
           Some(parent)
         else
           cs.flatMap(find).lastOption
@@ -829,13 +835,13 @@ trait PimpedTrees {
   case class NameTree(name: global.Name) extends global.Tree {
     if (name == nme.NO_NAME) sys.error("Name cannot be <none>, NoSymbol used?")
     def nameString = {
-      if(pos.isRange && pos.source.content(pos.start) == '`' && !name.toString.startsWith("`")) {
-        "`"+ name.decode.trim +"`"
+      if (pos.isRange && pos.source.content(pos.start) == '`' && !name.toString.startsWith("`")) {
+        "`" + name.decode.trim + "`"
       } else {
         name.decode.trim
       }
     }
-    override def toString = "NameTree("+ nameString +")"
+    override def toString = "NameTree(" + nameString + ")"
   }
   object NameTree {
     def apply(name: String) = new NameTree(newTermName(name))
@@ -845,29 +851,29 @@ trait PimpedTrees {
    */
   case class ModifierTree(flag: Long) extends global.Tree {
 
-    override def toString = "ModifierTree("+ nameString +")"
+    override def toString = "ModifierTree(" + nameString + ")"
 
     import Flags._
 
     def nameString = flag match {
-      case 0            => ""
-      case TRAIT        => "trait"
-      case METHOD       => "def"
-      case FINAL        => "final"
-      case IMPLICIT     => "implicit"
-      case PRIVATE      => "private"
-      case PROTECTED    => "protected"
-      case SEALED       => "sealed"
-      case OVERRIDE     => "override"
-      case CASE         => "case"
-      case ABSTRACT     => "abstract"
-      case PARAM        => ""
-      case LAZY         => "lazy"
-      case Tokens.VAL   => "val"
-      case Tokens.VAR   => "var"
-      case Tokens.TYPE  => "type"
-      case Tokens.DEF   => "def"
-      case _            => "<unknown flag, please report a bug>"
+      case 0 => ""
+      case TRAIT => "trait"
+      case METHOD => "def"
+      case FINAL => "final"
+      case IMPLICIT => "implicit"
+      case PRIVATE => "private"
+      case PROTECTED => "protected"
+      case SEALED => "sealed"
+      case OVERRIDE => "override"
+      case CASE => "case"
+      case ABSTRACT => "abstract"
+      case PARAM => ""
+      case LAZY => "lazy"
+      case Tokens.VAL => "val"
+      case Tokens.VAR => "var"
+      case Tokens.TYPE => "type"
+      case Tokens.DEF => "def"
+      case _ => "<unknown flag, please report a bug>"
     }
   }
 
@@ -895,7 +901,7 @@ trait PimpedTrees {
    *                         ^^^^
    */
   case class SuperConstructorCall(clazz: global.Tree, args: List[global.Tree]) extends global.Tree {
-    if(clazz.pos.isRange) {
+    if (clazz.pos.isRange) {
       val lastPos = args.lastOption map (_.pos) filter (_.isRange) map { pos =>
         /*
          * We want to include all the layout including the ) in the position.
@@ -935,12 +941,12 @@ trait PimpedTrees {
         }
 
         t.pos.isRange &&
-        qualifier.pos.isRange &&
-        qualifier.tpe != null &&
-        !args.isEmpty &&
-        !isSetter &&
-        !isVarArgsCall &&
-        args.exists(_.pos.isRange)
+          qualifier.pos.isRange &&
+          qualifier.tpe != null &&
+          !args.isEmpty &&
+          !isSetter &&
+          !isVarArgsCall &&
+          args.exists(_.pos.isRange)
       case _ => false
     }
 
@@ -964,7 +970,7 @@ trait PimpedTrees {
               src.contains("=") && !src.matches(".*\\).*=.*")
             }
 
-            if(isNamedArgument) {
+            if (isNamedArgument) {
               val start = leading.pos.end + src.indexOf(sym.decodedName)
               val end = start + sym.decodedName.length
               val namePos = argument.pos withStart start withPoint start withEnd end
@@ -1031,7 +1037,7 @@ trait PimpedTrees {
           val argumentsSource = apply.pos.source.content.slice(startOffset, apply.pos.end).mkString
 
           val newValDefs = stats collect {
-            case t: ValDef if t.pos != NoPosition=>
+            case t: ValDef if t.pos != NoPosition =>
               val sym = syntheticNameToSymbol(t.name)
 
               val newVal = NamedArgument(NameTree(sym.name), t.rhs) setSymbol sym
@@ -1039,7 +1045,7 @@ trait PimpedTrees {
               // FIXME we can do a better search..
               val nameStart = argumentsSource.indexOf(newVal.name.toString)
 
-              if(nameStart >= 0) {
+              if (nameStart >= 0) {
                 val nameLength = newVal.name.length
                 val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
                 newVal.nameTree setPos namePos
@@ -1071,7 +1077,7 @@ trait PimpedTrees {
       fixNamedArgumentCall(removeNewPatternMatchingCruft(t)) match {
         case t: Block =>
 
-          val trees = if(t.expr.pos.isRange && t.stats.nonEmpty && (t.expr.pos precedes t.stats.head.pos))
+          val trees = if (t.expr.pos.isRange && t.stats.nonEmpty && (t.expr.pos precedes t.stats.head.pos))
             t.expr :: t.stats
           else
             t.stats ::: t.expr :: Nil
@@ -1146,7 +1152,7 @@ trait PimpedTrees {
 
   class NotInstanceOf[T](implicit m: Manifest[T]) {
     def unapply(t: Tree): Option[Tree] = {
-      if(m.runtimeClass.isInstance(t)) {
+      if (m.runtimeClass.isInstance(t)) {
         None
       } else
         Some(t)
@@ -1157,7 +1163,6 @@ trait PimpedTrees {
   object NoPackageDef extends NotInstanceOf[PackageDef]
   object NoFunction extends NotInstanceOf[Function]
   object NoImportSelectorTree extends NotInstanceOf[ImportSelectorTree]
-
 
   /**
    *  The PlainText "tree" provides a hook into the source code generation.

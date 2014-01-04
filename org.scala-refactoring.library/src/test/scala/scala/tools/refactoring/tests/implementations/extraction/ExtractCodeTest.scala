@@ -276,4 +276,23 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("Extracted", 0)).assertEqualTree
+
+  @Test
+  def extractWithNothingSelected = new FileSet {
+    """
+      object Demo {
+        def fn = {
+	  	  val a = 1/*<-*/
+	  	}
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn = {
+          val extracted = 1
+          val a = extracted
+	  	}
+      }
+    """
+  }.performRefactoring(extract("extracted", 1)).assertEqualTree
 }
