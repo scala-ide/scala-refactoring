@@ -51,8 +51,8 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
-  @Test
-  def extractParamToMethodWithouParamList = new FileSet {
+  @Test(expected=classOf[IndexOutOfBoundsException])
+  def dontExtractParamToMethodWithouParamList = new FileSet {
     """
       object Demo {
         def fn = {
@@ -60,13 +60,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
         }
       }
     """ becomes
-      """
-      object Demo {
-        def fn(extracted: Int = 100) = {
-          10 * extracted
-        }
-      }
-    """
+      """"""
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test

@@ -84,7 +84,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
    * Inserts ValDef trees at the end of a parameter list.
    */
   lazy val atEndOfValueParameterList: InsertionPosition = {
-    case enclosing @ DefDef(_, _, _, vparamss, _, _) =>
+    case enclosing @ DefDef(_, _, _, vparamss, _, _) if !vparamss.isEmpty =>
       val lastParamOpt = vparamss.lastOption.flatMap(_.lastOption)
       lastParamOpt match {
         case Some(lastParam) =>

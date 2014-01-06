@@ -55,7 +55,11 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
     def perform() = {
       val outboundDeps = extractionSource.outboundLocalDeps
 
-      val call = mkCallDefDef(abstractionName, parameters :: Nil, outboundDeps)
+      val call = {
+        val args = parameters.map{ param => Ident(param) }
+        val call = Apply(Select(This(nme.EMPTY.toTypeName) setPos Invisible, abstractionName), args)
+        mkAssignmentToCall(call, outboundDeps)
+      }
 
       val returnStatements =
         if (outboundDeps.isEmpty) Nil
@@ -65,8 +69,7 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
 
       val statements = importStatements ::: extractionSource.selectedTopLevelTrees ::: returnStatements
 
-      val abstraction = {
-        /* We implement a simpler version of mkDefDef in order to address
+      val abstraction = {/* We implement a simpler version of mkDefDef in order to address
          * issues with symbols that are treated as by name parameters
          */
         def symbolToParam(s: Symbol) = {
@@ -82,8 +85,14 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
         }
 
         val ps = parameters.map(symbolToParam) :: Nil
+        object extracted1 {
+          def unapply(x: List[MethodExtractions.this.global.Tree]) = x match {
+            case (fn: Function) :: Nil => Some(fn)
+            case _ => None
+          }
+        }
         val returnTpt = extractionSource.selectedTopLevelTrees match {
-          case (fn: Function) :: Nil => TypeTree(fn.tpe)
+          case extracted1(fn) => TypeTree(fn.tpe)
           case _ => EmptyTree
         }
 

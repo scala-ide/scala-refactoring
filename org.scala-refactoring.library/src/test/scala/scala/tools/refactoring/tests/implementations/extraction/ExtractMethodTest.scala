@@ -80,6 +80,23 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 2)).assertEqualTree
+  
+  @Test
+  def extractMethodWithoutParametersAndCreateEmptyParameterList = new FileSet {
+    """
+      object Demo {
+        /*(*/println(123)/*)*/
+      }
+    """ becomes """
+      object Demo {
+        /*(*/extracted()/*)*/
+
+        def extracted() = {
+          /*(*/println(123)/*)*/
+        }
+      }
+    """
+  }.performRefactoring(extract("extracted", 0)).assertEqualSource
 
   @Test
   def extractImportedDependency = new FileSet {
