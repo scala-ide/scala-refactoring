@@ -230,7 +230,7 @@ trait CompilationUnitDependencies {
           ()
 
         // workaround for SI-5064
-        case t @ Select(qual: Select, nme.apply) if qual.pos.isTransparent && t.pos.isOpaqueRange =>
+        case t @ Select(qual: Select, nme.apply) if (qual.pos.isTransparent && t.pos.isOpaqueRange) || qual.pos.isOpaqueRange =>
           if(hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier)) {
             addToResult(qual)
           }
