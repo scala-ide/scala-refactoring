@@ -184,6 +184,30 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
+  @Ignore("Not yet supported")
+  def visibilityOfInheritedMembers = {
+    val s = toSelection("""
+      trait Base{
+        val baseVal = 1  
+      }
+        
+      object O extends Base {
+        def fn = /*(*/baseVal/*)*/  
+      }
+      """)
+
+    val innermost = ScopeTree.build(s)
+
+    val baseVal = s.inboundDeps.find(_.nameString == "baseVal").get
+
+    assertTrue(innermost.sees(baseVal))
+
+    val outermost = innermost.outermostScope
+    
+    assertFalse(outermost.sees(baseVal))
+  }
+
+  @Test
   def visibilityOfRenamedImport = {
     val s = toSelection("""
       import scala.collection.mutable
