@@ -154,8 +154,8 @@ trait TreeTraverser {
               handleAppliedTypeTree(tpt, tpe)
               traverse(tpt)
 
-            case (AnnotatedType(annotations, underlying, selfsym), _) =>
-              handleAnnotations(annotations)
+            case (at: AnnotatedType, _) =>
+              handleAnnotations(at.annotations)
               traverse(t.original)
 
             case (ExistentialType(quantified, TypeRef(_, sym, _)), ExistentialTypeTree(AppliedTypeTree(tpt, _), _)) =>
