@@ -1,7 +1,0 @@
-language: scala
-scala:
-  - "2.10.3"
-  - "2.11.0"
-jdk:
-  - oraclejdk7
-script: ./.travis.build.sh
