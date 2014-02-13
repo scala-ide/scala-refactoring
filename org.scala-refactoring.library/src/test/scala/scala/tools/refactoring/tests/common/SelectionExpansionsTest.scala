@@ -3,6 +3,7 @@ package scala.tools.refactoring.tests.common
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Assert._
 import scala.tools.refactoring.common.Selections
+import scala.reflect.internal.util.RangePosition
 
 class SelectionExpansionsTest extends TestHelper with Selections {
   import global._
@@ -333,6 +334,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     new Selection {
       val root = s.root
       val file = s.file
-      val pos = s.pos.withStart(s.pos.start + dStart).withEnd(s.pos.end + dEnd)
+      val pos = 
+        new RangePosition(s.pos.source, s.pos.start + dStart, s.pos.point, s.pos.end + dEnd) 
     }
 }

@@ -28,7 +28,7 @@ trait AutoExtractions extends MethodExtractions with ValueExtractions with Extra
      * `collect(s)` on every collector that accepts this source.
      */
     override def collect(s: Selection) = {
-      var applicableCollectors: List[ExtractionCollector[_ <: Extraction]] = Nil
+      var applicableCollectors: List[ExtractionCollector[Extraction]] = Nil
       val sourceOpt = s.expand.expandTo { source: Selection =>
         applicableCollectors = availableCollectors.filter(_.isValidExtractionSource(source))
         !applicableCollectors.isEmpty

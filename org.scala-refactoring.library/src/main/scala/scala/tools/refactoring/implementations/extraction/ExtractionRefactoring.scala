@@ -17,11 +17,11 @@ import scala.tools.refactoring.common.InsertionPositions
  * a list of possible extractions based on the current selection.
  */
 trait ExtractionRefactoring extends MultiStageRefactoring with Extractions {
+  def collector: ExtractionCollector[Extraction]
+  
   case class PreparationResult(extractions: List[Extraction])
 
   type RefactoringParameters = Extraction
-
-  val collector: ExtractionCollector[_ <: Extraction]
 
   def prepare(s: Selection) =
     collector.collect(s)
@@ -54,24 +54,24 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
     /**
      * The code to extract
      */
-    val extractionSource: Selection
+    def extractionSource: Selection
 
     /**
      * Where the new abstraction will be inserted.
      */
-    val extractionTarget: ExtractionTarget
+    def extractionTarget: ExtractionTarget
 
     /**
      * Name of the new abstraction introduced by this extraction.
      */
-    val abstractionName: String
+    def abstractionName: String
 
     def withAbstractionName(name: String): this.type
 
     /**
      * A brief description of the extraction.
      */
-    val displayName: String
+    def displayName: String
 
     /**
      * Returns one or more transformations required to perform
@@ -104,7 +104,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
       }
   }
 
-  trait ExtractionCollector[E <: Extraction] {
+  trait ExtractionCollector[+E <: Extraction] {
     /**
      * Expands selection `s` until it is applicable for extractions
      * of type `E`. If an appropriate selection is found, it returns

@@ -1658,7 +1658,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewParameterList = {
+  def testNewParameterList = global.ask { () =>
     val tree = treeFrom("""
       object O{
         def fn = 1
@@ -1673,7 +1673,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewParamInEmptyList = {
+  def testNewParamInEmptyList = global.ask { () =>
     val tree = treeFrom("""
       object O{
         def fn() = 1

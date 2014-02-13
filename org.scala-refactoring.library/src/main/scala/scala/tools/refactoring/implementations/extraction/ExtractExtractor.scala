@@ -155,7 +155,7 @@ trait ExtractorExtractions extends Extractions {
 
       val unapplyDef = DefDef(
         NoMods withPosition (Flags.METHOD, NoPosition),
-        newTermName(nme.unapply), Nil, List(List(param)), EmptyTree, unapplyBody)
+        nme.unapply, Nil, List(List(param)), EmptyTree, unapplyBody)
 
       mkModule(NoMods, abstractionName, unapplyDef :: Nil)
     }
