@@ -20,7 +20,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   import global._
 
   implicit class TreePrettyPrintMethods(original: Tree) {
-    def prettyPrintsTo(expected: String) = global.ask { () =>
+    def prettyPrintsTo(expected: String) = {
       val sourceFile = {
         // we only need the source file to see what kinds of newline we need to generate,
         // so we just pass the expected output :-)
@@ -41,7 +41,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testMethodDocDef() = {
+  def testMethodDocDef() = global.ask { () =>
 
     val doc = """/**
  * Bla
@@ -69,12 +69,12 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testCaseClassNoArgList() {
+  def testCaseClassNoArgList() = global.ask { () =>
     mkCaseClass(name = "A", argss = Nil) prettyPrintsTo "case class A"
   }
 
   @Test
-  def testCaseClassTwoArgLists() {
+  def testCaseClassTwoArgLists() = global.ask { () =>
     val argsList1 = (NoMods, "r1", Ident(newTermName("Rate"))) :: Nil
     val argsList2 = (NoMods, "r2", Ident(newTermName("Rate"))) :: (NoMods, "r3", Ident(newTermName("Rate"))) :: Nil
 
@@ -82,33 +82,33 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testCaseClassZeroArgs() {
+  def testCaseClassZeroArgs() = global.ask { () =>
     mkCaseClass(name = "A", argss = Nil :: Nil) prettyPrintsTo "case class A()"
   }
 
   @Test
-  def testCaseClassOneArg() = {
+  def testCaseClassOneArg() = global.ask { () =>
     mkCaseClass(
         name = "A",
         argss = ((NoMods, "rate", Ident(newTermName("Rate"))) :: Nil) :: Nil) prettyPrintsTo "case class A(rate: Rate)"
   }
 
   @Test
-  def testCaseClassTwoArgs() = {
+  def testCaseClassTwoArgs() = global.ask { () =>
     mkCaseClass(
         name = "A",
         argss = List(List((NoMods, "x", Ident(newTermName("Int"))), (NoMods, "y", Ident(newTermName("String")))))) prettyPrintsTo "case class A(x: Int, y: String)"
   }
 
   @Test
-  def testClassTwoArgs() = {
+  def testClassTwoArgs() = global.ask { () =>
     mkClass(
         name = "A",
         argss = List(List((NoMods, "x", Ident(newTermName("Int"))), (NoMods, "y", Ident(newTermName("String")))))) prettyPrintsTo "class A(x: Int, y: String)"
   }
 
   @Test
-  def testClassTwoValVarArgs() = {
+  def testClassTwoValVarArgs() = global.ask { () =>
     mkClass(
         name = "A",
         argss = List(List((NoMods withPosition (Tokens.VAL, NoPosition), "x", Ident(newTermName("Int"))), (NoMods withPosition (Tokens.VAR, NoPosition), "y", Ident(newTermName("String")))))) prettyPrintsTo "class A(val x: Int, var y: String)"
@@ -198,7 +198,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testDocDef() = {
+  def testDocDef() = global.ask { () =>
 
     val doc = DocDef(DocComment("/** Kuuka */", NoPosition), EmptyTree)
 
@@ -211,28 +211,28 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testApplyHasParens() = {
+  def testApplyHasParens() = global.ask { () =>
     Apply(Ident(newTermName("aa")), Nil) prettyPrintsTo """aa()"""
   }
 
   @Test
-  def testApplyTypesToClass() = {
+  def testApplyTypesToClass() = global.ask { () =>
     TypeApply(Ident(newTermName("MyClass")), Ident(newTermName("A")) :: Ident(newTermName("B")) :: Nil) prettyPrintsTo """MyClass[A, B]"""
   }
 
   @Test
-  def testClassWithTypeParams() = {
+  def testClassWithTypeParams() = global.ask { () =>
     val c = mkClass(name = "A", tparams = List(TypeDef(NoMods, newTypeName("T"), Nil, EmptyTree), TypeDef(NoMods, newTypeName("U"), Nil, EmptyTree)))
     c prettyPrintsTo """class A[T, U]"""
   }
 
   @Test
-  def testFloatLiteralFromIdent() = {
+  def testFloatLiteralFromIdent() = global.ask { () =>
    Ident(newTermName("33.3f")) prettyPrintsTo """33.3f"""
   }
 
   @Test
-  def testNumericLiterals() = {
+  def testNumericLiterals() = global.ask { () =>
    Literal(Constant(33.3f)) prettyPrintsTo """33.3f"""
    Literal(Constant(33.3d)) prettyPrintsTo """33.3"""
    Literal(Constant(33)) prettyPrintsTo """33"""
@@ -240,7 +240,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testUpperBound() = {
+  def testUpperBound() = global.ask { () =>
 
     val tree = DefDef(
           NoMods withPosition (Flags.METHOD, NoPosition),
@@ -255,7 +255,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNew() = {
+  def testNew() = global.ask { () =>
 
     val tree = treeFrom("""
     object Functions {
@@ -280,7 +280,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testThrow() = {
+  def testThrow() = global.ask { () =>
 
     val tree = treeFrom("""
     class Throw1 {
@@ -308,7 +308,7 @@ class Throw2 {
   }
 
   @Test
-  def testAnnotation() = {
+  def testAnnotation() = global.ask { () =>
 
     val tree = treeFrom("""
     import scala.reflect.BeanProperty
@@ -328,7 +328,7 @@ class ATest {
   }
 
   @Test
-  def allNeededParenthesesArePrinted() = {
+  def allNeededParenthesesArePrinted() = global.ask { () =>
 
     val tree = treeFrom("""
     class Test {
@@ -342,7 +342,7 @@ class ATest {
   }
 
   @Test
-  def multipleAssignmentWithTuple() = {
+  def multipleAssignmentWithTuple() = global.ask { () =>
     treeFrom("""
     class Test {
       val (a, b) = (1, 2)
@@ -353,7 +353,7 @@ class ATest {
   }
 
   @Test
-  def multipleAssignmentWithPimpedTuple() = {
+  def multipleAssignmentWithPimpedTuple() = global.ask { () =>
     treeFrom("""
     class Test {
       val (a, b) = 1 -> 2
@@ -364,7 +364,7 @@ class ATest {
   }
 
   @Test
-  def multipleAssignmentWith4Tuple() = {
+  def multipleAssignmentWith4Tuple() = global.ask { () =>
     treeFrom("""
     class Test {
       val (c, d, e, f) = (1, 2, 3, 4)
@@ -375,7 +375,7 @@ class ATest {
   }
 
   @Test
-  def multipleAssignmentFromMethodResult() = {
+  def multipleAssignmentFromMethodResult() = global.ask { () =>
 
     val tree = treeFrom("""
     class Test {
@@ -403,7 +403,7 @@ class ATest {
   }
 
   @Test
-  def patternMatchInAssignment() = {
+  def patternMatchInAssignment() = global.ask { () =>
 
     val tree = treeFrom("""
     class Test {
@@ -417,7 +417,7 @@ class ATest {
   }
 
   @Test
-  def testExistential() = {
+  def testExistential() = global.ask { () =>
 
     val tree = treeFrom("""
     class A(l: List[_])
@@ -431,7 +431,7 @@ class B(l: List[T] forSome {type T})"""
   }
 
   @Test
-  def testMissingParentheses() = {
+  def testMissingParentheses() = global.ask { () =>
 
     val tree = treeFrom("""
     package com.somedomain.test
@@ -473,7 +473,7 @@ class Test44 {
   }
 
   @Test
-  def testCompoundTypeTree() = {
+  def testCompoundTypeTree() = global.ask { () =>
 
     val tree = treeFrom("""
     trait A
@@ -495,7 +495,7 @@ abstract class C(val a: A with B) {
   }
 
   @Test
-  def testSingletonTypeTree() = {
+  def testSingletonTypeTree() = global.ask { () =>
 
     val tree = treeFrom("""
     trait A {
@@ -509,7 +509,7 @@ abstract class C(val a: A with B) {
   }
 
   @Test
-  def testSelectFromTypeTree() = {
+  def testSelectFromTypeTree() = global.ask { () =>
 
     val tree = treeFrom("""
     trait A {
@@ -528,7 +528,7 @@ class B(t: A#T)"""
 
   @Ignore
   @Test
-  def testSelfTypesWithThis() = {
+  def testSelfTypesWithThis() = global.ask { () =>
 
     val tree = treeFrom("""
     package common {
@@ -554,7 +554,7 @@ trait AbstractPrinter {
   }
 
   @Test
-  def testWhileLoop() = {
+  def testWhileLoop() = global.ask { () =>
 
     val tree = treeFrom("""
     trait WhileLoop {
@@ -606,7 +606,7 @@ trait AbstractPrinter {
   }
 
   @Test
-  def testDoWhileLoop() = {
+  def testDoWhileLoop() = global.ask { () =>
 
     val tree = treeFrom("""
     trait WhileLoop {
@@ -636,7 +636,7 @@ trait AbstractPrinter {
   }
 
   @Test
-  def testPlusEquals() = {
+  def testPlusEquals() = global.ask { () =>
     val tree = treeFrom("""
       trait Demo2 {
         var assignee = 1
@@ -647,7 +647,7 @@ trait AbstractPrinter {
   }
 
   @Test
-  def testAssign() = {
+  def testAssign() = global.ask { () =>
     val tree = treeFrom("""
       trait Demo1 {
         def method {
@@ -665,7 +665,7 @@ trait AbstractPrinter {
   }
 
   @Test
-  def testSetters() = {
+  def testSetters() = global.ask { () =>
     val tree = treeFrom("""
       package oneFromMany
       class Demo(val a: String,  /*(*/private var _i: Int/*)*/  ) {
@@ -682,7 +682,7 @@ class Demo(val a: String, private var _i: Int) {
   }
 
   @Test
-  def typeParametersAreSeparatedByComma() = {
+  def typeParametersAreSeparatedByComma() = global.ask { () =>
     val tree = treeFrom("""
       class MethodWithTypeParam {
         def foo[A, B, C] = 1
@@ -694,7 +694,7 @@ class Demo(val a: String, private var _i: Int) {
   }
 
   @Test
-  def testClassConstructorParams() = {
+  def testClassConstructorParams() = global.ask { () =>
     val tree = treeFrom("""
       class Demo1(a: String, b: Int)
       class Demo2(a: String, b: Int)
@@ -706,7 +706,7 @@ class Demo2(a: String, b: Int)"""
   }
 
   @Test
-  def testMatches() = {
+  def testMatches() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       List(1,2) match {
@@ -773,7 +773,7 @@ class Demo2(a: String, b: Int)"""
   }
 
   @Test
-  def testReturn() = {
+  def testReturn() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       def test: Int = {
@@ -788,7 +788,7 @@ class Demo2(a: String, b: Int)"""
   }
 
   @Test
-  def testVarArgs() = {
+  def testVarArgs() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       def test(args: String*) = args.toList
@@ -801,7 +801,7 @@ class Demo2(a: String, b: Int)"""
   }
 
   @Test
-  def testStar() = {
+  def testStar() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
       "abcde".toList match {
@@ -818,7 +818,7 @@ class Demo2(a: String, b: Int)"""
   }
 
   @Test
-  def testSuper() = {
+  def testSuper() = global.ask { () =>
     val tree = treeFrom("""
     trait Root {
       def x = "Root"
@@ -854,7 +854,7 @@ class B extends A with Root {
 }"""
   }
   @Test
-  def testThis() = {
+  def testThis() = global.ask { () =>
     val tree = treeFrom("""
     class Root {
       class Inner {
@@ -874,7 +874,7 @@ class B extends A with Root {
   }
 
   @Test
-  def testUnapply() = {
+  def testUnapply() = global.ask { () =>
     val tree = treeFrom("""
     object Extractor {
       def unapply(i: Int) = Some(i)
@@ -906,7 +906,7 @@ object User {
   }
 
   @Test
-  def testPackages() = {
+  def testPackages() = global.ask { () =>
     val tree = treeFrom("""
     package a
     package b.c
@@ -930,7 +930,7 @@ object A"""
   }
 
   @Test
-  def testIfs() = {
+  def testIfs() = global.ask { () =>
     val tree = treeFrom("""
     object Functions {
 
@@ -966,7 +966,7 @@ object A"""
   }
 
   @Test
-  def testFunctions() = {
+  def testFunctions() = global.ask { () =>
 
     val tree = treeFrom("""
     object Functions {
@@ -989,7 +989,7 @@ object A"""
 
   @Test
   @ScalaVersion(matches="2.10")
-  def testTypeDefs() = {
+  def testTypeDefs() = global.ask { () =>
 
     val tree = treeFrom("""
     trait Types {
@@ -1015,7 +1015,7 @@ object A"""
 
   @Test
   @ScalaVersion(matches="2.11")
-  def testTypeDefs_211() = {
+  def testTypeDefs_211() = global.ask { () =>
 
     val tree = treeFrom("""
     trait Types {
@@ -1040,7 +1040,7 @@ object A"""
   }
 
   @Test
-  def testTypes() = {
+  def testTypes() = global.ask { () =>
 
     val tree = treeFrom("""
     object Rename1 {
@@ -1067,7 +1067,7 @@ object A"""
   }
 
   @Test
-  def testObjectTemplate() = {
+  def testObjectTemplate() = global.ask { () =>
 
     val tree = treeFrom("""
     object Obj extends java.lang.Object {
@@ -1082,7 +1082,7 @@ object A"""
 
   @Ignore
   @Test
-  def testValOrDefDefModifiers() = {
+  def testValOrDefDefModifiers() = global.ask { () =>
 
     val tree = treeFrom("""
     class A {
@@ -1102,7 +1102,7 @@ object A"""
   }
 
   @Test
-  def testClassModifiers() = {
+  def testClassModifiers() = global.ask { () =>
 
     val tree = treeFrom("""
     package xy
@@ -1138,7 +1138,7 @@ class Dddd"""
   }
 
   @Test
-  def testSelfTypes() = {
+  def testSelfTypes() = global.ask { () =>
 
     val tree = treeFrom("""
     trait ATrait {
@@ -1166,7 +1166,7 @@ trait CTrait {
   }
 
   @Test
-  def testClassTemplates() = {
+  def testClassTemplates() = global.ask { () =>
 
     val tree = treeFrom("""
     trait ATrait
@@ -1189,7 +1189,7 @@ class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, 
   }
 
   @Test
-  def testSuperClass() = {
+  def testSuperClass() = global.ask { () =>
 
     val tree = treeFrom("""
     class ASuperClass(x: Int, val d: String)
@@ -1203,7 +1203,7 @@ class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
   }
 
   @Test
-  def testTry() = {
+  def testTry() = global.ask { () =>
 
     val tree = treeFrom("""
     import java.io._
@@ -1267,7 +1267,7 @@ object Aua {
 
   @Ignore
   @Test
-  def testEarlyDef() = {
+  def testEarlyDef() = global.ask { () =>
     val tree = treeFrom("""
     trait Greeting {
       val name: String
@@ -1294,7 +1294,7 @@ class C(i: Int) extends {
   }
 
   @Test
-  def testImports() = {
+  def testImports() = global.ask { () =>
     val tree = treeFrom("""
     import java.lang.{String => S}
     import java.lang.Object
@@ -1312,7 +1312,7 @@ import scala.collection.mutable._"""
   }
 
   @Test
-  def testVals() = {
+  def testVals() = global.ask { () =>
     val tree = treeFrom("""
     /*a*/package /*b*/xyz/*c*/ {
       // now a class
@@ -1342,7 +1342,8 @@ trait B {
   }
 
   @Test
-  def testMethodSignatures() = treeFrom("""
+  def testMethodSignatures() = global.ask { () =>
+    treeFrom("""
     package xy
 
     class A {
@@ -1383,18 +1384,22 @@ class A {
 
   def id[A](a: A) = a
 }"""
+  }
 
   @Test
-  def testFunctionArg = treeFrom("""
+  def testFunctionArg = global.ask { () =>
+    treeFrom("""
     class A {
       def fun[A, B, C](fu: (A, B, C) => A): A
     }
     """) prettyPrintsTo """class A {
   def fun[A, B, C](fu: (A, B, C) => A): A
 }"""
+  }
 
   @Test
-  def partialFunctionArg = treeFrom("""
+  def partialFunctionArg = global.ask { () =>
+    treeFrom("""
     class A {
       def main[A, B](e: Either[A, B]) {
         e match {
@@ -1407,42 +1412,51 @@ class A {
     case Right(_) => ()
   }
 }"""
+    }
 
   @Test
-  def operatorPrecedences1 = treeFrom("""
+  def operatorPrecedences1 = global.ask { () =>
+    treeFrom("""
     class A {
       5 * (2 + 1)
     }
     """) prettyPrintsTo """class A {
   5 * (2 + 1)
 }"""
+    }
 
   @Test
-  def operatorPrecedences2 = treeFrom("""
+  def operatorPrecedences2 = global.ask { () =>
+    treeFrom("""
     class A {
       5 * 2 + 1
     }
     """) prettyPrintsTo """class A {
   5 * 2 + 1
 }"""
+  }
 
   @Test
-  def operatorPrecedences3 = treeFrom("""
+  def operatorPrecedences3 = global.ask { () =>
+    treeFrom("""
     class A {
       1 + 2 + 3
     }
     """) prettyPrintsTo """class A {
   1 + 2 + 3
 }"""
+  }
 
   @Test
-  def operatorPrecedences4 = treeFrom("""
+  def operatorPrecedences4 = global.ask { () =>
+    treeFrom("""
     class A {
       1 + (2 + 3)
     }
     """) prettyPrintsTo """class A {
   1 + (2 + 3)
 }"""
+  }
 }
 
 
