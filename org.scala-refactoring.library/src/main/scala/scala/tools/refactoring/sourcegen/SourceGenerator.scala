@@ -43,7 +43,8 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
         }
 
         lazy val trailingSrc = {
-          range.source.content.slice(range.end, range.source.length)
+          val src = range.source.content.slice(range.end, range.source.length)
+          CommentsUtils.stripComment(src)
         }
 
         def hasTrailingBraceAndSomething = {

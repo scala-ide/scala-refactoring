@@ -1464,4 +1464,35 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("list"))
+
+  @Test
+  def renameFinalVal = new FileSet {
+    """
+    package renameFinalVal
+
+    object X {
+      final val /*(*/Value/*)*/ = 0
+    }
+    """ becomes
+    """
+    package renameFinalVal
+
+    object X {
+      final val /*(*/x/*)*/ = 0
+    }
+    """;
+    """
+    package renameFinalVal
+
+    class ClassA {
+      val value = X.Value
+    }
+    """ becomes """
+    package renameFinalVal
+
+    class ClassA {
+      val value = X.x
+    }
+    """
+  } applyRefactoring(renameTo("x"))
 }

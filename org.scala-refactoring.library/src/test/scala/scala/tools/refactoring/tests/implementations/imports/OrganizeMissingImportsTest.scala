@@ -288,4 +288,31 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
       object Main { val s: String = ""; val ll = new LinkedList }
     """
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
+  
+  @Test
+  def trailingCommentWithClosingBrace = new FileSet {
+    """
+    package trailingCommentWithClosingBrace
+
+object testbug {
+  val l = ListBuffer()
+
+}
+
+/*
+}
+*/""" becomes """
+    package trailingCommentWithClosingBrace
+
+    import scala.collection.mutable.ListBuffer
+
+object testbug {
+  val l = ListBuffer()
+
+}
+
+/*
+}
+*/"""
+  } applyRefactoring organize("scala.collection.mutable" -> "ListBuffer" :: Nil)
 }
