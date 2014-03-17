@@ -906,7 +906,6 @@ object User {
   }
 
   @Test
-<<<<<<< HEAD
   def testAlteredPattern = global.ask { () =>
     val tree = treeFrom("""
     object Demo {
