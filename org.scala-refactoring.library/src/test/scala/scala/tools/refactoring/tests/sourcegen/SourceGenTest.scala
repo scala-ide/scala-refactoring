@@ -14,7 +14,7 @@ import common.ConsoleTracing
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
-import language.{postfixOps, implicitConversions}
+import language.{ postfixOps, implicitConversions }
 
 class SourceGenTest extends TestHelper with SilentTracing {
 
@@ -34,8 +34,8 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   val negateAllBools = transform {
-    case l @ Literal(Constant(true )) => Literal(Constant(false)) setPos l.pos
-    case l @ Literal(Constant(false)) => Literal(Constant(true )) setPos l.pos
+    case l @ Literal(Constant(true)) => Literal(Constant(false)) setPos l.pos
+    case l @ Literal(Constant(false)) => Literal(Constant(true)) setPos l.pos
   }
 
   val wrapDefRhsInBlock = transform {
@@ -46,9 +46,9 @@ class SourceGenTest extends TestHelper with SilentTracing {
   val changeSomeModifiers = transform {
     case t: ClassDef =>
       t.copy(mods = NoMods) setPos t.pos
-    case t: DefDef   =>
+    case t: DefDef =>
       t.copy(mods = NoMods withPosition (Flags.PROTECTED, NoPosition) withPosition (Flags.METHOD, NoPosition)) setPos t.pos
-    case t: ValDef   =>
+    case t: ValDef =>
       t.copy(mods = NoMods withPosition (Flags.PROTECTED, NoPosition) withPosition (Tokens.VAL, NoPosition)) setPos t.pos
     case t => t
   }
@@ -846,6 +846,75 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
+  def testAlteredPattern = global.ask { () =>
+    val tree = treeFrom("""
+    object Demo {
+      5 match { case i => () }
+    }
+    """)
+
+    val alterPattern = topdown {
+      matchingChildren {
+        transform {
+          case b: Bind => Literal(Constant(5))
+        }
+      }
+    }
+
+    assertEquals("""
+    object Demo {
+      5 match { case 5 => () }
+    }
+    """, generateText(alterPattern(tree).get))
+  }
+
+  @Test
+  def testAlteredPatternWithGuard = global.ask { () =>
+    val tree = treeFrom("""
+    object Demo {
+      5 match { case i if true => () }
+    }
+    """)
+
+    val alterPattern = topdown {
+      matchingChildren {
+        transform {
+          case b: Bind => Literal(Constant(5))
+        }
+      }
+    }
+
+    assertEquals("""
+    object Demo {
+      5 match { case 5 if true => () }
+    }
+    """, generateText(alterPattern(tree).get))
+  }
+
+  @Test
+  def testAlteredSubPattern = global.ask { () =>
+    val tree = treeFrom("""
+    object Demo {
+      5 match { case 1 | 2 => () }
+    }
+    """)
+
+    val alterPattern = topdown {
+      matchingChildren {
+        transform {
+          case a@ Alternative(a1 :: a2 :: Nil) => a copy (trees = a1 :: Literal(Constant(5)) :: Nil)
+        }
+      }
+    }
+
+    assertEquals("""
+    object Demo {
+      5 match { case 1 | 5 => () }
+    }
+    """, generateText(alterPattern(tree).get))
+  }
+
+  @Test
   def testPackages() = global.ask { () =>
     val tree = treeFrom("""
     package a
@@ -1576,6 +1645,46 @@ class SourceGenTest extends TestHelper with SilentTracing {
     """
 
     assertEquals(code, generateText(treeFrom(code)))
+  }
+
+  val addParam = topdown {
+    matchingChildren {
+      transform {
+        case t @ DefDef(_, _, _, vparamss, tpt, _) =>
+          val p = mkValDef("p", EmptyTree, TypeTree(tpt.tpe)) copy (mods = Modifiers(Flags.PARAM))
+          t copy (vparamss = List(List(p)))
+      }
+    }
+  }
+
+  @Test
+  def testNewParameterList = global.ask { () =>
+    val tree = treeFrom("""
+      object O{
+        def fn = 1
+      }
+    """)
+
+    assertEquals("""
+      object O{
+        def fn(p: Int) = 1
+      }
+    """, generateText(addParam(tree).get))
+  }
+
+  @Test
+  def testNewParamInEmptyList = global.ask { () =>
+    val tree = treeFrom("""
+      object O{
+        def fn() = 1
+      }
+    """)
+
+    assertEquals("""
+      object O{
+        def fn(p: Int) = 1
+      }
+    """, generateText(addParam(tree).get))
   }
 }
 

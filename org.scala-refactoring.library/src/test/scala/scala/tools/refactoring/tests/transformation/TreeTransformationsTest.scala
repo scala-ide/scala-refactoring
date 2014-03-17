@@ -8,7 +8,7 @@ package tests.transformation
 import tests.util.TestHelper
 import org.junit.Assert._
 import common.PimpedTrees
-import language.{postfixOps, reflectiveCalls}
+import language.{ postfixOps, reflectiveCalls }
 import scala.tools.nsc.util.FailedInterrupt
 import scala.tools.refactoring.common.SilentTracing
 
@@ -16,7 +16,7 @@ class TreeTransformationsTest extends TestHelper with SilentTracing {
 
   import global._
 
-  def assertAllRangesOrNoPosition(t: Tree) =  assertFalse(t.exists(t => !(t.pos.isRange || t.pos == global.NoPosition)))
+  def assertAllRangesOrNoPosition(t: Tree) = assertFalse(t.exists(t => !(t.pos.isRange || t.pos == global.NoPosition)))
 
   @Test
   def allEmpty() = {
@@ -34,9 +34,9 @@ class TreeTransformationsTest extends TestHelper with SilentTracing {
   @Test
   def associativity() = {
 
-    assertTrue ((  succeed |>  succeed  &> fail[String]  )("").isDefined)
-    assertTrue ((  succeed |> (succeed  &> fail[String]) )("").isDefined)
-    assertFalse(( (succeed |>  succeed) &> fail[String]  )("").isDefined)
+    assertTrue((succeed |> succeed &> fail[String])("").isDefined)
+    assertTrue((succeed |> (succeed &> fail[String]))("").isDefined)
+    assertFalse(((succeed |> succeed) &> fail[String])("").isDefined)
   }
 
   @Test
@@ -148,7 +148,6 @@ class TreeTransformationsTest extends TestHelper with SilentTracing {
   @Test
   def bottomUpDoesNotDiverge() = global.ask { () =>
 
-
     var out = List[String]()
 
     val t = transform {
@@ -172,11 +171,60 @@ class TreeTransformationsTest extends TestHelper with SilentTracing {
   def testReplaceTrees() = {
     val ts = List(1, 2, 3, 4, 5)
 
-    assertEquals(List(1, 6, 3, 4, 5),    ts.replaceSequence(2 :: Nil, 6 :: Nil))
-    assertEquals(List(6, 2, 3, 4, 5),    ts.replaceSequence(1 :: Nil, 6 :: Nil))
+    assertEquals(List(1, 6, 3, 4, 5), ts.replaceSequence(2 :: Nil, 6 :: Nil))
+    assertEquals(List(6, 2, 3, 4, 5), ts.replaceSequence(1 :: Nil, 6 :: Nil))
     assertEquals(List(1, 2, 3, 4, 6, 7), ts.replaceSequence(5 :: Nil, 6 :: 7 :: Nil))
-    assertEquals(List(1, 2, 3, 4, 5),    ts.replaceSequence(6 :: Nil, 1 :: Nil))
+    assertEquals(List(1, 2, 3, 4, 5), ts.replaceSequence(6 :: Nil, 1 :: Nil))
 
     assertEquals(List(2, 1, 1), List(1, 1, 1).replaceSequence(1 :: Nil, 2 :: Nil))
+  }
+
+  @Test
+  def testReplaceTreesPreservingPositions() = {
+    val tree = treeFrom("""
+    object O{
+      val seq = {
+        0
+        1
+        2
+        3
+        4
+      }
+    }
+    """)
+    var seq: List[Tree] = Nil
+    topdown {
+      matchingChildren {
+        transform {
+          case t: Block =>
+            seq = t.children
+            t
+        }
+      }
+    }(tree)
+
+    def lit(i: Int) = Literal(Constant(i))
+    def assertPositions(seq: List[Tree]) = {
+      var currStart = 0
+      for(t <- seq){
+        assertTrue(s"expected ${t.pos.start} to be greater than $currStart", t.pos.start > currStart)
+        currStart = t.pos.start
+      }
+    }
+    
+    val seq1 = seq.replaceSequencePreservingPositions(seq(2) :: seq(3) :: Nil, lit(10) :: lit(11) :: Nil)
+    val seq2 = seq.replaceSequencePreservingPositions(seq(2) :: seq(3) :: Nil, lit(10) :: Nil)
+    try {
+      // replacement must not be greater than replaced sequence
+      val seq3 = seq.replaceSequencePreservingPositions(seq(2) :: Nil, lit(10) :: lit(11) :: Nil)
+      assertTrue("Expected AssertionError but non thrown", false)
+    } catch {
+      case e: AssertionError => ()
+    }
+
+    assertEquals("List(0, 1, 10, 11, 4)", seq1.toString)
+    assertPositions(seq1)
+    assertEquals("List(0, 1, 10, 4)", seq2.toString)
+    assertPositions(seq2)
   }
 }
