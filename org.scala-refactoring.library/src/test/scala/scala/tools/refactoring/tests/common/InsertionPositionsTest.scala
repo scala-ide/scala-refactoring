@@ -56,25 +56,26 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInTemplate = """
+  def insertInTemplate = global.ask { () => """
     object O{
       /*(*/def fn = println(1)/*)*/
-    
+
       def fm = println(2)
     }
     """.inScope(_.expandTo[Template].get.enclosingTree).atPosition(_.afterSelectionInTemplate)
     .insertionOf(tprint123).shouldBecome("""
     object O{
       def fn = println(1)
-        
+
       println(123)
-    
+
       def fm = println(2)
     }
     """)
+  }
 
   @Test
-  def insertInBlock = """
+  def insertInBlock = global.ask { () => """
     object O{
       def fn = {
         val a = 1
@@ -91,9 +92,10 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
       }
     }
     """)
+  }
 
   @Test
-  def insertInBlockBeforeFirstDeclaration = """
+  def insertInBlockBeforeFirstDeclaration = global.ask { () => """
     object O{
       def fn = {
         /*(*/val a = 1/*)*/
@@ -110,9 +112,10 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
       }
     }
     """)
+  }
 
   @Test
-  def insertInBlockBeforeSelectionInSubexpression = """
+  def insertInBlockBeforeSelectionInSubexpression = global.ask { () => """
     object O{
       def fn = {
         val a = 1
@@ -130,9 +133,10 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
       }
     }
     """)
+  }
 
   @Test
-  def insertInMethodBody = """
+  def insertInMethodBody = global.ask { () => """
     object O{
       def fn(a: Int) = /*(*/println(a)/*)*/
     }
@@ -145,9 +149,10 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
       }
     }
     """)
+  }
 
   @Test
-  def insertInFunctionBody = """
+  def insertInFunctionBody = global.ask { () => """
     object O{
       val fn = (a: Int) => /*(*/println(a)/*)*/
     }
@@ -160,9 +165,10 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
       }
     }
     """)
+  }
 
   @Test
-  def insertInCaseBody = """
+  def insertInCaseBody = global.ask { () => """
     object O{
       val i = 1 match {
         case i: Int => /*(*/i/*)*/
@@ -172,10 +178,11 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
     .insertionOf(tprint123).shouldBecome("""
     object O{
       val i = 1 match {
-        case i: Int => 
+        case i: Int =>
           println(123)
           i
       }
     }
     """)
+  }
 }
