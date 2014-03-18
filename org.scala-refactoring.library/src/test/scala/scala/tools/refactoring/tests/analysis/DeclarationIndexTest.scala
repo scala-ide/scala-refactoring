@@ -279,7 +279,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   def referencesToClassWithSuper() = {
     assertReferencesOfSelection("""""", """
       class T {
-        /*(*/private abstract class MySource extends Source {
+        /*(*/private abstract class MySource extends Iterator[String] {
           override def hasNext = super.hasNext
         }/*)*/
       }

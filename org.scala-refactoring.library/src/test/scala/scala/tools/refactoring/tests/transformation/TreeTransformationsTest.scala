@@ -180,7 +180,7 @@ class TreeTransformationsTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testReplaceTreesPreservingPositions() = {
+  def testReplaceTreesPreservingPositions() = global.ask { () =>
     val tree = treeFrom("""
     object O{
       val seq = {
@@ -211,7 +211,7 @@ class TreeTransformationsTest extends TestHelper with SilentTracing {
         currStart = t.pos.start
       }
     }
-    
+
     val seq1 = seq.replaceSequencePreservingPositions(seq(2) :: seq(3) :: Nil, lit(10) :: lit(11) :: Nil)
     val seq2 = seq.replaceSequencePreservingPositions(seq(2) :: seq(3) :: Nil, lit(10) :: Nil)
     try {

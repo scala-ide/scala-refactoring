@@ -26,10 +26,11 @@ trait TestRefactoring extends TestHelper {
 
       val global = TestRefactoring.this.global
 
+      lazy val trees = {
+        project.sources map (x => addToCompiler(project.fileName(x), x)) map (global.unitOfFile(_).body)
+      }
+
       override val index = global.ask { () =>
-
-        val trees = project.sources map (x => addToCompiler(project.fileName(x), x)) map (global.unitOfFile(_).body)
-
         val cuIndexes = trees map (_.pos.source.file) map { file =>
           global.unitOfFile(file).body
         } map CompilationUnitIndex.apply
@@ -39,18 +40,28 @@ trait TestRefactoring extends TestHelper {
 
     val refactoring: MultiStageRefactoring with InteractiveScalaCompiler
 
-    def preparationResult = global.ask { () =>
+    def preparationResult() = global.ask { () =>
       refactoring.prepare(selection(refactoring, project))
     }
 
-    def performRefactoring(): List[Change] = {
-      performRefactoring(null.asInstanceOf[refactoring.RefactoringParameters])
+    def preparationResult(selection: => refactoring.Selection) = global.ask { () =>
+      refactoring.prepare(selection)
     }
 
-    def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = global.ask { () =>
-      preparationResult match {
+    def performRefactoring(): List[Change] = {
+      performRefactoring(selection(refactoring, project), null.asInstanceOf[refactoring.RefactoringParameters])
+    }
+
+    def performRefactoring(parameters: refactoring.RefactoringParameters): List[Change] = {
+      performRefactoring(selection(refactoring, project), parameters)
+    }
+
+    def performRefactoring(
+        selection: => refactoring.Selection,
+        parameters: refactoring.RefactoringParameters): List[Change] = global.ask { () =>
+      preparationResult(selection) match {
         case Right(prepare) =>
-          refactoring.perform(selection(refactoring, project), prepare, parameters) match {
+          refactoring.perform(selection, prepare, parameters) match {
             case Right(modifications) => modifications
             case Left(error) => throw new RefactoringException(error.cause)
           }

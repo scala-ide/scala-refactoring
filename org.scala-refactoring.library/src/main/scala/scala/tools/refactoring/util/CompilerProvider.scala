@@ -15,10 +15,11 @@ import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.internal.util.SourceFile
 import scala.reflect.internal.util.Position
 import scala.reflect.internal.MissingRequirementError
+import scala.tools.nsc.interactive.Problem
 
 class CompilerInstance {
 
-  lazy val compiler = {
+  lazy val compiler: Global = {
 
     val settings = new Settings
 
@@ -45,7 +46,10 @@ class CompilerInstance {
 
     val compiler = new Global(settings, new ConsoleReporter(settings) {
       override def printMessage(pos: Position, msg: String) {
-        //throw new Exception(pos.source.file.name + pos.show + msg)
+        // The compiler does not seem to store compilation errors in the
+        // Compilation Unit's problems field, so we do this here:
+        val cu = CompilerInstance.compiler.unitOfFile(pos.source.file)
+        cu.problems.append(new Problem(pos, msg, 0))
       }
     })
 
