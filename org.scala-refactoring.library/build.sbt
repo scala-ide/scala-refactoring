@@ -1,4 +1,4 @@
-name := "org.scala-refactoring"
+name := "org.scala-refactoring.library"
 
 version := "0.6.2-SNAPSHOT"
 
@@ -8,7 +8,7 @@ moduleName := name.value
 
 organization := "org.scala-refactoring"
 
-crossScalaVersions := Seq("2.10.1", "2.11.0-RC1")
+crossScalaVersions := Seq("2.10.1", "2.11.0-RC3")
 
 publishMavenStyle := true
 
@@ -47,10 +47,11 @@ pomExtra := (
 
 credentials += Credentials(Path.userHome / ".m2" / "credentials")
 
-libraryDependencies += (scalaBinaryVersion.value match {
-  case "2.10" => "org.scala-lang" % "scala-compiler" % "2.10.4-RC3"
-  case "2.11.0-RC1" => "org.scala-lang" % "scala-compiler" % "2.11.0-RC1"
-})
+libraryDependencies += { 
+  val binVersion  = scalaBinaryVersion.value
+  val compVersion = if (binVersion == "2.10") "2.10.4-RC3" else binVersion
+  "org.scala-lang" % "scala-compiler" % compVersion
+}
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
