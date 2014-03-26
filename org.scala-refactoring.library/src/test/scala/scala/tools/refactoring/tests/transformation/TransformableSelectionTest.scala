@@ -42,7 +42,7 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
   }
 
   @Test
-  def replaceSingleStatement() = """
+  def replaceSingleStatement() = global.ask { () => """
     object O{
       def f = /*(*/1/*)*/
     }
@@ -51,9 +51,10 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
       def f = 123
     }
     """)
+  }
 
   @Test
-  def replaceSingleStatementInArgument() = """
+  def replaceSingleStatementInArgument() = global.ask { () => """
     object O{
       println(/*(*/1/*)*/)
     }
@@ -62,9 +63,10 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
       println(123)
     }
     """)
+}
 
   @Test
-  def replaceSequence() = """
+  def replaceSequence() = global.ask { () => """
     object O{
       def f = {
         /*(*/println(1)
@@ -80,9 +82,10 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
       }
     }
     """)
+  }
 
   @Test
-  def replaceAllExpressionsInBlock() = """
+  def replaceAllExpressionsInBlock() = global.ask { () => """
     object O{
       def f = {
         /*(*/println(1)
@@ -95,9 +98,10 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
       def f = println(123)
     }
     """)
+  }
 
   @Test
-  def replaceAllExpressionsInBlockPreservingHierarchy() = """
+  def replaceAllExpressionsInBlockPreservingHierarchy() = global.ask { () => """
     object O{
       def f = {
         /*(*/println(1)
@@ -106,11 +110,12 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
       }
     }
     """.assertReplacement(_.replaceBy(tprint123, preserveHierarchy = true)).toBecomeTreeWith { t =>
-    val preservedBlock = t.find {
-      // the new block must have an empty tree as its last expression
-      case Block(stats, EmptyTree) => true
-      case _ => false
+      val preservedBlock = t.find {
+        // the new block must have an empty tree as its last expression
+        case Block(stats, EmptyTree) => true
+        case _ => false
+      }
+      assertTrue(preservedBlock.isDefined)
     }
-    assertTrue(preservedBlock.isDefined)
   }
 }

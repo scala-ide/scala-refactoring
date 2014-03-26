@@ -4,11 +4,11 @@ import scala.tools.refactoring.tests.util.TestHelper
 import scala.tools.refactoring.analysis.ImportAnalysis
 import org.junit.Assert._
 
-class ImportAnalysisTest extends TestHelper with ImportAnalysis{
+class ImportAnalysisTest extends TestHelper with ImportAnalysis {
   import global._
 
   @Test
-  def importTrees() = {
+  def importTrees() = global.ask { () =>
     val s = toSelection("""
     import scala.collection.immutable.{LinearSeq, _}
 
@@ -28,7 +28,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis{
   }
 
   @Test
-  def isImported() = {
+  def isImported() = global.ask { () =>
     val s = toSelection("""
     import scala.math.E
 
@@ -53,7 +53,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis{
   }
 
   @Test
-  def isImportedWithWildcard() = {
+  def isImportedWithWildcard() = global.ask { () =>
     val s = toSelection("""
     object O{
       def fn = {
@@ -75,7 +75,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis{
   }
 
   @Test
-  def predefsAreAlwaysImported() = {
+  def predefsAreAlwaysImported() = global.ask { () =>
     val s = toSelection("""
     object O{
       println(123)
@@ -95,7 +95,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis{
 
   @Test
   @Ignore
-  def importsOfValueMembers() = {
+  def importsOfValueMembers() = global.ask { () =>
     val s = toSelection("""
     package pkg
     object O{
