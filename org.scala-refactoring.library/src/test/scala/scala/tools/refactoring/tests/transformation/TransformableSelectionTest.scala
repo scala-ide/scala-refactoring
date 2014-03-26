@@ -24,7 +24,7 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
       val result = trans(root)
 
       new {
-        def toFail =
+        def toFail() =
           assertTrue(result.isEmpty)
 
         def toBecome(expectedSrc: String) = {
@@ -42,7 +42,7 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
   }
 
   @Test
-  def replaceSingleStatement = """
+  def replaceSingleStatement() = """
     object O{
       def f = /*(*/1/*)*/
     }
@@ -53,7 +53,7 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
     """)
 
   @Test
-  def replaceSingleStatementInArgument = """
+  def replaceSingleStatementInArgument() = """
     object O{
       println(/*(*/1/*)*/)
     }
@@ -64,7 +64,7 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
     """)
 
   @Test
-  def replaceSequence = """
+  def replaceSequence() = """
     object O{
       def f = {
         /*(*/println(1)
@@ -82,7 +82,7 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
     """)
 
   @Test
-  def replaceAllExpressionsInBlock = """
+  def replaceAllExpressionsInBlock() = """
     object O{
       def f = {
         /*(*/println(1)
@@ -97,7 +97,7 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
     """)
 
   @Test
-  def replaceAllExpressionsInBlockPreservingHierarchy = """
+  def replaceAllExpressionsInBlockPreservingHierarchy() = """
     object O{
       def f = {
         /*(*/println(1)

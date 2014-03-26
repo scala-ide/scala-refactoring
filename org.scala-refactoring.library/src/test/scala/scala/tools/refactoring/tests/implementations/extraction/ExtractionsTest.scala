@@ -6,7 +6,7 @@ import org.junit.Assert._
 
 class ExtractionsTest extends TestHelper with Extractions {
   @Test
-  def findExtractionTargets = {
+  def findExtractionTargets() = {
     val s = toSelection("""
       object O{
         def fn = {
@@ -21,7 +21,7 @@ class ExtractionsTest extends TestHelper with Extractions {
   }
 
   @Test
-  def noExtractionTargetsForSyntheticScopes = {
+  def noExtractionTargetsForSyntheticScopes() = {
     val s = toSelection("""
       object O{
         def fn =
@@ -34,7 +34,7 @@ class ExtractionsTest extends TestHelper with Extractions {
   }
 
   @Test
-  def noExtractionTargetsForCasesWithSelectedPattern = {
+  def noExtractionTargetsForCasesWithSelectedPattern() = {
     val s = toSelection("""
       object O{
         1 match {

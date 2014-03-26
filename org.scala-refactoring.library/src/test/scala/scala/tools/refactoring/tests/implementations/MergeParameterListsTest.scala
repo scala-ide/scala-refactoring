@@ -21,7 +21,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
 
 
   @Test(expected=classOf[RefactoringException])
-  def tooSmallMergePosition = new FileSet {
+  def tooSmallMergePosition() = new FileSet {
     """
     package mergeParameterLists.tooSmallMergePosition
     class A {
@@ -37,7 +37,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(0::1::Nil))
 
   @Test(expected=classOf[RefactoringException])
-  def tooBigMergePosition = new FileSet {
+  def tooBigMergePosition() = new FileSet {
     """
     package mergeParameterLists.tooBigMergePosition
     class A {
@@ -53,7 +53,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test(expected=classOf[RefactoringException])
-  def unsortedMergePositions = new FileSet {
+  def unsortedMergePositions() = new FileSet {
     """
     package mergeParameterLists.unsortedMergePositions
     class A {
@@ -69,7 +69,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(2::1::Nil))
 
   @Test(expected=classOf[RefactoringException])
-  def repeatedMergePosition = new FileSet {
+  def repeatedMergePosition() = new FileSet {
     """
     package mergeParameterLists.repeatedMergePosition
     class A {
@@ -86,7 +86,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
 
 
   @Test
-  def mergeAllLists = new FileSet {
+  def mergeAllLists() = new FileSet {
     """
     package mergeParameterLists.mergeAllLists
     class A {
@@ -102,7 +102,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::2::3::Nil))
 
   @Test
-  def mergeSomeLists = new FileSet {
+  def mergeSomeLists() = new FileSet {
     """
     package mergeParameterLists.mergeSomeLists
     class A {
@@ -118,7 +118,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test
-  def mergeWithCall = new FileSet {
+  def mergeWithCall() = new FileSet {
     """
     package mergeParameterLists.mergeWithCall
     class A {
@@ -136,7 +136,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test
-  def mergeMethodSubclass = new FileSet {
+  def mergeMethodSubclass() = new FileSet {
     """
     package mergeParameterLists.mergeMethodSubclass
     class Parent {
@@ -158,7 +158,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test
-  def mergeMethodSuperclass = new FileSet {
+  def mergeMethodSuperclass() = new FileSet {
     """
     package mergeParameterLists.mergeMethodSuperclass
     class Parent {
@@ -180,7 +180,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test
-  def mergeMethodAliased = new FileSet {
+  def mergeMethodAliased() = new FileSet {
     """
     package mergeParameterLists.mergeMethodAliased
     class A {
@@ -200,7 +200,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::2::Nil))
 
   @Test
-  def mergePartiallyApplied= new FileSet {
+  def mergePartiallyApplied() = new FileSet {
     """
     package mergeParameterLists.mergePartiallyApplied
     class A {
@@ -220,7 +220,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test
-  def repeatedlyPartiallyApplied = new FileSet {
+  def repeatedlyPartiallyApplied() = new FileSet {
     """
     package mergeParameterLists.repeatedlyPartiallyApplied
     class A {
@@ -244,7 +244,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::5::7::Nil))
 
   @Test
-  def aliasToVal = new FileSet {
+  def aliasToVal() = new FileSet {
     """
       package mergeParameterLists.aliasToVal
       class A {
@@ -264,7 +264,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test
-  def repeatedlyPartiallyAppliedVal = new FileSet {
+  def repeatedlyPartiallyAppliedVal() = new FileSet {
     """
       package mergeParameterLists.repeatedlyPartiallyAppliedVal
       class A {
@@ -286,7 +286,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::5::Nil))
 
   @Test
-  def partialsWithBody = new FileSet {
+  def partialsWithBody() = new FileSet {
     """
     package mergeParameterLists.partialsWithBody
     class A {
@@ -328,7 +328,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(List(1, 3, 5, 6, 8)))
 
   @Test
-  def partialValsWithBody = new FileSet {
+  def partialValsWithBody() = new FileSet {
     """
     package mergeParameterLists.partialValsWithBody
     class A {
@@ -370,7 +370,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(List(1, 3, 5, 6, 8)))
 
   @Test(expected=classOf[RefactoringException])
-  def mergePointUsedForCurrying = new FileSet {
+  def mergePointUsedForCurrying() = new FileSet {
     """
     package mergeParameterLists.mergePointUsedForCurrying
     class A {
@@ -388,7 +388,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::2::Nil))
 
   @Test
-  def partiallyAppliedMethodUsage = new FileSet {
+  def partiallyAppliedMethodUsage() = new FileSet {
     """
       package splitParameterLists.partiallyAppliedMethodUsage
       class A {
@@ -408,7 +408,7 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(mergeParameterLists(1::3::Nil))
 
   @Test
-  def partiallyAppliedMethodUsage2 = new FileSet {
+  def partiallyAppliedMethodUsage2() = new FileSet {
     """
       package splitParameterLists.partiallyAppliedMethodUsage2
       class A {

@@ -53,7 +53,7 @@ class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGe
   }
 
   @Test
-  def collapse = {
+  def collapse() = {
     surroundingImport = " "
 
     new FileSet {

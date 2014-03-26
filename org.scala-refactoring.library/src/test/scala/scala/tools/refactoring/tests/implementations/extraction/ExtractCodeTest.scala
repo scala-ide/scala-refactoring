@@ -16,7 +16,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def extractCodeWithoutUnknownDependencies = new FileSet {
+  def extractCodeWithoutUnknownDependencies() = new FileSet {
     """
       object Demo {
         val a = 1
@@ -33,7 +33,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
-  def extractCodeWithUnknownDependencies = new FileSet {
+  def extractCodeWithUnknownDependencies() = new FileSet {
     """
       object Demo {
         val a = 1
@@ -46,7 +46,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         val a = 1
-    
+
         val b = {
           val c = 2
           extracted(c)
@@ -60,7 +60,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
-  def extractMultipleExpressions = new FileSet {
+  def extractMultipleExpressions() = new FileSet {
     """
       object Demo {
         val a = 1
@@ -87,7 +87,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractUnitExpressionToDef = new FileSet {
+  def extractUnitExpressionToDef() = new FileSet {
     """
       object Demo {
         /*(*/println("hello world")/*)*/
@@ -96,7 +96,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         extracted
-    
+
         def extracted(): Unit = {
           println("hello world")
         }
@@ -105,7 +105,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractCodeInCase = new FileSet {
+  def extractCodeInCase() = new FileSet {
     """
       object Demo {
         val p = (1, 1) match {
@@ -116,7 +116,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         val p = (1, 1) match {
-          case (x: Int, y: Int) => 
+          case (x: Int, y: Int) =>
             val extracted = x * y
             extracted
         }
@@ -125,7 +125,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractCodeWithPotentialSideEffects = new FileSet {
+  def extractCodeWithPotentialSideEffects() = new FileSet {
     """
       object Demo {
         val a = {
@@ -137,7 +137,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         val a = extracted
-    
+
         def extracted(): Int = {
           println("calculate answer...")
           6 * 7
@@ -147,7 +147,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
-  def extractCodeWithPotentialSideEffectsOnVar = new FileSet {
+  def extractCodeWithPotentialSideEffectsOnVar() = new FileSet {
     """
       object Demo {
         var c = 1
@@ -160,9 +160,9 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         var c = 1
-    
+
         val a = extracted
-    
+
         def extracted(): Int = {
           c += 1
           6 * 7
@@ -172,7 +172,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 1)).assertEqualTree
 
   @Test
-  def extractForEnumerator = new FileSet {
+  def extractForEnumerator() = new FileSet {
     """
       object Demo {
         for{
@@ -185,14 +185,14 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         for{
           i <- extracted
         } println(i)
-    
+
         val extracted = 1 to 100
       }
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractFromForBody = new FileSet {
+  def extractFromForBody() = new FileSet {
     """
       object Demo {
         for{
@@ -205,7 +205,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         for{
           i <- 1 to 100
         } extracted(i)
-    
+
         def extracted(i: Int): Unit = {
           println(i)
         }
@@ -214,7 +214,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractCase = {
+  def extractCase() = {
     new FileSet {
       """
       object Demo {
@@ -225,7 +225,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
     """ becomes """
       object Demo {
         extracted
-    
+
     	def extracted(): Unit = {
     	  1 match {
 	        /*(*/case _ => println(1)/*)*/
@@ -237,7 +237,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def extractConstructorCall = new FileSet {
+  def extractConstructorCall() = new FileSet {
     """
       object Demo {
         /*(*/List(1, 2, 3)/*)*/
@@ -246,14 +246,14 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         extracted
-    
+
     	val extracted = List(1, 2, 3)
       }
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractExtractor = new FileSet {
+  def extractExtractor() = new FileSet {
     """
       object Demo {
         1 match {
@@ -266,7 +266,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         1 match {
 	  	  case Extracted(i) => println(i)
         }
-    
+
         object Extracted {
           def unapply(x: Int) = x match {
     		case i => Some(i)
@@ -278,7 +278,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("Extracted", 0)).assertEqualTree
 
   @Test
-  def extractWithNothingSelected = new FileSet {
+  def extractWithNothingSelected() = new FileSet {
     """
       object Demo {
         def fn = {

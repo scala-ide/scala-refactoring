@@ -16,7 +16,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def extractSimpleMethod = new FileSet {
+  def extractSimpleMethod() = new FileSet {
     """
       object Demo {
         def fn(a: Int) = {
@@ -39,7 +39,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractComplexMethod = new FileSet {
+  def extractComplexMethod() = new FileSet {
     """
       object Demo {
         val na = 1
@@ -80,9 +80,9 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 2)).assertEqualTree
-  
+
   @Test
-  def extractMethodWithoutParametersAndCreateEmptyParameterList = new FileSet {
+  def extractMethodWithoutParametersAndCreateEmptyParameterList() = new FileSet {
     """
       object Demo {
         /*(*/println(123)/*)*/
@@ -99,7 +99,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualSource
 
   @Test
-  def extractImportedDependency = new FileSet {
+  def extractImportedDependency() = new FileSet {
     """
       object Demo {
         def fn = {
@@ -114,7 +114,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
           import scala.math.Pi
 	  	  extracted()
         }
-    
+
     	def extracted() = {
     	  import scala.math.Pi
     	  Pi
@@ -122,9 +122,9 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 1)).assertEqualTree
-  
+
   @Test
-  def extractFromNestedClass = new FileSet {
+  def extractFromNestedClass() = new FileSet {
     """
       object Demo {
         trait T{
@@ -146,7 +146,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
 
   @Test
   @Ignore("Has to be handled in pretty printer")
-  def hideImportedQualifiersOfParameter = new FileSet {
+  def hideImportedQualifiersOfParameter() = new FileSet {
     """
       import scala.collection.mutable.LinkedList
       object Demo {
@@ -170,9 +170,9 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract("extracted", 1)).assertEqualSource
-  
+
   @Test(expected=classOf[IndexOutOfBoundsException])
-  def extractWithSideEffects = new FileSet {
+  def extractWithSideEffects() = new FileSet {
     """
       object Demo {
         def fn = {
@@ -184,9 +184,9 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """ becomes
       """"""
   }.performRefactoring(extract("extracted", 1)).assertEqualSource
-  
+
   @Test
-  def extractFunction = new FileSet {
+  def extractFunction() = new FileSet {
     """
       object Demo {
 	  	def fn(a: Int) = {

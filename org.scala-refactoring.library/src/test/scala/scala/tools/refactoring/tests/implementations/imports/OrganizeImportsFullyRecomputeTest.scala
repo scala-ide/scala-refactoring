@@ -93,7 +93,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   }
 
   @Test
-  def dependencyOnMultipleOverloadedMethods = new FileSet {
+  def dependencyOnMultipleOverloadedMethods() = new FileSet {
     """
     import scala.math.BigDecimal._
 
@@ -117,7 +117,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def expandImportsButNotWildcards = new FileSet {
+  def expandImportsButNotWildcards() = new FileSet {
     """
     package tests.importing
 
@@ -135,7 +135,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeExpand
 
   @Test
-  def dontCollapseImports = new FileSet {
+  def dontCollapseImports() = new FileSet {
     """
     package tests.importing
 
@@ -155,7 +155,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithoutCollapsing
 
   @Test
-  def collapse = new FileSet {
+  def collapse() = new FileSet {
     """
     import scala.collection.mutable.Set
     import scala.collection.mutable.Queue
@@ -170,7 +170,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def sortSelectors = new FileSet {
+  def sortSelectors() = new FileSet {
     """
     import scala.collection.mutable.{Set, Queue}
 
@@ -184,7 +184,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def sortAndCollapse = new FileSet {
+  def sortAndCollapse() = new FileSet {
     """
     import scala.collection.mutable.ListBuffer
     import scala.collection.mutable.Set
@@ -200,7 +200,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def collapseWithRename = new FileSet {
+  def collapseWithRename() = new FileSet {
     """
     import collection.mutable.{Set => S}
     import collection.mutable.{Queue => Q}
@@ -215,7 +215,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def removeOneFromMany = new FileSet {
+  def removeOneFromMany() = new FileSet {
     """
     import collection.mutable.{HashSet, Queue}
 
@@ -229,7 +229,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importAll = new FileSet {
+  def importAll() = new FileSet {
     """
     import java.lang._
     import java.lang.String
@@ -244,7 +244,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importOnTrait = new FileSet {
+  def importOnTrait() = new FileSet {
     """
     package importOnTrait
     import java.lang._
@@ -266,7 +266,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importWithSpace = new FileSet {
+  def importWithSpace() = new FileSet {
     """
 
     import scala.collection.mutable.ListBuffer
@@ -283,7 +283,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importAllWithRename = new FileSet {
+  def importAllWithRename() = new FileSet {
     """
     import collection.mutable._
     import collection.mutable.{Set => S}
@@ -298,7 +298,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importRemovesUnneeded = new FileSet {
+  def importRemovesUnneeded() = new FileSet {
     """
     import java.lang._
     import java.lang.{String => S}
@@ -324,7 +324,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def multipleImportsOnOneLine = new FileSet {
+  def multipleImportsOnOneLine() = new FileSet {
     """
     import java.lang.String, String._
 
@@ -341,7 +341,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importsInNestedPackages = new FileSet {
+  def importsInNestedPackages() = new FileSet {
     """
     package outer
     package inner
@@ -365,7 +365,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importFromPackageObject = new FileSet {
+  def importFromPackageObject() = new FileSet {
     """
     import scala.collection.breakOut
     import scala.collection.mutable.ListBuffer
@@ -383,7 +383,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def unusedImportWildcards = new FileSet {
+  def unusedImportWildcards() = new FileSet {
     """
     import java.util._
     import scala.collection._
@@ -398,7 +398,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def simplifyWildcards = new FileSet {
+  def simplifyWildcards() = new FileSet {
     """
     import scala.collection.mutable._
     import scala.collection.mutable.ListBuffer
@@ -414,7 +414,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def appliedType = new FileSet {
+  def appliedType() = new FileSet {
     """
     import scala.collection.mutable.HashMap
     import scala.collection.mutable.ListBuffer
@@ -431,7 +431,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def annotation = new FileSet {
+  def annotation() = new FileSet {
     """
     import scala.beans.BeanProperty
     case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
@@ -443,7 +443,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def selfTypeAnnotation = new FileSet {
+  def selfTypeAnnotation() = new FileSet {
     """
     import java.util.Observer
     trait X {
@@ -459,7 +459,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def renamedPackage = new FileSet {
+  def renamedPackage() = new FileSet {
     """
     import java.{ lang => jl, util => ju }
     import ju.{ArrayList => AL}
@@ -479,7 +479,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def abstractVals = new FileSet {
+  def abstractVals() = new FileSet {
     """
     import scala.collection.mutable.ListBuffer
     import scala.collection._
@@ -501,7 +501,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def fullPaths = new FileSet {
+  def fullPaths() = new FileSet {
     """
     trait FullPaths {
       sys.error("")
@@ -517,7 +517,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def organizeNeededForTypeInClassOf = new FileSet {
+  def organizeNeededForTypeInClassOf() = new FileSet {
     """
     import scala.io.Source
 
@@ -535,7 +535,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def SystemcurrentTimeMillis = new FileSet {
+  def SystemcurrentTimeMillis() = new FileSet {
     """
     import System.currentTimeMillis
 
@@ -553,7 +553,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def dontImportSystem = new FileSet {
+  def dontImportSystem() = new FileSet {
     """
     class SystemTypeDef {
       type S = System
@@ -567,7 +567,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importMethodFromSamePackage = new FileSet {
+  def importMethodFromSamePackage() = new FileSet {
 
     addToCompiler("testimplicits", """
     package a.b.c
@@ -595,7 +595,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importedPackageHasKeywordName = new FileSet {
+  def importedPackageHasKeywordName() = new FileSet {
 
     addToCompiler("testkeyword", """
     package other
@@ -624,7 +624,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def fileWithoutNewline = new FileSet {
+  def fileWithoutNewline() = new FileSet {
     """
     import java.util.Date
     class MyClass[T]""" becomes
@@ -634,7 +634,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def parensAtEndOfFile = new FileSet {
+  def parensAtEndOfFile() = new FileSet {
     """
     import java.util.Date
     class MyClass(i: Int)""" becomes
@@ -644,7 +644,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importFromSamePackage = new FileSet {
+  def importFromSamePackage() = new FileSet {
 
     addToCompiler("first", """
     package mypackage
@@ -671,7 +671,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importFromSameNestedPackage = new FileSet {
+  def importFromSameNestedPackage() = new FileSet {
 
     addToCompiler("first", """
     package mypackage
@@ -701,7 +701,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importWithSelfType = new FileSet {
+  def importWithSelfType() = new FileSet {
     """
     package importWithSelfType
 
@@ -735,7 +735,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def collapseTypes = new FileSet {
+  def collapseTypes() = new FileSet {
     """
     import scala.util.DynamicVariable
     import scala.util.Random
@@ -756,7 +756,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def typeConstructors = new FileSet {
+  def typeConstructors() = new FileSet {
     """
     trait Property[+T]
 
@@ -777,7 +777,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
   @Test
   @ScalaVersion(matches="2.10")
-  def annotationTypeDef = new FileSet {
+  def annotationTypeDef() = new FileSet {
 
     addToCompiler("ann.scala", """
       package pkg
@@ -803,7 +803,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """
   } applyRefactoring organize
 
-  def qualifiedImportFromPackageObject = new FileSet {
+  def qualifiedImportFromPackageObject() = new FileSet {
     addToCompiler("package.scala", """
       package test
 
@@ -837,7 +837,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def implicitConversion = new FileSet {
+  def implicitConversion() = new FileSet {
     addToCompiler("implicitConversion.scala", """
       package implicitConversion
       trait AimplicitConversion {
@@ -865,7 +865,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
   @Test
   @Ignore // fails when run by Jenkins
-  def dependencyInSameFile = new FileSet {
+  def dependencyInSameFile() = new FileSet {
     """
     package dependencyInSameFile
     class Foo {
@@ -899,7 +899,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def ignoreScalaLanguageImports = new FileSet {
+  def ignoreScalaLanguageImports() = new FileSet {
     """
     package ignoreScalaLanguageImports
 
@@ -919,7 +919,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def ignoreLanguageImports = new FileSet {
+  def ignoreLanguageImports() = new FileSet {
     """
     package ignoreScalaLanguageImports
 
@@ -939,7 +939,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def runWith = new FileSet {
+  def runWith() = new FileSet {
     """
     package runWith
 
@@ -963,7 +963,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def shouldIgnoreScalaPackage = new FileSet {
+  def shouldIgnoreScalaPackage() = new FileSet {
     """
     package shouldIgnoreScalaPackage
 

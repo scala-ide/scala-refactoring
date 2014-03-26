@@ -18,7 +18,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def representsValue = {
+  def representsValue() = {
     val sel = """
       object O{
         def fn = {
@@ -31,7 +31,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def doesNotRepresentValue = {
+  def doesNotRepresentValue() = {
     val sel = """
       object O{
         def fn = {
@@ -42,30 +42,30 @@ class SelectionPropertiesTest extends TestHelper with Selections {
       """.selection
     assertFalse(sel.representsValue)
   }
-  
+
   @Test
-  def nonValuePatternsDoNotRepresentValues = {
+  def nonValuePatternsDoNotRepresentValues() = {
     val selWildcard = """object O { 1 match { case /*(*/_/*)*/ => () } }""".selection
     assertFalse(selWildcard.representsValue)
-    
+
     val selCtorPattern = """object O { Some(1) match { case /*(*/Some(i)/*)*/ => () } }""".selection
     assertFalse(selCtorPattern.representsValue)
-    
+
     val selBinding =  """object O { 1 match { case /*(*/i: Int/*)*/ => i } }""".selection
     assertFalse(selBinding.representsValue)
-    
+
     val selPatAndGuad = """object O { 1 match { case /*(*/i if i > 10/*)*/ => i } }""".selection
     assertFalse(selPatAndGuad.representsValue)
   }
-  
+
   @Test
-  def valuePatternsDoRepresentValues = {
+  def valuePatternsDoRepresentValues() = {
     val selCtorPattern = """object O { Some(1) match { case /*(*/Some(1)/*)*/ => () } }""".selection
     assertTrue(selCtorPattern.representsValue)
   }
 
   @Test
-  def argumentLists = {
+  def argumentLists() = {
     val sel = """
       object O{
         def fn = {
@@ -79,7 +79,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def parameter = {
+  def parameter() = {
     val sel = """
       object O{
         def fn(/*(*/a: Int/*)*/) = {
@@ -93,7 +93,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def multipleParameters = {
+  def multipleParameters() = {
     val sel = """
       object O{
         def fn(/*(*/a: Int, b: Int/*)*/) = {
@@ -107,7 +107,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def triggersSideEffects = {
+  def triggersSideEffects() = {
     val sel = """
       object O{
         var a = 1

@@ -9,7 +9,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   import global._
 
   @Test
-  def simpleScopes = {
+  def simpleScopes() = {
     val s = toSelection("""
       package demo
       object Demo{
@@ -28,7 +28,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def nestedLocalScopes = {
+  def nestedLocalScopes() = {
     val s = toSelection("""
       object Demo{
         def fn = {
@@ -50,7 +50,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def LocalScopes = {
+  def LocalScopes() = {
     val s = toSelection("""
       class Demo(cp: Int){
         def fn(a: Int, b: Int) = {
@@ -65,7 +65,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopesInForEnumerators = {
+  def scopesInForEnumerators() = {
     val s = toSelection("""
       object Demo{
         for(i <- 1 to 10; j <- 1 to 10){
@@ -80,7 +80,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeFromCase = {
+  def scopeFromCase() = {
     val s = toSelection("""
       object Demo{
         (1, 2) match {
@@ -95,14 +95,14 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def nestedClassScopes = {
+  def nestedClassScopes() = {
     val s = toSelection("""
       object Demo {
         def fn(p: Int) = {
           class A {
             val a = /*(*/p/*)*/
           }
-        
+
           new A.a
         }
       }
@@ -114,26 +114,26 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def visibility = {
+  def visibility() = {
     val s = toSelection("""
       package demo
-      
+
       class A
-      
+
       object Demo{
         val m1 = {
           val hidden = 1
           hidden
         }
-        
+
         def fn = {
           val a = 1
           /*(*/a/*)*/
         }
-        
+
         val m2 = 2
       }
-        
+
       trait C
       """)
 
@@ -156,13 +156,13 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def visibilityOfImports = {
+  def visibilityOfImports() = {
     val s = toSelection("""
       import scala.collection.mutable
-        
+
       class Demo{
         import mutable.LinkedList
-        
+
         def local = {
           import scala.math.Pi
     	  /*(*/(Pi, new LinkedList)/*)*/
@@ -185,14 +185,14 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
   @Test
   @Ignore("Not yet supported")
-  def visibilityOfInheritedMembers = {
+  def visibilityOfInheritedMembers() = {
     val s = toSelection("""
       trait Base{
-        val baseVal = 1  
+        val baseVal = 1
       }
-        
+
       object O extends Base {
-        def fn = /*(*/baseVal/*)*/  
+        def fn = /*(*/baseVal/*)*/
       }
       """)
 
@@ -203,18 +203,18 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
     assertTrue(innermost.sees(baseVal))
 
     val outermost = innermost.outermostScope
-    
+
     assertFalse(outermost.sees(baseVal))
   }
 
   @Test
-  def visibilityOfRenamedImport = {
+  def visibilityOfRenamedImport() = {
     val s = toSelection("""
       import scala.collection.mutable
-        
+
       class Demo{
         import mutable.{LinkedList => LL}
-        
+
         def local = {
     	  /*(*/new LL/*)*/
         }
@@ -233,13 +233,13 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def visibilityOfWildcardImport = {
+  def visibilityOfWildcardImport() = {
     val s = toSelection("""
       import scala.collection.mutable
-        
+
       class Demo{
         import mutable._
-        
+
         def local = {
     	  /*(*/new LinkedList/*)*/
         }
@@ -257,16 +257,16 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookup = {
+  def scopeLookup() = {
     val s = toSelection("""
       object Demo{
         val a = 1
-        
+
         val b = {
           val l = 123
     	  /*(*/2/*)*/
         }
-        
+
     	val c = 3
       }
     """)
@@ -284,7 +284,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupOfParams = {
+  def scopeLookupOfParams() = {
     val s = toSelection("""
       class Demo(cp: Int){
         def fn(a: Int) = {
@@ -309,7 +309,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupOfParamsOfDesugaredFunctions = {
+  def scopeLookupOfParamsOfDesugaredFunctions() = {
     val s = toSelection("""
       object Demo{
         for(i <- 1 to 10) /*(*/println(i)/*)*/
@@ -332,7 +332,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupInNestedClasses = {
+  def scopeLookupInNestedClasses() = {
     val s = toSelection("""
       class Outer {
         def fn(p: Int) = {
@@ -356,7 +356,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupInNestedClasses2 = {
+  def scopeLookupInNestedClasses2() = {
     val s = toSelection("""
       class Outer {
         class Inner {
@@ -373,14 +373,14 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
       case t: Template if t != inner => true
       case _ => false
     }.get
-    
+
     val outerScope = scopes.findScopeFor(outer)
 
     assertEquals("MemberScope(Outer) -> MemberScope(<empty>)", outerScope.toString())
     assertEquals("MemberScope(Inner) -> MemberScope(Outer) -> MemberScope(<empty>)", scopes.toString())
-    
+
     val aSym = s.inboundDeps.head
-    
+
     assertTrue(scopes.sees(aSym))
     assertFalse(outerScope.sees(aSym))
   }

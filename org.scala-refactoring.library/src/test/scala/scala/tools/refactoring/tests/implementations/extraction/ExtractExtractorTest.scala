@@ -14,7 +14,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def extractSimpleExtractor = new FileSet {
+  def extractSimpleExtractor() = new FileSet {
     """
       object Demo {
         1 match {
@@ -39,7 +39,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
-  def extractWithBodyOnNewLine = new FileSet {
+  def extractWithBodyOnNewLine() = new FileSet {
     """
       object Demo {
         List(1) match {
@@ -66,7 +66,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  def extractorWithMultipleBindings = new FileSet{
+  def extractorWithMultipleBindings() = new FileSet{
     """
       object Demo {
         (1, 2) match {
@@ -91,7 +91,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  def extractorWithoutBindings = new FileSet{
+  def extractorWithoutBindings() = new FileSet{
     """
       object Demo {
         1 match {
@@ -116,7 +116,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  def extractSubPattern = new FileSet{
+  def extractSubPattern() = new FileSet{
     """
       object Demo {
         1 match {
@@ -141,7 +141,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  def extractPatternWithGuard = new FileSet{
+  def extractPatternWithGuard() = new FileSet{
     """
       object Demo {
         1 match {
@@ -166,7 +166,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  def extractWithoutGuard = new FileSet{
+  def extractWithoutGuard() = new FileSet{
     """
       object Demo {
         "abc" match {
@@ -191,7 +191,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  def extractListPattern = new FileSet{
+  def extractListPattern() = new FileSet{
     """
       object Demo {
         List(1, 2, 3) match {
@@ -216,7 +216,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
   
   @Test
-  def extractConstructorPatternWithoutGuard = new FileSet{
+  def extractConstructorPatternWithoutGuard() = new FileSet{
     """
       case class TwoInts(a: Int, b: Int)
       object Demo {

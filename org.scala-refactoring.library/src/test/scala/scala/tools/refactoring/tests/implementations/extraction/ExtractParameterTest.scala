@@ -16,7 +16,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def extractSimpleParam = new FileSet {
+  def extractSimpleParam() = new FileSet {
     """
       object Demo {
         def fn(a: Int) = {
@@ -34,7 +34,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractParamToParameterlessMethod = new FileSet {
+  def extractParamToParameterlessMethod() = new FileSet {
     """
       object Demo {
         def fn() = {
@@ -52,7 +52,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test(expected=classOf[IndexOutOfBoundsException])
-  def dontExtractParamToMethodWithouParamList = new FileSet {
+  def dontExtractParamToMethodWithouParamList() = new FileSet {
     """
       object Demo {
         def fn = {
@@ -64,7 +64,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractParamToMethodWithMultipleParamLists = new FileSet {
+  def extractParamToMethodWithMultipleParamLists() = new FileSet {
     """
       object Demo {
         def fn(a: Int)(b: Int) = {
@@ -82,13 +82,13 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test
-  def extractParamToReferencedMethod = new FileSet {
+  def extractParamToReferencedMethod() = new FileSet {
     """
       object Demo {
         def fn(a: Int) = {
           /*(*/100/*)*/
         }
-    
+
 	  	fn(1)
       }
     """ becomes
@@ -97,21 +97,21 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
         def fn(a: Int, extracted: Int = 100) = {
           extracted
         }
-    
+
         fn(1)
       }
     """
   }.performRefactoring(extract("extracted", 0)).assertEqualTree
 
   @Test(expected = classOf[IndexOutOfBoundsException])
-  def dontExtractWithInaccessibleDependencies = new FileSet {
+  def dontExtractWithInaccessibleDependencies() = new FileSet {
     """
       object Demo {
         def fn(a: Int) = {
 	      val b = 100
           /*(*/b/*)*/
         }
-    
+
 	  	fn(1)
       }
     """ becomes
@@ -120,7 +120,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
 
   @Test
   @Ignore
-  def expandSelection = new FileSet {
+  def expandSelection() = new FileSet {
     """
       object Demo {
         def fn(a: Int) = {

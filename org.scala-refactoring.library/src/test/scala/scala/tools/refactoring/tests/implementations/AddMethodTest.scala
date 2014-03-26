@@ -24,7 +24,7 @@ class AddMethodTest extends TestHelper {
   }
 
   @Test
-  def addMethodToObject = {
+  def addMethodToObject() = {
     addMethod("Main", "method", Nil, None, AddToObject, """
 class Main
 object Main {
@@ -40,7 +40,7 @@ object Main {
   }
 
   @Test
-  def addMethodToClass = {
+  def addMethodToClass() = {
     addMethod("Main", "method", Nil, None, AddToClass, """
 object Main
 class Main {
@@ -58,7 +58,7 @@ class Main {
   }
 
   @Test
-  def addMethodWithParametersAndReturnType = {
+  def addMethodWithParametersAndReturnType() = {
     addMethod("Main", "method", List(List("a" -> "Any", "b" -> "Int"), List("c" -> "Double")), Some("String"), AddToClass, "class Main",
       """class Main {
   def method(a: Any, b: Int)(c: Double): String = {
@@ -68,7 +68,7 @@ class Main {
   }
 
   @Test
-  def addMethodToInnerClass = {
+  def addMethodToInnerClass() = {
     addMethod("Inner", "method", Nil, None, AddToClass, """
 class Main {
   class Inner
@@ -84,7 +84,7 @@ class Main {
   }
 
   @Test
-  def addMethodToCaseClass = {
+  def addMethodToCaseClass() = {
     addMethod("Main", "method", Nil, None, AddToClass, """
 case class Main""",
       """
@@ -96,7 +96,7 @@ case class Main {
   }
 
   @Test
-  def addMethodToTrait = {
+  def addMethodToTrait() = {
     addMethod("Main", "method", Nil, None, AddToClass, """
 trait Main""",
       """
@@ -108,7 +108,7 @@ trait Main {
   }
 
   @Test
-  def addMethodByClosestPosition = {
+  def addMethodByClosestPosition() = {
     addMethod("Main", "method", Nil, None, AddToClosest(30), """
 class Main {
 

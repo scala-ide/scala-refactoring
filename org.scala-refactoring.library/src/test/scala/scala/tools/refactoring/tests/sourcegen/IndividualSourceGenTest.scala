@@ -108,7 +108,7 @@ class IndividualSourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def selfTypeAnnotation = global.ask { () =>
+  def selfTypeAnnotation() = global.ask { () =>
     val src = """
 trait tr[A] {
   self: List[A] =>
@@ -145,7 +145,7 @@ trait tr[A] {
   }
 
   @Test
-  def addMethodToEmptyTraitWithSelfTypeAnnotation = global.ask { () =>
+  def addMethodToEmptyTraitWithSelfTypeAnnotation() = global.ask { () =>
     val src = """
 trait tr[A] {
   self: List[A] =>
@@ -178,7 +178,7 @@ trait tr[A] {
   }
 
   @Test
-  def misprintedFunctionDefinition = global.ask { () =>
+  def misprintedFunctionDefinition() = global.ask { () =>
 
     val ast = treeFrom("""
       package generated
@@ -750,7 +750,7 @@ class Test
   }
 
   @Test
-  def testFunctionArg = global.ask { () =>
+  def testFunctionArg() = global.ask { () =>
     val ast = treeFrom(
 """
 class A {
@@ -765,7 +765,7 @@ def fun[A, B, C](fu: (A, B, C) => A): A
   }
 
   @Test
-  def testClassParameter = global.ask { () =>
+  def testClassParameter() = global.ask { () =>
     val ast = treeFrom("""
 class A(a: Int) {
 }
@@ -777,7 +777,7 @@ class A(a: Int) {
     }
 
   @Test
-  def testPrintParentheses = global.ask { () =>
+  def testPrintParentheses() = global.ask { () =>
 
     val ast = treeFrom("""
     trait tr {
@@ -810,7 +810,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testPrintNoParentheses = global.ask { () =>
+  def testPrintNoParentheses() = global.ask { () =>
 
     val ast = treeFrom("""
     trait tr {
@@ -842,7 +842,7 @@ class A(a: Int) {
   }
 
   @Test
-  def replaceWithThis = global.ask { () =>
+  def replaceWithThis() = global.ask { () =>
 
     val str = """
     class MyList[T] {
@@ -899,7 +899,7 @@ class A(a: Int) {
   }
 
     @Test
-  def changeMethodInvocation = global.ask { () =>
+  def changeMethodInvocation() = global.ask { () =>
 
     val str = """
     package abc
@@ -945,7 +945,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation2 = global.ask { () =>
+  def changeMethodInvocation2() = global.ask { () =>
 
     val src = """
     package abc
@@ -991,7 +991,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testRemoveAnArgument = global.ask { () =>
+  def testRemoveAnArgument() = global.ask { () =>
 
     val src = """
     trait tr {
@@ -1027,7 +1027,7 @@ class A(a: Int) {
   }
 
    @Test
-  def testParentheses = global.ask { () =>
+  def testParentheses() = global.ask { () =>
 
     val ast = treeFrom("""
     package abc
@@ -1060,7 +1060,7 @@ class A(a: Int) {
   }
 
    @Test
-  def testFullQualifiedName = global.ask { () =>
+  def testFullQualifiedName() = global.ask { () =>
     val str = """
     package asd
     object primitive {
@@ -1107,7 +1107,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation3 = global.ask { () =>
+  def changeMethodInvocation3() = global.ask { () =>
 
     val ast = treeFrom("""
     package abc
@@ -1147,7 +1147,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy = global.ask { () =>
+  def testCopy() = global.ask { () =>
     val str = """
     object primitive {
       def member[A](a:A, li:List[A]):Boolean = {
@@ -1187,7 +1187,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy2 = global.ask { () =>
+  def testCopy2() = global.ask { () =>
     val str = """
     package abc
     case class Pair[A, B](a: A, b: B)
@@ -1249,7 +1249,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy3 = global.ask { () =>
+  def testCopy3() = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1311,7 +1311,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy4 = global.ask { () =>
+  def testCopy4() = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1346,7 +1346,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy4Variation = global.ask { () =>
+  def testCopy4Variation() = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1395,7 +1395,7 @@ class A(a: Int) {
   }
 
   @Test
-  def testCopy5 = global.ask { () =>
+  def testCopy5() = global.ask { () =>
     val str = """
     package abc
     object primitive {
@@ -1467,7 +1467,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation4 = global.ask { () =>
+  def changeMethodInvocation4() = global.ask { () =>
 
     val ast = treeFrom("""
     package abc
@@ -1505,7 +1505,7 @@ class A(a: Int) {
   }
 
   @Test
-  def changeMethodInvocation5 = global.ask { () =>
+  def changeMethodInvocation5() = global.ask { () =>
 
    val str = """
     package abc
@@ -1557,7 +1557,7 @@ class A(a: Int) {
   }
 
   @Test
-  def patternMatchTest = global.ask { () =>
+  def patternMatchTest() = global.ask { () =>
     val src = """
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1608,7 +1608,7 @@ class A(a: Int) {
   }
 
   @Test
-  def patternMatchTest2 = global.ask { () =>
+  def patternMatchTest2() = global.ask { () =>
     val src = """
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1691,7 +1691,7 @@ class A(a: Int) {
   }
 
   @Test
-  def patternMatchTest3 = global.ask { () =>
+  def patternMatchTest3() = global.ask { () =>
     val src = """
 object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1765,7 +1765,7 @@ object acmatch {
   }
 
   @Test
-  def patternMatchTest4 = global.ask { () =>
+  def patternMatchTest4() = global.ask { () =>
     val src = """
 object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
@@ -1842,7 +1842,7 @@ object acmatch {
   }
 
   @Test
-  def changeMethodInvocation7 = global.ask { () =>
+  def changeMethodInvocation7() = global.ask { () =>
 
     val str = """
     package abc
@@ -1890,7 +1890,7 @@ object acmatch {
   }
 
   @Test
-  def changeMethodInvocation8 = global.ask { () =>
+  def changeMethodInvocation8() = global.ask { () =>
 
     val str = """
     object primitive {
@@ -1933,7 +1933,7 @@ object acmatch {
   }
 
   @Test
-  def testAddSealed = global.ask { () =>
+  def testAddSealed() = global.ask { () =>
     val str = """
     abstract class asd {
     }
@@ -1965,7 +1965,7 @@ object acmatch {
   }
 
   @Test
-  def testRemoveSealed = global.ask { () =>
+  def testRemoveSealed() = global.ask { () =>
     val str = """
     abstract sealed class asd {
     }
@@ -1994,7 +1994,7 @@ object acmatch {
   }
 
   @Test
-  def testAddSealedPP = global.ask { () =>
+  def testAddSealedPP() = global.ask { () =>
     val str = """
     abstract class asd {
     }
@@ -2026,7 +2026,7 @@ object acmatch {
   }
 
   @Test
-  def testRemoveSealedPP = global.ask { () =>
+  def testRemoveSealedPP() = global.ask { () =>
     val str = """
     abstract sealed class asd {
     }
@@ -2055,7 +2055,7 @@ object acmatch {
   }
 
   @Test
-  def insertPlainString = global.ask { () =>
+  def insertPlainString() = global.ask { () =>
     val source = """
     class InsertHere {
       def method = {

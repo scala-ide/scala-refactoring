@@ -12,7 +12,7 @@ class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBase
   }.mkChanges
 
   @Test
-  def collapseImportSelectorsToWildcard = new FileSet {
+  def collapseImportSelectorsToWildcard() = new FileSet {
     """
       import scala.math.{BigDecimal, BigInt, Numeric}
 
@@ -29,7 +29,7 @@ class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBase
 
   @Test
   @Ignore("I don't know why but this test fails when running the complete test suite")
-  def dontCollapseImportsWhenRename = new FileSet {
+  def dontCollapseImportsWhenRename() = new FileSet {
     val before = """
       import scala.math.{BigDecimal, BigInt, Numeric => N}
 
@@ -41,7 +41,7 @@ class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBase
   } applyRefactoring organize()
 
   @Test
-  def dontCollapseWhenCollidingWithExplicitImport = new FileSet {
+  def dontCollapseWhenCollidingWithExplicitImport() = new FileSet {
     """
       import scala.collection.immutable.{HashSet, BitSet, HashMap}
       import scala.collection.mutable.{ArrayStack, ArrayBuilder, ArrayBuffer}
@@ -61,7 +61,7 @@ class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBase
   } applyRefactoring organize()
 
   @Test
-  def dontCollapseWhenPackageInExcludes = new FileSet {
+  def dontCollapseWhenPackageInExcludes() = new FileSet {
     val before = """
       import scala.collection.immutable.{BitSet, HashMap, HashSet}
 

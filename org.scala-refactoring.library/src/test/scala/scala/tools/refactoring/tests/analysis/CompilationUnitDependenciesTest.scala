@@ -28,7 +28,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     assertTrees(expected, src, dependencies)
 
   @Test
-  def evidenceNoImport = assertNeededImports(
+  def evidenceNoImport() = assertNeededImports(
     """""",
     """
     trait Transformations {
@@ -46,7 +46,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def evidence = assertDependencies(
+  def evidence() = assertDependencies(
     """scala.Some""",
     """
     trait Transformations {
@@ -64,14 +64,14 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def typeFromScalaPackage = assertDependencies(
+  def typeFromScalaPackage() = assertDependencies(
     """""",
     """
        object NoRuleApplies extends Exception("No Rule Applies")
     """)
 
   @Test
-  def abstractValType = assertDependencies(
+  def abstractValType() = assertDependencies(
     """java.util.Observable
        scala.collection.mutable.ListBuffer""",
     """
@@ -81,7 +81,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def dependencyOnMultipleOverloadedMethods = assertNeededImports(
+  def dependencyOnMultipleOverloadedMethods() = assertNeededImports(
     """scala.math.BigDecimal.apply""",
     """
       import scala.math.BigDecimal._
@@ -95,7 +95,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def typeArgument = assertDependencies(
+  def typeArgument() = assertDependencies(
     """scala.collection.mutable.ListBuffer""",
     """
        import collection.mutable._
@@ -105,7 +105,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def objectType = assertDependencies(
+  def objectType() = assertDependencies(
     """<root>.scala.io.Source""",
     """
       import scala.io._
@@ -113,7 +113,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def objectTypeRequiresImport = assertNeededImports(
+  def objectTypeRequiresImport() = assertNeededImports(
     """<root>.scala.io.Source""",
     """
       import scala.io._
@@ -121,7 +121,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def valAnnotation = assertDependencies(
+  def valAnnotation() = assertDependencies(
     """java.lang.Object
        scala.beans.BeanProperty
        scala.this.Predef.String""",
@@ -132,7 +132,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   @ScalaVersion(matches="2.10.0")
-  def switchAnnotation210 = assertDependencies(
+  def switchAnnotation210() = assertDependencies(
     """Integer.parseInt
        java.this.lang.Integer
        scala.annotation.switch""",
@@ -148,7 +148,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   @ScalaVersion(matches="2.10.1")
-  def switchAnnotation2101 = assertDependencies(
+  def switchAnnotation2101() = assertDependencies(
     """java.this.lang.Integer
        scala.annotation.switch""",
     """
@@ -163,7 +163,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   @ScalaVersion(matches="2.11")
-  def switchAnnotation = assertDependencies(
+  def switchAnnotation() = assertDependencies(
     """java.this.lang.Integer
        scala.annotation.switch""",
     """
@@ -177,7 +177,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def annotationRequiresImport = assertNeededImports(
+  def annotationRequiresImport() = assertNeededImports(
     """scala.beans.BeanProperty""",
     """
       import scala.beans.BeanProperty
@@ -185,7 +185,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def classAttributeDeps = assertDependencies(
+  def classAttributeDeps() = assertDependencies(
     """scala.collection.mutable.Map
        scala.this.Predef.String""",
     """
@@ -194,7 +194,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def classAttributeRequiresImport = assertNeededImports(
+  def classAttributeRequiresImport() = assertNeededImports(
     """scala.collection.mutable.Map""",
     """
       import scala.collection.mutable.Map
@@ -202,7 +202,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def fullAndShortNames = assertNeededImports(
+  def fullAndShortNames() = assertNeededImports(
     """scala.collection.mutable.Map
        scala.collection.mutable.Set""",
     """
@@ -218,7 +218,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def renamedImport = assertDependencies(
+  def renamedImport() = assertDependencies(
     """scala.collection.mutable.Map
        scala.this.Predef.String""",
     """
@@ -227,7 +227,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def renamedImportIsNeeded = assertNeededImports(
+  def renamedImportIsNeeded() = assertNeededImports(
     """scala.collection.mutable.Map""",
     """
       import scala.collection.mutable.{Map => M}
@@ -235,7 +235,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def localImport = assertDependencies(
+  def localImport() = assertDependencies(
     """scala.this.Predef.println
        x.B""",
     """
@@ -254,7 +254,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def localImportNotNeeded = assertNeededImports(
+  def localImportNotNeeded() = assertNeededImports(
     "",
     """
       class A {
@@ -272,7 +272,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def classAttributeWithFullPackage = assertDependencies(
+  def classAttributeWithFullPackage() = assertDependencies(
     """scala.collection.mutable.Map
        scala.this.Predef.String""",
     """
@@ -280,14 +280,14 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def classAttributeWithFullPackageNoImports = assertNeededImports(
+  def classAttributeWithFullPackageNoImports() = assertNeededImports(
     "",
     """
       class UsesMap { val x = collection.mutable.Map[Int, String]() }
       """)
 
   @Test
-  def etaExpandedMethod = assertNeededImports(
+  def etaExpandedMethod() = assertNeededImports(
     "",
     """
       trait A {
@@ -296,7 +296,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }      """)
 
   @Test
-  def classAttributeWithWildcardImport = assertDependencies(
+  def classAttributeWithWildcardImport() = assertDependencies(
     """scala.collection.mutable.HashSet""",
     """
       import collection._
@@ -304,7 +304,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def classAttributeWithWildcardImportNeeded = assertNeededImports(
+  def classAttributeWithWildcardImportNeeded() = assertNeededImports(
     """scala.collection.mutable""",
     """
       import collection._
@@ -312,7 +312,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importIsUsedAsType = assertDependencies(
+  def importIsUsedAsType() = assertDependencies(
     """java.util.ArrayList""",
     """
       import java.util._
@@ -320,7 +320,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importIsUsedAsTypeButNotNeeded = assertNeededImports(
+  def importIsUsedAsTypeButNotNeeded() = assertNeededImports(
     "",
     """
       import java.util._
@@ -329,7 +329,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   @ScalaVersion(matches="2.10")
-  def importIsUsedAsTypeAscription210 = assertDependencies(
+  def importIsUsedAsTypeAscription210() = assertDependencies(
     """scala.collection.immutable.Set
        scala.this.Predef.Map
        scala.this.Predef.any2ArrowAssoc""",
@@ -339,7 +339,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   @ScalaVersion(matches="2.11")
-  def importIsUsedAsTypeAscription = assertDependencies(
+  def importIsUsedAsTypeAscription() = assertDependencies(
     """scala.collection.immutable.Set
        scala.this.Predef.ArrowAssoc
        scala.this.Predef.Map""",
@@ -348,14 +348,14 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importIsUsedAsTypeAscriptionNeeded = assertNeededImports(
+  def importIsUsedAsTypeAscriptionNeeded() = assertNeededImports(
     "",
     """
       class UsesSet { val s: collection.immutable.Set[Any] = Map(1 -> 2).toSet }
       """)
 
   @Test
-  def typeUsedAsParent = assertDependencies(
+  def typeUsedAsParent() = assertDependencies(
     """java.util.Observer""",
     """
       import java.util.Observer
@@ -363,7 +363,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def typeUsedAsParentImportNeeded = assertNeededImports(
+  def typeUsedAsParentImportNeeded()= assertNeededImports(
     """java.util.Observer""",
     """
       import java.util.Observer
@@ -371,7 +371,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def singleTypeUsedAsSelfTypeAnnotation = assertDependencies(
+  def singleTypeUsedAsSelfTypeAnnotation() = assertDependencies(
     """java.util.Observer""",
     """
       package singleTypeUsedAsSelfTypeAnnotation
@@ -382,7 +382,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def singleTypeUsedAsSelfTypeAnnotationImport = assertNeededImports(
+  def singleTypeUsedAsSelfTypeAnnotationImport() = assertNeededImports(
     """java.util.Observer""",
     """
       import java.util.Observer
@@ -392,7 +392,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def typeUsedAsSelfTypeAnnotation = assertDependencies(
+  def typeUsedAsSelfTypeAnnotation() = assertDependencies(
     """java.util.Observable
          java.util.Observer""",
     """
@@ -405,7 +405,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def typeUsedAsSelfTypeAnnotationImportsNeeded = assertNeededImports(
+  def typeUsedAsSelfTypeAnnotationImportsNeeded() = assertNeededImports(
     """java.util.Observable
          java.util.Observer""",
     """
@@ -418,7 +418,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def compoundTypeTree = assertDependencies(
+  def compoundTypeTree() = assertDependencies(
     """java.util.Observable
          java.util.Observer""",
     """
@@ -429,7 +429,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def typeUsedAsBound = assertDependencies(
+  def typeUsedAsBound()= assertDependencies(
     """java.util.Observer""",
     """
       import java.util.Observer
@@ -438,7 +438,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def typeUsedAsBoundNeeded = assertNeededImports(
+  def typeUsedAsBoundNeeded() = assertNeededImports(
     """java.util.Observer""",
     """
       import java.util.Observer
@@ -447,7 +447,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def qualifiedAndUnqualifiedImports = assertNeededImports(
+  def qualifiedAndUnqualifiedImports() = assertNeededImports(
     """scala.collection.mutable.HashMap""",
     """
       import collection.mutable.HashMap
@@ -459,7 +459,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importStaticMethodDependency = assertDependencies(
+  def importStaticMethodDependency() = assertDependencies(
     """java.lang.Integer.parseInt""",
     """
       import java.lang.Integer._
@@ -469,7 +469,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importStaticMethodNeeded = assertNeededImports(
+  def importStaticMethodNeeded() = assertNeededImports(
     """java.lang.Integer.parseInt""",
     """
       import java.lang.Integer._
@@ -479,7 +479,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def typeUsedInNew = assertDependencies(
+  def typeUsedInNew() = assertDependencies(
     """scala.this.Predef.intWrapper
        scala.util.Random""",
     """
@@ -491,7 +491,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def typeUsedInNewNeeded = assertNeededImports(
+  def typeUsedInNewNeeded() = assertNeededImports(
     """scala.util.Random""",
     """
       import scala.util._
@@ -502,7 +502,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def dependenciesAreUnique = assertDependencies(
+  def dependenciesAreUnique() = assertDependencies(
     """scala.collection.mutable.ListBuffer""",
     """
       import scala.collection.mutable.ListBuffer
@@ -510,7 +510,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def existential = assertDependencies(
+  def existential() = assertDependencies(
     """java.util.Map""",
     """
       import java.util._
@@ -520,7 +520,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def existentialTypeTree = assertNeededImports(
+  def existentialTypeTree() = assertNeededImports(
     """java.util.Map""",
     """
       import java.util._
@@ -530,7 +530,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def renamedPackage = assertDependencies(
+  def renamedPackage() = assertDependencies(
     """java.util.Map""",
     """
       import java.{ lang => jl, util => ju }
@@ -540,7 +540,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def renamedPackageImport = assertNeededImports(
+  def renamedPackageImport() = assertNeededImports(
     """java.util""",
     """
       import java.{ lang => jl, util => ju }
@@ -550,7 +550,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importFromPackageObject = assertDependencies(
+  def importFromPackageObject() = assertDependencies(
     """scala.collection.`package`.breakOut
        scala.this.Predef.Map
        scala.this.Predef.identity""",
@@ -562,7 +562,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def selfTypeFromThis = assertDependencies(
+  def selfTypeFromThis() = assertDependencies(
     """""",
     """
       trait A {
@@ -576,7 +576,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def somePackages = assertDependencies(
+  def somePackages() = assertDependencies(
     """a.X""",
     """
       package a {
@@ -589,7 +589,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def somePackagesButNoImports = assertNeededImports(
+  def somePackagesButNoImports() = assertNeededImports(
     "",
     """
       package a {
@@ -602,7 +602,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importedImplicitConversion = assertDependencies(
+  def importedImplicitConversion() = assertDependencies(
     """java.util.List
        scala.collection.JavaConversions.bufferAsJavaList
        scala.collection.mutable.ListBuffer""",
@@ -615,7 +615,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importedImplicitConversionNeedsImport = assertNeededImports(
+  def importedImplicitConversionNeedsImport() = assertNeededImports(
     """scala.collection.JavaConversions.bufferAsJavaList""",
     """
       import scala.collection.JavaConversions._
@@ -626,7 +626,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
-  def importedImplicitConversionNeedsImportShortForm = assertNeededImports(
+  def importedImplicitConversionNeedsImportShortForm() = assertNeededImports(
     """scala.collection.JavaConversions.asScalaBuffer""",
     """
       import collection.JavaConversions._
@@ -637,7 +637,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def importedImplicitArgument {
+  def importedImplicitArgument() {
 
     addToCompiler("xy.scala", """
       package impl.args
@@ -669,7 +669,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   }
 
   @Test
-  def importFromLocalValueDependency = assertDependencies(
+  def importFromLocalValueDependency() = assertDependencies(
     """param.global.X""",
     """
       trait Param {
@@ -685,7 +685,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def importFromLocalValueNoImport = assertNeededImports(
+  def importFromLocalValueNoImport() = assertNeededImports(
     """""",
     """
       trait Param {
@@ -701,7 +701,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def classOfRequiresImport = assertNeededImports(
+  def classOfRequiresImport() = assertNeededImports(
     """scala.io.Source""",
     """
       import scala.io.Source
@@ -712,7 +712,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def SystemcurrentTimeMillis = assertNeededImports(
+  def SystemcurrentTimeMillis() = assertNeededImports(
     """java.this.lang.System.currentTimeMillis""",
     """
       import System.currentTimeMillis
@@ -723,7 +723,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def SystemcurrentTimeMillisDeps = assertDependencies(
+  def SystemcurrentTimeMillisDeps() = assertDependencies(
     """java.this.lang.System.currentTimeMillis""",
     """
       import System.currentTimeMillis
@@ -734,7 +734,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def ClassInAnnotationAttrArg = assertNeededImports(
+  def ClassInAnnotationAttrArg() = assertNeededImports(
     """java.util.Calendar""",
     """
       import java.util.Calendar
@@ -746,7 +746,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def ClassInAnnotationImports = assertNeededImports(
+  def ClassInAnnotationImports() = assertNeededImports(
     """java.io.BufferedReader
        java.io.FileReader
        java.io.IOException""",
@@ -763,7 +763,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def ClassInAnnotationDeps = assertDependencies(
+  def ClassInAnnotationDeps() = assertDependencies(
     """java.io.BufferedReader
        java.io.FileReader
        java.io.IOException
@@ -781,7 +781,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def implicitDefImports  = assertNeededImports(
+  def implicitDefImports()  = assertNeededImports(
     "", """class ImplicitDef {
 
       val readBuffer = Array.ofDim[Byte](1024)
@@ -793,7 +793,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     }""")
 
   @Test
-  def implicitDef = assertDependencies(
+  def implicitDef() = assertDependencies(
     """scala.reflect.ClassTag
        scala.this.Predef.byteArrayOps""",
     """class ImplicitDef {
@@ -814,7 +814,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     }""")
 
   @Test
-  def annotationOnPrimaryConstructor = assertDependencies(
+  def annotationOnPrimaryConstructor() = assertDependencies(
     "java.lang.annotation.Documented",
     """
       import java.lang.annotation.Documented
@@ -824,7 +824,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
 
   @Test
-  def annotationOnField = assertDependencies(
+  def annotationOnField() = assertDependencies(
     "java.lang.annotation.Documented",
     """
       import java.lang.annotation.Documented

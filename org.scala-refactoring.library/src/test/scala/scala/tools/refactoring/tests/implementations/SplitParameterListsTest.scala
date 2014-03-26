@@ -17,7 +17,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def simpleSplitting = new FileSet {
+  def simpleSplitting() = new FileSet {
     """
       package splitParameterLists.simpleSplitting
     class A {
@@ -33,7 +33,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil)))
 
   @Test
-  def multipleParamListSplitting = new FileSet {
+  def multipleParamListSplitting() = new FileSet {
     """
       package splitParameterLists.multipleParamListSplitting
     class A {
@@ -49,7 +49,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 1 :: 2 :: Nil)))
 
   @Test
-  def splittingWithMethodCall = new FileSet {
+  def splittingWithMethodCall() = new FileSet {
     """
       package splitParameterLists.splittingWithMethodCall
     class A {
@@ -73,7 +73,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil)))
 
   @Test
-  def splittingMethodSubclass = new FileSet {
+  def splittingMethodSubclass() = new FileSet {
     """
       package splitParameterLists.splittingMethodSubclass
       class Parent {
@@ -97,7 +97,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil)))
 
   @Test
-  def splittingMethodSuperclass = new FileSet {
+  def splittingMethodSuperclass() = new FileSet {
     """
       package splitParameterLists.splittingMethodSuperclass
       class Parent {
@@ -121,7 +121,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil)))
 
   @Test
-  def curriedMethodAliased = new FileSet {
+  def curriedMethodAliased() = new FileSet {
     """
       package splitParameterLists.curriedMethodAliased
       class A {
@@ -141,7 +141,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: 2 :: Nil)))
 
   @Test
-  def curriedMethodAliasedTwoParamLists = new FileSet {
+  def curriedMethodAliasedTwoParamLists() = new FileSet {
     """
       package splitParameterLists.curriedMethodAliasedTwoParamLists
       class A {
@@ -161,7 +161,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 1 :: Nil)))
 
   @Test
-  def curriedMethodPartiallyApplied = new FileSet {
+  def curriedMethodPartiallyApplied() = new FileSet {
     """
       package splitParameterLists.curriedMethodPartiallyApplied
       class A {
@@ -181,7 +181,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil)))
 
   @Test
-  def partiallyCurried = new FileSet {
+  def partiallyCurried() = new FileSet {
     """
       package splitParameterLists.partiallyCurried
       class A {
@@ -201,7 +201,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil, 1 :: Nil)))
 
   @Test
-  def twoPartiallyCurriedMethods = new FileSet {
+  def twoPartiallyCurriedMethods() = new FileSet {
     """
       package splitParameterLists.twoPartiallyCurriedMethods
       class A {
@@ -225,7 +225,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil, 1 :: Nil)))
 
   @Test
-  def repeatedlyPartiallyApplied = new FileSet {
+  def repeatedlyPartiallyApplied() = new FileSet {
     """
       package splitParameterLists.repeatedlyPartiallyApplied
       class A {
@@ -249,7 +249,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil, 1 :: Nil, 1 :: Nil)))
 
   @Test
-  def aliasToVal = new FileSet {
+  def aliasToVal() = new FileSet {
     """
       package splitParameterLists.aliasToVal
       class A {
@@ -269,7 +269,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil)))
 
   @Test
-  def repeatedlyPartiallyAppliedVal = new FileSet {
+  def repeatedlyPartiallyAppliedVal() = new FileSet {
     """
       package splitParameterLists.repeatedlyPartiallyAppliedVal
       class A {
@@ -291,7 +291,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil, 1 :: Nil)))
 
   @Test
-  def partialsWithBody = new FileSet {
+  def partialsWithBody() = new FileSet {
     """
     package splitParameterLists.partialsWithBody
     class A {
@@ -333,7 +333,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 2 :: Nil, 1 :: 2 :: Nil, 1 :: Nil)))
 
   @Test
-  def partialValsWithBody = new FileSet {
+  def partialValsWithBody() = new FileSet {
     """
     package splitParameterLists.partialsWithBody
     class A {
@@ -376,7 +376,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
 
   @Test
   @Ignore // TODO: implement
-  def partialOverride = new FileSet {
+  def partialOverride() = new FileSet {
     """
       package splitParameterLists.partialOverride
       class Parent {
@@ -400,7 +400,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 1 :: Nil)))
 
   @Test(expected = classOf[RefactoringException])
-  def unorderedSplitPositions = new FileSet {
+  def unorderedSplitPositions() = new FileSet {
     """
       package splitParameterLists.unorderedSplitPositions
       class Foo {
@@ -416,7 +416,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(2 :: 1 :: Nil)))
 
   @Test(expected = classOf[RefactoringException])
-  def aboveBoundsSplitPosition = new FileSet {
+  def aboveBoundsSplitPosition() = new FileSet {
     """
       package splitParameterLists.aboveBoundsSplitPosition
       class Foo {
@@ -432,7 +432,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(3 :: Nil)))
 
   @Test(expected = classOf[RefactoringException])
-  def belowBoundsSplitPosition = new FileSet {
+  def belowBoundsSplitPosition() = new FileSet {
     """
       package splitParameterLists.belowBoundsSplitPosition
       class Foo {
@@ -448,7 +448,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(0 :: Nil)))
 
   @Test(expected = classOf[RefactoringException])
-  def duplicatedSplitPosition = new FileSet {
+  def duplicatedSplitPosition() = new FileSet {
     """
       package splitParameterLists.duplicatedSplitPosition
       class Foo {
@@ -464,7 +464,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: 1 :: Nil)))
 
   @Test(expected = classOf[RefactoringException])
-  def tooManySplitPositions = new FileSet {
+  def tooManySplitPositions() = new FileSet {
     """
       package splitParameterLists.tooManySplitPositions
       class Foo {
@@ -480,7 +480,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 1 :: Nil)))
 
   @Test
-  def partiallyAppliedMethodUsage = new FileSet {
+  def partiallyAppliedMethodUsage() = new FileSet {
     """
       package splitParameterLists.partiallyAppliedMethodUsage
       class A {
@@ -500,7 +500,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 1 :: Nil)))
 
   @Test
-  def partiallyAppliedMethodUsage2 = new FileSet {
+  def partiallyAppliedMethodUsage2() = new FileSet {
     """
       package splitParameterLists.partiallyAppliedMethodUsage2
       class A {
@@ -522,7 +522,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(1 :: Nil, 1 :: Nil, 1 :: Nil)))
 
   @Test
-  def partiallyAppliedMethodUsageOutsideClass = new FileSet {
+  def partiallyAppliedMethodUsageOutsideClass() = new FileSet {
     """
     package splitParameterLists.partiallyAppliedMethodUsageOutsideClass
     class A {
@@ -552,7 +552,7 @@ class SplitParameterListsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (splitParameterLists(List(Nil, 1 :: Nil)))
 
   @Test(expected = classOf[PreparationException])
-  def splitConstructor = new FileSet {
+  def splitConstructor() = new FileSet {
     """
     package splitParameterLists.splitConstructor
     class /*SplitMe*/(a: Int, b: Int)

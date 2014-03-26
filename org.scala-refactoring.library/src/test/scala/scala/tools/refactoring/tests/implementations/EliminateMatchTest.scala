@@ -26,7 +26,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   val none = None: Option[String]
 
   @Test
-  def eliminateOptionMap {
+  def eliminateOptionMap() {
 
     def f1(x: Option[String]) = x match {
       case Some(s) => Some(s * 2)
@@ -40,7 +40,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def eliminateOptionExists {
+  def eliminateOptionExists() {
 
     def f1(x: Option[String]) = x match {
       case Some(s) => s contains "a"
@@ -54,7 +54,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def eliminateOptionIsDefined {
+  def eliminateOptionIsDefined() {
 
     def f1(x: Option[String]) = x match {
       case Some(_) => true
@@ -68,7 +68,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def eliminateOptionForeach {
+  def eliminateOptionForeach() {
 
     var x1 = 0
     var x2 = 0
@@ -87,7 +87,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def eliminateIsDefined = new FileSet {
+  def eliminateIsDefined() = new FileSet {
     """
     object EliminiateWithoutSelection {
       def f1(x: Option[String]) = x /*(*/ match /*)*/ {
@@ -104,7 +104,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def flatMapElimination = new FileSet {
+  def flatMapElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -125,7 +125,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def flatMapElimination2 = new FileSet {
+  def flatMapElimination2() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -146,7 +146,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def simpleExistsElimination = new FileSet {
+  def simpleExistsElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -165,7 +165,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def isDefinedElimination = new FileSet {
+  def isDefinedElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -184,7 +184,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def existsEliminationDifferentOrder = new FileSet {
+  def existsEliminationDifferentOrder() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -203,7 +203,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test // TODO: could be more beautiful
-  def existsEliminationWithBody = new FileSet {
+  def existsEliminationWithBody() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -237,7 +237,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def mapEliminationSimple = new FileSet {
+  def mapEliminationSimple() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -256,7 +256,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def mapEliminationNoneSome = new FileSet {
+  def mapEliminationNoneSome() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -275,7 +275,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def mapEliminationNoCapture = new FileSet {
+  def mapEliminationNoCapture() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -294,7 +294,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def mapEliminationNoNone = new FileSet {
+  def mapEliminationNoNone() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -313,7 +313,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def mapEliminationWithChainedCall = new FileSet {
+  def mapEliminationWithChainedCall() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -332,7 +332,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def mapEliminationWithBlock = new FileSet {
+  def mapEliminationWithBlock() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -359,7 +359,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def foreachEliminationWithExplicitUnit = new FileSet {
+  def foreachEliminationWithExplicitUnit() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -380,7 +380,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def foreachEliminationWithUnit = new FileSet {
+  def foreachEliminationWithUnit() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -401,7 +401,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def flattenElimination = new FileSet {
+  def flattenElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -422,7 +422,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def isEmptyElimination = new FileSet {
+  def isEmptyElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -443,7 +443,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def forallElimination = new FileSet {
+  def forallElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -464,7 +464,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def orElseElimination = new FileSet {
+  def orElseElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -485,7 +485,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def orElseEliminationAlt = new FileSet {
+  def orElseEliminationAlt() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -508,7 +508,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def getOrElseElimination = new FileSet {
+  def getOrElseElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -529,7 +529,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def toListElimination = new FileSet {
+  def toListElimination() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -550,7 +550,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def toListEliminationAlt = new FileSet {
+  def toListEliminationAlt() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -571,7 +571,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test
-  def foreachInBlock = new FileSet {
+  def foreachInBlock() = new FileSet {
     """
       package elimination
       object EliminateMap {
@@ -614,7 +614,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   } applyRefactoring(elim)
 
   @Test(expected=classOf[PreparationException])
-  def cannotEliminateWithBinding = new FileSet {
+  def cannotEliminateWithBinding() = new FileSet {
     """
       package elimination
       object EliminateMap {

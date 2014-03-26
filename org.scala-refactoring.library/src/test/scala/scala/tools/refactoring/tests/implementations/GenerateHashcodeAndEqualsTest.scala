@@ -20,7 +20,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   override val global = (new CompilerInstance).compiler
 
   @After
-  def shutdownCompiler {
+  def shutdownCompiler() {
     global.askShutdown
   }
 
@@ -34,7 +34,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def singleValParam = new FileSet {
+  def singleValParam() = new FileSet {
     """
       package generateHashcodeAndEquals.singleValParam
 
@@ -64,7 +64,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((false, p => true, false)))
 
   @Test
-  def twoValParams = new FileSet {
+  def twoValParams() = new FileSet {
     """
       package generateHashcodeAndEquals.twoValParams
 
@@ -94,7 +94,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((false, p => true, false)))
 
   @Test
-  def excludeNonPublicParams = new FileSet {
+  def excludeNonPublicParams() = new FileSet {
     """
       package generateHashcodeAndEquals.excludeNonPublicParams
 
@@ -124,7 +124,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((false, _ => true, false)))
 
   @Test
-  def keepExistingEquals = new FileSet {
+  def keepExistingEquals() = new FileSet {
     """
       package generateHashcodeAndEquals.keepExistingEquals
 
@@ -151,7 +151,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((false, _ => true, true)))
 
   @Test
-  def dropExistingHashCode = new FileSet {
+  def dropExistingHashCode() = new FileSet {
     """
       package generateHashcodeAndEquals.dropExistingHashCode
 
@@ -183,7 +183,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((false, _ => true, false)))
 
   @Test
-  def keepExistingCanEqual = new FileSet {
+  def keepExistingCanEqual() = new FileSet {
     """
       package generateHashcodeAndEquals.keepExistingCanEqual
 
@@ -213,7 +213,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((false, _ => true, true)))
 
   @Test
-  def selectByName = new FileSet {
+  def selectByName() = new FileSet {
     """
     package generateHashcodeAndEquals.selectByName
 
@@ -248,7 +248,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   , false))
 
   @Test
-  def callSuper = new FileSet {
+  def callSuper() = new FileSet {
     """
       package generateHashcodeAndEquals.callSuper
 
@@ -278,7 +278,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((true, _ => true, false)))
 
   @Test
-  def emptyClassBody = new FileSet {
+  def emptyClassBody() = new FileSet {
     """
       package generateHashcodeAndEquals.emptyClassBody
 
@@ -310,7 +310,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring (generateHashcodeAndEquals((true, _ => true, true)))
 
   @Test
-  def noParams = new FileSet {
+  def noParams() = new FileSet {
     """
     package generateHashcodeAndEquals.noParams
     class /*(*/Foo/*)*/ {
@@ -339,7 +339,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
 
   @Test(expected = classOf[PreparationException])
-  def traitFails = new FileSet {
+  def traitFails() = new FileSet {
     """
     package generateHashcodeAndEquals.traitFails
     trait NotAClass
@@ -348,7 +348,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
 
   @Test
-  def replaceHashcodeVal = new FileSet {
+  def replaceHashcodeVal() = new FileSet {
     """
     package generateHashcodeAndEquals.replaceHashcodeVal
     class /*(*/Foo/*)*/ {
@@ -378,7 +378,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, false)))
 
   @Test
-  def dontExtendEqualsTwice = new FileSet {
+  def dontExtendEqualsTwice() = new FileSet {
     """
     class /*(*/Foo/*)*/ extends Equals {
       def canEqual(that: Any) = false
@@ -404,7 +404,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   } applyRefactoring(generateHashcodeAndEquals((false, _ => false, true)))
 
   @Test
-  def traitWithExistingSuperConstructorCall = new FileSet {
+  def traitWithExistingSuperConstructorCall() = new FileSet {
     """
     package traitWithExistingSuperConstructorCall
 

@@ -23,7 +23,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def oneVarFromMany = new FileSet {
+  def oneVarFromMany() = new FileSet {
     """
       package oneFromMany
       class Demo(val a: String,  /*(*/var i: Int/*)*/  ) {
@@ -46,7 +46,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   } applyRefactoring(explicitGettersSetters)
 
   @Test
-  def oneValFromMany = new FileSet {
+  def oneValFromMany() = new FileSet {
     """
       package oneFromMany
       class Demo(val a: String,  /*(*/val i: Int/*)*/  ) {
@@ -66,7 +66,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   } applyRefactoring(explicitGettersSetters)
 
   @Test
-  def singleVal = new FileSet {
+  def singleVal() = new FileSet {
     """
       package oneFromMany
       class Demo(  /*(*/val i: Int/*)*/  )
@@ -82,7 +82,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   } applyRefactoring(explicitGettersSetters)
 
   @Test
-  def singleValWithEmptyBody = new FileSet {
+  def singleValWithEmptyBody() = new FileSet {
     """
       package oneFromMany
       class Demo(  /*(*/val i: Int/*)*/  ) {

@@ -69,7 +69,7 @@ class PimpedTreesTest extends TestHelper with PimpedTrees {
   }
 
   @Test
-  def namePositionOfFieldAccessor = {
+  def namePositionOfFieldAccessor() = {
     val src = """
     object O{
       val field = 1

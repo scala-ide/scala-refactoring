@@ -9,7 +9,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
   import global._
 
   @Test
-  def expandSelectionToBlock =
+  def expandSelectionToBlock() =
     """
     class C{
       def fn = {
@@ -35,7 +35,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandSelectionInForEnumerator =
+  def expandSelectionInForEnumerator() =
     """
     class C{
       for{
@@ -45,7 +45,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """.assertExpansion(_.expandTo[Tree].get).toRemain
 
   @Test
-  def expandSelectionInYield =
+  def expandSelectionInYield() =
     """
     class C{
       for{
@@ -55,7 +55,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """.assertExpansion(_.expandTo[Tree].get).toRemain
 
   @Test
-  def expandWithLastTreePartiallySelected =
+  def expandWithLastTreePartiallySelected() =
     """
     class C{
       val first = 1
@@ -83,7 +83,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandWithFirstTreePartiallySelected =
+  def expandWithFirstTreePartiallySelected() =
     """
     class C{
       def fn = {
@@ -107,7 +107,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandValidSelection =
+  def expandValidSelection() =
     """
     class C{
       val a = /*(*/1/*)*/
@@ -115,7 +115,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """.assertExpansion(_.expand).toRemain
 
   @Test
-  def expandValidSelectionOfBlock =
+  def expandValidSelectionOfBlock() =
     """
     class C{
       val a = /*(*/{
@@ -126,7 +126,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """.assertExpansion(_.expand).toRemain
 
   @Test
-  def expandMethodCalls =
+  def expandMethodCalls() =
     """
     class C{
       val s = "abc"
@@ -142,7 +142,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandPartiallySelectedMethodDefinitions1 =
+  def expandPartiallySelectedMethodDefinitions1() =
     """
     class C{
       def /*(*/fn(i: Int) = {
@@ -160,7 +160,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandPartiallySelectedMethodDefinitions2 =
+  def expandPartiallySelectedMethodDefinitions2() =
     """
     class C{
       def /*(*/fn(i: Int) = {
@@ -178,7 +178,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandPartiallySelectedMethodDefinitions3 =
+  def expandPartiallySelectedMethodDefinitions3() =
     """
     class C{
       def /*(*/fn = {
@@ -196,7 +196,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandPartiallySelectedIf =
+  def expandPartiallySelectedIf() =
     """
     class C{
       if(/*(*/true)
@@ -216,7 +216,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandPartiallySelectedMatch =
+  def expandPartiallySelectedMatch() =
     """
     class C{
       1 match{
@@ -236,7 +236,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandSelectedPatternWithGuard =
+  def expandSelectedPatternWithGuard() =
     """
     class C{
       1 match{
@@ -254,7 +254,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandAnonFunWithWildcardParam =
+  def expandAnonFunWithWildcardParam() =
     """
     class C{
       List(1).map(/*(*/_ + 1/*)*/)
@@ -271,7 +271,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandEmptySelection =
+  def expandEmptySelection() =
     """
     object O{
       1/*(*//*)*/
@@ -285,7 +285,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     }
 
   @Test
-  def expandEmptySelectionWithinTree =
+  def expandEmptySelectionWithinTree() =
     """
     object O{
       123/*(*//*)*/
@@ -324,7 +324,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
             }
           }
 
-          def toRemain = toBecome(src)
+          def toRemain() = toBecome(src)
         }
       }
     }
@@ -334,7 +334,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     new Selection {
       val root = s.root
       val file = s.file
-      val pos = 
-        new RangePosition(s.pos.source, s.pos.start + dStart, s.pos.point, s.pos.end + dEnd) 
+      val pos =
+        new RangePosition(s.pos.source, s.pos.start + dStart, s.pos.point, s.pos.end + dEnd)
     }
 }
