@@ -45,7 +45,7 @@ class MarkOccurrencesTest extends TestHelper {
   }
 
   @Test
-  def methodCall = markOccurrences("""
+  def methodCall() = markOccurrences("""
       package renameRecursive
       class A {
         def length[T](l: List[T]): Int = l match {
@@ -65,7 +65,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def fullySelected = markOccurrences("""
+  def fullySelected() = markOccurrences("""
       class Abc {
           new /*(*/Abc/*)*/
       }
@@ -77,7 +77,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def typeParameter = markOccurrences("""
+  def typeParameter() = markOccurrences("""
       class Abc {
           val xs: List[String] = "" :: Nil
           val x: /*(*/String/*)*/ = xs.head
@@ -91,7 +91,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def invalidSelection = markOccurrences("""
+  def invalidSelection() = markOccurrences("""
       class Abc {
           val xs: List[String] = "" :: Nil
           /*(*/val/*)*/ x: String = xs.head
@@ -105,7 +105,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def appliedTypeTreeParameter = markOccurrences("""
+  def appliedTypeTreeParameter() = markOccurrences("""
       class Abc {
           val xs: List[/*(*/String/*)*/] = "" :: Nil
           val x: String = xs.head
@@ -119,7 +119,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def superConstructorArguments = markOccurrences("""
+  def superConstructorArguments() = markOccurrences("""
       class Base(s: String)
       class Sub(a: String) extends Base(/*(*/a/*)*/)
     """,
@@ -129,7 +129,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def importValInInnerObject = markOccurrences("""
+  def importValInInnerObject() = markOccurrences("""
     object Outer {
       object Inner {
         val /*(*/c/*)*/ = 2
@@ -151,7 +151,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def markImportedOccurrences = markOccurrences("""
+  def markImportedOccurrences() = markOccurrences("""
     import java.io./*(*/File/*)*/
     object Whatever {
       val sep = File.pathSeparator
@@ -165,7 +165,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def markImportedAndRenamedOccurrences = markOccurrences("""
+  def markImportedAndRenamedOccurrences() = markOccurrences("""
     import java.io./*(*/File/*)*/
     import java.io.{File => F}
     object Whatever {
@@ -183,7 +183,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def markImportedAndRenamedOccurrencesRenamedSelected = markOccurrences("""
+  def markImportedAndRenamedOccurrencesRenamedSelected() = markOccurrences("""
     import java.io.File
     import java.io.{File => F}
     object Whatever {
@@ -201,7 +201,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def backtickedIdentifiers = markOccurrences("""
+  def backtickedIdentifiers() = markOccurrences("""
     trait StrangeIdentifiers {
       val /*(*/`my strange identifier`/*)*/ = "foo"
       val `my strange identifier 2` = `my strange identifier`
@@ -215,7 +215,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def annotatedType = markOccurrences("""
+  def annotatedType() = markOccurrences("""
       object U {
         def go(t: List[ /*(*/String/*)*/ ]) = {
           val s: String = ""
@@ -233,7 +233,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def filterInForComprehension1 = markOccurrences("""
+  def filterInForComprehension1() = markOccurrences("""
       object U {
         for (/*(*/foo/*)*/ <- List("santa", "claus") if foo.startsWith("s")) yield foo
       }
@@ -245,7 +245,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def filterInForComprehension2 = markOccurrences("""
+  def filterInForComprehension2() = markOccurrences("""
       object U {
         for (foo <- List("santa", "claus") if /*(*/foo/*)*/.startsWith("s")) yield foo
       }
@@ -257,7 +257,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def filterInForComprehension3 = markOccurrences("""
+  def filterInForComprehension3() = markOccurrences("""
       object U {
         for (foo <- List("santa", "claus") if foo.startsWith("s")) yield /*(*/foo/*)*/
       }
@@ -269,7 +269,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def filterInForComprehension4 = markOccurrences("""
+  def filterInForComprehension4() = markOccurrences("""
       object U {
         for (foo <- List("santa", "claus") if "".startsWith(/*(*/foo/*)*/)) yield foo
       }
@@ -281,7 +281,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def filterInForComprehensions = markOccurrences("""
+  def filterInForComprehensions() = markOccurrences("""
       object U {
         for (/*(*/foo/*)*/ <- List("santa", "2claus"); bar <- List(1,2) if foo.startsWith(""+ bar)) yield foo
       }
@@ -293,7 +293,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def filterInForComprehensions2 = markOccurrences("""
+  def filterInForComprehensions2() = markOccurrences("""
       object U {
         for (foo <- List("santa", "2claus"); /*(*/bar/*)*/ <- List(1,2) if foo.startsWith(""+ bar)) yield foo
       }
@@ -305,7 +305,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def referenceFromInside = markOccurrences("""
+  def referenceFromInside() = markOccurrences("""
     package referenceFromInside
     class /*(*/Foo/*)*/ {
       class Bar {
@@ -323,7 +323,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def referenceToOverridenTypesInSubclasses = markOccurrences("""
+  def referenceToOverridenTypesInSubclasses() = markOccurrences("""
     abstract class A {
 
       type /*(*/Foo/*)*/
@@ -359,7 +359,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def typeAscriptionTraitMember = markOccurrences("""
+  def typeAscriptionTraitMember() = markOccurrences("""
     trait ScalaIdeRefactoring {
       trait /*(*/Refactoring/*)*/
       val refactoring: Refactoring
@@ -373,7 +373,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def typeAliasRhs = markOccurrences("""
+  def typeAliasRhs() = markOccurrences("""
     class Foo2 {
       type T = /*(*/Int/*)*/
       val x: T = 10
@@ -389,7 +389,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def typeAliasLhs = markOccurrences("""
+  def typeAliasLhs() = markOccurrences("""
     class Foo2 {
       type /*(*/T/*)*/ = Int
       val x: T = 10
@@ -406,7 +406,7 @@ class MarkOccurrencesTest extends TestHelper {
 
   @Ignore
   @Test
-  def namedArg = markOccurrences("""
+  def namedArg() = markOccurrences("""
     class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }
 
     class NamedParameter {
@@ -424,7 +424,7 @@ class MarkOccurrencesTest extends TestHelper {
     """)
 
   @Test
-  def constructorInForComprehension = markOccurrences("""
+  def constructorInForComprehension() = markOccurrences("""
     package constructorInForComprehension
     case class /*(*/A/*)*/(val x: Int)
 

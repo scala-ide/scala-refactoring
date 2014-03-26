@@ -21,7 +21,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def inlineIfCond = new FileSet {
+  def inlineIfCond() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -48,7 +48,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineInMatch = new FileSet {
+  def inlineInMatch() = new FileSet {
     """
   object ExtractLocal1 {
 
@@ -79,7 +79,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineLocal = new FileSet {
+  def inlineLocal() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -106,7 +106,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromElseWithoutParens = new FileSet {
+  def inlineFromElseWithoutParens() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -145,7 +145,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineValRhs = new FileSet {
+  def inlineValRhs() = new FileSet {
     """
       object Demo {
         def update(platform: String) {
@@ -170,7 +170,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFilter = new FileSet {
+  def inlineFilter() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -192,7 +192,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFilterFunction = new FileSet {
+  def inlineFilterFunction() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -214,7 +214,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlinePartOfACondition = new FileSet {
+  def inlinePartOfACondition() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -239,7 +239,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromCaseWithMultipleStatements = new FileSet {
+  def inlineFromCaseWithMultipleStatements() = new FileSet {
     """
       class Extr2 { def m {
         Nil match {
@@ -264,7 +264,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromCaseWithSingleStatement = new FileSet {
+  def inlineFromCaseWithSingleStatement() = new FileSet {
     """
       class Extr2 { def m {
         Nil match {
@@ -287,7 +287,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromCaseWithTwoStatements = new FileSet {
+  def inlineFromCaseWithTwoStatements() = new FileSet {
     """
       class Extr2 { def m {
         /*(*/val six = 5 + 1/*)*/
@@ -302,7 +302,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inliningNeedsParens = new FileSet {
+  def inliningNeedsParens() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -323,7 +323,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inliningNeedsParens2 = new FileSet {
+  def inliningNeedsParens2() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -344,7 +344,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inliningNeedsNoParens = new FileSet {
+  def inliningNeedsNoParens() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -365,7 +365,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromTry = new FileSet {
+  def inlineFromTry() = new FileSet {
     """
       class Extr2 { def m {
         try {
@@ -386,7 +386,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromFunctionWithCurlyBraces = new FileSet {
+  def inlineFromFunctionWithCurlyBraces() = new FileSet {
     """
       class Extr2 { def m {
         List(1,2,3) filter { it =>
@@ -406,7 +406,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromValBlock = new FileSet {
+  def inlineFromValBlock() = new FileSet {
     """
       class Extr2 { def m {
         val a = {
@@ -427,7 +427,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromThen = new FileSet {
+  def inlineFromThen() = new FileSet {
     """
       class Extr2 { def m {
         if(true) {
@@ -446,7 +446,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromElse = new FileSet {
+  def inlineFromElse() = new FileSet {
     """
 
     object ExtractLocal1 {
@@ -487,7 +487,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromSeveralVals = new FileSet {
+  def inlineFromSeveralVals() = new FileSet {
     """
     class InlineTest {
       def m {
@@ -508,7 +508,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineFromVal = new FileSet {
+  def inlineFromVal() = new FileSet {
     """
     class InlineTest {
       def m {
@@ -529,7 +529,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def inlineInListConcatenation = new FileSet {
+  def inlineInListConcatenation() = new FileSet {
     """
      class InlineTest {
        def m {
@@ -548,7 +548,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(inline)
 
   @Test
-  def preserveSomeWhitespace = new FileSet {
+  def preserveSomeWhitespace() = new FileSet {
     """
 object Test extends App {
   def f() {
@@ -567,7 +567,7 @@ object Test extends App {
   } applyRefactoring(inline)
 
   @Test(expected=classOf[RefactoringException])
-  def dontStartInlineFromRhs = new FileSet {
+  def dontStartInlineFromRhs() = new FileSet {
     """
     object Test extends App {
       def f() {

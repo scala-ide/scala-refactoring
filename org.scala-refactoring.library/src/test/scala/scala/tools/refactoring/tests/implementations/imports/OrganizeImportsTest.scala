@@ -90,7 +90,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   }
 
   @Test
-  def expandImports = new FileSet {
+  def expandImports() = new FileSet {
     """
       package tests.importing
 
@@ -109,7 +109,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeExpand
 
   @Test
-  def expandImportsButNotWildcards = new FileSet {
+  def expandImportsButNotWildcards() = new FileSet {
     """
       package tests.importing
 
@@ -127,7 +127,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeExpand
 
   @Test
-  def dontCollapseImports = new FileSet {
+  def dontCollapseImports() = new FileSet {
     """
       package tests.importing
 
@@ -147,7 +147,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithoutCollapsing
 
   @Test
-  def sort = new FileSet {
+  def sort() = new FileSet {
     """
       package tests.importing
 
@@ -167,7 +167,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def collapse = new FileSet {
+  def collapse() = new FileSet {
     """
       import java.lang.String
       import java.lang.Object
@@ -182,7 +182,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def sortSelectors = new FileSet {
+  def sortSelectors() = new FileSet {
     """
       import java.lang.{String, Object}
 
@@ -196,7 +196,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def sortAndCollapse = new FileSet {
+  def sortAndCollapse() = new FileSet {
     """
       import scala.collection.mutable.ListBuffer
       import java.lang.String
@@ -213,7 +213,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def collapseWithRename = new FileSet {
+  def collapseWithRename() = new FileSet {
     """
       import java.lang.{String => S}
       import java.lang.{Object => Objekt}
@@ -228,7 +228,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def removeOneFromMany = new FileSet {
+  def removeOneFromMany() = new FileSet {
     """
       import java.lang.{String, Math}
 
@@ -242,7 +242,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importAll = new FileSet {
+  def importAll() = new FileSet {
     """
       import java.lang._
       import java.lang.String
@@ -257,7 +257,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importOnTrait = new FileSet {
+  def importOnTrait() = new FileSet {
     """
       package importOnTrait
       import java.lang._
@@ -281,7 +281,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importWithSpace = new FileSet {
+  def importWithSpace() = new FileSet {
     """
 
       import scala.collection.mutable.ListBuffer
@@ -299,7 +299,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importAllWithRename = new FileSet {
+  def importAllWithRename() = new FileSet {
     """
       import java.lang._
       import java.lang.{String => S}
@@ -314,7 +314,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importRemovesUnneeded = new FileSet {
+  def importRemovesUnneeded() = new FileSet {
     """
       import java.lang._
       import java.lang.{String => S}
@@ -341,7 +341,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def multipleImportsOnOneLine = new FileSet {
+  def multipleImportsOnOneLine() = new FileSet {
       """
       import java.lang.String, String._
 
@@ -359,7 +359,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importsInNestedPackages = new FileSet {
+  def importsInNestedPackages() = new FileSet {
     """
        package outer
        package inner
@@ -383,7 +383,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importFromPackageObject = new FileSet {
+  def importFromPackageObject() = new FileSet {
     """
     import scala.collection.breakOut
     import scala.collection.mutable.ListBuffer
@@ -401,7 +401,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def unusedImportWildcards = new FileSet {
+  def unusedImportWildcards() = new FileSet {
     """
       import java.util._
       import scala.collection._
@@ -416,7 +416,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def simplifyWildcards = new FileSet {
+  def simplifyWildcards() = new FileSet {
     """
       import scala.collection.mutable._
       import scala.collection.mutable.ListBuffer
@@ -433,7 +433,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def appliedType = new FileSet {
+  def appliedType() = new FileSet {
     """
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
@@ -450,7 +450,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def annotateClass = new FileSet {
+  def annotateClass() = new FileSet {
     """
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
@@ -469,7 +469,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importSymbolicName = new FileSet {
+  def importSymbolicName() = new FileSet {
     """
       import collection.immutable.Nil.++
 
@@ -491,7 +491,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def finalBraceShouldNotBeRemoved = new FileSet {
+  def finalBraceShouldNotBeRemoved() = new FileSet {
     """
       import java.io.Serializable
       object A extends Serializable {

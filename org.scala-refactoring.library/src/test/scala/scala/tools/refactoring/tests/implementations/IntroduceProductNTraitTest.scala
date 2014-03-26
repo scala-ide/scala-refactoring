@@ -19,7 +19,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   override val global = (new CompilerInstance).compiler
 
   @After
-  def shutdownCompiler {
+  def shutdownCompiler() {
     global.askShutdown
   }
 
@@ -33,7 +33,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def product1Simple = new FileSet {
+  def product1Simple() = new FileSet {
     """
     package introduceProductNTrait.product1Simple
 
@@ -67,7 +67,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(false, _ => true, false))
 
   @Test
-  def product2Simple = new FileSet {
+  def product2Simple() = new FileSet {
     """
     package introduceProductNTrait.product2Simple
 
@@ -105,7 +105,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(false, _ => true, false))
 
   @Test
-  def multipleTraits = new FileSet {
+  def multipleTraits() = new FileSet {
     """
     package introduceProductNTrait.multipleTraits
 
@@ -139,7 +139,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   } applyRefactoring(introduceProductNTrait(true, s => s == "p", false))
 
   @Test
-  def nonPublicClassParams = new FileSet {
+  def nonPublicClassParams() = new FileSet {
     """
     package introduceProductNTrait.nonPublicClassParams
 

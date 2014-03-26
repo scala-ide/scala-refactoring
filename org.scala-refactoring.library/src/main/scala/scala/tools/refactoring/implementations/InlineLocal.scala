@@ -32,7 +32,7 @@ abstract class InlineLocal extends MultiStageRefactoring with ParameterlessRefac
         && t.symbol.enclMethod != NoSymbol => Right(t)
       case Some(t) =>
         Left(PreparationError("The selected value cannot be inlined."))
-      case _ =>
+      case None =>
         Left(PreparationError("No local value selected."))
     }
   }

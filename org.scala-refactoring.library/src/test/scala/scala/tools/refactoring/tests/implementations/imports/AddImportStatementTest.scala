@@ -28,7 +28,7 @@ class AddImportStatementTest extends TestHelper {
   }
 
   @Test
-  def importPackageContainsKeyword = {
+  def importPackageContainsKeyword() = {
     addImport(("whatever.type", "Bla"), """
       object Main
     """,
@@ -40,7 +40,7 @@ class AddImportStatementTest extends TestHelper {
   }
 
   @Test
-  def importAnnotationOnClassWithoutPackage = {
+  def importAnnotationOnClassWithoutPackage() = {
     addImport(("scala.annotation.unchecked", "uncheckedStable"),
     """
       @uncheckedStable
@@ -53,7 +53,7 @@ class T
   }
 
   @Test
-  def importAnnotationOnObjectWithoutPackage = {
+  def importAnnotationOnObjectWithoutPackage() = {
     addImport(("scala.annotation.unchecked", "uncheckedStable"),
     """
       @uncheckedStable
@@ -66,7 +66,7 @@ object T
   }
 
   @Test
-  def importWithPackageObject = {
+  def importWithPackageObject() = {
     addImport(("java.util", "ArrayList"), """
       // Copyright blabla
       package object foo {
@@ -83,7 +83,7 @@ object T
   }
 
   @Test
-  def importWithPackageObjectAndExistingImport = {
+  def importWithPackageObjectAndExistingImport() = {
     addImport(("java.util", "ArrayList"), """
       import java.util.Arrays
       package object foo {
@@ -100,7 +100,7 @@ object T
   }
 
   @Test
-  def importInEmpty = {
+  def importInEmpty() = {
     addImport(("collection.mutable", "ListBuffer"), """
       object Main {val lb = ListBuffer(1)}
     """,
@@ -112,7 +112,7 @@ object T
   }
 
   @Test
-  def importInEmptyWithPackage = {
+  def importInEmptyWithPackage() = {
     addImport(("collection.mutable", "ListBuffer"), """
       package xy
 
@@ -128,7 +128,7 @@ object T
   }
 
   @Test
-  def importAlreadyExisting = {
+  def importAlreadyExisting() = {
     addImport(("collection.mutable", "ListBuffer"), """
       import collection.mutable.ListBuffer
       object Main {}
@@ -141,7 +141,7 @@ object T
   }
 
   @Test
-  def importIsInsertedAtEnd = {
+  def importIsInsertedAtEnd() = {
     addImport(("collection.mutable", "ListBuffer"), """
       import collection.mutable.HashMap
 
@@ -159,7 +159,7 @@ object T
   }
 
   @Test
-  def importWithNestedPackages = {
+  def importWithNestedPackages() = {
     addImport(("collection.mutable", "ListBuffer"), """
       package nstd
       package pckg
@@ -183,7 +183,7 @@ object T
   }
 
   @Test
-  def importExistsBetweenPackages = {
+  def importExistsBetweenPackages() = {
     addImport(("collection.mutable", "ListBuffer"), """
       package nstd
 
@@ -211,7 +211,7 @@ object T
   }
 
   @Test
-  def importWithPackage = {
+  def importWithPackage() = {
     addImport(("collection.mutable", "ListBuffer"), """
       package just.some.pkg
 
@@ -227,7 +227,7 @@ object T
   }
 
   @Test
-  def importWithMultiplePackages = {
+  def importWithMultiplePackages() = {
     addImport(("collection.mutable", "ListBuffer"), """
       package just
       package some
@@ -247,7 +247,7 @@ object T
   }
 
   @Test
-  def importWithMultiplePackagesAndBraces = {
+  def importWithMultiplePackagesAndBraces() = {
     addImport(("collection.mutable", "ListBuffer"), """
       package just
       package some
@@ -271,7 +271,7 @@ object T
   }
 
   @Test
-  def importWithNestedImports = {
+  def importWithNestedImports() = {
     addImport(("collection.mutable", "ListBuffer"), """
       package just
       package some

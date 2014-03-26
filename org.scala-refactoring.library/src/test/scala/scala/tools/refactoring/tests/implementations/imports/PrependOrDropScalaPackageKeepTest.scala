@@ -22,7 +22,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
   }.mkChanges
 
   @Test
-  def dropScalaPackageWildcardImport = new FileSet {
+  def dropScalaPackageWildcardImport() = new FileSet {
     """
     import scala.math.BigDecimal._
 
@@ -46,7 +46,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeDropScalaPackage
 
   @Test
-  def prependScalaPackageWildcardImport = new FileSet {
+  def prependScalaPackageWildcardImport() = new FileSet {
     """
     import math.BigDecimal._
 
@@ -70,7 +70,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizePrependScalaPackage
 
   @Test
-  def wildcardAndRename = new FileSet {
+  def wildcardAndRename() = new FileSet {
     """
     package tests.importing
 
@@ -88,7 +88,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeDropScalaPackage
 
   @Test
-  def importFromPackageObject = new FileSet {
+  def importFromPackageObject() = new FileSet {
     """
     import scala.collection.breakOut
     import scala.collection.mutable.ListBuffer
@@ -106,7 +106,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeDropScalaPackage
 
   @Test
-  def fromMixedToUniformDrop = new FileSet {
+  def fromMixedToUniformDrop() = new FileSet {
     """
     package fromMixedToUniformDrop
     import collection.immutable
@@ -131,7 +131,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeDropScalaPackage
 
   @Test
-  def fromMixedToUniformPrepend = new FileSet {
+  def fromMixedToUniformPrepend() = new FileSet {
     """
     package fromMixedToUniformDrop
     import collection.immutable

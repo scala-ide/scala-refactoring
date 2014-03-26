@@ -101,8 +101,8 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
       new {
         def withResultTree(fn: global.Tree => Unit) = fn(treeFrom(res.mkString("\n")))
         def withResultSource(fn: String => Unit) = fn(res.mkString("\n"))
-        def assertEqualSource = assert(res)
-        def assertEqualTree = withResultTree { actualTree =>
+        def assertEqualSource() = assert(res)
+        def assertEqualTree() = withResultTree { actualTree =>
           val expectedTree = treeFrom(srcs.head._2)
           val (expected, actual) = global.ask { () =>
             (expectedTree.toString(), actualTree.toString())

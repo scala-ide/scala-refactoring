@@ -18,7 +18,7 @@ class ExtractTraitTest extends TestRefactoring {
   override val global = (new CompilerInstance).compiler
 
   @After
-  def shutdownCompiler {
+  def shutdownCompiler() {
     global.askShutdown
   }
 
@@ -38,7 +38,7 @@ class ExtractTraitTest extends TestRefactoring {
   }.changes
 
   @Test
-  def extractNothing = new FileSet {
+  def extractNothing() = new FileSet {
     """
     package extractTrait.extractNothing
     class /*(*/Foo/*)*/
@@ -56,7 +56,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Extracted", (name) => false)))
 
   @Test
-  def extractNothingNestedPackages = new FileSet {
+  def extractNothingNestedPackages() = new FileSet {
     """
     package a {
       package b.c {
@@ -88,7 +88,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Extracted", (name) => false)))
 
   @Test
-  def extractSingleDefDef = new FileSet {
+  def extractSingleDefDef() = new FileSet {
     """
     package extractTrait.extractSingleDefDef
 
@@ -117,7 +117,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify", (name) => name == "square")))
 
   @Test
-  def extractSingleValDef = new FileSet {
+  def extractSingleValDef() = new FileSet {
     """
     package extractTrait.extractSingleValDef
 
@@ -144,7 +144,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Extracted", (name) => name == "immutable")))
 
   @Test
-  def extractSingleVarDef = new FileSet {
+  def extractSingleVarDef() = new FileSet {
     """
     package extractTrait.extractSingleVarDef
 
@@ -171,7 +171,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Extracted", (name) => name == "mutable")))
 
   @Test
-  def dontExtractClassParameters = new FileSet {
+  def dontExtractClassParameters() = new FileSet {
     """
     package extractTrait.dontExtractClassParameters
 
@@ -195,7 +195,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("EmptyTrait"), (name) => "a"::"b"::"c"::Nil contains name))
 
   @Test(expected=classOf[RefactoringException])
-  def failWhenTraitAccessesPrivateClassMembers = new FileSet {
+  def failWhenTraitAccessesPrivateClassMembers() = new FileSet {
     """
     package extractTrait.failWhenTraitAccessesPrivateClassMembers
 
@@ -221,7 +221,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "square"))
 
   @Test(expected=classOf[RefactoringException])
-  def failWhenClassAccessesPrivateTraitMembers = new FileSet {
+  def failWhenClassAccessesPrivateTraitMembers() = new FileSet {
     """
     package extractTrait.failWhenClassAccessesPrivateTraitMembers
 
@@ -247,7 +247,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "number"))
 
   @Test
-  def addSelfTypeForClassMemberAccess = new FileSet {
+  def addSelfTypeForClassMemberAccess() = new FileSet {
     """
     package extractTrait.addSelfTypeForClassMemberAccess
 
@@ -273,7 +273,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "square"))
 
   @Test
-  def addSelfTypeForClassMethodAccess = new FileSet {
+  def addSelfTypeForClassMethodAccess() = new FileSet {
     """
     package extractTrait.addSelfTypeForClassMethodAccess
 
@@ -301,7 +301,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "square"))
 
   @Test
-  def withTypeParameters = new FileSet {
+  def withTypeParameters() = new FileSet {
     """
     package extractTrait.withTypeParameters
 
@@ -330,7 +330,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Empty"), (name) => name == "empty"))
 
   @Test
-  def withTypeParametersAndSelfType = new FileSet {
+  def withTypeParametersAndSelfType() = new FileSet {
     """
     package extractTrait.withTypeParametersAndSelfType
 
@@ -358,7 +358,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("FirstReverser"), (name) => name == "reverseFirst"))
 
   @Test
-  def withImportsMovedToTrait = new FileSet {
+  def withImportsMovedToTrait() = new FileSet {
     """
     package extractTrait.withImportsMovedToTrait
     import scala.math.abs
@@ -390,7 +390,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Preparator"), (name) => name == "prepare"))
 
   @Test
-  def withImportsOnlyInClass = new FileSet {
+  def withImportsOnlyInClass() = new FileSet {
     """
     package extractTrait.withImportsOnlyInClass
 
@@ -424,7 +424,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("LpNorms"), (name) => name.startsWith("l")))
 
   @Test
-  def fromTrait = new FileSet {
+  def fromTrait() = new FileSet {
     """
     package extractTrait.fromTrait
 
@@ -453,7 +453,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait(("Squarify"), (name) => name == "square"))
 
   @Test
-  def overloadedMethods = new FileSet {
+  def overloadedMethods() = new FileSet {
     """
     package extractTrait.overloadedMethods
 
@@ -480,7 +480,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTraitByParamListLength("OverloadedTrait", (nrParams) => nrParams == 2))
 
   @Test
-  def inDefaultPackage = new FileSet {
+  def inDefaultPackage() = new FileSet {
     """
     class /*(*/OriginalClassInDefaultPackage/*)*/ {
       def foo() {}
@@ -499,7 +499,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait("Foo", (s) => s == "foo"))
 
   @Test
-  def withExistingSuperclass = new FileSet {
+  def withExistingSuperclass() = new FileSet {
     """
     package withExistingSuperclass
     trait A {
@@ -528,7 +528,7 @@ class ExtractTraitTest extends TestRefactoring {
   } applyRefactoring(extractTrait("Extracted", _ == "foo"))
 
   @Test
-  def removeOverride = new FileSet {
+  def removeOverride() = new FileSet {
     """
     package extractTrait.removeOverride
 

@@ -23,7 +23,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def extracPartOfChainedCalls = new FileSet {
+  def extracPartOfChainedCalls() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -46,7 +46,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("asList"))
 
   @Test
-  def extractIfCond = new FileSet {
+  def extractIfCond() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -73,7 +73,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("isMacOs"))
 
   @Test
-  def extractLocal = new FileSet {
+  def extractLocal() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -100,7 +100,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("gr"))
 
   @Test
-  def extractFromElseWithoutParens = new FileSet {
+  def extractFromElseWithoutParens() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -138,7 +138,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("sum"))
 
   @Test
-  def extractValRhs = new FileSet {
+  def extractValRhs() = new FileSet {
     """
       object Demo {
         def update(platform: String) {
@@ -157,7 +157,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("plt"))
 
   @Test
-  def extractValRhs2 = new FileSet {
+  def extractValRhs2() = new FileSet {
     """
       class Extr {
         def update(platform: String) {
@@ -176,7 +176,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("six"))
 
   @Test
-  def extractFilter = new FileSet {
+  def extractFilter() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -199,7 +199,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("largerThree"))
 
   @Test
-  def extractPartOfACondition = new FileSet {
+  def extractPartOfACondition() = new FileSet {
     """
       class Extr2 {
         def m {
@@ -224,7 +224,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("part2"))
 
   @Test
-  def extractFromCaseWithMultipleStatements = new FileSet {
+  def extractFromCaseWithMultipleStatements() = new FileSet {
     """
       class Extr2 {
         Nil match {
@@ -249,7 +249,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("six"))
 
   @Test
-  def extractFromCaseWithSingleStatement = new FileSet {
+  def extractFromCaseWithSingleStatement() = new FileSet {
     """
       class Extr2 {
         Nil match {
@@ -270,7 +270,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("six"))
 
   @Test
-  def extractFromCaseWithTwoStatements = new FileSet {
+  def extractFromCaseWithTwoStatements() = new FileSet {
     """
       class Extr2 {
         /*(*/5 + 1/*)*/toString
@@ -286,7 +286,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("six"))
 
   @Test
-  def extractFromTry = new FileSet {
+  def extractFromTry() = new FileSet {
     """
       class Extr2 {
         try {
@@ -307,7 +307,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("largerThanTwo"))
 
   @Test
-  def extractFromTrySingleStatement = new FileSet {
+  def extractFromTrySingleStatement() = new FileSet {
     """
       class Extr2 {
         try {
@@ -326,7 +326,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("largerThanTwo"))
 
   @Test
-  def extractMethod = new FileSet {
+  def extractMethod() = new FileSet {
     """
       class Extr2 {
         /*(*/List(1,2,3) filter/*)*/ (_> 2) mkString ", "
@@ -342,7 +342,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("filterList"))
 
   @Test
-  def extractFromFunctionWithCurlyBraces = new FileSet {
+  def extractFromFunctionWithCurlyBraces() = new FileSet {
     """
       class Extr2 {
         List(1,2,3) filter { it =>
@@ -361,7 +361,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("isOdd"))
 
   @Test
-  def extractFromFunction = new FileSet {
+  def extractFromFunction() = new FileSet {
     """
       class Extr2 {
         List(1,2,3) filter (i => /*(*/i + 1 % 2/*)*/ == 0)
@@ -378,7 +378,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("isOdd"))
 
   @Test
-  def extractFromValBlock = new FileSet {
+  def extractFromValBlock() = new FileSet {
       """
       class Extr2 {
         val a = {
@@ -398,7 +398,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("addTwo")
 
   @Test
-  def extractFromThen = new FileSet {
+  def extractFromThen() = new FileSet {
     """
       class Extr2 {
         if(true) {
@@ -417,7 +417,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("ab"))
 
   @Test
-  def extractFromThenWithoutParent = new FileSet {
+  def extractFromThenWithoutParent() = new FileSet {
     """
       class Extr2 {
         if(true)
@@ -435,7 +435,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("ab"))
 
   @Test
-  def extractFromElse = new FileSet {
+  def extractFromElse() = new FileSet {
     """
 
     object ExtractLocal1 {
@@ -476,7 +476,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("msg"))
 
   @Test
-  def extractFromSimpleMethod = new FileSet {
+  def extractFromSimpleMethod() = new FileSet {
     """
       class Extr2 {
         def method {
@@ -495,7 +495,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("ab"))
 
   @Test
-  def extractFromMethod = new FileSet {
+  def extractFromMethod() = new FileSet {
     """
       class Extr2 {
         def method {
@@ -516,7 +516,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   } applyRefactoring(extract("ab"))
 
   @Test
-  def extractFromMethod2 = new FileSet {
+  def extractFromMethod2() = new FileSet {
     """
 object ExtractMethod2 {
 
@@ -548,7 +548,7 @@ object ExtractMethod2 {
 
   @Test
   @Ignore
-  def extractFromFunction2 = new FileSet {
+  def extractFromFunction2() = new FileSet {
     """
       class Extr2 {
         List(1,2,3) filter (/*(*/_ + 1 % 2/*)*/ == 0)
@@ -558,7 +558,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("isOdd"))
 
   @Test
-  def extractFromCaseClause = new FileSet {
+  def extractFromCaseClause() = new FileSet {
     """
       class Extr2 {
         List() match {
@@ -578,7 +578,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("isFalse"))
 
   @Test
-  def extractFromMatch = new FileSet {
+  def extractFromMatch() = new FileSet {
     """
       class Extr2 {
         /*(*/List(1,2,3)/*)*/ match {
@@ -598,7 +598,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("l"))
 
   @Test
-  def extractFunctionFromMethodCall = new FileSet {
+  def extractFunctionFromMethodCall() = new FileSet {
     """
       class Extr2 {
         def main(args : Array[String]) {
@@ -621,7 +621,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("cc"))
 
   @Test
-  def extractLastExpressionInUnitMethod = new FileSet {
+  def extractLastExpressionInUnitMethod() = new FileSet {
     """
     object Bar {
       def foo {
@@ -638,7 +638,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("t"))
 
   @Test
-  def extractFromUpdateMethod = new FileSet {
+  def extractFromUpdateMethod() = new FileSet {
     """
     object ExtractLocalBugTest extends App{
       val List(one, three, eight) = List(1,3,8);
@@ -664,7 +664,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("two"))
 
   @Test
-  def extractWithoutSelection = new FileSet {
+  def extractWithoutSelection() = new FileSet {
     """
     object ExtractLocal {
       def x() {
@@ -685,7 +685,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("one"))
 
   @Test
-  def extractFromFor = new FileSet {
+  def extractFromFor() = new FileSet {
     """
     object ExtractFromFor {
 
@@ -707,7 +707,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("len"))
 
   @Test
-  def extractFromForFilter = new FileSet {
+  def extractFromForFilter() = new FileSet {
     """
     object ExtractFromFor {
 
@@ -729,7 +729,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("len"))
 
   @Test
-  def extractFromForFilterYieldWithBody = new FileSet {
+  def extractFromForFilterYieldWithBody() = new FileSet {
     """
     object ExtractFromFor {
 
@@ -755,7 +755,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("len"))
 
   @Test
-  def extractFromForFilterYieldWithSameLineBody = new FileSet {
+  def extractFromForFilterYieldWithSameLineBody() = new FileSet {
     """
     object ExtractFromFor {
 
@@ -777,7 +777,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("len"))
 
   @Test
-  def extractFromForFilterYieldWithBlockBody = new FileSet {
+  def extractFromForFilterYieldWithBlockBody() = new FileSet {
     """
     object ExtractFromFor {
 
@@ -805,7 +805,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("len"))
 
   @Test
-  def extractAnonFunction = new FileSet {
+  def extractAnonFunction() = new FileSet {
     """
     object ExtractFromFor {
       val inc = /*(*/(_:Int)+1/*)*/
@@ -821,7 +821,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("plusOne"))
 
  @Test
- def extractList = new FileSet {
+ def extractList() = new FileSet {
    """
    class ExtractList {
      val list = /*(*/1::Nil/*)*/
@@ -837,7 +837,7 @@ object ExtractMethod2 {
  } applyRefactoring(extract("extracted"))
 
  @Test
- def extractFromConstructor = new FileSet {
+ def extractFromConstructor() = new FileSet {
    """
    object ExtractFromHere {
      import java.net.URL
@@ -861,7 +861,7 @@ object ExtractMethod2 {
  } applyRefactoring(extract("url"))
 
   @Test
-  def plusAssignRhs = new FileSet {
+  def plusAssignRhs() = new FileSet {
    """
     class ExtractLocalVariable {
       def f() {
@@ -884,7 +884,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("result_of_g"))
 
   @Test
-  def fromForExpressionReturningUnit = new FileSet {
+  def fromForExpressionReturningUnit() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() {
@@ -903,7 +903,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("lst"))
 
   @Test
-  def fromForExpression = new FileSet {
+  def fromForExpression() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() {
@@ -922,7 +922,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("lst"))
 
   @Test
-  def fromForExpressionNoEnclosingBlock = new FileSet {
+  def fromForExpressionNoEnclosingBlock() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() = for (x <- /*(*/List(1,2,3,4)/*)*/) yield x
@@ -939,7 +939,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("lst"))
 
   @Test
-  def fromForExpressionCurlyOneLiner = new FileSet {
+  def fromForExpressionCurlyOneLiner() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() = {
@@ -958,7 +958,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("lst"))
 
   @Test
-  def fromForExpressionWithFilter = new FileSet {
+  def fromForExpressionWithFilter() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() {
@@ -981,7 +981,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("lst"))
 
   @Test
-  def fromForExpressionCurly = new FileSet {
+  def fromForExpressionCurly() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() {
@@ -1012,7 +1012,7 @@ object ExtractMethod2 {
    * going to be very difficult. */
   @Test
   @Ignore
-  def fromForExpressionMultiple = new FileSet {
+  def fromForExpressionMultiple() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() {
@@ -1029,7 +1029,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("lst"))
 
   @Test
-  def fromForBlockBody = new FileSet {
+  def fromForBlockBody() = new FileSet {
    """
     class ExtractfromForExpression {
       def f() {
@@ -1058,7 +1058,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("lst"))
 
   @Test
-  def extractFromForEntireRhs = new FileSet {
+  def extractFromForEntireRhs() = new FileSet {
     """
     object ExtractFromFor {
       def foo {
@@ -1077,7 +1077,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("extractedValue"))
 
   @Test
-  def extractFromForEntireRhsYield = new FileSet {
+  def extractFromForEntireRhsYield() = new FileSet {
     """
     object ExtractFromFor {
       def foo {
@@ -1096,7 +1096,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("extractedValue"))
 
   @Test
-  def missingTypeNeedsAnnotation = new FileSet {
+  def missingTypeNeedsAnnotation() = new FileSet {
     """
     object ExtractmissingTypeNeedsAnnotation {
       def foo {
@@ -1115,7 +1115,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("pred"))
 
   @Test
-  def extractAnonFunctionWithoutTypeAscriptions = new FileSet {
+  def extractAnonFunctionWithoutTypeAscriptions() = new FileSet {
     """
     object ExtractFromFor {
       def foo {
@@ -1134,7 +1134,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("sum"))
 
   @Test
-  def extractAnonFunctionWithoutTypeAscription = new FileSet {
+  def extractAnonFunctionWithoutTypeAscription() = new FileSet {
     """
     object ExtractFromFor {
       def foo {
@@ -1153,7 +1153,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("addOne"))
 
   @Test
-  def extractMatchBodyOperatorMap = new FileSet {
+  def extractMatchBodyOperatorMap() = new FileSet {
     """
     object ExtractFromFor {
       def foo {
@@ -1176,7 +1176,7 @@ object ExtractMethod2 {
   } applyRefactoring(extract("toOne"))
 
   @Test
-  def extractMatchBody = new FileSet {
+  def extractMatchBody() = new FileSet {
     """
     object ExtractFromFor {
       def foo {

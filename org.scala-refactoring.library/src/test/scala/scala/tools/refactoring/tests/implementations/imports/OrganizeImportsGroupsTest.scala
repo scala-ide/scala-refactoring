@@ -34,7 +34,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
     """
 
   @Test
-  def noGrouping = new FileSet {
+  def noGrouping() = new FileSet {
     source becomes
     """
       import java.util.AbstractList
@@ -54,7 +54,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(List())
 
   @Test
-  def oneScalaGroup = new FileSet {
+  def oneScalaGroup() = new FileSet {
     source becomes
     """
       import scala.collection.mutable.HashMap
@@ -75,7 +75,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(List("scala"))
 
   @Test
-  def scalaAndJavaGroup = new FileSet {
+  def scalaAndJavaGroup() = new FileSet {
     source becomes
     """
       import scala.collection.mutable.HashMap
@@ -97,7 +97,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(List("scala", "java"))
 
   @Test
-  def severalScalaGroups = new FileSet {
+  def severalScalaGroups() = new FileSet {
     source becomes
     """
       import java.util.AbstractList
@@ -120,7 +120,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(List("java", "scala.collection", "scala.io"))
 
   @Test
-  def emptyGroups = new FileSet {
+  def emptyGroups() = new FileSet {
     source becomes
     """
       import java.util.AbstractList
@@ -142,7 +142,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(List("java", "scala.collection", "scala.tools"))
 
   @Test
-  def packagesNeedToMatchCompletely = new FileSet {
+  def packagesNeedToMatchCompletely() = new FileSet {
     source becomes
     """
       import java.util.AbstractList

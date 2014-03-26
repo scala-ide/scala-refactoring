@@ -15,7 +15,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   }.changes
 
   @Test
-  def moveConstructorToExistingCompanion = new FileSet {
+  def moveConstructorToExistingCompanion() = new FileSet {
     """
       package moveConstructorToCompanion.existingCompanion
 
@@ -39,7 +39,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def existingCompanionWithMethods = new FileSet {
+  def existingCompanionWithMethods() = new FileSet {
     """
       package moveConstructorToCompanion.existingCompanionWithMethods
 
@@ -69,7 +69,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def withoutExistingCompanion = new FileSet {
+  def withoutExistingCompanion() = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanion
 
@@ -89,7 +89,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def withoutExistingCompanionWithEnclosingClass = new FileSet {
+  def withoutExistingCompanionWithEnclosingClass() = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanionWithEnclosingClass
 
@@ -117,7 +117,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def withoutExistingCompanionWithEnclosingObject = new FileSet {
+  def withoutExistingCompanionWithEnclosingObject() = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanionWithEnclosingObject
 
@@ -145,7 +145,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def withoutExistingCompanionWithEnclosingMethod = new FileSet {
+  def withoutExistingCompanionWithEnclosingMethod() = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanionWithEnclosingMethod
 
@@ -174,7 +174,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def withoutExistingCompanionWithEnclosingVal = new FileSet {
+  def withoutExistingCompanionWithEnclosingVal() = new FileSet {
     """
       package moveConstructorToCompanion.withoutExistingCompanionWithEnclosingVal
 
@@ -203,7 +203,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def withTypeParams = new FileSet {
+  def withTypeParams() = new FileSet {
     """
       package moveConstructorToCompanion.withTypeParams
 
@@ -225,7 +225,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def curriedConstructor = new FileSet {
+  def curriedConstructor() = new FileSet {
     """
       package moveConstructorToCompanion.curriedConstructor
 
@@ -247,7 +247,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def constructorWithoutParameters = new FileSet {
+  def constructorWithoutParameters() = new FileSet {
     """
       package moveConstructorToCompanion.emptyConstructor
 
@@ -269,7 +269,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
   } applyRefactoring(moveConstructorToCompanion)
 
   @Test
-  def replaceConstructorCallsWithoutExistingCompanion = new FileSet {
+  def replaceConstructorCallsWithoutExistingCompanion() = new FileSet {
     """
       package moveConstructorToCompanion.replaceConstructorCallsWithoutExistingCompanion
 
@@ -298,7 +298,7 @@ class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactori
 
 
   @Test
-  def replaceConstructorCallsInObject = new FileSet {
+  def replaceConstructorCallsInObject() = new FileSet {
     """
       package moveConstructorToCompanion.replaceConstructorCallsInObject
 

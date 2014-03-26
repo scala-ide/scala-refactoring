@@ -45,7 +45,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
                   assertEquals(expected, actual)
                 }
 
-                def toFail = {
+                def toFail() = {
                   assertFalse(ip.isDefinedAt(scope))
                 }
               }
@@ -56,7 +56,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInTemplate = global.ask { () => """
+  def insertInTemplate() = global.ask { () => """
     object O{
       /*(*/def fn = println(1)/*)*/
 
@@ -75,7 +75,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInBlock = global.ask { () => """
+  def insertInBlock() = global.ask { () => """
     object O{
       def fn = {
         val a = 1
@@ -95,7 +95,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInBlockBeforeFirstDeclaration = global.ask { () => """
+  def insertInBlockBeforeFirstDeclaration() = global.ask { () => """
     object O{
       def fn = {
         /*(*/val a = 1/*)*/
@@ -115,7 +115,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInBlockBeforeSelectionInSubexpression = global.ask { () => """
+  def insertInBlockBeforeSelectionInSubexpression() = global.ask { () => """
     object O{
       def fn = {
         val a = 1
@@ -136,7 +136,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInMethodBody = global.ask { () => """
+  def insertInMethodBody() = global.ask { () => """
     object O{
       def fn(a: Int) = /*(*/println(a)/*)*/
     }
@@ -152,7 +152,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInFunctionBody = global.ask { () => """
+  def insertInFunctionBody() = global.ask { () => """
     object O{
       val fn = (a: Int) => /*(*/println(a)/*)*/
     }
@@ -168,7 +168,7 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   }
 
   @Test
-  def insertInCaseBody = global.ask { () => """
+  def insertInCaseBody() = global.ask { () => """
     object O{
       val i = 1 match {
         case i: Int => /*(*/i/*)*/

@@ -17,7 +17,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDeps = {
+  def inboundDeps() = {
     val sel = """
       object O{
         val i = 1
@@ -32,7 +32,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsDoesNotIncludeCalledMethods = {
+  def inboundDepsDoesNotIncludeCalledMethods() = {
     val sel = """
       object O{
         val i = 1
@@ -44,7 +44,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsIncludesMethodArguments = {
+  def inboundDepsIncludesMethodArguments() = {
     val sel = """
       object O{
         def fn(i: Int) = /*(*/8.*(i)/*)*/
@@ -54,7 +54,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsDoesNotIncludeMembersOfLiterals = {
+  def inboundDepsDoesNotIncludeMembersOfLiterals() = {
     val sel = """
       object O{
         /*(*/
@@ -67,13 +67,13 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundImplicitDeps = {
+  def inboundImplicitDeps() = {
     val sel = """
       object O{
         implicit def wrapInt(i: Int) = new {
           def extension = i * 2
         }
-      
+
         val i = /*(*/2.extension/*)*/
       }
       """.selection
@@ -81,14 +81,14 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundTypeDeps = {
+  def inboundTypeDeps() = {
     val sel = """
       class A(i: Int)
-      
+
       object N{
         def apply() = 1
       }
-      
+
       object O{
         val i = 1
         def fn = {
@@ -100,12 +100,12 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundTypeDepsByOwner = {
+  def inboundTypeDepsByOwner() = {
     val sel = """
       object N{
         def apply() = 1
       }
-      
+
       object O{
         val i = 1
         def fn = {
@@ -118,7 +118,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsOfWildcardsInMatch = {
+  def inboundDepsOfWildcardsInMatch() = {
     val sel = """
       object O{
         /*(*/1 match{
@@ -130,12 +130,12 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsOfImported = {
+  def inboundDepsOfImported() = {
     val sel = """
       object O{
         import scala.math.Pi
     	import scala.collection.mutable
-      
+
     	/*(*/(Pi, new mutable.LinkedList)/*)*/
       }
       """.selection
@@ -143,7 +143,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundLocalDeps = {
+  def outboundLocalDeps() = {
     val sel = """
       object O{
         def fn(p: Int) = {
@@ -157,7 +157,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def noOutboundLocalDeps = {
+  def noOutboundLocalDeps() = {
     val sel = """
       object O{
         def fn(c: Int) = {
@@ -173,7 +173,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundDepsInParameterLists = {
+  def outboundDepsInParameterLists() = {
     val sel = """
       object O{
         def fn(/*(*/c: Int, d: Int/*)*/) = {
@@ -185,7 +185,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundDepsInTemplateScope = {
+  def outboundDepsInTemplateScope() = {
     val sel = """
       object O{
         def fn = fm
@@ -196,9 +196,9 @@ class SelectionDependenciesTest extends TestHelper with Selections {
       """.selection
     assertEquals("method fm, method fo", sel.outboundLocalDeps.mkString(", "))
   }
-  
+
   @Test
-  def outboundDepsOfVars = {
+  def outboundDepsOfVars() = {
     val sel = """
       object O{
         def fn = {
@@ -213,7 +213,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundImportedDeps = {
+  def outboundImportedDeps() = {
     val sel = """
       object O{
         def fn = {
@@ -226,7 +226,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def reassignedVariablesAsOutboundDeps = {
+  def reassignedVariablesAsOutboundDeps() = {
     val sel = """
       object O{
         def fn = {

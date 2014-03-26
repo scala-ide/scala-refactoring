@@ -28,7 +28,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   }.mkChanges
 
   @Test
-  def wildcardImportIsNotExpanded = new FileSet {
+  def wildcardImportIsNotExpanded() = new FileSet {
     """
     import scala.math.BigDecimal._
 
@@ -52,7 +52,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def wildcardAndRename = new FileSet {
+  def wildcardAndRename() = new FileSet {
     """
     package tests.importing
 
@@ -70,7 +70,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def removeOneFromMany = new FileSet {
+  def removeOneFromMany() = new FileSet {
     """
     import collection.mutable.{HashSet, Queue}
 
@@ -84,7 +84,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def wildcardImportIsPreserved = new FileSet {
+  def wildcardImportIsPreserved() = new FileSet {
     """
     import java.lang._
     import java.lang.String
@@ -99,7 +99,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def sortAndGroup = new FileSet {
+  def sortAndGroup() = new FileSet {
     """
     import scala.collection.mutable.ListBuffer
     import java.util.Map
@@ -122,7 +122,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCleanup(List("java", "scala"))
 
   @Test
-  def importRemovesUnneeded = new FileSet {
+  def importRemovesUnneeded() = new FileSet {
     """
     import java.lang.{String => S}
     import java.util.Map
@@ -147,7 +147,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importFromPackageObject = new FileSet {
+  def importFromPackageObject() = new FileSet {
     """
     import scala.collection.breakOut
     import scala.collection.mutable.ListBuffer
@@ -165,7 +165,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def selfTypeAnnotation = new FileSet {
+  def selfTypeAnnotation() = new FileSet {
     """
     import java.util.Observer
     trait X {
@@ -181,7 +181,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def renamedPackage = new FileSet {
+  def renamedPackage() = new FileSet {
     """
     import java.{ lang => jl, util => ju }
     import ju.{ArrayList => AL}
@@ -201,7 +201,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def SystemcurrentTimeMillis = new FileSet {
+  def SystemcurrentTimeMillis() = new FileSet {
     """
     import System.currentTimeMillis
     import scala.collection.mutable.ListBuffer
@@ -220,7 +220,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importMethodFromSamePackage = new FileSet {
+  def importMethodFromSamePackage() = new FileSet {
 
     addToCompiler("testimplicits", """
     package a.b.c
@@ -247,7 +247,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importFromSamePackage = new FileSet {
+  def importFromSamePackage() = new FileSet {
 
     addToCompiler("first", """
     package mypackage
@@ -274,7 +274,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importFromSameNestedPackage = new FileSet {
+  def importFromSameNestedPackage() = new FileSet {
 
     addToCompiler("first", """
     package mypackage
@@ -304,7 +304,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def severalScalaGroups = new FileSet {
+  def severalScalaGroups() = new FileSet {
     """
       import scala.collection.mutable.ListBuffer
       import java.util.BitSet
@@ -343,7 +343,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCleanup(List("java", "scala.collection", "scala.io"))
 
   @Test
-  def qualifiedImportFromPackageObject = new FileSet {
+  def qualifiedImportFromPackageObject() = new FileSet {
     addToCompiler("package.scala", """
       package test
 
@@ -377,7 +377,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def importDependingOnImport = new FileSet {
+  def importDependingOnImport() = new FileSet {
     addToCompiler("Bar.scala", """
     package barr
 
@@ -422,7 +422,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def removeDuplicate = new FileSet {
+  def removeDuplicate() = new FileSet {
     """
     package removeDuplicate
     import collection.mutable

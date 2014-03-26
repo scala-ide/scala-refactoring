@@ -846,7 +846,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testAlteredPattern = global.ask { () =>
+  def testAlteredPattern() = global.ask { () =>
     val tree = treeFrom("""
     object Demo {
       5 match { case i => () }
@@ -869,7 +869,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testAlteredPatternWithGuard = global.ask { () =>
+  def testAlteredPatternWithGuard() = global.ask { () =>
     val tree = treeFrom("""
     object Demo {
       5 match { case i if true => () }
@@ -892,7 +892,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testAlteredSubPattern = global.ask { () =>
+  def testAlteredSubPattern() = global.ask { () =>
     val tree = treeFrom("""
     object Demo {
       5 match { case 1 | 2 => () }
@@ -1615,7 +1615,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testExprInRequiredParens = global.ask { () =>
+  def testExprInRequiredParens() = global.ask { () =>
     val code = """
       object Main{
         (1 to 10).foreach(println(_))
@@ -1626,7 +1626,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testExprInOptionalParens = global.ask { () =>
+  def testExprInOptionalParens() = global.ask { () =>
     val code = """
       object Main{
         (List(1)).foreach(println(_))
@@ -1637,7 +1637,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testConsOperator = {
+  def testConsOperator() = {
     val code = """
       object ConsClient{
         val a = 1 :: 2 :: Nil
@@ -1658,7 +1658,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewParameterList = global.ask { () =>
+  def testNewParameterList() = global.ask { () =>
     val tree = treeFrom("""
       object O{
         def fn = 1
@@ -1673,7 +1673,7 @@ class SourceGenTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testNewParamInEmptyList = global.ask { () =>
+  def testNewParamInEmptyList() = global.ask { () =>
     val tree = treeFrom("""
       object O{
         def fn() = 1

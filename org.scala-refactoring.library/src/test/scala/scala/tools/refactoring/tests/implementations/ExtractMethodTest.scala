@@ -19,7 +19,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def extractBlock = new FileSet {
+  def extractBlock() = new FileSet {
     """
     package extractBlock
     class A {
@@ -52,7 +52,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def simpleExtract = new FileSet {
+  def simpleExtract() = new FileSet {
     """
     package simpleExtract
     class A {
@@ -78,7 +78,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("myOwnPrint")
 
   @Test
-  def ignoreOtherClass = new FileSet {
+  def ignoreOtherClass() = new FileSet {
     """
     package ignoreOtherClass
     class A {
@@ -110,7 +110,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def simpleExtractOneParameter = new FileSet {
+  def simpleExtractOneParameter() = new FileSet {
     """
     package simpleExtractOneParameter
     class A {
@@ -138,7 +138,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def extractRangeParameter = new FileSet {
+  def extractRangeParameter() = new FileSet {
       """
       object ExtractMethod3 {
 
@@ -175,7 +175,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def simpleExtractSeveralParameters = new FileSet {
+  def simpleExtractSeveralParameters() = new FileSet {
     """
     package simpleExtractSeveralParameters
     class A {
@@ -207,7 +207,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def simpleExtractReturn = new FileSet {
+  def simpleExtractReturn() = new FileSet {
     """
     package simpleExtractReturn
     class A {
@@ -234,7 +234,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def simpleExtractMultipleReturns = new FileSet {
+  def simpleExtractMultipleReturns() = new FileSet {
     """
     package simpleExtractMultipleReturns
     class A {
@@ -263,7 +263,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def simpleExtractParametersAndReturns = new FileSet {
+  def simpleExtractParametersAndReturns() = new FileSet {
     """
     package simpleExtractParametersAndReturns
     class A {
@@ -298,7 +298,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("prntln")
 
   @Test
-  def extractBlockExpression = new FileSet {
+  def extractBlockExpression() = new FileSet {
       """
     package extractBlockExpression
     class A {
@@ -323,7 +323,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("inc")
 
   @Test
-  def replaceWholeMethod = new FileSet {
+  def replaceWholeMethod() = new FileSet {
     """
     package replaceWholeMethod
     class A {
@@ -348,7 +348,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("inc")
 
   @Test
-  def extractIfCond = new FileSet {
+  def extractIfCond() = new FileSet {
     """
     package extractIfCond
     class A {
@@ -378,7 +378,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
   } applyRefactoring extract("test")
 
   @Test
-  def extractAnonFunction = new FileSet {
+  def extractAnonFunction() = new FileSet {
     """
 object ExtractMethod3 {
 
@@ -409,7 +409,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("test")
 
   @Test
-  def extractAnonFunction2 = new FileSet {
+  def extractAnonFunction2() = new FileSet {
     """
 object ExtractMethod3 {
 
@@ -440,7 +440,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("test")
 
   @Test
-  def extractAnonFunction3 = new FileSet {
+  def extractAnonFunction3() = new FileSet {
     """
 object ExtractMethod3 {
 
@@ -471,7 +471,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("test")
 
   @Test
-  def extractIfThen = new FileSet {
+  def extractIfThen() = new FileSet {
     """
     package extractIfThen
     class A {
@@ -500,7 +500,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("test")
 
   @Test
-  def extractIfElse = new FileSet {
+  def extractIfElse() = new FileSet {
     """
     package extractIfElse
     class A {
@@ -532,7 +532,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("test")
 
   @Test
-  def extractIfSingleLineElse = new FileSet {
+  def extractIfSingleLineElse() = new FileSet {
     """
     package extractIfSingleLineElse
     class A {
@@ -556,7 +556,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("test")
 
   @Test
-  def extractIfElseTry = new FileSet {
+  def extractIfElseTry() = new FileSet {
     """
     package extractIfElseTry
     class A {
@@ -598,7 +598,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("test")
 
   @Test
-  def extractCheckForFalse = new FileSet {
+  def extractCheckForFalse() = new FileSet {
     """
           package extractCheckForFalse
       trait Check {
@@ -628,7 +628,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("isFalse")
 
   @Test
-  def extractWithMethod = new FileSet {
+  def extractWithMethod() = new FileSet {
     """
     package extractWithMethod
     class A {
@@ -659,7 +659,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("certainlyTrue")
 
   @Test
-  def extractAllAtOnce = new FileSet {
+  def extractAllAtOnce() = new FileSet {
     """
     package extractAllAtOnce
     object C {
@@ -696,7 +696,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("magic")
 
   @Test
-  def extractLarger = new FileSet {
+  def extractLarger() = new FileSet {
     """
     package extractLarger
     object C {
@@ -762,7 +762,7 @@ object ExtractMethod3 {
   } applyRefactoring extract("isFalse")
 
   @Test
-  def singleIfInMethod = new FileSet {
+  def singleIfInMethod() = new FileSet {
     """
 object ExtractMethod2 {
   def method {
@@ -788,7 +788,7 @@ object ExtractMethod2 {
   } applyRefactoring extract("certainlyTrue")
 
   @Test
-  def localFunctionAsParameter = new FileSet {
+  def localFunctionAsParameter() = new FileSet {
     """
 object ExtractWithLocalFunction {
   def method {
@@ -816,7 +816,7 @@ object ExtractWithLocalFunction {
   } applyRefactoring extract("call")
 
   @Test
-  def localFunctionAsParameter2 = new FileSet {
+  def localFunctionAsParameter2() = new FileSet {
     """
 object ExtractWithLocalFunction2 {
   def method {
@@ -846,7 +846,7 @@ object ExtractWithLocalFunction2 {
   } applyRefactoring extract("call")
 
   @Test
-  def localFunctionAsParameter3 = new FileSet {
+  def localFunctionAsParameter3() = new FileSet {
     """
 object ExtractWithLocalFunction3 {
   def method {
@@ -872,7 +872,7 @@ object ExtractWithLocalFunction3 {
   } applyRefactoring extract("call")
 
   @Test
-  def bug18 = new FileSet {
+  def bug18() = new FileSet {
     """
 object Bar {
   def foo {
@@ -898,7 +898,7 @@ object Bar {
   } applyRefactoring extract("calc")
 
   @Test
-  def simpleYield = new FileSet {
+  def simpleYield() = new FileSet {
     """
 package simpleExtract
 class A {
@@ -928,7 +928,7 @@ class A {
   } applyRefactoring extract("call")
 
   @Test
-  def extractFromMethodWithObject = new FileSet {
+  def extractFromMethodWithObject() = new FileSet {
     """
 package simpleExtract
 class PathSeparator {
@@ -965,7 +965,7 @@ class PathSeparator {
   } applyRefactoring extract("mkTuple")
 
   @Test
-  def extractFromMethodWithMultipleAssignment = new FileSet {
+  def extractFromMethodWithMultipleAssignment() = new FileSet {
     """
 package simpleExtract
 class PathSeparator {
@@ -995,7 +995,7 @@ class PathSeparator {
   } applyRefactoring extract("sayHello")
 
   @Test
-  def extractFromWithinAnonymousClass = new FileSet {
+  def extractFromWithinAnonymousClass() = new FileSet {
     """
     class ExtractFromAnonClass {
       def method {
@@ -1025,7 +1025,7 @@ class PathSeparator {
   } applyRefactoring extract("three")
 
   @Test
-  def extractFromWithinForExpr = new FileSet {
+  def extractFromWithinForExpr() = new FileSet {
     """
     class ExtractFromAnonClass {
       def method {
@@ -1047,7 +1047,7 @@ class PathSeparator {
   } applyRefactoring extract("lst")
 
   @Test
-  def extractFromWithinForExprFilter = new FileSet {
+  def extractFromWithinForExprFilter() = new FileSet {
     """
     class ExtractFromAnonClass {
       def method {
@@ -1069,7 +1069,7 @@ class PathSeparator {
   } applyRefactoring extract("test")
 
   @Test
-  def extractFromWithinForExprBody = new FileSet {
+  def extractFromWithinForExprBody() = new FileSet {
     """
     class ExtractFromAnonClass {
       def method {
@@ -1091,7 +1091,7 @@ class PathSeparator {
   } applyRefactoring extract("addTwo")
 
   @Test(expected=classOf[PreparationException])
-  def extractionNeedsSelection = new FileSet {
+  def extractionNeedsSelection() = new FileSet {
     """
     class Foo {
       def bar = {

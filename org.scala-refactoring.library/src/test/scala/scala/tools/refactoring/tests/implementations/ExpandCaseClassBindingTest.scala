@@ -21,7 +21,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def expandSome = new FileSet {
+  def expandSome() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -41,7 +41,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test
-  def expandSomeWithReference = new FileSet {
+  def expandSomeWithReference() = new FileSet {
     """
       package extractLocal
       object Demo {
@@ -61,7 +61,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test
-  def expandWithMultipleParams = new FileSet {
+  def expandWithMultipleParams() = new FileSet {
     """
       package expandWithMultipleParams
       case class Abc(a: String, b: Int, c: Double)
@@ -83,7 +83,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test
-  def expandTuple = new FileSet {
+  def expandTuple() = new FileSet {
     """
       object Demo {
         ("", 5, 5.0) match {
@@ -101,7 +101,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test
-  def expandNested = new FileSet {
+  def expandNested() = new FileSet {
     """
       case class Pair[T, U](first: T, second: U)
       object Demo {
@@ -121,7 +121,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test
-  def expandInnerNested = new FileSet {
+  def expandInnerNested() = new FileSet {
     """
       case class Pair[T, U](first: T, second: U)
       object Demo {
@@ -141,7 +141,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test(expected=classOf[PreparationException])
-  def illegalExpansion = new FileSet {
+  def illegalExpansion() = new FileSet {
     """
       package illegalExpansion
       object /*(*/Xy/*)*/ {

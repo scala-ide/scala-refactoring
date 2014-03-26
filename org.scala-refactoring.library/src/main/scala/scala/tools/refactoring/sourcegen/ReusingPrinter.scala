@@ -88,25 +88,22 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       EmptyTree
     }
 
-    /**
-     * Returns a NameTree for a tree's name and gives it the position of
-     * the original tree's name.
+    /** Returns a NameTree for a tree's name and gives it the position of
+     *  the original tree's name.
      */
     def nameOf(tree: Tree): NameTree = {
       val namePos = orig(tree).namePosition
       outer.NameTree(tree.nameString) setPos namePos
     }
 
-    /**
-     * Prints the children of the tree, surrounded with the layout from
-     * the existing code.
+    /** Prints the children of the tree, surrounded with the layout from
+     *  the existing code.
      */
     def printChildren(tree: Tree)(implicit ctx: PrintingContext) = {
       l ++ children(tree).foldLeft(EmptyFragment: Fragment)(_ ++ p(_)) ++ r
     }
 
-    /**
-     * This is the default handler that is called for non-overriden methods.
+    /** This is the default handler that is called for non-overriden methods.
      */
     override def default(tree: Tree)(implicit ctx: PrintingContext): Fragment = {
       printChildren(tree)
@@ -212,8 +209,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         // It's just nice to have a whitespace before and after the arrow
         def getLayout = Layout(" => ")
       }
-      
-      val ifReq = new Requisite{
+
+      val ifReq = new Requisite {
         def isRequired(l: Layout, r: Layout) = {
           !(l.contains("if") || r.contains("if"))
         }
@@ -474,17 +471,15 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             receiver.qualifier.pos.isRange && betweenEndAndPoint(receiver.qualifier, receiver).contains(".")
           }
 
-          if (isReceiverMethodCallWithDot) {
+          if (isReceiverMethodCallWithDot || !keepTree(receiver.qualifier) || l.contains("(") || r.contains(")")) {
             l ++ p(fun) ++ p(arg, before = Requisite.anywhere("("), after = Requisite.anywhere(")")) ++ r
-          } else if (keepTree(receiver.qualifier) && !l.contains("(") && !r.contains(")")) {
+          } else {
             val arg_ = p(arg)
             if (arg_.asText.matches("""(?ms)\s*\{.*""") && !arg_.asText.matches("""(?ms).*\}\s*""")) {
               l ++ p(fun) ++ arg_ ++ indentedNewline ++ "}" ++ r
             } else {
               l ++ p(fun) ++ arg_ ++ r
             }
-          } else {
-            l ++ p(fun) ++ p(arg, before = Requisite.anywhere("("), after = Requisite.anywhere(")")) ++ r
           }
 
         case (fun, arg :: Nil) if !keepTree(fun) =>

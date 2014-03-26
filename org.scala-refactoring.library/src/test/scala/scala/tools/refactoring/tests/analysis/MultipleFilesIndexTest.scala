@@ -100,7 +100,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findReferencesToClass = global.ask { () =>
+  def findReferencesToClass() = global.ask { () =>
     new FileSet("p1") {
       """
       package p1
@@ -131,7 +131,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findReferencesToMethod = global.ask { () =>
+  def findReferencesToMethod() = global.ask { () =>
     new FileSet("p2") {
       """
       package p2
@@ -171,7 +171,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findReferencesToTraitMethod = global.ask { () =>
+  def findReferencesToTraitMethod() = global.ask { () =>
     new FileSet("p3") {
       """
       package p3
@@ -198,7 +198,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findReferencesFromCallSite = global.ask { () =>
+  def findReferencesFromCallSite() = global.ask { () =>
     new FileSet("p4") {
       """
       package p4
@@ -219,7 +219,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findValues = global.ask { () =>
+  def findValues() = global.ask { () =>
     new FileSet("p5") {
       """
       package p5
@@ -242,7 +242,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findSuperCall = global.ask { () =>
+  def findSuperCall() = global.ask { () =>
     new FileSet("p6") {
       """
       package p6
@@ -255,7 +255,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findCaseClassValues = global.ask { () =>
+  def findCaseClassValues() = global.ask { () =>
     new FileSet("p7") {
       """
       package p7
@@ -269,7 +269,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def passMethodAsFunction = global.ask { () =>
+  def passMethodAsFunction() = global.ask { () =>
     new FileSet("p8") {
       """
       package p8
@@ -286,7 +286,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def traitImplementation = global.ask { () =>
+  def traitImplementation() = global.ask { () =>
     new FileSet("p9") {
       """
       package p9
@@ -302,7 +302,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def findInImports = global.ask { () =>
+  def findInImports() = global.ask { () =>
     new FileSet("p10") {
       """
       package p10
@@ -320,7 +320,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def inClassHierarchy = global.ask { () =>
+  def inClassHierarchy() = global.ask { () =>
     new FileSet("p11") {
       """
     trait Abc
@@ -336,7 +336,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def allDeclarationsInClasses = global.ask { () =>
+  def allDeclarationsInClasses() = global.ask { () =>
     new FileSet {
       """
     trait Abc
@@ -352,7 +352,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def allSymbolsInIndex = global.ask { () =>
+  def allSymbolsInIndex() = global.ask { () =>
     new FileSet {
       """
     trait Abc
@@ -363,7 +363,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def allDeclarationsMethods = global.ask { () =>
+  def allDeclarationsMethods() = global.ask { () =>
     new FileSet {
       """
     trait Abc {
@@ -389,7 +389,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def overriddenMethods = global.ask { () =>
+  def overriddenMethods() = global.ask { () =>
     new FileSet {
       """
     trait Abc2 {
@@ -410,7 +410,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def overriddenMethods2 = global.ask { () =>
+  def overriddenMethods2() = global.ask { () =>
     new FileSet {
       """
     class Abc {
@@ -431,7 +431,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def overriddenMethods3 = global.ask { () =>
+  def overriddenMethods3() = global.ask { () =>
     new FileSet {
       """
     class Abc {
@@ -447,7 +447,7 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   @Test
-  def overriddenMethods4 = global.ask { () =>
+  def overriddenMethods4() = global.ask { () =>
     new FileSet {
       """
     class Abc {

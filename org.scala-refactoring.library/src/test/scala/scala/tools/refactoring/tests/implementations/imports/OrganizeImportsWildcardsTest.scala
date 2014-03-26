@@ -30,7 +30,7 @@ class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
     """
 
   @Test
-  def noGrouping = new FileSet {
+  def noGrouping() = new FileSet {
     source becomes
     """
     import org.xml.sax.Attributes
@@ -46,7 +46,7 @@ class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(Set())
 
   @Test
-  def simpleWildcard = new FileSet {
+  def simpleWildcard() = new FileSet {
     source becomes
     """
     import org.xml.sax.Attributes
@@ -62,7 +62,7 @@ class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(Set("scala.collection.mutable.Set"))
 
   @Test
-  def renamedImport = new FileSet {
+  def renamedImport() = new FileSet {
     """
     import java.lang.Integer.{valueOf => vo}
     import java.lang.Integer.toBinaryString
@@ -88,7 +88,7 @@ class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize(Set("java.lang.Integer"))
 
   @Test
-  def multipleImportsOneWildcard = new FileSet {
+  def multipleImportsOneWildcard() = new FileSet {
     """
     import java.lang.Integer.valueOf
     import java.lang.Integer.toBinaryString

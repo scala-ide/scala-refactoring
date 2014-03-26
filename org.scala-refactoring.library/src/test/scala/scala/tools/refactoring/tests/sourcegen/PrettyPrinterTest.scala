@@ -115,7 +115,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSuperCall =  {
+  def testSuperCall() =  {
 
     val tree = mkCaseClass(
         name = "A",
@@ -126,7 +126,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testSuperConstructorCall =  {
+  def testSuperConstructorCall() =  {
 
     val tree = mkCaseClass(
         name = "A",
@@ -138,7 +138,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testDefDefWithoutParens =  {
+  def testDefDefWithoutParens() =  {
 
     val tree = Block(
         DefDef(
@@ -165,7 +165,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testImplicitKeyword =  {
+  def testImplicitKeyword() =  {
 
     val tree = DefDef(
           NoMods withPosition (Flags.IMPLICIT, NoPosition) withPosition (Flags.METHOD, NoPosition) ,
@@ -180,7 +180,7 @@ class PrettyPrinterTest extends TestHelper with SilentTracing {
   }
 
   @Test
-  def testDefDefWithTypeParams =  {
+  def testDefDefWithTypeParams() =  {
 
     val arg = ValDef(NoMods withPosition (Flags.IMPLICIT, NoPosition), newTermName("a"),
                 TypeDef(NoMods, newTypeName("R"), TypeDef(NoMods, newTypeName("X"), Nil, EmptyTree) :: Nil, EmptyTree), EmptyTree)
@@ -906,7 +906,7 @@ object User {
   }
 
   @Test
-  def testAlteredPattern = global.ask { () =>
+  def testAlteredPattern() = global.ask { () =>
     val tree = treeFrom("""
     object Demo {
       5 match { case i => () }
@@ -1410,7 +1410,7 @@ class A {
   }
 
   @Test
-  def testFunctionArg = global.ask { () =>
+  def testFunctionArg() = global.ask { () =>
     treeFrom("""
     class A {
       def fun[A, B, C](fu: (A, B, C) => A): A
@@ -1421,7 +1421,7 @@ class A {
   }
 
   @Test
-  def partialFunctionArg = global.ask { () =>
+  def partialFunctionArg() = global.ask { () =>
     treeFrom("""
     class A {
       def main[A, B](e: Either[A, B]) {
@@ -1438,7 +1438,7 @@ class A {
     }
 
   @Test
-  def operatorPrecedences1 = global.ask { () =>
+  def operatorPrecedences1() = global.ask { () =>
     treeFrom("""
     class A {
       5 * (2 + 1)
@@ -1449,7 +1449,7 @@ class A {
     }
 
   @Test
-  def operatorPrecedences2 = global.ask { () =>
+  def operatorPrecedences2() = global.ask { () =>
     treeFrom("""
     class A {
       5 * 2 + 1
@@ -1460,7 +1460,7 @@ class A {
   }
 
   @Test
-  def operatorPrecedences3 = global.ask { () =>
+  def operatorPrecedences3() = global.ask { () =>
     treeFrom("""
     class A {
       1 + 2 + 3
@@ -1471,7 +1471,7 @@ class A {
   }
 
   @Test
-  def operatorPrecedences4 = global.ask { () =>
+  def operatorPrecedences4() = global.ask { () =>
     treeFrom("""
     class A {
       1 + (2 + 3)
