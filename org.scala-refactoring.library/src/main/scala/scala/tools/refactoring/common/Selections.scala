@@ -169,9 +169,10 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         case t: PackageDef => true
         case t: ImplDef => true
         case _ => false
-      }.head.symbol
+      }
 
-      inboundDepsOwnedBy(outmostOwnerInCU)
+      if (outmostOwnerInCU.isEmpty) Nil
+      else inboundDepsOwnedBy(outmostOwnerInCU.head.symbol)
     }
 
     /**
