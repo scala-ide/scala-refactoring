@@ -6,11 +6,10 @@ import scala.tools.refactoring.implementations.extraction.ExtractParameter
 
 class ExtractParameterTest extends TestHelper with TestRefactoring {
 
-  def extract(name: String, extractionIdx: Int)(pro: FileSet) = {
+  def extract(extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractParameter with SilentTracing with TestProjectIndex
       val extraction = preparationResult.right.get.extractions(extractionIdx)
-        .withAbstractionName(name)
     }
     testRefactoring.performRefactoring(testRefactoring.extraction)
   }
@@ -31,7 +30,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractParamToParameterlessMethod() = new FileSet {
@@ -49,7 +48,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test(expected=classOf[IndexOutOfBoundsException])
   def dontExtractParamToMethodWithouParamList() = new FileSet {
@@ -61,7 +60,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
       }
     """ becomes
       """"""
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractParamToMethodWithMultipleParamLists() = new FileSet {
@@ -79,7 +78,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractParamToReferencedMethod() = new FileSet {
@@ -101,7 +100,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
         fn(1)
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test(expected = classOf[IndexOutOfBoundsException])
   def dontExtractWithInaccessibleDependencies() = new FileSet {
@@ -116,7 +115,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
       }
     """ becomes
       """"""
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   @Ignore
@@ -135,5 +134,25 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
+
+  @Test
+  def avoidNameCollisions = new FileSet {
+    """
+      object Demo {
+        def fn() = {
+          val extracted = /*(*/1/*)*/
+          extracted
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        def fn(extracted1: Int = 1) = {
+          val extracted = extracted1
+          extracted
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
 }

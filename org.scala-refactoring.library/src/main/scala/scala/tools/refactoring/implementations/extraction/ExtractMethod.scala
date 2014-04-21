@@ -19,12 +19,12 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
     def isValidExtractionSource(s: Selection) =
       (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
 
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
       val validTargets = targets.takeWhile { t =>
         source.inboundLocalDeps.forall(dep => t.scope.sees(dep) || (isAllowedAsParameter(dep) && !source.reassignedDeps.contains(dep)))
       }
 
-      validTargets.map(MethodExtraction(source, _))
+      validTargets.map(MethodExtraction(source, _, name))
     }
 
     def isAllowedAsParameter(s: Symbol) =
@@ -34,7 +34,7 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
   case class MethodExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    abstractionName: String = defaultAbstractionName) extends Extraction {
+    abstractionName: String) extends Extraction {
 
     val displayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Method to ${t.symbol.owner.decodedName}"

@@ -56,11 +56,28 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
      * to `name`.
      * TODO: Handle symbols from other CUs
      */
-    def nameCollisions(name: String): List[Symbol] =
-      (enclosing.children.collect {
-        case t: DefTree => t
+    def nameCollisions(name: String): List[Symbol] = {
+      (enclosing.children.flatMap {
+        case t: Template => t.children.filter(_.hasSymbol)
+        case t: DefTree => t :: Nil
+        case _ => Nil
       }.map(_.symbol).filter(_.decodedName == name)) :::
+        knownSymbols.filter(_.decodedName == name) :::
         outerScope.map(_.nameCollisions(name)).getOrElse(Nil)
+    }
+
+    /**
+     * Returns a name based on `preferred` that does not collide
+     * with other visible symbols.
+     */
+    def proposeName(preferred: String): String =
+      if (nameCollisions(preferred).isEmpty)
+        preferred
+      else
+        (1 to Int.MaxValue).collectFirst {
+          case i if nameCollisions(preferred + i).isEmpty =>
+            preferred + i
+        }.get
 
     /**
      * Traverses the scope tree from inner to outer and returns

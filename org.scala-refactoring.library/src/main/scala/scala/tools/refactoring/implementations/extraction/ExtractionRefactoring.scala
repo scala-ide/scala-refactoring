@@ -18,7 +18,7 @@ import scala.tools.refactoring.common.InsertionPositions
  */
 trait ExtractionRefactoring extends MultiStageRefactoring with Extractions {
   def collector: ExtractionCollector[Extraction]
-  
+
   case class PreparationResult(extractions: List[Extraction])
 
   type RefactoringParameters = Extraction
@@ -44,8 +44,6 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
   import global._
 
   type ErrorMsg = String
-
-  val defaultAbstractionName = "extracted"
 
   /**
    * A concrete and applicable extraction.
@@ -112,7 +110,9 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
      */
     def collect(s: Selection): Either[ErrorMsg, List[E]] = {
       s.expand.expandTo(isValidExtractionSource(_)).map { source =>
-        val mkTarget = createExtractionTargets(createInsertionPosition(source), ScopeTree.build(source))_
+        val scope = ScopeTree.build(source)
+        val name = scope.proposeName(defaultAbstractionName)
+        val mkTarget = createExtractionTargets(createInsertionPosition(source), scope)_
         val targets = source
           .filterSelected(isValidTargetTree(source, _))
           .reverse
@@ -120,9 +120,11 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
             mkTarget(enclosing)
           }
 
-        Right(createExtractions(source, targets))
+        Right(createExtractions(source, targets, name))
       }.getOrElse(Left("No extraction for current selection found."))
     }
+    
+    def defaultAbstractionName = "extracted"
 
     /**
      * Does `s` represent code that is extractable by extractions
@@ -134,7 +136,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
      * Creates extractions that extract code from `source` and inserts a
      * new abstraction in a target from `targets`.
      */
-    private[extraction] def createExtractions(source: Selection, targets: List[ExtractionTarget]): List[E]
+    private[extraction] def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String): List[E]
 
     /**
      * Is `t` a feasible target for extracted abstractions?
