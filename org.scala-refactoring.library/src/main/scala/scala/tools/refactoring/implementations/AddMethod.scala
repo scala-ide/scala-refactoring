@@ -12,7 +12,7 @@ abstract class AddMethod extends Refactoring with InteractiveScalaCompiler {
   val global: tools.nsc.interactive.Global
   import global._
 
-  def addMethod(file: AbstractFile, className: String, methodName: String, parameters: List[List[(String, String)]], returnType: Option[String], target: AddMethodTarget): List[TextChange] = {
+  def addMethod(file: AbstractFile, className: String, methodName: String, parameters: List[List[(String, String)]], typeParameters: List[String], returnType: Option[String], target: AddMethodTarget): List[TextChange] = {
     val astRoot = abstractFileToTree(file)
 
     //it would be nice to pass in the symbol and use that rather than compare the name, but it might not be available
@@ -39,18 +39,26 @@ abstract class AddMethod extends Refactoring with InteractiveScalaCompiler {
       }
     }
 
-    addMethod(methodName, parameters, returnType, classOrObjectDef.get)
+    addMethod(methodName, parameters, typeParameters, returnType, classOrObjectDef.get)
   }
 
-  private def addMethod(methodName: String, parameters: List[List[(String, String)]], returnTypeOpt: Option[String], classOrObjectDef: Tree): List[TextChange] = {
+  def addMethod(file: AbstractFile, className: String, methodName: String, parameters: List[List[(String, String)]], returnType: Option[String], target: AddMethodTarget): List[TextChange] =
+    addMethod(file, className, methodName, parameters, Nil, returnType, target)
+
+  private def addMethod(methodName: String, parameters: List[List[(String, String)]], typeParameters: List[String], returnTypeOpt: Option[String], classOrObjectDef: Tree): List[TextChange] = {
     val nscParameters = for (paramList <- parameters) yield for ((paramName, typeName) <- paramList) yield {
       val paramSymbol = NoSymbol.newValue(newTermName(paramName))
       paramSymbol.setInfo(newType(typeName))
       paramSymbol
     }
 
+    val typeParams = if (typeParameters.nonEmpty) {
+      val typeDef = new TypeDef(NoMods, newTypeName(typeParameters.mkString(", ")), Nil, EmptyTree)
+      List(typeDef)
+    } else Nil
+
     val returnStatement = Ident("???") :: Nil
-    val newDef = mkDefDef(NoMods, methodName, nscParameters, returnStatement, returnTypeOpt = returnTypeOpt.map(name => TypeTree(newType(name))))
+    val newDef = mkDefDef(NoMods, methodName, nscParameters, returnStatement, typeParams, returnTypeOpt = returnTypeOpt.map(name => TypeTree(newType(name))))
 
     def addMethodToTemplate(tpl: Template) = tpl copy (body = tpl.body ::: newDef :: Nil) replaces tpl
 
