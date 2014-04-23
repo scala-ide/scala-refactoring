@@ -3,6 +3,7 @@ package implementations
 
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.refactoring.common.TextChange
+import scala.tools.nsc.ast.parser.Tokens
 
 abstract class AddField extends AddValOrDef {
 
@@ -17,18 +18,12 @@ abstract class AddField extends AddValOrDef {
 
     val returnType = returnTypeOpt.map(name => TypeTree(newType(name))).getOrElse(new TypeTree)
 
-    val fieldSym = if (isVar) NoSymbol.newVariable(newTermName(s"${nme.VARkw} " + valName))
-      else NoSymbol.newValue(valName)
+    val mods = if (isVar) Modifiers(Flag.MUTABLE) withPosition (Tokens.VAR, NoPosition) else NoMods
 
-    val newVal = mkValDef(fieldSym.name.toString, returnStatement, returnType) setSymbol fieldSym
+    val newVal = mkValOrVarDef(mods, valName, returnStatement, returnType)
 
-    def addMethodToTemplate(tpl: Template) = tpl copy (body = tpl.body ::: newVal :: Nil) replaces tpl
+    val insertField = insertDef(newVal)
 
-    val insertMethodCall = transform {
-      case ClassDef(_, _, _, tpl) => addMethodToTemplate(tpl)
-      case ModuleDef(_, _, tpl) => addMethodToTemplate(tpl)
-    }
-
-    refactor((insertMethodCall apply classOrObjectDef).toList)
+    refactor((insertField apply classOrObjectDef).toList)
   }
 }

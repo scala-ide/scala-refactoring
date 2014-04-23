@@ -28,15 +28,11 @@ abstract class AddMethod extends AddValOrDef {
     } else Nil
 
     val returnStatement = Ident("???") :: Nil
+
     val newDef = mkDefDef(NoMods, methodName, nscParameters, returnStatement, typeParams, returnTypeOpt = returnTypeOpt.map(name => TypeTree(newType(name))))
 
-    def addMethodToTemplate(tpl: Template) = tpl copy (body = tpl.body ::: newDef :: Nil) replaces tpl
+    val insertMethod = insertDef(newDef)
 
-    val insertMethodCall = transform {
-      case ClassDef(_, _, _, tpl) => addMethodToTemplate(tpl)
-      case ModuleDef(_, _, tpl) => addMethodToTemplate(tpl)
-    }
-
-    refactor((insertMethodCall apply classOrObjectDef).toList)
+    refactor((insertMethod apply classOrObjectDef).toList)
   }
 }

@@ -42,6 +42,14 @@ trait AddValOrDef extends Refactoring with InteractiveScalaCompiler {
     changeFunc(classOrObjectDef.get)
   }
 
+  protected def insertDef(valOrDef: ValOrDefDef) = {
+    def addMethodToTemplate(tpl: Template) = tpl copy (body = tpl.body ::: valOrDef :: Nil) replaces tpl
+
+    transform {
+      case implDef: ImplDef => addMethodToTemplate(implDef.impl)
+    }
+  }
+
   protected def newType(name: String) = new Type {
     override def safeToString: String = name
   }
