@@ -17,7 +17,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDeps() = {
+  def inboundDeps() = global.ask { () =>
     val sel = """
       object O{
         val i = 1
@@ -32,7 +32,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsDoesNotIncludeCalledMethods() = {
+  def inboundDepsDoesNotIncludeCalledMethods() = global.ask { () =>
     val sel = """
       object O{
         val i = 1
@@ -44,7 +44,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsIncludesMethodArguments() = {
+  def inboundDepsIncludesMethodArguments() = global.ask { () =>
     val sel = """
       object O{
         def fn(i: Int) = /*(*/8.*(i)/*)*/
@@ -54,7 +54,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsDoesNotIncludeMembersOfLiterals() = {
+  def inboundDepsDoesNotIncludeMembersOfLiterals() = global.ask { () =>
     val sel = """
       object O{
         /*(*/
@@ -67,7 +67,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundImplicitDeps() = {
+  def inboundImplicitDeps() = global.ask { () =>
     val sel = """
       object O{
         implicit def wrapInt(i: Int) = new {
@@ -81,7 +81,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundTypeDeps() = {
+  def inboundTypeDeps() = global.ask { () =>
     val sel = """
       class A(i: Int)
 
@@ -100,7 +100,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundTypeDepsByOwner() = {
+  def inboundTypeDepsByOwner() = global.ask { () =>
     val sel = """
       object N{
         def apply() = 1
@@ -118,7 +118,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsOfWildcardsInMatch() = {
+  def inboundDepsOfWildcardsInMatch() = global.ask { () =>
     val sel = """
       object O{
         /*(*/1 match{
@@ -130,7 +130,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def inboundDepsOfImported() = {
+  def inboundDepsOfImported() = global.ask { () =>
     val sel = """
       object O{
         import scala.math.Pi
@@ -143,7 +143,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundLocalDeps() = {
+  def outboundLocalDeps() = global.ask { () =>
     val sel = """
       object O{
         def fn(p: Int) = {
@@ -157,7 +157,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def noOutboundLocalDeps() = {
+  def noOutboundLocalDeps() = global.ask { () =>
     val sel = """
       object O{
         def fn(c: Int) = {
@@ -173,7 +173,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundDepsInParameterLists() = {
+  def outboundDepsInParameterLists() = global.ask { () =>
     val sel = """
       object O{
         def fn(/*(*/c: Int, d: Int/*)*/) = {
@@ -185,7 +185,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundDepsInTemplateScope() = {
+  def outboundDepsInTemplateScope() = global.ask { () =>
     val sel = """
       object O{
         def fn = fm
@@ -198,7 +198,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundDepsOfVars() = {
+  def outboundDepsOfVars() = global.ask { () =>
     val sel = """
       object O{
         def fn = {
@@ -213,7 +213,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def outboundImportedDeps() = {
+  def outboundImportedDeps() = global.ask { () =>
     val sel = """
       object O{
         def fn = {
@@ -226,7 +226,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   }
 
   @Test
-  def reassignedVariablesAsOutboundDeps() = {
+  def reassignedVariablesAsOutboundDeps() = global.ask { () =>
     val sel = """
       object O{
         def fn = {

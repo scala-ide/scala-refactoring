@@ -18,7 +18,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def representsValue() = {
+  def representsValue() = global.ask { () =>
     val sel = """
       object O{
         def fn = {
@@ -31,7 +31,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def doesNotRepresentValue() = {
+  def doesNotRepresentValue() = global.ask { () =>
     val sel = """
       object O{
         def fn = {
@@ -44,7 +44,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def nonValuePatternsDoNotRepresentValues() = {
+  def nonValuePatternsDoNotRepresentValues() = global.ask { () =>
     val selWildcard = """object O { 1 match { case /*(*/_/*)*/ => () } }""".selection
     assertFalse(selWildcard.representsValue)
 
@@ -59,13 +59,13 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def valuePatternsDoRepresentValues() = {
+  def valuePatternsDoRepresentValues() = global.ask { () =>
     val selCtorPattern = """object O { Some(1) match { case /*(*/Some(1)/*)*/ => () } }""".selection
     assertTrue(selCtorPattern.representsValue)
   }
 
   @Test
-  def argumentLists() = {
+  def argumentLists() = global.ask { () =>
     val sel = """
       object O{
         def fn = {
@@ -79,7 +79,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def parameter() = {
+  def parameter() = global.ask { () =>
     val sel = """
       object O{
         def fn(/*(*/a: Int/*)*/) = {
@@ -93,7 +93,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def multipleParameters() = {
+  def multipleParameters() = global.ask { () =>
     val sel = """
       object O{
         def fn(/*(*/a: Int, b: Int/*)*/) = {
@@ -107,7 +107,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
   }
 
   @Test
-  def triggersSideEffects() = {
+  def triggersSideEffects() = global.ask { () =>
     val sel = """
       object O{
         var a = 1
