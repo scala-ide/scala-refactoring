@@ -97,12 +97,14 @@ trait TreeFactory {
     mkAssignmentToCall(call, returns)
   }
 
-  def mkValDef(name: String, rhs: Tree, tpt: TypeTree = new TypeTree): ValDef = {
+  def mkValDef(name: String, rhs: Tree, tpt: TypeTree = new TypeTree): ValDef =
+    mkValOrVarDef(NoMods, name, rhs, tpt)
 
-    def valDef = ValDef(NoMods, newTermName(name), tpt, rhs)
-    def valDefForFunction = ValDef(NoMods, newTermName(name), tpt, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
+  def mkValOrVarDef(mods: Modifiers, name: String, rhs: Tree, tpt: TypeTree = new TypeTree): ValDef = {
+    def valDef = ValDef(mods, newTermName(name), tpt, rhs)
+    def valDefForFunction = ValDef(mods, newTermName(name), tpt, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
 
-    rhs match {
+    val valOrVarDef = rhs match {
       case rhs: Select if rhs.symbol.isMethod =>
         rhs.symbol.tpe match {
           case _: NullaryMethodType => valDef
@@ -110,7 +112,9 @@ trait TreeFactory {
         }
       case _ => valDef
     }
-  }
+
+    if (mods != NoMods) valOrVarDef setSymbol NoSymbol.newValue(name, newFlags = mods.flags) else valOrVarDef
+  }  
 
   def mkParam(name: String, tpe: Type, defaultVal: Tree = EmptyTree): ValDef = {
     ValDef(Modifiers(Flags.PARAM), newTermName(name), TypeTree(tpe), defaultVal)

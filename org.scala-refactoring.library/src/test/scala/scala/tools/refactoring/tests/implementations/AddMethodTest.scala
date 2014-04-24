@@ -12,12 +12,12 @@ import language.reflectiveCalls
 class AddMethodTest extends TestHelper {
   outer =>
 
-  def addMethod(className: String, methodName: String, parameters: List[List[(String, String)]], returnType: Option[String], target: AddMethodTarget, src: String, expected: String) = {
+  def addMethod(className: String, methodName: String, parameters: List[List[(String, String)]], typeParameters: List[String], returnType: Option[String], target: AddMethodTarget, src: String, expected: String) = {
     global.ask { () =>
       val refactoring = new AddMethod with SilentTracing {
         val global = outer.global
         val file = addToCompiler(randomFileName(), src)
-        val change = addMethod(file, className, methodName, parameters, returnType, target)
+        val change = addMethod(file, className, methodName, parameters, typeParameters, returnType, target)
       }
       assertEquals(expected, Change.applyChanges(refactoring.change, src))
     }
@@ -25,7 +25,7 @@ class AddMethodTest extends TestHelper {
 
   @Test
   def addMethodToObject() = {
-    addMethod("Main", "method", Nil, None, AddToObject, """
+    addMethod("Main", "method", Nil, Nil, None, AddToObject, """
 class Main
 object Main {
 
@@ -41,7 +41,7 @@ object Main {
 
   @Test
   def addMethodToClass() = {
-    addMethod("Main", "method", Nil, None, AddToClass, """
+    addMethod("Main", "method", Nil, Nil, None, AddToClass, """
 object Main
 class Main {
   def existingMethod = "this is an existing method"
@@ -59,7 +59,7 @@ class Main {
 
   @Test
   def addMethodWithParametersAndReturnType() = {
-    addMethod("Main", "method", List(List("a" -> "Any", "b" -> "Int"), List("c" -> "Double")), Some("String"), AddToClass, "class Main",
+    addMethod("Main", "method", List(List("a" -> "Any", "b" -> "Int"), List("c" -> "Double")), Nil, Some("String"), AddToClass, "class Main",
       """class Main {
   def method(a: Any, b: Int)(c: Double): String = {
     ???
@@ -68,8 +68,28 @@ class Main {
   }
 
   @Test
+  def addMethodWithTypeParameters1() = {
+    addMethod("Main", "method", List(List("a" -> "T")), List("T"), Some("String"), AddToClass, "class Main",
+      """class Main {
+  def method[T](a: T): String = {
+    ???
+  }
+}""")
+  }
+
+  @Test
+  def addMethodWithTypeParameters2() = {
+    addMethod("Main", "method", List(List("a" -> "Any")), List("X", "Y", "Z <: List[T] forSome {type T}"), Some("String"), AddToClass, "class Main",
+      """class Main {
+  def method[X, Y, Z <: List[T] forSome {type T}](a: Any): String = {
+    ???
+  }
+}""")
+  }
+
+  @Test
   def addMethodToInnerClass() = {
-    addMethod("Inner", "method", Nil, None, AddToClass, """
+    addMethod("Inner", "method", Nil, Nil, None, AddToClass, """
 class Main {
   class Inner
 }""",
@@ -85,7 +105,7 @@ class Main {
 
   @Test
   def addMethodToCaseClass() = {
-    addMethod("Main", "method", Nil, None, AddToClass, """
+    addMethod("Main", "method", Nil, Nil, None, AddToClass, """
 case class Main""",
       """
 case class Main {
@@ -97,7 +117,7 @@ case class Main {
 
   @Test
   def addMethodToTrait() = {
-    addMethod("Main", "method", Nil, None, AddToClass, """
+    addMethod("Main", "method", Nil, Nil, None, AddToClass, """
 trait Main""",
       """
 trait Main {
@@ -109,7 +129,7 @@ trait Main {
 
   @Test
   def addMethodByClosestPosition() = {
-    addMethod("Main", "method", Nil, None, AddToClosest(30), """
+    addMethod("Main", "method", Nil, Nil, None, AddToClosest(30), """
 class Main {
 
 }
