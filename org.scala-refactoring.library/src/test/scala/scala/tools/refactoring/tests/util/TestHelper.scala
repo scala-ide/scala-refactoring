@@ -179,7 +179,7 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
     FileSelection(tree.pos.source.file, tree, start, end)
   }
 
-  def toSelection(src: String) = {
+  def toSelection(src: String) = global.ask{ () =>
     val tree = treeFrom(src)
     findMarkedNodes(src, tree)
   }

@@ -7,18 +7,9 @@ import scala.tools.refactoring.common.Selections
 class SelectionDependenciesTest extends TestHelper with Selections {
   import global._
 
-  implicit class StringToSel(src: String) {
-    val root = treeFrom(src)
-    val selection = {
-      val start = commentSelectionStart(src)
-      val end = commentSelectionEnd(src)
-      FileSelection(root.pos.source.file, root, start, end)
-    }
-  }
-
   @Test
   def inboundDeps() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         val i = 1
         def fn(p: Int) = {
@@ -27,48 +18,48 @@ class SelectionDependenciesTest extends TestHelper with Selections {
           a
         }
       }
-      """.selection
-    assertEquals("value p, value i", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("value p, value i", sel.inboundLocalDeps)
   }
 
   @Test
   def inboundDepsDoesNotIncludeCalledMethods() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         val i = 1
         /*(*/println(i.toInt*i*i.toInt)
         println(i.*(2)*(3))/*)*/
       }
-      """.selection
-    assertEquals("value i", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("value i", sel.inboundLocalDeps)
   }
 
   @Test
   def inboundDepsIncludesMethodArguments() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn(i: Int) = /*(*/8.*(i)/*)*/
       }
-      """.selection
-    assertEquals("value i", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("value i", sel.inboundLocalDeps)
   }
 
   @Test
   def inboundDepsDoesNotIncludeMembersOfLiterals() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         /*(*/
     	1 + 2
     	1.toInt.toInt.toInt
     	/*)*/
       }
-      """.selection
-    assertEquals("", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("", sel.inboundLocalDeps)
   }
 
   @Test
   def inboundImplicitDeps() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         implicit def wrapInt(i: Int) = new {
           def extension = i * 2
@@ -76,13 +67,13 @@ class SelectionDependenciesTest extends TestHelper with Selections {
 
         val i = /*(*/2.extension/*)*/
       }
-      """.selection
-    assertEquals("method extension, method wrapInt", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("method extension, method wrapInt", sel.inboundLocalDeps)
   }
 
   @Test
   def inboundTypeDeps() = {
-    val sel = """
+    val sel = toSelection("""
       class A(i: Int)
 
       object N{
@@ -95,13 +86,13 @@ class SelectionDependenciesTest extends TestHelper with Selections {
           /*(*/new A(N())/*)*/
         }
       }
-      """.selection
-    assertEquals("constructor A, class A, method apply, object N", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("constructor A, class A, method apply, object N", sel.inboundLocalDeps)
   }
 
   @Test
   def inboundTypeDepsByOwner() = {
-    val sel = """
+    val sel = toSelection("""
       object N{
         def apply() = 1
       }
@@ -112,39 +103,39 @@ class SelectionDependenciesTest extends TestHelper with Selections {
           /*(*/N() * i/*)*/
         }
       }
-      """.selection
+      """)
     val symO = sel.expandTo[DefDef].get.enclosingTree.symbol.ownerChain.find(_.isType).get
-    assertEquals("value i", sel.inboundDepsOwnedBy(symO).mkString(", "))
+    assertSymbols("value i", sel.inboundDepsOwnedBy(symO))
   }
 
   @Test
   def inboundDepsOfWildcardsInMatch() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         /*(*/1 match{
     	  case _ => ()
         }/*)*/
       }
-      """.selection
-    assertEquals("", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("", sel.inboundLocalDeps)
   }
 
   @Test
   def inboundDepsOfImported() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         import scala.math.Pi
     	import scala.collection.mutable
 
     	/*(*/(Pi, new mutable.LinkedList)/*)*/
       }
-      """.selection
-    assertEquals("", sel.inboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("", sel.inboundLocalDeps)
   }
 
   @Test
   def outboundLocalDeps() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn(p: Int) = {
           /*(*/val (a, b) = (1, p)
@@ -152,13 +143,13 @@ class SelectionDependenciesTest extends TestHelper with Selections {
           (b, c)
         }
       }
-      """.selection
-    assertEquals("value b, value c", sel.outboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("value b, value c", sel.outboundLocalDeps)
   }
 
   @Test
   def noOutboundLocalDeps() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn(c: Int) = {
     	  {
@@ -168,66 +159,51 @@ class SelectionDependenciesTest extends TestHelper with Selections {
           c
         }
       }
-      """.selection
-    assertEquals("", sel.outboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("", sel.outboundLocalDeps)
   }
 
   @Test
   def outboundDepsInParameterLists() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn(/*(*/c: Int, d: Int/*)*/) = {
           c
         }
       }
-      """.selection
-    assertEquals("value c", sel.outboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("value c", sel.outboundLocalDeps)
   }
 
   @Test
   def outboundDepsInTemplateScope() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn = fm
         /*(*/def fm = 1
         def fo = 2/*)*/
         def fq = fo
       }
-      """.selection
-    assertEquals("method fm, method fo", sel.outboundLocalDeps.mkString(", "))
-  }
-
-  @Test
-  def outboundDepsOfVars() = {
-    val sel = """
-      object O{
-        def fn = {
-          var a = 1
-          {
-            def inner = /*(*/a += 1/*)*/
-          }
-    	  a
-        }
-      }
-      """
+      """)
+    assertSymbols("method fm, method fo", sel.outboundLocalDeps)
   }
 
   @Test
   def outboundImportedDeps() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn = {
           /*(*/import scala.math.Pi/*)*/
     	  Pi
         }
       }
-      """.selection
-    assertEquals("", sel.outboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("", sel.outboundLocalDeps)
   }
 
   @Test
   def reassignedVariablesAsOutboundDeps() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn = {
     	  var a = 1
@@ -235,7 +211,12 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     	  a
         }
       }
-      """.selection
-    assertEquals("variable a", sel.outboundLocalDeps.mkString(", "))
+      """)
+    assertSymbols("variable a", sel.outboundLocalDeps)
   }
+
+  def assertSymbols(expected: String, actualSymbols: List[Symbol]) =
+    assertEquals(expected, global.ask { () =>
+      actualSymbols.mkString(", ")
+    })
 }

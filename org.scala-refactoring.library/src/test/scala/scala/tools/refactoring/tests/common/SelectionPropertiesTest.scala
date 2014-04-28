@@ -8,71 +8,62 @@ import org.junit.Assert._
 class SelectionPropertiesTest extends TestHelper with Selections {
   import global._
 
-  implicit class StringToSel(src: String) {
-    val root = treeFrom(src)
-    val selection = {
-      val start = commentSelectionStart(src)
-      val end = commentSelectionEnd(src)
-      FileSelection(root.pos.source.file, root, start, end)
-    }
-  }
-
   @Test
   def representsValue() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn = {
           /*(*/val i = 100
           i * 2/*)*/
     	}
       }
-      """.selection
+      """)
     assertTrue(sel.representsValue)
   }
 
   @Test
   def doesNotRepresentValue() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn = {
           /*(*/val i = 100
           val b = i * 2/*)*/
     	}
       }
-      """.selection
+      """)
     assertFalse(sel.representsValue)
   }
 
   @Test
   def nonValuePatternsDoNotRepresentValues() = {
-    val selWildcard = """object O { 1 match { case /*(*/_/*)*/ => () } }""".selection
+    val selWildcard = toSelection("""object O { 1 match { case /*(*/_/*)*/ => () } }""")
     assertFalse(selWildcard.representsValue)
 
-    val selCtorPattern = """object O { Some(1) match { case /*(*/Some(i)/*)*/ => () } }""".selection
+    val selCtorPattern = toSelection("""object O { Some(1) match { case /*(*/Some(i)/*)*/ => () } }""")
     assertFalse(selCtorPattern.representsValue)
 
-    val selBinding =  """object O { 1 match { case /*(*/i: Int/*)*/ => i } }""".selection
+    val selBinding = toSelection("""object O { 1 match { case /*(*/i: Int/*)*/ => i } }""")
     assertFalse(selBinding.representsValue)
 
-    val selPatAndGuad = """object O { 1 match { case /*(*/i if i > 10/*)*/ => i } }""".selection
+    val selPatAndGuad = toSelection("""object O { 1 match { case /*(*/i if i > 10/*)*/ => i } }""")
     assertFalse(selPatAndGuad.representsValue)
   }
 
   @Test
   def valuePatternsDoRepresentValues() = {
-    val selCtorPattern = """object O { Some(1) match { case /*(*/Some(1)/*)*/ => () } }""".selection
+    val selCtorPattern = toSelection("""object O { Some(1) match { case /*(*/Some(1)/*)*/ => () } }""")
     assertTrue(selCtorPattern.representsValue)
   }
 
   @Test
   def argumentLists() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn = {
           List(/*(*/1, 2/*)*/, 3)
     	}
       }
-      """.selection
+      """)
     assertFalse(sel.representsValue)
     assertFalse(sel.representsValueDefinitions)
     assertTrue(sel.representsArgument)
@@ -80,13 +71,13 @@ class SelectionPropertiesTest extends TestHelper with Selections {
 
   @Test
   def parameter() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn(/*(*/a: Int/*)*/) = {
           a
     	}
       }
-      """.selection
+      """)
     assertFalse(sel.representsValue)
     assertTrue(sel.representsValueDefinitions)
     assertTrue(sel.representsParameter)
@@ -94,21 +85,21 @@ class SelectionPropertiesTest extends TestHelper with Selections {
 
   @Test
   def multipleParameters() = {
-    val sel = """
+    val sel = toSelection("""
       object O{
         def fn(/*(*/a: Int, b: Int/*)*/) = {
           a * b
     	}
       }
-      """.selection
+      """)
     assertFalse(sel.representsValue)
     assertTrue(sel.representsValueDefinitions)
     assertTrue(sel.representsParameter)
   }
 
   @Test
-  def triggersSideEffects() = {
-    val sel = """
+  def triggersSideEffects() = global.ask { () =>
+    val sel = toSelection("""
       object O{
         var a = 1
         /*(*/def fn = {
@@ -116,7 +107,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
           a
         }/*)*/
       }
-      """.selection
+      """)
     assertTrue(sel.mayHaveSideEffects)
   }
 }
