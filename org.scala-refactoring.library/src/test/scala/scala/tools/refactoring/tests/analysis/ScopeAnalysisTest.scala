@@ -9,7 +9,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   import global._
 
   @Test
-  def simpleScopes() = {
+  def simpleScopes() = global.ask { () =>
     val s = toSelection("""
       package demo
       object Demo{
@@ -28,7 +28,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def nestedLocalScopes() = {
+  def nestedLocalScopes() = global.ask { () =>
     val s = toSelection("""
       object Demo{
         def fn = {
@@ -50,7 +50,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def LocalScopes() = {
+  def LocalScopes() = global.ask { () =>
     val s = toSelection("""
       class Demo(cp: Int){
         def fn(a: Int, b: Int) = {
@@ -65,7 +65,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopesInForEnumerators() = {
+  def scopesInForEnumerators() = global.ask { () =>
     val s = toSelection("""
       object Demo{
         for(i <- 1 to 10; j <- 1 to 10){
@@ -80,7 +80,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeFromCase() = {
+  def scopeFromCase() = global.ask { () =>
     val s = toSelection("""
       object Demo{
         (1, 2) match {
@@ -95,7 +95,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def nestedClassScopes() = {
+  def nestedClassScopes() = global.ask { () =>
     val s = toSelection("""
       object Demo {
         def fn(p: Int) = {
@@ -114,7 +114,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def visibility() = {
+  def visibility() = global.ask { () =>
     val s = toSelection("""
       package demo
 
@@ -185,7 +185,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
   @Test
   @Ignore("Not yet supported")
-  def visibilityOfInheritedMembers() = {
+  def visibilityOfInheritedMembers() = global.ask { () =>
     val s = toSelection("""
       trait Base{
         val baseVal = 1
@@ -208,7 +208,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def visibilityOfRenamedImport() = {
+  def visibilityOfRenamedImport() = global.ask { () =>
     val s = toSelection("""
       import scala.collection.mutable
 
@@ -231,7 +231,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def visibilityOfWildcardImport() = {
+  def visibilityOfWildcardImport() = global.ask { () =>
     val s = toSelection("""
       import scala.collection.mutable
 
@@ -253,7 +253,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookup() = {
+  def scopeLookup() = global.ask { () =>
     val s = toSelection("""
       object Demo{
         val a = 1
@@ -280,7 +280,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupOfParams() = {
+  def scopeLookupOfParams() = global.ask { () =>
     val s = toSelection("""
       class Demo(cp: Int){
         def fn(a: Int) = {
@@ -305,7 +305,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupOfParamsOfDesugaredFunctions() = {
+  def scopeLookupOfParamsOfDesugaredFunctions() = global.ask { () =>
     val s = toSelection("""
       object Demo{
         for(i <- 1 to 10) /*(*/println(i)/*)*/
@@ -328,7 +328,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupInNestedClasses() = {
+  def scopeLookupInNestedClasses() = global.ask { () =>
     val s = toSelection("""
       class Outer {
         def fn(p: Int) = {
@@ -352,7 +352,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
   }
 
   @Test
-  def scopeLookupInNestedClasses2() = {
+  def scopeLookupInNestedClasses2() = global.ask { () =>
     val s = toSelection("""
       class Outer {
         class Inner {
