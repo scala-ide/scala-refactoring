@@ -6,11 +6,10 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 
 class ExtractCodeTest extends TestHelper with TestRefactoring {
-  def extract(name: String, extractionIdx: Int)(pro: FileSet) = {
+  def extract(extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractCode with SilentTracing with TestProjectIndex
       val e = preparationResult.right.get.extractions(extractionIdx)
-        .withAbstractionName(name)
     }
     testRefactoring.performRefactoring(testRefactoring.e)
   }
@@ -30,7 +29,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         val extracted = a * a
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   def extractCodeWithUnknownDependencies() = new FileSet {
@@ -57,7 +56,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   def extractMultipleExpressions() = new FileSet {
@@ -84,7 +83,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractUnitExpressionToDef() = new FileSet {
@@ -102,7 +101,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractCodeInCase() = new FileSet {
@@ -122,7 +121,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractCodeWithPotentialSideEffects() = new FileSet {
@@ -144,7 +143,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   def extractCodeWithPotentialSideEffectsOnVar() = new FileSet {
@@ -169,7 +168,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   def extractForEnumerator() = new FileSet {
@@ -189,7 +188,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         val extracted = 1 to 100
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractFromForBody() = new FileSet {
@@ -211,7 +210,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractCase() = {
@@ -233,7 +232,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-    }.performRefactoring(extract("extracted", 0)).assertEqualTree
+    }.performRefactoring(extract(0)).assertEqualTree
   }
 
   @Test
@@ -250,7 +249,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
     	val extracted = List(1, 2, 3)
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractExtractor() = new FileSet {
@@ -275,7 +274,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("Extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractWithNothingSelected() = new FileSet {
@@ -294,5 +293,23 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
 	  	}
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
+  
+  def avoidNameCollisions = new FileSet {
+    """
+      object Demo {
+        val extracted = 1
+	    val extracted1 = /*(*/2/*)*/
+      }
+    """ becomes
+      """
+      object Demo {
+        val extracted = 1
+	    val extracted1 = {
+          val extracted2 = 2
+          extracted2
+        }
+      }
+    """
+  }.performRefactoring(extract(1)).assertEqualTree
 }

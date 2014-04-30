@@ -223,13 +223,11 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
     val innermost = ScopeTree.build(s)
 
-    val consLinked = s.inboundDeps.find(_.toString == "constructor LinkedList").get
+    val consLinked = global.ask {
+      () => s.inboundDeps.find(_.toString == "constructor LinkedList").get
+    }
 
     assertTrue(innermost.sees(consLinked))
-
-    val outermost = innermost.outermostScope
-
-    //assertFalse(outermost.sees(consLinked))
   }
 
   @Test
@@ -247,13 +245,11 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
       """)
 
     val innermost = ScopeTree.build(s)
-    val consLinked = s.inboundDeps.find(_.toString == "constructor LinkedList").get
+    val consLinked = global.ask { () =>
+      s.inboundDeps.find(_.toString == "constructor LinkedList").get
+    }
 
     assertTrue(innermost.sees(consLinked))
-
-    val outermost = innermost.outermostScope
-
-    //assertFalse(outermost.sees(consLinked))
   }
 
   @Test
@@ -346,7 +342,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
     val scopes = ScopeTree.build(s.root, s.selectedTopLevelTrees.head)
 
     val inner = s.findSelectedOfType[Template].get
-    val outer = s.findSelectedWithPredicate{
+    val outer = s.findSelectedWithPredicate {
       case t: Template if t != inner => true
       case _ => false
     }.get
@@ -369,7 +365,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
     val scopes = ScopeTree.build(s.root, s.selectedTopLevelTrees.head)
 
     val inner = s.findSelectedOfType[Template].get
-    val outer = s.findSelectedWithPredicate{
+    val outer = s.findSelectedWithPredicate {
       case t: Template if t != inner => true
       case _ => false
     }.get

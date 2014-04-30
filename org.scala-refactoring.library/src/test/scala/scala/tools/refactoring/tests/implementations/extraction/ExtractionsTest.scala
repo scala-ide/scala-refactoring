@@ -52,7 +52,7 @@ class ExtractionsTest extends TestHelper with Extractions {
 
     def isValidExtractionSource(s: Selection) = true
 
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
       extractionTargets = targets
       Nil
     }

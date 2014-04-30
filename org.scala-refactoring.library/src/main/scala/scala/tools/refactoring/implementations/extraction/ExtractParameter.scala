@@ -21,19 +21,19 @@ trait ParameterExtractions extends Extractions with ImportAnalysis {
     override def createInsertionPosition(s: Selection) = 
       atEndOfValueParameterList
 
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
       val validTargets = targets.takeWhile { t =>
         source.inboundLocalDeps.forall(t.scope.sees(_))
       }
       
-      validTargets.map(ParameterExtraction(source, _))
+      validTargets.map(ParameterExtraction(source, _, name))
     }
   }
 
   case class ParameterExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    abstractionName: String = defaultAbstractionName) extends Extraction {
+    abstractionName: String) extends Extraction {
 
     val displayName = extractionTarget.enclosing match {
       case t: DefDef => s"Extract Parameter to Method ${t.symbol.nameString}"

@@ -31,18 +31,20 @@ trait ExtractorExtractions extends Extractions {
       }
     }
 
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
       val validTargets = targets.takeWhile { t =>
         source.inboundDeps.forall(t.scope.sees(_))
       }
 
       source.selectedTopLevelTrees.head match {
         case cd: CaseDef => 
-          validTargets.map(CasePatternExtraction(cd, source, _))
+          validTargets.map(CasePatternExtraction(cd, source, _, name))
         case pat => 
-          validTargets.map(PatternExtraction(pat, source, _))
+          validTargets.map(PatternExtraction(pat, source, _, name))
       }
     }
+    
+    override val defaultAbstractionName = "Extracted"
   }
 
   /**

@@ -46,7 +46,7 @@ trait AutoExtractions extends MethodExtractions with ValueExtractions with Extra
 
     def isValidExtractionSource(s: Selection) = ???
 
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = ???
+    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = ???
   }
 
   /**
@@ -60,16 +60,16 @@ trait AutoExtractions extends MethodExtractions with ValueExtractions with Extra
     def isValidExtractionSource(s: Selection) =
       MethodExtraction.isValidExtractionSource(s)
 
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
       val valueExtractions =
         if (source.mayHaveSideEffects)
           Nil
         else
-          ValueExtraction.createExtractions(source, targets)
+          ValueExtraction.createExtractions(source, targets, name)
 
       val remainingTargets = targets.filterNot(t => valueExtractions.exists(e => e.extractionTarget == t))
 
-      val methodExtractions = MethodExtraction.createExtractions(source, remainingTargets)
+      val methodExtractions = MethodExtraction.createExtractions(source, remainingTargets, name)
 
       valueExtractions ::: methodExtractions
     }

@@ -16,19 +16,19 @@ trait ValueExtractions extends Extractions with ImportAnalysis {
     def isValidExtractionSource(s: Selection) =
       (s.representsValue || s.representsValueDefinitions) && !s.representsParameter
 
-    def createExtractions(source: Selection, targets: List[ExtractionTarget]) = {
+    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
       val validTargets = targets.takeWhile { t =>
         source.inboundLocalDeps.forall(t.scope.sees(_))
       }
 
-      validTargets.map(ValueExtraction(source, _))
+      validTargets.map(ValueExtraction(source, _, name))
     }
   }
 
   case class ValueExtraction(
     extractionSource: Selection,
     extractionTarget: ExtractionTarget,
-    abstractionName: String = defaultAbstractionName) extends Extraction {
+    abstractionName: String) extends Extraction {
 
     val displayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Value to ${t.symbol.owner.decodedName}"

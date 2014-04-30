@@ -41,7 +41,6 @@ class OccurrencesTest extends TestHelper with GlobalIndexes with Occurrences {
   }
 
   @Test
-  @Ignore("fails because of issue https://www.assembla.com/spaces/scala-refactoring/tickets/83")
   def accessorNameOccurrences() = {
     val src = """
       object O{
@@ -59,7 +58,6 @@ class OccurrencesTest extends TestHelper with GlobalIndexes with Occurrences {
   }
 
   @Test
-  @Ignore("fails because of issue https://www.assembla.com/spaces/scala-refactoring/tickets/83")
   def paramsOccurrences() = {
     val src = """
       object O{

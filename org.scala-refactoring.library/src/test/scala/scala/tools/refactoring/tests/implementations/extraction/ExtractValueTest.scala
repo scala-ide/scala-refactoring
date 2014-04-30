@@ -8,11 +8,10 @@ import tests.util.TestRefactoring
 class ExtractValueTest extends TestHelper with TestRefactoring {
   outer =>
 
-  def extract(name: String, extractionIdx: Int)(pro: FileSet) = {
+  def extract(extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractValue with SilentTracing with TestProjectIndex
       val extraction = preparationResult.right.get.extractions(extractionIdx)
-        .withAbstractionName(name)
     }
     testRefactoring.performRefactoring(testRefactoring.extraction)
   }
@@ -31,12 +30,12 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       object Demo {
         def fn(a: Int) = {
           val b = 2
-          val c = /*(*/a * b
-          println(c/*)*/)
+          val extracted = /*(*/a * b
+          println(extracted/*)*/)
         }
       }
     """
-  }.performRefactoring(extract("c", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractSimpleSequence() = new FileSet {
@@ -53,15 +52,15 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       object Demo {
         def fn(a: Int) = {
           val b = 2
-          val c = {
+          val extracted = {
             /*(*/println(a)
             println(b)/*)*/
           }
-          c
+          extracted
         }
       }
     """
-  }.performRefactoring(extract("c", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractWithOutboundDependency() = new FileSet {
@@ -76,16 +75,16 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         def fn(a: Int) = {
-          val c = {
+          val extracted = {
                  /*(*/val b = a + 1/*)*/
                  b
                }
-          /*(*/val b = c/*)*/
+          /*(*/val b = extracted/*)*/
           println(b)
         }
       }
     """
-  }.performRefactoring(extract("c", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractWithOutboundDependencies() = new FileSet {
@@ -103,19 +102,19 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         def fn(a: Int) = {
-          val e = {
+          val extracted = {
                  /*(*/val b = a + 1
                  val c = a + 2
                  println(b*c)
                  val d = a + 3/*)*/
                  (c, d)
                }
-          /*(*/val (c, d) = e
+          /*(*/val (c, d) = extracted
           println(c * d)
         }
       }
     """
-  }.performRefactoring(extract("e", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractToTemplateScope() = new FileSet {
@@ -131,15 +130,15 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         def fn(a: Int) = {
-          val b = c/*)*/
+          val b = extracted/*)*/
         }
 
-        val c = /*(*/1 + 2
+        val extracted = /*(*/1 + 2
 
         def fm = 7
       }
     """
-  }.performRefactoring(extract("c", 2)).assertEqualTree
+  }.performRefactoring(extract(2)).assertEqualTree
 
   @Test
   def extractImportedDependency() = new FileSet {
@@ -164,7 +163,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   def extractImportedDependencyInSubtree() = new FileSet {
@@ -189,7 +188,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   def extractImportedCtor() = new FileSet {
@@ -214,7 +213,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   def extractImportedCtorWithImportedQualifiers() = new FileSet {
@@ -236,8 +235,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualSource
-
+  }.performRefactoring(extract(1)).assertEqualSource
+  
   @Test
   @Ignore
   def extractInFunctionWithSingleExprBody() = new FileSet{
@@ -253,8 +252,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       })
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualSource
-
+  }.performRefactoring(extract(0)).assertEqualSource
+  
   @Test
   def extractFunction() = new FileSet{
     """
@@ -268,8 +267,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       val extracted: Int => Int = i => i + 1
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
+  }.performRefactoring(extract(0)).assertEqualTree
+  
   @Test
   def extractFunctionWithBlockBody() = new FileSet{
     """
@@ -289,8 +288,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
+  }.performRefactoring(extract(0)).assertEqualTree
+  
   @Test
   def extractFunctionWithWildcardParam() = new FileSet{
     """
@@ -304,8 +303,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       val extracted: Int => Int = _ + 1
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
+  }.performRefactoring(extract(0)).assertEqualTree
+  
   @Test
   def extractConstantPattern() = new FileSet{
     """
@@ -323,8 +322,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       val extracted = 1
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
+  }.performRefactoring(extract(0)).assertEqualTree
+  
   @Test
   def dontExtractPatternsWithBindings() = new FileSet{
     """
@@ -344,8 +343,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
+  }.performRefactoring(extract(0)).assertEqualTree
+  
   @Test
   def dontExtractWildcardPatterns() = new FileSet{
     """
@@ -365,8 +364,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
+  }.performRefactoring(extract(0)).assertEqualTree
+  
   @Test
   def extractIntoNewValBlock() = new FileSet{
     """
@@ -381,8 +380,8 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
-
+  }.performRefactoring(extract(0)).assertEqualTree
+  
   @Test
   def extractMutable() = new FileSet{
     """
@@ -404,5 +403,5 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 }

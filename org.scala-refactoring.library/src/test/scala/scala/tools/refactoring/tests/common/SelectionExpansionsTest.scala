@@ -304,11 +304,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
 
   implicit class StringToSel(src: String) {
     def withSelection[T](fn: Selection => T) = {
-      val tree = treeFrom(src)
-      val start = commentSelectionStart(src)
-      val end = commentSelectionEnd(src)
-      val selection = FileSelection(tree.pos.source.file, tree, start, end)
-
+      val selection = toSelection(src)
       fn(selection)
     }
     def assertExpansion(expansion: Selection => Selection) = {

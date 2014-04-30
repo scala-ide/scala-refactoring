@@ -241,4 +241,29 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def avoidNameCollisions = new FileSet{
+    """
+      object Extracted {
+        1 match {
+	  	  case /*(*/i: Int/*)*/ => println(i)
+        }
+      }
+    """ becomes
+      """
+      object Extracted {
+        1 match {
+	  	  case Extracted1(i) => println(i)
+        }
+    
+        object Extracted1 {
+          def unapply(x: Int) = x match {
+    		case i => Some(i)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
 }

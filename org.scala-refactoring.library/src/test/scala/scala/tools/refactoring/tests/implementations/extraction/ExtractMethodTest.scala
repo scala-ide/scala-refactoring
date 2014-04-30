@@ -6,11 +6,10 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 
 class ExtractMethodTest extends TestHelper with TestRefactoring {
-  def extract(name: String, extractionIdx: Int)(pro: FileSet) = {
+  def extract(extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
       val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
-      val e = preparationResult.right.get.extractions(extractionIdx).asInstanceOf[refactoring.MethodExtraction]
-      val extraction = e.copy(abstractionName = name)
+      val extraction = preparationResult.right.get.extractions(extractionIdx).asInstanceOf[refactoring.MethodExtraction]
     }
     testRefactoring.performRefactoring(testRefactoring.extraction)
   }
@@ -36,7 +35,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
   def extractComplexMethod() = new FileSet {
@@ -79,8 +78,8 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         def fm(p: Int) = p + 1
       }
     """
-  }.performRefactoring(extract("extracted", 2)).assertEqualTree
-
+  }.performRefactoring(extract(2)).assertEqualTree
+  
   @Test
   def extractMethodWithoutParametersAndCreateEmptyParameterList() = new FileSet {
     """
@@ -96,7 +95,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 0)).assertEqualSource
+  }.performRefactoring(extract(0)).assertEqualSource
 
   @Test
   def extractImportedDependency() = new FileSet {
@@ -121,8 +120,8 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
-
+  }.performRefactoring(extract(1)).assertEqualTree
+  
   @Test
   def extractFromNestedClass() = new FileSet {
     """
@@ -142,7 +141,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     	def extracted(a: Int) = a
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
 
   @Test
   @Ignore("Has to be handled in pretty printer")
@@ -169,8 +168,8 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         }
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualSource
-
+  }.performRefactoring(extract(1)).assertEqualSource
+  
   @Test(expected=classOf[IndexOutOfBoundsException])
   def extractWithSideEffects() = new FileSet {
     """
@@ -183,8 +182,8 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes
       """"""
-  }.performRefactoring(extract("extracted", 1)).assertEqualSource
-
+  }.performRefactoring(extract(1)).assertEqualSource
+  
   @Test
   def extractFunction() = new FileSet {
     """
@@ -203,5 +202,24 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     	  i => i + a
       }
     """
-  }.performRefactoring(extract("extracted", 1)).assertEqualTree
+  }.performRefactoring(extract(1)).assertEqualTree
+  
+  @Test
+  def avoidNameCollisions = new FileSet{
+    """
+      object Demo {
+        def extracted() = 1
+        def fn = /*(*/100/*)*/
+      }
+    """ becomes 
+    """
+      object Demo {
+        def extracted() = 1
+        def fn = {
+          def extracted1() = 100
+          extracted1()
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree
 }
