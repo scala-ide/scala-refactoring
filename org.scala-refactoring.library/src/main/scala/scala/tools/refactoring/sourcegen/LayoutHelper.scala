@@ -243,6 +243,9 @@ trait LayoutHelper {
       case (c, p: ImplDef) =>
         layout(c.pos.end, p.pos.end) splitAfter '}'
 
+       case (c: TypeTree /*extends Trait*/, p: Template) =>
+         NoLayout → layout(c.pos.end, p.pos.end)
+
        case (c, p: Template) =>
          layout(c.pos.end, p.pos.end) splitBefore (')', '\r', '\n')
 

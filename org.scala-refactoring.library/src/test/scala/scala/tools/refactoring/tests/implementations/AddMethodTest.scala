@@ -128,6 +128,23 @@ trait Main {
   }
 
   @Test
+  def addMethodToEmptyClassWithTrait() = {
+    addMethod("Trait", "method", Nil, Nil, None, AddToClass, """
+trait TestTrait
+trait Trait extends TestTrait {
+}
+""",
+      """
+trait TestTrait
+trait Trait extends TestTrait {
+  def method = {
+    ???
+  }
+}
+""")
+  }
+
+  @Test
   def addMethodByClosestPosition() = {
     addMethod("Main", "method", Nil, Nil, None, AddToClosest(30), """
 class Main {
