@@ -9,7 +9,7 @@
     <artifactId>oss-parent</artifactId>
     <version>7</version>
   </parent>
-  <version>0.6.2-SNAPSHOT</version>
+  <version>0.6.2</version>
   <packaging>pom</packaging>
   <name>Scala Refactoring Library</name>
   <url>http://scala-refactoring.org</url>
@@ -34,13 +34,13 @@
     </developer>
   </developers>
   <properties>
-    <scala.version>2.10.4-SNAPSHOT</scala.version>
+    <scala.version>2.10.4</scala.version>
     <version.suffix>2_10</version.suffix>
-    <tycho.version>0.18.1</tycho.version>
+    <tycho.version>0.20.0</tycho.version>
     <encoding>UTF-8</encoding>
-    <scala.binary.version>2.11.0-M5</scala.binary.version>
-    <scala.xml.version>1.0.0-RC5</scala.xml.version>
-    <scala.parser-combinators.version>1.0.0-RC3</scala.parser-combinators.version>
+    <scala.binary.version>2.11</scala.binary.version>
+    <scala.xml.version>1.0.1</scala.xml.version>
+    <scala.parser-combinators.version>1.0.1</scala.parser-combinators.version>
   </properties>
   <modules>
     <module>org.scala-refactoring.library</module>
@@ -102,7 +102,7 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <version>3.1.5</version>
+        <version>3.1.6</version>
         <executions>
           <execution>
             <goals>
@@ -286,7 +286,26 @@
       <id>scala-2.11.x</id>
       <properties>
         <version.suffix>2_11</version.suffix>
-        <scala.version>2.11.0-SNAPSHOT</scala.version>
+        <scala.version>2.11.0</scala.version>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-xml_${scala.binary.version}</artifactId>
+          <version>${scala.xml.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-parser-combinators_${scala.binary.version}</artifactId>
+          <version>${scala.parser-combinators.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>scala-2.12.x</id>
+      <properties>
+        <version.suffix>2_12</version.suffix>
+        <scala.version>2.12.0-SNAPSHOT</scala.version>
       </properties>
       <dependencies>
         <dependency>
