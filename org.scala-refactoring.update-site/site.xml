@@ -3,7 +3,7 @@
    <description name="Scala Refactoring Update Site">
       The update site for the Scala Refactoring project.
    </description>
-   <feature url="features/org.scala-refactoring.feature_0.6.2.jar" id="org.scala-refactoring.feature" version="0.6.2">
+   <feature url="features/org.scala-refactoring.feature_0.6.3.qualifier.jar" id="org.scala-refactoring.feature" version="0.6.3.qualifier">
       <category name="org.scala-refactoring"/>
    </feature>
    <category-def name="org.scala-refactoring" label="Scala Refactoring"/>

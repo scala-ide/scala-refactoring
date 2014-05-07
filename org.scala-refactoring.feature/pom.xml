@@ -4,12 +4,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.scala-refactoring</groupId>
   <artifactId>org.scala-refactoring.feature</artifactId>
-  <version>0.6.2</version>
+  <version>0.6.3-SNAPSHOT</version>
   <packaging>eclipse-feature</packaging>
   <parent>
     <groupId>org.scala-refactoring</groupId>
     <artifactId>org.scala-refactoring</artifactId>
-    <version>0.6.2</version>
+    <version>0.6.3-SNAPSHOT</version>
   </parent>
   <build>
     <plugins>
