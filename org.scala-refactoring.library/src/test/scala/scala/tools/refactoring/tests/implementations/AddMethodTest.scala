@@ -145,6 +145,23 @@ trait Trait extends TestTrait {
   }
 
   @Test
+  def addMethodToEmptyClassWithAbstractSuperclass() = {
+    addMethod("concClass", "method", Nil, Nil, None, AddToClass, """
+abstract class absClass
+class concClass extends absClass {
+}
+""",
+      """
+abstract class absClass
+class concClass extends absClass {
+  def method = {
+    ???
+  }
+}
+""")
+  }
+
+  @Test
   def addMethodByClosestPosition() = {
     addMethod("Main", "method", Nil, Nil, None, AddToClosest(30), """
 class Main {

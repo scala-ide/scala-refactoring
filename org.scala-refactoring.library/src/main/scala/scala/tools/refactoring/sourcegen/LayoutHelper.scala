@@ -243,7 +243,7 @@ trait LayoutHelper {
       case (c, p: ImplDef) =>
         layout(c.pos.end, p.pos.end) splitAfter '}'
 
-       case (c: TypeTree /*extends Trait*/, p: Template) =>
+       case (c @ (_: TypeTree /*extends Trait*/ | _: Ident /*extends Class*/), p: Template) =>
          NoLayout → layout(c.pos.end, p.pos.end)
 
        case (c, p: Template) =>
