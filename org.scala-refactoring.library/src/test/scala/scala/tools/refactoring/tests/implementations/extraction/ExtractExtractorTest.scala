@@ -39,6 +39,33 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
+  def extractWithBodyOnNextLine() = new FileSet {
+    """
+      object Demo {
+        List(1) match {
+	  	  case /*(*/List(i)/*)*/ =>
+	  		println(i)
+        }
+      }
+    """ becomes
+      """
+      object Demo {
+        List(1) match {
+	  	  case Extracted(i) =>
+            println(i)
+        }
+    
+        object Extracted {
+          def unapply(x: List[Int]) = x match {
+    		case List(i) => Some(i)
+            case _ => None
+          }
+        }
+      }
+    """
+  }.performRefactoring(extract(0)).assertEqualTree()
+
+  @Test
   def extractWithBodyOnNewLine() = new FileSet {
     """
       object Demo {
