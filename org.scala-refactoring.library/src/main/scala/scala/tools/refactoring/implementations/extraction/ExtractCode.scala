@@ -18,7 +18,8 @@ trait AutoExtractions extends MethodExtractions with ValueExtractions with Extra
      */
     val availableCollectors =
       ExtractorExtraction ::
-        ValueOrMethodExtraction ::
+        ValueExtraction ::
+        MethodExtraction ::
         ParameterExtraction ::
         Nil
 
@@ -47,31 +48,5 @@ trait AutoExtractions extends MethodExtractions with ValueExtractions with Extra
     def isValidExtractionSource(s: Selection) = ???
 
     def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = ???
-  }
-
-  /**
-   * Proposes either value or method extractions for an extraction target depending
-   * on whether all inbound dependencies are satisfied in the respective scope or not.
-   *
-   * If the extraction source contains (obvious) side effects it proposes only method
-   * extractions. 
-   */
-  object ValueOrMethodExtraction extends ExtractionCollector[Extraction] {
-    def isValidExtractionSource(s: Selection) =
-      MethodExtraction.isValidExtractionSource(s)
-
-    def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
-      val valueExtractions =
-        if (source.mayHaveSideEffects)
-          Nil
-        else
-          ValueExtraction.createExtractions(source, targets, name)
-
-      val remainingTargets = targets.filterNot(t => valueExtractions.exists(e => e.extractionTarget == t))
-
-      val methodExtractions = MethodExtraction.createExtractions(source, remainingTargets, name)
-
-      valueExtractions ::: methodExtractions
-    }
   }
 }
