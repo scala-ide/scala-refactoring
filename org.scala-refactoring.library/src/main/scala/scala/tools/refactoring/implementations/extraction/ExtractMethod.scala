@@ -56,8 +56,11 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
       val outboundDeps = extractionSource.outboundLocalDeps
 
       val call = {
-        val args = parameters.map{ param => Ident(param) }
-        val call = Apply(Select(This(nme.EMPTY.toTypeName) setPos Invisible, abstractionName), args)
+        val args = parameters.map { param => Ident(param) }
+        val call =
+          /* Pretty printer does in some cases ommit the parens for empty argument lists */
+          if (args.isEmpty) PlainText.Raw(abstractionName + "()")
+          else Apply(Select(This(nme.EMPTY.toTypeName) setPos Invisible, abstractionName), args)
         mkAssignmentToCall(call, outboundDeps)
       }
 
@@ -65,11 +68,15 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
         if (outboundDeps.isEmpty) Nil
         else mkReturn(outboundDeps) :: Nil
 
-      val importStatements = extractionSource.selectedTopLevelTrees.flatMap(imports.findRequiredImports(_, extractionSource.pos, extractionTarget.pos))
+      val importStatements = for {
+        selectedTree <- extractionSource.selectedTopLevelTrees
+        importStmt <- imports.findRequiredImports(selectedTree, extractionSource.pos, extractionTarget.pos)
+      } yield importStmt
 
       val statements = importStatements ::: extractionSource.selectedTopLevelTrees ::: returnStatements
 
-      val abstraction = {/* We implement a simpler version of mkDefDef in order to address
+      val abstraction = {
+        /* We implement a simpler version of mkDefDef in order to address
          * issues with symbols that are treated as by name parameters
          */
         def symbolToParam(s: Symbol) = {
@@ -85,14 +92,9 @@ trait MethodExtractions extends Extractions with ImportAnalysis {
         }
 
         val ps = parameters.map(symbolToParam) :: Nil
-        object extracted1 {
-          def unapply(x: List[MethodExtractions.this.global.Tree]) = x match {
-            case (fn: Function) :: Nil => Some(fn)
-            case _ => None
-          }
-        }
+
         val returnTpt = extractionSource.selectedTopLevelTrees match {
-          case extracted1(fn) => TypeTree(fn.tpe)
+          case (fn: Function) :: Nil => TypeTree(fn.tpe)
           case _ => EmptyTree
         }
 
