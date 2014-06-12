@@ -88,7 +88,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """ becomes """
       object Demo {
-        /*(*/extracted()/*)*/
+        extracted()
 
         def extracted() = {
           /*(*/println(123)/*)*/
@@ -96,6 +96,23 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualSource
+  
+  @Test
+  def extractMethodWithoutParametersAndCreateEmptyParameterList2() = new FileSet {
+    """
+      object Demo {
+        val a = /*(*/1 * 2/*)*/
+      }
+    """ becomes """
+      object Demo {
+        val a = extracted()/*)*/
+
+        def extracted() = {
+          /*(*/1 * 2
+        }
+      }
+    """
+  }.performRefactoring(extract(1)).assertEqualSource
 
   @Test
   def extractImportedDependency() = new FileSet {
