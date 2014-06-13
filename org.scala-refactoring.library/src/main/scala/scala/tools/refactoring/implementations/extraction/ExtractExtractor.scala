@@ -37,14 +37,18 @@ trait ExtractorExtractions extends Extractions {
       }
 
       source.selectedTopLevelTrees.head match {
-        case cd: CaseDef => 
+        case cd: CaseDef =>
           validTargets.map(CasePatternExtraction(cd, source, _, name))
-        case pat => 
+        case pat =>
           validTargets.map(PatternExtraction(pat, source, _, name))
       }
     }
-    
+
     override val defaultAbstractionName = "Extracted"
+
+    override def createInsertionPosition(s: Selection): InsertionPosition =
+      super.createInsertionPosition(s) orElse
+        s.afterSelectionInPackage
   }
 
   /**
@@ -132,6 +136,7 @@ trait ExtractorExtractions extends Extractions {
 
     val displayName = extractionTarget.enclosing match {
       case t: Template => s"Extract Extractor to ${t.symbol.owner.decodedName}"
+      case p: PackageDef => s"Extract Extractor to ${p.name}"
       case _ => s"Extract Local Extractor"
     }
 
@@ -145,11 +150,17 @@ trait ExtractorExtractions extends Extractions {
     val boundNames = bindings.map(_.nameString).distinct
 
     val matchedResult = {
-      PlainText.Raw(s"Some(${boundNames.mkString(", ")})")
+      if (boundNames.isEmpty)
+        Literal(Constant(true))
+      else
+        PlainText.Raw(s"Some(${boundNames.mkString(", ")})")
     }
 
     val notMatchedResult = {
-      PlainText.Raw(s"None")
+      if (boundNames.isEmpty)
+        Literal(Constant(false))
+      else
+        PlainText.Raw(s"None")
     }
 
     def mkExtractor(unapplyBody: Tree) = {

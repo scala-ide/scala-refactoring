@@ -136,6 +136,21 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
           enclosing copy (body = insertInSeq(body, insertion, isBeforeEndOfSelection))
         }, approxPos)
     }
+    
+    /**
+     * Inserts trees in the enclosing package right after the selection.
+     */
+    lazy val afterSelectionInPackage: InsertionPosition = {
+      case enclosing @ PackageDef(_, stats) =>
+        val selPos = posOfSelectedTreeIn(enclosing)
+        val approxPos = selPos.withStart(selPos.endOrPoint).withEnd(selPos.endOrPoint + 1)
+
+        InsertionPoint(enclosing, { insertion =>
+          val pkg = enclosing copy (stats = insertInSeq(stats, insertion, isBeforeEndOfSelection))
+          pkg.pos = enclosing.pos
+          pkg
+        }, approxPos)
+    }
 
     /**
      * Inserts trees in the enclosing template right before the selection.

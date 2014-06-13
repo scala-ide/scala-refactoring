@@ -18,19 +18,19 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         1 match {
-	  	  case /*(*/i: Int/*)*/ => println(i)
+          case /*(*/i: Int/*)*/ => println(i)
         }
       }
     """ becomes
       """
       object Demo {
         1 match {
-	  	  case Extracted(i) => println(i)
+          case Extracted(i) => println(i)
         }
     
         object Extracted {
           def unapply(x: Int) = x match {
-    		case i => Some(i)
+            case i => Some(i)
             case _ => None
           }
         }
@@ -43,21 +43,21 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         List(1) match {
-	  	  case /*(*/List(i)/*)*/ =>
-	  		println(i)
+          case /*(*/List(i)/*)*/ =>
+            println(i)
         }
       }
     """ becomes
       """
       object Demo {
         List(1) match {
-	  	  case Extracted(i) =>
+          case Extracted(i) =>
             println(i)
         }
     
         object Extracted {
           def unapply(x: List[Int]) = x match {
-    		case List(i) => Some(i)
+            case List(i) => Some(i)
             case _ => None
           }
         }
@@ -70,21 +70,20 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         List(1) match {
-	  	  case /*(*/List(i)/*)*/ => 
-    
-	  		println(i)
+          case /*(*/List(i)/*)*/ => 
+            println(i)
         }
       }
     """ becomes
       """
       object Demo {
         List(1) match {
-	  	  case Extracted(i) => println(i)
+          case Extracted(i) => println(i)
         }
     
         object Extracted {
           def unapply(x: List[Int]) = x match {
-    		case List(i) => Some(i)
+            case List(i) => Some(i)
             case _ => None
           }
         }
@@ -97,19 +96,19 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         (1, 2) match {
-	  	  case /*(*/(x, y)/*)*/ => println(x*y)
+          case /*(*/(x, y)/*)*/ => println(x*y)
         }
       }
     """ becomes
       """
       object Demo {
         (1, 2) match {
-	  	  case Extracted(x, y) => println(x*y)
+          case Extracted(x, y) => println(x*y)
         }
     
         object Extracted {
           def unapply(x: (Int, Int)) = x match {
-    		case (x, y) => Some(x, y)
+            case (x, y) => Some(x, y)
             case _ => None
           }
         }
@@ -122,20 +121,20 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         1 match {
-	  	  case /*(*/1/*)*/ => println(1)
+          case /*(*/1/*)*/ => println(1)
         }
       }
     """ becomes
       """
       object Demo {
         1 match {
-	  	  case Extracted() => println(1)
+          case Extracted() => println(1)
         }
     
         object Extracted {
           def unapply(x: Int) = x match {
-    		case 1 => Some()
-            case _ => None
+            case 1 => true
+            case _ => false
           }
         }
       }
@@ -147,20 +146,20 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         1 match {
-	  	  case /*(*/1/*)*/ | 2 => println(1)
+          case /*(*/1/*)*/ | 2 => println(1)
         }
       }
     """ becomes
       """
       object Demo {
         1 match {
-	  	  case Extracted() | 2 => println(1)
+          case Extracted() | 2 => println(1)
         }
     
         object Extracted {
           def unapply(x: Int) = x match {
-    		case 1 => Some()
-            case _ => None
+            case 1 => true
+            case _ => false
           }
         }
       }
@@ -172,19 +171,19 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         1 match {
-	  	  case /*(*/i if i < 10/*)*/ => println(1)
+          case /*(*/i if i < 10/*)*/ => println(1)
         }
       }
     """ becomes
       """
       object Demo {
         1 match {
-	  	  case Extracted(i) => println(1)
+          case Extracted(i) => println(1)
         }
     
         object Extracted {
           def unapply(x: Int) = x match {
-    		case i if i < 10 => Some(i)
+            case i if i < 10 => Some(i)
             case _ => None
           }
         }
@@ -197,19 +196,19 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         "abc" match {
-	  	  case /*(*/s/*)*/ if s.length < 10 => println(s)
+          case /*(*/s/*)*/ if s.length < 10 => println(s)
         }
       }
     """ becomes
       """
       object Demo {
         "abc" match {
-	  	  case Extracted(s) if s.length < 10 => println(s)
+          case Extracted(s) if s.length < 10 => println(s)
         }
     
         object Extracted {
           def unapply(x: String) = x match {
-    		case s => Some(s)
+            case s => Some(s)
             case _ => None
           }
         }
@@ -222,19 +221,19 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         List(1, 2, 3) match {
-	  	  case /*(*/1 :: rest/*)*/ => println(rest)
+          case /*(*/1 :: rest/*)*/ => println(rest)
         }
       }
     """ becomes
       """
       object Demo {
         List(1, 2, 3) match {
-	  	  case Extracted(rest) => println(rest)
+          case Extracted(rest) => println(rest)
         }
     
         object Extracted {
           def unapply(x: List[Int]) = x match {
-    		case 1 :: rest => Some(rest)
+            case 1 :: rest => Some(rest)
             case _ => None
           }
         }
@@ -248,7 +247,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       case class TwoInts(a: Int, b: Int)
       object Demo {
         TwoInts(1, 2) match {
-	  	  case /*(*/TwoInts(a, b)/*)*/ if a * b == 42 => ()
+          case /*(*/TwoInts(a, b)/*)*/ if a * b == 42 => ()
         }
       }
     """ becomes
@@ -256,12 +255,12 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       case class TwoInts(a: Int, b: Int)
       object Demo {
         TwoInts(1, 2) match {
-	  	  case /*(*/Extracted(a, b)/*)*/ if a * b == 42 => ()
+          case /*(*/Extracted(a, b)/*)*/ if a * b == 42 => ()
         }
     
         object Extracted {
           def unapply(x: TwoInts) = x match {
-    		case TwoInts(a, b) => Some(a, b)
+            case TwoInts(a, b) => Some(a, b)
             case _ => None
           }
         }
@@ -274,23 +273,48 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Extracted {
         1 match {
-	  	  case /*(*/i: Int/*)*/ => println(i)
+          case /*(*/i: Int/*)*/ => println(i)
         }
       }
     """ becomes
       """
       object Extracted {
         1 match {
-	  	  case Extracted1(i) => println(i)
+          case Extracted1(i) => println(i)
         }
     
         object Extracted1 {
           def unapply(x: Int) = x match {
-    		case i => Some(i)
+            case i => Some(i)
             case _ => None
           }
         }
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractToPackage = new FileSet{
+    """
+      object O {
+        1 match {
+          case /*(*/i: Int/*)*/ => println(i)
+        }
+      }
+    """ becomes
+      """
+      object O {
+        1 match {
+          case Extracted(i) => println(i)
+        }
+      }
+
+      object Extracted {
+        def unapply(x: Int) = x match {
+          case i => Some(i)
+          case _ => None
+        }
+      }
+    """
+  }.performRefactoring(extract(1)).assertEqualTree
 }

@@ -91,15 +91,18 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
     /**
      * Inserts `t` at the targeted position.
      */
-    def insert(t: Tree): Transformation[Tree, Tree] =
-      topdown {
-        matchingChildren {
-          transform {
-            case e if e.samePosAndType(enclosing) =>
-              ip(e)(t)
+    def insert(t: Tree): Transformation[Tree, Tree] = {
+      val insert = transform {
+        case e if e.samePosAndType(enclosing) =>
+          ip(e)(t)
+      }
+      insert orElse
+        topdown {
+          matchingChildren {
+            insert
           }
         }
-      }
+    }
   }
 
   trait ExtractionCollector[+E <: Extraction] {
@@ -123,7 +126,7 @@ trait Extractions extends ScopeAnalysis with TransformableSelections with Insert
         Right(createExtractions(source, targets, name))
       }.getOrElse(Left("No extraction for current selection found."))
     }
-    
+
     def defaultAbstractionName = "extracted"
 
     /**
