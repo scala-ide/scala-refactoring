@@ -134,8 +134,8 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     
         object Extracted {
           def unapply(x: Int) = x match {
-    		case 1 => Some()
-            case _ => None
+    		    case 1 => true
+            case _ => false
           }
         }
       }
@@ -159,8 +159,8 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     
         object Extracted {
           def unapply(x: Int) = x match {
-    		case 1 => Some()
-            case _ => None
+    		    case 1 => true
+            case _ => false
           }
         }
       }

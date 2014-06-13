@@ -150,11 +150,17 @@ trait ExtractorExtractions extends Extractions {
     val boundNames = bindings.map(_.nameString).distinct
 
     val matchedResult = {
-      PlainText.Raw(s"Some(${boundNames.mkString(", ")})")
+      if (boundNames.isEmpty)
+        Literal(Constant(true))
+      else
+        PlainText.Raw(s"Some(${boundNames.mkString(", ")})")
     }
 
     val notMatchedResult = {
-      PlainText.Raw(s"None")
+      if (boundNames.isEmpty)
+        Literal(Constant(false))
+      else
+        PlainText.Raw(s"None")
     }
 
     def mkExtractor(unapplyBody: Tree) = {
