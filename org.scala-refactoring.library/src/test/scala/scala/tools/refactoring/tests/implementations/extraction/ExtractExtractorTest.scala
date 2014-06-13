@@ -293,4 +293,29 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
+  
+  @Test
+  def extractToPackage = new FileSet{
+    """
+      object O {
+        1 match {
+	  	  case /*(*/i: Int/*)*/ => println(i)
+        }
+      }
+    """ becomes
+      """
+      object O {
+        1 match {
+	  	  case Extracted(i) => println(i)
+        }
+      }
+
+		  object Extracted {
+        def unapply(x: Int) = x match {
+    		  case i => Some(i)
+          case _ => None
+        }
+		  }
+    """
+  }.performRefactoring(extract(1)).assertEqualTree
 }
