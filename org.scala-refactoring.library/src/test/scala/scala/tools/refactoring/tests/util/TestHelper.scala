@@ -116,7 +116,8 @@ trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProv
   def selection(refactoring: Selections with InteractiveScalaCompiler, project: FileSet) = {
 
     val files = project.sources map (x => addToCompiler(project.fileName(x), x))
-    val trees: List[refactoring.global.Tree] = files map (refactoring.global.unitOfFile(_).body)
+    implicit def unsafeGet(or: Option[global.RichCompilationUnit]): global.RichCompilationUnit = or.get
+    val trees: List[refactoring.global.Tree] = files map (refactoring.global.unitOfFile.get(_).body)
 
     (project.sources zip trees flatMap {
       case (src, tree) =>

@@ -48,7 +48,8 @@ class CompilerInstance {
       override def printMessage(pos: Position, msg: String) {
         // The compiler does not seem to store compilation errors in the
         // Compilation Unit's problems field, so we do this here:
-        val cu = CompilerInstance.compiler.unitOfFile(pos.source.file)
+        implicit def unsafeGet(or: Option[CompilerInstance.compiler.RichCompilationUnit]): CompilerInstance.compiler.RichCompilationUnit = or.get
+        val cu = CompilerInstance.compiler.unitOfFile.get(pos.source.file)
         cu.problems.append(new Problem(pos, msg, 0))
       }
     })
@@ -116,8 +117,11 @@ trait CompilerProvider extends TreeCreationMethods {
   val global = CompilerInstance.compiler
 
   private[refactoring] def resetPresentationCompiler() = global.ask { () =>
+    import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
-    global.unitOfFile.values.foreach { cu =>
+    implicit def toScala(h: java.util.Collection[CompilerProvider.this.global.RichCompilationUnit]): Iterable[CompilerProvider.this.global.RichCompilationUnit] = h.asScala
+    val units: Iterable[CompilerProvider.this.global.RichCompilationUnit] = global.unitOfFile.values
+    units foreach { cu =>
       global.removeUnitOf(cu.source)
       assert(global.getUnitOf(cu.source).isEmpty)
     }

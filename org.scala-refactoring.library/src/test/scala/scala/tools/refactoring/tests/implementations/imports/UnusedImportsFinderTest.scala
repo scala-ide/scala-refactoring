@@ -18,7 +18,8 @@ class UnusedImportsFinderTest extends TestHelper {
 
         val global = outer.global
 
-        val unit = global.unitOfFile(addToCompiler(randomFileName(), src))
+       implicit def unsafeGet(or: Option[global.RichCompilationUnit]): global.RichCompilationUnit = or.get
+        val unit = global.unitOfFile.get(addToCompiler(randomFileName(), src))
 
         def compilationUnitOfFile(f: AbstractFile) = Some(unit)
 

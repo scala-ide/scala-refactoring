@@ -26,13 +26,14 @@ trait TestRefactoring extends TestHelper {
 
       val global = TestRefactoring.this.global
 
+      implicit def unsafeGet(or: Option[global.RichCompilationUnit]): global.RichCompilationUnit = or.get
       lazy val trees = {
-        project.sources map (x => addToCompiler(project.fileName(x), x)) map (global.unitOfFile(_).body)
+        project.sources map (x => addToCompiler(project.fileName(x), x)) map (global.unitOfFile.get(_).body)
       }
 
       override val index = global.ask { () =>
         val cuIndexes = trees map (_.pos.source.file) map { file =>
-          global.unitOfFile(file).body
+          global.unitOfFile.get(file).body
         } map CompilationUnitIndex.apply
         GlobalIndex(cuIndexes)
       }

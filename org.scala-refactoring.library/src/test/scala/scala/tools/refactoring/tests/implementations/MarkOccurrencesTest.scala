@@ -21,8 +21,9 @@ class MarkOccurrencesTest extends TestHelper {
       val global = outer.global
 
       val index = {
+        implicit def unsafeGet(or: Option[global.RichCompilationUnit]): global.RichCompilationUnit = or.get
         val file = tree.pos.source.file
-        val t = global.unitOfFile(file).body
+        val t = global.unitOfFile.get(file).body
         global.ask { () =>
           GlobalIndex(CompilationUnitIndex(t) :: Nil)
         }
