@@ -57,6 +57,7 @@ import util._
     classOf[PrependOrDropScalaPackageKeepTest],
     classOf[PrettyPrinterTest],
     classOf[RenameTest],
+    classOf[ReusingPrinterTest],
     classOf[ScopeAnalysisTest],
     classOf[SelectionDependenciesTest],
     classOf[SelectionExpansionsTest],
