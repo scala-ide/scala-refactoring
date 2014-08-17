@@ -917,7 +917,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         p(tpt) ++ p(rhs) ++ r
       } else {
         val mods_ = pp(modsAndName, separator = Requisite.Blank)
-        l ++ mods_ ++ p(tpt) ++ p(rhs) ++ r
+        val resultType = p(tpt, before = Requisite.allowSurroundingWhitespace(":", ": "))
+        val body = p(rhs)
+        val noEqualNeeded = body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
+
+        if (noEqualNeeded)
+          l ++ mods_ ++ resultType ++ body ++ r
+        else
+          l ++ mods_ ++ resultType ++ Requisite.anywhere("=", " = ") ++ body ++ r
       }
     }
 

@@ -367,6 +367,10 @@ trait LayoutHelper {
               case _ => split(layout)
             }
 
+          case (l, ValOrDefDef(_, _, tpt: TypeTree, rhs), r)
+              if r.samePos(rhs) && layout.contains("=") && !l.isInstanceOf[TypeTree] && tpt.original != null =>
+            ("", "", "Return type after ValOrDefDef")
+
           case (l, parent: ValOrDefDef, r) if r.samePos(parent.rhs) && layout.contains("=") =>
             val EndOfParameterList = """(?ms)(.*?)\)\s*=[ ]?(.*)""".r
             layout match {
