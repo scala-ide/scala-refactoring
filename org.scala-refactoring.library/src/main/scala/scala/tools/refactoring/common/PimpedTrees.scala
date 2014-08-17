@@ -1214,6 +1214,15 @@ trait PimpedTrees {
     }
   }
 
+  /** Copy of [[scala.reflect.internal.Trees.ValOrDefDef]] of 2.11 to support 2.10. */
+  object ValOrDefDef {
+    def unapply(tree: Tree): Option[(Modifiers, TermName, Tree, Tree)] = tree match {
+      case ValDef(mods, name, tpt, rhs)       => Some((mods, name, tpt, rhs))
+      case DefDef(mods, name, _, _, tpt, rhs) => Some((mods, name, tpt, rhs))
+      case _                                  => None
+    }
+  }
+
   /**
    * A SourceLayoutTree can be used to insert arbitrary text into the code,
    * for example, blank lines.
