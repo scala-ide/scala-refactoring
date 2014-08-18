@@ -882,17 +882,61 @@ trait PimpedTrees {
    * object.
    */
   object ModifierTree {
-    def unapply(m: global.Modifiers) = {
-      Some(m.positions.toList map {
+    def unapply(m: global.Modifiers): Option[List[ModifierTree]] = {
+      val flagSorter = Ordering.by((pair: (Long, Position)) => flagPosition(pair._1))
+      val sortedMods = m.positions.toList.sorted(flagSorter)
+
+      Some(sortedMods map {
         // hack to get rid of override modifiers
         // couldn't figure out how to remove a flag from the positions map (michael)
-        case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 => ModifierTree(0)
+        case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 =>
+          ModifierTree(0)
         case (flag, pos) if pos.isRange =>
           ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
         case (flag, _) =>
           ModifierTree(flag)
       })
     }
+    import Flags._
+
+    /**
+     * Defines an ordering for flags. A lower value means that the flag shoud be
+     * shown at an earlier position.
+     *
+     * Returns `0` if to a given value no ordering could be found.
+     */
+    private def flagPosition(flag: Long): Int = flag match {
+      case OVERRIDE    => 1
+      case PRIVATE     => 3
+      case PROTECTED   => 3
+      case FINAL       => 5
+      case ABSTRACT    => 6
+      case SEALED      => 8
+      case IMPLICIT    => 10
+      case CASE        => 15
+      case LAZY        => 15
+      case TRAIT       => 20
+      case METHOD      => 20
+      case Tokens.VAL  => 20
+      case Tokens.VAR  => 20
+      case Tokens.TYPE => 20
+      case Tokens.DEF  => 20
+      case _           => 0
+    }
+  }
+
+  implicit class RichModifiers(mods: global.Modifiers) {
+
+    /**
+     * Returns a copy of the modifiers with an attached flag whose position
+     * is `NoPosition`. Usage:
+     * {{{
+     * val newMods = mods.withFlag(Flag.OVERRIDE).withFlag(Flag.FINAL)
+     * }}}
+     * Note: Combining flags with one `withFlag` call does not work.
+     */
+    def withFlag(flag: Long): global.Modifiers =
+      mods.copy(flags = mods.flags | flag) setPositions mods.positions + (flag -> NoPosition)
   }
 
   /**
