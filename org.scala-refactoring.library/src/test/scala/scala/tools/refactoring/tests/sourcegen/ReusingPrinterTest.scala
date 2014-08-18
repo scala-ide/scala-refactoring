@@ -146,4 +146,57 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
           d.copy(mods = d.mods.withFlag(Flag.FINAL).withFlag(Flag.CASE).withFlag(Flag.PRIVATE)) replaces d
       }
     }}
+
+  @Test
+  def add_modifier_to_def_without_return_type() = """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      def meth
+    }
+    """ becomes """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override def meth
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: DefDef =>
+          d.symbol.isOverridingSymbol && !d.symbol.isOverride
+      } &>
+      transform {
+        case d: DefDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
+      }
+    }}
+
+  @Test
+  def add_modifier_to_val_without_return_type() = """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      val meth
+    }
+    """ becomes """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override val meth
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: ValDef =>
+          val getter = d.symbol.getter(d.symbol.owner)
+          getter.isOverridingSymbol && !getter.isOverride
+      } &>
+      transform {
+        case d: ValDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
+      }
+    }}
 }

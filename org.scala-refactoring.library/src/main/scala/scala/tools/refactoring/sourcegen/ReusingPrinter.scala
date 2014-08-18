@@ -977,7 +977,19 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
 
       val body = p(rhs)
-      val resultType = p(tpt, before = Requisite.allowSurroundingWhitespace(":", ": "))
+
+      def existsTptInFile = tpt match {
+        case tpt: TypeTree =>
+          val textInFile = betweenStartAndEnd(tpt).asText
+          textInFile == tpt.toString() || textInFile == tpt.original.toString()
+        case _ => false
+      }
+
+      val resultType =
+        if (body == EmptyFragment && !existsTptInFile)
+          EmptyFragment
+        else
+          p(tpt, before = Requisite.allowSurroundingWhitespace(":", ": "))
 
       def hasEqualInSource = {
         val originalDefDef = orig(tree)
