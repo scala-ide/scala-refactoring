@@ -83,4 +83,67 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
         d.copy(tpt = newTpt) replaces d
     }}}
 
+  @Test
+  def add_override_flag() = """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override def meth = 0
+    }
+    """ becomes """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override def meth = 0
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: DefDef =>
+          d.symbol.isOverridingSymbol && !d.symbol.isOverride
+      } &>
+      transform {
+        case d: DefDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
+      }
+    }}
+
+  @Test
+  def add_override_protected_abstract_flag() = """
+    trait T {
+      protected def meth: Int = 0
+    }
+    trait TT extends T {
+      def meth = super.meth + 0
+    }
+    """ becomes """
+    trait T {
+      protected def meth: Int = 0
+    }
+    trait TT extends T {
+      override protected abstract def meth = super.meth + 0
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: DefDef =>
+          d.symbol.isOverridingSymbol && !d.symbol.isOverride
+      } &>
+      transform {
+        case d: DefDef =>
+          d.copy(mods = d.mods.withFlag(Flag.ABSTRACT).withFlag(Flag.OVERRIDE).withFlag(Flag.PROTECTED)) replaces d
+      }
+    }}
+
+  @Test
+  def add_final_case_flag() = """
+    class C(i: Int)
+    """ becomes """
+    private final case class C(i: Int)
+    """ after topdown { matchingChildren {
+      transform {
+        case d: ClassDef =>
+          d.copy(mods = d.mods.withFlag(Flag.FINAL).withFlag(Flag.CASE).withFlag(Flag.PRIVATE)) replaces d
+      }
+    }}
 }
