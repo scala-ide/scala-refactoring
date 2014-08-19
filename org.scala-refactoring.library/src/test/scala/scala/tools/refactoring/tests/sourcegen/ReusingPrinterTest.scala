@@ -26,7 +26,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     def printsTo(expectedOutput: String): Unit = {
       val sourceFile = new BatchSourceFile("noname", expectedOutput)
       val expected = stripWhitespacePreservers(expectedOutput).trim()
-      val actual = generate(original, sourceFile = Some(sourceFile)).asText.trim()
+      val actual = ask { () => generate(original, sourceFile = Some(sourceFile)).asText.trim() }
       if (actual != expected)
         throw new ComparisonFailure("", expected, actual)
     }
@@ -36,7 +36,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
   }
   final implicit class OrToDieAfter(input: (String, String)) {
     def after(trans: Transformation[Tree, Tree]): Unit = {
-      val t = trans(treeFrom(input._1))
+      val t = ask { () => trans(treeFrom(input._1)) }
       require(t.isDefined, "transformation was not successful")
       t foreach (_.printsTo(input._2))
     }
@@ -144,6 +144,59 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
       transform {
         case d: ClassDef =>
           d.copy(mods = d.mods.withFlag(Flag.FINAL).withFlag(Flag.CASE).withFlag(Flag.PRIVATE)) replaces d
+      }
+    }}
+
+  @Test
+  def add_modifier_to_def_without_return_type() = """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      def meth
+    }
+    """ becomes """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override def meth
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: DefDef =>
+          d.symbol.isOverridingSymbol && !d.symbol.isOverride
+      } &>
+      transform {
+        case d: DefDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
+      }
+    }}
+
+  @Test
+  def add_modifier_to_val_without_return_type() = """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      val meth
+    }
+    """ becomes """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override val meth
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: ValDef =>
+          val getter = d.symbol.getter(d.symbol.owner)
+          getter.isOverridingSymbol && !getter.isOverride
+      } &>
+      transform {
+        case d: ValDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
       }
     }}
 }
