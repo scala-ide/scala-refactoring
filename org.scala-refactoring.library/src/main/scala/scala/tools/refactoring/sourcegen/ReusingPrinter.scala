@@ -980,8 +980,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       def existsTptInFile = tpt match {
         case tpt: TypeTree =>
-          val textInFile = betweenStartAndEnd(tpt).asText
-          textInFile == tpt.toString() || textInFile == tpt.original.toString()
+          lazy val textInFile = betweenStartAndEnd(tpt).asText
+          tpt.pos.isRange && (textInFile == tpt.toString() || textInFile == tpt.original.toString())
         case _ => false
       }
 
