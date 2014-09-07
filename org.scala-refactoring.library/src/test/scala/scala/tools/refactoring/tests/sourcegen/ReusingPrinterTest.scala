@@ -2,6 +2,7 @@ package scala.tools.refactoring.tests
 package sourcegen
 
 import scala.reflect.internal.util.BatchSourceFile
+import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.refactoring.common.SilentTracing
 import scala.tools.refactoring.sourcegen.EmptyFragment
 import scala.tools.refactoring.sourcegen.Fragment
@@ -106,6 +107,32 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
       transform {
         case d: DefDef =>
           d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
+      }
+    }}
+
+  @Test
+  def add_override_final_flags_to_lazy_val() = """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      lazy val meth = 0
+    }
+    """ becomes """
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override final lazy val meth = 0
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: DefDef =>
+          d.symbol.isLazy
+      } &>
+      transform {
+        case d: DefDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE).withFlag(Flag.FINAL).withFlag(Flag.LAZY).withFlag(Tokens.VAL)) replaces d
       }
     }}
 

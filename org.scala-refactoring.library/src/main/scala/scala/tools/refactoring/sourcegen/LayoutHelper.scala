@@ -151,6 +151,9 @@ trait LayoutHelper {
       case (p: ValOrDefDef, c: ModifierTree) =>
         NoLayout → NoLayout
 
+      case (p: ValOrDefDef, c) if p.symbol.isLazy =>
+        NoLayout → NoLayout
+
       case (p: ValOrDefDef, c) =>
         layout(p.pos.start, p.namePosition.start) → NoLayout
 
