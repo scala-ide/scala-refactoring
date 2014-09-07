@@ -89,7 +89,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
       def meth: Int
     }
     trait TT extends T {
-      override def meth = 0
+      def meth = 0
     }
     """ becomes """
     trait T {
