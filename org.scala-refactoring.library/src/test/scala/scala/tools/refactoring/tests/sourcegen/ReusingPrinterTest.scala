@@ -2,6 +2,7 @@ package scala.tools.refactoring.tests
 package sourcegen
 
 import scala.reflect.internal.util.BatchSourceFile
+import scala.tools.nsc.ast.parser.Tokens
 import scala.tools.refactoring.common.SilentTracing
 import scala.tools.refactoring.sourcegen.EmptyFragment
 import scala.tools.refactoring.sourcegen.Fragment
@@ -44,9 +45,11 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   @Test
   def add_return_type_to_def() = """
+    package add_return_type_to_def
     object X {
       def value = new java.io.File("")
     }""" becomes """
+    package add_return_type_to_def
     object X {
       def value: java.io.File = new java.io.File("")
     }""" after topdown { matchingChildren { transform {
@@ -57,9 +60,11 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   @Test
   def add_return_type_to_val() = """
+    package add_return_type_to_val
     object X {
       val value = new java.io.File("")
     }""" becomes """
+    package add_return_type_to_val
     object X {
       val value: java.io.File = new java.io.File("")
     }
@@ -71,9 +76,11 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   @Test
   def add_return_type_to_var() = """
+    package add_return_type_to_var
     object X {
       var variable = new java.io.File("")
     }""" becomes """
+    package add_return_type_to_var
     object X {
       var variable: java.io.File = new java.io.File("")
     }
@@ -85,13 +92,15 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   @Test
   def add_override_flag() = """
+    package add_override_flag
     trait T {
       def meth: Int
     }
     trait TT extends T {
-      override def meth = 0
+      def meth = 0
     }
     """ becomes """
+    package add_override_flag
     trait T {
       def meth: Int
     }
@@ -110,7 +119,36 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     }}
 
   @Test
+  def add_override_final_flags_to_lazy_val() = """
+    package add_override_final_flags_to_lazy_val
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      lazy val meth = 0
+    }
+    """ becomes """
+    package add_override_final_flags_to_lazy_val
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override final lazy val meth = 0
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: DefDef =>
+          d.symbol.isLazy
+      } &>
+      transform {
+        case d: DefDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE).withFlag(Flag.FINAL).withFlag(Flag.LAZY).withFlag(Tokens.VAL)) replaces d
+      }
+    }}
+
+  @Test
   def add_override_protected_abstract_flag() = """
+    package add_override_protected_abstract_flag
     trait T {
       protected def meth: Int = 0
     }
@@ -118,6 +156,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
       def meth = super.meth + 0
     }
     """ becomes """
+    package add_override_protected_abstract_flag
     trait T {
       protected def meth: Int = 0
     }
@@ -137,8 +176,10 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   @Test
   def add_final_case_flag() = """
+    package add_final_case_flag
     class C(i: Int)
     """ becomes """
+    package add_final_case_flag
     private final case class C(i: Int)
     """ after topdown { matchingChildren {
       transform {
@@ -149,6 +190,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   @Test
   def add_modifier_to_def_without_return_type() = """
+    package add_modifier_to_def_without_return_type
     trait T {
       def meth: Int
     }
@@ -156,6 +198,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
       def meth
     }
     """ becomes """
+    package add_modifier_to_def_without_return_type
     trait T {
       def meth: Int
     }
@@ -175,6 +218,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   @Test
   def add_modifier_to_val_without_return_type() = """
+    package add_modifier_to_val_without_return_type
     trait T {
       def meth: Int
     }
@@ -182,6 +226,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
       val meth
     }
     """ becomes """
+    package add_modifier_to_val_without_return_type
     trait T {
       def meth: Int
     }
