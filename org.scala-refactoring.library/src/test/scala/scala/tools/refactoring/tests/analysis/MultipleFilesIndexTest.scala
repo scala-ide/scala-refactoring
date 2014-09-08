@@ -23,8 +23,8 @@ class MultipleFilesIndexTest extends TestHelper with GlobalIndexes with FreshCom
   }
 
   def buildIndex(pro: FileSet) = {
-
-    val trees = pro.sources map (x => addToCompiler(pro.fileName(x), x)) map (global.unitOfFile(_).body)
+    implicit def unsafeGet(or: Option[global.RichCompilationUnit]): global.RichCompilationUnit = or.get
+    val trees = pro.sources map (x => addToCompiler(pro.fileName(x), x)) map (global.unitOfFile.get(_).body)
 
     val cuIndexes = global.ask { () =>
       trees map CompilationUnitIndex.apply
