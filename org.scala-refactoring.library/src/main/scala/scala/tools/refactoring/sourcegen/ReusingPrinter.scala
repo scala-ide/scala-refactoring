@@ -202,22 +202,22 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
     override def CaseDef(tree: CaseDef, pat: Tree, guard: Tree, body: Tree)(implicit ctx: PrintingContext) = {
       val arrowReq = new Requisite {
-        def isRequired(l: Layout, r: Layout) = {
+        override def isRequired(l: Layout, r: Layout) = {
           !(l.contains("=>") || r.contains("=>") || p(body).asText.startsWith("=>"))
         }
 
         // It's just nice to have a whitespace before and after the arrow
-        def getLayout = Layout(" => ")
+        override def getLayout = Layout(" => ")
       }
 
       val ifReq = new Requisite {
-        def isRequired(l: Layout, r: Layout) = {
+        override def isRequired(l: Layout, r: Layout) = {
           !(l.contains("if") || r.contains("if"))
         }
 
         // Leading and trailing whitespace is required in some cases!
         // e.g. `case i if i > 0 => ???` becomes `case iifi > 0 => ???` otherwise
-        def getLayout = Layout(" if ")
+        override def getLayout = Layout(" if ")
       }
 
       body match {
