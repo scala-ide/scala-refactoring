@@ -921,10 +921,12 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         val body = p(rhs)
         val noEqualNeeded = body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
 
+        def openingBrace = keepOpeningBrace(tree, tpt, rhs)
+
         if (noEqualNeeded)
           l ++ mods_ ++ resultType ++ body ++ r
         else
-          l ++ mods_ ++ resultType ++ Requisite.anywhere("=", " = ") ++ body ++ r
+          l ++ mods_ ++ resultType ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
       }
     }
 
@@ -1004,11 +1006,24 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
       }
 
+      def openingBrace = keepOpeningBrace(tree, tpt, rhs)
+
       if (noEqualNeeded && !hasEqualInSource) {
         l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ body ++ r
       } else {
-        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ Requisite.anywhere("=", " = ") ++ body ++ r
+        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
       }
+    }
+
+    private def keepOpeningBrace(tree: Tree, tpt: Tree, rhs: Tree): String = tpt match {
+      case tpt: TypeTree if tpt.original != null && tree.pos != NoPosition && rhs.pos != NoPosition =>
+        val OpeningBrace = "(?s).*(\\{.*)".r
+        Layout(tree.pos.source, tree.pos.point, rhs.pos.start).asText match {
+          case OpeningBrace(brace) => brace
+          case _ => ""
+        }
+      case _ =>
+        ""
     }
   }
 

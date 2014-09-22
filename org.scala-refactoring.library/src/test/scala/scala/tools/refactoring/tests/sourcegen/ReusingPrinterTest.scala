@@ -92,6 +92,94 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     }}}
 
   @Test
+  def add_return_type_to_val_with_single_expression_in_braces() = """
+    package add_return_type_to_val_with_single_expression_in_braces
+    object X {
+      val foo = {
+        0
+      }
+    }
+    """ becomes """
+    package add_return_type_to_val_with_single_expression_in_braces
+    object X {
+      val foo: Int = {
+        0
+      }
+    }
+    """ after topdown { matchingChildren { transform {
+      case d @ ValDef(_, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
+  def add_return_type_to_val_with_multiple_expressions_in_braces() = """
+    package add_return_type_to_val_with_multiple_expressions_in_braces
+    object X {
+      val foo = {
+        val a = 0
+        a
+      }
+    }
+    """ becomes """
+    package add_return_type_to_val_with_multiple_expressions_in_braces
+    object X {
+      val foo: Int = {
+        val a: Int = 0
+        a
+      }
+    }
+    """ after topdown { matchingChildren { transform {
+      case d @ ValDef(_, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
+  def add_return_type_to_def_with_single_expression_in_braces() = """
+    package add_return_type_to_def_with_single_expression_in_braces
+    object X {
+      def foo = {
+        0
+      }
+    }
+    """ becomes """
+    package add_return_type_to_def_with_single_expression_in_braces
+    object X {
+      def foo: Int = {
+        0
+      }
+    }
+    """ after topdown { matchingChildren { transform {
+      case d @ DefDef(_, _, _, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
+  def add_return_type_to_def_with_multiple_expressions_in_braces() = """
+    package add_return_type_to_def_with_multiple_expressions_in_braces
+    object X {
+      def foo = {
+        def a = 0
+        a
+      }
+    }
+    """ becomes """
+    package add_return_type_to_def_with_multiple_expressions_in_braces
+    object X {
+      def foo: Int = {
+        def a: Int = 0
+        a
+      }
+    }
+    """ after topdown { matchingChildren { transform {
+      case d @ DefDef(_, _, _, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
   def add_override_flag() = """
     package add_override_flag
     trait T {
