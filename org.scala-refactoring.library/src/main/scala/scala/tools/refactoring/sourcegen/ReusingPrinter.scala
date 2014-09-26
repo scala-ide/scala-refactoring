@@ -987,8 +987,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case _ => false
       }
 
+      val isAbstract = body == EmptyFragment
       val resultType =
-        if (body == EmptyFragment && !existsTptInFile)
+        if (isAbstract && !existsTptInFile)
           EmptyFragment
         else
           p(tpt, before = Requisite.allowSurroundingWhitespace(":", ": "))
@@ -1002,19 +1003,30 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         }
       }
 
-      val noEqualNeeded = {
-        body == EmptyFragment || rhs.tpe == null || (rhs.tpe != null && rhs.tpe.toString == "Unit")
-      }
-
-      def openingBrace = keepOpeningBrace(tree, tpt, rhs)
+      val noEqualNeeded = resultType == EmptyFragment || isAbstract
 
       if (noEqualNeeded && !hasEqualInSource) {
         l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ body ++ r
       } else {
-        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
+        val openingBrace = keepOpeningBrace(tree, tpt, rhs)
+        // In case a Unit return type is added to a method like `def f {}`, we
+        // need to remove the whitespace between name and rhs, otherwise the
+        // result would be `def f : Unit = {}`.
+        val modsAndName2 =
+          if (modsAndName.trailing.asText.trim.isEmpty)
+            Fragment(modsAndName.leading, modsAndName.center, NoLayout)
+          else
+            modsAndName
+
+        l ++ modsAndName2 ++ typeParameters ++ parameters ++ resultType ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
       }
     }
 
+    /**
+     * In case a definition like `def f = {0}` contains a single expression in
+     * braces, we need to find the braces manually because they are no part of
+     * the tree.
+     */
     private def keepOpeningBrace(tree: Tree, tpt: Tree, rhs: Tree): String = tpt match {
       case tpt: TypeTree if tpt.original != null && tree.pos != NoPosition && rhs.pos != NoPosition =>
         val OpeningBrace = "(?s).*(\\{.*)".r

@@ -180,6 +180,31 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     }}}
 
   @Test
+  def add_Unit_return_type_to_def_with_single_expression_in_braces() = """
+    package add_Unit_return_type_to_def_with_single_expression_in_braces
+    object X {
+      def foo {
+        println
+      }
+      def bar {}
+      def baz = ()
+    }
+    """ becomes """
+    package add_Unit_return_type_to_def_with_single_expression_in_braces
+    object X {
+      def foo: Unit = {
+        println
+      }
+      def bar: Unit = {}
+      def baz: Unit = ()
+    }
+    """ after topdown { matchingChildren { transform {
+      case d @ DefDef(_, _, _, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
   def add_override_flag() = """
     package add_override_flag
     trait T {
