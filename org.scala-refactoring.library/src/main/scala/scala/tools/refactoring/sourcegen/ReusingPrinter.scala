@@ -1005,8 +1005,13 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       val noEqualNeeded = resultType == EmptyFragment || isAbstract
 
+      val resultType2 = {
+        def addLeadingSpace = name.isOperatorName || name.endsWith('_')
+        if (resultType != EmptyFragment && addLeadingSpace) Layout(" ") ++ resultType else resultType
+      }
+
       if (noEqualNeeded && !hasEqualInSource) {
-        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ body ++ r
+        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType2 ++ body ++ r
       } else {
         val openingBrace = keepOpeningBrace(tree, tpt, rhs)
         // In case a Unit return type is added to a method like `def f {}`, we
@@ -1018,7 +1023,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           else
             modsAndName
 
-        l ++ modsAndName2 ++ typeParameters ++ parameters ++ resultType ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
+        l ++ modsAndName2 ++ typeParameters ++ parameters ++ resultType2 ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
       }
     }
 

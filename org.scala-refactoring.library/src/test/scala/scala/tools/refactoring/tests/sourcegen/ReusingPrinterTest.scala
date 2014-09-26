@@ -205,6 +205,25 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     }}}
 
   @Test
+  def add_space_before_return_type_of_def_when_it_ends_with_special_sign() = """
+    package add_space_before_return_type_of_def_when_it_ends_with_special_sign
+    object X {
+      def foo_ = 0
+      def ++ = 0
+    }
+    """ becomes """
+    package add_space_before_return_type_of_def_when_it_ends_with_special_sign
+    object X {
+      def foo_ : Int = 0
+      def ++ : Int = 0
+    }
+    """ after topdown { matchingChildren { transform {
+      case d @ DefDef(_, _, _, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
   def add_override_flag() = """
     package add_override_flag
     trait T {
