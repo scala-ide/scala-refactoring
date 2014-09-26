@@ -224,6 +224,23 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     }}}
 
   @Test
+  def add_type_keyword_to_return_type_when_it_represents_an_object() = """
+    package add_type_keyword_to_return_type_when_it_represents_an_object
+    object X {
+      def o = X
+    }
+    """ becomes """
+    package add_type_keyword_to_return_type_when_it_represents_an_object
+    object X {
+      def o: X.type = X
+    }
+    """ after topdown { matchingChildren { transform {
+      case d @ DefDef(_, _, _, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
   def add_override_flag() = """
     package add_override_flag
     trait T {

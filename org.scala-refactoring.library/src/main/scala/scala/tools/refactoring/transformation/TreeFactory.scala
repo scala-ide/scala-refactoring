@@ -64,7 +64,9 @@ trait TreeFactory {
 
   def mkReturn(s: List[Symbol]): Tree = s match {
     case Nil => EmptyTree
-    case x :: Nil => Ident(x) setType x.tpe
+    case x :: Nil =>
+      val ident = if (x.isModuleClass) Ident(newTermName(s"${x.name}.type")) else Ident(x)
+      ident setType x.tpe
     case xs =>
       typer.typed(gen.mkTuple(xs map (s => Ident(s) setType s.tpe))) match {
         case t: Apply =>
@@ -114,7 +116,7 @@ trait TreeFactory {
     }
 
     if (mods != NoMods) valOrVarDef setSymbol NoSymbol.newValue(name, newFlags = mods.flags) else valOrVarDef
-  }  
+  }
 
   def mkParam(name: String, tpe: Type, defaultVal: Tree = EmptyTree): ValDef = {
     ValDef(Modifiers(Flags.PARAM), newTermName(name), TypeTree(tpe), defaultVal)
