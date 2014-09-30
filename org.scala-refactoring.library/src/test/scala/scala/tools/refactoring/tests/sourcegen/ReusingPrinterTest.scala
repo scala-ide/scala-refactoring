@@ -24,10 +24,11 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
   }
 
   final implicit class ImplicitTreeHelper(original: Tree) {
+    /** Needs to be executed on the PC thread. */
     def printsTo(expectedOutput: String): Unit = {
       val sourceFile = new BatchSourceFile("noname", expectedOutput)
       val expected = stripWhitespacePreservers(expectedOutput).trim()
-      val actual = ask { () => generate(original, sourceFile = Some(sourceFile)).asText.trim() }
+      val actual = generate(original, sourceFile = Some(sourceFile)).asText.trim()
       if (actual != expected)
         throw new ComparisonFailure("", expected, actual)
     }
@@ -36,8 +37,8 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     def becomes(expectedOutput: String) = input -> expectedOutput
   }
   final implicit class OrToDieAfter(input: (String, String)) {
-    def after(trans: Transformation[Tree, Tree]): Unit = {
-      val t = ask { () => trans(treeFrom(input._1)) }
+    def after(trans: Transformation[Tree, Tree]): Unit = ask { () =>
+      val t = trans(treeFrom(input._1))
       require(t.isDefined, "transformation was not successful")
       t foreach (_.printsTo(input._2))
     }
