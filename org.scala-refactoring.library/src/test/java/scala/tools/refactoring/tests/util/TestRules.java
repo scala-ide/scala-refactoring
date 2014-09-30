@@ -8,4 +8,7 @@ public abstract class TestRules {
 
   @Rule
   public final ScalaVersionTestRule rule1 = new ScalaVersionTestRule();
+
+  @Rule
+  public final ExceptionWrapper rule2 = new ExceptionWrapper();
 }
