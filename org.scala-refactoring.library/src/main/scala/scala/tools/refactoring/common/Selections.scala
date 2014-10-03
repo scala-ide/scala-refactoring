@@ -72,12 +72,12 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     /**
      * Returns true if the given Tree is fully contained in the selection.
      */
-    def contains(t: Tree) = isPosContainedIn(t.pos, pos)
+    def contains(t: Tree): Boolean = isPosContainedIn(t.pos, pos)
 
     /**
      * Returns true if the given Tree fully contains this selection.
      */
-    def isContainedIn(t: Tree) = isPosContainedIn(pos, t.pos)
+    def isContainedIn(t: Tree): Boolean = isPosContainedIn(pos, t.pos)
 
     /**
      * Tries to find the selected SymTree: first it is checked if the selection
@@ -232,7 +232,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
 
       // some trees have to be selected as a whole if more than one child
       // is selected. For example if a method parameter and the body is selected,
-      // we select the DefDef as a whole to get a complete selection. 
+      // we select the DefDef as a whole to get a complete selection.
       def expandToParentIfRequired(s: Selection) =
         s.enclosingTree match {
           case t @ (_: DefDef | _: Function | _: If | _: Match | _: Try | _: CaseDef) =>
@@ -287,9 +287,9 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       }
       val outer = this
       new Selection {
-        val root = outer.root
-        val file = outer.file
-        val pos = p
+        override val root = outer.root
+        override val file = outer.file
+        override val pos = p
       }
     }
 
@@ -396,7 +396,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     }
   }
 
-  def skipForExpressionTrees(t: Tree) = t match {
+  def skipForExpressionTrees(t: Tree): Tree = t match {
     case t @ TypeApply(fun: Select, args) if fun.pos.eq(t.pos) && fun.pos.eq(fun.qualifier.pos) =>
       fun.qualifier
     case t @ Select(qualifier, nme) if t.pos.eq(qualifier.pos) && nme.toTermName.toString == "withFilter" =>
@@ -404,28 +404,28 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
     case t => t
   }
 
-  case class FileSelection(file: tools.nsc.io.AbstractFile, root: Tree, from: Int, to: Int) extends Selection {
+  case class FileSelection(override val file: tools.nsc.io.AbstractFile, override val root: Tree, from: Int, to: Int) extends Selection {
 
     @deprecated("Please use the primary constructor.", "0.4.0")
     def this(file: tools.nsc.io.AbstractFile, from: Int, to: Int) = {
       this(file, compilationUnitOfFile(file).get.body, from, to)
     }
 
-    lazy val pos = new RangePosition(root.pos.source, from, from, to)
+    override lazy val pos = new RangePosition(root.pos.source, from, from, to)
   }
 
   object FileSelection {
     @deprecated("Please use the primary constructor.", "0.4.0")
-    def apply(file: tools.nsc.io.AbstractFile, from: Int, to: Int) = new FileSelection(file: tools.nsc.io.AbstractFile, from: Int, to: Int)
+    def apply(file: tools.nsc.io.AbstractFile, from: Int, to: Int): FileSelection = new FileSelection(file: tools.nsc.io.AbstractFile, from: Int, to: Int)
   }
 
-  case class TreeSelection(root: Tree) extends Selection {
+  case class TreeSelection(override val root: Tree) extends Selection {
 
     if (!root.pos.isRange)
       error("Position not a range.")
 
-    val pos = root.pos.asInstanceOf[RangePosition]
+    override val pos: RangePosition = root.pos.asInstanceOf[RangePosition]
 
-    val file = pos.source.file
+    override val file: tools.nsc.io.AbstractFile = pos.source.file
   }
 }
