@@ -20,7 +20,7 @@ import scala.tools.refactoring.common.Selections
 
 import language.{ postfixOps, implicitConversions }
 
-trait TestHelper extends ScalaVersionTestRule with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
+trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
 
   @Before
   def cleanup() = resetPresentationCompiler()

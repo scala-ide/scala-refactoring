@@ -24,10 +24,11 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
   }
 
   final implicit class ImplicitTreeHelper(original: Tree) {
+    /** Needs to be executed on the PC thread. */
     def printsTo(expectedOutput: String): Unit = {
       val sourceFile = new BatchSourceFile("noname", expectedOutput)
       val expected = stripWhitespacePreservers(expectedOutput).trim()
-      val actual = ask { () => generate(original, sourceFile = Some(sourceFile)).asText.trim() }
+      val actual = generate(original, sourceFile = Some(sourceFile)).asText.trim()
       if (actual != expected)
         throw new ComparisonFailure("", expected, actual)
     }
@@ -36,15 +37,15 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     def becomes(expectedOutput: String) = input -> expectedOutput
   }
   final implicit class OrToDieAfter(input: (String, String)) {
-    def after(trans: Transformation[Tree, Tree]): Unit = {
-      val t = ask { () => trans(treeFrom(input._1)) }
+    def after(trans: Transformation[Tree, Tree]): Unit = ask { () =>
+      val t = trans(treeFrom(input._1))
       require(t.isDefined, "transformation was not successful")
       t foreach (_.printsTo(input._2))
     }
   }
 
   @Test
-  def add_return_type_to_def() = global.ask { () => """
+  def add_return_type_to_def() = """
     package add_return_type_to_def
     object X {
       def value = new java.io.File("")
@@ -57,10 +58,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
         val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
         d.copy(tpt = newTpt) replaces d
     }}}
-  }
 
   @Test
-  def add_return_type_to_val() = global.ask { () => """
+  def add_return_type_to_val() = """
     package add_return_type_to_val
     object X {
       val value = new java.io.File("")
@@ -74,10 +74,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
         val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
         d.copy(tpt = newTpt) replaces d
     }}}
-  }
 
   @Test
-  def add_return_type_to_var() = global.ask { () => """
+  def add_return_type_to_var() = """
     package add_return_type_to_var
     object X {
       var variable = new java.io.File("")
@@ -91,10 +90,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
         val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
         d.copy(tpt = newTpt) replaces d
     }}}
-  }
 
   @Test
-  def add_override_flag() = global.ask { () => """
+  def add_override_flag() = """
     package add_override_flag
     trait T {
       def meth: Int
@@ -120,10 +118,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
           d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
       }
     }}
-  }
 
   @Test
-  def add_override_final_flags_to_lazy_val() = global.ask { () => """
+  def add_override_final_flags_to_lazy_val() = """
     package add_override_final_flags_to_lazy_val
     trait T {
       def meth: Int
@@ -149,10 +146,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
           d.copy(mods = d.mods.withFlag(Flag.OVERRIDE).withFlag(Flag.FINAL).withFlag(Flag.LAZY).withFlag(Tokens.VAL)) replaces d
       }
     }}
-  }
 
   @Test
-  def add_override_protected_abstract_flag() = global.ask { () => """
+  def add_override_protected_abstract_flag() = """
     package add_override_protected_abstract_flag
     trait T {
       protected def meth: Int = 0
@@ -178,10 +174,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
           d.copy(mods = d.mods.withFlag(Flag.ABSTRACT).withFlag(Flag.OVERRIDE).withFlag(Flag.PROTECTED)) replaces d
       }
     }}
-  }
 
   @Test
-  def add_final_case_flag() = global.ask { () => """
+  def add_final_case_flag() = """
     package add_final_case_flag
     class C(i: Int)
     """ becomes """
@@ -193,10 +188,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
           d.copy(mods = d.mods.withFlag(Flag.FINAL).withFlag(Flag.CASE).withFlag(Flag.PRIVATE)) replaces d
       }
     }}
-  }
 
   @Test
-  def add_modifier_to_def_without_return_type() = global.ask { () => """
+  def add_modifier_to_def_without_return_type() = """
     package add_modifier_to_def_without_return_type
     trait T {
       def meth: Int
@@ -222,10 +216,9 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
           d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
       }
     }}
-  }
 
   @Test
-  def add_modifier_to_val_without_return_type() = global.ask { () => """
+  def add_modifier_to_val_without_return_type() = """
     package add_modifier_to_val_without_return_type
     trait T {
       def meth: Int
@@ -252,5 +245,4 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
           d.copy(mods = d.mods.withFlag(Flag.OVERRIDE)) replaces d
       }
     }}
-  }
 }
