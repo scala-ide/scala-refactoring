@@ -5,10 +5,9 @@
 package scala.tools.refactoring
 package common
 
-import collection.mutable.ListBuffer
-import tools.nsc.Global
+import scala.collection.mutable.ListBuffer
+import scala.reflect.internal.util.OffsetPosition
 import scala.reflect.internal.util.RangePosition
-import scala.reflect.internal.Flags
 
 trait Selections extends TreeTraverser with common.PimpedTrees {
 
@@ -276,12 +275,21 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       else
         None
 
+    /**
+     * An [[scala.reflect.internal.util.OffsetPosition]] is needed as a new
+     * position. Throws an exception if another position type is passed.
+     */
     def withPos(newPos: Position): Selection = {
+      val p = newPos match {
+        case p: RangePosition  => p
+        case p: OffsetPosition => new RangePosition(p.source, p.start, p.start, p.start)
+        case p                 => throw new IllegalArgumentException(s"An offset position is required, but was: $p")
+      }
       val outer = this
       new Selection {
         val root = outer.root
         val file = outer.file
-        val pos = newPos.asInstanceOf[RangePosition]
+        val pos = p
       }
     }
 
