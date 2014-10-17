@@ -60,6 +60,21 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     }}}
 
   @Test
+  def add_return_type_to_def_with_brace() = """
+    package add_return_type_to_def
+    object X {
+      def sideEffect() = 3
+    }""" becomes """
+    package add_return_type_to_def
+    object X {
+      def sideEffect(): Int = 3
+    }""" after topdown { matchingChildren { transform {
+      case d @ DefDef(_, _, _, _, tpt: TypeTree, _) =>
+        val newTpt = tpt setOriginal mkReturn(List(tpt.tpe.typeSymbol))
+        d.copy(tpt = newTpt) replaces d
+    }}}
+
+  @Test
   def add_return_type_to_val() = """
     package add_return_type_to_val
     object X {
