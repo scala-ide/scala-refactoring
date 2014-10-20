@@ -11,7 +11,7 @@ import language.implicitConversions
 
 trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
-  outer: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with Formatting with Indentations =>
+  outer: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with common.CompilerApiExtensions with Formatting with Indentations =>
 
   import global._
 
@@ -988,7 +988,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
 
       val isAbstract = body == EmptyFragment
-      val resultType =
+      val rawResultType =
         if (isAbstract && !existsTptInFile)
           EmptyFragment
         else
@@ -1003,42 +1003,47 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         }
       }
 
-      val noEqualNeeded = resultType == EmptyFragment || isAbstract
+      val noEqualNeeded = rawResultType == EmptyFragment || isAbstract
 
-      val resultType2 = {
+      val resultType = {
         def addLeadingSpace = name.isOperatorName || name.endsWith('_')
-        if (resultType != EmptyFragment && addLeadingSpace) Layout(" ") ++ resultType else resultType
+        if (rawResultType != EmptyFragment && addLeadingSpace) Layout(" ") ++ rawResultType else rawResultType
       }
 
       if (noEqualNeeded && !hasEqualInSource) {
-        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType2 ++ body ++ r
+        l ++ modsAndName ++ typeParameters ++ parameters ++ resultType ++ body ++ r
       } else {
         val openingBrace = keepOpeningBrace(tree, tpt, rhs)
         // In case a Unit return type is added to a method like `def f {}`, we
         // need to remove the whitespace between name and rhs, otherwise the
         // result would be `def f : Unit = {}`.
-        val modsAndName2 =
+        val modsAndNameTrimmed =
           if (modsAndName.trailing.asText.trim.isEmpty)
             Fragment(modsAndName.leading, modsAndName.center, NoLayout)
           else
             modsAndName
 
-        l ++ modsAndName2 ++ typeParameters ++ parameters ++ resultType2 ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
+        l ++ modsAndNameTrimmed ++ typeParameters ++ parameters ++ resultType ++ Requisite.anywhere("=", " = ") ++ openingBrace ++ body ++ r
       }
     }
 
     /**
-     * In case a definition like `def f = {0}` contains a single expression in
-     * braces, we need to find the braces manually because they are no part of
-     * the tree.
+     * In case a `ValOrDefDef` like `def f = {0}` contains a single expression
+     * in braces, we are screwed.
+     * In such cases the compiler removes the opening and closing braces from
+     * the tree. It also removes all the whitespace between the equal sign and
+     * the opening brace. If a refactoring edits such a definition, we need to
+     * get the whitespace+opening brace back.
      */
-    private def keepOpeningBrace(tree: Tree, tpt: Tree, rhs: Tree): String = tpt match {
+    private def keepOpeningBrace(tree: Tree, tpt: Tree, rhs: Tree)(implicit ctx: PrintingContext): String = tpt match {
       case tpt: TypeTree if tpt.original != null && tree.pos != NoPosition && rhs.pos != NoPosition =>
-        val OpeningBrace = "(?s).*(\\{.*)".r
-        Layout(tree.pos.source, tree.pos.point, rhs.pos.start).asText match {
-          case OpeningBrace(brace) => brace
-          case _ => ""
-        }
+        val tokens = ctx.tokensBetween(tree.pos.point, rhs.pos.start)
+        tokens find (_.tokenId == tools.nsc.ast.parser.Tokens.EQUALS) map {
+          case Token(_, start, _) =>
+            val c = tree.pos.source.content
+            val skippedWsStart = if (c(start+1).isWhitespace) start+2 else start+1
+            c.slice(skippedWsStart, rhs.pos.start).mkString
+        } getOrElse ""
       case _ =>
         ""
     }

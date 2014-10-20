@@ -25,8 +25,8 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
 
   final implicit class ImplicitTreeHelper(original: Tree) {
     /** Needs to be executed on the PC thread. */
-    def printsTo(expectedOutput: String): Unit = {
-      val sourceFile = new BatchSourceFile("noname", expectedOutput)
+    def printsTo(input: String, expectedOutput: String): Unit = {
+      val sourceFile = new BatchSourceFile("textInput", input)
       val expected = stripWhitespacePreservers(expectedOutput).trim()
       val actual = generate(original, sourceFile = Some(sourceFile)).asText.trim()
       if (actual != expected)
@@ -40,7 +40,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     def after(trans: Transformation[Tree, Tree]): Unit = ask { () =>
       val t = trans(treeFrom(input._1))
       require(t.isDefined, "transformation was not successful")
-      t foreach (_.printsTo(input._2))
+      t foreach (_.printsTo(input._1, input._2))
     }
   }
 
@@ -95,16 +95,42 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
   def add_return_type_to_val_with_single_expression_in_braces() = """
     package add_return_type_to_val_with_single_expression_in_braces
     object X {
-      val foo = {
+      val a = {
         0
       }
+      val b = /* {str */ {
+        0
+      }
+      val c = { 0 match {
+        case i => i
+      }}
+      val d = { // {str}
+        0
+      }
+      val e = /* {str */ { // {str
+        0
+      }
+      val f={0}
     }
     """ becomes """
     package add_return_type_to_val_with_single_expression_in_braces
     object X {
-      val foo: Int = {
+      val a: Int = {
         0
       }
+      val b: Int = /* {str */ {
+        0
+      }
+      val c: Int = { 0 match {
+        case i => i
+      }}
+      val d: Int = { // {str}
+        0
+      }
+      val e: Int = /* {str */ { // {str
+        0
+      }
+      val f: Int = {0}
     }
     """ after topdown { matchingChildren { transform {
       case d @ ValDef(_, _, tpt: TypeTree, _) =>
@@ -139,16 +165,42 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
   def add_return_type_to_def_with_single_expression_in_braces() = """
     package add_return_type_to_def_with_single_expression_in_braces
     object X {
-      def foo = {
+      def a = {
         0
       }
+      def b = /* {str */ {
+        0
+      }
+      def c = { 0 match {
+        case i => i
+      }}
+      def d = { // {str}
+        0
+      }
+      def e = /* {str */ { // {str
+        0
+      }
+      def f={0}
     }
     """ becomes """
     package add_return_type_to_def_with_single_expression_in_braces
     object X {
-      def foo: Int = {
+      def a: Int = {
         0
       }
+      def b: Int = /* {str */ {
+        0
+      }
+      def c: Int = { 0 match {
+        case i => i
+      }}
+      def d: Int = { // {str}
+        0
+      }
+      def e: Int = /* {str */ { // {str
+        0
+      }
+      def f: Int = {0}
     }
     """ after topdown { matchingChildren { transform {
       case d @ DefDef(_, _, _, _, tpt: TypeTree, _) =>
