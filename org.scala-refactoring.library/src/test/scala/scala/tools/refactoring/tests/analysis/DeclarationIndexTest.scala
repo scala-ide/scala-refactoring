@@ -32,7 +32,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
 
     if(m.isDefinedAt(firstSelected)) {
       val result = m(firstSelected)
-      assertEquals(expected, result)
+      assertEquals(expected.replaceAll("\r\n", "\n"), result.replaceAll("\r\n", "\n"))
     } else {
       throw new Exception("found: "+ firstSelected + "(" + firstSelected.getClass.getSimpleName + ")")
     }
