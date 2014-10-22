@@ -933,8 +933,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
       val modsAndName = pp(mods ::: nameTree :: Nil, separator = Requisite.Blank)
 
       val parameters = {
-        if (vparamss == List(List())) {
-          Fragment("()")
+        // The `)` is always removed from the layout, so if we have an empty
+        // parameter list and `()` in the source, we need to insert it here.
+        if (vparamss == List(List()) && modsAndName.asText.endsWith("(")) {
+          Fragment(")")
         } else {
           tree.explicitVParamss.map { vparams =>
             pp(vparams, before = "(", separator = ", ", after = ")")
