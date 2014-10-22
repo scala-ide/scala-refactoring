@@ -42,14 +42,12 @@ class CompilerInstance {
         settings.classpath.append(jarLocation)
         settings.bootclasspath.append(jarLocation)
       }
+
+      settings.processArgumentString("-usejavacp")
     }
 
     val compiler = new Global(settings, new ConsoleReporter(settings) {
       override def printMessage(pos: Position, msg: String) {
-        // The compiler does not seem to store compilation errors in the
-        // Compilation Unit's problems field, so we do this here:
-        val cu = CompilerInstance.compiler.unitOfFile(pos.source.file)
-        cu.problems.append(new Problem(pos, msg, 0))
       }
     })
 
