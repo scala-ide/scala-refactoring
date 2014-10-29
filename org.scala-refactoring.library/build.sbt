@@ -14,6 +14,8 @@ publishMavenStyle := true
 
 useGpg := true
 
+fork := true
+
 publishTo <<= version { (v: String) =>
   val nexus = "https://oss.sonatype.org/"
   if (v.trim.endsWith("SNAPSHOT"))
