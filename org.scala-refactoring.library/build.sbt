@@ -50,11 +50,7 @@ pomExtra := (
 credentials += Credentials(Path.userHome / ".m2" / "credentials")
 
 libraryDependencies += {
-  val compVersion  = scalaBinaryVersion.value match {
-    case "2.10" => "2.10.4"
-    case "2.11" => "2.11.4"
-  }
-  "org.scala-lang" % "scala-compiler" % compVersion
+  "org.scala-lang" % "scala-compiler" % scalaVersion.value
 }
 
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
