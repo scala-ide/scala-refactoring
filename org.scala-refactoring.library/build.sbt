@@ -2,13 +2,13 @@ name := "org.scala-refactoring.library"
 
 version := "0.6.2"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.4"
 
 moduleName := name.value
 
 organization := "org.scala-refactoring"
 
-crossScalaVersions := Seq("2.10.4", "2.11.0")
+crossScalaVersions := Seq("2.10.4", "2.11.4")
 
 publishMavenStyle := true
 
@@ -52,7 +52,7 @@ credentials += Credentials(Path.userHome / ".m2" / "credentials")
 libraryDependencies += {
   val compVersion  = scalaBinaryVersion.value match {
     case "2.10" => "2.10.4"
-    case "2.11" => "2.11.0"
+    case "2.11" => "2.11.4"
   }
   "org.scala-lang" % "scala-compiler" % compVersion
 }
