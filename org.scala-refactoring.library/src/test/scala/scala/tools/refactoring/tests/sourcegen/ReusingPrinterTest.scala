@@ -139,7 +139,7 @@ class ReusingPrinterTest extends TestHelper with SilentTracing {
     """ after topdown { matchingChildren {
       filter {
         case d: DefDef =>
-          d.symbol.isLazy
+          d.symbol.owner.nameString == "TT"
       } &>
       transform {
         case d: DefDef =>
