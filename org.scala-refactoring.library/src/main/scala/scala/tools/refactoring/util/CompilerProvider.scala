@@ -123,5 +123,8 @@ trait CompilerProvider extends TreeCreationMethods {
     global.askReset
 
     global.checkNoResponsesOutstanding
+
+    global.reporter.reset()      // Hopefully a fix for https://github.com/scala-ide/scala-refactoring/issues/69
+    global.analyzer.resetTyper() // ... added for good measure.
   }
 }
