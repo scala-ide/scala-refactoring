@@ -5,7 +5,9 @@
 package scala.tools.refactoring
 package analysis
 
-trait CompilationUnitDependencies {
+import scala.tools.refactoring.common.CompilerApiExtensions
+
+trait CompilationUnitDependencies extends CompilerApiExtensions {
   // we need to interactive compiler because we work with RangePositions
   this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors with common.PimpedTrees =>
 
@@ -72,19 +74,9 @@ trait CompilationUnitDependencies {
    */
   def neededImports(t: Tree): List[Select] = {
 
-    /**
-     * Check if the definition is also a child of the outer `t`. In that case, we don't need
-     * to add an import because the dependency is to a local definition.
-     */
-    def isLocalDefinition(dependency: Tree) = t.exists {
-      case t: DefTree => dependency.symbol == t.symbol
-      case _ => false
-    }
-
     val deps = dependencies(t)
 
     val neededDependencies = deps.flatMap {
-      case t if isLocalDefinition(t) => None
       case t: Select if !t.pos.isRange => Some(t)
       case t => findDeepestNeededSelect(t)
     }.filter(isImportReallyNeeded).distinct
@@ -100,6 +92,20 @@ trait CompilationUnitDependencies {
    * because they are defined in the same compilation unit.
    */
   def dependencies(t: Tree): List[Select] = {
+    val wholeTree = t
+
+    def qualifierIsEnclosingPackage(t: Select) = {
+      enclosingPackage(wholeTree, t.pos) match {
+        case pkgDef: PackageDef =>
+          t.qualifier.nameString == pkgDef.nameString
+        case _ => false
+      }
+    }
+
+    def isDefinedLocally(t: Tree) = wholeTree.exists {
+      case defTree: DefTree if t.symbol == defTree.symbol => true
+      case _ => false
+    }
 
     val result = new collection.mutable.HashMap[String, Select]
 
@@ -173,7 +179,6 @@ trait CompilationUnitDependencies {
       val language = newTermName("language")
 
       override def traverse(tree: Tree) = tree match {
-
         // Always add the SIP 18 language imports as required until we can handle them properly
         case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
           feature foreach (selector => addToResult(Select(select, selector.name)))
@@ -240,7 +245,8 @@ trait CompilationUnitDependencies {
           if (!isMethodCallFromExplicitReceiver(t)
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD
-              && hasStableQualifier(t)) {
+              && hasStableQualifier(t)
+              && !(isDefinedLocally(t) && qualifierIsEnclosingPackage(t))) {
             addToResult(t)
           }
 
