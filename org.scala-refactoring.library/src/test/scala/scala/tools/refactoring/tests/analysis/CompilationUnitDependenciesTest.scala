@@ -834,5 +834,24 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         def xx(i: Int) = i
       }
     """)
+
+  @Test
+  def importLocallyDefinedClass() = assertNeededImports(
+    """test.MyType""",
+    """import test.MyType
+       package test {
+          class MyType
+       }
+       class Test(myType: MyType)
+    }""")
+
+  @Test
+  def importLocallyDefniedClassNotNeeded = assertNeededImports(
+    """""",
+    """package test {
+          class MyType
+          class Test(myType: MyType)
+       }
+    }""")
 }
 
