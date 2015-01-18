@@ -27,4 +27,32 @@ trait CompilerApiExtensions {
   private class FilteringLocator(pos: Position, p: Tree => Boolean) extends Locator(pos) {
     override def isEligible(t: Tree) = super.isEligible(t) && p(t)
   }
+
+  /*
+   * For Scala-2.10 (see scala.reflect.internal.Positions.Locator in Scala-2.11).
+   */
+  private class Locator(pos: Position) extends Traverser {
+    var last: Tree = _
+    def locateIn(root: Tree): Tree = {
+      this.last = EmptyTree
+      traverse(root)
+      this.last
+    }
+    protected def isEligible(t: Tree) = !t.pos.isTransparent
+    override def traverse(t: Tree) {
+      t match {
+        case tt : TypeTree if tt.original != null && (tt.pos includes tt.original.pos) =>
+          traverse(tt.original)
+        case _ =>
+          if (t.pos includes pos) {
+            if (isEligible(t)) last = t
+            super.traverse(t)
+          } else t match {
+            case mdef: MemberDef =>
+              traverseTrees(mdef.mods.annotations)
+            case _ =>
+          }
+      }
+    }
+  }
 }
