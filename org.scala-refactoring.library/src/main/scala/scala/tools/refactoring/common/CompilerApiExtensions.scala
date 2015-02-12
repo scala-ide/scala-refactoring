@@ -1,9 +1,12 @@
 package scala.tools.refactoring.common
 
-import scala.tools.nsc.Global
+import scala.collection.immutable
+import scala.collection.mutable.ArrayBuffer
+import scala.reflect.internal.util.SourceFile
+import scala.tools.nsc.ast.parser.Tokens
 
 /*
- * FIXME: This class duplicates functionality from org.scalaide.core.compiler.CompilerApiExtensions.
+ * FIXME: This class duplicates functionality from [[org.scalaide.core.compiler.CompilerApiExtensions]].
  */
 trait CompilerApiExtensions {
   this: CompilerAccess =>
@@ -55,4 +58,58 @@ trait CompilerApiExtensions {
       }
     }
   }
+
+  /** A helper class to access the lexical tokens of `source`.
+   *
+   *  Once constructed, instances of this class are thread-safe.
+   */
+  class LexicalStructure(source: SourceFile) {
+    private val token = new ArrayBuffer[Int]
+    private val startOffset = new ArrayBuffer[Int]
+    private val endOffset = new ArrayBuffer[Int]
+    private val scanner = new syntaxAnalyzer.UnitScanner(new CompilationUnit(source))
+    scanner.init()
+
+    while (scanner.token != Tokens.EOF) {
+      startOffset += scanner.offset
+      token += scanner.token
+      scanner.nextToken
+      endOffset += scanner.lastOffset
+    }
+
+    /** Return the index of the token that covers `offset`.
+     */
+    private def locateIndex(offset: Int): Int = {
+      var lo = 0
+      var hi = token.length - 1
+      while (lo < hi) {
+        val mid = (lo + hi + 1) / 2
+        if (startOffset(mid) <= offset) lo = mid
+        else hi = mid - 1
+      }
+      lo
+    }
+
+    /** Return all tokens between start and end offsets.
+     *
+     *  The first token may start before `start` and the last token may span after `end`.
+     */
+    def tokensBetween(start: Int, end: Int): immutable.Seq[Token] = {
+      val startIndex = locateIndex(start)
+      val endIndex = locateIndex(end)
+
+      val tmp = for (i <- startIndex to endIndex)
+        yield Token(token(i), startOffset(i), endOffset(i))
+
+      tmp.toSeq
+    }
+  }
+
+  /** A Scala token covering [start, end)
+   *
+   *  @param tokenId one of scala.tools.nsc.ast.parser.Tokens identifiers
+   *  @param start   the offset of the first character in this token
+   *  @param end     the offset of the first character after this token
+   */
+  case class Token(tokenId: Int, start: Int, end: Int)
 }

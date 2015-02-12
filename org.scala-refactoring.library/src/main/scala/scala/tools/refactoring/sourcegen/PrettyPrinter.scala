@@ -13,7 +13,7 @@ import language.implicitConversions
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
-  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper with Formatting =>
+  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with common.CompilerApiExtensions with Indentations with LayoutHelper with Formatting =>
 
   import global._
 
@@ -130,7 +130,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case Some(patP(patStr)) if guard == EmptyTree => Fragment(patStr)
         case _ => p(pat)
       }
-      
+
       val arrowReq = new Requisite {
         def isRequired(l: Layout, r: Layout) = {
           !(l.contains("=>") || r.contains("=>"))

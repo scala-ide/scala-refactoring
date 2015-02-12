@@ -9,7 +9,7 @@ import scala.reflect.internal.util.SourceFile
 
 trait AbstractPrinter extends CommonPrintUtils {
 
-  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with Formatting =>
+  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with common.CompilerApiExtensions with Formatting =>
 
   import global._
 
@@ -18,6 +18,11 @@ trait AbstractPrinter extends CommonPrintUtils {
    * the context or environment for the current printing.
    */
   case class PrintingContext(ind: Indentation, changeSet: ChangeSet, parent: Tree, file: Option[SourceFile]) {
+    private lazy val lexical = file map (new LexicalStructure(_))
+
+    def tokensBetween(start: Int, end: Int): Seq[Token] =
+      lexical.map(_.tokensBetween(start, end)).getOrElse(Seq())
+
     lazy val newline: String = {
       if(file.exists(_.content.containsSlice("\r\n")))
         "\r\n"
