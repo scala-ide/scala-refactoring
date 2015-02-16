@@ -101,8 +101,9 @@ trait TreeFactory {
     mkValOrVarDef(NoMods, name, rhs, tpt)
 
   def mkValOrVarDef(mods: Modifiers, name: String, rhs: Tree, tpt: TypeTree = new TypeTree): ValDef = {
-    def valDef = ValDef(mods, newTermName(name), tpt, rhs)
-    def valDefForFunction = ValDef(mods, newTermName(name), tpt, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
+    val termName = newTermName(name)
+    def valDef = ValDef(mods, termName, tpt, rhs)
+    def valDefForFunction = ValDef(mods, termName, tpt, Apply(rhs, Ident(nme.USCOREkw) :: Nil))
 
     val valOrVarDef = rhs match {
       case rhs: Select if rhs.symbol.isMethod =>
@@ -113,7 +114,7 @@ trait TreeFactory {
       case _ => valDef
     }
 
-    if (mods != NoMods) valOrVarDef setSymbol NoSymbol.newValue(name, newFlags = mods.flags) else valOrVarDef
+    if (mods != NoMods) valOrVarDef setSymbol NoSymbol.newValue(termName, newFlags = mods.flags) else valOrVarDef
   }  
 
   def mkParam(name: String, tpe: Type, defaultVal: Tree = EmptyTree): ValDef = {
