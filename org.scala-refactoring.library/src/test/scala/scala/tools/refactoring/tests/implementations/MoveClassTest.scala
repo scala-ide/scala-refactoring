@@ -1022,7 +1022,7 @@ sealed abstract class Term
 case object TmTrue extends Term
 case object TmFalse extends Term
 
-object /*(*/Arith/*)*/ extends scala.util.parsing.combinator.JavaTokenParsers {
+object /*(*/Arith/*)*/ {
 
   def isVal(t: Term) : Boolean = t match {
     case TmTrue | TmFalse => true
@@ -1043,7 +1043,7 @@ import arith.Term
 import arith.TmFalse
 import arith.TmTrue
 
-object /*(*/Arith/*)*/ extends scala.util.parsing.combinator.JavaTokenParsers {
+object /*(*/Arith/*)*/ {
 
   def isVal(t: Term) : Boolean = t match {
     case TmTrue | TmFalse => true
