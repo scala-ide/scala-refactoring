@@ -95,22 +95,12 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
     val wholeTree = t
 
     def qualifierIsEnclosingPackage(t: Select) = {
-      t.pos
       enclosingPackage(wholeTree, t.pos) match {
         case pkgDef: PackageDef =>
           t.qualifier.nameString == pkgDef.nameString
         case _ => false
       }
     }
-
-    def extractQualifier(tpe: TypeRef) = {
-      val tpeStr = tpe.toString
-      val suffix = tpe.trimPrefix(tpeStr)
-      val prefix = tpeStr.substring(0, tpeStr.length - suffix.length)
-      if (prefix.endsWith(".")) prefix.init
-      else prefix
-    }
-
 
     def isDefinedLocally(t: Tree): Boolean = isSymDefinedLocally(t.symbol)
 
@@ -320,7 +310,9 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
       }
 
       override def handleAnnotations(as: List[AnnotationInfo]) {
-        if (annotationTree.isEmpty) {
+        val recusing = annotationTree.isDefined
+
+        if (!recusing) {
           try {
             as.foreach { a =>
               val tree = annotationInfoTree(a)

@@ -107,6 +107,8 @@ trait TreeCreationMethods {
     treeFrom(file) // use the side effect
     file.file
   }
+
+  def parseJava(src: String): global.Tree = treeFromString(src, true)
 }
 
 object CompilerInstance extends CompilerInstance
@@ -129,6 +131,4 @@ trait CompilerProvider extends TreeCreationMethods {
     global.reporter.reset()      // Hopefully a fix for https://github.com/scala-ide/scala-refactoring/issues/69
     global.analyzer.resetTyper() // ... added for good measure.
   }
-
-  def parseJava(src: String): Unit = treeFromString(src, true)
 }
