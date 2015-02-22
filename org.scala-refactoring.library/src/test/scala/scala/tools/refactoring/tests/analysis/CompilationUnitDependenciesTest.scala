@@ -1020,6 +1020,9 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
          Class<?> clazz2();
        }""")
 
+  /*
+   * See https://scala-ide-portfolio.assembla.com/spaces/scala-ide/tickets/1001793-organize-imports-removes-import-referenced-from-an-annotation
+   */
   @Ignore
   @Test
   def testWithSimpleJavaAnnotationAndIntConstant = assertNeededImports(
