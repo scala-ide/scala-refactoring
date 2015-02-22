@@ -7,6 +7,7 @@ package tests.analysis
 
 import analysis.CompilationUnitDependencies
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import tests.util._
 import org.junit.After
 import common.TreeExtractors
@@ -15,17 +16,19 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   import global._
 
-  private def assertTrees(expected: String, src: String, f: Tree => Seq[Tree]) {
+  private def assertTrees(expected: String, src: String, javaSrc: String, f: Tree => Seq[Tree]) {
+    if (!javaSrc.isEmpty) parseJava(javaSrc)
     val tree = treeFrom(src)
+    assertFalse(tree.isErroneous)
     val imports = global.ask(() => f(tree).sortBy(_.toString).map(asString))
     assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n"))
   }
 
-  def assertNeededImports(expected: String, src: String): Unit =
-    assertTrees(expected, src, neededImports)
+  def assertNeededImports(expected: String, src: String, javaSrc: String = ""): Unit =
+    assertTrees(expected, src, javaSrc, neededImports)
 
   def assertDependencies(expected: String, src: String): Unit =
-    assertTrees(expected, src, dependencies)
+    assertTrees(expected, src, "", dependencies)
 
   @Test
   def evidenceNoImport() = assertNeededImports(
@@ -837,7 +840,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def importLocallyDefinedClass() = assertNeededImports(
-    """test.MyType""",
+    "test.MyType",
     """import test.MyType
        package test {
           class MyType
@@ -847,11 +850,244 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def importLocallyDefniedClassNotNeeded = assertNeededImports(
-    """""",
+    "",
     """package test {
           class MyType
           class Test(myType: MyType)
        }
     }""")
-}
 
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithSimpleJavaAnnotation = assertNeededImports(
+    "test.Foo",
+    """import test._
+
+       package test {
+         class Foo
+       }
+
+       @AnAnnotation(classOf[Foo])
+       class Bug
+    """,
+    """public @interface AnAnnotation {
+         Class<?> value();
+       }""")
+
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithSimpleJavaAnnotationAndLocalClass = assertNeededImports(
+    "",
+    """package test
+
+       class InSamePackage
+
+       @AnAnnotation(classOf[InSamePackage])
+       class Bug
+    """,
+    """public @interface AnAnnotation {
+         Class<?> value();
+       }""")
+
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithSimpleJavaAnnotationOnDef = assertNeededImports(
+    "test.Foo",
+    """import test._
+
+       package test {
+         class Foo
+       }
+
+       object Bug {
+         @AnAnnotation(classOf[Foo])
+         def f(x: Int) = x
+       }
+    """,
+    """public @interface AnAnnotation {
+         Class<?> value();
+       }""")
+
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithSimpleJavaAnnotationOnParam = assertNeededImports(
+    "test.Foo",
+    """import test._
+
+       package test {
+         class Foo
+       }
+
+       object Bug {
+         def f(@AnAnnotation(classOf[Foo]) x: Int) = x
+       }
+    """,
+    """public @interface AnAnnotation {
+         Class<?> value();
+       }""")
+
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithSimpleJavaAnnotationOnCtor = assertNeededImports(
+    "test.Foo",
+    """import test._
+
+       package test {
+         class Foo
+       }
+
+       class Bug @AnAnnotation(classOf[Foo]) ()
+    """,
+    """public @interface AnAnnotation {
+         Class<?> value();
+       }""")
+
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithSimpleJavaAnnotationLocalClassAndMultiplePackages = assertNeededImports(
+    "",
+    """package test1 {
+
+       }
+
+       package test2 {
+         class InSamePackage
+
+         @AnAnnotation(classOf[InSamePackage])
+         class Bug
+      }
+    """,
+    """public @interface AnAnnotation {
+         Class<?> value();
+       }""")
+
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithMoreComplexJavaAnnotation = assertNeededImports(
+    """test1.Bar
+       test1.Foo""",
+    """package test1 {
+         class Foo
+         class Bar
+       }
+
+       package test2 {
+         class Foo
+       }
+
+       package test3 {
+         import test1._
+         class LocalFoo
+
+         @AnAnnotation(
+            clazz1 = classOf[Foo],
+            clazz2 = classOf[Bar],
+            clazz3 = classOf[test2.Foo],
+            clazz4 = classOf[LocalFoo],
+            version = 42)
+         class Bug
+      }
+    """,
+    """public @interface AnAnnotation {
+         Class<?> clazz1();
+         Class<?> clazz2();
+         Class<?> clazz3();
+         Class<?> clazz4();
+         int version();
+       }""")
+
+  @ScalaVersion(matches="2.11")
+  @Test
+  def testWithMoreComplexJavaAnnotation_minify = assertNeededImports(
+    """test1.Bar
+       test1.Foo""",
+    """package test1 {
+         class Foo
+         class Bar
+       }
+
+       package test3 {
+         import test1._
+
+         @AnAnnotation(
+            clazz1 = classOf[Foo],
+            clazz2 = classOf[Bar])
+         class Bug
+      }
+    """,
+    """public @interface AnAnnotation {
+         Class<?> clazz1();
+         Class<?> clazz2();
+       }""")
+
+  @Ignore
+  @Test
+  def testWithSimpleJavaAnnotationAndIntConstant = assertNeededImports(
+    "test.Constants",
+    """import test._
+
+       package test {
+         object Constants {
+           final val X = 42
+         }
+       }
+
+       @AnAnnotation(Constants.X)
+       class Bug
+    """,
+    """public @interface AnAnnotation {
+         int value();
+       }""")
+
+   @Test
+   def testWithFullyQualifiedLocallyDefiniedType = assertNeededImports(
+     "",
+     """package test {
+          class LocallyDefined
+        }
+        class Test extends test.LocallyDefined""")
+
+   @Test
+   def testWithTailrecAnnotationImportNeeded = assertNeededImports(
+     "scala.annotation.tailrec",
+     """import scala.annotation.tailrec
+
+        object Test {
+          @tailrec
+          def foo = 22
+        }
+     """)
+
+   @Test
+   def testWithTailrecAnnotationImportNotNeeded = assertNeededImports(
+     "",
+     """import scala.annotation.tailrec
+
+        object Test {
+          @annotation.tailrec
+          def foo = 22
+        }
+     """)
+
+
+  @Test
+  def testWithCaseObjects = assertNeededImports(
+    """test.Hund
+       test.Ottokar
+       test.Waldemar""",
+    """package test {
+         sealed trait Hund
+         case object Waldemar extends Hund
+         case object Ottokar extends Hund
+         case class Sauhund(name: String) extends Hund
+       }
+
+       import test._
+
+      object Test {
+        def test(h: Hund) = h match {
+          case (Waldemar | Ottokar) => true
+          case _ => false
+        }
+      }""")
+}

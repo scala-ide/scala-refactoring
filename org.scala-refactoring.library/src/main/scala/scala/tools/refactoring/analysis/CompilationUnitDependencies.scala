@@ -7,7 +7,7 @@ package analysis
 
 import scala.tools.refactoring.common.CompilerApiExtensions
 
-trait CompilationUnitDependencies extends CompilerApiExtensions {
+trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersionAdapters.CompilerApiAdapters {
   // we need to interactive compiler because we work with RangePositions
   this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors with common.PimpedTrees =>
 
@@ -95,6 +95,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions {
     val wholeTree = t
 
     def qualifierIsEnclosingPackage(t: Select) = {
+      t.pos
       enclosingPackage(wholeTree, t.pos) match {
         case pkgDef: PackageDef =>
           t.qualifier.nameString == pkgDef.nameString
@@ -102,9 +103,24 @@ trait CompilationUnitDependencies extends CompilerApiExtensions {
       }
     }
 
-    def isDefinedLocally(t: Tree) = wholeTree.exists {
-      case defTree: DefTree if t.symbol == defTree.symbol => true
+    def extractQualifier(tpe: TypeRef) = {
+      val tpeStr = tpe.toString
+      val suffix = tpe.trimPrefix(tpeStr)
+      val prefix = tpeStr.substring(0, tpeStr.length - suffix.length)
+      if (prefix.endsWith(".")) prefix.init
+      else prefix
+    }
+
+
+    def isDefinedLocally(t: Tree): Boolean = isSymDefinedLocally(t.symbol)
+
+    def isSymDefinedLocally(sym: Symbol): Boolean = wholeTree.exists {
+      case defTree: DefTree if sym == defTree.symbol => true
       case _ => false
+    }
+
+    def isDefinedLocallyAndQualifiedWithEnclosingPackage(t: Select) = {
+      qualifierIsEnclosingPackage(t) && isDefinedLocally(t)
     }
 
     val result = new collection.mutable.HashMap[String, Select]
@@ -128,6 +144,21 @@ trait CompilationUnitDependencies extends CompilerApiExtensions {
     }
 
     val traverser = new TraverserWithFakedTrees {
+      var annotationTree: Option[Tree] = None
+
+      def traversingAnnotation() = annotationTree.isDefined
+
+      def tryFindTpeAndSymFor(ident: Ident) = {
+        Option(ident.tpe).map((_, ident.symbol)).orElse {
+          annotationTree.flatMap { tree =>
+            val name = ident.name
+
+            tree.collect {
+              case Literal(Constant(tpe @ TypeRef(_, sym, _))) if (sym.name == name) => (tpe, sym)
+            }.headOption
+          }
+        }
+      }
 
       def isSelectFromInvisibleThis(t: Tree) = {
 
@@ -241,12 +272,11 @@ trait CompilationUnitDependencies extends CompilerApiExtensions {
           }
 
         case t @ Select(qual, _) if t.pos.isOpaqueRange =>
-
           if (!isMethodCallFromExplicitReceiver(t)
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD
               && hasStableQualifier(t)
-              && !(isDefinedLocally(t) && qualifierIsEnclosingPackage(t))) {
+              && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)) {
             addToResult(t)
           }
 
@@ -255,29 +285,54 @@ trait CompilationUnitDependencies extends CompilerApiExtensions {
         /*
          * classOf[some.Type] is represented by a Literal
          * */
-        case t @ Literal(Constant(value)) =>
-
+        case t @ Literal(c @ Constant(value)) =>
           value match {
             case tpe @ TypeRef(_, sym, _) =>
               fakeSelectTreeFromType(tpe, sym, t.pos) match {
-                case t: Select => addToResult(t)
+                case s: Select if !isDefinedLocallyAndQualifiedWithEnclosingPackage(s) =>
+                  addToResult(s)
                 case _ => ()
               }
             case _ => ()
           }
 
-        case t: Ident if t.tpe != null && t.name != nme.EMPTY_PACKAGE_NAME =>
-          fakeSelectTree(t.tpe, t.symbol, t) match {
-            // only repeat if it's a Select, if it's an Ident,
-            // otherwise we risk to loop endlessly
-            case select: Select =>
-              traverse(select)
+        case t: Ident if t.name != nme.EMPTY_PACKAGE_NAME =>
+          tryFindTpeAndSymFor(t) match {
+            case Some((tpe, sym)) =>
+              fakeSelectTree(tpe, sym, t) match {
+                // only repeat if it's a Select, if it's an Ident,
+                // otherwise we risk to loop endlessly
+                case select: Select =>
+                  traverse(select)
+                case _ =>
+                  super.traverse(tree)
+              }
             case _ =>
               super.traverse(tree)
           }
 
+        case t: Ident => {
+          super.traverse(tree)
+        }
+
         case _ =>
           super.traverse(tree)
+      }
+
+      override def handleAnnotations(as: List[AnnotationInfo]) {
+        if (annotationTree.isEmpty) {
+          try {
+            as.foreach { a =>
+              val tree = annotationInfoTree(a)
+              val orig = a.original
+
+              annotationTree = Some(tree)
+              traverse(orig)
+            }
+          } finally {
+            annotationTree = None
+          }
+        }
       }
     }
 

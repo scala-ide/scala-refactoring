@@ -78,10 +78,12 @@ trait TreeCreationMethods {
     () => "file" + r.nextInt
   }
 
-  def treeFrom(src: String): global.Tree = {
-    val file = new BatchSourceFile(randomFileName(), src)
+  protected def treeFromString(src: String, isJava: Boolean = false): global.Tree = {
+    val file = new BatchSourceFile(randomFileName() + (if (isJava) ".java" else ""), src)
     treeFrom(file)
   }
+
+  def treeFrom(src: String): global.Tree = treeFromString(src, false)
 
   def treeFrom(file: SourceFile): global.Tree = {
 
@@ -127,4 +129,6 @@ trait CompilerProvider extends TreeCreationMethods {
     global.reporter.reset()      // Hopefully a fix for https://github.com/scala-ide/scala-refactoring/issues/69
     global.analyzer.resetTyper() // ... added for good measure.
   }
+
+  def parseJava(src: String): Unit = treeFromString(src, true)
 }

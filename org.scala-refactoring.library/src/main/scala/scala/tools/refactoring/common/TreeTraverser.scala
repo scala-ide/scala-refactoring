@@ -38,7 +38,13 @@ trait TreeTraverser {
       // we fake our own Select(Ident(..), ..) tree from the type
       // so we can handle them just like any other select call
 
-      val stringRep = tpe.trimPrefix(tpe.toString)
+      def trimTypeArgs(str: String) = {
+        val firstBracket = str.indexOf("[")
+        if (firstBracket < 0) str
+        else str.substring(0, firstBracket + 1)
+      }
+
+      val stringRep = trimTypeArgs(tpe.trimPrefix(tpe.toString))
 
       val select = stringRep.split("\\.").toList match {
         case x :: xs =>
