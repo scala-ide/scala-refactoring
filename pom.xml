@@ -41,6 +41,7 @@
     <scala.binary.version>2.11</scala.binary.version>
     <scala.xml.version>1.0.1</scala.xml.version>
     <scala.parser-combinators.version>1.0.1</scala.parser-combinators.version>
+    <scala.versioned.source>src/main/scala-${version.suffix}</scala.versioned.source>
   </properties>
   <modules>
     <module>org.scala-refactoring.library</module>
