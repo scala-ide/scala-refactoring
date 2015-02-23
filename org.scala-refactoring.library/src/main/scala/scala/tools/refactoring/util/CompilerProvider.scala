@@ -78,10 +78,12 @@ trait TreeCreationMethods {
     () => "file" + r.nextInt
   }
 
-  def treeFrom(src: String): global.Tree = {
-    val file = new BatchSourceFile(randomFileName(), src)
+  protected def treeFromString(src: String, isJava: Boolean = false): global.Tree = {
+    val file = new BatchSourceFile(randomFileName() + (if (isJava) ".java" else ""), src)
     treeFrom(file)
   }
+
+  def treeFrom(src: String): global.Tree = treeFromString(src, false)
 
   def treeFrom(file: SourceFile): global.Tree = {
 
@@ -105,6 +107,8 @@ trait TreeCreationMethods {
     treeFrom(file) // use the side effect
     file.file
   }
+
+  def parseJava(src: String): global.Tree = treeFromString(src, true)
 }
 
 object CompilerInstance extends CompilerInstance
