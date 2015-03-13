@@ -8,7 +8,12 @@ moduleName := name.value
 
 organization := "org.scala-refactoring"
 
-crossScalaVersions := Seq("2.10.4", "2.11.4")
+crossScalaVersions := Seq("2.10.5", "2.11.6")
+
+unmanagedSourceDirectories in Compile += baseDirectory.value / (scalaBinaryVersion.value match {
+  case "2.10" => "src/main/scala-2_10"
+  case _      => "src/main/scala-2_11"
+})
 
 publishMavenStyle := true
 
