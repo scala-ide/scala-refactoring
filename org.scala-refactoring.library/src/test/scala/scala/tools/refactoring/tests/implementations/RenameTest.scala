@@ -10,7 +10,6 @@ import tests.util.TestRefactoring
 import tests.util.TestHelper
 import org.junit.Assert._
 import org.junit.Ignore
-
 import language.reflectiveCalls
 
 class RenameTest extends TestHelper with TestRefactoring {
@@ -142,6 +141,63 @@ class RenameTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(renameTo("c"))
+
+  /*
+   * See Assembla ticket #1002392
+   */
+  @Test
+  def renameLazyValFromClass() = new FileSet {
+    """
+    package renameLazyValFromClass
+    class Bug {
+      lazy val /*(*/tryRenameMe/*)*/ = "bar"
+    }
+    """ becomes
+    """
+    package renameLazyValFromClass
+    class Bug {
+      lazy val /*(*/test/*)*/ = "bar"
+    }
+    """
+  } applyRefactoring(renameTo("test"))
+
+  /*
+   * See Assembla ticket #1002392
+   */
+  @Test
+  def renameProtectedLazyValFromClass() = new FileSet {
+    """
+    package renameLazyValFromClass
+    class Bug {
+      protected lazy val /*(*/tryRenameMe/*)*/ = "bar"
+    }
+    """ becomes
+    """
+    package renameLazyValFromClass
+    class Bug {
+      protected lazy val /*(*/test/*)*/ = "bar"
+    }
+    """
+  } applyRefactoring(renameTo("test"))
+
+  /*
+   * See Assembla ticket #1002392
+   */
+  @Test
+  def renameLazyValFromClassWithOneLetterName() = new FileSet {
+    """
+    package renameLazyValFromClass
+    class Bug {
+      lazy val /*(*/x/*)*/ = "bar"
+    }
+    """ becomes
+    """
+    package renameLazyValFromClass
+    class Bug {
+      lazy val /*(*/y/*)*/ = "bar"
+    }
+    """
+  } applyRefactoring(renameTo("y"))
 
   @Test
   def renameParameterWithoutSelection() = new FileSet {
