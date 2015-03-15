@@ -96,16 +96,19 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * See #1002392 if you wonder why we need this
      */
     private def eventuallyFixModifierPositionsForLazyVals(t: Option[SymTree]): Option[SymTree] = t.map {
-      case dd: DefDef if dd.mods.isLazy && dd.mods.positions.isEmpty =>
-        root.foreach {
-          case ld: ValDef if ld.mods.isLazy && !ld.mods.positions.isEmpty && ld.pos.point == dd.pos.point =>
-            dd.mods.setPositions(ld.mods.positions)
-          case _ => ()
-        }
+        case dd: DefDef if dd.mods.isLazy && dd.mods.positions.isEmpty =>
+          val vd = root.find {
+            case vd: ValDef if vd.mods.isLazy && !vd.mods.positions.isEmpty && vd.pos.point == vd.pos.point => true
+            case _ => false
+          }
 
-        dd
-      case other => other
-    }
+          vd.map { vd =>
+            val nDd = dd.copy()
+            nDd.mods.setPositions(vd.asInstanceOf[ValDef].mods.positions)
+            nDd.copyAttrs(dd)
+          }.getOrElse(dd)
+        case other => other
+      }
 
     /**
      * Finds a selected tree by its type.
