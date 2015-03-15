@@ -99,7 +99,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       case lDef: DefDef if lDef.mods.isLazy && lDef.mods.positions.isEmpty =>
         root.foreach {
           case lVal: ValDef if lDef.mods.isLazy && !lVal.mods.positions.isEmpty && lVal.pos.point == lDef.pos.point =>
-            lDef.mods.setPositions(lVal.asInstanceOf[ValDef].mods.positions)
+            lDef.mods.setPositions(lVal.mods.positions)
           case _ => ()
         }
 
