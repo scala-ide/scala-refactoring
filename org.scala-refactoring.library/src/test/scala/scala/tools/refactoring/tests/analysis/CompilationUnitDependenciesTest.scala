@@ -1094,4 +1094,65 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
           case _ => false
         }
       }""")
+
+
+  /*
+   * See Assembla ticket #1002402
+   */
+  @Test
+  def testWithTypeOnLazyVal = assertNeededImports(
+    "java.util.UUID",
+    """import java.util.UUID
+
+       class ImportsRemovedFromLazyVals2 {
+         lazy val test: UUID = ImportsFromLazyValsRemoved1.getUuid()
+       }""",
+    "",
+    """import java.util.UUID
+
+       object ImportsFromLazyValsRemoved1 {
+         def getUuid() = UUID.randomUUID()
+       }""")
+
+  @Test
+  def testWithLocalTypeThatNeedsNoImportOnLazyVal = assertNeededImports(
+    "",
+    """package test {
+         class LazyType
+         object LazyIdiot extends LazyType
+         object LazyObject {
+           lazy val l: LazyType = LazyIdiot
+         }
+       }""")
+
+  @Test
+  def testWithLocalTypeOnLazyVal = assertNeededImports(
+    """test.DarkMagic
+       test.Magic""",
+    """import test._
+
+     package test {
+       class Magic
+       object DarkMagic extends Magic
+     }
+
+     class AlwaysLazy {
+       lazy val test: Magic = DarkMagic
+     }""",
+    "")
+
+  @Test
+  def testWithoutTypeOnLazyVal = assertNeededImports(
+    "",
+    """import java.util.UUID
+
+       class ImportsRemovedFromLazyVals2 {
+         lazy val test = ImportsFromLazyValsRemoved1.getUuid()
+       }""",
+    "",
+    """import java.util.UUID
+
+       object ImportsFromLazyValsRemoved1 {
+         def getUuid() = UUID.randomUUID()
+       }""")
 }
