@@ -96,14 +96,14 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * See #1002392 if you wonder why we need this
      */
     private def eventuallyFixModifierPositionsForLazyVals(t: Option[SymTree]): Option[SymTree] = t.map {
-      case lDef: DefDef if lDef.mods.isLazy && lDef.mods.positions.isEmpty =>
+      case dd: DefDef if dd.mods.isLazy && dd.mods.positions.isEmpty =>
         root.foreach {
-          case lVal: ValDef if lDef.mods.isLazy && !lVal.mods.positions.isEmpty && lVal.pos.point == lDef.pos.point =>
-            lDef.mods.setPositions(lVal.mods.positions)
+          case ld: ValDef if dd.mods.isLazy && !ld.mods.positions.isEmpty && ld.pos.point == dd.pos.point =>
+            dd.mods.setPositions(ld.mods.positions)
           case _ => ()
         }
 
-        lDef
+        dd
       case other => other
     }
 
