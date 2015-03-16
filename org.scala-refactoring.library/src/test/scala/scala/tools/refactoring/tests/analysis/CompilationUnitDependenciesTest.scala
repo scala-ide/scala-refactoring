@@ -16,19 +16,20 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   import global._
 
-  private def assertTrees(expected: String, src: String, javaSrc: String, f: Tree => Seq[Tree]) {
+  private def assertTrees(expected: String, src: String, javaSrc: String, addScalaSrc: String, f: Tree => Seq[Tree]) {
     if (!javaSrc.isEmpty) parseJava(javaSrc)
+    if (!addScalaSrc.isEmpty) treeFrom(addScalaSrc)
     val tree = treeFrom(src)
     assertFalse(tree.isErroneous)
     val imports = global.ask(() => f(tree).sortBy(_.toString).map(asString))
     assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n"))
   }
 
-  def assertNeededImports(expected: String, src: String, javaSrc: String = ""): Unit =
-    assertTrees(expected, src, javaSrc, neededImports)
+  def assertNeededImports(expected: String, src: String, javaSrc: String = "", addScalaSrc: String = ""): Unit =
+    assertTrees(expected, src, javaSrc, addScalaSrc, neededImports)
 
   def assertDependencies(expected: String, src: String): Unit =
-    assertTrees(expected, src, "", dependencies)
+    assertTrees(expected, src, "", "", dependencies)
 
   @Test
   def evidenceNoImport() = assertNeededImports(
@@ -1093,4 +1094,65 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
           case _ => false
         }
       }""")
+
+
+  /*
+   * See Assembla ticket #1002402
+   */
+  @Test
+  def testWithTypeOnLazyVal = assertNeededImports(
+    "java.util.UUID",
+    """import java.util.UUID
+
+       class ImportsRemovedFromLazyVals2 {
+         lazy val test: UUID = ImportsFromLazyValsRemoved1.getUuid()
+       }""",
+    "",
+    """import java.util.UUID
+
+       object ImportsFromLazyValsRemoved1 {
+         def getUuid() = UUID.randomUUID()
+       }""")
+
+  @Test
+  def testWithLocalTypeThatNeedsNoImportOnLazyVal = assertNeededImports(
+    "",
+    """package test {
+         class LazyType
+         object LazyIdiot extends LazyType
+         object LazyObject {
+           lazy val l: LazyType = LazyIdiot
+         }
+       }""")
+
+  @Test
+  def testWithLocalTypeOnLazyVal = assertNeededImports(
+    """test.DarkMagic
+       test.Magic""",
+    """import test._
+
+     package test {
+       class Magic
+       object DarkMagic extends Magic
+     }
+
+     class AlwaysLazy {
+       lazy val test: Magic = DarkMagic
+     }""",
+    "")
+
+  @Test
+  def testWithoutTypeOnLazyVal = assertNeededImports(
+    "",
+    """import java.util.UUID
+
+       class ImportsRemovedFromLazyVals2 {
+         lazy val test = ImportsFromLazyValsRemoved1.getUuid()
+       }""",
+    "",
+    """import java.util.UUID
+
+       object ImportsFromLazyValsRemoved1 {
+         def getUuid() = UUID.randomUUID()
+       }""")
 }

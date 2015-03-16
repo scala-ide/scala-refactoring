@@ -272,6 +272,15 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
           super.traverse(t)
 
+        // workaround for Assembla ticket #1002402
+        case t @ ValDef(modifiers, _, tpe: TypeTree, rhs) if modifiers.isLazy =>
+          tpe.original match {
+            case s @ Select(qualifier, _) =>
+              addToResult(s)
+              super.traverse(rhs)
+            case _ => super.traverse(t)
+          }
+
         /*
          * classOf[some.Type] is represented by a Literal
          * */
