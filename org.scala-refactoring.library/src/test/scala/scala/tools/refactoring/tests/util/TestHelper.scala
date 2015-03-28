@@ -14,11 +14,14 @@ import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.TextChange
 import scala.tools.refactoring.util.CompilerProvider
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import scala.tools.refactoring.common.InteractiveScalaCompiler
 import scala.tools.refactoring.common.Selections
-
-import language.{ postfixOps, implicitConversions }
+import language.{ postfixOps, implicitConversions, reflectiveCalls }
+import scala.tools.refactoring.common.NewFileChange
+import scala.tools.refactoring.common.RenameSourceFileChange
+import scala.tools.refactoring.common.RenameSourceFileChange
 
 trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
 
@@ -33,27 +36,40 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
 
+  private case class Source(code: String, filename: String) {
+    def toPair = (code, filename)
+  }
+
+  private object Source {
+    def apply(codeWithFilename: (String, String)) = new Source(codeWithFilename._1, codeWithFilename._2)
+  }
+
   /**
    * A project to test multiple compilation units. Add all
    * sources using "add" before using any of the lazy vals.
    */
-  abstract class FileSet(val name: String) {
-
+  abstract class FileSet(private val baseName: String) {
     def this() = this(randomFileName())
+    private val srcs = ListBuffer[(Source, Source)]()
 
-    private val srcs = ListBuffer[(String, String)]()
-
-    implicit def addRefactoringFile(src: String) = new {
+    implicit def wrapSource(src: String) = new {
       def becomes(expected: String) {
-        srcs += src → stripWhitespacePreservers(expected)
+        val filename = nextFilename()
+        srcs += Source(src, filename) → Source(stripWhitespacePreservers(expected), filename)
       }
     }
 
-    def fileName(src: String) = name + "_" + sources.indexOf(src).toString
+    implicit def wrapSourceWithFilename(srcWithName: (String, String)) = new {
+      def becomes(newSrcWithName: (String, String)) {
+        srcs += Source(srcWithName) -> Source(stripWhitespacePreservers(newSrcWithName._1), newSrcWithName._2)
+      }
+    }
 
-    lazy val sources = srcs.unzip._1 toList
+    private def nextFilename() = {
+      baseName + "_" + srcs.size + ".scala"
+    }
 
-    def apply(f: FileSet => List[String]) = assert(f(this))
+    lazy val sources = srcs.unzip._1.map(_.toPair).toList
 
     val NewFile = ""
 
@@ -61,10 +77,24 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
       performRefactoring(createChanges).assertEqualSource
     }
 
-    private def assert(res: List[String]) = {
+    def apply(f: FileSet => List[String]) = assert(f(this), Nil)
+
+    private def assert(res: List[String], sourceRenames: List[RenameSourceFileChange]) = {
       assertEquals(srcs.length, res.length)
-      val expected = srcs.unzip._2.toList
+      val expected = srcs.unzip._2.toList.map(_.code)
       expected zip res foreach (p => assertEquals(p._1, p._2))
+
+      fileRenameOps.foreach { case (oldName, newName) =>
+        assertTrue(s"Missing rename operation $oldName -> $newName", sourceRenames.exists { r =>
+          r.sourceFile.name == oldName && r.to == newName
+        })
+      }
+    }
+
+    private def fileRenameOps = {
+      srcs.collect { case (oldSource, newSource) if oldSource.filename != newSource.filename =>
+        (oldSource.filename, newSource.filename)
+      }
     }
 
     /**
@@ -84,7 +114,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
           throw e.getCause
       }
 
-      val res = sources zip (sources map fileName) flatMap {
+      val refactoredCode = sources flatMap {
         case (NewFile, name) =>
           changes collect {
             case nfc: NewFileChange => nfc.text
@@ -98,12 +128,14 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
       } filterNot (_.isEmpty)
 
+      val sourceRenames = changes.collect { case d: RenameSourceFileChange => d }
+
       new {
-        def withResultTree(fn: global.Tree => Unit) = fn(treeFrom(res.mkString("\n")))
-        def withResultSource(fn: String => Unit) = fn(res.mkString("\n"))
-        def assertEqualSource() = assert(res)
+        def withResultTree(fn: global.Tree => Unit) = fn(treeFrom(refactoredCode.mkString("\n")))
+        def withResultSource(fn: String => Unit) = fn(refactoredCode.mkString("\n"))
+        def assertEqualSource() = assert(refactoredCode, sourceRenames)
         def assertEqualTree() = withResultTree { actualTree =>
-          val expectedTree = treeFrom(srcs.head._2)
+          val expectedTree = treeFrom(srcs.head._2.code)
           val (expected, actual) = global.ask { () =>
             (expectedTree.toString(), actualTree.toString())
           }
@@ -115,12 +147,12 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
   def selection(refactoring: Selections with InteractiveScalaCompiler, project: FileSet) = {
 
-    val files = project.sources map (x => addToCompiler(project.fileName(x), x))
+    val files = project.sources map { case (code, filename) => addToCompiler(filename, code)}
     val trees: List[refactoring.global.Tree] = files map (refactoring.global.unitOfFile(_).body)
 
     (project.sources zip trees flatMap {
       case (src, tree) =>
-        findMarkedNodes(refactoring)(src, tree)
+        findMarkedNodes(refactoring)(src._1, tree)
     } headOption) getOrElse {
       refactoring.FileSelection(trees.head.pos.source.file, trees.head, 0, 0)
     }

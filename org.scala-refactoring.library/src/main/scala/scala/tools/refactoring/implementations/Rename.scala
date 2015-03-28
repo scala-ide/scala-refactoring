@@ -9,6 +9,7 @@ import common.Change
 import transformation.TreeFactory
 import analysis.TreeAnalysis
 import tools.nsc.symtab.Flags
+import scala.tools.refactoring.common.RenameSourceFileChange
 
 abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler  {
 
@@ -79,8 +80,23 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
 
     val rename = topdown(isInTheIndex &> renameTree |> id)
 
-    val renamedTrees = occurences flatMap (rename(_))
+    val renamedTreesWithOriginals = occurences.flatMap { tree =>
+      rename(tree).map((_, tree))
+    }
 
-    Right(refactor(renamedTrees))
+    val renameSourceChanges = renamedTreesWithOriginals.collect {
+      case (newTree: ImplDef, oldTree: ImplDef) if sourceShouldBeRenamed(newTree, oldTree) =>
+        RenameSourceFileChange(oldTree.pos.source.file, newTree.name.toString() + ".scala")
+    }
+
+    Right(refactor(renamedTreesWithOriginals.map(_._1)) ++ renameSourceChanges)
+  }
+
+  private def sourceShouldBeRenamed(newTree: ImplDef, oldTree: ImplDef) = {
+    lazy val namesDefined = newTree.name != null && oldTree.name != null
+    lazy val namesDifferent = newTree.name != oldTree.name
+    lazy val fileNamedLikeOldTree = oldTree.pos.isDefined && oldTree.pos.source.file.name == oldTree.name.toString + ".scala"
+
+    namesDefined && namesDifferent & fileNamedLikeOldTree
   }
 }
