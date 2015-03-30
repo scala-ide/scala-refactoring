@@ -1551,4 +1551,63 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("x"))
+
+  /*
+   * See Assembla ticket #1001928
+   */
+  @Test
+  def testRenameClassInSamePackageButOtherFile() = new FileSet {
+    """
+    class A
+    """ -> "A.scala" becomes
+    """
+    class B
+    """ -> "B.scala";
+
+    """
+    class C extends /*(*/A/*)*/
+    """ becomes
+    """
+    class C extends /*(*/B/*)*/
+    """
+  } applyRefactoring(renameTo("B"))
+
+
+  /*
+   * See Assembla ticket #1001928
+   */
+  @Test
+  def testRenameClassInDifferentPackageAndOtherFile() = new FileSet {
+    """
+    package one
+    class Eins
+    """ -> "Eins.scala" becomes
+    """
+    package one
+    class One
+    """ -> "One.scala";
+
+    """
+    package two
+    import one._
+
+    class Two {
+      val uno = new /*(*/Eins/*)*/
+    }
+    """ becomes
+    """
+    package two
+    import one._
+
+    class Two {
+      val uno = new /*(*/One/*)*/
+    }
+    """
+  } applyRefactoring(renameTo("One"))
+
+  @Test
+  def testClassInDedicatedFile() = new FileSet {
+    "class /*(*/Foo/*)*/" -> "Foo.scala" becomes
+    "class /*(*/Bazius/*)*/" -> "Bazius.scala"
+  } applyRefactoring(renameTo("Bazius"))
 }
