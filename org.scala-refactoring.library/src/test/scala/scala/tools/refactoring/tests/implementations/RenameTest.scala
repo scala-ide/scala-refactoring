@@ -11,14 +11,23 @@ import tests.util.TestHelper
 import org.junit.Assert._
 import org.junit.Ignore
 import language.reflectiveCalls
+import scala.language.existentials
+import scala.tools.refactoring.common.Change
+import TestHelper.PrepResultWithChanges
 
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
 
-  def renameTo(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new Rename with SilentTracing with TestProjectIndex
-    val changes = performRefactoring(name)
-  }.changes
+  private def prepareAndRenameTo(name: String)(pro: FileSet): PrepResultWithChanges = {
+    val impl = new TestRefactoringImpl(pro) {
+      val refactoring = new Rename with SilentTracing with TestProjectIndex
+    }
+    PrepResultWithChanges(Some(impl.preparationResult()), impl.performRefactoring(name))
+  }
+
+  private def renameTo(name: String)(pro: FileSet): List[Change] = {
+    prepareAndRenameTo(name)(pro).changes
+  }
 
   @Test
   def renameOverlapping() = new FileSet {
@@ -1610,4 +1619,157 @@ class Blubb
     "class /*(*/Foo/*)*/" -> "Foo.scala" becomes
     "class /*(*/Bazius/*)*/" -> "Bazius.scala"
   } applyRefactoring(renameTo("Bazius"))
+
+  /*
+   * See Assembla ticket #1002435
+   */
+  @Test
+  def testRenamePublicValInPlainClass() = new FileSet {
+    """
+    class Bug(val /*(*/number/*)*/: Int)
+    """ becomes
+    """
+    class Bug(val /*(*/z/*)*/: Int)
+    """;
+
+    """
+    object Buggy {
+      def x = new Bug(32).number
+    }
+    """ becomes
+    """
+    object Buggy {
+      def x = new Bug(32).z
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  /*
+   * See Assembla ticket #1002435
+   */
+  @Test
+  def testRenamePublicValInCaseClass() = new FileSet {
+    """
+    case class Bug(/*(*/number/*)*/: Int)
+    """ becomes
+    """
+    case class Bug(/*(*/z/*)*/: Int)
+    """;
+
+    """
+    object Buggy {
+      def x = Bug(32).number
+    }
+    """ becomes
+    """
+    object Buggy {
+      def x = Bug(32).z
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  /*
+   * See Assembla ticket #1002435
+   */
+  @Test
+  def testRenamePublicValInTrait() = new FileSet {
+    """
+    trait Bug {
+      val /*(*/number/*)*/: Int
+    }
+    """ becomes
+    """
+    trait Bug {
+      val /*(*/x/*)*/: Int
+    }
+    """;
+
+    """
+    object Buggy {
+      def bug: Bug = ???
+      def x = bug.number
+    }
+    """ becomes
+    """
+    object Buggy {
+      def bug: Bug = ???
+      def x = bug.x
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("x"))
+
+  @Test
+  def testRenamePublicVarInPlainClass() = new FileSet {
+    """
+    class Bug(var /*(*/number/*)*/: Int)
+    """ becomes
+    """
+    class Bug(var /*(*/z/*)*/: Int)
+    """;
+
+    """
+    object Buggy {
+      def x = new Bug(32).number
+    }
+    """ becomes
+    """
+    object Buggy {
+      def x = new Bug(32).z
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  @Test
+  def testRenamePrivateVarInPlainClass() = new FileSet {
+    """
+    class Bug {
+      private var /*(*/number/*)*/ = 42
+      def test = number
+    }
+    """ becomes
+    """
+    class Bug {
+      private var /*(*/z/*)*/ = 42
+      def test = z
+    }
+    """ -> TaggedAsLocalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  /*
+   * See Assembla Ticket 1002434
+   */
+  def testRenameOverrideVal() = new FileSet {
+    """
+    trait Bug {
+      def x = 42
+    }
+    """ becomes
+    """
+    trait Bug {
+      def xyz = 42
+    }
+    """;
+
+    """
+    class Buggy extends Bug {
+      override val x = 43
+    }
+    """ becomes
+    """
+    class Buggy extends Bug {
+      override val xyz = 43
+    }
+    """;
+
+    """
+    class MoreBugs extends Buggy {
+      override val /*(*/x/*)*/ = 99
+    }
+    """ becomes
+    """
+    class MoreBugs extends Buggy {
+      override val /*(*/xyz/*)*/ = 99
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xyz"))
 }

@@ -22,13 +22,21 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
   def prepare(s: Selection) = {
 
     def isLocalRename(t: Tree) = {
-      def hasNoAccessor = {
-        !((t.symbol.isVal || t.symbol.isVar) &&
-            t.symbol.getter(t.symbol.owner) != NoSymbol &&
-            t.symbol.setter(t.symbol.owner) != NoSymbol)
+      def isHiddenOrNoAccessor(s: Symbol) = {
+        s == NoSymbol || s.isPrivate
       }
 
-      (t.symbol.isPrivate || t.symbol.isLocal) && hasNoAccessor
+      def hasHiddenOrNoAccessor = {
+        if (t.symbol.isVal || t.symbol.isVar) {
+          def getter = t.symbol.getter(t.symbol.owner)
+          def setter = t.symbol.setter(t.symbol.owner)
+          isHiddenOrNoAccessor(getter) && isHiddenOrNoAccessor(setter)
+        } else {
+          true
+        }
+      }
+
+      (t.symbol.isPrivate || t.symbol.isLocal) && hasHiddenOrNoAccessor
     }
 
     s.selectedSymbolTree match {
