@@ -22,8 +22,15 @@ import language.{ postfixOps, implicitConversions, reflectiveCalls }
 import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.common.RenameSourceFileChange
+import scala.tools.refactoring.implementations.Rename
+
+object TestHelper {
+  case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
+}
+
 
 trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
+  import TestHelper._
 
   @Before
   def cleanup() = resetPresentationCompiler()
@@ -52,14 +59,32 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     def this() = this(randomFileName())
     private val srcs = ListBuffer[(Source, Source)]()
 
-    implicit def wrapSource(src: String) = new {
+    object TaggedAsGlobalRename
+    object TaggedAsLocalRename
+    var expectGlobalRename: Option[Boolean] = None
+
+    implicit class WrapSource(src: String) {
       def becomes(expected: String) {
         val filename = nextFilename()
         srcs += Source(src, filename) → Source(stripWhitespacePreservers(expected), filename)
       }
+
+      def ->(tag: TaggedAsGlobalRename.type): String = {
+        expectGlobalRename = Some(true)
+        src
+      }
+
+      def ->(tag: TaggedAsLocalRename.type): String = {
+        expectGlobalRename = Some(false)
+        src
+      }
+
+      def ->(filename: String): (String, String) = {
+        (src, filename)
+      }
     }
 
-    implicit def wrapSourceWithFilename(srcWithName: (String, String)) = new {
+    implicit class WrapSourceWithFilename(srcWithName: (String, String)) {
       def becomes(newSrcWithName: (String, String)) {
         srcs += Source(srcWithName) -> Source(stripWhitespacePreservers(newSrcWithName._1), newSrcWithName._2)
       }
@@ -75,6 +100,10 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
     def applyRefactoring(createChanges: FileSet => List[Change]) {
       performRefactoring(createChanges).assertEqualSource
+    }
+
+    def prepareAndApplyRefactoring(result: FileSet => PrepResultWithChanges) {
+      prepareAndPerformRefactoring(result).assertOk()
     }
 
     def apply(f: FileSet => List[String]) = assert(f(this), Nil)
@@ -97,13 +126,8 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
       }
     }
 
-    /**
-     * Same as applyRefactoring but does not make the assertion on the
-     * refactoring result.
-     */
-    def performRefactoring(createChanges: FileSet => List[Change]) = {
-
-      val changes = try {
+    def prepareAndPerformRefactoring(createChanges: FileSet => PrepResultWithChanges) = {
+      val PrepResultWithChanges(prepResult, changes) = try {
         global.ask { () =>
           createChanges(this)
         }
@@ -134,6 +158,14 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
         def withResultTree(fn: global.Tree => Unit) = fn(treeFrom(refactoredCode.mkString("\n")))
         def withResultSource(fn: String => Unit) = fn(refactoredCode.mkString("\n"))
         def assertEqualSource() = assert(refactoredCode, sourceRenames)
+
+        def assertOk() = {
+          expectGlobalRename.foreach { expectGlobalRename =>
+            assertEquals(expectGlobalRename, !prepResult.get.right.get.hasLocalScope)
+          }
+          assertEqualSource()
+        }
+
         def assertEqualTree() = withResultTree { actualTree =>
           val expectedTree = treeFrom(srcs.head._2.code)
           val (expected, actual) = global.ask { () =>
@@ -143,6 +175,16 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
         }
       }
     }
+
+
+    /**
+     * Same as applyRefactoring but does not make the assertion on the
+     * refactoring result.
+     */
+    def performRefactoring(createChanges: FileSet => List[Change]) = {
+      prepareAndPerformRefactoring(createChanges.andThen(PrepResultWithChanges(None, _)))
+    }
+
   }
 
   def selection(refactoring: Selections with InteractiveScalaCompiler, project: FileSet) = {
