@@ -1735,6 +1735,64 @@ class Blubb
     """ -> TaggedAsLocalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
 
+  @Test
+  def testRenamePackagePrivateVal() = new FileSet {
+    """
+    package test
+    class Bug(private[test] val /*(*/number/*)*/: Int)
+    """ becomes
+    """
+    package test
+    class Bug(private[test] val /*(*/z/*)*/: Int)
+    """;
+
+    """
+    package test
+    object Buggy {
+      def x = new Bug(32).number
+    }
+    """ becomes
+    """
+    package test
+    object Buggy {
+      def x = new Bug(32).z
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  /*
+   * See Assembla Ticket #1002446
+   */
+  @Test
+  def testRenamePackgePrivateDef() = new FileSet {
+    """
+    package bug
+    class Bug {
+      private[bug] def /*(*/bar/*)*/ = 99
+    }
+    """ becomes
+    """
+    package bug
+    class Bug {
+      private[bug] def /*(*/x/*)*/ = 99
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("x"))
+
+  @Test
+  def testRenamePrivateThisVal() = new FileSet {
+    """
+    class Bug {
+      private[this] val /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    class Bug {
+      private[this] val /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
   /*
    * See Assembla Ticket 1002434
    */
