@@ -16,8 +16,9 @@ import scala.tools.refactoring.sourcegen.AbstractPrinter
 import scala.tools.refactoring.sourcegen.Layout
 import scala.reflect.internal.util.RangePosition
 import scala.annotation.tailrec
-
 import language.implicitConversions
+import scala.tools.refactoring.util.SourceWithMarker
+import scala.tools.refactoring.util.SourceWithMarker.Movements._
 
 /**
  * A collection of implicit conversions for ASTs and other
@@ -882,22 +883,56 @@ trait PimpedTrees {
    * object.
    */
   object ModifierTree {
+    import Flags._
+
     def unapply(m: global.Modifiers): Option[List[ModifierTree]] = {
       val flagSorter = Ordering.by((pair: (Long, Position)) => flagPosition(pair._1))
       val sortedMods = m.positions.toList.sorted(flagSorter)
 
-      Some(sortedMods map {
+      Some(sortedMods flatMap {
         // hack to get rid of override modifiers
         // couldn't figure out how to remove a flag from the positions map (michael)
         case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 =>
-          ModifierTree(0)
+          Seq(ModifierTree(0))
         case (flag, pos) if pos.isRange =>
-          ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
+          val fixedEnd = {
+            if (flag == PRIVATE) fixEndForScopedAccessModifier(pos)
+            else pos.end + 1
+          }
+
+          val missingModifierTree = {
+            if (m.privateWithin.nonEmpty && pos.end - pos.start < 3) {
+              val srcAtModifierEnd = SourceWithMarker(pos.source.content, pos.start - 1).moveMarker(
+                 (commentsAndSpaces ~ (("abstract" | "override" | "lazy") ~ commentsAndSpaces).zeroOrMore ~ commentsAndSpaces).backward)
+
+              val srcAtModifierStart = srcAtModifierEnd.moveMarker((("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward)
+
+             Some(ModifierTree(extractAccessModifier(flag)).setPos(pos.withStart(srcAtModifierStart.marker + 1).withEnd(srcAtModifierEnd.marker + 1)))
+            } else {
+              None
+            }
+          }
+
+          missingModifierTree ++ Seq(ModifierTree(flag) setPos (pos withEnd (fixedEnd)))
         case (flag, _) =>
-          ModifierTree(flag)
+          Seq(ModifierTree(flag))
       })
     }
-    import Flags._
+
+    private def extractAccessModifier(flag: Long): Long = {
+      if ((flag & PRIVATE) != 0) PRIVATE
+      else if ((flag & PROTECTED) != 0) PROTECTED
+      else 0
+    }
+
+    private def fixEndForScopedAccessModifier(pos: global.Position): Int = {
+      SourceWithMarker(pos.source.content, pos.end + 1).moveMarker(commentsAndSpaces ~ bracketsWithContents).marker
+    }
+
+    private def fixStartForScopedAccessModifer(pos: global.Position): Int = {
+      SourceWithMarker(pos.source.content, pos.start - 1).moveMarker(
+          (("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward).marker
+    }
 
     /**
      * Defines an ordering for flags. A lower value means that the flag shoud be

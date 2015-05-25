@@ -1793,6 +1793,20 @@ class Blubb
     """ -> TaggedAsLocalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
 
+  @Test
+  def testRenameValWithCommentAfterModifier() = new FileSet {
+    """
+    class Bug {
+      private/*--*/ val /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    class Bug {
+      private/*--*/ val /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
   /*
    * See Assembla Ticket 1002434
    */
