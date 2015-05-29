@@ -1829,6 +1829,30 @@ class Blubb
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
 
+  @Test
+  def testRenamePkgProtectedDefWithComments() = new FileSet {
+    """
+    package bug
+    class Bug {
+      protected/*--*/ //**//**//**//**//**/
+      ////
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] /**/ def /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    package bug
+    class Bug {
+      protected/*--*/ //**//**//**//**//**/
+      ////
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] /**/ def /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
 
   /*
    * See Assembla Ticket 1002434
