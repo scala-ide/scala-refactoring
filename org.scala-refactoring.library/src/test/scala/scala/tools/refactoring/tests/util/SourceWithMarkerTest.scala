@@ -51,10 +51,17 @@ class SourceWithMarkerTest {
 
     val src4 = SourceWithMarker("x//", 2)
 
-   assertEquals("x", src4.moveMarker(commentsAndSpaces.backward).current.toString)
-   assertEquals("v", src1.moveMarker(commentsAndSpaces).current.toString)
-   assertEquals("v", src2.moveMarker(commentsAndSpaces).current.toString)
-   assertEquals("v", src3.moveMarker(commentsAndSpaces).current.toString)
+    val srcStr5 = "/**/ //**/"
+    val src5 = SourceWithMarker(srcStr5, srcStr5.size - 1)
+
+    val res = src5.moveMarker(commentsAndSpaces.backward)
+    println(s"res: $res")
+
+    assertEquals("x", src4.moveMarker(commentsAndSpaces.backward).current.toString)
+    assertEquals("v", src1.moveMarker(commentsAndSpaces).current.toString)
+    assertEquals("v", src2.moveMarker(commentsAndSpaces).current.toString)
+    assertEquals("v", src3.moveMarker(commentsAndSpaces).current.toString)
+    assertTrue(src5.moveMarker(commentsAndSpaces.backward).isDepleted)
   }
 
   @Test
@@ -95,6 +102,27 @@ class SourceWithMarkerTest {
 
     assertTrue(src.moveMarker("protected" ~ ("protected" ~ commentsAndSpaces).backward).isDepleted)
     assertTrue(src.moveMarker(moveToVal ~ (moveToVal ~ "v").backward).isDepleted)
+  }
+
+  @Test
+  def testWithRealisticExamples() {
+    val srcStr = """
+      package bug
+      class Bug {
+        private/*--*/ //**//**//**//**//**/
+        // -/**/-
+        // -/**/-
+        [/**/ bug /**/] val /*(*/z/*)*/ = 99
+      }
+      """
+
+    val src = SourceWithMarker(srcStr, srcStr.lastIndexOf("]"))
+    val mvmt = (("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward
+
+    println("bracketsWithContents: " + src.moveMarker(bracketsWithContents.backward))
+    println("commentsAndSpaces ~ bracketsWithContents: " + src.moveMarker((commentsAndSpaces ~ bracketsWithContents).backward))
+    println("mvmt: " + src.moveMarker(mvmt))
+    assertEquals("p", src.moveMarker(mvmt ~ commentsAndSpaces).current.toString)
   }
 
   @Test

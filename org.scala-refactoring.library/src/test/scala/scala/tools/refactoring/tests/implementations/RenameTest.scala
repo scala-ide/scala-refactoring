@@ -1736,7 +1736,7 @@ class Blubb
   } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
 
   @Test
-  def testRenamePackagePrivateVal() = new FileSet {
+  def testRenamePkgPrivateVal() = new FileSet {
     """
     package test
     class Bug(private[test] val /*(*/number/*)*/: Int)
@@ -1764,7 +1764,7 @@ class Blubb
    * See Assembla Ticket #1002446
    */
   @Test
-  def testRenamePackgePrivateDef() = new FileSet {
+  def testRenamePkgPrivateDef() = new FileSet {
     """
     package bug
     class Bug {
@@ -1806,6 +1806,29 @@ class Blubb
     }
     """ -> TaggedAsLocalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  @Test
+  def testRenamePkgPrivateValWithComments() = new FileSet {
+    """
+    package bug
+    class Bug {
+      private/*--*/ //**//**//**//**//**/
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] val /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    package bug
+    class Bug {
+      private/*--*/ //**//**//**//**//**/
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] val /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
 
   /*
    * See Assembla Ticket 1002434

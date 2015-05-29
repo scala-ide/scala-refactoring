@@ -253,7 +253,7 @@ object SourceWithMarker {
           }
         }
 
-        if(!forward) go(sourceWithMarker.marker).orElse(go(sourceWithMarker.marker, inSingleLineComment = true))
+        if(!forward) go(sourceWithMarker.marker, inSingleLineComment = true).orElse(go(sourceWithMarker.marker, inSingleLineComment = false))
         else go(sourceWithMarker.marker)
       }
 

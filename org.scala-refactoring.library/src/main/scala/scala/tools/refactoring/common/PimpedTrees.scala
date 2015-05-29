@@ -907,7 +907,7 @@ trait PimpedTrees {
 
               val srcAtModifierStart = srcAtModifierEnd.moveMarker((("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward)
 
-             Some(ModifierTree(extractAccessModifier(flag)).setPos(pos.withStart(srcAtModifierStart.marker + 1).withEnd(srcAtModifierEnd.marker + 1)))
+              Some(ModifierTree(extractAccessModifier(flag)).setPos(pos.withStart(srcAtModifierStart.marker + 1).withEnd(srcAtModifierEnd.marker + 1)))
             } else {
               None
             }
