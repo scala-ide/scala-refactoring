@@ -902,10 +902,11 @@ trait PimpedTrees {
 
           val missingModifierTree = {
             if (m.privateWithin.nonEmpty && pos.end - pos.start < 3) {
-              val srcAtModifierEnd = SourceWithMarker(pos.source.content, pos.start - 1).moveMarker(
-                 (commentsAndSpaces ~ (("abstract" | "override" | "lazy") ~ commentsAndSpaces).zeroOrMore ~ commentsAndSpaces).backward)
+              val srcAtModifierEnd = SourceWithMarker(pos.source.content, pos.start - 1).moveMarker(commentsAndSpaces.backward)
 
-              val srcAtModifierStart = srcAtModifierEnd.moveMarker((("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward)
+              val srcAtModifierStart = srcAtModifierEnd.moveMarker(
+                  (("private" | "protected") ~
+                  commentsAndSpaces ~ bracketsWithContents ~ commentsAndSpaces).backward)
 
               Some(ModifierTree(extractAccessModifier(flag)).setPos(pos.withStart(srcAtModifierStart.marker + 1).withEnd(srcAtModifierEnd.marker + 1)))
             } else {
