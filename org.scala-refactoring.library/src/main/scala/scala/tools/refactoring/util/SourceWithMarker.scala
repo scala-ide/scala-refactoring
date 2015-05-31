@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 import java.util.Arrays
 import scala.collection.immutable.SortedMap
 import scala.language.implicitConversions
+import scala.reflect.internal.util.RangePosition
 
 /**
  * Represents source code with a movable marker.
@@ -19,6 +20,10 @@ final case class SourceWithMarker(source: Array[Char] = Array(), marker: Int = 0
   def moveMarker(movement: Movement): SourceWithMarker = {
     if (isDepleted) this
     else movement(this).map(m => copy(marker = m)).getOrElse(this)
+  }
+
+  def moveMarkerBack(movement: Movement): SourceWithMarker = {
+    moveMarker(movement.backward)
   }
 
   def current: Char = source(marker)
@@ -68,6 +73,14 @@ final case class SourceWithMarker(source: Array[Char] = Array(), marker: Int = 0
 }
 
 object SourceWithMarker {
+
+  def beforeStartOf(pos: RangePosition): SourceWithMarker = {
+    SourceWithMarker(pos.source.content, pos.start - 1)
+  }
+
+  def afterEndOf(pos: RangePosition): SourceWithMarker = {
+    SourceWithMarker(pos.source.content, pos.end + 1)
+  }
 
   /**
    * A context dependent, directional movement that can be applied to a [[SourceWithMarker]]

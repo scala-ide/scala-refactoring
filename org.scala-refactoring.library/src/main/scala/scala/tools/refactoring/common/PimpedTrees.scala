@@ -894,7 +894,7 @@ trait PimpedTrees {
         // couldn't figure out how to remove a flag from the positions map (michael)
         case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 =>
           Seq(ModifierTree(0))
-        case (flag, pos) if pos.isRange =>
+        case (flag, pos: RangePosition) =>
           val fixedEnd = {
             if (flag == PRIVATE) fixEndForScopedAccessModifier(pos)
             else pos.end + 1
@@ -906,12 +906,13 @@ trait PimpedTrees {
            *  add the associated modifier trees "by-hand" if needed.
            */
           val missingModifierTree = {
-            if (m.privateWithin.nonEmpty && pos.end - pos.start < 3) {
-              val srcAtModifierEnd = SourceWithMarker(pos.source.content, pos.start - 1).moveMarker(commentsAndSpaces.backward)
 
-              val srcAtModifierStart = srcAtModifierEnd.moveMarker(
-                  (("private" | "protected") ~
-                  commentsAndSpaces ~ bracketsWithContents ~ commentsAndSpaces).backward)
+            if (m.privateWithin.nonEmpty && pos.end - pos.start < 3) {
+              val srcAtModifierEnd = SourceWithMarker.beforeStartOf(pos).moveMarkerBack(commentsAndSpaces)
+
+              val srcAtModifierStart = srcAtModifierEnd.moveMarkerBack(
+                  ("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents)
+
 
               Some(ModifierTree(extractAccessModifier(flag)).setPos(pos.withStart(srcAtModifierStart.marker + 1).withEnd(srcAtModifierEnd.marker + 1)))
             } else {
@@ -935,13 +936,8 @@ trait PimpedTrees {
      * Positions might be set incorrectly by the compiler when dealing with 'private[this]' or 'protected[this]'; instead of pointing to
      * ']', end might point to the end of 'private' or 'protected'. This method is meant to take care of this.
      */
-    private def fixEndForScopedAccessModifier(pos: global.Position): Int = {
-      SourceWithMarker(pos.source.content, pos.end + 1).moveMarker(commentsAndSpaces ~ bracketsWithContents).marker
-    }
-
-    private def fixStartForScopedAccessModifer(pos: global.Position): Int = {
-      SourceWithMarker(pos.source.content, pos.start - 1).moveMarker(
-          (("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward).marker
+    private def fixEndForScopedAccessModifier(pos: RangePosition): Int = {
+      SourceWithMarker.afterEndOf(pos).moveMarker(commentsAndSpaces ~ bracketsWithContents).marker
     }
 
     /**
