@@ -900,6 +900,11 @@ trait PimpedTrees {
             else pos.end + 1
           }
 
+          /*
+           *  Unfortunately package private and protected vals/defs (like "private[pgk] val test = 2") might not be properly represented
+           *  in 'm.positions' (see https://www.assembla.com/spaces/scala-ide/tickets/1002446#/activity/ticket:). We therefore
+           *  add the associated modifier trees "by-hand" if needed.
+           */
           val missingModifierTree = {
             if (m.privateWithin.nonEmpty && pos.end - pos.start < 3) {
               val srcAtModifierEnd = SourceWithMarker(pos.source.content, pos.start - 1).moveMarker(commentsAndSpaces.backward)
@@ -926,6 +931,10 @@ trait PimpedTrees {
       else 0
     }
 
+    /*
+     * Positions might be set incorrectly by the compiler when dealing with 'private[this]' or 'protected[this]'; instead of pointing to
+     * ']', end might point to the end of 'private' or 'protected'. This method is meant to take care of this.
+     */
     private def fixEndForScopedAccessModifier(pos: global.Position): Int = {
       SourceWithMarker(pos.source.content, pos.end + 1).moveMarker(commentsAndSpaces ~ bracketsWithContents).marker
     }
