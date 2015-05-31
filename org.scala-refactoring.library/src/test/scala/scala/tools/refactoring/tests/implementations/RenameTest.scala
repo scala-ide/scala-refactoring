@@ -1853,10 +1853,30 @@ class Blubb
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
 
+  /*
+   * Correctly renaming package private lazy vals is not as easy as one might hope,
+   * because of their representation in the ASTs, both as "ValDef"s and "DefDef"s.
+   */
+  @Ignore
+  @Test
+  def testRenamePkgProtectedLazyVal() = new FileSet {
+    """
+    package experiments
+    class Clazz {
+      private[experiments] lazy val /*(*/x/*)*/ = 999
+    }""" becomes
+    """
+    package experiments
+    class Clazz {
+      private[experiments] lazy val /*(*/xy/*)*/ = 999
+    }""" -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xy"))
+
 
   /*
    * See Assembla Ticket 1002434
    */
+  @Test
   def testRenameOverrideVal() = new FileSet {
     """
     trait Bug {
@@ -1889,6 +1909,6 @@ class Blubb
     class MoreBugs extends Buggy {
       override val /*(*/xyz/*)*/ = 99
     }
-    """ -> TaggedAsLocalRename
+    """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("xyz"))
 }
