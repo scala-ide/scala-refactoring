@@ -92,7 +92,7 @@ object SourceWithMarker {
    * scala> val src = SourceWithMarker("private val /*---*/ x = 4".toCharArray)
    * src: scala.tools.refactoring.util.SourceWithMarker = <p>riv...
    * scala> val movement = ("private" | "protected") ~ commentsAndSpaces ~ "val" ~ commentsAndSpaces
-   * scala> val = srcAtx = src.moveMarker(movement)
+   * scala> val srcAtx = src.moveMarker(movement)
    * srcAtx: scala.tools.refactoring.util.SourceWithMarker = ... <x> = ...
    * scala> val moveBackToVal = ("al" ~ commentsAndSpaces ~ "x").backward
    * scala> val srcAtVal = srcAtx.moveMarker(moveBackToVal)
