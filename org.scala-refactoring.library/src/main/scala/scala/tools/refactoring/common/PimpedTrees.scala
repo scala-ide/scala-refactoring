@@ -16,8 +16,9 @@ import scala.tools.refactoring.sourcegen.AbstractPrinter
 import scala.tools.refactoring.sourcegen.Layout
 import scala.reflect.internal.util.RangePosition
 import scala.annotation.tailrec
-
 import language.implicitConversions
+import scala.tools.refactoring.util.SourceWithMarker
+import scala.tools.refactoring.util.SourceWithMarker.Movements._
 
 /**
  * A collection of implicit conversions for ASTs and other
@@ -882,22 +883,62 @@ trait PimpedTrees {
    * object.
    */
   object ModifierTree {
+    import Flags._
+
     def unapply(m: global.Modifiers): Option[List[ModifierTree]] = {
       val flagSorter = Ordering.by((pair: (Long, Position)) => flagPosition(pair._1))
       val sortedMods = m.positions.toList.sorted(flagSorter)
 
-      Some(sortedMods map {
+      Some(sortedMods flatMap {
         // hack to get rid of override modifiers
         // couldn't figure out how to remove a flag from the positions map (michael)
         case (Flags.OVERRIDE, _) if (m.flags & Flags.OVERRIDE) == 0 =>
-          ModifierTree(0)
-        case (flag, pos) if pos.isRange =>
-          ModifierTree(flag) setPos (pos withEnd (pos.end + 1))
+          Seq(ModifierTree(0))
+        case (flag, pos: RangePosition) =>
+          val fixedEnd = {
+            if (flag == PRIVATE) fixEndForScopedAccessModifier(pos)
+            else pos.end + 1
+          }
+
+          /*
+           *  Unfortunately package private and protected vals/defs (like "private[pgk] val test = 2") might not be properly represented
+           *  in 'm.positions' (see https://www.assembla.com/spaces/scala-ide/tickets/1002446#/activity/ticket:). We therefore
+           *  add the associated modifier trees "by-hand" if needed.
+           */
+          val missingModifierTree = {
+
+            if (m.privateWithin.nonEmpty && pos.end - pos.start < 3) {
+              val srcAtModifierEnd = SourceWithMarker.beforeStartOf(pos).moveMarkerBack(commentsAndSpaces)
+
+              val srcAtModifierStart = srcAtModifierEnd.moveMarkerBack(
+                  ("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents)
+
+
+              Some(ModifierTree(extractAccessModifier(flag)).setPos(pos.withStart(srcAtModifierStart.marker + 1).withEnd(srcAtModifierEnd.marker + 1)))
+            } else {
+              None
+            }
+          }
+
+          missingModifierTree ++ Seq(ModifierTree(flag) setPos (pos withEnd (fixedEnd)))
         case (flag, _) =>
-          ModifierTree(flag)
+          Seq(ModifierTree(flag))
       })
     }
-    import Flags._
+
+    private def extractAccessModifier(flag: Long): Long = {
+      if ((flag & PRIVATE) != 0) PRIVATE
+      else if ((flag & PROTECTED) != 0) PROTECTED
+      else 0
+    }
+
+    /*
+     * Positions might be set incorrectly by the compiler when dealing with 'private[this]' or 'protected[this]'; instead of pointing to
+     * ']', end might point to the end of 'private' or 'protected'. This method is meant to take care of this.
+     */
+    private def fixEndForScopedAccessModifier(pos: RangePosition): Int = {
+      SourceWithMarker.afterEndOf(pos).moveMarker(commentsAndSpaces ~ bracketsWithContents).marker
+    }
 
     /**
      * Defines an ordering for flags. A lower value means that the flag shoud be

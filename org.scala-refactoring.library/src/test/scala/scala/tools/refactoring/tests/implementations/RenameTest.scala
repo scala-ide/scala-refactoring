@@ -1735,9 +1735,148 @@ class Blubb
     """ -> TaggedAsLocalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
 
+  @Test
+  def testRenamePkgPrivateVal() = new FileSet {
+    """
+    package test
+    class Bug(private[test] val /*(*/number/*)*/: Int)
+    """ becomes
+    """
+    package test
+    class Bug(private[test] val /*(*/z/*)*/: Int)
+    """;
+
+    """
+    package test
+    object Buggy {
+      def x = new Bug(32).number
+    }
+    """ becomes
+    """
+    package test
+    object Buggy {
+      def x = new Bug(32).z
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  /*
+   * See Assembla Ticket #1002446
+   */
+  @Test
+  def testRenamePkgPrivateDef() = new FileSet {
+    """
+    package bug
+    class Bug {
+      private[bug] def /*(*/bar/*)*/ = 99
+    }
+    """ becomes
+    """
+    package bug
+    class Bug {
+      private[bug] def /*(*/x/*)*/ = 99
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("x"))
+
+  @Test
+  def testRenamePrivateThisVal() = new FileSet {
+    """
+    class Bug {
+      private[this] val /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    class Bug {
+      private[this] val /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  @Test
+  def testRenameValWithCommentAfterModifier() = new FileSet {
+    """
+    class Bug {
+      private/*--*/ val /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    class Bug {
+      private/*--*/ val /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  @Test
+  def testRenamePkgPrivateValWithComments() = new FileSet {
+    """
+    package bug
+    class Bug {
+      private/*--*/ //**//**//**//**//**/
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] val /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    package bug
+    class Bug {
+      private/*--*/ //**//**//**//**//**/
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] val /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  @Test
+  def testRenamePkgProtectedDefWithComments() = new FileSet {
+    """
+    package bug
+    class Bug {
+      protected/*--*/ //**//**//**//**//**/
+      ////
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] /**/ def /*(*/nautilus/*)*/ = 99
+    }
+    """ becomes
+    """
+    package bug
+    class Bug {
+      protected/*--*/ //**//**//**//**//**/
+      ////
+      // -/**/-
+      // -/**/-
+      [/**/ bug /**/] /**/ def /*(*/z/*)*/ = 99
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("z"))
+
+  /*
+   * Correctly renaming package private lazy vals is not as easy as one might hope,
+   * because of their representation in the ASTs, both as "ValDef"s and "DefDef"s.
+   */
+  @Ignore
+  @Test
+  def testRenamePkgProtectedLazyVal() = new FileSet {
+    """
+    package experiments
+    class Clazz {
+      private[experiments] lazy val /*(*/x/*)*/ = 999
+    }""" becomes
+    """
+    package experiments
+    class Clazz {
+      private[experiments] lazy val /*(*/xy/*)*/ = 999
+    }""" -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xy"))
+
+
   /*
    * See Assembla Ticket 1002434
    */
+  @Test
   def testRenameOverrideVal() = new FileSet {
     """
     trait Bug {
@@ -1770,6 +1909,6 @@ class Blubb
     class MoreBugs extends Buggy {
       override val /*(*/xyz/*)*/ = 99
     }
-    """ -> TaggedAsLocalRename
+    """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("xyz"))
 }

@@ -76,8 +76,8 @@ object Requisite {
 
   val Blank = new Requisite {
     def isRequired(l: Layout, r: Layout) = {
-      val _1 = l.matches(".*\\s+$")
-      val _2 = r.matches("^\\s+.*")
+      val _1 = l.matches("(?s).*\\s+$")
+      val _2 = r.matches("(?s)^\\s+.*")
 
       !(_1 || _2)
     }
