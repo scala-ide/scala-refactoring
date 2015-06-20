@@ -1911,4 +1911,19 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("xyz"))
+
+  /*
+   * See Assembla Ticket 1002490
+   */
+  @Test
+  def testRenameClassWithCompanion() = new FileSet {
+    """
+    class /*(*/Bug/*)*/
+    object Bug
+    """ -> "Bug.scala" becomes
+    """
+    class /*(*/Buggy/*)*/
+    object Buggy
+    """ -> "Buggy.scala"
+  } applyRefactoring(renameTo("Buggy"))
 }

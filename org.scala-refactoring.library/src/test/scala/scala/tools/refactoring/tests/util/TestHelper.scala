@@ -118,6 +118,15 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
           r.sourceFile.name == oldName && r.to == newName
         })
       }
+
+      assertNoDuplicates(sourceRenames.map(_.to), d => s"Destination '$d' appearing multiple times")
+      assertNoDuplicates(sourceRenames.map(_.sourceFile.canonicalPath), s => s"Source '$s' appearing multiple times")
+    }
+
+    private def assertNoDuplicates[T](values: Seq[T], mkErrMsg: Any => String): Unit = {
+      values.groupBy(identity).foreach { case (v, vs) =>
+        assertTrue(mkErrMsg(v), vs.size < 2)
+      }
     }
 
     private def fileRenameOps = {

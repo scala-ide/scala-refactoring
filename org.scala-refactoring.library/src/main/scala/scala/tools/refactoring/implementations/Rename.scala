@@ -95,7 +95,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     val renameSourceChanges = renamedTreesWithOriginals.collect {
       case (newTree: ImplDef, oldTree: ImplDef) if sourceShouldBeRenamed(newTree, oldTree) =>
         RenameSourceFileChange(oldTree.pos.source.file, newTree.name.toString() + ".scala")
-    }
+    }.distinct
 
     Right(refactor(renamedTreesWithOriginals.map(_._1)) ++ renameSourceChanges)
   }
