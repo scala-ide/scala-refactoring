@@ -1926,4 +1926,61 @@ class Blubb
     object Buggy
     """ -> "Buggy.scala"
   } applyRefactoring(renameTo("Buggy"))
+
+  /*
+   * See Assembla Ticket 1002436
+   */
+  @Ignore
+  @Test
+  def testRenameTypeAnnotatingLazyVal() = new FileSet {
+    """
+    class /*(*/Bug/*)*/
+
+    class Buggy {
+      lazy val bug: Bug = new Bug
+
+      def moreBugs = {
+        lazy val buggy: Bug = new Bug
+        val notBuggy: Bug = new Bug
+        buggy.hashCode + notBuggy.hashCode
+      }
+    }
+    """ becomes
+    """
+    class /*(*/Mistkaefer/*)*/
+
+    class Buggy {
+      lazy val bug: Mistkaefer = new Mistkaefer
+
+      def moreBugs = {
+        lazy val buggy: Mistkaefer = new Mistkaefer
+        val notBuggy: Mistkaefer = new Mistkaefer
+        buggy.hashCode + notBuggy.hashCode
+      }
+    }
+    """
+  } applyRefactoring(renameTo("Mistkaefer"))
+
+  @Ignore
+  @Test
+  def testRenameTypeAnnotatingLazyValMinimal() = new FileSet {
+    """
+    object Buggy {
+      class /*(*/Bug/*)*/
+      def err = {
+        lazy val bug: Bug = new Bug
+        bug.hashCode
+      }
+    }
+    """ becomes
+    """
+    object Buggy {
+      class /*(*/Mistkaefer/*)*/
+      def err = {
+        lazy val bug: Mistkaefer = new Mistkaefer
+        bug.hashCode
+      }
+    }
+    """
+  } applyRefactoring(renameTo("Mistkaefer"))
 }
