@@ -13,7 +13,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
   private def createRefactoring(pro: FileSet) = {
     new TestRefactoringImpl(pro) {
-      val refactoring = new MoveClass with SilentTracing with TestProjectIndex
+      val refactoring = new MoveClass with TestProjectIndex
     }
   }
 

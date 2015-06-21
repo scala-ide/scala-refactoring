@@ -12,7 +12,7 @@ import language.reflectiveCalls
 class SplitParameterListsTest extends TestHelper with TestRefactoring {
 
   def splitParameterLists(splitPositions: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new SplitParameterLists with SilentTracing with TestProjectIndex
+    val refactoring = new SplitParameterLists with TestProjectIndex
     val changes = performRefactoring(splitPositions)
   }.changes
 

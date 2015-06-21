@@ -23,13 +23,13 @@ class ExtractTraitTest extends TestRefactoring {
   }
 
   def extractTrait(params: (String, String => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractTrait with SilentTracing with TestProjectIndex
+    val refactoring = new ExtractTrait with TestProjectIndex
     def filter(member: refactoring.global.ValOrDefDef) = params._2(member.symbol.nameString)
     val changes = performRefactoring(new refactoring.RefactoringParameters(params._1, filter))
   }.changes
 
   def extractTraitByParamListLength(params: (String, Int => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractTrait with SilentTracing with TestProjectIndex
+    val refactoring = new ExtractTrait with TestProjectIndex
     def filter(member: refactoring.global.ValOrDefDef) = member match {
       case valdef: refactoring.global.ValDef => false
       case defdef: refactoring.global.DefDef => defdef.vparamss.headOption.map(vparams => params._2(vparams.size)).getOrElse(false)

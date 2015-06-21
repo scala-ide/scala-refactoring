@@ -25,7 +25,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   }
 
   def generateHashcodeAndEquals(params: (Boolean, String => Boolean, Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new GenerateHashcodeAndEquals with SilentTracing {
+    val refactoring = new GenerateHashcodeAndEquals  {
       val global = outer.global
     }
     import refactoring.global.ValDef

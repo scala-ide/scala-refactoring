@@ -10,7 +10,7 @@ import scala.tools.refactoring.tests.util.TestHelper
 
 import org.junit.ComparisonFailure
 
-class ReusingPrinterTest extends TestHelper with SilentTracing {
+class ReusingPrinterTest extends TestHelper {
 
   import global._
 

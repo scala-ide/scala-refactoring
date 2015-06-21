@@ -12,7 +12,7 @@ import tests.util.TestRefactoring
 abstract class OrganizeImportsBaseTest extends TestHelper with TestRefactoring {
 
   abstract class OrganizeImportsRefatoring(pro: FileSet) extends TestRefactoringImpl(pro) {
-    val refactoring = new OrganizeImports with SilentTracing { val global = OrganizeImportsBaseTest.this.global }
+    val refactoring = new OrganizeImports { val global = OrganizeImportsBaseTest.this.global }
     type RefactoringParameters = refactoring.RefactoringParameters
     val params: RefactoringParameters
     def mkChanges = performRefactoring(params)

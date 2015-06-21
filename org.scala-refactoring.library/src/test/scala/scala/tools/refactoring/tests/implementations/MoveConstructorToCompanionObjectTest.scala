@@ -10,7 +10,7 @@ import language.reflectiveCalls
 class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactoring {
 
   def moveConstructorToCompanion(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new MoveConstructorToCompanionObject with SilentTracing with TestProjectIndex
+    val refactoring = new MoveConstructorToCompanionObject with TestProjectIndex
     val changes = performRefactoring()
   }.changes
 

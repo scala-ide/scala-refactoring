@@ -17,7 +17,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
 
   def extract(param: ExtractLocal#RefactoringParameters)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractLocal with SilentTracing with TestProjectIndex
+      val refactoring = new ExtractLocal with TestProjectIndex
     }
     testRefactoring.performRefactoring(param)
   }

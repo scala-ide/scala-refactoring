@@ -16,7 +16,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   outer =>
 
   def elim(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new EliminateMatch with SilentTracing with common.InteractiveScalaCompiler {
+    val refactoring = new EliminateMatch with common.InteractiveScalaCompiler {
       val global = outer.global
     }
     val changes = performRefactoring()

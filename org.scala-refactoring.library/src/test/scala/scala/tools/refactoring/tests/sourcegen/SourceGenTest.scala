@@ -16,7 +16,7 @@ import tools.nsc.ast.parser.Tokens
 
 import language.{ postfixOps, implicitConversions }
 
-class SourceGenTest extends TestHelper with SilentTracing {
+class SourceGenTest extends TestHelper {
 
   import global._
 

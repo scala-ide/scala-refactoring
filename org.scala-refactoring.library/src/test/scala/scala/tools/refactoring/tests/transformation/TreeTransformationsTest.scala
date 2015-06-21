@@ -10,9 +10,9 @@ import org.junit.Assert._
 import common.PimpedTrees
 import language.{ postfixOps, reflectiveCalls }
 import scala.tools.nsc.util.FailedInterrupt
-import scala.tools.refactoring.common.SilentTracing
+import scala.tools.refactoring.common.TracingImpl
 
-class TreeTransformationsTest extends TestHelper with SilentTracing {
+class TreeTransformationsTest extends TestHelper with TracingImpl {
 
   import global._
 

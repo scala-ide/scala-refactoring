@@ -16,7 +16,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   outer =>
 
   def explicitGettersSetters(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExplicitGettersSetters with SilentTracing {
+    val refactoring = new ExplicitGettersSetters  {
       val global = outer.global
     }
     val changes = performRefactoring()

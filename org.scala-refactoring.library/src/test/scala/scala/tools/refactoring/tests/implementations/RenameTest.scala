@@ -14,13 +14,14 @@ import language.reflectiveCalls
 import scala.language.existentials
 import scala.tools.refactoring.common.Change
 import TestHelper.PrepResultWithChanges
+import scala.tools.refactoring.common.TracingImpl
 
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
 
   private def prepareAndRenameTo(name: String)(pro: FileSet): PrepResultWithChanges = {
     val impl = new TestRefactoringImpl(pro) {
-      val refactoring = new Rename with SilentTracing with TestProjectIndex
+      val refactoring = new Rename with TracingImpl with TestProjectIndex
     }
     PrepResultWithChanges(Some(impl.preparationResult()), impl.performRefactoring(name))
   }
