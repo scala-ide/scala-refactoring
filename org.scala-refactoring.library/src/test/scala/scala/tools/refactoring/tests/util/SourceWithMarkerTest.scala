@@ -55,7 +55,6 @@ class SourceWithMarkerTest {
     val src5 = SourceWithMarker(srcStr5, srcStr5.size - 1)
 
     val res = src5.moveMarker(commentsAndSpaces.backward)
-    println(s"res: $res")
 
     assertEquals("x", src4.moveMarker(commentsAndSpaces.backward).current.toString)
     assertEquals("v", src1.moveMarker(commentsAndSpaces).current.toString)
@@ -119,9 +118,6 @@ class SourceWithMarkerTest {
     val src = SourceWithMarker(srcStr, srcStr.lastIndexOf("]"))
     val mvmt = (("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward
 
-    println("bracketsWithContents: " + src.moveMarker(bracketsWithContents.backward))
-    println("commentsAndSpaces ~ bracketsWithContents: " + src.moveMarker((commentsAndSpaces ~ bracketsWithContents).backward))
-    println("mvmt: " + src.moveMarker(mvmt))
     assertEquals("p", src.moveMarker(mvmt ~ commentsAndSpaces).current.toString)
   }
 
