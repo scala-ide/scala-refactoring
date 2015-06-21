@@ -1931,7 +1931,6 @@ class Blubb
   /*
    * See Assembla Ticket 1002436
    */
-  @Ignore
   @Test
   def testRenameTypeAnnotatingLazyVal() = new FileSet {
     """
@@ -1962,7 +1961,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("Mistkaefer"))
 
-  @Ignore
   @Test
   def testRenameTypeAnnotatingLazyValMinimal() = new FileSet {
     """

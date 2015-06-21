@@ -115,7 +115,7 @@ trait TreeFactory {
     }
 
     if (mods != NoMods) valOrVarDef setSymbol NoSymbol.newValue(termName, newFlags = mods.flags) else valOrVarDef
-  }  
+  }
 
   def mkParam(name: String, tpe: Type, defaultVal: Tree = EmptyTree): ValDef = {
     ValDef(Modifiers(Flags.PARAM), newTermName(name), TypeTree(tpe), defaultVal)
