@@ -14,7 +14,7 @@ class AddFieldTest extends TestHelper {
 
   def addField(className: String, valName: String, isVar: Boolean, returnType: Option[String], target: AddMethodTarget, src: String, expected: String) = {
     global.ask { () =>
-      val refactoring = new AddField with SilentTracing {
+      val refactoring = new AddField {
         val global = outer.global
         val file = addToCompiler(randomFileName(), src)
         val change = addField(file, className, valName, isVar, returnType, target)

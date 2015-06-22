@@ -14,7 +14,7 @@ import language.reflectiveCalls
 class ExtractMethodTest extends TestHelper with TestRefactoring {
 
   def extract(name: String)(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExtractMethod with SilentTracing with TestProjectIndex
+    val refactoring = new ExtractMethod with TestProjectIndex
     val changes = performRefactoring(name)
   }.changes
 

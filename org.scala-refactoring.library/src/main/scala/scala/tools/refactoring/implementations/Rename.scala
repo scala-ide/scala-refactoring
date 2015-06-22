@@ -11,7 +11,7 @@ import analysis.TreeAnalysis
 import tools.nsc.symtab.Flags
 import scala.tools.refactoring.common.RenameSourceFileChange
 
-abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler  {
+abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler {
 
   import global._
 

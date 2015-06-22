@@ -24,7 +24,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   }
 
   def introduceProductNTrait(params: (Boolean, String => Boolean, Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new IntroduceProductNTrait with SilentTracing {
+    val refactoring = new IntroduceProductNTrait  {
       val global = outer.global
     }
     import refactoring.global.ValDef

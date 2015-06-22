@@ -7,7 +7,7 @@ import scala.tools.refactoring.implementations.extraction.ExtractExtractor
 class ExtractExtractorTest extends TestHelper with TestRefactoring {
   def extract(extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractExtractor with SilentTracing with TestProjectIndex
+      val refactoring = new ExtractExtractor with TestProjectIndex
       val extraction = preparationResult.right.get.extractions(extractionIdx).asInstanceOf[refactoring.Extraction]
     }
     testRefactoring.performRefactoring(testRefactoring.extraction)

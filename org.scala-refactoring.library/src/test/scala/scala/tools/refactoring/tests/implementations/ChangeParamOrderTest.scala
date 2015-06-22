@@ -10,7 +10,7 @@ import language.reflectiveCalls
 class ChangeParamOrderTest extends TestHelper with TestRefactoring {
 
   def changeParamOrder(permutations: List[List[Int]])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ChangeParamOrder with SilentTracing with TestProjectIndex
+    val refactoring = new ChangeParamOrder with TestProjectIndex
     val changes = performRefactoring(permutations)
   }.changes
 

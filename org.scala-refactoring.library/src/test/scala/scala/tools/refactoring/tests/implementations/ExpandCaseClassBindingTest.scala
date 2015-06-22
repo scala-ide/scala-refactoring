@@ -16,7 +16,7 @@ import language.reflectiveCalls
 class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
 
   def expand(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExpandCaseClassBinding with SilentTracing with TestProjectIndex
+    val refactoring = new ExpandCaseClassBinding with TestProjectIndex
     val changes = performRefactoring()
   }.changes
 

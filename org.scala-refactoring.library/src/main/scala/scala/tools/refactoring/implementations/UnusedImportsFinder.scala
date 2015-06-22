@@ -10,8 +10,9 @@ import common.PimpedTrees
 import common.SilentTracing
 import common.TreeTraverser
 import sourcegen.SourceGenerator
+import scala.tools.refactoring.common.TracingImpl
 
-trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeTraverser with PimpedTrees with SilentTracing {
+trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeTraverser with PimpedTrees with TracingImpl {
 
   import global._
 

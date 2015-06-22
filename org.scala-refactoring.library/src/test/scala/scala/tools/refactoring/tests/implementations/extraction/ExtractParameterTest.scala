@@ -8,7 +8,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
 
   def extract(extractionIdx: Int)(pro: FileSet) = {
     val testRefactoring = new TestRefactoringImpl(pro) {
-      val refactoring = new ExtractParameter with SilentTracing with TestProjectIndex
+      val refactoring = new ExtractParameter with TestProjectIndex
       val extraction = preparationResult.right.get.extractions(extractionIdx)
     }
     testRefactoring.performRefactoring(testRefactoring.extraction)

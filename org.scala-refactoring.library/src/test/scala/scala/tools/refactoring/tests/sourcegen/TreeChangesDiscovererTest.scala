@@ -11,7 +11,7 @@ import common.SilentTracing
 import common.PimpedTrees
 import sourcegen.TreeChangesDiscoverer
 
-class TreeChangesDiscovererTest extends TestHelper with SilentTracing {
+class TreeChangesDiscovererTest extends TestHelper {
 
   import global._
 

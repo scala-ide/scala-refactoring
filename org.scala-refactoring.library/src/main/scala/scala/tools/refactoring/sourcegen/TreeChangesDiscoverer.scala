@@ -52,6 +52,8 @@ trait TreeChangesDiscoverer {
           t.qual.toString != o.qual.toString
         case (t: Import, o: Import) =>
           t != o
+        case (t: TypeTree, o: TypeTree) if (o.original == null) =>
+          !(t.samePos(o) && t.tpe.safeToString == o.tpe.safeToString)
         case _ =>
           false
       }

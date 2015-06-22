@@ -16,14 +16,14 @@ import scala.tools.refactoring.tests.util.TestRefactoring
 
 import language.reflectiveCalls
 
-class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGenerator with SilentTracing {
+class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGenerator {
 
   var surroundingImport = ""
 
   override def spacingAroundMultipleImports = surroundingImport
 
   abstract class OrganizeImportsRefatoring(pro: FileSet) extends TestRefactoringImpl(pro) {
-    val refactoring = new OrganizeImports with SilentTracing {
+    val refactoring = new OrganizeImports {
       val global = CustomFormattingTest.this.global
       override def spacingAroundMultipleImports = surroundingImport
     }

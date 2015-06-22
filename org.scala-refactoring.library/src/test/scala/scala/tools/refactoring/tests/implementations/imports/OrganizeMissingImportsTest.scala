@@ -15,7 +15,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   outer =>
 
   def organize(imports: List[(String, String)])(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new OrganizeImports with SilentTracing {
+    val refactoring = new OrganizeImports  {
       val global = outer.global
     }
     val changes = performRefactoring(new refactoring.RefactoringParameters(imports))

@@ -21,15 +21,15 @@ import scala.tools.refactoring.common.Selections
 import language.{ postfixOps, implicitConversions, reflectiveCalls }
 import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.RenameSourceFileChange
-import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.implementations.Rename
+import scala.tools.refactoring.common.TracingImpl
 
 object TestHelper {
   case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
 }
 
 
-trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler {
+trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler with TracingImpl {
   import TestHelper._
 
   @Before
