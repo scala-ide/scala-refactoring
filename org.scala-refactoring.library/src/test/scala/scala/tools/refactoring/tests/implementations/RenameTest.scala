@@ -1982,4 +1982,84 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("Mistkaefer"))
+
+  /*
+   * See Assembla Ticket #1002498
+   */
+  @Test
+  def testRenameProtectedOverrideDef() = new FileSet {
+    """
+    trait Bug {
+      protected def /*(*/br0ken/*)*/: Int
+    }
+
+    class Buggy extends Bug {
+      protected override def br0ken = 9
+    }
+    """ becomes
+    """
+    trait Bug {
+      protected def /*(*/ups/*)*/: Int
+    }
+
+    class Buggy extends Bug {
+      protected override def ups = 9
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  /*
+   * See Assembla Ticket #1002498
+   */
+  @Test
+  def testRenameProtectedOverrideVal() = new FileSet {
+    """
+    trait Bug {
+      protected val /*(*/br0ken/*)*/: Int
+    }
+
+    class Buggy extends Bug {
+      protected override val br0ken = 9
+    }
+    """ becomes
+    """
+    trait Bug {
+      protected val /*(*/ups/*)*/: Int
+    }
+
+    class Buggy extends Bug {
+      protected override val ups = 9
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameOverrideProtected() = new FileSet {
+    """
+    trait Base {
+      protected def /*(*/x/*)*/: Int
+    }
+
+    class Derived1 extends Base {
+      override protected val x = 9
+    }
+
+    class Derived2 extends Base {
+      override protected def x = 9
+    }
+    """ becomes
+    """
+    trait Base {
+      protected def /*(*/xxx/*)*/: Int
+    }
+
+    class Derived1 extends Base {
+      override protected val xxx = 9
+    }
+
+    class Derived2 extends Base {
+      override protected def xxx = 9
+    }
+    """
+  } applyRefactoring(renameTo("xxx"))
 }
