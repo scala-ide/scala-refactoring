@@ -886,8 +886,7 @@ trait PimpedTrees {
     import Flags._
 
     def unapply(m: global.Modifiers): Option[List[ModifierTree]] = {
-      val flagSorter = Ordering.by((pair: (Long, Position)) => flagPosition(pair._1))
-      val sortedMods = m.positions.toList.sorted(flagSorter)
+      val sortedMods = sortModifiers(m.positions.toList)
 
       Some(sortedMods flatMap {
         // hack to get rid of override modifiers
@@ -926,6 +925,38 @@ trait PimpedTrees {
       })
     }
 
+    /*
+     * Modifiers are sorted by
+     *  - their positions if available
+     *  - a fallback ordering otherwise
+     */
+    private def sortModifiers(mods: List[(Long, Position)]): List[(Long, Position)] = {
+      def fallbackOrdering(flag: Long): Int = flag match {
+        case OVERRIDE    => 1
+        case PRIVATE     => 3
+        case PROTECTED   => 3
+        case FINAL       => 5
+        case ABSTRACT    => 6
+        case SEALED      => 8
+        case IMPLICIT    => 10
+        case CASE        => 15
+        case LAZY        => 15
+        case TRAIT       => 20
+        case METHOD      => 20
+        case Tokens.VAL  => 20
+        case Tokens.VAR  => 20
+        case Tokens.TYPE => 20
+        case Tokens.DEF  => 20
+        case _           => 0
+      }
+
+
+      mods.sortWith { case ((lmod, lpos), (rmod, rpos)) =>
+        if (lpos.isDefined && rpos.isDefined) lpos.start < rpos.start
+        else fallbackOrdering(lmod) < fallbackOrdering(rmod)
+      }
+    }
+
     private def extractAccessModifier(flag: Long): Long = {
       if ((flag & PRIVATE) != 0) PRIVATE
       else if ((flag & PROTECTED) != 0) PROTECTED
@@ -938,31 +969,6 @@ trait PimpedTrees {
      */
     private def fixEndForScopedAccessModifier(pos: RangePosition): Int = {
       SourceWithMarker.afterEndOf(pos).moveMarker(commentsAndSpaces ~ bracketsWithContents).marker
-    }
-
-    /**
-     * Defines an ordering for flags. A lower value means that the flag shoud be
-     * shown at an earlier position.
-     *
-     * Returns `0` if to a given value no ordering could be found.
-     */
-    private def flagPosition(flag: Long): Int = flag match {
-      case OVERRIDE    => 1
-      case PRIVATE     => 3
-      case PROTECTED   => 3
-      case FINAL       => 5
-      case ABSTRACT    => 6
-      case SEALED      => 8
-      case IMPLICIT    => 10
-      case CASE        => 15
-      case LAZY        => 15
-      case TRAIT       => 20
-      case METHOD      => 20
-      case Tokens.VAL  => 20
-      case Tokens.VAR  => 20
-      case Tokens.TYPE => 20
-      case Tokens.DEF  => 20
-      case _           => 0
     }
   }
 
