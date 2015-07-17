@@ -5,6 +5,11 @@
 package scala.tools.refactoring
 package common
 
+import java.io.IOException
+import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintStream
+
 trait Tracing {
 
   implicit class TraceAndReturn[T](t: T) {
@@ -21,7 +26,32 @@ trait Tracing {
   def trace(msg: => String)
 }
 
-trait ConsoleTracing extends Tracing {
+object DebugTracing {
+  private val debugStream = {
+    Option(System.getProperty("scala.refactoring.traceFile")).flatMap { fn =>
+      try {
+        val traceFile = new File(fn)
+        val out = new FileOutputStream(traceFile, true)
+        Some(new PrintStream(out, true, "UTF-8"))
+      } catch {
+        case e: Exception =>
+          e.printStackTrace()
+          System.err.println(s"Could not open '$fn' for writing; falling back to System.out...")
+          None
+      }
+    }.getOrElse(System.out)
+  }
+
+  private def printLine(str: String) = {
+    debugStream.println(str)
+  }
+}
+
+/**
+ * Traces to STDOUT or a custom file (via the system property `scala.refactoring.traceFile`)
+ */
+trait DebugTracing extends Tracing {
+  import DebugTracing._
 
   var level = 0
   val marker = "│"
@@ -31,13 +61,13 @@ trait ConsoleTracing extends Tracing {
 
     val spacer = "─" * (indent.length - 1)
 
-    println((indent * level) +"╰"+ spacer +"┬────────" )
+    printLine((indent * level) +"╰"+ spacer +"┬────────" )
     level += 1
     trace("→ "+ name)
 
     body \\ { _ =>
       level -= 1
-      println((indent * level) + "╭"+ spacer +"┴────────" )
+      printLine((indent * level) + "╭"+ spacer +"┴────────" )
     }
   }
 
@@ -53,7 +83,7 @@ trait ConsoleTracing extends Tracing {
 
   override def trace(msg: => String) {
     val border = (indent * level) + marker
-    println(border + msg.replaceAll("\n", "\n"+ border))
+    printLine(border + msg.replaceAll("\n", "\n"+ border))
   }
 }
 
