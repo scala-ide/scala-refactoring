@@ -18,7 +18,7 @@ trait ImportsHelper {
           val global: self.global.type = self.global
 
           object NeededImports extends Participant {
-            def apply(trees: List[Import]) = {
+            def doApply(trees: List[Import]) = {
 
               val externalDependencies = neededImports(user) filterNot { imp =>
                 // We don't want to add imports for types that are
