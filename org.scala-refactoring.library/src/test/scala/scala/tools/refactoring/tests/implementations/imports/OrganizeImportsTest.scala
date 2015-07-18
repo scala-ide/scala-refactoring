@@ -8,7 +8,6 @@ package tests.implementations.imports
 import implementations.OrganizeImports
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-
 import language.reflectiveCalls
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
@@ -23,6 +22,23 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports, refactoring.SortImports))
+  }.mkChanges
+
+  def organizeWithTypicalParams(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val params = {
+      val groupImports = refactoring.GroupImports(List("java", "scala", "org", "com"))
+      val alwaysUseWildcards = refactoring.AlwaysUseWildcards(Set("scalaz", "scalaz.Scalaz"))
+
+      new refactoring.RefactoringParameters(
+          options =
+            refactoring.ExpandImports ::
+            refactoring.SortImports ::
+            groupImports ::
+            alwaysUseWildcards ::
+            refactoring.PrependScalaPackage ::
+            Nil,
+          deps = refactoring.Dependencies.FullyRecompute)
+    }
   }.mkChanges
 
   @Test
@@ -503,5 +519,42 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       }"""
   } applyRefactoring organize
+
+  /*
+   * See Assembla Ticket #1002506
+   */
+  @Test
+  def localValInClosureShouldNotAddBrokenImports() = new FileSet {
+    """
+      package com.github.mlangc.experiments
+
+      import com.github.mlangc.experiments.test._
+
+      package test {
+        class Test
+      }
+
+      class Bug {
+        None.getOrElse {
+          val x: Test = ???
+          x
+        }
+      }""" becomes
+      """
+      package com.github.mlangc.experiments
+
+      import com.github.mlangc.experiments.test.Test
+
+      package test {
+        class Test
+      }
+
+      class Bug {
+        None.getOrElse {
+          val x: Test = ???
+          x
+        }
+      }"""
+  } applyRefactoring organizeWithTypicalParams
 
 }
