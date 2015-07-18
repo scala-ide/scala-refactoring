@@ -266,6 +266,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
               && !isSelectFromInvisibleThis(qual)
               && t.name != nme.WILDCARD
               && hasStableQualifier(t)
+              && !t.symbol.isLocal
               && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)) {
             addToResult(t)
           }
