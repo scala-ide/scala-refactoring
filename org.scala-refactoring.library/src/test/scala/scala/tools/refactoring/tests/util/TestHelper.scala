@@ -38,8 +38,6 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
   type Test = org.junit.Test
   type Ignore = org.junit.Ignore
   type AbstractFile = tools.nsc.io.AbstractFile
-  type ConsoleTracing = common.ConsoleTracing
-  type SilentTracing = common.SilentTracing
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
 
