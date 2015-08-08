@@ -1093,7 +1093,6 @@ object /*(*/Arith/*)*/ {
    * See Assembla Ticket 1002511
    */
   @Test
-  @Ignore
   def moveWithQualifiedObjectImportAndSpecialChars() = new FileSet {
     """
     package p1

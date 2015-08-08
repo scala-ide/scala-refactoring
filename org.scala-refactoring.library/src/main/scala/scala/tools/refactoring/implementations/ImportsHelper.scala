@@ -21,10 +21,13 @@ trait ImportsHelper {
             def doApply(trees: List[Import]) = {
 
               val externalDependencies = neededImports(user) filterNot { imp =>
-                // We don't want to add imports for types that are
-                // children of `importsUser`.
-                val declaration = index.declaration(imp.symbol)
-                declaration map (user.pos includes _.pos) getOrElse false
+                  // We don't want to add imports for types that are
+                  // children of `importsUser`.
+                  index.declaration(imp.symbol).exists { declaration =>
+                    val sameFile = declaration.pos.source.file.canonicalPath == user.pos.source.file.canonicalPath
+                    def userPosIncludesDeclPos = user.pos.includes(declaration.pos)
+                    sameFile && userPosIncludesDeclPos
+                  }
               }
 
               val newImportsToAdd = externalDependencies filterNot {
