@@ -1057,8 +1057,14 @@ object /*(*/Arith/*)*/ {
    * See Assembla Ticket 1002511
    */
   @Test
-  @Ignore
   def moveWithUnqualifiedObjectImportAndSpecialChars() = new FileSet {
+    """
+    package p1
+
+    object O {
+      def ? : String = ???
+    }
+    """ isNotModified();
     """
     package p1
 
@@ -1079,14 +1085,6 @@ object /*(*/Arith/*)*/ {
       def f = ?
     }
     """
-    ;
-    """
-    package p1
-
-    object O {
-      def ? : String = ???
-    }
-    """ isNotModified()
   } applyRefactoring(moveTo("p1.p2"))
 
   /*
@@ -1123,8 +1121,14 @@ object /*(*/Arith/*)*/ {
    * See Assembla Ticket 1002511
    */
   @Test
-  @Ignore
   def moveWithUnqualifiedObjectImport() = new FileSet {
+    """
+    package p1
+
+    object O {
+      def a : String = ???
+    }
+    """ isNotModified();
     """
     package p1
 
@@ -1145,13 +1149,5 @@ object /*(*/Arith/*)*/ {
       def f = a
     }
     """
-    ;
-    """
-    package p1
-
-    object O {
-      def a : String = ???
-    }
-    """ isNotModified()
   } applyRefactoring(moveTo("p1.p2"))
 }
