@@ -1052,4 +1052,107 @@ object /*(*/Arith/*)*/ {
 }
     """
   } applyRefactoring(moveTo("x.y"))
+
+  /*
+   * See Assembla Ticket 1002511
+   */
+  @Test
+  @Ignore
+  def moveWithUnqualifiedObjectImportAndSpecialChars() = new FileSet {
+    """
+    package p1
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = ?
+    }
+    """ becomes
+    """
+    package p1.p2
+
+    import p1.O
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = ?
+    }
+    """
+    ;
+    """
+    package p1
+
+    object O {
+      def ? : String = ???
+    }
+    """ isNotModified()
+  } applyRefactoring(moveTo("p1.p2"))
+
+  /*
+   * See Assembla Ticket 1002511
+   */
+  @Test
+  @Ignore
+  def moveWithQualifiedObjectImportAndSpecialChars() = new FileSet {
+    """
+    package p1
+
+    object O {
+      def ? : String = ???
+    }
+    """ isNotModified();
+    """
+    package p1
+
+    class /*(*/C/*)*/ {
+      def f = O.?
+    }
+    """ becomes
+    """
+    package p1.p2
+
+    import p1.O
+
+    class /*(*/C/*)*/ {
+      def f = O.?
+    }
+    """
+  } applyRefactoring(moveTo("p1.p2"))
+
+  /*
+   * See Assembla Ticket 1002511
+   */
+  @Test
+  @Ignore
+  def moveWithUnqualifiedObjectImport() = new FileSet {
+    """
+    package p1
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = a
+    }
+    """ becomes
+    """
+    package p1.p2
+
+    import p1.O
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = a
+    }
+    """
+    ;
+    """
+    package p1
+
+    object O {
+      def a : String = ???
+    }
+    """ isNotModified()
+  } applyRefactoring(moveTo("p1.p2"))
 }

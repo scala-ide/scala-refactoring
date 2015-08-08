@@ -67,6 +67,10 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
         srcs += Source(src, filename) → Source(stripWhitespacePreservers(expected), filename)
       }
 
+      def isNotModified() {
+        becomes(src)
+      }
+
       def ->(tag: TaggedAsGlobalRename.type): String = {
         expectGlobalRename = Some(true)
         src
