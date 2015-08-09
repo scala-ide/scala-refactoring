@@ -2,8 +2,9 @@ package scala.tools.refactoring
 package implementations
 
 import language.reflectiveCalls
+import scala.tools.refactoring.common.TracingImpl
 
-trait ImportsHelper {
+trait ImportsHelper extends TracingImpl {
 
   self: common.InteractiveScalaCompiler with analysis.Indexes with transformation.Transformations with transformation.TreeTransformations with common.PimpedTrees =>
 

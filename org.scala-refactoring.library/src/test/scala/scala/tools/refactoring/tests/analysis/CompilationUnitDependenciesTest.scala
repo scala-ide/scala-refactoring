@@ -21,15 +21,20 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     if (!addScalaSrc.isEmpty) treeFrom(addScalaSrc)
     val tree = treeFrom(src)
     assertFalse(tree.isErroneous)
-    val imports = global.ask(() => f(tree).sortBy(_.toString).map(asString))
+
+    val imports = global.ask {() =>
+      val res = f(tree)
+      res.sortBy(_.toString).map(asString)
+    }
+
     assertEquals(expected.split("\n").map(_.trim).mkString("\n"), imports.mkString("\n"))
   }
 
   def assertNeededImports(expected: String, src: String, javaSrc: String = "", addScalaSrc: String = ""): Unit =
     assertTrees(expected, src, javaSrc, addScalaSrc, neededImports)
 
-  def assertDependencies(expected: String, src: String): Unit =
-    assertTrees(expected, src, "", "", dependencies)
+  def assertDependencies(expected: String, src: String, javaSrc: String = "", addScalaSrc: String = ""): Unit =
+    assertTrees(expected, src, javaSrc, addScalaSrc, dependencies)
 
   @Test
   def evidenceNoImport() = assertNeededImports(
@@ -672,9 +677,15 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
   }
 
+  /*
+   * Note:
+   * 	Previous versions of this test expected the dependency `Param.global.X`.
+   *  This is wrong however, as X is satisfied by local imports, that work
+   *  as long as `Param` is in scope.
+   */
   @Test
   def importFromLocalValueDependency() = assertDependencies(
-    """param.global.X""",
+    "",
     """
       trait Param {
         object global { trait X }
@@ -1155,4 +1166,97 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
        object ImportsFromLazyValsRemoved1 {
          def getUuid() = UUID.randomUUID()
        }""")
+
+   /*
+    * This test is related to Assembla ticket #1002511
+    */
+   @Test
+   def testWithImportInObject = assertDependencies(
+       "p1.O",
+       src = """
+         package p1
+
+         class C {
+            import O._
+
+            def f = a
+         }""",
+       addScalaSrc = """
+         package p1
+
+         object O {
+           def a: String = ???
+         }
+       """)
+
+
+   /*
+    * This test is related to Assembla ticket #1002511
+    */
+   @Test
+   def testWithScopedImports = assertDependencies(
+       "p1.O",
+       src = """
+         package p1
+
+         class C {
+            import O._
+
+            def f = a
+
+            class CC {
+              import OO._
+
+              def ff = aa
+            }
+         }""",
+       addScalaSrc = """
+         package p1
+
+         object O {
+           def a: String = ???
+           object OO {
+              def aa: String = ???
+           }
+         }
+       """)
+
+   /*
+    * This test is related to Assembla ticket #1002511
+    */
+   def testWithMoreComplexScopedImports = assertDependencies(
+       """p1.O
+          p1.O.b
+          p1.O.OO.b""",
+       src = """
+         package p1
+
+         import O.b
+         import O.OO.{bb => BB}
+
+         class C {
+            import O.a
+
+            def f = a
+            def g = b
+
+            class CC {
+              import OO.{aa => AA}
+
+              def ff = AA
+              def gg = BB
+            }
+         }""",
+       addScalaSrc = """
+         package p1
+
+         object O {
+           def a: String = ???
+           def b: String = ???
+           object OO {
+              def aa: String = ???
+              def bb: String = ???
+           }
+         }
+       """)
 }

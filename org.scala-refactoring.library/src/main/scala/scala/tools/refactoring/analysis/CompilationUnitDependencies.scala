@@ -6,8 +6,10 @@ package scala.tools.refactoring
 package analysis
 
 import scala.tools.refactoring.common.CompilerApiExtensions
+import scala.tools.refactoring.common.TracingImpl
+import scala.annotation.tailrec
 
-trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersionAdapters.CompilerApiAdapters {
+trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersionAdapters.CompilerApiAdapters with TracingImpl {
   // we need to interactive compiler because we work with RangePositions
   this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors with common.PimpedTrees =>
 
@@ -197,126 +199,186 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         t.qualifier.symbol != null && (!t.qualifier.symbol.isTerm || t.qualifier.symbol.isStable)
       }
 
+      @tailrec
+      def isRelativeToPreviousImports(tree: Tree): Boolean = tree match {
+        case Select(qualifier, _) =>
+          if (qualifier.pos.isRange) isRelativeToPreviousImports(qualifier)
+          else true
+        case _ => false
+      }
+
       val language = newTermName("language")
 
-      override def traverse(tree: Tree) = tree match {
-        // Always add the SIP 18 language imports as required until we can handle them properly
-        case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
-          feature foreach (selector => addToResult(Select(select, selector.name)))
+      def isScopeForLocalImports(tree: Tree) = tree match {
+        case _: ImplDef | _: ValOrDefDef => true
+        case _ => false
+      }
 
-        case Import(_, _) => ()
+      var inScopeForLocalImports = false
+      var localImports: List[Import] = Nil
+      var localImportsForParent: List[Import] = Nil
 
-        case Select(Ident(Names.scala), _) => ()
+      def isQualifierFromLocalImport(qualifier: Tree): Boolean = {
+        localImports.exists { imp =>
+          imp.expr.symbol == qualifier.symbol
+        }
+      }
 
-        case Select(Select(Ident(Names.scala), Names.pkg), _) => ()
+      override def traverse(tree: Tree) = {
+        var resetInScopeForLocalImports = false
+        var restoreLocalImports = false
 
-        case t: Template =>
-          // The primary constructor can have visible annotations even
-          // if its DefDef has an OffsetPosition.
-          t.primaryConstructor foreach {
-            case primaryConstructor: DefDef =>
-              handleAnnotations(primaryConstructor.symbol.annotations)
+        if (isScopeForLocalImports(tree)) {
+          localImportsForParent = localImports
+          restoreLocalImports = true
+
+          if (!inScopeForLocalImports) {
+            inScopeForLocalImports = true
+            resetInScopeForLocalImports = true
           }
+        }
 
-          super.traverse(tree)
+        try {
+          tree match {
+            // Always add the SIP 18 language imports as required until we can handle them properly
+            case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
+              feature foreach (selector => addToResult(Select(select, selector.name)))
 
-        case t : ApplyImplicitView =>
+            case imp @ Import(qualifier, selector)  => {
+              if (inScopeForLocalImports && !qualifier.symbol.isLocal) {
+                localImports ::= imp
 
-          val hasSelectFromNonPackageThis = t.fun exists {
-            case Select(ths: This, _) if !ths.symbol.isPackageClass =>
-              true
-            case _ =>
-              false
-          }
+                if (!isRelativeToPreviousImports(qualifier)) {
+                  fakeSelectTree(qualifier.tpe, qualifier.symbol, qualifier) match {
+                    case select: Select => addToResult(select)
+                    case _ => ()
+                  }
+                }
+              }
+            }
 
-          if(hasSelectFromNonPackageThis) {
-            // We can ignore this tree because it is selected from a
-            // non-package instance, so there's nothing useful to import.
-          } else {
+            case Select(Ident(Names.scala), _) => ()
 
-            t.fun find {
-              case t: Select =>
-                !isMethodCallFromExplicitReceiver(t) && !t.pos.isTransparent && hasStableQualifier(t)
-              case _ =>
-                false
-            } foreach foundPotentialTree
-          }
+            case Select(Select(Ident(Names.scala), Names.pkg), _) => ()
 
-          t.args foreach traverse
+            case t: Template =>
+              // The primary constructor can have visible annotations even
+              // if its DefDef has an OffsetPosition.
+              t.primaryConstructor foreach {
+                case primaryConstructor: DefDef =>
+                  handleAnnotations(primaryConstructor.symbol.annotations)
+              }
 
-        case t : ApplyToImplicitArgs =>
-          traverse(t.fun)
-          t.args foreach handleSelectFromImplicit
+              super.traverse(tree)
 
-        case Select(New(qual), _) =>
-          traverse(qual)
+            case t : ApplyImplicitView =>
 
-        // workaround for SI-5064
-        case t @ Select(qual: This, _) if qual.pos.sameRange(t.pos) =>
-          ()
+              val hasSelectFromNonPackageThis = t.fun exists {
+                case Select(ths: This, _) if !ths.symbol.isPackageClass =>
+                  true
+                case _ =>
+                  false
+              }
 
-        // workaround for SI-5064
-        case t @ Select(qual: Select, nme.apply) if (qual.pos.isTransparent && t.pos.isOpaqueRange) || qual.pos.isOpaqueRange =>
-          if(hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier)) {
-            addToResult(qual)
-          }
+              if(hasSelectFromNonPackageThis) {
+                // We can ignore this tree because it is selected from a
+                // non-package instance, so there's nothing useful to import.
+              } else {
 
-        case t @ Select(qual, _) if t.pos.isOpaqueRange =>
-          if (!isMethodCallFromExplicitReceiver(t)
-              && !isSelectFromInvisibleThis(qual)
-              && t.name != nme.WILDCARD
-              && hasStableQualifier(t)
-              && !t.symbol.isLocal
-              && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)) {
-            addToResult(t)
-          }
+                t.fun find {
+                  case t: Select =>
+                    !isMethodCallFromExplicitReceiver(t) && !t.pos.isTransparent && hasStableQualifier(t)
+                  case _ =>
+                    false
+                } foreach foundPotentialTree
+              }
 
-          super.traverse(t)
+              t.args foreach traverse
 
-        // workaround for Assembla ticket #1002402
-        case t @ ValDef(modifiers, _, tpe: TypeTree, rhs) if modifiers.isLazy =>
-          tpe.original match {
-            case s @ Select(qualifier, _) =>
-              addToResult(s)
-              super.traverse(rhs)
-            case _ => super.traverse(t)
-          }
+            case t : ApplyToImplicitArgs =>
+              traverse(t.fun)
+              t.args foreach handleSelectFromImplicit
 
-        /*
-         * classOf[some.Type] is represented by a Literal
-         * */
-        case t @ Literal(c @ Constant(value)) =>
-          value match {
-            case tpe @ TypeRef(_, sym, _) =>
-              fakeSelectTreeFromType(tpe, sym, t.pos) match {
-                case s: Select if !isDefinedLocallyAndQualifiedWithEnclosingPackage(s) =>
+            case Select(New(qual), _) =>
+              traverse(qual)
+
+            // workaround for SI-5064
+            case t @ Select(qual: This, _) if qual.pos.sameRange(t.pos) =>
+              ()
+
+            // workaround for SI-5064
+            case t @ Select(qual: Select, nme.apply) if (qual.pos.isTransparent && t.pos.isOpaqueRange) || qual.pos.isOpaqueRange =>
+              if(hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier)) {
+                addToResult(qual)
+              }
+
+            case t @ Select(qual, _) if t.pos.isOpaqueRange =>
+              if (!isMethodCallFromExplicitReceiver(t)
+                  && !isSelectFromInvisibleThis(qual)
+                  && t.name != nme.WILDCARD
+                  && hasStableQualifier(t)
+                  && !t.symbol.isLocal
+                  && !isQualifierFromLocalImport(qual)
+                  && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)) {
+                addToResult(t)
+              }
+
+              super.traverse(t)
+
+            // workaround for Assembla ticket #1002402
+            case t @ ValDef(modifiers, _, tpe: TypeTree, rhs) if modifiers.isLazy =>
+              tpe.original match {
+                case s @ Select(qualifier, _) =>
                   addToResult(s)
+                  super.traverse(rhs)
+                case _ => super.traverse(t)
+              }
+
+            /*
+             * classOf[some.Type] is represented by a Literal
+             * */
+            case t @ Literal(c @ Constant(value)) =>
+              value match {
+                case tpe @ TypeRef(_, sym, _) =>
+                  fakeSelectTreeFromType(tpe, sym, t.pos) match {
+                    case s: Select if !isDefinedLocallyAndQualifiedWithEnclosingPackage(s) =>
+                      addToResult(s)
+                    case _ => ()
+                  }
                 case _ => ()
               }
-            case _ => ()
-          }
 
-        case t: Ident if t.name != nme.EMPTY_PACKAGE_NAME =>
-          tryFindTpeAndSymFor(t) match {
-            case Some((tpe, sym)) =>
-              fakeSelectTree(tpe, sym, t) match {
-                // only repeat if it's a Select, if it's an Ident,
-                // otherwise we risk to loop endlessly
-                case select: Select =>
-                  traverse(select)
+            case t: Ident if t.name != nme.EMPTY_PACKAGE_NAME =>
+              tryFindTpeAndSymFor(t) match {
+                case Some((tpe, sym)) =>
+                  fakeSelectTree(tpe, sym, t) match {
+                    // only repeat if it's a Select, if it's an Ident,
+                    // otherwise we risk to loop endlessly
+                    case select: Select =>
+                      traverse(select)
+                    case _ =>
+                      super.traverse(tree)
+                  }
                 case _ =>
                   super.traverse(tree)
               }
+
+            case t: Ident => {
+              super.traverse(tree)
+            }
+
             case _ =>
               super.traverse(tree)
           }
+        } finally {
+          if (resetInScopeForLocalImports) {
+            inScopeForLocalImports = false
+          }
 
-        case t: Ident => {
-          super.traverse(tree)
+          if (restoreLocalImports) {
+            localImports = localImportsForParent
+          }
         }
-
-        case _ =>
-          super.traverse(tree)
       }
 
       override def handleAnnotations(as: List[AnnotationInfo]) {
