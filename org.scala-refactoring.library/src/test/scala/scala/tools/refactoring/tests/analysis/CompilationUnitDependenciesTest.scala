@@ -18,9 +18,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   private def assertTrees(expected: String, src: String, javaSrc: String, addScalaSrc: String, f: Tree => Seq[Tree]) {
     if (!javaSrc.isEmpty) parseJava(javaSrc)
-    if (!addScalaSrc.isEmpty) treeFrom(addScalaSrc)
-    val tree = treeFrom(src)
-    assertFalse(tree.isErroneous)
+    if (!addScalaSrc.isEmpty) parseScalaAndVerify(addScalaSrc)
+    val tree = parseScalaAndVerify(src)
 
     val imports = global.ask {() =>
       val res = f(tree)
@@ -1259,4 +1258,42 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
            }
          }
        """)
+
+   /*
+    * This test is related to Assembla ticket #1002512
+    */
+   @Test
+   @Ignore
+   def testWithScopedImportsOfImplicits = assertDependencies(
+       """p1.O
+          p1.X
+          p1.Y""",
+       src = """
+         package p1
+
+         class C {
+            import O._
+
+            def f: X = ""
+
+            class CC {
+              import OO._
+
+              def ff: Y = ""
+            }
+         }""",
+       addScalaSrc = """
+         package p1
+
+         object O {
+           implicit def toX(s: String): X = ???
+           object OO {
+              implicit def toY(s: String): Y = ???
+           }
+         }
+
+         class X
+         class Y
+       """)
+
 }

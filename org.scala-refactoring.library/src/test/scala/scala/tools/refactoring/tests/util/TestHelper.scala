@@ -15,6 +15,7 @@ import scala.tools.refactoring.common.TextChange
 import scala.tools.refactoring.util.CompilerProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import scala.tools.refactoring.common.InteractiveScalaCompiler
 import scala.tools.refactoring.common.Selections
@@ -47,6 +48,17 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
   private object Source {
     def apply(codeWithFilename: (String, String)) = new Source(codeWithFilename._1, codeWithFilename._2)
+  }
+
+  protected def parseScalaAndVerify(src: String): global.Tree = {
+    val tree = treeFrom(src)
+
+    val errorFound = global.ask {() =>
+      tree.find(t => t.isErroneous || t.isErrorTyped).nonEmpty
+    }
+
+    assertFalse("Error compiling test source", errorFound)
+    tree
   }
 
   /**
