@@ -1155,7 +1155,6 @@ object /*(*/Arith/*)*/ {
    * See Assembla Ticket 1002512
    */
   @Test
-  @Ignore
   def moveWithLocalImplicitImport() = new FileSet {
     """
     package p1

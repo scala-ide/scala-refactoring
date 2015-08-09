@@ -1263,7 +1263,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     * This test is related to Assembla ticket #1002512
     */
    @Test
-   @Ignore
    def testWithScopedImportsOfImplicits = assertDependencies(
        """p1.O
           p1.X

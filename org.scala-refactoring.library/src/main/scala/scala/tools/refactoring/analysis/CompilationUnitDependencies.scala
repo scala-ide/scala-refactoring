@@ -169,7 +169,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         t match {
           case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX =>
             ()
-          case t: Select =>
+          case t @ Select(qual, _) if !isQualifierFromLocalImport(qual) =>
             addToResult(t)
           case _ =>
             ()
