@@ -2,8 +2,9 @@ package scala.tools.refactoring
 package implementations
 
 import language.reflectiveCalls
+import scala.tools.refactoring.common.TracingImpl
 
-trait ImportsHelper {
+trait ImportsHelper extends TracingImpl {
 
   self: common.InteractiveScalaCompiler with analysis.Indexes with transformation.Transformations with transformation.TreeTransformations with common.PimpedTrees =>
 
@@ -21,10 +22,13 @@ trait ImportsHelper {
             def doApply(trees: List[Import]) = {
 
               val externalDependencies = neededImports(user) filterNot { imp =>
-                // We don't want to add imports for types that are
-                // children of `importsUser`.
-                val declaration = index.declaration(imp.symbol)
-                declaration map (user.pos includes _.pos) getOrElse false
+                  // We don't want to add imports for types that are
+                  // children of `importsUser`.
+                  index.declaration(imp.symbol).exists { declaration =>
+                    val sameFile = declaration.pos.source.file.canonicalPath == user.pos.source.file.canonicalPath
+                    def userPosIncludesDeclPos = user.pos.includes(declaration.pos)
+                    sameFile && userPosIncludesDeclPos
+                  }
               }
 
               val newImportsToAdd = externalDependencies filterNot {

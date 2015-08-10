@@ -108,6 +108,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
      *     the file and don't need to create a new source file.
      * */
     val movedClassChanges = if(moveOnlyPartOfSourceFile(selection, parameters)) {
+      trace("Moving only a part of %s", selection.file.name)
 
       val newFileChanges = {
         val moveClass = {
@@ -121,6 +122,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       newFileChanges ++ removeClassFromOldFileAndAddImportToNewIfNecessary(selection, parameters)
 
     } else {
+      trace("Moving %s entirely", selection.file.name)
       val stats = statsToMove(selection, parameters)
       val transformation = createRenamedTargetPackageTransformation(parameters, stats, selection.root)
       transformFile(selection.file, transformation)

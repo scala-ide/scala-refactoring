@@ -1052,4 +1052,141 @@ object /*(*/Arith/*)*/ {
 }
     """
   } applyRefactoring(moveTo("x.y"))
+
+  /*
+   * See Assembla Ticket 1002511
+   */
+  @Test
+  def moveWithUnqualifiedObjectImportAndSpecialChars() = new FileSet {
+    """
+    package p1
+
+    object O {
+      def ? : String = ???
+    }
+    """ isNotModified();
+    """
+    package p1
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = ?
+    }
+    """ becomes
+    """
+    package p1.p2
+
+    import p1.O
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = ?
+    }
+    """
+  } applyRefactoring(moveTo("p1.p2"))
+
+  /*
+   * See Assembla Ticket 1002511
+   */
+  @Test
+  def moveWithQualifiedObjectImportAndSpecialChars() = new FileSet {
+    """
+    package p1
+
+    object O {
+      def ? : String = ???
+    }
+    """ isNotModified();
+    """
+    package p1
+
+    class /*(*/C/*)*/ {
+      def f = O.?
+    }
+    """ becomes
+    """
+    package p1.p2
+
+    import p1.O
+
+    class /*(*/C/*)*/ {
+      def f = O.?
+    }
+    """
+  } applyRefactoring(moveTo("p1.p2"))
+
+  /*
+   * See Assembla Ticket 1002511
+   */
+  @Test
+  def moveWithUnqualifiedObjectImport() = new FileSet {
+    """
+    package p1
+
+    object O {
+      def a : String = ???
+    }
+    """ isNotModified();
+    """
+    package p1
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = a
+    }
+    """ becomes
+    """
+    package p1.p2
+
+    import p1.O
+
+    class /*(*/C/*)*/ {
+      import O._
+
+      def f = a
+    }
+    """
+  } applyRefactoring(moveTo("p1.p2"))
+
+  /*
+   * See Assembla Ticket 1002512
+   */
+  @Test
+  def moveWithLocalImplicitImport() = new FileSet {
+    """
+    package p1
+
+    object O {
+      implicit def toX(s: String): X = ???
+    }
+
+    class X
+    """ isNotModified();
+    """
+    package p1
+
+    class /*(*/C/*)*/ {
+
+      import O._
+
+      def f: X = ""
+    }
+    """ becomes
+    """
+    package p1.p2
+
+    import p1.O
+    import p1.X
+
+    class /*(*/C/*)*/ {
+
+      import O._
+
+      def f: X = ""
+    }
+    """
+  } applyRefactoring(moveTo("p1.p2"))
 }

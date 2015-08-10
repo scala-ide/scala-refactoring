@@ -404,6 +404,10 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
         case t: RefTree => t.symbol.tpe.exists(_.toString == "Unit")
       })
     }
+
+    override def toString = {
+      s"Selection(${PositionDebugging.format(pos)})"
+    }
   }
 
   def skipForExpressionTrees(t: Tree) = t match {
