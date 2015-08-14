@@ -5,12 +5,12 @@
 package scala.tools.refactoring
 package tests.analysis
 
-import analysis.CompilationUnitDependencies
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import tests.util._
-import org.junit.After
+
+import analysis.CompilationUnitDependencies
 import common.TreeExtractors
+import tests.util.FreshCompilerForeachTest
+import tests.util.TestHelper
 
 class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDependencies with TreeExtractors with FreshCompilerForeachTest {
 
@@ -1295,4 +1295,18 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
          class Y
        """)
 
+  @Test
+  def testWithLanguageFeatureImports = assertDependencies(
+      """java.net.URL
+         scala.language.implicitConversions
+         scala.language.postfixOps""",
+      src = """
+        import language.implicitConversions
+        import language.postfixOps
+        import java.net.URL
+
+        object O {
+          def urlToString(url: URL) = url toString
+        }
+      """)
 }
