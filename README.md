@@ -1,5 +1,4 @@
-================================================================================
-  The Scala Refactoring Project -- www.scala-refactoring.org
+[The Scala Refactoring Project](http://scala-refactoring.org)
 ================================================================================
 
 Welcome to the Scala Refactoring project!
@@ -18,6 +17,7 @@ The examples directory contains two demos:
  - diy is an example of how the library can be used to build new refactorings.
  - editor is a simple swing editor that integrates the refactorings.
 
+```
 ├── pom.xml
 ├── build-2.10.sh
 ├── build-2.11.sh
@@ -66,19 +66,20 @@ The examples directory contains two demos:
     ├── pom.xml
     ├── site.xml
     └── web
+ ```
 
 2. Building
 --------------------------------------------------------------------------------
 
 We use Maven to build the project:
 
-> ./build-2.10.sh
+```bash
+$ ./build-2.11.sh
+```
 
 creates all the artifacts, except for the documentation, which needs to be
 built separately. For different versions of Scala, take a look at the build.sh
 script.
-
-A separate P2 repository can be built using the build_p2_repo.sh script.
 
 3. License
 --------------------------------------------------------------------------------
