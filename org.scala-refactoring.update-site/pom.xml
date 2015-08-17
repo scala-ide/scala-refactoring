@@ -4,12 +4,12 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.scala-refactoring</groupId>
   <artifactId>org.scala-refactoring.update-site</artifactId>
-  <version>0.6.3-SNAPSHOT</version>
+  <version>0.7.0-SNAPSHOT</version>
   <packaging>eclipse-update-site</packaging>
   <parent>
     <groupId>org.scala-refactoring</groupId>
     <artifactId>org.scala-refactoring</artifactId>
-    <version>0.6.3-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
   </parent>
   <build>
     <plugins>
