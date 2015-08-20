@@ -223,11 +223,6 @@
       <url>http://download.eclipse.org/releases/kepler</url>
     </repository>
     <repository>
-      <id>codehaus-snapshots</id>
-      <name>Maven Codehaus snapshot repository</name>
-      <url>http://snapshots.repository.codehaus.org/</url>
-    </repository>
-    <repository>
       <id>sonatype.release</id>
       <name>Sonatype maven release repository</name>
       <url>https://oss.sonatype.org/content/repositories/releases/</url>
