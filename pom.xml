@@ -3,14 +3,14 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.scala-refactoring</groupId>
-  <artifactId>org.scala-refactoring</artifactId>
+  <artifactId>org.scala-refactoring.library</artifactId>
   <parent>
     <groupId>org.sonatype.oss</groupId>
     <artifactId>oss-parent</artifactId>
     <version>7</version>
   </parent>
   <version>0.7.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
+  <packaging>eclipse-plugin</packaging>
   <name>Scala Refactoring Library</name>
   <url>http://scala-refactoring.org</url>
   <licenses>
@@ -43,9 +43,7 @@
     <scala.parser-combinators.version>1.0.1</scala.parser-combinators.version>
     <scala.versioned.source>src/main/scala-${version.suffix}</scala.versioned.source>
   </properties>
-  <modules>
-    <module>org.scala-refactoring.library</module>
-  </modules>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -71,6 +69,48 @@
   </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-compiler-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <configuration>
+          <excludeResources>
+            <excludeResource>**/*.scala</excludeResource>
+          </excludeResources>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-source-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <executions>
+          <execution>
+            <id>plugin-source</id>
+            <goals>
+              <goal>plugin-source</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.9.1</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${scala.versioned.source}</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>latex-maven-plugin</artifactId>
@@ -340,6 +380,19 @@
                 <phase>verify</phase>
                 <goals>
                   <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.9</version>
+            <executions>
+              <execution>
+                <id>attach-javadoc</id>
+                <goals>
+                  <goal>jar</goal>
                 </goals>
               </execution>
             </executions>
