@@ -45,8 +45,6 @@
   </properties>
   <modules>
     <module>org.scala-refactoring.library</module>
-    <module>org.scala-refactoring.feature</module>
-    <module>org.scala-refactoring.update-site</module>
   </modules>
   <dependencies>
     <dependency>
