@@ -1,14 +1,14 @@
 name := "org.scala-refactoring.library"
 
-version := "0.6.2"
+version := "0.7.0"
 
-scalaVersion := "2.11.4"
+scalaVersion := "2.11.7"
 
 moduleName := name.value
 
 organization := "org.scala-refactoring"
 
-crossScalaVersions := Seq("2.10.5", "2.11.6")
+crossScalaVersions := Seq("2.10.5", "2.11.7")
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / (scalaBinaryVersion.value match {
   case "2.10" => "src/main/scala-2_10"

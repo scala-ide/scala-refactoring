@@ -1,9 +1,0 @@
-This is an example application built with the Scala refactoring library.
-
-Run it with:
-
-> mvn scala:run -DmainClass=scala.tools.refactoring.ExplicitGettersSetters
-
-Visit http://scala-refactoring.org/documentation and take a look at the
-documentation's appendix for more details.
-
