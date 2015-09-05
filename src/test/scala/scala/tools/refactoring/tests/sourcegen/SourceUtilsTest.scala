@@ -137,6 +137,58 @@ class SourceUtilsTest {
       testCases.foreach((testSplitComment _).tupled)
   }
 
+  @Test
+  def testCountRelevantBracketsWithSimpleExamples() = {
+    testCountRelevantBrackets("", 0, 0)
+    testCountRelevantBrackets("""val x = ")"""", 0, 0)
+    testCountRelevantBrackets("""val x = "\")"""", 0, 0)
+    testCountRelevantBrackets("def x = 3", 0, 0)
+    testCountRelevantBrackets("def f(x: Int) = x", 1, 1)
+    testCountRelevantBrackets("def f(x: Int) = x //(", 1, 1)
+    testCountRelevantBrackets("def f(x: Int) = /*)*/ x //(", 1, 1)
+    testCountRelevantBrackets("""val z = "\"()()()\"()()()\"" """, 0, 0)
+    testCountRelevantBrackets("'('", 0, 0)
+    testCountRelevantBrackets("""(''', '\'', '(', ')')""", 1, 1)
+  }
+
+  @Test
+  def testCountRelevantBracketsWithMultilineExamples() = {
+    val tripleQuote = "\"\"\""
+
+    val testCases =
+      (
+          """
+          /*
+           * ()
+           */
+          """, 0, 0
+       ) ::
+       (
+           raw"""
+           //))))))))))))))))))))))))))
+           val x = "))))))))))))))))))))))"
+           val y = $tripleQuote
+             )))))))))))))))))))))))))))))))))))))))
+             $tripleQuote
+           /* /**/ /* -- */
+            *)))))))))))))))))))))))))))))))))
+            */
+           val z = "\")))))))))))))))))))))))))))))))"
+
+           val c = '('
+
+           ())
+           """, 1, 2
+       ) :: Nil
+
+    testCases.foreach((testCountRelevantBrackets _).tupled)
+  }
+
+  private def testCountRelevantBrackets(in: String, expectedOpen: Int, expectedClose: Int): Unit = {
+    val res = SourceUtils.countRelevantBrackets(in)
+    assertEquals((expectedOpen, expectedClose), res)
+  }
+
   private def testSplitComment(in: String, woComments: String, commentsOnly: String): Unit = {
     val (resWoComments, resCommentsOnly) = SourceUtils.splitComment(removeTrailingSpaceMarkers(in))
     assertEquals(s"woComments: $in", removeTrailingSpaceMarkers(woComments), resWoComments)

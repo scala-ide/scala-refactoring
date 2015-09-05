@@ -7,6 +7,109 @@ package sourcegen
 import scala.language.postfixOps
 
 object SourceUtils {
+  /**
+   * Counts brackets, skipping comments, string and character constants.
+   */
+  def countRelevantBrackets(source: String, open: Char = '(', close: Char = ')'): (Int, Int) = {
+    def charAtIs(i: Int, c: Char) = {
+      if (i < source.length) source(i) == c
+      else false
+    }
+
+    /*
+     * Note for purists:
+     *   The algorithm below could easily be made purely functional by packing it into a tail recursive function
+     *   with an appropriate accumulator. In fact, I tried exactly this in the beginning, but found this
+     *   version more straight forward and readable.
+     */
+
+    var i = 0
+    var inMultilineComment = 0
+    var inCharConstant = false
+    var inSingleLineComment = false
+    var inNormalStringConstant = false
+    var inMultilineStringConstant = false
+    var openingBraces = 0
+    var closingBraces = 0
+
+    def inRange(j: Int) = j < source.length
+    def atEnd = !inRange(i)
+    def currentCharIs(c: Char) = charAtIs(i, c)
+    def current2CharsAre(c0: Char, c1: Char) = inRange(i+1) && charAtIs(i+1, c1) && charAtIs(i, c0)
+    def current3CharsAre(c0: Char, c1: Char, c2: Char) = inRange(i+2) && charAtIs(i+2, c2) && charAtIs(i+1, c1) && charAtIs(i, c0)
+    def inComment = inSingleLineComment || inMultilineComment > 0
+    def inStringConstant = inNormalStringConstant || inMultilineStringConstant
+    def inRelevantSection = !inComment && !inStringConstant && !inCharConstant
+    def currentCharsAreTrippleQuote = current3CharsAre('"', '"', '"')
+    def currentCharsAreSingleLineCommentStart = current2CharsAre('/', '/')
+    def currentCharsAreMultilineCommentCommentStart = current2CharsAre('/', '*')
+    def currentCharsAreMultilineCommentCommentEnd = current2CharsAre('*', '/')
+    def currentCharIsRegularQuote = currentCharIs('"')
+    def currentCharsAreSingleQuotedSingleQuote = current3CharsAre(''', ''', ''')
+    def currentCharsAreEscapedSingleQuote = current2CharsAre('\\', ''')
+    def currentCharIsSingleQuote = currentCharIs(''')
+    def currentCharsAreEscapedRegularQuote = current2CharsAre('\\', '"')
+    def currentCharIsNewline = currentCharIs('\n')
+
+    while(!atEnd) {
+      if (inRelevantSection) {
+        if (currentCharIs(open)) {
+          openingBraces += 1
+        }  else if (currentCharIs(close)) {
+          closingBraces +=1
+        } else if (currentCharsAreTrippleQuote) {
+          i += 2
+          inMultilineStringConstant = true
+        } else if (currentCharIsRegularQuote) {
+          inNormalStringConstant = true
+        } else if (currentCharsAreSingleLineCommentStart) {
+          i += 1
+          inSingleLineComment = true
+        } else if (currentCharsAreMultilineCommentCommentStart) {
+          i += 1
+          inMultilineComment = 1
+        } else if (currentCharsAreSingleQuotedSingleQuote) {
+          i += 2
+        } else if (currentCharIsSingleQuote) {
+          inCharConstant = true
+        }
+      } else if (inSingleLineComment) {
+        if (currentCharIsNewline) {
+          inSingleLineComment = false
+        }
+      } else if (inMultilineComment > 0) {
+        if (currentCharsAreMultilineCommentCommentStart) {
+          i += 1
+          inMultilineComment += 1
+        } else if (currentCharsAreMultilineCommentCommentEnd) {
+          i += 1
+          inMultilineComment -= 1
+        }
+      } else if (inNormalStringConstant) {
+        if (currentCharsAreEscapedRegularQuote) {
+          i += 1
+        } else if (currentCharIsRegularQuote) {
+          inNormalStringConstant = false
+        }
+      } else if (inMultilineStringConstant) {
+        if (currentCharsAreTrippleQuote) {
+          i += 2
+          inMultilineStringConstant = false
+        }
+      } else if (inCharConstant) {
+        if (currentCharsAreEscapedSingleQuote) {
+          i += 1
+        } else if (currentCharIsSingleQuote) {
+          inCharConstant = false
+        }
+      }
+
+      i += 1
+    }
+
+    (openingBraces, closingBraces)
+  }
+
 
   def stripFromCode(source: String, c: Char) = {
 

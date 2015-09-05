@@ -306,7 +306,7 @@ object T
 
 
   /*
-   * See Assert Ticket #1002088
+   * See Assembla ticket #1002088
    */
   @Test
   def addImportWithRoundBracketStringTicket1002088Ex1() = {
@@ -334,6 +334,12 @@ object T
       """)
   }
 
+  /*
+   * This test inspired from ticket #1002088 deals with code that
+   * does not compile, and therefore for now is not of very high
+   * priority.
+   */
+  @Ignore
   @Test
   def addImportWithRoundBracketStringTicket1002088Ex2() = {
     addImport(("scala.util.matching", "Regex"), """
