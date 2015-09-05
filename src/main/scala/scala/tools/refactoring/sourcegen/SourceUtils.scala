@@ -6,7 +6,7 @@ package scala.tools.refactoring
 package sourcegen
 import scala.language.postfixOps
 
-object CommentsUtils {
+object SourceUtils {
 
   def stripFromCode(source: String, c: Char) = {
 

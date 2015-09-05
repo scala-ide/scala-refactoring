@@ -1,10 +1,10 @@
 package scala.tools.refactoring.tests.sourcegen
 
-import scala.tools.refactoring.sourcegen.CommentsUtils
+import scala.tools.refactoring.sourcegen.SourceUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class CommentsUtilsTest {
+class SourceUtilsTest {
   @Test
   def testStripCommentWithExampleFromTicket1002166() {
     val source = """
@@ -14,13 +14,13 @@ class CommentsUtilsTest {
       }
     """
 
-   assertEquals(source, CommentsUtils.stripComment(source))
+   assertEquals(source, SourceUtils.stripComment(source))
   }
 
   @Test
   def testStripCommentWithMinimalExampleFromTicket1002166() {
     val source = """("\\")"""
-    assertEquals(source, CommentsUtils.stripComment(source))
+    assertEquals(source, SourceUtils.stripComment(source))
   }
 
   @Test
@@ -138,7 +138,7 @@ class CommentsUtilsTest {
   }
 
   private def testSplitComment(in: String, woComments: String, commentsOnly: String): Unit = {
-    val (resWoComments, resCommentsOnly) = CommentsUtils.splitComment(removeTrailingSpaceMarkers(in))
+    val (resWoComments, resCommentsOnly) = SourceUtils.splitComment(removeTrailingSpaceMarkers(in))
     assertEquals(s"woComments: $in", removeTrailingSpaceMarkers(woComments), resWoComments)
     assertEquals(s"commentsOnly: $in", removeTrailingSpaceMarkers(commentsOnly), resCommentsOnly)
   }

@@ -7,11 +7,11 @@ package tests.sourcegen
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import sourcegen.CommentsUtils
+import sourcegen.SourceUtils
 
 class SourceHelperTest extends TestHelper {
 
-  import CommentsUtils._
+  import SourceUtils._
 
   @Test
   def liftSingleLineComment(): Unit = {
