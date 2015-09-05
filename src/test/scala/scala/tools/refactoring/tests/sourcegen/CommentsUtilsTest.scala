@@ -35,11 +35,11 @@ class CommentsUtilsTest {
   @Test
   def testSplitCommentWithMultilineExamples() {
     val tripleQuote = "\"\"\""
-    
+
     /*
      * Attention:
-     *  These test cases contain a lot of relevant white space chars; make sure that they are not stripped
-     *  away by safe actions.
+     *  These tests contain a lot of relevant trailing white space chars; they are marked with ¶
+     *  so that they are not stripped away by safe actions.
      */
     val testCases =
       (
@@ -50,15 +50,15 @@ class CommentsUtilsTest {
          """,
          """
          class X {
-             
+             ¶
          }
          """,
          """
-                  
+                  ¶
            //
-          
+          ¶
          """
-      ) :: 
+      ) ::
       (
           """
           class X {
@@ -75,31 +75,31 @@ class CommentsUtilsTest {
           """,
           """
           class X {
-              
-                            
-                            
-                 
-                 
-               
+              ¶
+                            ¶
+                            ¶
+                 ¶
+                 ¶
+               ¶
             def x = 43
-                
-                
+                ¶
+                ¶
           }
           """,
           """
-                   
+                   ¶
             /*
              * /***********/
              * /***********/
              * //
              * //
              */
-                      
+                      ¶
             ////
             ////
-           
+           ¶
           """
-      ) :: 
+      ) ::
       (
           s"""
           val x = $tripleQuote
@@ -117,16 +117,16 @@ class CommentsUtilsTest {
             /*
              */
             $tripleQuote
-              
-              
-               
+              ¶
+              ¶
+               ¶
           """,
           s"""
-                     
-              
-              
-               
-               
+                     ¶
+              ¶
+              ¶
+               ¶
+               ¶
             //
             /*
              */
@@ -138,8 +138,10 @@ class CommentsUtilsTest {
   }
 
   private def testSplitComment(in: String, woComments: String, commentsOnly: String): Unit = {
-    val (resWoComments, resCommentsOnly) = CommentsUtils.splitComment(in)
-    assertEquals(s"woComments: $in", woComments, resWoComments)
-    assertEquals(s"commentsOnly: $in", commentsOnly, resCommentsOnly)
+    val (resWoComments, resCommentsOnly) = CommentsUtils.splitComment(removeTrailingSpaceMarkers(in))
+    assertEquals(s"woComments: $in", removeTrailingSpaceMarkers(woComments), resWoComments)
+    assertEquals(s"commentsOnly: $in", removeTrailingSpaceMarkers(commentsOnly), resCommentsOnly)
   }
+
+  private def removeTrailingSpaceMarkers(str: String) = str.replace("¶", "")
 }
