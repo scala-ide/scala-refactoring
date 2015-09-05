@@ -743,6 +743,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         } else {
           pp(imports, separator = indentedNewline)
         }
+
         pid_.ifNotEmpty(_ ++ newline ++ indentedNewline) ++ imports_ ++ pp(restStats, separator = newline ++ indentedNewline) ++ r
       }
     }

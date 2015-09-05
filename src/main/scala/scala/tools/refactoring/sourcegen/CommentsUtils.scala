@@ -4,6 +4,7 @@
 
 package scala.tools.refactoring
 package sourcegen
+import scala.language.postfixOps
 
 object CommentsUtils {
 
@@ -32,9 +33,13 @@ object CommentsUtils {
     } else if (source.length == 1) {
       (source(0).toString, " ")
     } else {
-      var nestingLevel = 0
-      var lineComment = false
+      var inMultilineComment = 0
+      var inSingleLineComment = false
       var nextToComment = false
+      def inComment = inSingleLineComment || inMultilineComment > 0
+      var inNormalStringConstant = false
+      var inMultilineStringConstant = false
+      def inStringConstant = inNormalStringConstant || inMultilineStringConstant
 
       val text = new StringBuilder
       val comment = new StringBuilder
@@ -45,6 +50,15 @@ object CommentsUtils {
       }
 
       var i = 0
+
+      def nextCharIs(c: Char) = {
+        (i + 1 < source.length) && source(i + 1) == c
+      }
+
+      def nextCharsAre(c1: Char, c2: Char) = {
+        (i + 2 < source.length) && source(i + 1) == c1 && source(i + 2) == c2
+      }
+
       val src = source ++ " "
       while (i < source.length) {
 
@@ -53,25 +67,41 @@ object CommentsUtils {
         if (nextToComment) {
           nextToComment = false
           add(_1, ' ')
-        } else if (_1 == '/' && src(i + 1) == '/' && !lineComment && nestingLevel == 0) {
-          lineComment = true
+        } else if (!inStringConstant && _1 == '/' && nextCharIs('/') && !inSingleLineComment && inMultilineComment == 0) {
+          inSingleLineComment = true
           nextToComment = true
           add('/', ' ')
         } else if (_1 == '\r') {
-          lineComment = false
+          inSingleLineComment = false
           add('\r', '\r')
         } else if (_1 == '\n') {
-          lineComment = false
+          inSingleLineComment = false
           add('\n', '\n')
-        } else if (_1 == '/' && src(i + 1) == '*' && !lineComment) {
-          nestingLevel += 1
+        } else if (!inStringConstant && _1 == '/' && nextCharIs('*') && !inSingleLineComment) {
+          inMultilineComment += 1
           nextToComment = true
           add('/', ' ')
-        } else if (_1 == '*' && src(i + 1) == '/' && !lineComment && nestingLevel > 0) {
-          nestingLevel -= 1
+        } else if (_1 == '*' && nextCharIs('/') && !inSingleLineComment && inMultilineComment > 0) {
+          inMultilineComment -= 1
           nextToComment = true
           add('*', ' ')
-        } else if (lineComment || nestingLevel > 0) {
+        } else if(_1 == '"' && !inComment) {
+          if (inNormalStringConstant) {
+            inNormalStringConstant = false
+          } else if (inMultilineStringConstant) {
+            if (nextCharsAre('"', '"')) {
+              inMultilineStringConstant = false
+            }
+          } else {
+            if (nextCharsAre('"', '"')) {
+              inMultilineStringConstant = true
+            } else {
+              inNormalStringConstant = true
+            }
+          }
+
+          add(' ', '"')
+        } else if (inComment) {
           add(_1, ' ')
         } else {
           add(' ', _1)
