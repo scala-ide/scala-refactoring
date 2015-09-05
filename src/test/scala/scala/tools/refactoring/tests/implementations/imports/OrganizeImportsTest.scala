@@ -557,4 +557,31 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }"""
   } applyRefactoring organizeWithTypicalParams
 
+  /*
+   * See Assembla Ticket #1002166
+   */
+  @Test
+  def dontInsertExtraRoundBrackets() = new FileSet {
+    """
+      package test
+      import scala.collection.mutable.ListBuffer
+
+      object O1
+
+      object O2 {
+        ("//")
+        ("//")
+      }
+    """ becomes
+    """
+      package test
+
+      object O1
+
+      object O2 {
+        ("//")
+        ("//")
+      }
+    """
+  } applyRefactoring organizeWithTypicalParams
 }
