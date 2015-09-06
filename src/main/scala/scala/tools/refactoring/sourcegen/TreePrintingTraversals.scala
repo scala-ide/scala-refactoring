@@ -271,8 +271,8 @@ trait TreePrintingTraversals {
         case (l, r) if r.asText == "" => l
         case (l, r) =>
 
-          val leftCenter = balanceParensInLayout('(', ')', l.center)
-          val rightCenter = balanceParensInLayout('(', ')', r.center)
+          val leftCenter = balanceBracketsInLayout('(', ')', l.center)
+          val rightCenter = balanceBracketsInLayout('(', ')', r.center)
 
           val left = l.post(leftCenter ++ l.trailing, NoLayout)
           val right = r.pre(NoLayout, r.leading ++ rightCenter)

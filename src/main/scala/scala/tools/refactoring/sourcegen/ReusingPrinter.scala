@@ -402,7 +402,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       val _args = pp(args, separator = ", ", before = "[", after = "]")
 
-      l ++ _fun.dropTrailingLayout ++ balanceParens('[', ']')(_fun.trailing ++ _args ++ r)
+      l ++ _fun.dropTrailingLayout ++ balanceBrackets('[', ']')(_fun.trailing ++ _args ++ r)
     }
 
     override def Apply(tree: Apply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
@@ -413,10 +413,10 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
          * the case we include the trailing layout in the balanceParens call.
          */
         if (recv.trailing.contains("(")) {
-          val _arg = balanceParens('(', ')')(recv.trailing ++ args ++ r)
+          val _arg = balanceBrackets('(', ')')(recv.trailing ++ args ++ r)
           l ++ recv.dropTrailingLayout ++ _arg
         } else {
-          val _arg = balanceParens('(', ')')(args ++ r)
+          val _arg = balanceBrackets('(', ')')(args ++ r)
           l ++ recv ++ _arg
         }
       }
@@ -604,7 +604,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
     }
 
     override def CompoundTypeTree(tree: CompoundTypeTree, tpl: Template)(implicit ctx: PrintingContext) = {
-      balanceParens('{', '}') {
+      balanceBrackets('{', '}') {
         printTemplate(tpl, printExtends = false)
       }
     }
@@ -874,7 +874,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         case f => (f.leading, f.dropLeadingLayout)
       }
 
-      val _cond = balanceParens('(', ')') {
+      val _cond = balanceBrackets('(', ')') {
         // we want to balance the parens around the condition and all adjacent layout
         l ++ p(cond, before = "(", after = Requisite.anywhere(")")) ++ _thenLeadingLayout
       }
