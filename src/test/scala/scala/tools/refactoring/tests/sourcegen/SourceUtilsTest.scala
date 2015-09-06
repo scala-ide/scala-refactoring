@@ -140,6 +140,7 @@ class SourceUtilsTest {
   @Test
   def testCountRelevantBracketsWithSimpleExamples() = {
     testCountRelevantBrackets("", 0, 0)
+    testCountRelevantBrackets("val `(` = 42", 0, 0)
     testCountRelevantBrackets("""val x = ")"""", 0, 0)
     testCountRelevantBrackets("""val x = "\")"""", 0, 0)
     testCountRelevantBrackets("def x = 3", 0, 0)
@@ -176,6 +177,8 @@ class SourceUtilsTest {
            val z = "\")))))))))))))))))))))))))))))))"
 
            val c = '('
+
+           val `))))))` = '\)'
 
            ())
            """, 1, 2

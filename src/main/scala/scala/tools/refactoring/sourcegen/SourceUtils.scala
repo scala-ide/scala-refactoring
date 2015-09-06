@@ -8,7 +8,7 @@ import scala.language.postfixOps
 
 object SourceUtils {
   /**
-   * Counts brackets, skipping comments, string and character constants.
+   * Counts brackets, skipping comments, back-tick identifiers, string and character constants.
    */
   def countRelevantBrackets(source: String, open: Char = '(', close: Char = ')'): (Int, Int) = {
     def charAtIs(i: Int, c: Char) = {
@@ -29,6 +29,7 @@ object SourceUtils {
     var inSingleLineComment = false
     var inNormalStringConstant = false
     var inMultilineStringConstant = false
+    var inBackTickIdentifier = false
     var openingBraces = 0
     var closingBraces = 0
 
@@ -39,7 +40,7 @@ object SourceUtils {
     def current3CharsAre(c0: Char, c1: Char, c2: Char) = inRange(i+2) && charAtIs(i+2, c2) && charAtIs(i+1, c1) && charAtIs(i, c0)
     def inComment = inSingleLineComment || inMultilineComment > 0
     def inStringConstant = inNormalStringConstant || inMultilineStringConstant
-    def inRelevantSection = !inComment && !inStringConstant && !inCharConstant
+    def inRelevantSection = !inComment && !inStringConstant && !inCharConstant && !inBackTickIdentifier
     def currentCharsAreTrippleQuote = current3CharsAre('"', '"', '"')
     def currentCharsAreSingleLineCommentStart = current2CharsAre('/', '/')
     def currentCharsAreMultilineCommentCommentStart = current2CharsAre('/', '*')
@@ -50,6 +51,7 @@ object SourceUtils {
     def currentCharIsSingleQuote = currentCharIs(''')
     def currentCharsAreEscapedRegularQuote = current2CharsAre('\\', '"')
     def currentCharIsNewline = currentCharIs('\n')
+    def currentCharIsBackTick = currentCharIs('`')
 
     while(!atEnd) {
       if (inRelevantSection) {
@@ -72,6 +74,8 @@ object SourceUtils {
           i += 2
         } else if (currentCharIsSingleQuote) {
           inCharConstant = true
+        } else if (currentCharIsBackTick) {
+          inBackTickIdentifier = true
         }
       } else if (inSingleLineComment) {
         if (currentCharIsNewline) {
@@ -101,6 +105,10 @@ object SourceUtils {
           i += 1
         } else if (currentCharIsSingleQuote) {
           inCharConstant = false
+        }
+      } else if (inBackTickIdentifier) {
+        if (currentCharIsBackTick) {
+          inBackTickIdentifier = false
         }
       }
 

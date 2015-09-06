@@ -611,9 +611,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
   } applyRefactoring organizeWithTypicalParams
 
-  /*
-   * See Assembla Ticket #1002088
-   */
   @Test
   def dontInsertExtraRoundBrackets1002088Ex2() = new FileSet {
     """
@@ -637,9 +634,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
   } applyRefactoring organizeWithTypicalParams
 
-  /*
-   * See Assembla Ticket #1002088
-   */
   @Test
   def dontInsertExtraRoundBrackets1002088Ex3() = new FileSet {
     """
@@ -657,6 +651,29 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Bug2 {
         ')'
+      }
+
+      object O2
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def dontInsertExtraRoundBrackets1002088Ex4() = new FileSet {
+    """
+      package test
+      import java.lang.String
+
+      object Bug2 {
+        val `)` = ')'
+      }
+
+      object O2
+    """ becomes
+    """
+      package test
+
+      object Bug2 {
+        val `)` = ')'
       }
 
       object O2
