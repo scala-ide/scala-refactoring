@@ -77,7 +77,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
     override def toString = s"Participant[$name]"
 
-    private def name = getClass.getSimpleName
+    private def name = getSimpleClassName(this)
   }
 
   object CollapseImports extends Participant {
