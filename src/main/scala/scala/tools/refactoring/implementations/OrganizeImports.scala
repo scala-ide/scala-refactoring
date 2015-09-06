@@ -69,12 +69,15 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
     final def apply(trees: List[Import]): List[Import] = {
       doApply(trees) \\ { res =>
-        val name = getClass.getSimpleName
-        trace("Participant %s:", name)
+        trace(s"$this:")
         trees.foreach(trace("-- %s", _))
         res.foreach(trace("++ %s", _))
       }
     }
+
+    override def toString = s"Participant[$name]"
+
+    private def name = getSimpleClassName(this)
   }
 
   object CollapseImports extends Participant {
