@@ -57,9 +57,7 @@ trait CommonPrintUtils {
 
   def balanceBrackets(open: Char, close: Char)(f: Fragment) = Fragment {
     val (opening, closing) = SourceUtils.countRelevantBrackets(f.toLayout.asText, open, close)
-    if (opening > closing && closing > 0) {
-      f.asText.reverse.replaceFirst("\\" + close, ("" + close) * (opening - closing + 1)).reverse
-    } else if (opening > closing) {
+    if (opening > closing) {
       f.asText + (("" + close) * (opening - closing))
     } else if (opening < closing) {
       (("" + open) * (closing - opening)) + f.asText
