@@ -6,7 +6,7 @@ package scala.tools.refactoring
 package sourcegen
 import scala.language.postfixOps
 
-object SourceUtils {
+trait SourceUtils {
   /**
    * Counts brackets, skipping comments, back-tick identifiers, string and character constants.
    */
@@ -265,3 +265,5 @@ object SourceUtils {
     }
   }
 }
+
+object SourceUtils extends SourceUtils
