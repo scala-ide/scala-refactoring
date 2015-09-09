@@ -3,14 +3,14 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.scala-refactoring</groupId>
-  <artifactId>org.scala-refactoring.library</artifactId>
+  <artifactId>org.scala-refactoring</artifactId>
   <parent>
     <groupId>org.sonatype.oss</groupId>
     <artifactId>oss-parent</artifactId>
     <version>7</version>
   </parent>
   <version>0.7.0-SNAPSHOT</version>
-  <packaging>eclipse-plugin</packaging>
+  <packaging>pom</packaging>
   <name>Scala Refactoring Library</name>
   <url>http://scala-refactoring.org</url>
   <licenses>
@@ -44,6 +44,12 @@
     <scala.versioned.source>src/main/scala-${version.suffix}</scala.versioned.source>
   </properties>
 
+  <modules>
+    <module>org.scala-refactoring.library</module>
+    <module>org.scala-refactoring.feature</module>
+    <module>org.scala-refactoring.update-site</module>
+  </modules>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -70,48 +76,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.eclipse.tycho</groupId>
-        <artifactId>tycho-compiler-plugin</artifactId>
-        <version>${tycho.version}</version>
-        <configuration>
-          <excludeResources>
-            <excludeResource>**/*.scala</excludeResource>
-          </excludeResources>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.eclipse.tycho</groupId>
-        <artifactId>tycho-source-plugin</artifactId>
-        <version>${tycho.version}</version>
-        <executions>
-          <execution>
-            <id>plugin-source</id>
-            <goals>
-              <goal>plugin-source</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.9.1</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${scala.versioned.source}</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>latex-maven-plugin</artifactId>
         <version>1.0</version>
@@ -137,59 +101,6 @@
             <optionalDependencies>ignore</optionalDependencies>
           </dependency-resolution>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <version>3.1.6</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <jvmArgs>
-            <jvmArg>-Xms256m</jvmArg>
-            <jvmArg>-Xmx768m</jvmArg>
-          </jvmArgs>
-          <args>
-            <arg>${scalac.options}</arg>
-          </args>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
-        <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
-        </configuration>
-        <executions>
-          <execution>
-            <id>compile</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <phase>compile</phase>
-          </execution>
-          <execution>
-            <id>test-compile</id>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-            <phase>test-compile</phase>
-          </execution>
-          <execution>
-          <phase>process-resources</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-           </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -380,19 +291,6 @@
                 <phase>verify</phase>
                 <goals>
                   <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.9</version>
-            <executions>
-              <execution>
-                <id>attach-javadoc</id>
-                <goals>
-                  <goal>jar</goal>
                 </goals>
               </execution>
             </executions>
