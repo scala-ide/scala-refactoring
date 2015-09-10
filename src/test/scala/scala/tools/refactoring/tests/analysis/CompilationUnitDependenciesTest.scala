@@ -777,12 +777,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def ClassInAnnotationDeps() = assertDependencies(
-    """java.io.BufferedReader
-       java.io.FileReader
-       java.io.IOException
-       scala.this.Predef.String""",
-    """
+  def ClassInAnnotationDeps() = {
+    val code =  """
       package examples
 
       import java.io._
@@ -792,7 +788,24 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         @throws(classOf[IOException])
         def read() = in.read()
       }
-    """)
+    """
+    val deps1 = """java.io.BufferedReader
+         java.io.FileReader
+         java.io.IOException
+         scala.this.Predef.String"""
+    val deps2 = deps1 + "\nscala.this.Predef.classOf"
+    def test(deps: String): Option[Throwable] = try {
+      assertDependencies(deps, code)
+      None
+    } catch {
+      case t: Throwable => Some(t)
+    }
+
+    (test(deps1), test(deps2)) match {
+      case (Some(t1), Some(t2)) => throw t1
+      case _ => // okay, one test passed
+    }
+  }
 
   @Test
   def implicitDefImports()  = assertNeededImports(
