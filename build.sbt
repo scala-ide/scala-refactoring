@@ -63,3 +63,9 @@ libraryDependencies += {
 libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
 parallelExecution in Test := false
+
+// sbt doesn't automatically load the content of the MANIFST.MF file, therefore we have to do it here by ourselves
+packageOptions in Compile in packageBin += {
+  val m = Using.fileInputStream(new java.io.File("META-INF/MANIFEST.MF"))(in => new java.util.jar.Manifest(in))
+  Package.JarManifest(m)
+}
