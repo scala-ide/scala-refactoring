@@ -12,19 +12,19 @@ import language.reflectiveCalls
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
-  def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+  private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new RefactoringParameters()
   }.mkChanges
 
-  def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+  private def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new RefactoringParameters(options = List(refactoring.SortImportSelectors))
   }.mkChanges
 
-  def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+  private def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports, refactoring.SortImports))
   }.mkChanges
 
-  def organizeWithTypicalParams(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+  private def organizeWithTypicalParams(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = {
       val groupImports = refactoring.GroupImports(List("java", "scala", "org", "com"))
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(Set("scalaz", "scalaz.Scalaz"))
@@ -561,7 +561,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
    * See Assembla Ticket #1002166
    */
   @Test
-  def dontInsertExtraRoundBrackets() = new FileSet {
+  def dontInsertExtraRoundBrackets1002166() = new FileSet {
     """
       package test
       import scala.collection.mutable.ListBuffer
@@ -584,4 +584,100 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     """
   } applyRefactoring organizeWithTypicalParams
+
+  /*
+   * See Assembla Ticket #1002088
+   */
+  @Test
+  def dontInsertExtraRoundBrackets1002088Ex1() = new FileSet {
+    """
+      package test
+      import java.lang.String
+
+      object O1
+
+      trait Bug1 {
+        ")"
+      }
+    """ becomes
+    """
+      package test
+
+      object O1
+
+      trait Bug1 {
+        ")"
+      }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def dontInsertExtraRoundBrackets1002088Ex2() = new FileSet {
+    """
+      package test
+      import java.lang.String
+
+      object Bug2 {
+        ")"
+      }
+
+      object O2
+    """ becomes
+    """
+      package test
+
+      object Bug2 {
+        ")"
+      }
+
+      object O2
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def dontInsertExtraRoundBrackets1002088Ex3() = new FileSet {
+    """
+      package test
+      import java.lang.String
+
+      object Bug2 {
+        ')'
+      }
+
+      object O2
+    """ becomes
+    """
+      package test
+
+      object Bug2 {
+        ')'
+      }
+
+      object O2
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def dontInsertExtraRoundBrackets1002088Ex4() = new FileSet {
+    """
+      package test
+      import java.lang.String
+
+      object Bug2 {
+        val `)` = ')'
+      }
+
+      object O2
+    """ becomes
+    """
+      package test
+
+      object Bug2 {
+        val `)` = ')'
+      }
+
+      object O2
+    """
+  } applyRefactoring organizeWithTypicalParams
+
 }

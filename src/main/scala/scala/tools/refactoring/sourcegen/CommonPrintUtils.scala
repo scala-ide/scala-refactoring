@@ -51,17 +51,13 @@ trait CommonPrintUtils {
     }
   }
 
-  def balanceParensInLayout(open: Char, close: Char, l: Layout) = {
-    balanceParens(open, close)(Fragment(l.asText)).toLayout
+  def balanceBracketsInLayout(open: Char, close: Char, l: Layout) = {
+    balanceBrackets(open, close)(Fragment(l.asText)).toLayout
   }
 
-  def balanceParens(open: Char, close: Char)(f: Fragment) = Fragment {
-    val txt = f.toLayout.withoutComments // TODO also without strings, etc.
-    val opening = txt.count(_ == open)
-    val closing = txt.count(_ == close)
-    if (opening > closing && closing > 0) {
-      f.asText.reverse.replaceFirst("\\" + close, ("" + close) * (opening - closing + 1)).reverse
-    } else if (opening > closing) {
+  def balanceBrackets(open: Char, close: Char)(f: Fragment) = Fragment {
+    val (opening, closing) = SourceUtils.countRelevantBrackets(f.toLayout.asText, open, close)
+    if (opening > closing) {
       f.asText + (("" + close) * (opening - closing))
     } else if (opening < closing) {
       (("" + open) * (closing - opening)) + f.asText

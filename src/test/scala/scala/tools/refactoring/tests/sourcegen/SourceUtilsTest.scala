@@ -1,10 +1,10 @@
 package scala.tools.refactoring.tests.sourcegen
 
-import scala.tools.refactoring.sourcegen.CommentsUtils
+import scala.tools.refactoring.sourcegen.SourceUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class CommentsUtilsTest {
+class SourceUtilsTest {
   @Test
   def testStripCommentWithExampleFromTicket1002166() {
     val source = """
@@ -14,13 +14,13 @@ class CommentsUtilsTest {
       }
     """
 
-   assertEquals(source, CommentsUtils.stripComment(source))
+   assertEquals(source, SourceUtils.stripComment(source))
   }
 
   @Test
   def testStripCommentWithMinimalExampleFromTicket1002166() {
     val source = """("\\")"""
-    assertEquals(source, CommentsUtils.stripComment(source))
+    assertEquals(source, SourceUtils.stripComment(source))
   }
 
   @Test
@@ -137,8 +137,63 @@ class CommentsUtilsTest {
       testCases.foreach((testSplitComment _).tupled)
   }
 
+  @Test
+  def testCountRelevantBracketsWithSimpleExamples() = {
+    testCountRelevantBrackets("", 0, 0)
+    testCountRelevantBrackets("val `(` = 42", 0, 0)
+    testCountRelevantBrackets("""val x = ")"""", 0, 0)
+    testCountRelevantBrackets("""val x = "\")"""", 0, 0)
+    testCountRelevantBrackets("def x = 3", 0, 0)
+    testCountRelevantBrackets("def f(x: Int) = x", 1, 1)
+    testCountRelevantBrackets("def f(x: Int) = x //(", 1, 1)
+    testCountRelevantBrackets("def f(x: Int) = /*)*/ x //(", 1, 1)
+    testCountRelevantBrackets("""val z = "\"()()()\"()()()\"" """, 0, 0)
+    testCountRelevantBrackets("'('", 0, 0)
+    testCountRelevantBrackets("""(''', '\'', '(', ')')""", 1, 1)
+  }
+
+  @Test
+  def testCountRelevantBracketsWithMultilineExamples() = {
+    val tripleQuote = "\"\"\""
+
+    val testCases =
+      (
+          """
+          /*
+           * ()
+           */
+          """, 0, 0
+       ) ::
+       (
+           raw"""
+           //))))))))))))))))))))))))))
+           val x = "))))))))))))))))))))))"
+           val y = $tripleQuote
+             )))))))))))))))))))))))))))))))))))))))
+             $tripleQuote
+           /* /**/ /* -- */
+            *)))))))))))))))))))))))))))))))))
+            */
+           val z = "\")))))))))))))))))))))))))))))))"
+
+           val c = '('
+
+           val `))))))` = '\)'
+
+           ())
+           """, 1, 2
+       ) :: Nil
+
+    testCases.foreach((testCountRelevantBrackets _).tupled)
+  }
+
+  private def testCountRelevantBrackets(in: String, expectedOpen: Int, expectedClose: Int): Unit = {
+    val res = SourceUtils.countRelevantBrackets(in)
+    assertEquals((expectedOpen, expectedClose), res)
+  }
+
   private def testSplitComment(in: String, woComments: String, commentsOnly: String): Unit = {
-    val (resWoComments, resCommentsOnly) = CommentsUtils.splitComment(removeTrailingSpaceMarkers(in))
+    val (resWoComments, resCommentsOnly) = SourceUtils.splitComment(removeTrailingSpaceMarkers(in))
     assertEquals(s"woComments: $in", removeTrailingSpaceMarkers(woComments), resWoComments)
     assertEquals(s"commentsOnly: $in", removeTrailingSpaceMarkers(commentsOnly), resCommentsOnly)
   }

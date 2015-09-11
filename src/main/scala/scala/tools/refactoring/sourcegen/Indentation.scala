@@ -40,7 +40,7 @@ trait Indentations {
       if(memoizedSourceWithoutComments contains tree.pos.source.path) {
         memoizedSourceWithoutComments(tree.pos.source.path)
       } else {
-        val src = CommentsUtils.stripComment(tree.pos.source.content)
+        val src = SourceUtils.stripComment(tree.pos.source.content)
         memoizedSourceWithoutComments += tree.pos.source.path → src
         src
       }

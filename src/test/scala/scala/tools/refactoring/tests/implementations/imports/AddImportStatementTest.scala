@@ -303,4 +303,88 @@ object T
       }
     """)
   }
+
+
+  /*
+   * See Assembla ticket #1002088
+   */
+  @Test
+  def addImportWithRoundBracketStringTicket1002088Ex1() = {
+    addImport(("scala.util.matching", "Regex"), """
+      object X
+
+      class Y {
+
+        ")"
+
+        val r: Regex
+      }
+      """,
+      """
+      import scala.util.matching.Regex
+
+      object X
+
+      class Y {
+
+        ")"
+
+        val r: Regex
+      }
+      """)
+  }
+
+  /*
+   * This test inspired from ticket #1002088 deals with code that
+   * does not compile, and therefore for now is not of very high
+   * priority.
+   */
+  @Ignore
+  @Test
+  def addImportWithRoundBracketStringTicket1002088Ex2() = {
+    addImport(("scala.util.matching", "Regex"), """
+      object X
+
+      ")"
+
+      class Y {
+
+        val r: Regex
+      }
+      """,
+      """
+      import scala.util.matching.Regex
+
+      object X
+
+      ")"
+
+      class Y {
+
+        val r: Regex
+      }
+      """)
+  }
+
+  @Test
+  def addImportWithRoundBracketStringTicket1002088Ex3() = {
+    addImport(("scala.collection.mutable", "LinkedHashSet"), """
+      object DummyObject
+
+      class WrongFormatting {
+        def importHere = LinkedHashSet("(")
+        ()
+      }
+      """,
+      """
+      import scala.collection.mutable.LinkedHashSet
+
+      object DummyObject
+
+      class WrongFormatting {
+        def importHere = LinkedHashSet("(")
+        ()
+      }
+      """)
+  }
 }

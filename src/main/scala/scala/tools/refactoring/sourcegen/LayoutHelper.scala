@@ -32,7 +32,7 @@ trait LayoutHelper {
         // therefore we have to skip them here otherwise we have no chance
         // to re-introduce missing (
 
-        val left = Layout(CommentsUtils.stripFromCode(l.asText, '('))
+        val left = Layout(SourceUtils.stripFromCode(l.asText, '('))
 
         (left, r)
       case (l, r) => (l, r)
@@ -346,7 +346,7 @@ trait LayoutHelper {
       case (l, r) =>
 
         val source = between(l, r).toString
-        val (layout, comments) = CommentsUtils.splitComment(source)
+        val (layout, comments) = SourceUtils.splitComment(source)
 
         val (ll, lr, rule) = (l, parent, r) match {
 

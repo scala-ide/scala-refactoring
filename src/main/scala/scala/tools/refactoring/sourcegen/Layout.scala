@@ -18,7 +18,7 @@ trait Layout {
    * @return Returns this layout as a string but without comments.
    *         Comments are replaced by whitespace.
    */
-  lazy val withoutComments = CommentsUtils.stripComment(asText)
+  lazy val withoutComments = SourceUtils.stripComment(asText)
 
   def asText: String
 
