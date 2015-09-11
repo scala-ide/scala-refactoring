@@ -2062,4 +2062,21 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("xxx"))
+
+  /*
+   * See Assembla Ticket #1002540
+   */
+  @Test
+  def testRenameInCaseClassWithCopy1002540() = new FileSet {
+    """
+    case class Bug(i: Int = 1, j: Int = 2) {
+      def /*(*/buggy/*)*/ = copy(j = i)
+    }
+    """ becomes
+    """
+    case class Bug(i: Int = 1, j: Int = 2) {
+      def /*(*/notBuggy/*)*/ = copy(j = i)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
 }

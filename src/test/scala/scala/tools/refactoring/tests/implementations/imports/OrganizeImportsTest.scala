@@ -680,4 +680,26 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
   } applyRefactoring organizeWithTypicalParams
 
+  /*
+   * See Assembla Ticket #1002540
+   */
+  @Test
+  def dontFailForCaseClassWithCopy1002540() = new FileSet {
+    """
+    package test
+    import java.net.URL
+
+    case class Bug(i: Int = 1, j: Int = 2) {
+      def buggy = copy(j = i)
+    }
+    """ becomes
+    """
+    package test
+
+    case class Bug(i: Int = 1, j: Int = 2) {
+      def buggy = copy(j = i)
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
 }
