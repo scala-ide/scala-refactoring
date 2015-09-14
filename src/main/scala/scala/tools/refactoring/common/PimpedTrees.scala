@@ -1138,10 +1138,21 @@ trait PimpedTrees {
 
               if (nameStart >= 0) {
                 val nameLength = newVal.name.length
-                val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
-                newVal.nameTree setPos namePos
-                newVal setPos namePos.withEnd(t.pos.end)
-                newVal
+                val newStart = nameStart + startOffset
+
+                // Note the FIXMEs above:
+                //  This can actually happen; what you see below is a hack that helps in some cases
+                //  by avoiding an exception that would otherwise be thrown a few lines below
+                //  (see ticket #1002540).
+                if (newStart > t.pos.end) {
+                  t
+                } else {
+                  val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+                  newVal.nameTree setPos namePos
+                  newVal setPos namePos.withEnd(t.pos.end)
+                  newVal
+                }
+
               } else /*no named argument*/ {
                 t.rhs
               }
