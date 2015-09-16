@@ -203,12 +203,12 @@ object SourceWithMarker {
   object Movements {
     import MovementHelpers._
 
-    def consumeChar(c: Char) = Movement { (sourceWithMarker, forward) =>
+    def chararcter(c: Char) = Movement { (sourceWithMarker, forward) =>
       if (sourceWithMarker.current == c) Some(nextMarker(sourceWithMarker.marker, forward))
       else None
     }
 
-    def consumeString(str: String) = Movement { (sourceWithMarker, forward) =>
+    def string(str: String) = Movement { (sourceWithMarker, forward) =>
       def strAt(i: Int) = {
         if (forward) str.charAt(i)
         else str.charAt(str.length - 1 - i)
@@ -229,12 +229,12 @@ object SourceWithMarker {
       go(sourceWithMarker.marker)
     }
 
-    val consumeSpace = Movement { (sourceWithMarker, forward) =>
+    val space = Movement { (sourceWithMarker, forward) =>
       if (sourceWithMarker.current.isWhitespace) Some(nextMarker(sourceWithMarker.marker, forward))
       else None
     }
 
-    val consumeComment = Movement { (sourceWithMarker, forward) =>
+    val comment = Movement { (sourceWithMarker, forward) =>
       @tailrec
       def go(m: Int, inSingleLineComment: Boolean = false, inMultilineComment: Int = 0, slashSeen: Boolean = false, starSeen: Boolean = false): Option[Int] = {
         if (wouldBeDepleted(m, sourceWithMarker)) {
@@ -278,7 +278,7 @@ object SourceWithMarker {
       else go(sourceWithMarker.marker)
     }
 
-    def consumeInBrackets(open: Char, close: Char) = Movement { (sourceWithMarker, forward) =>
+    def inBrackets(open: Char, close: Char) = Movement { (sourceWithMarker, forward) =>
       val (br1, br2) = if (forward) (open, close) else (close, open)
       if (sourceWithMarker.isDepleted || sourceWithMarker.current != br1) {
         None
@@ -304,14 +304,13 @@ object SourceWithMarker {
       }
     }
 
-    val space: Movement = consumeSpace
-    val spaces: Movement = consumeSpace.zeroOrMore
-    val comments: Movement = (consumeComment ~ spaces).zeroOrMore
+    val spaces: Movement = space.zeroOrMore
+    val comments: Movement = (comment ~ spaces).zeroOrMore
     val commentsAndSpaces: Movement = (spaces ~ comments).zeroOrMore
-    val bracketsWithContents = consumeInBrackets('[', ']')
+    val bracketsWithContents = inBrackets('[', ']')
 
-    implicit def charToMovement(c: Char) = consumeChar(c)
-    implicit def stringToMovement(str: String)  = consumeString(str)
+    implicit def charToMovement(c: Char) = chararcter(c)
+    implicit def stringToMovement(str: String)  = string(str)
   }
 
   object MovementHelpers {

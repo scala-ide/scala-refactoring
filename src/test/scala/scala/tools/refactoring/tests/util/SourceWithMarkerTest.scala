@@ -89,7 +89,7 @@ class SourceWithMarkerTest {
 
     val moveToBracketOpen = "protected" ~ commentsAndSpaces
     val moveToBracketClose = moveToBracketOpen ~ bracketsWithContents ~ '/'.backward
-    val moveToStartOfMultilineComment = moveToBracketClose ~ ']' ~ (consumeComment) ~ spaces
+    val moveToStartOfMultilineComment = moveToBracketClose ~ ']' ~ (comment) ~ spaces
     val moveToEndOfMultilineComment = moveToStartOfMultilineComment ~ comments ~ (spaces ~ 'o').backward
     val moveToVal = moveToBracketClose ~ ']' ~ commentsAndSpaces ~ "override" ~ commentsAndSpaces
 
