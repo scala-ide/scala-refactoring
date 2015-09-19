@@ -291,6 +291,13 @@ object SourceWithMarker {
     }
   }
 
+  /**
+   * Various movements related to Scala code
+   *
+   * Take a look at the
+   * [[http://www.scala-lang.org/files/archive/spec/2.11/01-lexical-syntax.html  Scala Language Specification]]
+   * if you wonder about terms like ''plainid'', ''idrest'' or ''varid''.
+   */
   object Movements {
     import MovementHelpers._
 
