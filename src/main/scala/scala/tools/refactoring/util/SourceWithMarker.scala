@@ -114,7 +114,7 @@ object SourceWithMarker {
    * The difference between a [[SimpleMovement]] and a [[Movement]] is that [[SimpleMovement]]
    * is missing the `backward` method. Apart from that, the documentation for [[Movement]] applies.
    * Note that ''movements'' can be combined with ''simple movements'', so there is no need to
-   * implement `backward` unless you need it.
+   * implement a full movement unless you need it.
    */
   trait SimpleMovement { self =>
     def apply(sourceWithMarker: SourceWithMarker): Option[Int]
