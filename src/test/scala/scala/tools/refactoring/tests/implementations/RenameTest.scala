@@ -2179,4 +2179,24 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex9() = new FileSet {
+    """
+    case class Bug9(i: Int, j: Int) {
+      def /*(*/buggy/*)*/ = copy(j = {
+        val i = 3
+        i
+      })
+    }
+    """ becomes
+    """
+    case class Bug9(i: Int, j: Int) {
+      def /*(*/notBuggy/*)*/ = copy(j = {
+        val i = 3
+        i
+      })
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
 }
