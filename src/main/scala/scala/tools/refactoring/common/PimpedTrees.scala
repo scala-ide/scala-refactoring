@@ -1091,7 +1091,13 @@ trait PimpedTrees {
    * removed and named argument trees are created.
    */
   object BlockExtractor {
-    private val skipWhileSearchingForAssignment = (comment | stringLiteral | characterLiteral | literalIdentifier | symbolLiteral)
+    private val skipWhileSearchingForAssignment =
+      comment |
+      stringLiteral |
+      characterLiteral |
+      literalIdentifier |
+      symbolLiteral |
+      curlyBracesWithContents
 
     private def findParamAssignment(argsSource: String, paramName: String): Option[Int] = {
       val mvnt = until(paramName ~ spaces ~ '=', skipping = skipWhileSearchingForAssignment)

@@ -498,6 +498,7 @@ object SourceWithMarker {
     val comments: Movement = (comment ~ spaces).zeroOrMore
     val commentsAndSpaces: Movement = (spaces ~ comments).zeroOrMore
     val bracketsWithContents = inBrackets('[', ']')
+    val curlyBracesWithContents = inBrackets('{', '}')
 
     implicit def charToMovement(c: Char): Movement = chararcter(c)
     implicit def stringToMovement(str: String): Movement  = string(str)
