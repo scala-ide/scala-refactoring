@@ -397,20 +397,34 @@ object SourceWithMarker {
       }
     }
 
+    /**
+     * Advances the marker until the given movement can be applied, optionally skipping parts of the input.
+     *
+     * Note that the movement specified by ''skipping'' is applied after ''mvnt''. This matters if
+     * there is input that might be matched by both movements. Here is an example:
+     * {{{
+     * val src = SimpleMovement("0123456789".toCharArray)
+     * src.moveMarker(until('5', skipping = digit))
+     * }}}
+     * will move the marker to ''5'', because ''5'' is matched before ''digit''. However doing
+     * {{{
+     * src.moveMarker(until('5', skipping = digit.zeroOrMore))
+     * }}}
+     * will leave the marker at ''0'', since ''digit.zeroOrMore'' will consume the entire string,
+     * after matching ''5'' against ''0'' has failed.
+     */
     def until(mvnt: SimpleMovement, skipping: SimpleMovement = none) = SimpleMovement { sourceWithMarker =>
-      val skipMvnt = skipping.atLeastOnce
-
       @tailrec
-      def go(current: SourceWithMarker = sourceWithMarker): Option[Int] = {
-        val skipTo = skipMvnt(current).getOrElse(current.marker)
-        if (wouldBeDepleted(skipTo, sourceWithMarker)) {
-          None
-        } else {
-          val currentAfterSkip = current.copy(marker = skipTo)
-          mvnt(currentAfterSkip) match {
-            case Some(_) => Some(currentAfterSkip.marker)
-            case _ => go(current.copy(marker = skipTo + 1))
-          }
+      def go(sourceWithMarker: SourceWithMarker = sourceWithMarker): Option[Int] = {
+        mvnt(sourceWithMarker) match {
+          case Some(_) => Some(sourceWithMarker.marker)
+          case _ =>
+            if (sourceWithMarker.isDepleted) {
+              None
+            } else {
+              val newMarker = skipping(sourceWithMarker).getOrElse(sourceWithMarker.marker + 1)
+              go(sourceWithMarker.copy(marker = newMarker))
+            }
         }
       }
 

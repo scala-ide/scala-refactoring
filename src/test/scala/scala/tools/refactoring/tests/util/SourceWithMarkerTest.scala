@@ -213,7 +213,8 @@ class SourceWithMarkerTest {
   def testUntilWithSimpleExamples() {
     val src = SourceWithMarker("0123456789")
     assertEquals("5", src.moveMarker(until("5")).current.toString)
-    assertEquals("0", src.moveMarker(until("5", skipping = digit)).current.toString)
+    assertEquals("5", src.moveMarker(until("5", skipping = digit)).current.toString)
+    assertEquals("0", src.moveMarker(until("5", skipping = digit.zeroOrMore)).current.toString)
   }
 
   @Test
