@@ -137,6 +137,88 @@ class SourceWithMarkerTest {
     assertTrue(SourceWithMarker().isDepleted)
   }
 
+  @Test
+  def testCharConst() {
+    val src1 = SourceWithMarker("(a='b',b=''',c='\'',e='s)")
+    val baseMvnt1 = '(' ~ "a=" ~ characterLiteral ~ ",b=" ~ characterLiteral ~ ",c=" ~ characterLiteral ~ ",e="
+
+    assertEquals("'", src1.moveMarker(baseMvnt1).current.toString)
+    assertEquals("(", src1.moveMarker(baseMvnt1 ~ characterLiteral).current.toString)
+    assertTrue(src1.moveMarker(baseMvnt1 ~ "'s)").isDepleted)
+
+    val src2 = SourceWithMarker("""'\222'x''';'\b'°'\\'''\"'::""")
+    val baseMvnt2 = (characterLiteral ~ any).zeroOrMore
+
+    assertEquals(":", src2.moveMarker(baseMvnt2).current.toString)
+    assertEquals("'", src2.moveMarker(baseMvnt2 ~ (any ~ characterLiteral ~ any).backward).current.toString)
+  }
+
+  @Test
+  def testNtimes() {
+    val src = SourceWithMarker("aaaa")
+    assertTrue(src.moveMarker('a'.nTimes(4)).isDepleted)
+    assertFalse(src.moveMarker('a'.nTimes(3)).isDepleted)
+  }
+
+  @Test
+  def testOpChar() {
+    val src = SourceWithMarker("+-/*:><!~^\u03f6.")
+    assertEquals("~", src.moveMarker(opChar.zeroOrMore ~ (opChar.nTimes(2) ~ '.').backward).current.toString)
+  }
+
+  @Test
+  def testUntilWithSimpleExamples() {
+    val src = SourceWithMarker("0123456789")
+    assertEquals("5", src.moveMarker(until("5")).current.toString)
+    assertEquals("0", src.moveMarker(until("5", skipping = digit)).current.toString)
+  }
+
+  @Test
+  def testStringLiteral() {
+    val trippleQuote = "\"\"\""
+
+    val src1 = SourceWithMarker(s"""$trippleQuote a $trippleQuote""")
+    assertTrue(src1.moveMarker(stringLiteral).isDepleted)
+
+    val src2 = SourceWithMarker(raw"""
+      $trippleQuote
+      asdfasdfadsf
+      ""
+      asdfasdf
+      $trippleQuote
+      "asdf\""
+      "\n"
+      "\t\"\"";
+    """)
+
+    val mvnt2 = (spaces ~ stringLiteral ~ spaces).atLeastOnce
+    assertEquals(";", src2.moveMarker(mvnt2).current.toString)
+  }
+
+  @Test
+  def testUntilWithTypicalExamples() {
+    def untilVal(name: String) = until(name ~ spaces ~ "=", skipping = characterLiteral | symbolLiteral | stringLiteral | comment)
+
+    val src1 = SourceWithMarker("(j = i, i = j)")
+    val src2 = SourceWithMarker("""(j = "i = 2;", i = "v = 2"/*k=2*/,k=l)""")
+
+    val trippleQuote = "\"\"\""
+    val src3 = SourceWithMarker(s"""(a = $trippleQuote
+      b = 0
+      c = 0
+      e = 0
+      $trippleQuote, b = 'd_=, c = 'd', d= 3)
+    )""")
+
+    assertEquals("i", src1.moveMarker(untilVal("j") ~ any.nTimes(4)).current.toString)
+    assertEquals("j", src1.moveMarker(untilVal("i") ~ any.nTimes(4)).current.toString)
+
+    assertEquals("v", src2.moveMarker(untilVal("i") ~ any.nTimes(5)).current.toString)
+    assertEquals("l", src2.moveMarker(untilVal("k") ~ any.nTimes(2)).current.toString)
+
+    assertEquals("3", src3.moveMarker(untilVal("d") ~ any.nTimes(3)).current.toString)
+  }
+
   private implicit def stringToCharArray(str: String): Array[Char] = str.toCharArray
   private implicit class SourceWithMarkerOps(underlying: SourceWithMarker) {
     def withMarkerOnLastChar = underlying.copy(marker = underlying.source.length - 1)

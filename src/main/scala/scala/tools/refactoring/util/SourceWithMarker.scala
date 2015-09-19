@@ -28,8 +28,12 @@ final case class SourceWithMarker(source: Array[Char] = Array(), marker: Int = 0
 
   def current: Char = source(marker)
 
+  def isInRange(i: Int): Boolean = {
+    i >= 0 && i < source.length
+  }
+
   def isDepleted: Boolean = {
-    marker < 0 || marker >= source.length
+    !isInRange(marker)
   }
 
   def length = source.length
@@ -70,6 +74,28 @@ final case class SourceWithMarker(source: Array[Char] = Array(), marker: Int = 0
   private def assertLegalState() {
     require(marker >= -1 && marker <= source.length, s"Marker out of bounds: $marker")
   }
+
+  private def nextChars(n: Int): Option[IndexedSeq[Char]] = {
+    if (isDepleted) {
+      None
+    } else if (n == 0) {
+      Some(IndexedSeq())
+    } else {
+      val m = marker + n
+      if (n > 0 && m <= length) Some(source.view(marker + 1, m + 1))
+      else if (m >= 0) Some(source.view(m, marker))
+      else None
+    }
+  }
+
+  private def nextChar(n: Int): Option[Char] = {
+    charAt(marker + n)
+  }
+
+  private def charAt(i: Int): Option[Char] = {
+    if (isInRange(i)) Some(source(i))
+    else None
+  }
 }
 
 object SourceWithMarker {
@@ -93,16 +119,28 @@ object SourceWithMarker {
   trait SimpleMovement { self =>
     def apply(sourceWithMarker: SourceWithMarker): Option[Int]
 
-    final def ~(other: SimpleMovement): SimpleMovement = SimpleMovementOps.sequence(SimpleMovement.this, other) _
-    final def |(other: SimpleMovement): SimpleMovement = SimpleMovementOps.or(SimpleMovement.this, other) _
-    def zeroOrMore: SimpleMovement = SimpleMovementOps.repeat(SimpleMovement.this) _
+    final def ~(other: SimpleMovement): SimpleMovement = SimpleMovementOps.sequence(this, other) _
+    final def |(other: SimpleMovement): SimpleMovement = SimpleMovementOps.or(this, other) _
+    def zeroOrMore: SimpleMovement = SimpleMovementOps.repeat(this) _
     def atLeastOnce: SimpleMovement = this ~ this.zeroOrMore
+    def nTimes(n: Int): SimpleMovement = SimpleMovementOps.nTimes(this, n) _
+    def butNot(other: SimpleMovement): SimpleMovement = SimpleMovementOps.butNot(this, other) _
+    def optional: SimpleMovement = SimpleMovementOps.optional(this) _
+    def atMostNtimes(n: Int): SimpleMovement = optional.nTimes(n)
   }
 
   object SimpleMovement {
     implicit class WrapSimpleMovementImpl(impl: SourceWithMarker => Option[Int]) extends SimpleMovement {
       override def apply(sourceWithMarker: SourceWithMarker) = impl(sourceWithMarker)
     }
+
+    def apply(impl: SourceWithMarker => Option[Int]): SimpleMovement = impl
+
+    def startingWith(c: Char)(impl: SourceWithMarker => Option[Int]) = SimpleMovement { sourceWithMarker =>
+      if (sourceWithMarker.current == c) impl(sourceWithMarker)
+      else None
+    }
+
   }
 
   private object SimpleMovementOps {
@@ -130,6 +168,32 @@ object SourceWithMarker {
       }
 
       go(sourceWithMarker)
+    }
+
+    def nTimes[MovementT <: SimpleMovement](mvnt: MovementT, n: Int)(sourceWithMarker: SourceWithMarker): Option[Int] = {
+      if (n == 0) {
+        Some(sourceWithMarker.marker)
+      } else if (n == 1) {
+        mvnt(sourceWithMarker)
+      } else if (n > 1) {
+        mvnt(sourceWithMarker) match {
+          case Some(newMarker) => nTimes(mvnt, n-1)(sourceWithMarker.copy(marker = newMarker))
+          case _ => None
+        }
+      } else {
+        throw new IllegalArgumentException(s"$n")
+      }
+    }
+
+    def butNot[MovementT <: SimpleMovement](mvnt: MovementT, notMvnt: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
+      notMvnt(sourceWithMarker) match {
+        case None => mvnt(sourceWithMarker)
+        case Some(_) => None
+      }
+    }
+
+    def optional[MovementT <: SimpleMovement](mvnt: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
+      mvnt(sourceWithMarker).orElse(Some(sourceWithMarker.marker))
     }
   }
 
@@ -187,6 +251,26 @@ object SourceWithMarker {
     }
 
     final override def atLeastOnce: Movement = this ~ this.zeroOrMore
+
+    final override def nTimes(n: Int) = Movement { (sourceWithMarker, forward) =>
+      val mvnt = if  (forward) self else self.backward
+      SimpleMovementOps.nTimes(mvnt, n)(sourceWithMarker)
+    }
+
+    final def butNot(mvnt: Movement) = Movement { (sourceWithMarker, forward) =>
+      val (actualSelf, actualMvnt) = {
+        if (forward) (self, mvnt)
+        else (self.backward, mvnt.backward)
+      }
+
+      SimpleMovementOps.butNot(actualSelf, actualMvnt)(sourceWithMarker)
+    }
+
+    final override def optional = Movement { (sourceWithMarker, forward) =>
+      SimpleMovementOps.optional(if (forward) self else self.backward)(sourceWithMarker)
+    }
+
+    final override def atMostNtimes(n: Int) = optional.nTimes(n)
   }
 
   object Movement {
@@ -202,6 +286,12 @@ object SourceWithMarker {
 
   object Movements {
     import MovementHelpers._
+
+    val any = Movement { (sourceWithMarker, forward) =>
+      Some(nextMarker(sourceWithMarker.marker, forward))
+    }
+
+    val none = Movement { (_, _) => None }
 
     def chararcter(c: Char) = Movement { (sourceWithMarker, forward) =>
       if (sourceWithMarker.current == c) Some(nextMarker(sourceWithMarker.marker, forward))
@@ -227,11 +317,6 @@ object SourceWithMarker {
       }
 
       go(sourceWithMarker.marker)
-    }
-
-    val space = Movement { (sourceWithMarker, forward) =>
-      if (sourceWithMarker.current.isWhitespace) Some(nextMarker(sourceWithMarker.marker, forward))
-      else None
     }
 
     val comment = Movement { (sourceWithMarker, forward) =>
@@ -304,13 +389,94 @@ object SourceWithMarker {
       }
     }
 
+    def until(mvnt: SimpleMovement, skipping: SimpleMovement = none) = SimpleMovement { sourceWithMarker =>
+      val skipMvnt = skipping.atLeastOnce
+
+      @tailrec
+      def go(current: SourceWithMarker = sourceWithMarker): Option[Int] = {
+        val skipTo = skipMvnt(current).getOrElse(current.marker)
+        if (wouldBeDepleted(skipTo, sourceWithMarker)) {
+          None
+        } else {
+          val currentAfterSkip = current.copy(marker = skipTo)
+          mvnt(currentAfterSkip) match {
+            case Some(_) => Some(currentAfterSkip.marker)
+            case _ => go(current.copy(marker = skipTo + 1))
+          }
+        }
+      }
+
+      go()
+    }
+
+    def charOfClass(inClass: Char => Boolean) = Movement { (sourceWithMarker, forward) =>
+      if (inClass(sourceWithMarker.current)) Some(nextMarker(sourceWithMarker.marker, forward))
+      else None
+    }
+
+    val space = charOfClass { c =>
+      c == '\u0020' || c == '\u0009' || c == '\u000D' || c == '\u000A'
+    }
+
+    val letter = charOfClass { c =>
+      c.isLower || c.isUpper || c.isTitleCase || c == '\u0024' || c == '$' || c == '\u005F' || c == '_' || {
+        val ct = c.getType
+        ct == Character.OTHER_LETTER || ct == Character.LETTER_NUMBER
+      }
+    }
+
+    val digit = charOfClass(_.isDigit)
+
+    val bracket = charOfClass { c =>
+      c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}'
+    }
+
+    val delimiter = charOfClass { c =>
+      c == '`' || c == ''' || c == '"' || c == '.' || c == ';' || c == ','
+    }
+
+    val opChar = charOfClass { c =>
+      (c >= '\u0020' && c <= '\u007F') || {
+        val ct = c.getType
+        ct == Character.MATH_SYMBOL || ct == Character.OTHER_SYMBOL
+      }
+    }.butNot(letter | digit | space | bracket | delimiter)
+
+    val octalDigit = charOfClass { c =>
+      c.isDigit && c != '8' && c != '9'
+    }
+
+    val characterLiteral = {
+      val charEscape = chararcter('b') | 't' | 'n' | 'f' | 'r' | '"' | ''' | '\\'
+      val octEscape = octalDigit ~ octalDigit.atMostNtimes(2)
+
+      ''' ~ ((any.butNot('\\') | ('\\' ~ (charEscape | octEscape)))) ~ '''
+    }
+
+    val stringLiteral = {
+      val simpleLiteral = '"' ~ (('\\' ~ '"') | charOfClass(c => !c.isControl && c != '"')).zeroOrMore ~ '"'
+      val multiLiteral = "\"\"\"" ~ ('"'.atMostNtimes(2) ~ any.butNot('"')).zeroOrMore ~ "\"\"\""
+
+      multiLiteral | simpleLiteral
+    }
+
+    val op = opChar.atLeastOnce
+
+    val idrest = (letter | digit).zeroOrMore ~ ('_' ~ op).zeroOrMore
+
+    val varid = charOfClass(_.isLower) ~ idrest
+
+    val plainid = (charOfClass(_.isUpper) ~ idrest) | varid | op
+
+    val symbolLiteral = ''' ~ plainid
+
     val spaces: Movement = space.zeroOrMore
     val comments: Movement = (comment ~ spaces).zeroOrMore
     val commentsAndSpaces: Movement = (spaces ~ comments).zeroOrMore
     val bracketsWithContents = inBrackets('[', ']')
 
-    implicit def charToMovement(c: Char) = chararcter(c)
-    implicit def stringToMovement(str: String)  = string(str)
+    implicit def charToMovement(c: Char): Movement = chararcter(c)
+    implicit def stringToMovement(str: String): Movement  = string(str)
   }
 
   object MovementHelpers {
@@ -320,9 +486,7 @@ object SourceWithMarker {
     }
 
     def wouldBeDepleted(potentialMarker: Int, sourceWithMarker: SourceWithMarker): Boolean = {
-      if (potentialMarker < 0) true
-      else if (potentialMarker >= sourceWithMarker.source.length) true
-      else false
+      !sourceWithMarker.isInRange(potentialMarker)
     }
   }
 }
