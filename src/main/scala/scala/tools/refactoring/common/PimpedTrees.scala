@@ -1091,6 +1091,12 @@ trait PimpedTrees {
    * removed and named argument trees are created.
    */
   object BlockExtractor {
+    private val skipWhileSearchingForAssignment = (comment | stringLiteral | characterLiteral | literalIdentifier | symbolLiteral)
+
+    private def findParamAssignment(argsSource: String, paramName: String): Option[Int] = {
+      val mvnt = until(paramName ~ spaces ~ '=', skipping = skipWhileSearchingForAssignment)
+      mvnt(SourceWithMarker(argsSource.toCharArray()))
+    }
 
     def unapply(t: Block) = {
 
@@ -1124,7 +1130,6 @@ trait PimpedTrees {
           }.zip(argumentSymbols).toMap
 
           val startOffset = apply.pos.point
-          // FIXME strip comments!
           val argumentsSource = apply.pos.source.content.slice(startOffset, apply.pos.end).mkString
 
           val newValDefs = stats collect {
@@ -1133,29 +1138,14 @@ trait PimpedTrees {
 
               val newVal = NamedArgument(NameTree(sym.name), t.rhs) setSymbol sym
 
-              // FIXME we can do a better search..
-              val nameStart = argumentsSource.indexOf(newVal.name.toString)
-
-              if (nameStart >= 0) {
+              findParamAssignment(argumentsSource, newVal.name.toString).map { nameStart =>
                 val nameLength = newVal.name.length
                 val newStart = nameStart + startOffset
-
-                // Note the FIXMEs above:
-                //  This can actually happen; what you see below is a hack that helps in some cases
-                //  by avoiding an exception that would otherwise be thrown a few lines below
-                //  (see ticket #1002540).
-                if (newStart > t.pos.end) {
-                  t
-                } else {
-                  val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
-                  newVal.nameTree setPos namePos
-                  newVal setPos namePos.withEnd(t.pos.end)
-                  newVal
-                }
-
-              } else /*no named argument*/ {
-                t.rhs
-              }
+                val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+                newVal.nameTree setPos namePos
+                newVal setPos namePos.withEnd(t.pos.end)
+                newVal
+              }.getOrElse(t.rhs)
           }
 
           Apply(fun, newValDefs) setPos apply.pos

@@ -478,6 +478,8 @@ object SourceWithMarker {
 
     val symbolLiteral = ''' ~ plainid
 
+    val literalIdentifier = '`' ~ any.butNot('`').atLeastOnce ~ '`'
+
     val spaces: Movement = space.zeroOrMore
     val comments: Movement = (comment ~ spaces).zeroOrMore
     val commentsAndSpaces: Movement = (spaces ~ comments).zeroOrMore
