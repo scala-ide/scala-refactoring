@@ -141,6 +141,9 @@ object SourceWithMarker {
       else None
     }
 
+    def ifNotDepleted(impl: SourceWithMarker => Option[Int]): SimpleMovement = {
+      SimpleMovement(s => MovementHelpers.doIfNotDepleted(s)(impl(s)))
+    }
   }
 
   private object SimpleMovementOps {
@@ -282,23 +285,28 @@ object SourceWithMarker {
 
       return new MovementImpl(true)
     }
+
+    def ifNotDepleted(impl: (SourceWithMarker, Boolean) => Option[Int]): Movement = {
+      Movement((s, f) => MovementHelpers.doIfNotDepleted(s)(impl(s, f)))
+    }
   }
 
   object Movements {
     import MovementHelpers._
 
     val any = Movement { (sourceWithMarker, forward) =>
-      Some(nextMarker(sourceWithMarker.marker, forward))
+      if (sourceWithMarker.isDepleted) None
+      else Some(nextMarker(sourceWithMarker.marker, forward))
     }
 
     val none = Movement { (_, _) => None }
 
-    def chararcter(c: Char) = Movement { (sourceWithMarker, forward) =>
+    def chararcter(c: Char) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
       if (sourceWithMarker.current == c) Some(nextMarker(sourceWithMarker.marker, forward))
       else None
     }
 
-    def string(str: String) = Movement { (sourceWithMarker, forward) =>
+    def string(str: String) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
       def strAt(i: Int) = {
         if (forward) str.charAt(i)
         else str.charAt(str.length - 1 - i)
@@ -319,7 +327,7 @@ object SourceWithMarker {
       go(sourceWithMarker.marker)
     }
 
-    val comment = Movement { (sourceWithMarker, forward) =>
+    val comment = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
       @tailrec
       def go(m: Int, inSingleLineComment: Boolean = false, inMultilineComment: Int = 0, slashSeen: Boolean = false, starSeen: Boolean = false): Option[Int] = {
         if (wouldBeDepleted(m, sourceWithMarker)) {
@@ -363,7 +371,7 @@ object SourceWithMarker {
       else go(sourceWithMarker.marker)
     }
 
-    def inBrackets(open: Char, close: Char) = Movement { (sourceWithMarker, forward) =>
+    def inBrackets(open: Char, close: Char) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
       val (br1, br2) = if (forward) (open, close) else (close, open)
       if (sourceWithMarker.isDepleted || sourceWithMarker.current != br1) {
         None
@@ -409,7 +417,7 @@ object SourceWithMarker {
       go()
     }
 
-    def charOfClass(inClass: Char => Boolean) = Movement { (sourceWithMarker, forward) =>
+    def charOfClass(inClass: Char => Boolean) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
       if (inClass(sourceWithMarker.current)) Some(nextMarker(sourceWithMarker.marker, forward))
       else None
     }
@@ -487,6 +495,11 @@ object SourceWithMarker {
 
     def wouldBeDepleted(potentialMarker: Int, sourceWithMarker: SourceWithMarker): Boolean = {
       !sourceWithMarker.isInRange(potentialMarker)
+    }
+
+    def doIfNotDepleted(sourceWithMarker: SourceWithMarker)(op: => Option[Int]): Option[Int] = {
+      if (sourceWithMarker.isDepleted) None
+      else op
     }
   }
 }

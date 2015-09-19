@@ -3,6 +3,7 @@ import org.junit.Test
 import org.junit.Assert._
 import scala.tools.refactoring.util.SourceWithMarker
 import scala.language.implicitConversions
+import scala.util.control.NonFatal
 
 class SourceWithMarkerTest {
   import SourceWithMarker.Movements._
@@ -132,9 +133,50 @@ class SourceWithMarkerTest {
     SourceWithMarker(Array(), 1)
   }
 
+  val mvntsToTestAtEndOfString = {
+    val mvnts =
+      characterLiteral ::
+      plainid ::
+      op ::
+      opChar ::
+      stringLiteral ::
+      comment ::
+      comment.atLeastOnce ::
+      bracket ::
+      bracketsWithContents ::
+      charToMovement('c') ::
+      stringToMovement("s") ::
+      symbolLiteral ::
+      any ::
+      none ::
+      any.butNot('c') ::
+      space ::
+      Nil
+
+    mvnts.zipWithIndex.map { case (m, i) => (m, s"mvnts[$i]") }
+  }
+
   @Test
   def testWithEmptySource() {
-    assertTrue(SourceWithMarker().isDepleted)
+    mvntsToTestAtEndOfString.foreach { case (mvnt, indexStr) =>
+      try {
+        assertTrue(indexStr, mvnt(SourceWithMarker()).isEmpty)
+      } catch {
+        case e: IllegalArgumentException =>
+          throw new RuntimeException(s"Error at $indexStr", e)
+      }
+    }
+  }
+
+  @Test
+  def testAtEndOfSource() {
+    val src = SourceWithMarker("a")
+    val prefixMvnt = stringToMovement("a")
+
+    mvntsToTestAtEndOfString.foreach { case (mvnt, indexStr) =>
+      assertTrue(indexStr, src.moveMarker(prefixMvnt ~ mvnt.zeroOrMore).isDepleted)
+      assertTrue(indexStr, src.moveMarker((mvnt ~ prefixMvnt.zeroOrMore) | prefixMvnt.zeroOrMore).isDepleted)
+    }
   }
 
   @Test
@@ -158,6 +200,7 @@ class SourceWithMarkerTest {
     val src = SourceWithMarker("aaaa")
     assertTrue(src.moveMarker('a'.nTimes(4)).isDepleted)
     assertFalse(src.moveMarker('a'.nTimes(3)).isDepleted)
+    assertFalse(src.moveMarker('a'.nTimes(5)).isDepleted)
   }
 
   @Test
@@ -217,6 +260,34 @@ class SourceWithMarkerTest {
     assertEquals("l", src2.moveMarker(untilVal("k") ~ any.nTimes(2)).current.toString)
 
     assertEquals("3", src3.moveMarker(untilVal("d") ~ any.nTimes(3)).current.toString)
+  }
+
+  @Test
+  def testSeqOpsAtEndOfSource() {
+    val src = SourceWithMarker("aaa")
+
+    val shouldDeplete =
+      ('a' ~ 'a' ~ 'a') ::
+      ('a'.atLeastOnce) ::
+      ('a'.zeroOrMore) ::
+      (any ~ any ~ any) ::
+      (('a' ~ 'a' ~ 'a' ~ 'a').zeroOrMore ~ 'a'.atLeastOnce) ::
+      (('a' ~ 'a' ~ 'a') ~ 'a'.zeroOrMore) ::
+      (('a' ~ 'a' ~ 'a' ~ 'a') | 'a'.nTimes(3)) ::
+      Nil
+
+    val shouldNotDeplete =
+      ('a' ~ 'a' ~ 'a' ~ 'a') ::
+      (('a' ~ 'a' ~ 'a') ~ 'a'.atLeastOnce) ::
+      Nil
+
+   shouldDeplete.foreach { mvnt =>
+      assertTrue(src.moveMarker(mvnt).isDepleted)
+    }
+
+   shouldNotDeplete.foreach { mvnt =>
+      assertFalse(src.moveMarker(mvnt).isDepleted)
+    }
   }
 
   private implicit def stringToCharArray(str: String): Array[Char] = str.toCharArray
