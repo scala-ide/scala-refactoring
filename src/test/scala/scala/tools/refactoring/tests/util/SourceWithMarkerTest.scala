@@ -130,7 +130,7 @@ class SourceWithMarkerTest {
 
   @Test(expected = classOf[IllegalArgumentException])
   def testCtorWithTooLargeMarker() {
-    SourceWithMarker(Array(), 1)
+    SourceWithMarker(IndexedSeq(), 1)
   }
 
   val mvntsToTestAtEndOfString = {
@@ -291,7 +291,6 @@ class SourceWithMarkerTest {
     }
   }
 
-  private implicit def stringToCharArray(str: String): Array[Char] = str.toCharArray
   private implicit class SourceWithMarkerOps(underlying: SourceWithMarker) {
     def withMarkerOnLastChar = underlying.copy(marker = underlying.source.length - 1)
   }

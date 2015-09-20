@@ -1101,7 +1101,7 @@ trait PimpedTrees {
 
     private def findParamAssignment(argsSource: String, paramName: String): Option[Int] = {
       val mvnt = until(paramName ~ spaces ~ '=', skipping = skipWhileSearchingForAssignment)
-      mvnt(SourceWithMarker(argsSource.toCharArray()))
+      mvnt(SourceWithMarker(argsSource))
     }
 
     def unapply(t: Block) = {

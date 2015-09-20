@@ -5,6 +5,7 @@ import java.util.Arrays
 import scala.collection.immutable.SortedMap
 import scala.language.implicitConversions
 import scala.reflect.internal.util.RangePosition
+import scala.collection.SeqView
 
 /**
  * Represents source code with a movable marker.
@@ -12,7 +13,7 @@ import scala.reflect.internal.util.RangePosition
  * @see [[SourceWithMarker.Movement]]
  * @see [[SourceWithMarker.Movements]]
  */
-final case class SourceWithMarker(source: Array[Char] = Array(), marker: Int = 0) {
+final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marker: Int = 0) {
   import SourceWithMarker._
 
   assertLegalState()
@@ -75,11 +76,13 @@ final case class SourceWithMarker(source: Array[Char] = Array(), marker: Int = 0
     require(marker >= -1 && marker <= source.length, s"Marker out of bounds: $marker")
   }
 
-  private def nextChars(n: Int): Option[IndexedSeq[Char]] = {
+  private def emptyView = IndexedSeq.empty[Char].view(0, 0)
+
+  private def nextChars(n: Int): Option[SeqView[Char, IndexedSeq[Char]]] = {
     if (isDepleted) {
       None
     } else if (n == 0) {
-      Some(IndexedSeq())
+      Some(emptyView)
     } else {
       val m = marker + n
       if (n > 0 && m <= length) Some(source.view(marker + 1, m + 1))
