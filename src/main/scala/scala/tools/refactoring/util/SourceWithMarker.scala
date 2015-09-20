@@ -16,8 +16,6 @@ import scala.collection.SeqView
 final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marker: Int = 0) {
   import SourceWithMarker._
 
-  assertLegalState()
-
   def moveMarker(movement: SimpleMovement): SourceWithMarker = {
     if (isDepleted) this
     else movement(this).map(m => copy(marker = m)).getOrElse(this)
@@ -70,10 +68,6 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
 
   override def hashCode = {
     (source.toSeq, marker).hashCode
-  }
-
-  private def assertLegalState() {
-    require(marker >= -1 && marker <= source.length, s"Marker out of bounds: $marker")
   }
 
   private def emptyView = IndexedSeq.empty[Char].view(0, 0)
@@ -161,21 +155,18 @@ object SourceWithMarker {
     def repeat[MovementT <: SimpleMovement](mvnt: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
       @tailrec
       def go(sourceWithMarker: SourceWithMarker): Option[Int] = {
-        if (sourceWithMarker.isDepleted) {
-          Some(sourceWithMarker.marker)
-        } else {
-          mvnt(sourceWithMarker) match {
-            case Some(marker) =>
-              if (marker != sourceWithMarker.marker) go(sourceWithMarker.copy(marker = marker))
-              else Some(marker)
-            case None => Some(sourceWithMarker.marker)
-          }
+        mvnt(sourceWithMarker) match {
+          case Some(marker) =>
+            if (marker != sourceWithMarker.marker) go(sourceWithMarker.copy(marker = marker))
+            else Some(marker)
+          case None => Some(sourceWithMarker.marker)
         }
       }
 
       go(sourceWithMarker)
     }
 
+    @tailrec
     def nTimes[MovementT <: SimpleMovement](mvnt: MovementT, n: Int)(sourceWithMarker: SourceWithMarker): Option[Int] = {
       if (n == 0) {
         Some(sourceWithMarker.marker)
@@ -183,7 +174,9 @@ object SourceWithMarker {
         mvnt(sourceWithMarker)
       } else if (n > 1) {
         mvnt(sourceWithMarker) match {
-          case Some(newMarker) => nTimes(mvnt, n-1)(sourceWithMarker.copy(marker = newMarker))
+          case Some(newMarker) =>
+            if (newMarker == sourceWithMarker.marker) Some(newMarker)
+            else nTimes(mvnt, n-1)(sourceWithMarker.copy(marker = newMarker))
           case _ => None
         }
       } else {
@@ -304,17 +297,28 @@ object SourceWithMarker {
   object Movements {
     import MovementHelpers._
 
-    val any = Movement { (sourceWithMarker, forward) =>
-      if (sourceWithMarker.isDepleted) None
-      else Some(nextMarker(sourceWithMarker.marker, forward))
+    class SingleCharMovement(private val acceptChar: Char => Boolean, private val forward: Boolean = true) extends Movement {
+      final override def apply(sourceWithMarker: SourceWithMarker): Option[Int] = {
+        if (sourceWithMarker.isDepleted || !acceptChar(sourceWithMarker.current)) None
+        else Some(nextMarker(sourceWithMarker.marker, forward))
+      }
+
+      final def |(other: SingleCharMovement): SingleCharMovement = {
+        new SingleCharMovement(c => acceptChar(c) || other.acceptChar(c), forward)
+      }
+
+      final override def backward: SingleCharMovement = new SingleCharMovement(acceptChar, !forward)
+
+      final def butNot(mvnt: SingleCharMovement): SingleCharMovement = {
+        new SingleCharMovement(c => acceptChar(c) && !mvnt.acceptChar(c))
+      }
     }
 
-    val none = Movement { (_, _) => None }
+    val any = new SingleCharMovement(_ => true)
 
-    def chararcter(c: Char) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
-      if (sourceWithMarker.current == c) Some(nextMarker(sourceWithMarker.marker, forward))
-      else None
-    }
+    val none = new SingleCharMovement(_ => false)
+
+    def character(c: Char) = new SingleCharMovement(_ == c)
 
     def string(str: String) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
       def strAt(i: Int) = {
@@ -441,10 +445,7 @@ object SourceWithMarker {
       go()
     }
 
-    def charOfClass(inClass: Char => Boolean) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
-      if (inClass(sourceWithMarker.current)) Some(nextMarker(sourceWithMarker.marker, forward))
-      else None
-    }
+    def charOfClass(inClass: Char => Boolean) = new SingleCharMovement(inClass)
 
     val space = charOfClass { c =>
       c == '\u0020' || c == '\u0009' || c == '\u000D' || c == '\u000A'
@@ -479,7 +480,7 @@ object SourceWithMarker {
     }
 
     val characterLiteral = {
-      val charEscape = chararcter('b') | 't' | 'n' | 'f' | 'r' | '"' | ''' | '\\'
+      val charEscape = character('b') | 't' | 'n' | 'f' | 'r' | '"' | ''' | '\\'
       val octEscape = octalDigit ~ octalDigit.atMostNtimes(2)
 
       ''' ~ ((any.butNot('\\') | ('\\' ~ (charEscape | octEscape)))) ~ '''
@@ -510,7 +511,7 @@ object SourceWithMarker {
     val bracketsWithContents = inBrackets('[', ']')
     val curlyBracesWithContents = inBrackets('{', '}')
 
-    implicit def charToMovement(c: Char): Movement = chararcter(c)
+    implicit def charToMovement(c: Char): SingleCharMovement = character(c)
     implicit def stringToMovement(str: String): Movement  = string(str)
   }
 

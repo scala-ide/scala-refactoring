@@ -128,11 +128,6 @@ class SourceWithMarkerTest {
     assertTrue(src.moveMarker((("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward).isDepleted)
   }
 
-  @Test(expected = classOf[IllegalArgumentException])
-  def testCtorWithTooLargeMarker() {
-    SourceWithMarker(IndexedSeq(), 1)
-  }
-
   val mvntsToTestAtEndOfString = {
     val mvnts =
       characterLiteral ::
