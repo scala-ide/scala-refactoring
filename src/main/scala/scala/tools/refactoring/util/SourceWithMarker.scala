@@ -297,7 +297,7 @@ object SourceWithMarker {
   object Movements {
     import MovementHelpers._
 
-    class SingleCharMovement(private val acceptChar: Char => Boolean, private val forward: Boolean = true) extends Movement {
+    class SingleCharMovement(private val acceptChar: Int => Boolean, private val forward: Boolean = true) extends Movement {
       final override def apply(sourceWithMarker: SourceWithMarker): Option[Int] = {
         if (sourceWithMarker.isDepleted || !acceptChar(sourceWithMarker.current)) None
         else Some(nextMarker(sourceWithMarker.marker, forward))
@@ -312,6 +312,15 @@ object SourceWithMarker {
       final def butNot(mvnt: SingleCharMovement): SingleCharMovement = {
         new SingleCharMovement(c => acceptChar(c) && !mvnt.acceptChar(c))
       }
+    }
+
+    private implicit class CharacterOps(val underlying: Int) extends AnyVal {
+      def getType = Character.getType(underlying)
+      def isUpper = Character.isUpperCase(underlying)
+      def isLower = Character.isLowerCase(underlying)
+      def isTitleCase = Character.isTitleCase(underlying)
+      def isDigit = Character.isDigit(underlying)
+      def isControl = Character.isISOControl(underlying)
     }
 
     val any = new SingleCharMovement(_ => true)
@@ -445,7 +454,7 @@ object SourceWithMarker {
       go()
     }
 
-    def charOfClass(inClass: Char => Boolean) = new SingleCharMovement(inClass)
+    def charOfClass(inClass: Int => Boolean) = new SingleCharMovement(inClass)
 
     val space = charOfClass { c =>
       c == '\u0020' || c == '\u0009' || c == '\u000D' || c == '\u000A'
@@ -458,7 +467,7 @@ object SourceWithMarker {
       }
     }
 
-    val digit = charOfClass(_.isDigit)
+    val digit = charOfClass(c => c.isDigit)
 
     val bracket = charOfClass { c =>
       c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}'
