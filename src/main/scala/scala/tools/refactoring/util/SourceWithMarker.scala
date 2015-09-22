@@ -300,7 +300,7 @@ object SourceWithMarker {
     /**
      * A specialized implementation that matches single characters
      *
-     * Note the we represent characters as ints to avoid needles boxing ([[Function1]] is not specialized for [[Char]]).
+     * Note the we represent characters as ints to avoid needless boxing ([[Function1]] is not specialized for [[Char]]).
      */
     class SingleCharMovement(private val acceptChar: Int => Boolean, private val forward: Boolean = true) extends Movement {
       final override def apply(sourceWithMarker: SourceWithMarker): Option[Int] = {
