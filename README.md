@@ -24,12 +24,12 @@ script.
 In order to publish sbt is used. The project is cross compiled against Scala 2.10
 and 2.11. To test a release run sbt and type:
 ```
-> + publishLocal
+> + publishLocalSigned
 ```
 
 If everything looks good the release can be uploaded:
 ```
-> + publish
+> + publishSigned
 ```
 
 For the upload the file `~/.m2/credentials` is needed. It should contain:
