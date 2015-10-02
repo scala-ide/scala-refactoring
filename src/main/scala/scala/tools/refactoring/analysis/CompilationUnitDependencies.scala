@@ -348,7 +348,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                 case _ => ()
               }
 
-            case t: Ident if t.name != nme.EMPTY_PACKAGE_NAME =>
+            case t: Ident if t.name != nme.EMPTY_PACKAGE_NAME && t.name != tpnme.WILDCARD_STAR  =>
               tryFindTpeAndSymFor(t) match {
                 case Some((tpe, sym)) =>
                   fakeSelectTree(tpe, sym, t) match {
