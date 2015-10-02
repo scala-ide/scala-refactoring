@@ -702,4 +702,31 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
   } applyRefactoring organizeWithTypicalParams
 
+  /*
+   * See Assembla Ticket #1002142
+   */
+  @Test
+  def organizeImportsAndVarargs1002142Ex1() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.collection.immutable.HashMap
+
+    object TryOrganizeImportsHere {
+      def values: Seq[HashMap[Int, Int]] = ???
+      List(values: _*)
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import scala.collection.immutable.HashMap
+
+    object TryOrganizeImportsHere {
+      def values: Seq[HashMap[Int, Int]] = ???
+      List(values: _*)
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
 }
