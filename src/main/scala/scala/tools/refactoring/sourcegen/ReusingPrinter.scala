@@ -981,8 +981,17 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       def existsTptInFile = tpt match {
         case tpt: TypeTree =>
-          lazy val textInFile = betweenStartAndEnd(tpt).asText
-          tpt.pos.isRange && (textInFile == tpt.toString() || textInFile == tpt.original.toString())
+          def tpeInFileIsUnit = betweenStartAndEnd(tpt).asText == "Unit"
+          def tpeIsUnit = tpt.toString == "Unit"
+
+          // This check handles the special case where a method with a non unit return type
+          // is overriden by a method without a return type, which is not legal Scala of course.
+          // It's not entirely clear to me why we need to handle this case, but there is a unit test
+          // that checks for this explicitly: ReusingPrinterTest.add_modifier_to_def_without_return_type
+          def tpeIsntFromOverrideWithMissingRetType = (tpeInFileIsUnit == tpeIsUnit)
+
+          tpt.pos.isRange && tpeIsntFromOverrideWithMissingRetType
+
         case _ => false
       }
 
