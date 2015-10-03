@@ -2062,4 +2062,141 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("xxx"))
+
+  /*
+   * See Assembla Ticket #1002540
+   */
+  @Test
+  def testRenameInCaseClassWithCopy1002540Ex1() = new FileSet {
+    """
+    case class Bug(i: Int = 1, j: Int = 2) {
+      def /*(*/buggy/*)*/ = copy(j = i)
+    }
+    """ becomes
+    """
+    case class Bug(i: Int = 1, j: Int = 2) {
+      def /*(*/notBuggy/*)*/ = copy(j = i)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex2() = new FileSet {
+    """
+    case class Bug2(s1: String = "", s2: String = "") {
+      def /*(*/buggy/*)*/ = copy(s2 = "s1", s1 = "s2")
+    }
+    """ becomes
+    """
+    case class Bug2(s1: String = "", s2: String = "") {
+      def /*(*/notBuggy/*)*/ = copy(s2 = "s1", s1 = "s2")
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex3() = new FileSet {
+    """
+    case class Bug3(s1: String = "", s2: String = "", ss1: String = "", ss2: String = "") {
+      def /*(*/buggy/*)*/ = copy(s2 = ss1, s1 = ss2)
+    }
+    """ becomes
+    """
+    case class Bug3(s1: String = "", s2: String = "", ss1: String = "", ss2: String = "") {
+      def /*(*/notBuggy/*)*/ = copy(s2 = ss1, s1 = ss2)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex4() = new FileSet {
+    """
+    case class Bug4(i: Int = 1, j: Int = 2, `i!`: Int = 3, `j!`: Int = 4) {
+      def /*(*/buggy/*)*/ = copy(j = `i!`, i = `j!`)
+    }
+    """ becomes
+    """
+    case class Bug4(i: Int = 1, j: Int = 2, `i!`: Int = 3, `j!`: Int = 4) {
+      def /*(*/notBuggy/*)*/ = copy(j = `i!`, i = `j!`)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex5() = new FileSet {
+    """
+    case class Bug5(i: Int = 1, j: Int = 2) {
+      def /*(*/buggy/*)*/ = copy(j = i, i = j)
+    }
+    """ becomes
+    """
+    case class Bug5(i: Int = 1, j: Int = 2) {
+      def /*(*/notBuggy/*)*/ = copy(j = i, i = j)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex6() = new FileSet {
+    """
+    case class Bug6(i: Int = 1, j: Int = 2) {
+      def /*(*/buggy/*)*/ = copy(j = /*i*/0, i = /*j*/1)
+    }
+    """ becomes
+    """
+    case class Bug6(i: Int = 1, j: Int = 2) {
+      def /*(*/notBuggy/*)*/ = copy(j = /*i*/0, i = /*j*/1)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex7() = new FileSet {
+    """
+    case class Bug7(i: Int = 1, j: Int = 2) {
+      private val `i=3` = 666
+      def /*(*/buggy/*)*/ = copy(j = /*i*/`i=3`, i = /*j*/1)
+    }
+    """ becomes
+    """
+    case class Bug7(i: Int = 1, j: Int = 2) {
+      private val `i=3` = 666
+      def /*(*/notBuggy/*)*/ = copy(j = /*i*/`i=3`, i = /*j*/1)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex8() = new FileSet {
+    """
+    case class Bug8(`i=j`: Int = 667, `i`: Int = 23) {
+      def /*(*/buggy/*)*/ = copy(`i=j`=666,`i`=1)
+    }
+    """ becomes
+    """
+    case class Bug8(`i=j`: Int = 667, `i`: Int = 23) {
+      def /*(*/notBuggy/*)*/ = copy(`i=j`=666,`i`=1)
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
+
+  @Test
+  def testRenameInCaseClassWithCopy100254Ex9() = new FileSet {
+    """
+    case class Bug9(i: Int, j: Int) {
+      def /*(*/buggy/*)*/ = copy(j = {
+        val i = 3
+        i
+      })
+    }
+    """ becomes
+    """
+    case class Bug9(i: Int, j: Int) {
+      def /*(*/notBuggy/*)*/ = copy(j = {
+        val i = 3
+        i
+      })
+    }
+    """
+  } applyRefactoring(renameTo("notBuggy"))
 }
