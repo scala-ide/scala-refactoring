@@ -65,8 +65,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
    * A project to test multiple compilation units. Add all
    * sources using "add" before using any of the lazy vals.
    */
-  abstract class FileSet(private val baseName: String) {
-    def this() = this(randomFileName())
+  abstract class FileSet(baseName: String = randomFileName(), val expectCompilingCode: Boolean = false) {
     private val srcs = ListBuffer[(Source, Source)]()
 
     object TaggedAsGlobalRename
@@ -214,6 +213,15 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
     val files = project.sources map { case (code, filename) => addToCompiler(filename, code)}
     val trees: List[refactoring.global.Tree] = files map (refactoring.global.unitOfFile(_).body)
+
+    if (project.expectCompilingCode) {
+      trees.foreach { tree =>
+        if (tree.find(_.isErroneous).isDefined) {
+          val src = new String(tree.pos.source.content)
+          throw new AssertionError(s"Expected compiling code but got:\n---------------------\n$src")
+        }
+      }
+    }
 
     (project.sources zip trees flatMap {
       case (src, tree) =>
