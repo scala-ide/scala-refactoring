@@ -2199,4 +2199,81 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("notBuggy"))
+
+  /*
+   * See Assembla Ticket 1002560
+   */
+  @Test
+  def testRenameTraitMethod1002560Ex1() = new FileSet {
+    """
+    package test
+
+    trait Bug {
+      def /*(*/renameMe/*)*/: Seq[Bug]
+    }
+    """ becomes
+    """
+    package test
+
+    trait Bug {
+      def /*(*/ups/*)*/: Seq[Bug]
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameTraitMethod1002560Ex2() = new FileSet {
+    """
+    trait Bug2 {
+      def /*(*/renameMe/*)*/: Map[Int, Int]
+    }
+    """ becomes
+    """
+    trait Bug2 {
+      def /*(*/ups/*)*/: Map[Int, Int]
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameTraitMethod1002560Ex3() = new FileSet {
+    """
+    trait Bug3 {
+      def /*(*/renameMe/*)*/: Seq[/**/Int]
+    }
+    """ becomes
+    """
+    trait Bug3 {
+      def /*(*/ups/*)*/: Seq[/**/Int]
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameTraitMethod1002560Ex4() = new FileSet {
+    """
+    trait Bug4 {
+      def /*(*/renameMe/*)*/: Seq[Int ]
+    }
+    """ becomes
+    """
+    trait Bug4 {
+      def /*(*/ups/*)*/: Seq[Int ]
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameTraitMethod1002560Ex5() = new FileSet {
+    """
+    trait Bug5 {
+      def /*(*/renameMe/*)*/: Seq[/**/ Int /* --- */ ]
+    }
+    """ becomes
+    """
+    trait Bug5 {
+      def /*(*/ups/*)*/: Seq[/**/ Int /* --- */ ]
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
 }
