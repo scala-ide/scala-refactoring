@@ -9,6 +9,7 @@ import implementations.OrganizeImports
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 import language.reflectiveCalls
+import language.postfixOps
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
@@ -706,7 +707,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
    * See Assembla Ticket #1002142
    */
   @Test
-  def organizeImportsAndVarargs1002142Ex1() = new FileSet {
+  def organizeImportsAndVarargs1002142Ex1() = new FileSet(expectCompilingCode = true) {
     """
     package com.github.mlangc.experiments
 
@@ -716,17 +717,25 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def values: Seq[HashMap[Int, Int]] = ???
       List(values: _*)
     }
-    """ becomes
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsAndVarargs1002142Ex2() = new FileSet(expectCompilingCode = true) {
     """
-    package com.github.mlangc.experiments
+    import scala.collection.mutable.HashMap
 
-    import scala.collection.immutable.HashMap
-
-    object TryOrganizeImportsHere {
-      def values: Seq[HashMap[Int, Int]] = ???
-      List(values: _*)
+    object Y {
+     def values: List[HashMap[Int, Int]] = ???
     }
+    """ isNotModified;
     """
+    object X {
+
+      val xs = Y.values
+      List(xs: _*)
+    }
+    """ isNotModified
   } applyRefactoring organizeWithTypicalParams
 
 }
