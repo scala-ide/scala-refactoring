@@ -985,9 +985,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           def tpeIsUnit = tpt.toString == "Unit"
 
           // This check handles the special case where a method with a non unit return type
-          // is overriden by a method without a return type, which is not legal Scala of course.
-          // It's not entirely clear to me why we need to handle this case, but there is a unit test
-          // that checks for this explicitly: ReusingPrinterTest.add_modifier_to_def_without_return_type
+          // is overriden by a method without a return type. This is not legal Scala but can
+          // be useful to implement transformations for non-compiling code.
+          // See ReusingPrinterTest.add_modifier_to_def_without_return_type for a test case.
           def tpeIsntFromOverrideWithMissingRetType = (tpeInFileIsUnit == tpeIsUnit)
 
           tpt.pos.isRange && tpeIsntFromOverrideWithMissingRetType
