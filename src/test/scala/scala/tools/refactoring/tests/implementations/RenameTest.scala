@@ -2276,4 +2276,105 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002371
+   */
+  @Test
+  def testRenameTraitMethod1002371Ex1() = new FileSet {
+    """
+    class C {
+      val /*(*/value/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+    }
+    """ becomes
+    """
+    class C {
+      val /*(*/ups/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameTraitMethod1002371Ex2() = new FileSet {
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/value/*)*/ = 0
+        println(value)
+        this
+      }
+    }
+    """ becomes
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/ups/*)*/ = 0
+        println(ups)
+        this
+      }
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameTraitMethod1002371Ex3() = new FileSet {
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/value/*)*/ = 0
+        println(value)
+      }
+    }
+    """ becomes
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/ups/*)*/ = 0
+        println(ups)
+      }
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
+
+  @Test
+  def testRenameTraitMethod1002371Ex4() = new FileSet {
+    """
+    class C {
+      val /*(*/value/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+
+     val another = value
+    }
+    """ becomes
+    """
+    class C {
+      val /*(*/ups/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+
+     val another = ups
+    }
+    """
+  } applyRefactoring(renameTo("ups"))
 }
