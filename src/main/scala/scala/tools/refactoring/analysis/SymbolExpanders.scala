@@ -49,7 +49,7 @@ trait DependentSymbolExpanders extends TracingImpl {
     protected abstract override def doExpand(s: Symbol) = super.doExpand(s) ++ (s match {
       case s if s.hasFlag(Flags.ACCESSOR) =>
         s.accessed :: Nil
-      case s if s != NoSymbol && s.owner != NoSymbol =>
+      case s if s != NoSymbol && s.owner != NoSymbol && !s.isLocal =>
         (s.getter(s.owner) :: s.setter(s.owner) :: Nil)
       case _ =>
         Nil
