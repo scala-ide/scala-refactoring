@@ -1,9 +1,8 @@
 package scala.tools.refactoring.common
 
 import scala.reflect.api.Position
-import scala.reflect.internal.util.RangePosition
+import scala.reflect.internal.util.NoPosition
 import scala.reflect.internal.util.NoSourceFile
-
 import scala.tools.refactoring.getSimpleClassName
 
 /**
@@ -31,17 +30,22 @@ object PositionDebugging {
   }
 
   private def formatInternal(pos: Position, compact: Boolean): String = {
-    if (pos.source != NoSourceFile) {
+    if (pos != NoPosition && pos.source != NoSourceFile) {
       val posType = getSimpleClassName(pos)
 
+      val (start, end) = {
+        if (!pos.isRange) (pos.point, pos.point)
+        else (pos.start, pos.end)
+      }
+
       val markerString = {
-        if (pos.start == pos.end) s"(${pos.start})"
-        else s"(${pos.start}, ${pos.end})"
+        if (start == end) s"(${start})"
+        else s"(${start}, ${end})"
       }
 
       val relevantSource = {
         if (compact) ""
-        else "[" + format(pos.start, pos.end, pos.source.content) + "]"
+        else "[" + format(start, end, pos.source.content) + "]"
       }
 
       s"$posType$markerString$relevantSource"
