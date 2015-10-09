@@ -7,11 +7,11 @@ showHelp() {
   echo "Patches ScalaIDE with the latest local build"
   echo "--------------------------------------------"
   echo ""
-  echo "The script is controlled by the following envirnoment variables:"
+  echo "The script is controlled by the following environment variables:"
   echo "  SCALA_IDE_HOME (mandatory):"
   echo "    Path to you local ScalaIDE installation"
   echo "  KEEP_REFACTORING_LIBRARY_BACKUP (defaults to true):"
-  echo "    Tells the script wether to keep a backup of the old library"
+  echo "    Tells the script weather to keep a backup of the old library"
   echo ""
   echo "Examples: " 
   echo "  SCALA_IDE_HOME=\"/path/to/scala-ide\" $SCRIPT_NAME"
@@ -22,6 +22,11 @@ showHelp() {
   echo "  appropriate values for SCALA_IDE_HOME and"
   echo "  KEEP_REFACTORING_LIBRARY_BACKUP via your bashrc, so that you"
   echo "  don't have to specify these values repeatedly."
+  echo ""
+  echo "Warning:"
+  echo "  Note that patching the IDE like this only works as long as"
+  echo "  binary compatibility is maintained. Watch out for"
+  echo "  AbstractMethodErrors and the like."
 }
 
 showHelpAndDie() {
