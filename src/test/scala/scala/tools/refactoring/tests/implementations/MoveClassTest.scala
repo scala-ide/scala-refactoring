@@ -886,7 +886,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
   } applyRefactoring(moveTo("bar"))
 
   @Test
-  def nestedPackageAndImports() = new FileSet {
+  def nestedPackageAndImports() = new FileSet(expectCompilingCode = false) {
     """
     package x
     package y

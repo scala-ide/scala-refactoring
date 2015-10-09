@@ -1917,7 +1917,7 @@ class Blubb
    * See Assembla Ticket 1002490
    */
   @Test
-  def testRenameClassWithCompanion() = new FileSet {
+  def testRenameClassWithCompanion() = new FileSet(expectCompilingCode = false) {
     """
     class /*(*/Bug/*)*/
     object Bug
