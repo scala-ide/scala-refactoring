@@ -37,7 +37,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
         }
       }
 
-      (t.symbol.isPrivate || t.symbol.isLocal) && hasHiddenOrNoAccessor
+      t.symbol.isLocal || (t.symbol.isPrivate && hasHiddenOrNoAccessor)
     }
 
     s.selectedSymbolTree match {

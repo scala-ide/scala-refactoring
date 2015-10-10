@@ -5,16 +5,15 @@
 package scala.tools.refactoring
 package tests.implementations
 
-import implementations.Rename
-import tests.util.TestRefactoring
-import tests.util.TestHelper
-import org.junit.Assert._
-import org.junit.Ignore
-import language.reflectiveCalls
 import scala.language.existentials
+import scala.language.reflectiveCalls
 import scala.tools.refactoring.common.Change
-import TestHelper.PrepResultWithChanges
 import scala.tools.refactoring.common.TracingImpl
+
+import implementations.Rename
+import tests.util.TestHelper
+import tests.util.TestHelper.PrepResultWithChanges
+import tests.util.TestRefactoring
 
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
@@ -2301,8 +2300,8 @@ class Blubb
         this
       }
     }
-    """
-  } applyRefactoring(renameTo("ups"))
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 
   @Test
   def testRenameWithDifferentValsWithSameName1002371Ex2() = new FileSet {
@@ -2325,8 +2324,8 @@ class Blubb
         this
       }
     }
-    """
-  } applyRefactoring(renameTo("ups"))
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 
   @Test
   def testRenameWithDifferentValsWithSameName1002371Ex3() = new FileSet {
@@ -2347,8 +2346,8 @@ class Blubb
         println(ups)
       }
     }
-    """
-  } applyRefactoring(renameTo("ups"))
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 
   @Test
   def testRenameWithDifferentValsWithSameName1002371Ex4() = new FileSet {
@@ -2375,6 +2374,6 @@ class Blubb
 
      val another = ups
     }
-    """
-  } applyRefactoring(renameTo("ups"))
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
