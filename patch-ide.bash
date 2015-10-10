@@ -63,7 +63,7 @@ fi
 
 TSTAMP="$(date +%Y-%m-%dT%H-%M-%S)"
 
-for oldRefactoringJar in "$SCALA_IDE_PLUGINS_DIR/"org.scala-refactoring.library-*.jar; do
+for oldRefactoringJar in "$SCALA_IDE_PLUGINS_DIR/"org.scala-refactoring.library_*.jar; do
   if [[ "$KEEP_REFACTORING_LIBRARY_BACKUP" == "true" ]]; then
     backupRefactoringJar="$oldRefactoringJar.$TSTAMP.bak"
     mv "$oldRefactoringJar" "$backupRefactoringJar"
@@ -72,7 +72,7 @@ for oldRefactoringJar in "$SCALA_IDE_PLUGINS_DIR/"org.scala-refactoring.library-
   fi
 done
 
-REFACTORING_JAR_DEST_NAME="org.scala-refactoring.library-localbuild-$TSTAMP-SNAPSHOT.jar"
+REFACTORING_JAR_DEST_NAME="org.scala-refactoring.library_localbuild-$TSTAMP-SNAPSHOT.jar"
 REFACTORING_JAR_DESTINATION="$SCALA_IDE_PLUGINS_DIR/$REFACTORING_JAR_DEST_NAME"
 
 cp "$NEW_REFACTORING_JAR" "$REFACTORING_JAR_DESTINATION"
