@@ -2281,7 +2281,7 @@ class Blubb
    * See Assembla Ticket 1002371
    */
   @Test
-  def testRenameTraitMethod1002371Ex1() = new FileSet {
+  def testRenameWithDifferentValsWithSameName1002371Ex1() = new FileSet {
     """
     class C {
       val /*(*/value/*)*/ = 0
@@ -2305,7 +2305,7 @@ class Blubb
   } applyRefactoring(renameTo("ups"))
 
   @Test
-  def testRenameTraitMethod1002371Ex2() = new FileSet {
+  def testRenameWithDifferentValsWithSameName1002371Ex2() = new FileSet {
     """
     class C {
       val value = 0
@@ -2329,7 +2329,7 @@ class Blubb
   } applyRefactoring(renameTo("ups"))
 
   @Test
-  def testRenameTraitMethod1002371Ex3() = new FileSet {
+  def testRenameWithDifferentValsWithSameName1002371Ex3() = new FileSet {
     """
     class C {
       val value = 0
@@ -2351,7 +2351,7 @@ class Blubb
   } applyRefactoring(renameTo("ups"))
 
   @Test
-  def testRenameTraitMethod1002371Ex4() = new FileSet {
+  def testRenameWithDifferentValsWithSameName1002371Ex4() = new FileSet {
     """
     class C {
       val /*(*/value/*)*/ = 0
