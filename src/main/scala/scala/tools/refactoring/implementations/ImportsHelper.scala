@@ -11,7 +11,7 @@ trait ImportsHelper extends TracingImpl {
   import global._
 
   def addRequiredImports(importsUser: Option[Tree], targetPackageName: Option[String]) = traverseAndTransformAll {
-    locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+    findBestPackageForImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (pkg, existingImports, rest) => {
         val user = importsUser getOrElse pkg
         val targetPkgName = targetPackageName getOrElse pkg.nameString
