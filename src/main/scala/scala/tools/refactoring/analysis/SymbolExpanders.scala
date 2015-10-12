@@ -6,6 +6,8 @@ package scala.tools.refactoring
 package analysis
 
 import tools.nsc.symtab.Flags
+import scala.tools.refactoring.common.TracingImpl
+import scala.tools.refactoring.common.PositionDebugging
 
 /**
  * Provides various traits that are used by the indexer
@@ -13,7 +15,7 @@ import tools.nsc.symtab.Flags
  * related to each other. For example, it finds overridden
  * methods in subclasses.
  */
-trait DependentSymbolExpanders {
+trait DependentSymbolExpanders extends TracingImpl {
 
   this: Indexes with common.CompilerAccess =>
 
@@ -24,17 +26,31 @@ trait DependentSymbolExpanders {
    * concrete expanders.
    */
   trait SymbolExpander {
-    def expand(s: Symbol): List[Symbol] = List(s)
+    final def expand(s: Symbol): List[Symbol] = {
+      doExpand(s).filterNot(_ == NoSymbol) \\ { res =>
+        val debugInfo = {
+          if (res.map(_.pos).toSet == Set(NoPosition)) Seq()
+          else if (res == Seq(s)) Seq()
+          else res.map(elem => PositionDebugging.formatCompact(elem.pos))
+        }
+
+        if (debugInfo.nonEmpty) {
+          trace("Expanding %s to %s", s.nameString,  debugInfo)
+        }
+      }
+    }
+
+    protected def doExpand(s: Symbol): List[Symbol] = List(s)
   }
 
   trait ExpandGetterSetters extends SymbolExpander {
     this: IndexLookup =>
 
-    abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
+    protected abstract override def doExpand(s: Symbol) = super.doExpand(s) ++ (s match {
       case s if s.hasFlag(Flags.ACCESSOR) =>
         s.accessed :: Nil
-      case s if s != NoSymbol && s.owner != NoSymbol =>
-        s.getter(s.owner) :: s.setter(s.owner) :: Nil
+      case s if s != NoSymbol && s.owner != NoSymbol && !s.isLocal =>
+        (s.getter(s.owner) :: s.setter(s.owner) :: Nil)
       case _ =>
         Nil
     })
@@ -44,7 +60,7 @@ trait DependentSymbolExpanders {
 
     this: IndexLookup =>
 
-    abstract override def expand(s: Symbol) = super.expand(s) ++ (s match {
+    protected abstract override def doExpand(s: Symbol) = super.doExpand(s) ++ (s match {
 
       case s if s != NoSymbol && s.owner.isClass && s.hasFlag(Flags.ACCESSOR) =>
 
@@ -63,24 +79,24 @@ trait DependentSymbolExpanders {
   }
 
   trait Companion extends SymbolExpander {
-    abstract override def expand(s: Symbol) = {
-      s.companionSymbol :: super.expand(s)
+    protected abstract override def doExpand(s: Symbol) = {
+      s.companionSymbol :: super.doExpand(s)
     }
   }
 
   trait LazyValAccessor extends SymbolExpander {
-    abstract override def expand(s: Symbol) = s match {
+    protected abstract override def doExpand(s: Symbol) = s match {
       case ts: TermSymbol if ts.isLazy =>
-        ts.lazyAccessor :: super.expand(s)
+        ts.lazyAccessor :: super.doExpand(s)
       case _ =>
-        super.expand(s)
+        super.doExpand(s)
     }
   }
 
   trait OverridesInSuperClasses extends SymbolExpander {
     this : IndexLookup =>
 
-    abstract override def expand(s: Symbol): List[Symbol] = super.expand(s) ++ (s match {
+    protected abstract override def doExpand(s: Symbol): List[Symbol] = super.doExpand(s) ++ (s match {
       case s @ (_: global.TypeSymbol | _: global.TermSymbol) if s.owner.isClass => {
         s.allOverriddenSymbols
       }

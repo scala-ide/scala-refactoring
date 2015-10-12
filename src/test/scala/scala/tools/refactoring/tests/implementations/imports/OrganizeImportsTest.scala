@@ -10,6 +10,7 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 import language.reflectiveCalls
 import language.postfixOps
+import scala.collection.mutable.ListBuffer
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
@@ -69,7 +70,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
       """
 
-    new FileSet {
+    new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
       """
       package tests.importing
@@ -81,7 +82,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       """ + restOfFile
     } applyRefactoring organizeWithoutCollapsing
 
-    new FileSet {
+    new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
       """
       package tests.importing
@@ -94,7 +95,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       """ + restOfFile
     } applyRefactoring organizeExpand
 
-    new FileSet {
+    new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
       """
       package tests.importing
@@ -433,7 +434,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def simplifyWildcards() = new FileSet {
+  def simplifyWildcards() = new FileSet(expectCompilingCode = false) {
     """
       import scala.collection.mutable._
       import scala.collection.mutable.ListBuffer
@@ -707,7 +708,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
    * See Assembla Ticket #1002142
    */
   @Test
-  def organizeImportsAndVarargs1002142Ex1() = new FileSet(expectCompilingCode = true) {
+  def organizeImportsAndVarargs1002142Ex1() = new FileSet {
     """
     package com.github.mlangc.experiments
 
@@ -721,7 +722,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def organizeImportsAndVarargs1002142Ex2() = new FileSet(expectCompilingCode = true) {
+  def organizeImportsAndVarargs1002142Ex2() = new FileSet {
     """
     import scala.collection.mutable.HashMap
 

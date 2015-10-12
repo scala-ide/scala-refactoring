@@ -10,6 +10,7 @@ import transformation.TreeFactory
 import analysis.TreeAnalysis
 import tools.nsc.symtab.Flags
 import scala.tools.refactoring.common.RenameSourceFileChange
+import scala.tools.refactoring.common.PositionDebugging
 
 abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler {
 
@@ -36,7 +37,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
         }
       }
 
-      (t.symbol.isPrivate || t.symbol.isLocal) && hasHiddenOrNoAccessor
+      t.symbol.isLocal || (t.symbol.isPrivate && hasHiddenOrNoAccessor)
     }
 
     s.selectedSymbolTree match {
@@ -59,8 +60,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
 
     val occurences = index.occurences(sym)
 
-    occurences foreach (s => trace("Symbol is referenced at %s (%s:%s, %s:%s)",
-        s, s.pos.source.file.name, s.pos.line, s.pos.start, s.pos.end))
+    occurences foreach (s => trace("Symbol is referenced at %s", PositionDebugging.formatCompact(s.pos)))
 
     val isInTheIndex = filter {
       case t: Tree => occurences contains t

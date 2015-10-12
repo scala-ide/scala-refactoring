@@ -65,7 +65,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
    * A project to test multiple compilation units. Add all
    * sources using "add" before using any of the lazy vals.
    */
-  abstract class FileSet(baseName: String = randomFileName(), val expectCompilingCode: Boolean = false) {
+  abstract class FileSet(baseName: String = randomFileName(), val expectCompilingCode: Boolean = true) {
     private val srcs = ListBuffer[(Source, Source)]()
 
     object TaggedAsGlobalRename

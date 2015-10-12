@@ -84,7 +84,9 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     /*
      * This stores knows symbols into connected components, where the connection is to refer to the same symbol name
      */
-    private lazy val symbolsUF: UnionFind[Symbol] = linkSymbols(new UnionFind(), allSymbols(), new HashSet[Symbol]())
+    private lazy val symbolsUF: UnionFind[Symbol] = context("Linking symbols") {
+      linkSymbols(new UnionFind(), allSymbols(), new HashSet[Symbol]())
+    }
 
     def expandSymbol(s: Symbol): List[Symbol] = symbolsUF.equivalenceClass(s)
 

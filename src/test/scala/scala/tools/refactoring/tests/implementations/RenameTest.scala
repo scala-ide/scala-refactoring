@@ -5,16 +5,15 @@
 package scala.tools.refactoring
 package tests.implementations
 
-import implementations.Rename
-import tests.util.TestRefactoring
-import tests.util.TestHelper
-import org.junit.Assert._
-import org.junit.Ignore
-import language.reflectiveCalls
 import scala.language.existentials
+import scala.language.reflectiveCalls
 import scala.tools.refactoring.common.Change
-import TestHelper.PrepResultWithChanges
 import scala.tools.refactoring.common.TracingImpl
+
+import implementations.Rename
+import tests.util.TestHelper
+import tests.util.TestHelper.PrepResultWithChanges
+import tests.util.TestRefactoring
 
 class RenameTest extends TestHelper with TestRefactoring {
   outer =>
@@ -1917,7 +1916,7 @@ class Blubb
    * See Assembla Ticket 1002490
    */
   @Test
-  def testRenameClassWithCompanion() = new FileSet {
+  def testRenameClassWithCompanion() = new FileSet(expectCompilingCode = false) {
     """
     class /*(*/Bug/*)*/
     object Bug
@@ -2276,4 +2275,105 @@ class Blubb
     }
     """
   } applyRefactoring(renameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002371
+   */
+  @Test
+  def testRenameWithDifferentValsWithSameName1002371Ex1() = new FileSet {
+    """
+    class C {
+      val /*(*/value/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+    }
+    """ becomes
+    """
+    class C {
+      val /*(*/ups/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithDifferentValsWithSameName1002371Ex2() = new FileSet {
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/value/*)*/ = 0
+        println(value)
+        this
+      }
+    }
+    """ becomes
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/ups/*)*/ = 0
+        println(ups)
+        this
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithDifferentValsWithSameName1002371Ex3() = new FileSet {
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/value/*)*/ = 0
+        println(value)
+      }
+    }
+    """ becomes
+    """
+    class C {
+      val value = 0
+      def f = {
+        val /*(*/ups/*)*/ = 0
+        println(ups)
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithDifferentValsWithSameName1002371Ex4() = new FileSet {
+    """
+    class C {
+      val /*(*/value/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+
+     val another = value
+    }
+    """ becomes
+    """
+    class C {
+      val /*(*/ups/*)*/ = 0
+      def f = {
+        val value = 0
+        println(value)
+        this
+      }
+
+     val another = ups
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }

@@ -52,7 +52,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       }
       """
 
-    new FileSet {
+    new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
       """
       package tests.importing
@@ -66,7 +66,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       """ + restOfFile
     } applyRefactoring organizeWithoutCollapsing
 
-    new FileSet {
+    new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
       """
       package tests.importing
@@ -80,7 +80,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       """ + restOfFile
     } applyRefactoring organizeExpand
 
-    new FileSet {
+    new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
       """
       package tests.importing

@@ -22,7 +22,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  def applyall() = new FileSet {
+  def applyall() = new FileSet(expectCompilingCode = false) {
     """
       object Main {val lb = ListBuffer(1)}
     """ becomes
@@ -34,7 +34,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
 
   @Test
-  def parameter() = new FileSet {
+  def parameter() = new FileSet(expectCompilingCode = false) {
     """
       object Main { def method(l: ListBuffer) = "" }
     """ becomes
@@ -46,7 +46,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
 
   @Test
-  def returnValue() = new FileSet {
+  def returnValue() = new FileSet(expectCompilingCode = false) {
     """
       object Main { def method(): ListBuffer = new collection.mutable.ListBuffer() }
     """ becomes
@@ -58,7 +58,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
 
   @Test
-  def newInstance() = new FileSet {
+  def newInstance() = new FileSet(expectCompilingCode = false) {
     """
       object Main { def method() = new ListBuffer() }
     """ becomes
@@ -70,7 +70,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
 
   @Test
-  def newInstance2() = new FileSet {
+  def newInstance2() = new FileSet(expectCompilingCode = false) {
     """
       object Main { def method() = new mutable.ListBuffer() }
     """ becomes
@@ -82,7 +82,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
 
   @Test
-  def importFromMissingImport() = new FileSet {
+  def importFromMissingImport() = new FileSet(expectCompilingCode = false) {
     """
       object Main { import ListBuffer._ }
     """ becomes
@@ -94,7 +94,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
 
   @Test
-  def missingSuperclass() = new FileSet {
+  def missingSuperclass() = new FileSet(expectCompilingCode = false) {
     """
       class Subclass extends LinkedList
     """ becomes
@@ -106,7 +106,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def importRemovesUnneeded() = new FileSet {
+  def importRemovesUnneeded() = new FileSet(expectCompilingCode = false) {
     """
       import java.lang._
       import java.lang.{String => S}
@@ -135,7 +135,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def sort() = new FileSet {
+  def sort() = new FileSet(expectCompilingCode = false) {
     """
       import scala.collection.mutable.ListBuffer
       import java.lang.Object
@@ -151,7 +151,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def collapse() = new FileSet {
+  def collapse() = new FileSet(expectCompilingCode = false) {
     """
       import java.lang.String
       import java.lang.Object
@@ -167,7 +167,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def sortAndCollapse() = new FileSet {
+  def sortAndCollapse() = new FileSet(expectCompilingCode = false) {
     """
       import scala.collection.mutable.ListBuffer
       import java.lang.String
@@ -184,7 +184,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def collapseWithRename() = new FileSet {
+  def collapseWithRename() = new FileSet(expectCompilingCode = false) {
     """
       import java.lang.{String => S}
       import java.lang.{Object => Objekt}
@@ -200,7 +200,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def removeOneFromMany() = new FileSet {
+  def removeOneFromMany() = new FileSet(expectCompilingCode = false) {
     """
       import java.lang.{String, Math}
 
@@ -215,7 +215,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def importAll() = new FileSet {
+  def importAll() = new FileSet(expectCompilingCode = false) {
     """
       import java.lang._
       import java.lang.String
@@ -231,7 +231,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def importOnTrait() = new FileSet {
+  def importOnTrait() = new FileSet(expectCompilingCode = false) {
     """
       package importOnTrait
       import java.lang._
@@ -256,7 +256,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def importWithSpace() = new FileSet {
+  def importWithSpace() = new FileSet(expectCompilingCode = false) {
     """
 
       import scala.collection.mutable.ListBuffer
@@ -274,7 +274,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def importAllWithRename() = new FileSet {
+  def importAllWithRename() = new FileSet(expectCompilingCode = false) {
     """
       import java.lang._
       import java.lang.{String => S}
@@ -290,7 +290,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
   @Test
-  def trailingCommentWithClosingBrace() = new FileSet {
+  def trailingCommentWithClosingBrace() = new FileSet(expectCompilingCode = false) {
     """
     package trailingCommentWithClosingBrace
 

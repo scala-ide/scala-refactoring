@@ -27,8 +27,8 @@ trait CompilationUnitIndexes {
     def definitions: Map[Symbol, List[DefTree]]
     def references:  Map[Symbol, List[Tree]]
   }
-
   object CompilationUnitIndex {
+
 
     private lazy val scalaVersion = {
       val Version = "version (\\d+)\\.(\\d+)\\.(\\d+).*".r
