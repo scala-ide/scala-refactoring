@@ -139,7 +139,7 @@ class ReusingPrinterTest extends TestHelper {
     """ after topdown { matchingChildren {
       filter {
         case d: DefDef =>
-          d.symbol.owner.nameString == "TT"
+          d.symbol.isLazy
       } &>
       transform {
         case d: DefDef =>
