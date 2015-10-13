@@ -430,7 +430,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
     val participants = importStrategy ::: params.options
 
-    val organizeImports = locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+    val organizeImports = findBestPackageForImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
       case (p, existingImports, others) =>
         val imports = scala.Function.chain(participants)(existingImports)
         p copy (stats = imports ::: others) replaces p

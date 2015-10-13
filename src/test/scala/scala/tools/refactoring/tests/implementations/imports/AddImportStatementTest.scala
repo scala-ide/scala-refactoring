@@ -387,4 +387,35 @@ object T
       }
       """)
   }
+
+  /*
+   * See Assembla Ticket #1002399
+   */
+  @Test
+  def importIsInsertedInWrongPackage1002399() = {
+    addImport(("a.b.c.actions", "ActionX"), """
+    package a.b.c
+
+    package actions {
+      class ActionX
+    }
+
+    class X {
+      val a: ActionX = null
+    }
+    """,
+    """
+    package a.b.c
+
+    import a.b.c.actions.ActionX
+
+    package actions {
+      class ActionX
+    }
+
+    class X {
+      val a: ActionX = null
+    }
+    """)
+  }
 }

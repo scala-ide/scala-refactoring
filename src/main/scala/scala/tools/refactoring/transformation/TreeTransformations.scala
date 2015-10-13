@@ -107,7 +107,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
      */
     def replaceSequencePreservingPositions(seqToReplace: List[Tree], replacement: List[Tree]): List[Tree] = {
       assert(seqToReplace.length >= replacement.length)
-      
+
       def inner(originalSeq: List[Tree], seqToReplace: List[Tree], replacement: List[Tree]): List[Tree] =
         (originalSeq, seqToReplace, replacement) match {
           case (Nil, _, _) => Nil
@@ -122,19 +122,41 @@ trait TreeTransformations extends Transformations with TreeFactory {
   }
 
   /**
-   * Locates the imports in a PackageDef. If we have nested packages, it will only match in the innermost.
+   * Finds the "best" package for adding imports, together with the imports it already contains
+   *
+   * The ''best'' package for imports means the innermost package where imports are still visible
+   * to all trees that might potentially need them. For example, given
+   * {{{
+   * package a.b.c
+   * package d
+   * package e
+   *
+   * package e1 {
+   *   object E1
+   * }
+   *
+   * package e2 {
+   *   object E2
+   * }
+   * }}}
+   * this function returns the package `a.b.c.d.e`.
    */
-  val locatePackageLevelImports = {
+  val findBestPackageForImports = {
 
     def splitImports(p: PackageDef, stats: List[Tree]) = {
       val (imports, others) = stats partition (_.isInstanceOf[Import])
       (p, imports map (_.asInstanceOf[Import]), others)
     }
 
+    def isPackageDef(tree: Tree) = tree.isInstanceOf[PackageDef]
+
+    def isBestPlaceForImports(trees: List[Tree]) = {
+      val (pkgDefs, otherTrees) = trees.partition(isPackageDef)
+      otherTrees.nonEmpty || pkgDefs.size >= 2
+    }
+
     transformation[Tree, (PackageDef, List[Import], List[Tree])] {
-      case p @ PackageDef(_, stats @ (NoPackageDef(_) :: _)) =>
-        splitImports(p, stats)
-      case p @ PackageDef(_, stats) if stats.filter(_.isInstanceOf[PackageDef]).size > 1 =>
+      case p @ PackageDef(_, stats) if isBestPlaceForImports(stats)  =>
         splitImports(p, stats)
     }
   }
@@ -166,7 +188,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
       }.toList
     }
 
-    val addImportStatement = once(locatePackageLevelImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+    val addImportStatement = once(findBestPackageForImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
 
       // For an empty PackageDef, with no exiting imports but with an Impl that has an annotation, we need to
       // modify positions so that the annotation, which is not in the AST, doesn't get assigned to the PackageDef
