@@ -64,7 +64,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(false, _ => true, false))
+  } applyRefactoring(introduceProductNTrait((false, _ => true, false)))
 
   @Test
   def product2Simple() = new FileSet {
@@ -102,7 +102,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(false, _ => true, false))
+  } applyRefactoring(introduceProductNTrait((false, _ => true, false)))
 
   @Test
   def multipleTraits() = new FileSet {
@@ -136,7 +136,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(true, s => s == "p", false))
+  } applyRefactoring(introduceProductNTrait((true, s => s == "p", false)))
 
   @Test
   def nonPublicClassParams() = new FileSet {
@@ -170,6 +170,6 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring(introduceProductNTrait(true, _ == "immutable", false))
+  } applyRefactoring(introduceProductNTrait((true, _ == "immutable", false)))
 
 }

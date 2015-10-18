@@ -22,19 +22,19 @@ class ExtractTraitTest extends TestRefactoring {
     global.askShutdown
   }
 
-  def extractTrait(params: (String, String => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
+  def extractTrait(traitName: String, defFilter: String => Boolean)(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExtractTrait with TestProjectIndex
-    def filter(member: refactoring.global.ValOrDefDef) = params._2(member.symbol.nameString)
-    val changes = performRefactoring(new refactoring.RefactoringParameters(params._1, filter))
+    def filter(member: refactoring.global.ValOrDefDef) = defFilter(member.symbol.nameString)
+    val changes = performRefactoring(new refactoring.RefactoringParameters(traitName, filter))
   }.changes
 
-  def extractTraitByParamListLength(params: (String, Int => Boolean))(pro: FileSet) = new TestRefactoringImpl(pro) {
+  def extractTraitByParamListLength(traitName: String, paramListLen: Int => Boolean)(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new ExtractTrait with TestProjectIndex
     def filter(member: refactoring.global.ValOrDefDef) = member match {
       case valdef: refactoring.global.ValDef => false
-      case defdef: refactoring.global.DefDef => defdef.vparamss.headOption.map(vparams => params._2(vparams.size)).getOrElse(false)
+      case defdef: refactoring.global.DefDef => defdef.vparamss.headOption.map(vparams => paramListLen(vparams.size)).getOrElse(false)
     }
-    val changes = performRefactoring(new refactoring.RefactoringParameters(params._1, filter))
+    val changes = performRefactoring(new refactoring.RefactoringParameters(traitName, filter))
   }.changes
 
   @Test
@@ -53,7 +53,7 @@ class ExtractTraitTest extends TestRefactoring {
 
     trait Extracted/*)*/
     """
-  } applyRefactoring(extractTrait(("Extracted", (name) => false)))
+  } applyRefactoring(extractTrait("Extracted", (name) => false))
 
   @Test
   def extractNothingNestedPackages() = new FileSet {
@@ -85,7 +85,7 @@ class ExtractTraitTest extends TestRefactoring {
 
     trait Extracted
     """
-  } applyRefactoring(extractTrait(("Extracted", (name) => false)))
+  } applyRefactoring(extractTrait("Extracted", (name) => false))
 
   @Test
   def extractSingleDefDef() = new FileSet {
@@ -114,7 +114,7 @@ class ExtractTraitTest extends TestRefactoring {
       def square(a: Int) = a*a
     }
     """
-  } applyRefactoring(extractTrait(("Squarify", (name) => name == "square")))
+  } applyRefactoring(extractTrait("Squarify", (name) => name == "square"))
 
   @Test
   def extractSingleValDef() = new FileSet {
@@ -141,7 +141,7 @@ class ExtractTraitTest extends TestRefactoring {
       val immutable = 57
     }
     """
-  } applyRefactoring(extractTrait(("Extracted", (name) => name == "immutable")))
+  } applyRefactoring(extractTrait("Extracted", (name) => name == "immutable"))
 
   @Test
   def extractSingleVarDef() = new FileSet {
@@ -168,7 +168,7 @@ class ExtractTraitTest extends TestRefactoring {
       var mutable = "57"
     }
     """
-  } applyRefactoring(extractTrait(("Extracted", (name) => name == "mutable")))
+  } applyRefactoring(extractTrait("Extracted", (name) => name == "mutable"))
 
   @Test
   def dontExtractClassParameters() = new FileSet {
