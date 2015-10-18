@@ -29,9 +29,11 @@ trait DependentSymbolExpanders extends TracingImpl {
     final def expand(s: Symbol): List[Symbol] = {
       doExpand(s).filterNot(_ == NoSymbol) \\ { res =>
         val debugInfo = {
-          if (res.map(_.pos).toSet == Set(NoPosition)) Seq()
+          val posSet = res.map(_.pos).toSet
+
+          if (posSet == Set(NoPosition)) Seq()
           else if (res == Seq(s)) Seq()
-          else res.map(elem => PositionDebugging.formatCompact(elem.pos))
+          else posSet.map(pos => PositionDebugging.formatCompact(pos))
         }
 
         if (debugInfo.nonEmpty) {
