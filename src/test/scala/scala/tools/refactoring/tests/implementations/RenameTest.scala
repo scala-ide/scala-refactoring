@@ -2376,4 +2376,79 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002569
+   */
+  @Test
+  def testRenameLazyConstants1002569Ex1() = new FileSet {
+    """
+    object Bug1 {
+      lazy val l = 1
+      lazy val /*(*/tryRenameMe/*)*/ = 2
+
+    }
+    """ becomes
+    """
+    object Bug1 {
+      lazy val l = 1
+      lazy val /*(*/renamed/*)*/ = 2
+
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("renamed"))
+
+  @Test
+  def testRenameLazyConstants1002569Ex2() = new FileSet {
+    """
+    package test
+
+    object Bug2 {
+      lazy val l1 = mkVal(1)
+      lazy val l2 = mkVal(2)
+      lazy val /*(*/tryRenameMe/*)*/ = mkVal(3)
+
+      def mkVal(i: Int) = i
+    }
+    """ becomes
+    """
+    package test
+
+    object Bug2 {
+      lazy val l1 = mkVal(1)
+      lazy val l2 = mkVal(2)
+      lazy val /*(*/renamed/*)*/ = mkVal(3)
+
+      def mkVal(i: Int) = i
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("renamed"))
+
+  @Test
+  def testRenameLazyConstants1002569Ex3() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    object Bystander {
+      lazy val l = "1"
+    }
+
+    object Bug3 {
+      lazy val l = 0
+      lazy val /*(*/tryRenameMe/*)*/ = 0
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    object Bystander {
+      lazy val l = "1"
+    }
+
+    object Bug3 {
+      lazy val l = 0
+      lazy val /*(*/renamed/*)*/ = 0
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("renamed"))
 }
