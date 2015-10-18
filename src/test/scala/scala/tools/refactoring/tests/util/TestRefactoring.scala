@@ -7,7 +7,6 @@ package tests.util
 
 import analysis.GlobalIndexes
 import common.Change
-import org.junit.Assert._
 import scala.tools.refactoring.common.CompilerAccess
 import common.InteractiveScalaCompiler
 import scala.tools.refactoring.common.InteractiveScalaCompiler

@@ -7,7 +7,6 @@ package tests.analysis
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import analysis._
 
 class FindShadowedTest extends TestHelper {
 
@@ -72,4 +71,3 @@ class FindShadowedTest extends TestHelper {
     assertEquals(3, results.size)
   }
 }
-

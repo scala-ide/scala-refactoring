@@ -11,8 +11,6 @@ import common.Selections
 
 class SelectionsTest extends TestHelper {
 
-  import global._
-
   private def getIndexedSelection(src: String) = {
     val tree = treeFrom(src)
     val start = commentSelectionStart(src)
@@ -147,4 +145,3 @@ class SelectionsTest extends TestHelper {
     """)
   }
 }
-

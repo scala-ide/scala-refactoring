@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package analysis
 
-import common.PimpedTrees
 import collection.mutable.ListBuffer
 import collection.mutable.HashSet
 import annotation.tailrec

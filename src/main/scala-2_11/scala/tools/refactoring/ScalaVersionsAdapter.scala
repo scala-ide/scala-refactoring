@@ -1,7 +1,5 @@
 package scala.tools.refactoring
 
-import scala.tools.refactoring.common.CompilerApiExtensions
-
 object ScalaVersionAdapters {
 
   trait CompilerApiAdapters { self: common.InteractiveScalaCompiler =>

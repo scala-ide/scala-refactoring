@@ -7,7 +7,6 @@ package tests.implementations.imports
 
 import implementations.OrganizeImports
 import tests.util.TestHelper
-import tests.util.TestRefactoring
 import language.reflectiveCalls
 import language.postfixOps
 import scala.collection.mutable.ListBuffer

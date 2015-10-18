@@ -2,7 +2,6 @@ package scala.tools.refactoring
 package implementations
 
 import scala.tools.refactoring.common.Change
-import transformation.TreeFactory
 
 /**
  * Generates an apply-method in the companion object that matches the primary

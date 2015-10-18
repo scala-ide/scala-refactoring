@@ -1,7 +1,5 @@
 package scala.tools.refactoring.common
 
-import scala.tools.nsc.Global
-
 /*
  * FIXME: This class duplicates functionality from org.scalaide.core.compiler.CompilerApiExtensions.
  */

@@ -7,7 +7,6 @@ package implementations
 
 import common.CompilerAccess
 import common.PimpedTrees
-import common.SilentTracing
 import common.TreeTraverser
 import sourcegen.SourceGenerator
 import scala.tools.refactoring.common.TracingImpl

@@ -7,7 +7,6 @@ package implementations
 
 import common.InteractiveScalaCompiler
 import common.Change
-import transformation.TreeFactory
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.refactoring.common.TextChange
 

@@ -8,7 +8,6 @@ package tests.implementations
 import implementations.ExplicitGettersSetters
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-import org.junit.Assert._
 
 import language.reflectiveCalls
 
