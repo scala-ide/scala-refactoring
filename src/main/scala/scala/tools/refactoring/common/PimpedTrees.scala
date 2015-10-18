@@ -145,7 +145,7 @@ trait PimpedTrees {
     def collect[T](f: PartialFunction[Tree, T]) = {
       val hits = new ListBuffer[T]
       object collectTreeTraverser extends Traverser {
-        override def traverse(t: Tree) {
+        override def traverse(t: Tree): Unit = {
           if (f.isDefinedAt(t)) hits += f(t)
           super.traverse(t)
         }

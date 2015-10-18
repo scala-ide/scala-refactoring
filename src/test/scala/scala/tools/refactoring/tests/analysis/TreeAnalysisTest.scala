@@ -17,7 +17,7 @@ class TreeAnalysisTest extends TestHelper with GlobalIndexes with TreeAnalysis {
 
   var index: IndexLookup = null
 
-  def withIndex(src: String)(body: Tree => Unit ) {
+  def withIndex(src: String)(body: Tree => Unit ): Unit = {
     val tree = treeFrom(src)
     global.ask { () =>
       index = GlobalIndex(List(CompilationUnitIndex(tree)))

@@ -18,7 +18,7 @@ class ExtractTraitTest extends TestRefactoring {
   override val global = (new CompilerInstance).compiler
 
   @After
-  def shutdownCompiler() {
+  def shutdownCompiler(): Unit = {
     global.askShutdown
   }
 
@@ -483,7 +483,7 @@ class ExtractTraitTest extends TestRefactoring {
   def inDefaultPackage() = new FileSet {
     """
     class /*(*/OriginalClassInDefaultPackage/*)*/ {
-      def foo() {}
+      def foo(): Unit = {}
     }
     """ becomes
     """
@@ -493,7 +493,7 @@ class ExtractTraitTest extends TestRefactoring {
     NewFile becomes
     """
     trait Foo {
-      def foo() {}
+      def foo(): Unit = {}
     }
     """
   } applyRefactoring(extractTrait("Foo", (s) => s == "foo"))
@@ -503,16 +503,16 @@ class ExtractTraitTest extends TestRefactoring {
     """
     package withExistingSuperclass
     trait A {
-     def foo(s: String)
+     def foo(s: String): Unit
     }
     class /*(*/Foo/*)*/ extends A {
-      override def foo(s: String) {}
+      override def foo(s: String): Unit = {}
     }
     """ becomes
     """
     package withExistingSuperclass
     trait A {
-     def foo(s: String)
+     def foo(s: String): Unit
     }
     class /*(*/Foo/*)*/ extends A with Extracted {
     }
@@ -522,7 +522,7 @@ class ExtractTraitTest extends TestRefactoring {
     package withExistingSuperclass
 
     trait Extracted {
-      def foo(s: String) {}
+      def foo(s: String): Unit = {}
     }
     """
   } applyRefactoring(extractTrait("Extracted", _ == "foo"))

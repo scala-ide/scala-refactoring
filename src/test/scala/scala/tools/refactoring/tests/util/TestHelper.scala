@@ -29,7 +29,6 @@ object TestHelper {
   case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
 }
 
-
 trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler with TracingImpl {
   import TestHelper._
 
@@ -73,12 +72,12 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     var expectGlobalRename: Option[Boolean] = None
 
     implicit class WrapSource(src: String) {
-      def becomes(expected: String) {
+      def becomes(expected: String): Unit = {
         val filename = nextFilename()
         srcs += Source(src, filename) → Source(stripWhitespacePreservers(expected), filename)
       }
 
-      def isNotModified() {
+      def isNotModified(): Unit = {
         becomes(src)
       }
 
@@ -98,7 +97,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     }
 
     implicit class WrapSourceWithFilename(srcWithName: (String, String)) {
-      def becomes(newSrcWithName: (String, String)) {
+      def becomes(newSrcWithName: (String, String)): Unit = {
         srcs += Source(srcWithName) -> Source(stripWhitespacePreservers(newSrcWithName._1), newSrcWithName._2)
       }
     }
@@ -111,11 +110,11 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
     val NewFile = ""
 
-    def applyRefactoring(createChanges: FileSet => List[Change]) {
+    def applyRefactoring(createChanges: FileSet => List[Change]): Unit = {
       performRefactoring(createChanges).assertEqualSource
     }
 
-    def prepareAndApplyRefactoring(result: FileSet => PrepResultWithChanges) {
+    def prepareAndApplyRefactoring(result: FileSet => PrepResultWithChanges): Unit = {
       prepareAndPerformRefactoring(result).assertOk()
     }
 
@@ -197,7 +196,6 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
         }
       }
     }
-
 
     /**
      * Same as applyRefactoring but does not make the assertion on the

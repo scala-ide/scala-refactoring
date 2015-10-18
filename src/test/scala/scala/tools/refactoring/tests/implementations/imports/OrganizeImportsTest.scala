@@ -43,7 +43,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   }.mkChanges
 
   @Test
-  def testOrganizeOptions() {
+  def testOrganizeOptions(): Unit = {
 
     val src = """
       package tests.importing

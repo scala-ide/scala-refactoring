@@ -16,7 +16,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   import global._
 
-  private def assertTrees(expected: String, src: String, javaSrc: String, addScalaSrc: String, f: Tree => Seq[Tree]) {
+  private def assertTrees(expected: String, src: String, javaSrc: String, addScalaSrc: String, f: Tree => Seq[Tree]): Unit = {
     if (!javaSrc.isEmpty) parseJava(javaSrc)
     if (!addScalaSrc.isEmpty) parseScalaAndVerify(addScalaSrc)
     val tree = parseScalaAndVerify(src)
@@ -95,7 +95,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       import scala.math.BigDecimal._
 
       class C {
-        def m() {
+        def m(): Unit = {
           apply("5")
           apply(5l)
         }
@@ -254,7 +254,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
 
       object CLocalImport {
-        def m(x: A) {
+        def m(x: A): Unit = {
           import x._
           println(B.y)
         }
@@ -272,7 +272,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
 
       object ClocalImportNotNeeded {
-        def m(x: A) {
+        def m(x: A): Unit = {
           import x._
           println(B.y)
         }
@@ -523,7 +523,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.util._
       trait Y {
-        def build(ignored: Map[_, _])
+        def build(ignored: Map[_, _]): Unit
       }
       """)
 
@@ -533,7 +533,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.util._
       trait Y {
-        def build(ignored: Map[_, _])
+        def build(ignored: Map[_, _]): Unit
       }
       """)
 
@@ -543,7 +543,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.{ lang => jl, util => ju }
       trait Y {
-        def build(ignored : ju.Map[_, _])
+        def build(ignored : ju.Map[_, _]): Unit
       }
       """)
 
@@ -553,7 +553,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.{ lang => jl, util => ju }
       trait Y {
-        def build(ignored : ju.Map[_, _])
+        def build(ignored : ju.Map[_, _]): Unit
       }
       """)
 
@@ -645,7 +645,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def importedImplicitArgument() {
+  def importedImplicitArgument(): Unit = {
 
     addToCompiler("xy.scala", """
       package impl.args
@@ -690,7 +690,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         object global { trait X }
       }
       trait SomeTrait {
-        def method(param: Param) {
+        def method(param: Param): Unit = {
           import param._
           import global._
           var x: X = null
@@ -706,7 +706,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         object global { trait X }
       }
       trait SomeTrait {
-        def method(param: Param) {
+        def method(param: Param): Unit = {
           import param._
           import global._
           var x: X = null

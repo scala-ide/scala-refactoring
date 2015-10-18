@@ -243,7 +243,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
       val referencesPerFile = collection.mutable.Map[SourceFile, List[(ImplDef, List[Tree])]]()
 
-      def addToMap(impl: ImplDef) {
+      def addToMap(impl: ImplDef): Unit = {
         index.references(impl.symbol) groupBy (_.pos.source) foreach {
           case (src, references) if src.file != selection.file =>
             val old = referencesPerFile.getOrElse(src, List[(ImplDef, List[Tree])]())

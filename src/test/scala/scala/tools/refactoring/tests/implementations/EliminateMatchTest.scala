@@ -26,7 +26,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   val none = None: Option[String]
 
   @Test
-  def eliminateOptionMap() {
+  def eliminateOptionMap(): Unit = {
 
     def f1(x: Option[String]) = x match {
       case Some(s) => Some(s * 2)
@@ -40,7 +40,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def eliminateOptionExists() {
+  def eliminateOptionExists(): Unit = {
 
     def f1(x: Option[String]) = x match {
       case Some(s) => s contains "a"
@@ -54,7 +54,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def eliminateOptionIsDefined() {
+  def eliminateOptionIsDefined(): Unit = {
 
     def f1(x: Option[String]) = x match {
       case Some(_) => true
@@ -68,7 +68,7 @@ class EliminateMatchTest extends TestHelper with TestRefactoring {
   }
 
   @Test
-  def eliminateOptionForeach() {
+  def eliminateOptionForeach(): Unit = {
 
     var x1 = 0
     var x2 = 0

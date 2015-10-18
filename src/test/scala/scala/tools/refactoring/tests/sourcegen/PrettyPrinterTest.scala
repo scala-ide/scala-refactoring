@@ -442,11 +442,11 @@ class B(l: List[T] forSome {type T})"""
     }
 
     object Test44 {
-       def doNothing {
+       def doNothing = {
        }
     }
     class Test44 {
-       def bar() {
+       def bar() = {
          Transaction.run[Unit](Transaction.Kind.ReadOnly)
        }
     }""")
@@ -648,7 +648,7 @@ trait AbstractPrinter {
   def testAssign() = global.ask { () =>
     val tree = treeFrom("""
       trait Demo1 {
-        def method {
+        def method = {
           var i = 0
           i = 1
         }
@@ -1067,7 +1067,7 @@ object A"""
     object Rename1 {
       case class Person(name: String)
       def printName(ppp: Person) = println(ppp.name)
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
         people foreach printName
       }
@@ -1078,7 +1078,7 @@ object A"""
 
   def printName(ppp: Rename1.Person) = println(ppp.name)
 
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     val people: List[Rename1.Person] = List(Person.apply("Mirko"), Person.apply("Christina"))
     people.foreach({
       (ppp: Rename1.Person) => printName(ppp)
@@ -1194,7 +1194,7 @@ trait CTrait {
     class ASuperClass(x: Int, val d: String)
     class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
       self_type_annotation =>
-      def someMethod() {
+      def someMethod() = {
       }
     }
     """)
@@ -1479,5 +1479,3 @@ class A {
 }"""
   }
 }
-
-

@@ -55,7 +55,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findChangedName1() {
+  def findChangedName1(): Unit = {
     assertEquals("DefDef(4): DefDef(4), NameTree(4)", transformAndFind(↓(matchingChildren(doubleAllDefNames)),
     """package findtest1
 
@@ -67,7 +67,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findChangedName2() {
+  def findChangedName2(): Unit = {
     assertEquals("DefDef(5): NameTree(6), Block(5), DefDef(6), DefDef(5), NameTree(5)", transformAndFind(↓(matchingChildren(doubleAllDefNames)),
     """package findtest2
 
@@ -82,7 +82,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findChangedName3() {
+  def findChangedName3(): Unit = {
     assertEquals("DefDef(4): DefDef(4), NameTree(4) | DefDef(5): DefDef(5), NameTree(5) | DefDef(6): DefDef(6), NameTree(6)", transformAndFind(↓(matchingChildren(doubleAllDefNames)),
     """package findtest1
 
@@ -95,7 +95,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findReversedBody() {
+  def findReversedBody(): Unit = {
     assertEquals("Template(3): Template(3)", transformAndFind(↓(matchingChildren(reverseBody)),
     """package findtest3
 
@@ -107,7 +107,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findReversedBodyAndIncrement() {
+  def findReversedBodyAndIncrement(): Unit = {
     assertEquals("Template(3): DefDef(4), Literal(5), Template(3), ValDef(5), Literal(4)", transformAndFind(↓(matchingChildren(reverseBody |> incrementIntegers)),
     """package findtest3
 
@@ -119,7 +119,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findIncrementedInts() {
+  def findIncrementedInts(): Unit = {
     assertEquals("Literal(3): Literal(3) | Literal(4): Literal(4) | Literal(4): Literal(4) | Literal(4): Literal(4)", transformAndFind(↓(matchingChildren(incrementIntegers)),
     """
      class Test {
@@ -130,11 +130,11 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def replaceOnlySingleStmtInBlock() {
+  def replaceOnlySingleStmtInBlock(): Unit = {
     assertEquals("Literal: Literal", transformAndFind(↓(matchingChildren(replaceStmtInBlock)),
     """
      class Test {
-       def someMethod {
+       def someMethod: Unit = {
          val x = "abcd"
          val i = 5
          println(i)
@@ -144,7 +144,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def replaceOnlySingleStmtInTemplate() {
+  def replaceOnlySingleStmtInTemplate(): Unit = {
     assertEquals("ValDef: ValDef, NameTree, Literal", transformAndFind(↓(matchingChildren(replaceStmtInTemplate)),
     """
      class Test {
@@ -156,7 +156,7 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findAddedBlock() {
+  def findAddedBlock(): Unit = {
     assertEquals("DefDef(3): DefDef(3), Block", transformAndFind(↓(matchingChildren(wrapDefRhsInBlock)),
     """
      class Test {
@@ -166,12 +166,12 @@ class TreeChangesDiscovererTest extends TestHelper {
   }
 
   @Test
-  def findNestedChanges() {
+  def findNestedChanges(): Unit = {
     assertEquals("DefDef(3): Function(5), Apply(5), Block(3), DefDef(3), Template(4), Literal(5), ApplyToImplicitArgs(5), NameTree(3), ModuleDef(4)",
       transformAndFind(↓(matchingChildren(doubleAllDefNames |> incrementIntegers)),
     """
      class Test {
-       def method(a: List[Int]) {
+       def method(a: List[Int]): Unit = {
          object Inner {
            a map (_ + 1)
          }

@@ -135,7 +135,7 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
 
     val tree = treeFrom("""
     class Class {
-      def block {
+      def block: Unit = {
         println("this is a block")
         println("this is a block")
       }
@@ -156,7 +156,7 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
 
     val tree = treeFrom("""
     class Class {
-      def block {
+      def block: Unit = {
         println("this is a block")
         println("this is a block")
       }

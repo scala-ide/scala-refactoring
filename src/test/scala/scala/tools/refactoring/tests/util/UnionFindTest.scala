@@ -29,7 +29,7 @@ class UnionFindTest {
   }
 
   @Test
-  def nodesInRelationIfAndOnlyIfWithSameColor(){
+  def nodesInRelationIfAndOnlyIfWithSameColor(): Unit ={
     def sameColorImpliesRelation(x: Node, y: Node) = x.color != y.color || uf.find(x) == uf.find(y)
     def relationImpliesSameColor(x: Node, y: Node) = uf.find(x) != uf.find(y) || x.color == y.color
     for (x <- testNodes;
@@ -49,7 +49,7 @@ class UnionFindTest {
   }
 
   @Test
-  def classRepresentantIsUnique(){
+  def classRepresentantIsUnique(): Unit ={
     val reps = colorRepresentant()
     testNodes.foreach{(x) => {
 	val xColor = colorString(x.color)
@@ -59,12 +59,12 @@ class UnionFindTest {
   }
 
   @Test
-  def findIsIdempotent(){
+  def findIsIdempotent(): Unit ={
     assertTrue(testNodes.forall{(x) => val p = uf.find(x); p == uf.find(p)})
   }
 
   @Test
-  def nodesForWhichFindIsIdentityAreReps(){
+  def nodesForWhichFindIsIdentityAreReps(): Unit ={
     val selfRepresented = testNodes.filter{ (n)=> uf.find(n) == n }
     val reps = colorRepresentant()
     assertTrue(reps.forall{(x) => selfRepresented.contains(x)})
@@ -72,7 +72,7 @@ class UnionFindTest {
   }
 
   @Test
-  def equivalenceClassGivesAColor(){
+  def equivalenceClassGivesAColor(): Unit ={
 	  def myClassIsExactlyMyColor(n: Node): Boolean = {
 	    val myClass = uf.equivalenceClass(n)
 	    val inClassImpliesSameColor = testNodes.forall{ (x) => !myClass.contains(x) || x.color == n.color}

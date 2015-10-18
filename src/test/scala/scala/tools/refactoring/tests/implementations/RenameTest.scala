@@ -87,7 +87,7 @@ class RenameTest extends TestHelper with TestRefactoring {
       package renameLocal1
       class A {
         def double(s: String) = s + s
-        def extractFrom {
+        def extractFrom: Unit = {
           val s = "hallo"
   /*(*/   s   /*)*/ .length
           double(s + "a")
@@ -98,7 +98,7 @@ class RenameTest extends TestHelper with TestRefactoring {
       package renameLocal1
       class A {
         def double(s: String) = s + s
-        def extractFrom {
+        def extractFrom: Unit = {
           val b = "hallo"
   /*(*/   b   /*)*/ .length
           double(b + "a")
@@ -112,7 +112,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameLazyVal
     class A {
-      def rename() {
+      def rename(): Unit = {
         lazy val a = 5
         println(/*(*/a/*)*/)
       }
@@ -121,7 +121,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameLazyVal
     class A {
-      def rename() {
+      def rename(): Unit = {
         lazy val b = 5
         println(/*(*/b/*)*/)
       }
@@ -134,7 +134,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameLazyVals
     class A {
-      def print {
+      def print: Unit = {
         lazy val /*(*/a = 42/*)*/
         println(a)
       }
@@ -143,7 +143,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameLazyVals
     class A {
-      def print {
+      def print: Unit = {
         lazy val /*(*/c = 42/*)*/
         println(c)
       }
@@ -213,7 +213,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameParameter
     class A {
-      def rename(a/*<-*/: String) {
+      def rename(a/*<-*/: String): Unit = {
         println(a)
       }
     }
@@ -221,7 +221,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameParameter
     class A {
-      def rename(b/*<-*/: String) {
+      def rename(b/*<-*/: String): Unit = {
         println(b)
       }
     }
@@ -253,7 +253,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameWithType
     class A {
-      def rename(a: String) {
+      def rename(a: String): Unit = {
         a match {
           case b: String => /*(*/  b  /*)*/
         }
@@ -263,7 +263,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameWithType
     class A {
-      def rename(a: String) {
+      def rename(a: String): Unit = {
         a match {
           case c: String => /*(*/  c  /*)*/
         }
@@ -277,7 +277,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameMultiAssignment
     class A {
-      def print {
+      def print: Unit = {
         val (/*(*/a/*)*/, b) = (5, 6)
         println(a + b)
       }
@@ -286,7 +286,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameMultiAssignment
     class A {
-      def print {
+      def print: Unit = {
         val (/*(*/c/*)*/, b) = (5, 6)
         println(c + b)
       }
@@ -299,7 +299,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameMultiAssignment
     class A {
-      def print {
+      def print: Unit = {
         val (/*(*/a: Int/*)*/, b) = (5, 6)
         println(a + b)
       }
@@ -308,7 +308,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameMultiAssignment
     class A {
-      def print {
+      def print: Unit = {
         val (/*(*/c: Int/*)*/, b) = (5, 6)
         println(c + b)
       }
@@ -369,7 +369,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameMultiAssignment
     class A {
-      def print {
+      def print: Unit = {
         val List(/*(*/a/*)*/, b) = List(5, 6)
         println(a + b)
       }
@@ -378,7 +378,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameMultiAssignment
     class A {
-      def print {
+      def print: Unit = {
         val List(/*(*/c/*)*/, b) = List(5, 6)
         println(c + b)
       }
@@ -391,7 +391,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameBinding
     class A {
-      def print {
+      def print: Unit = {
         1 match { case /*(*/ i /*)*/ => i }
       }
     }
@@ -399,7 +399,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameBinding
     class A {
-      def print {
+      def print: Unit = {
         1 match { case /*(*/ integer /*)*/ => integer }
       }
     }
@@ -411,7 +411,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameNewVal
     class A(i: Int) {
-      def print {
+      def print: Unit = {
         var  /*(*/  l = /*)*/  new A(5)
       }
     }
@@ -419,7 +419,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameNewVal
     class A(i: Int) {
-      def print {
+      def print: Unit = {
         var  /*(*/  ls = /*)*/  new A(5)
       }
     }
@@ -431,7 +431,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameLazyArg
     class A(i: Int) {
-      def print(a: => String) {
+      def print(a: => String): Unit = {
         println(/*(*/  a  /*)*/)
       }
     }
@@ -439,7 +439,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameLazyArg
     class A(i: Int) {
-      def print(s: => String) {
+      def print(s: => String): Unit = {
         println(/*(*/  s  /*)*/)
       }
     }
@@ -451,7 +451,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package forComprehension
     class A {
-      def print {
+      def print: Unit = {
         for(  /*(*/  i  /*)*/  <- 1 to 10) yield i
       }
     }
@@ -459,7 +459,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package forComprehension
     class A {
-      def print {
+      def print: Unit = {
         for(  /*(*/  index  /*)*/  <- 1 to 10) yield index
       }
     }
@@ -625,7 +625,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     object Rename1 {
       class /*(*/Person/*)*/(name: String)
 
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
 
         val people: List[Person] = List(new Person("Mirko"), new Person("Christina"))
 
@@ -638,7 +638,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     object Rename1 {
       class /*(*/P/*)*/(name: String)
 
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
 
         val people: List[P] = List(new P("Mirko"), new P("Christina"))
 
@@ -869,7 +869,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment
     class A {
-      def print {
+      def print: Unit = {
         val List(/*(*/a/*)*/, _) = List(5, 6)
         println(a)
       }
@@ -878,7 +878,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment
     class A {
-      def print {
+      def print: Unit = {
         val List(/*(*/c/*)*/, _) = List(5, 6)
         println(c)
       }
@@ -891,7 +891,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment2
     class A {
-      def print {
+      def print: Unit = {
         val Some(/*(*/a/*)*/) = Some(6)
         println(a)
       }
@@ -900,7 +900,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment2
     class A {
-      def print {
+      def print: Unit = {
         val Some(/*(*/c/*)*/) = Some(6)
         println(c)
       }
@@ -913,7 +913,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment2
     class A {
-      def print {
+      def print: Unit = {
         val Reg = "(\\w)".r
         val Reg(/*(*/a/*)*/) = "x"
         println(a)
@@ -923,7 +923,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment2
     class A {
-      def print {
+      def print: Unit = {
         val Reg = "(\\w)".r
         val Reg(/*(*/c/*)*/) = "x"
         println(c)
@@ -937,7 +937,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment4
     class A {
-      def print {
+      def print: Unit = {
         val List(_, /*(*/a/*)*/) = List(1, 2)
         println(a)
       }
@@ -946,7 +946,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment4
     class A {
-      def print {
+      def print: Unit = {
         val List(_, /*(*/c/*)*/) = List(1, 2)
         println(c)
       }
@@ -959,7 +959,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment5
     class A {
-      def print {
+      def print: Unit = {
         val List(_, Some(List(_, Some(/*(*/a/*)*/), _))) = List(None, Some(List(1, Some(2), 3)))
         println(a)
       }
@@ -968,7 +968,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment5
     class A {
-      def print {
+      def print: Unit = {
         val List(_, Some(List(_, Some(/*(*/c/*)*/), _))) = List(None, Some(List(1, Some(2), 3)))
         println(c)
       }
@@ -981,7 +981,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment6
     class A {
-      def print {
+      def print: Unit = {
         val List(/*(*/a/*)*/: Int) = List(42)
         println(a)
       }
@@ -990,7 +990,7 @@ class RenameTest extends TestHelper with TestRefactoring {
     """
     package renameSingleVariableDeconstructingAssignment6
     class A {
-      def print {
+      def print: Unit = {
         val List(/*(*/c/*)*/: Int) = List(42)
         println(c)
       }
@@ -1262,13 +1262,13 @@ class Blubb
     """
     class A {
       trait /*(*/B/*)*/
-      def foo(b: A#B) {}
+      def foo(b: A#B): Unit = {}
     }
     """ becomes
     """
     class A {
       trait /*(*/C/*)*/
-      def foo(b: A#C) {}
+      def foo(b: A#C): Unit = {}
     }
     """
   } applyRefactoring(renameTo("C"))

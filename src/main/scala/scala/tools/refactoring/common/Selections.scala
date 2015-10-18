@@ -38,7 +38,7 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
       // we might get duplicate trees. For an example, see the
       // extractFromMethodWithMultipleAssignment TestCase.
       new global.Traverser {
-        override def traverse(t: Tree) {
+        override def traverse(t: Tree): Unit = {
           if (t.pos.isRange && pos.includes(t.pos)) {
             hits += t
           } else

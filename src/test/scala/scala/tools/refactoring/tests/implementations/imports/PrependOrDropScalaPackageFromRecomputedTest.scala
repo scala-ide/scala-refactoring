@@ -26,7 +26,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     import scala.math.BigDecimal._
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -36,7 +36,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     import math.BigDecimal.apply
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -50,7 +50,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     import math.BigDecimal._
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -60,7 +60,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     import scala.math.BigDecimal.apply
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }

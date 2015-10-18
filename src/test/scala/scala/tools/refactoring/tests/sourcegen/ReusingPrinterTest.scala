@@ -196,7 +196,7 @@ class ReusingPrinterTest extends TestHelper {
       def meth: Int
     }
     trait TT extends T {
-      def meth
+      def meth: Unit
     }
     """ becomes """
     package add_modifier_to_def_without_return_type
@@ -204,7 +204,7 @@ class ReusingPrinterTest extends TestHelper {
       def meth: Int
     }
     trait TT extends T {
-      override def meth
+      override def meth: Unit
     }
     """ after topdown { matchingChildren {
       filter {

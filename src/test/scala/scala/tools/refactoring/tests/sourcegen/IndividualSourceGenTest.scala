@@ -111,7 +111,7 @@ class IndividualSourceGenTest extends TestHelper {
 trait tr[A] {
   self: List[A] =>
 
-  def asd() {
+  def asd(): Unit = {
   }
 }
 """
@@ -132,7 +132,7 @@ trait tr[A] {
 trait tr[A] {
   self: List[A] =>
 
-  def asd() {
+  def asd(): Unit = {
   }
 
   def member() = {
@@ -292,7 +292,7 @@ else {
        var value = 4
        // after value
 
-       def add(v: Int) {
+       def add(v: Int): Unit = {
          value += v
        }
     }
@@ -334,7 +334,7 @@ else {
 
     val originalDefDef = treeFrom("""
     object Account1 {
-      def addInterest(accounts: Array[Account1], rate: Float) {
+      def addInterest(accounts: Array[Account1], rate: Float): Unit = {
         for (a <- accounts) {
           println(a.value)
         }
@@ -345,7 +345,7 @@ else {
        var value = 4
        // after value
 
-       def add(v: Int) {
+       def add(v: Int): Unit = {
          value += v
        }
     }
@@ -359,7 +359,7 @@ else {
     val newDefDef1 = originalDefDef copy (rhs = newRHS1) setPos originalDefDef.pos
 
     assertEquals("""
-      def addInterest(accounts: Array[Account1], rate: Float) {
+      def addInterest(accounts: Array[Account1], rate: Float): Unit = {
         com.synchronized({
         for (a <- accounts) {
           println(a.value)
@@ -477,7 +477,7 @@ class Foo3 {
     val tree = treeFrom("""
 class Account2 {
    var value = 0
-   def add1(v: Int) {
+   def add1(v: Int): Unit = {
      value += v
    }
 }
@@ -486,7 +486,7 @@ class Account2 {
     assertEquals("""
 class Account2 {
    var value = 0
-   def add1(v: Int) {
+   def add1(v: Int): Unit = {
      value += v
    }
 }
@@ -780,7 +780,7 @@ class A(a: Int) {
     val ast = treeFrom("""
     trait tr {
       def bar(s: String) = s
-      def foo() {
+      def foo(): Unit = {
         bar("ASD")
       }
     }
@@ -800,7 +800,7 @@ class A(a: Int) {
     assertEquals("""
     trait tr {
       def bar(s: String) = s
-      def foo() {
+      def foo(): Unit = {
         bar()
       }
     }
@@ -813,7 +813,7 @@ class A(a: Int) {
     val ast = treeFrom("""
     trait tr {
       def bar(s: String) = s
-      def foo() {
+      def foo(): Unit = {
         bar("ASD")
       }
     }
@@ -832,7 +832,7 @@ class A(a: Int) {
     assertEquals("""
     trait tr {
       def bar(s: String) = s
-      def foo() {
+      def foo(): Unit = {
         bar
       }
     }
@@ -1610,7 +1610,7 @@ class A(a: Int) {
     val src = """
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
-    def method() {
+    def method(): Unit = {
     }
     class ASD
     def toInline() = {
@@ -1659,7 +1659,7 @@ class A(a: Int) {
     assertEquals("""
   object acmatch {
     def fail = throw new UnsupportedOperationException("unsupported")
-    def method() {
+    def method(): Unit = {
     }
     class ASD
     def toInline() = {

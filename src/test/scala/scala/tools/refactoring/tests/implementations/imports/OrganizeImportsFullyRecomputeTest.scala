@@ -25,7 +25,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   }.mkChanges
 
   @Test
-  def testOrganizeOptions() {
+  def testOrganizeOptions(): Unit = {
 
     val src = """
       package tests.importing
@@ -97,7 +97,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import scala.math.BigDecimal._
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -107,7 +107,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import scala.math.BigDecimal.apply
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -463,16 +463,16 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import java.{ lang => jl, util => ju }
     import ju.{ArrayList => AL}
     trait Y {
-      def build(ignored : ju.Map[_, _])
-        def build2(ignored : AL[Int])
+      def build(ignored : ju.Map[_, _]): Unit
+        def build2(ignored : AL[Int]): Unit
       }
     """ becomes
     """
     import java.{util => ju}
     import java.util.{ArrayList => AL}
     trait Y {
-      def build(ignored : ju.Map[_, _])
-        def build2(ignored : AL[Int])
+      def build(ignored : ju.Map[_, _]): Unit
+        def build2(ignored : AL[Int]): Unit
       }
     """
   } applyRefactoring organize
@@ -817,7 +817,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       import test.pkg
 
       class ScalaClass {
-        def f() {
+        def f(): Unit = {
           pkg.f_pkg
         }
       }
@@ -828,7 +828,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       import test.pkg
 
       class ScalaClass {
-        def f() {
+        def f(): Unit = {
           pkg.f_pkg
         }
       }

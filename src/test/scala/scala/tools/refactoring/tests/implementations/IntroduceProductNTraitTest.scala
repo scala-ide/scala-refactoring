@@ -19,7 +19,7 @@ class IntroduceProductNTraitTest extends TestHelper with TestRefactoring {
   override val global = (new CompilerInstance).compiler
 
   @After
-  def shutdownCompiler() {
+  def shutdownCompiler(): Unit = {
     global.askShutdown
   }
 

@@ -37,7 +37,7 @@ class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGe
 
   @Test
   @Ignore // TODO sometimes fails on Jenkins, need to investigate
-  def testSingleSpace() {
+  def testSingleSpace(): Unit = {
 
     val ast = treeFrom("""
     import scala.collection.{MapLike, MapProxy}

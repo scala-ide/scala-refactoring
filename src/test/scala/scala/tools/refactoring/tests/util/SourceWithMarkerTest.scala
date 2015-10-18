@@ -9,7 +9,7 @@ class SourceWithMarkerTest {
   import SourceWithMarker.Movements._
 
   @Test
-  def testApplyCharMovemnts() {
+  def testApplyCharMovemnts(): Unit = {
     val src = SourceWithMarker("implicit")
     assertEquals('m', src.moveMarker('i').current)
     assertEquals('l', src.moveMarker('u' | ('i' ~ 'm' ~ 'p')).current)
@@ -18,7 +18,7 @@ class SourceWithMarkerTest {
 
 
   @Test
-  def testApplyCharAndStringMovements() {
+  def testApplyCharAndStringMovements(): Unit = {
     val src = SourceWithMarker("abstract")
     assertEquals('a', src.moveMarker("").current)
     assertEquals('a', src.moveMarker(('a' ~ "bs") ~ ('b' ~ "str").backward).current)
@@ -26,13 +26,13 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testApplyBasicMovements() {
+  def testApplyBasicMovements(): Unit = {
     val src = SourceWithMarker("protected abstract override val x = 123")
     assertEquals('=', src.moveMarker((("protected" | "abstract" | "override" | "val" | "x" | "=") ~ spaces).zeroOrMore ~ "12" ~ (spaces ~ "123").backward).current)
   }
 
   @Test
-  def testCommentsAndSpaces() {
+  def testCommentsAndSpaces(): Unit = {
     val src1 = SourceWithMarker("""//--
       val x = 3
     """)
@@ -65,7 +65,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testSpaces() {
+  def testSpaces(): Unit = {
     val src1 = SourceWithMarker(" s")
     val src2 = SourceWithMarker("\n\ts")
     val src3 = SourceWithMarker("""
@@ -79,7 +79,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testApplyWithMoreComplexExample() {
+  def testApplyWithMoreComplexExample(): Unit = {
     val src = SourceWithMarker("""protected //--
       [test /**/]//--
       /*
@@ -105,7 +105,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testWithRealisticExamples() {
+  def testWithRealisticExamples(): Unit = {
     val srcStr = """
       package bug
       class Bug {
@@ -123,7 +123,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testWithScopedAccessModifiers() {
+  def testWithScopedAccessModifiers(): Unit = {
     val src = SourceWithMarker("private[test]").withMarkerOnLastChar
     assertTrue(src.moveMarker((("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents).backward).isDepleted)
   }
@@ -152,7 +152,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testWithEmptySource() {
+  def testWithEmptySource(): Unit = {
     mvntsToTestAtEndOfString.foreach { case (mvnt, indexStr) =>
       try {
         assertTrue(indexStr, mvnt(SourceWithMarker()).isEmpty)
@@ -164,7 +164,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testAtEndOfSource() {
+  def testAtEndOfSource(): Unit = {
     val src = SourceWithMarker("a")
     val prefixMvnt = stringToMovement("a")
 
@@ -175,7 +175,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testCharConst() {
+  def testCharConst(): Unit = {
     val src1 = SourceWithMarker("(a='b',b=''',c='\'',e='s)")
     val baseMvnt1 = '(' ~ "a=" ~ characterLiteral ~ ",b=" ~ characterLiteral ~ ",c=" ~ characterLiteral ~ ",e="
 
@@ -191,7 +191,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testNtimes() {
+  def testNtimes(): Unit = {
     val src = SourceWithMarker("aaaa")
     assertTrue(src.moveMarker('a'.nTimes(4)).isDepleted)
     assertFalse(src.moveMarker('a'.nTimes(3)).isDepleted)
@@ -199,13 +199,13 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testOpChar() {
+  def testOpChar(): Unit = {
     val src = SourceWithMarker("+-/*:><!~^\u03f6.")
     assertEquals("~", src.moveMarker(opChar.zeroOrMore ~ (opChar.nTimes(2) ~ '.').backward).current.toString)
   }
 
   @Test
-  def testUntilWithSimpleExamples() {
+  def testUntilWithSimpleExamples(): Unit = {
     val src = SourceWithMarker("0123456789")
     assertEquals("5", src.moveMarker(until("5")).current.toString)
     assertEquals("5", src.moveMarker(until("5", skipping = digit)).current.toString)
@@ -213,7 +213,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testStringLiteral() {
+  def testStringLiteral(): Unit = {
     val trippleQuote = "\"\"\""
 
     val src1 = SourceWithMarker(s"""$trippleQuote a $trippleQuote""")
@@ -235,7 +235,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testUntilWithTypicalExamples() {
+  def testUntilWithTypicalExamples(): Unit = {
     def untilVal(name: String) = until(name ~ spaces ~ "=", skipping = characterLiteral | symbolLiteral | stringLiteral | comment)
 
     val src1 = SourceWithMarker("(j = i, i = j)")
@@ -259,7 +259,7 @@ class SourceWithMarkerTest {
   }
 
   @Test
-  def testSeqOpsAtEndOfSource() {
+  def testSeqOpsAtEndOfSource(): Unit = {
     val src = SourceWithMarker("aaa")
 
     val shouldDeplete =

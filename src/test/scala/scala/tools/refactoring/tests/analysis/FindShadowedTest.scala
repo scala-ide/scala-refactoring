@@ -14,7 +14,7 @@ class FindShadowedTest extends TestHelper {
 
   @Ignore
   @Test
-  def findSimpleShadowing() {
+  def findSimpleShadowing(): Unit = {
 
     val t = treeFrom("""
     package shadowing
@@ -22,7 +22,7 @@ class FindShadowedTest extends TestHelper {
     object TheShadow {
       val i = 1
 
-      def method {
+      def method: Unit = {
         val i = ""
         ()
       }
@@ -30,7 +30,7 @@ class FindShadowedTest extends TestHelper {
 
     class Xyz(xyzxyz: Long) {
 
-      def method {
+      def method: Unit = {
         val xyzxyz = ""
         val i = xyzxyz
         ()

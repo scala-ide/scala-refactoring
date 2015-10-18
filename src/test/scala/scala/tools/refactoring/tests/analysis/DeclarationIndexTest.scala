@@ -80,7 +80,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     assertDeclarationOfSelection("private[this] val x: Int = 1", """
       object AfindValReferenceFromMethod {
         private[this] val x = 1
-        def go {
+        def go: Unit = {
           val y = /*(*/  x  /*)*/
         }
       }

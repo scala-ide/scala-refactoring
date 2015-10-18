@@ -44,7 +44,7 @@ trait CompilationUnitIndexes {
       val defs = new HashMap[Symbol, ListBuffer[DefTree]]
       val refs = new HashMap[Symbol, ListBuffer[Tree]]
 
-      def addDefinition(s: Symbol, t: DefTree) {
+      def addDefinition(s: Symbol, t: DefTree): Unit = {
         def add(s: Symbol) =
           defs.getOrElseUpdate(s, new ListBuffer[DefTree]) += t
 
@@ -60,7 +60,7 @@ trait CompilationUnitIndexes {
         }
       }
 
-      def addReference(s: Symbol, t: Tree) {
+      def addReference(s: Symbol, t: Tree): Unit = {
         def add(s: Symbol) =
           refs.getOrElseUpdate(s, new ListBuffer[Tree]) += t
 

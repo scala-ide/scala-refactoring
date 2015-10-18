@@ -21,9 +21,9 @@ trait Tracing {
 
   def context[T](name: String)(body: => T): T
 
-  def trace(msg: => String, arg1: => Any, args: Any*)
+  def trace(msg: => String, arg1: => Any, args: Any*): Unit
 
-  def trace(msg: => String)
+  def trace(msg: => String): Unit
 }
 
 object DebugTracing {
@@ -71,7 +71,7 @@ trait DebugTracing extends Tracing {
     }
   }
 
-  override def trace(msg: => String, arg1: => Any, args: Any*) {
+  override def trace(msg: => String, arg1: => Any, args: Any*): Unit = {
 
     val as: Array[AnyRef] = arg1 +: args.toArray map {
       case s: String => "«"+ s.replaceAll("\n", "\\\\n") +"»"
@@ -81,7 +81,7 @@ trait DebugTracing extends Tracing {
     trace(msg.format(as: _*))
   }
 
-  override def trace(msg: => String) {
+  override def trace(msg: => String): Unit = {
     val border = (indent * level) + marker
     printLine(border + msg.replaceAll("\n", "\n"+ border))
   }
