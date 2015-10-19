@@ -7,7 +7,6 @@ package tests.transformation
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import common.PimpedTrees
 import language.{ postfixOps, reflectiveCalls }
 import scala.tools.nsc.util.FailedInterrupt
 import scala.tools.refactoring.common.TracingImpl

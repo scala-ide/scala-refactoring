@@ -3,7 +3,6 @@ package sourcegen
 
 import scala.reflect.internal.util.BatchSourceFile
 import scala.tools.nsc.ast.parser.Tokens
-import scala.tools.refactoring.common.SilentTracing
 import scala.tools.refactoring.sourcegen.EmptyFragment
 import scala.tools.refactoring.sourcegen.Fragment
 import scala.tools.refactoring.tests.util.TestHelper

@@ -7,9 +7,6 @@ package tests.sourcegen
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import common.SilentTracing
-import common.PimpedTrees
-import sourcegen.TreeChangesDiscoverer
 
 class TreeChangesDiscovererTest extends TestHelper {
 
@@ -180,9 +177,3 @@ class TreeChangesDiscovererTest extends TestHelper {
     """))
   }
 }
-
-
-
-
-
-

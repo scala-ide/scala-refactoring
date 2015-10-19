@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-import implementations.OrganizeImports
 import tests.util.TestHelper
 
 import language.reflectiveCalls

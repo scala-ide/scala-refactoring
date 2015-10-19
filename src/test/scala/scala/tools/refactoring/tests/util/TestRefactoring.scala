@@ -5,12 +5,9 @@
 package scala.tools.refactoring
 package tests.util
 
-import analysis.GlobalIndexes
 import common.Change
-import scala.tools.refactoring.common.CompilerAccess
 import common.InteractiveScalaCompiler
 import scala.tools.refactoring.common.InteractiveScalaCompiler
-import scala.tools.refactoring.common.Selections
 import org.junit.Before
 
 trait TestRefactoring extends TestHelper {

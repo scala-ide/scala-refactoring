@@ -8,7 +8,6 @@ package tests.sourcegen
 import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
-import sourcegen.SourceGenerator
 import common.Change
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
@@ -322,7 +321,6 @@ else {
        def amethod(v: Int, a: Account): Unit = com.synchronized({
        a.add(v)
        })""", createFragment(newDefDef2).asText)
-
 
     assertEquals(1, createChanges(List(newDefDef1)).size)
 

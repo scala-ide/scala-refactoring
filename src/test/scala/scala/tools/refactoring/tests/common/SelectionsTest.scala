@@ -7,7 +7,6 @@ package tests.common
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import common.Selections
 
 class SelectionsTest extends TestHelper {
 

@@ -1,7 +1,6 @@
 package scala.tools.refactoring.implementations.extraction
 
 import scala.tools.refactoring.analysis.ImportAnalysis
-import scala.tools.refactoring.analysis.Indexes
 
 abstract class ExtractParameter extends ExtractionRefactoring with ParameterExtractions {
   val collector = ParameterExtraction

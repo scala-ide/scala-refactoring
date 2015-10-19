@@ -8,7 +8,6 @@ package tests.sourcegen
 import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
-import sourcegen.SourceGenerator
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
@@ -1685,4 +1684,3 @@ class SourceGenTest extends TestHelper {
     """, generateText(addParam(tree).get))
   }
 }
-

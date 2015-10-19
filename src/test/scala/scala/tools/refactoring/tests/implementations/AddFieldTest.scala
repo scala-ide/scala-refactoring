@@ -2,7 +2,6 @@ package scala.tools.refactoring
 package tests.implementations
 
 import common.Change
-import implementations.AddMethod
 import org.junit.Assert.assertEquals
 import tests.util.TestHelper
 import scala.tools.refactoring.implementations._

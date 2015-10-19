@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package tests.implementations
 
-import implementations.InlineLocal
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 import scala.tools.refactoring.implementations.ExpandCaseClassBinding
