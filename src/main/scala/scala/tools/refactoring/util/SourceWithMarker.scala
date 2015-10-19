@@ -295,7 +295,7 @@ object SourceWithMarker {
       }
     }
 
-    private implicit class CharacterOps(val underlying: Int) extends AnyVal {
+    private[Movements] implicit class CharacterOps(val underlying: Int) extends AnyVal {
       def getType = Character.getType(underlying)
       def isUpper = Character.isUpperCase(underlying)
       def isLower = Character.isLowerCase(underlying)

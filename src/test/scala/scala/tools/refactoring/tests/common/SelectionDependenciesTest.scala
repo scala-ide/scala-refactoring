@@ -197,19 +197,18 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     assertEquals("method fm, method fo", sel.outboundLocalDeps.mkString(", "))
   }
 
-  @Test
+  @Test @Ignore("The implementation needs to be fixed in order to pass this test")
   def outboundDepsOfVars() = global.ask { () =>
     val sel = """
       object O{
         def fn = {
           var a = 1
-          {
-            def inner = /*(*/a += 1/*)*/
-          }
+          def inner = /*(*/a += 1/*)*/
           a
         }
       }
-      """
+      """.selection
+    assertEquals("variable a", sel.outboundLocalDeps.mkString(", "))
   }
 
   @Test

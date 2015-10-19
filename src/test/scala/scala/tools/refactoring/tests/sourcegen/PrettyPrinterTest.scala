@@ -633,7 +633,7 @@ trait AbstractPrinter {
 }"""
   }
 
-  @Test
+  @Test @Ignore("The implementation needs to be fixed in order to pass this test")
   def testPlusEquals() = global.ask { () =>
     val tree = treeFrom("""
       trait Demo2 {
@@ -641,7 +641,11 @@ trait AbstractPrinter {
         assignee += -42
       }""")
 
-    //TODO fixme tree prettyPrintsTo """"""
+    tree prettyPrintsTo """
+      trait Demo2 {
+        var assignee = 1
+        assignee += -42
+      }"""
   }
 
   @Test
