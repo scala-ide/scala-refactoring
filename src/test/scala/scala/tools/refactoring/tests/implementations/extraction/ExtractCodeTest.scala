@@ -218,16 +218,16 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       """
       object Demo {
         1 match {
-	      /*(*/case _ => println(1)/*)*/
+          /*(*/case _ => println(1)/*)*/
         }
       }
     """ becomes """
       object Demo {
         extracted
 
-    	def extracted(): Unit = {
-    	  1 match {
-	        /*(*/case _ => println(1)/*)*/
+        def extracted(): Unit = {
+          1 match {
+            /*(*/case _ => println(1)/*)*/
           }
         }
       }
@@ -246,7 +246,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
       object Demo {
         extracted
 
-    	val extracted = List(1, 2, 3)
+        val extracted = List(1, 2, 3)
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
@@ -256,19 +256,19 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         1 match {
-	  	  case /*(*/i: Int/*)*/ => println(i)
+            case /*(*/i: Int/*)*/ => println(i)
         }
       }
     """ becomes
       """
       object Demo {
         1 match {
-	  	  case Extracted(i) => println(i)
+            case Extracted(i) => println(i)
         }
 
         object Extracted {
           def unapply(x: Int) = x match {
-    		case i => Some(i)
+            case i => Some(i)
             case _ => None
           }
         }
@@ -281,8 +281,8 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         def fn = {
-	  	  val a = 1/*<-*/
-	  	}
+          val a = 1/*<-*/
+        }
       }
     """ becomes
       """
@@ -290,22 +290,22 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
         def fn = {
           val extracted = 1
           val a = extracted
-	  	  }
+        }
       }
     """
   }.performRefactoring(extract(2)).assertEqualTree
-  
+
   def avoidNameCollisions = new FileSet {
     """
       object Demo {
         val extracted = 1
-	    val extracted1 = /*(*/2/*)*/
+        val extracted1 = /*(*/2/*)*/
       }
     """ becomes
       """
       object Demo {
         val extracted = 1
-	    val extracted1 = {
+        val extracted1 = {
           val extracted2 = 2
           extracted2
         }

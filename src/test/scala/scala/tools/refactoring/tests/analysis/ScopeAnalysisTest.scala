@@ -33,13 +33,13 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
       object Demo{
         def fn = {
           val a: Int = {
-    		if(true){
-    		  val b = 1
-    		  /*(*/b + a/*)*/
-    		} else {
+            if(true){
+              val b = 1
+              /*(*/b + a/*)*/
+            } else {
               2
-    		}
-    	  }
+            }
+          }
         }
       }
       """)
@@ -54,7 +54,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
     val s = toSelection("""
       class Demo(cp: Int){
         def fn(a: Int, b: Int) = {
-    	  /*(*/a * b/*)*/
+          /*(*/a * b/*)*/
         }
       }
       """)
@@ -70,7 +70,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
       object Demo{
         for(i <- 1 to 10; j <- 1 to 10){
           /*(*/println(i * j)/*)*/
-    	}
+        }
       }
       """)
 
@@ -84,8 +84,8 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
     val s = toSelection("""
       object Demo{
         (1, 2) match {
-        case (x: Int, y: Int) => println(/*(*/x*y/*)*/)
-    	}
+          case (x: Int, y: Int) => println(/*(*/x*y/*)*/)
+        }
       }
       """)
 
@@ -165,7 +165,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
         def local = {
           import scala.math.Pi
-    	  /*(*/(Pi, new LinkedList)/*)*/
+          /*(*/(Pi, new LinkedList)/*)*/
         }
 
         import mutable.Set
@@ -216,7 +216,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
         import mutable.{LinkedList => LL}
 
         def local = {
-    	  /*(*/new LL/*)*/
+          /*(*/new LL/*)*/
         }
       }
       """)
@@ -239,7 +239,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
         import mutable._
 
         def local = {
-    	  /*(*/new LinkedList/*)*/
+          /*(*/new LinkedList/*)*/
         }
       }
       """)
@@ -260,10 +260,10 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
         val b = {
           val l = 123
-    	  /*(*/2/*)*/
+          /*(*/2/*)*/
         }
 
-    	val c = 3
+        val c = 3
       }
     """)
 
@@ -286,7 +286,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
         def fn(a: Int) = {
           val giveMeABlock = true
           (x: Int) => {
-    	    /*(*/cp * a * x/*)*/
+            /*(*/cp * a * x/*)*/
           }
         }
       }
@@ -357,7 +357,7 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
       class Outer {
         class Inner {
           val a = 1
-	      println(/*(*/a/*)*/
+          println(/*(*/a/*)*/
         }
       }
     """)

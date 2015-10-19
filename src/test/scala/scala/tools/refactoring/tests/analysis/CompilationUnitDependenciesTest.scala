@@ -678,7 +678,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   /*
    * Note:
-   * 	Previous versions of this test expected the dependency `Param.global.X`.
+   *  Previous versions of this test expected the dependency `Param.global.X`.
    *  This is wrong however, as X is satisfied by local imports, that work
    *  as long as `Param` is in scope.
    */
@@ -848,7 +848,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
       class Foo @Documented() (i: Int)
     """)
-
 
   @Test
   def annotationOnField() = assertDependencies(
@@ -1096,7 +1095,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         }
      """)
 
-
   @Test
   def testWithCaseObjects = assertNeededImports(
     """test.Hund
@@ -1117,7 +1115,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
           case _ => false
         }
       }""")
-
 
   /*
    * See Assembla ticket #1002402
@@ -1200,7 +1197,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
            def a: String = ???
          }
        """)
-
 
    /*
     * This test is related to Assembla ticket #1002511

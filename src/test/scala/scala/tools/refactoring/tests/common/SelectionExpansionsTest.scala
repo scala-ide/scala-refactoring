@@ -119,7 +119,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """
     class C{
       val a = /*(*/{
-    	val b = 1
+        val b = 1
         b
       }/*)*/
     }
@@ -200,7 +200,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """
     class C{
       if(/*(*/true)
-    	1/*)*/
+        1/*)*/
       else
         2
     }
@@ -208,7 +208,7 @@ class SelectionExpansionsTest extends TestHelper with Selections {
       """
     class C{
       /*(*/if(true)
-    	1
+        1
       else
         2/*)*/
     }
@@ -220,16 +220,16 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """
     class C{
       1 match{
-    	case 1 => /*(*/"a"
-    	case 2 => "b"
+        case 1 => /*(*/"a"
+        case 2 => "b"
       }/*)*/
     }
     """.assertExpansion(_.expand).toBecome {
       """
     class C{
       /*(*/1 match{
-    	case 1 => "a"
-    	case 2 => "b"
+        case 1 => "a"
+        case 2 => "b"
       }/*)*/
     }
     """
@@ -240,14 +240,14 @@ class SelectionExpansionsTest extends TestHelper with Selections {
     """
     class C{
       1 match{
-    	case /*(*/i if i > /*)*/0 => i
+        case /*(*/i if i > /*)*/0 => i
       }
     }
     """.assertExpansion(_.expand).toBecome {
       """
     class C{
       1 match{
-    	/*(*/case i if i > 0 => i/*)*/
+        /*(*/case i if i > 0 => i/*)*/
       }
     }
     """

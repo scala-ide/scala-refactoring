@@ -24,7 +24,7 @@ class OccurrencesTest extends TestHelper with GlobalIndexes with Occurrences {
       object O{
         def fn = {
           val a = 1
-    	  val b = {
+          val b = {
             val a = 2
             a
           }

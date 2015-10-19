@@ -201,7 +201,7 @@ trait ScopeAnalysis extends Selections with CompilerAccess {
               // declaration and the inner one is the parameter list.
               // This sounds like it is possible to recursively call a function
               // from its parameter list. And...yeah it is:
-              // 	def fn(a: Int = fn(7)) = a - 1
+              //     def fn(a: Int = fn(7)) = a - 1
               val outer =
                 if (d.symbol.isLocal)
                   Some(LocalScope(enclosing, d :: Nil, outerScope))

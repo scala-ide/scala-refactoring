@@ -17,8 +17,8 @@ class UnionFindTest {
 
   @Before
   def unknownNodesShouldNotThrowWhenUnited() = {
-	  for (node1 <- testNodes;
-	    node2 <- testNodes if node1.color == node2.color) uf.union(node1, node2)
+    for (node1 <- testNodes;
+      node2 <- testNodes if node1.color == node2.color) uf.union(node1, node2)
   }
 
   @Test
@@ -52,9 +52,9 @@ class UnionFindTest {
   def classRepresentantIsUnique(): Unit ={
     val reps = colorRepresentant()
     testNodes.foreach{(x) => {
-	val xColor = colorString(x.color)
-	val xColorRep = reps(x.color)
-        assertTrue(s"problem found with $x yet the representant of $xColor is $xColorRep", uf.find(x) == xColorRep)}
+      val xColor = colorString(x.color)
+      val xColorRep = reps(x.color)
+      assertTrue(s"problem found with $x yet the representant of $xColor is $xColorRep", uf.find(x) == xColorRep)}
     }
   }
 
@@ -73,14 +73,14 @@ class UnionFindTest {
 
   @Test
   def equivalenceClassGivesAColor(): Unit ={
-	  def myClassIsExactlyMyColor(n: Node): Boolean = {
-	    val myClass = uf.equivalenceClass(n)
-	    val inClassImpliesSameColor = testNodes.forall{ (x) => !myClass.contains(x) || x.color == n.color}
-	    val sameColorImpliesInclass = testNodes.forall{ (x) => x.color != n.color || myClass.contains(x)}
-	    inClassImpliesSameColor && sameColorImpliesInclass
-	  }
-	  // A bit overkill to do this on more than representants
-	  assertTrue(colorRepresentant().forall{myClassIsExactlyMyColor})
+    def myClassIsExactlyMyColor(n: Node): Boolean = {
+      val myClass = uf.equivalenceClass(n)
+      val inClassImpliesSameColor = testNodes.forall{ (x) => !myClass.contains(x) || x.color == n.color}
+      val sameColorImpliesInclass = testNodes.forall{ (x) => x.color != n.color || myClass.contains(x)}
+      inClassImpliesSameColor && sameColorImpliesInclass
+    }
+    // A bit overkill to do this on more than representants
+    assertTrue(colorRepresentant().forall{myClassIsExactlyMyColor})
   }
 
 }
