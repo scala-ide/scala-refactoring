@@ -56,7 +56,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
     case Block((v: ValDef) :: Nil, _) if v.symbol.isSynthetic => true
     case _ => false
   }
-  
+
   /**
    * Inserts trees in a new block at the right hand side of a ValDef.
    * `val a = 1`
@@ -65,7 +65,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
    */
   lazy val atBeginningOfNewBlockInRhsOfVal: InsertionPosition = {
     case enclosing @ ValDef(_, _, _, NoBlock(rhs)) =>
-      InsertionPoint(enclosing, { insertion => 
+      InsertionPoint(enclosing, { insertion =>
         enclosing copy (rhs = mkBlock(insertion :: rhs :: Nil))
       }, rhs.pos)
   }
@@ -136,7 +136,7 @@ trait InsertionPositions extends Selections with TreeTransformations { self: Com
           enclosing copy (body = insertInSeq(body, insertion, isBeforeEndOfSelection))
         }, approxPos)
     }
-    
+
     /**
      * Inserts trees in the enclosing package right after the selection.
      */
