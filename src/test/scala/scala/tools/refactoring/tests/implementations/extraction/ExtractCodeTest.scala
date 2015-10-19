@@ -295,7 +295,7 @@ class ExtractCodeTest extends TestHelper with TestRefactoring {
     """
   }.performRefactoring(extract(2)).assertEqualTree
 
-  def avoidNameCollisions = new FileSet {
+  def avoidNameCollisions() = new FileSet {
     """
       object Demo {
         val extracted = 1

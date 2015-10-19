@@ -269,7 +269,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
-  def avoidNameCollisions = new FileSet{
+  def avoidNameCollisions() = new FileSet{
     """
       object Extracted {
         1 match {
@@ -294,7 +294,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
-  def extractToPackage = new FileSet{
+  def extractToPackage() = new FileSet{
     """
       object O {
         1 match {

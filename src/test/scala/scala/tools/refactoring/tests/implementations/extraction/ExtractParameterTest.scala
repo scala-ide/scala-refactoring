@@ -137,7 +137,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
-  def avoidNameCollisions = new FileSet {
+  def avoidNameCollisions() = new FileSet {
     """
       object Demo {
         def fn() = {
