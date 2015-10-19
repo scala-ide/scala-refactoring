@@ -1075,10 +1075,10 @@ trait PimpedTrees {
           case (List(leading, argument), sym) => argument
         }
 
-        Some(Pair(t.fun, transformedArgs))
+        Some((t.fun, transformedArgs))
 
       case t =>
-        Some(Pair(t.fun, t.args))
+        Some((t.fun, t.args))
     }
   }
   /**

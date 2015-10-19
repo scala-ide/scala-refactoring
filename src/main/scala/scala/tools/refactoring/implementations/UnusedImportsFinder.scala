@@ -124,7 +124,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
 
           selectors foreach { selector =>
             if(!neededImportSelector(unit, expr, selector)) {
-              unuseds += Pair(selector.name.toString, tree.pos.line)
+              unuseds += ((selector.name.toString, tree.pos.line))
             }
           }
 
