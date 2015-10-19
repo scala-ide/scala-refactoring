@@ -626,7 +626,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
         if (args.size == 1) {
           l ++ "() => " ++ p(args.head) ++ r
         } else if (args.size == 2) {
-          val x = p(args.head)
           l ++ p(args.head) ++ p(args.last) ++ r
         } else {
           val arguments = args.init
@@ -668,7 +667,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
         case _ =>
           val params = pp(vparams, separator = ", ")
-          val bdy = p(body)
 
           if (r.contains(")")) {
             l ++ params ++ "(" ++ p(body) ++ r
@@ -705,11 +703,6 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
 
       def isPackageObjectWithNoTopLevelImports = originalPackageDef exists {
         case global.PackageDef(_, ModuleDef(_, nme.PACKAGEkw, _) :: Nil) => true
-        case _ => false
-      }
-
-      def isOriginallyFromDefaultPackage = originalPackageDef exists {
-        case global.PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _) => true
         case _ => false
       }
 
@@ -861,7 +854,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             val printedThen = pi(thenp)
 
             if (layout.contains("{") && !printedThen.asText.matches("(?ms)^\\s*\\{.*")) {
-              val (left, right) = layout.splitAt(layout.indexOf(")") + 1)
+              val (_, right) = layout.splitAt(layout.indexOf(")") + 1)
               pi(thenp, before = Requisite.anywhere(right))
             } else {
               pi(thenp)

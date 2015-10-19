@@ -16,7 +16,6 @@ class SourceWithMarkerTest {
     assertEquals('i', src.moveMarker('i' ~ 'm'.backward).current)
   }
 
-
   @Test
   def testApplyCharAndStringMovements(): Unit = {
     val src = SourceWithMarker("abstract")
@@ -54,8 +53,6 @@ class SourceWithMarkerTest {
 
     val srcStr5 = "/**/ //**/"
     val src5 = SourceWithMarker(srcStr5, srcStr5.size - 1)
-
-    val res = src5.moveMarker(commentsAndSpaces.backward)
 
     assertEquals("x", src4.moveMarker(commentsAndSpaces.backward).current.toString)
     assertEquals("v", src1.moveMarker(commentsAndSpaces).current.toString)

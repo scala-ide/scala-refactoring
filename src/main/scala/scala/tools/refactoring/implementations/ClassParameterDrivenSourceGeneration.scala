@@ -50,8 +50,6 @@ abstract class ClassParameterDrivenSourceGeneration extends MultiStageRefactorin
   def perform(selection: Selection, prep: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
     val selectedParams = prep.classParams.map(_._1) filter params.paramsFilter
 
-    val classSymbol = prep.classDef.symbol
-
     val templateFilter = filter {
       case prep.classDef.impl => true
     }

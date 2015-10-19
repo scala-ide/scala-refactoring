@@ -16,7 +16,6 @@ trait Occurrences extends Selections with CompilerAccess with Indexes {
   private def termNameDefinition(root: Tree, name: String) = {
     root.collect {
       case t: DefTree if t.name.decode == name =>
-        val pos = t.pos
         t
     }.headOption
   }

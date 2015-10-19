@@ -171,7 +171,6 @@ trait TreeFactory {
     }
 
     val primeVal = mkValDef("prime", Literal(Constant(prime)))
-    val oneLiteral = Literal(Constant(1))
     val (startFactor, remainingParams): (Tree, List[ValDef]) = if (callSuper) {
       (Apply(Select(Super(classSymbol, newTypeName("")), nme.hashCode_), Nil), classParamsForHashcode)
     } else {

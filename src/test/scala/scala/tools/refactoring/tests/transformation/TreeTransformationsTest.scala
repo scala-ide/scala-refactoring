@@ -127,8 +127,6 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
   @Test(expected = classOf[FailedInterrupt])
   def topdownCanDiverge(): Unit = global.ask { () =>
 
-    var out = List[String]()
-
     val t = transform {
       case t @ Block(stats, expr) => t copy (stats = t :: stats)
     }
@@ -147,8 +145,6 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
 
   @Test
   def bottomUpDoesNotDiverge() = global.ask { () =>
-
-    var out = List[String]()
 
     val t = transform {
       case t @ Block(stats, expr) => t copy (stats = t :: stats)
@@ -217,6 +213,7 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
     try {
       // replacement must not be greater than replaced sequence
       val seq3 = seq.replaceSequencePreservingPositions(seq(2) :: Nil, lit(10) :: lit(11) :: Nil)
+      assertPositions(seq3)
       assertTrue("Expected AssertionError but non thrown", false)
     } catch {
       case e: AssertionError => ()

@@ -179,8 +179,6 @@ class ScopeAnalysisTest extends TestHelper with ScopeAnalysis {
 
     assertTrue(innermost.sees(pi))
     assertTrue(innermost.sees(linkedCtor))
-
-    val outermost = innermost.outermostScope
   }
 
   @Test

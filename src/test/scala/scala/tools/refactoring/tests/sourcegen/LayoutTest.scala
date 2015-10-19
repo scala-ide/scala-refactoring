@@ -85,7 +85,6 @@ class LayoutTest {
     val a = Fragment("a")
     val b = Fragment("b")
     val x = Layout("x")
-    val y = Layout("y")
 
     assertEquals("a,x", a ++ r ++ x asText)
     assertEquals("a,b", a ++ r ++ b asText)
@@ -118,4 +117,3 @@ class LayoutTest {
     assertEquals("abc,yzabc", a ++ r ++ b ++ a asText)
   }
 }
-
