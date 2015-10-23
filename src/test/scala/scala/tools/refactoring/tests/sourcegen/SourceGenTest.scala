@@ -8,7 +8,6 @@ package tests.sourcegen
 import tests.util.TestHelper
 import org.junit.Assert
 import org.junit.Assert._
-import sourcegen.SourceGenerator
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 
@@ -310,11 +309,11 @@ class SourceGenTest extends TestHelper {
     }
 
     object Test4 {
-       def doNothing {
+       def doNothing: Unit = {
        }
     }
     class Test4 {
-       def bar() {
+       def bar(): Unit = {
          Transaction.run[Unit](Transaction.Kind.ReadOnly)
        }
     }
@@ -331,11 +330,11 @@ class SourceGenTest extends TestHelper {
     }
 
     object Test4 {
-       def doNothing {
+       def doNothing: Unit = {
        }
     }
     class Test4 {
-       def bar() {
+       def bar(): Unit = {
          Transaction.run[Unit](Transaction.Kind.ReadOnly)
        }
     }
@@ -552,7 +551,7 @@ class SourceGenTest extends TestHelper {
   def testAssign() = global.ask { () =>
     val tree = treeFrom("""
       trait Demo1 {
-        def method {
+        def method: Unit = {
           var i = 0
           i = 1
         }
@@ -561,7 +560,7 @@ class SourceGenTest extends TestHelper {
 
     assertEquals("""
       trait Demo1 {
-        def method {
+        def method: Unit = {
           var i = 0
           i = 1
         }
@@ -1095,7 +1094,7 @@ class SourceGenTest extends TestHelper {
     object Rename1 {
       case class Person(name: String)
       def printName(ppp: Person) = println(ppp.name)
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
         people foreach printName
       }
@@ -1106,7 +1105,7 @@ class SourceGenTest extends TestHelper {
     object Rename1 {
       case class Person(name: String)
       def printName(ppp: Person) = println(ppp.name)
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
         val people: List[Person] = List(Person("Mirko"), Person("Christina"))
         people foreach printName
       }
@@ -1208,7 +1207,7 @@ class SourceGenTest extends TestHelper {
     class ASuperClass(x: Int, val d: String)
     class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
       self_type_annotation =>
-      def someMethod() {
+      def someMethod(): Unit = {
       }
     }
     """)
@@ -1218,7 +1217,7 @@ class SourceGenTest extends TestHelper {
     class ASuperClass(x: Int, val d: String)
     class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, b) with ATrait {
       self_type_annotation =>
-      def someMethod() {
+      def someMethod(): Unit = {
       }
     }
     """, generateText(tree))
@@ -1514,7 +1513,7 @@ class SourceGenTest extends TestHelper {
           i.*(5)
           i * 2
         }
-        def square {
+        def square: Unit = {
           def nested(i: Int) = {
             i * i
           }
@@ -1526,7 +1525,7 @@ class SourceGenTest extends TestHelper {
     assertEquals("""
       trait ATest
       {
-        def squaresquare {
+        def squaresquare: Unit = {
           def nestednested(i: Int) = {
             i * i
           }
@@ -1685,4 +1684,3 @@ class SourceGenTest extends TestHelper {
     """, generateText(addParam(tree).get))
   }
 }
-

@@ -600,7 +600,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     case object TmZero extends Term
 
     class /*(*/ArithParser/*)*/ {
-      def x {
+      def x: Unit = {
         TmZero
       }
     }
@@ -618,7 +618,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     import arith.TmZero
 
     class /*(*/ArithParser/*)*/ {
-      def x {
+      def x: Unit = {
         TmZero
       }
     }
@@ -758,7 +758,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
 
     object C {
-      def m(x: A) {
+      def m(x: A): Unit = {
         import x._
         println(B.y)
       }
@@ -774,7 +774,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
 
     object C {
-      def m(x: A) {
+      def m(x: A): Unit = {
         import x._
         println(B.y)
       }

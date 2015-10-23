@@ -27,7 +27,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         1 match {
           case Extracted(i) => println(i)
         }
-    
+
         object Extracted {
           def unapply(x: Int) = x match {
             case i => Some(i)
@@ -54,7 +54,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
           case Extracted(i) =>
             println(i)
         }
-    
+
         object Extracted {
           def unapply(x: List[Int]) = x match {
             case List(i) => Some(i)
@@ -70,7 +70,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         List(1) match {
-          case /*(*/List(i)/*)*/ => 
+          case /*(*/List(i)/*)*/ =>
             println(i)
         }
       }
@@ -80,7 +80,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         List(1) match {
           case Extracted(i) => println(i)
         }
-    
+
         object Extracted {
           def unapply(x: List[Int]) = x match {
             case List(i) => Some(i)
@@ -90,7 +90,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
   def extractorWithMultipleBindings() = new FileSet{
     """
@@ -105,7 +105,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         (1, 2) match {
           case Extracted(x, y) => println(x*y)
         }
-    
+
         object Extracted {
           def unapply(x: (Int, Int)) = x match {
             case (x, y) => Some(x, y)
@@ -115,7 +115,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
   def extractorWithoutBindings() = new FileSet{
     """
@@ -130,7 +130,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         1 match {
           case Extracted() => println(1)
         }
-    
+
         object Extracted {
           def unapply(x: Int) = x match {
             case 1 => true
@@ -140,7 +140,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
   def extractSubPattern() = new FileSet{
     """
@@ -155,7 +155,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         1 match {
           case Extracted() | 2 => println(1)
         }
-    
+
         object Extracted {
           def unapply(x: Int) = x match {
             case 1 => true
@@ -165,7 +165,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
   def extractPatternWithGuard() = new FileSet{
     """
@@ -180,7 +180,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         1 match {
           case Extracted(i) => println(1)
         }
-    
+
         object Extracted {
           def unapply(x: Int) = x match {
             case i if i < 10 => Some(i)
@@ -190,7 +190,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
   def extractWithoutGuard() = new FileSet{
     """
@@ -205,7 +205,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         "abc" match {
           case Extracted(s) if s.length < 10 => println(s)
         }
-    
+
         object Extracted {
           def unapply(x: String) = x match {
             case s => Some(s)
@@ -215,7 +215,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
   def extractListPattern() = new FileSet{
     """
@@ -230,7 +230,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         List(1, 2, 3) match {
           case Extracted(rest) => println(rest)
         }
-    
+
         object Extracted {
           def unapply(x: List[Int]) = x match {
             case 1 :: rest => Some(rest)
@@ -240,7 +240,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
   def extractConstructorPatternWithoutGuard() = new FileSet{
     """
@@ -257,7 +257,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         TwoInts(1, 2) match {
           case /*(*/Extracted(a, b)/*)*/ if a * b == 42 => ()
         }
-    
+
         object Extracted {
           def unapply(x: TwoInts) = x match {
             case TwoInts(a, b) => Some(a, b)
@@ -267,9 +267,9 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
-  def avoidNameCollisions = new FileSet{
+  def avoidNameCollisions() = new FileSet{
     """
       object Extracted {
         1 match {
@@ -282,7 +282,7 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
         1 match {
           case Extracted1(i) => println(i)
         }
-    
+
         object Extracted1 {
           def unapply(x: Int) = x match {
             case i => Some(i)
@@ -292,9 +292,9 @@ class ExtractExtractorTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualTree
-  
+
   @Test
-  def extractToPackage = new FileSet{
+  def extractToPackage() = new FileSet{
     """
       object O {
         1 match {

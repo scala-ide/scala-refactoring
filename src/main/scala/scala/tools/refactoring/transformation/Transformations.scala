@@ -28,9 +28,9 @@ trait Transformations {
 
   this: common.CompilerAccess =>
 
-  type X = global.Tree
+  import global.Tree
 
-  def traverse(x: X, f: X ⇒ X): X
+  def traverse(x: Tree, f: Tree ⇒ Tree): Tree
 
   abstract class Transformation[X, Y] extends (X ⇒ Option[Y]) {
     self ⇒
@@ -114,8 +114,8 @@ trait Transformations {
    * If the transformation fails on one child, abort and
    * fail the whole application.
    */
-  def allChildren(t: ⇒ T[X, X]) = new T[X, X] {
-    def apply(in: X): Option[X] = {
+  def allChildren(t: ⇒ T[Tree, Tree]) = new T[Tree, Tree] {
+    def apply(in: Tree): Option[Tree] = {
       Some(traverse(in, child => t(child) getOrElse (return None)))
     }
   }
@@ -128,7 +128,7 @@ trait Transformations {
    * identity transformation `id` and don't fail, unlike
    * `allChildren`.
    */
-  def matchingChildren(t: T[X, X]) = allChildren(t |> id[X])
+  def matchingChildren(t: T[Tree, Tree]) = allChildren(t |> id[Tree])
 
   /**
    * Applies a transformation top-down, that is, it applies
@@ -136,9 +136,9 @@ trait Transformations {
    * transformed T to all children. The consequence is that
    * the children "see" their new parent.
    */
-  def ↓       (t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
-  def topdown (t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
-  def preorder(t: ⇒ T[X, X]): T[X, X] = t &> allChildren(↓(t))
+  def ↓       (t: ⇒ T[Tree, Tree]): T[Tree, Tree] = t &> allChildren(↓(t))
+  def topdown (t: ⇒ T[Tree, Tree]): T[Tree, Tree] = t &> allChildren(↓(t))
+  def preorder(t: ⇒ T[Tree, Tree]): T[Tree, Tree] = t &> allChildren(↓(t))
 
   /**
    * Applies a transformation bottom-up, that is, it applies
@@ -146,9 +146,9 @@ trait Transformations {
    * then to their parent. The consequence is that the parent
    * "sees" its transformed children.
    */
-  def ↑        (t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
-  def bottomup (t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
-  def postorder(t: ⇒ T[X, X]): T[X, X] = allChildren(↑(t)) &> t
+  def ↑        (t: ⇒ T[Tree, Tree]): T[Tree, Tree] = allChildren(↑(t)) &> t
+  def bottomup (t: ⇒ T[Tree, Tree]): T[Tree, Tree] = allChildren(↑(t)) &> t
+  def postorder(t: ⇒ T[Tree, Tree]): T[Tree, Tree] = allChildren(↑(t)) &> t
 
   /**
    * Do a transformation until it succeeded once, then just fail.
@@ -171,12 +171,12 @@ trait Transformations {
     }
   }
 
-  def traverseAndTransformAll (t: ⇒ T[X, X]): T[X, X] = t |> topdown(matchingChildren(t))
+  def traverseAndTransformAll (t: ⇒ T[Tree, Tree]): T[Tree, Tree] = t |> topdown(matchingChildren(t))
 
   /**
    * Creates a transformation that always returns the value x.
    */
-  def constant(y: X) = transformation[X, X] {
+  def constant(y: Tree) = transformation[Tree, Tree] {
     case _ => y
   }
 }

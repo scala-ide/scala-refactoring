@@ -24,7 +24,7 @@ trait TransformableSelections extends Selections with TreeTransformations {
       transform {
         case t if t.samePosAndType(original) =>
           replacement replaces t
-        case t => 
+        case t =>
           t
       }
     }

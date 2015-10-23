@@ -69,30 +69,6 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
   override def hashCode = {
     (source.toSeq, marker).hashCode
   }
-
-  private def emptyView = IndexedSeq.empty[Char].view(0, 0)
-
-  private def nextChars(n: Int): Option[SeqView[Char, IndexedSeq[Char]]] = {
-    if (isDepleted) {
-      None
-    } else if (n == 0) {
-      Some(emptyView)
-    } else {
-      val m = marker + n
-      if (n > 0 && m <= length) Some(source.view(marker + 1, m + 1))
-      else if (m >= 0) Some(source.view(m, marker))
-      else None
-    }
-  }
-
-  private def nextChar(n: Int): Option[Char] = {
-    charAt(marker + n)
-  }
-
-  private def charAt(i: Int): Option[Char] = {
-    if (isInRange(i)) Some(source(i))
-    else None
-  }
 }
 
 object SourceWithMarker {
@@ -319,7 +295,7 @@ object SourceWithMarker {
       }
     }
 
-    private implicit class CharacterOps(val underlying: Int) extends AnyVal {
+    private[Movements] implicit class CharacterOps(val underlying: Int) extends AnyVal {
       def getType = Character.getType(underlying)
       def isUpper = Character.isUpperCase(underlying)
       def isLower = Character.isLowerCase(underlying)

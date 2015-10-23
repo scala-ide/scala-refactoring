@@ -88,7 +88,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
           /*(*/100/*)*/
         }
 
-	  	fn(1)
+        fn(1)
       }
     """ becomes
       """
@@ -107,11 +107,11 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
     """
       object Demo {
         def fn(a: Int) = {
-	      val b = 100
+          val b = 100
           /*(*/b/*)*/
         }
 
-	  	fn(1)
+        fn(1)
       }
     """ becomes
       """"""
@@ -137,7 +137,7 @@ class ExtractParameterTest extends TestHelper with TestRefactoring {
   }.performRefactoring(extract(0)).assertEqualTree
 
   @Test
-  def avoidNameCollisions = new FileSet {
+  def avoidNameCollisions() = new FileSet {
     """
       object Demo {
         def fn() = {

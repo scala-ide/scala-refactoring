@@ -377,14 +377,14 @@ class MarkOccurrencesTest extends TestHelper {
     class Foo2 {
       type T = /*(*/Int/*)*/
       val x: T = 10
-      def foo(x: T) {}
+      def foo(x: T): Unit = {}
     }
     """,
     """
     class Foo2 {
       type T = /*(*/###/*)*/
       val x: T = 10
-      def foo(x: T) {}
+      def foo(x: T): Unit = {}
     }
     """)
 
@@ -393,14 +393,14 @@ class MarkOccurrencesTest extends TestHelper {
     class Foo2 {
       type /*(*/T/*)*/ = Int
       val x: T = 10
-      def foo(x: T) {}
+      def foo(x: T): Unit = {}
     }
     """,
     """
     class Foo2 {
       type /*(*/#/*)*/ = Int
       val x: # = 10
-      def foo(x: #) {}
+      def foo(x: #): Unit = {}
     }
     """)
 

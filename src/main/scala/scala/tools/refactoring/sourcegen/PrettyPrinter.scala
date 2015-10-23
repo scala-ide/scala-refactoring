@@ -130,7 +130,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case Some(patP(patStr)) if guard == EmptyTree => Fragment(patStr)
         case _ => p(pat)
       }
-      
+
       val arrowReq = new Requisite {
         def isRequired(l: Layout, r: Layout) = {
           !(l.contains("=>") || r.contains("=>"))

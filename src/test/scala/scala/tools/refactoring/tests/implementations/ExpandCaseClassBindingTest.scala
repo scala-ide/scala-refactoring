@@ -5,10 +5,8 @@
 package scala.tools.refactoring
 package tests.implementations
 
-import implementations.InlineLocal
 import tests.util.TestRefactoring
 import tests.util.TestHelper
-import org.junit.Assert._
 import scala.tools.refactoring.implementations.ExpandCaseClassBinding
 
 import language.reflectiveCalls

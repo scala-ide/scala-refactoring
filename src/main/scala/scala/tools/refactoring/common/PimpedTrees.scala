@@ -145,7 +145,7 @@ trait PimpedTrees {
     def collect[T](f: PartialFunction[Tree, T]) = {
       val hits = new ListBuffer[T]
       object collectTreeTraverser extends Traverser {
-        override def traverse(t: Tree) {
+        override def traverse(t: Tree): Unit = {
           if (f.isDefinedAt(t)) hits += f(t)
           super.traverse(t)
         }
@@ -912,7 +912,6 @@ trait PimpedTrees {
               val srcAtModifierStart = srcAtModifierEnd.moveMarkerBack(
                   ("private" | "protected") ~ commentsAndSpaces ~ bracketsWithContents)
 
-
               Some(ModifierTree(extractAccessModifier(flag)).setPos(pos.withStart(srcAtModifierStart.marker + 1).withEnd(srcAtModifierEnd.marker + 1)))
             } else {
               None
@@ -949,7 +948,6 @@ trait PimpedTrees {
         case Tokens.DEF  => 20
         case _           => 0
       }
-
 
       mods.sortWith { case ((lmod, lpos), (rmod, rpos)) =>
         if (lpos.isDefined && rpos.isDefined) lpos.start < rpos.start
@@ -1077,10 +1075,10 @@ trait PimpedTrees {
           case (List(leading, argument), sym) => argument
         }
 
-        Some(Pair(t.fun, transformedArgs))
+        Some((t.fun, transformedArgs))
 
       case t =>
-        Some(Pair(t.fun, t.args))
+        Some((t.fun, t.args))
     }
   }
   /**
@@ -1108,12 +1106,6 @@ trait PimpedTrees {
 
       def fixNamedArgumentCall(t: Tree): Tree = t match {
         case Block(stats, apply @ Apply(fun: Select, emptyArgs)) if apply.pos.isRange && emptyArgs.size == stats.size && emptyArgs.forall(i => isEmptyTree(i) || !i.pos.isRange) =>
-
-          val allValDefs = stats forall {
-            case t: ValDef => t.pos.isRange && t.pos.start > apply.pos.start
-            case _ => return t
-          }
-
           val argumentSymbols = fun.tpe match {
             case tpe: MethodType => tpe.params
             case _ => return t
@@ -1147,7 +1139,7 @@ trait PimpedTrees {
               findParamAssignment(argumentsSource, newVal.name.toString).map { nameStart =>
                 val nameLength = newVal.name.length
                 val newStart = nameStart + startOffset
-                val namePos = (t.pos withStart (nameStart + startOffset) withPoint nameStart + startOffset + nameLength)
+                val namePos = (t.pos withStart newStart withPoint newStart + nameLength)
                 newVal.nameTree setPos namePos
                 newVal setPos namePos.withEnd(t.pos.end)
                 newVal

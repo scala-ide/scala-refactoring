@@ -12,7 +12,7 @@ package object refactoring {
    *
    * To run an operation on the PC thread, use global.ask { .. }
    */
-  def assertCurrentThreadIsPresentationCompiler() {
+  def assertCurrentThreadIsPresentationCompiler(): Unit = {
     val msg = "operation should be running on the presentation compiler thread"
     assert(Thread.currentThread.isInstanceOf[PresentationCompilerThread], msg)
   }

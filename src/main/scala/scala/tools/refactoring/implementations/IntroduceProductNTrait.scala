@@ -2,8 +2,6 @@ package scala.tools.refactoring
 package implementations
 
 import common.Change
-import scala.tools.refactoring.common.PimpedTrees
-import scala.tools.refactoring.transformation.TreeFactory
 
 /**
  * Refactoring that implements the ProductN trait for a class.
@@ -15,7 +13,6 @@ import scala.tools.refactoring.transformation.TreeFactory
 abstract class IntroduceProductNTrait extends GenerateHashcodeAndEquals {
 
   import global._
-
 
   override def sourceGeneration(selectedParams: List[ValDef], preparationResult: PreparationResult, refactoringParams: RefactoringParameters) = {
     val superGeneration = super.sourceGeneration(selectedParams, preparationResult, refactoringParams)

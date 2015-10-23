@@ -12,13 +12,10 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
 
   outer =>
 
-  import outer.global._
-
   def mergeParameterLists(mergePositions: List[Int])(pro: FileSet) = new TestRefactoringImpl(pro) {
     val refactoring = new MergeParameterLists with TestProjectIndex
     val changes = performRefactoring(mergePositions)
   }.changes
-
 
   @Test(expected=classOf[RefactoringException])
   def tooSmallMergePosition() = new FileSet {
@@ -83,7 +80,6 @@ class MergeParameterListsTest extends TestHelper with TestRefactoring {
     }
     """
   } applyRefactoring(mergeParameterLists(1::1::2::Nil))
-
 
   @Test
   def mergeAllLists() = new FileSet {

@@ -7,7 +7,6 @@ package implementations
 
 import common.Change
 import tools.nsc.symtab.Flags
-import transformation.TreeFactory
 import scala.tools.refactoring.analysis.GlobalIndexes
 
 abstract class ExpandCaseClassBinding extends MultiStageRefactoring with ParameterlessRefactoring with GlobalIndexes {

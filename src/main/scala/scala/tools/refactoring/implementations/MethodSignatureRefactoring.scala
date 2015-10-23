@@ -135,7 +135,7 @@ abstract class MethodSignatureRefactoring extends MultiStageRefactoring with com
     case _ => 0
   }
 
-  def traverseApply(t: => Transformation[X, X]) = topdown(t)
+  def traverseApply(t: => Transformation[Tree, Tree]) = topdown(t)
 
   def prepareParamsForSingleRefactoring(originalParams: RefactoringParameters, selectedMethod: DefDef, toRefactor: DefInfo): RefactoringParameters = originalParams
 

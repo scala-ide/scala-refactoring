@@ -43,7 +43,7 @@ trait LayoutHelper {
 
     (leadingLayoutFromParent, trailingLayoutFromParent)
 
-  } getOrElse (NoLayout, NoLayout)
+  } getOrElse ((NoLayout, NoLayout))
 
   def leadingLayoutForTree(t: Tree): Layout = {
     findOriginalTree(t) map { t =>
@@ -310,25 +310,25 @@ trait LayoutHelper {
       def layoutDoesNotIncludeAnnotation = !layout.contains("@")
 
       (layout match {
-        case Else(l, r)             => Some(l, r, "else")
-        case Match(l, r)            => Some(l, r, "match")
-        case StartComment(l, r)     => Some(l, r, "StartComment")
-        case Class(l, r)            => Some(l, r, "Class")
-        case Colon(l, r)            => Some(l, r, "Colon")
-        case EmptyParens(l, r)      => Some(l, r, "EmptyParens")
-        case OpeningBrace(l, r)     => Some(l, r, "OpeningBrace")
-        case Arrow(l, r)            => Some(l, r, "`=>`")
-        case ClosingBrace(l, r) if layoutDoesNotIncludeAnnotation => Some(l, r, "ClosingBrace")
-        case Equals(l, r)       if layoutDoesNotIncludeAnnotation => Some(l, r, "Equals")
-        case ImportStatementNewline(l, r) => Some(l, r, "ImportStatement Newline")
-        case ImportStatement(l, r)  => Some(l, r, "ImportStatement")
-        case ClosingCurlyBrace(l, r)=> Some(l, r, "ClosingCurlyBrace")
-        case NewLine(l, r)          => Some(l, r, "NewLine")
-        case CommaSpace(l, r)       => Some(l, r, "CommaSpace")
-        case Comma(l, r)                => Some(l, r, "Comma")
-        case Dot(l, r)                  => Some(l, r, "Dot")
-        case OpeningSquareBracket(l, r) => Some(l, r, "OpeningSquareBracket")
-        case s                          => Some(s, "", "NoMatch")
+        case Else(l, r)             => Some((l, r, "else"))
+        case Match(l, r)            => Some((l, r, "match"))
+        case StartComment(l, r)     => Some((l, r, "StartComment"))
+        case Class(l, r)            => Some((l, r, "Class"))
+        case Colon(l, r)            => Some((l, r, "Colon"))
+        case EmptyParens(l, r)      => Some((l, r, "EmptyParens"))
+        case OpeningBrace(l, r)     => Some((l, r, "OpeningBrace"))
+        case Arrow(l, r)            => Some((l, r, "`=>`"))
+        case ClosingBrace(l, r) if layoutDoesNotIncludeAnnotation => Some((l, r, "ClosingBrace"))
+        case Equals(l, r)       if layoutDoesNotIncludeAnnotation => Some((l, r, "Equals"))
+        case ImportStatementNewline(l, r) => Some((l, r, "ImportStatement Newline"))
+        case ImportStatement(l, r)  => Some((l, r, "ImportStatement"))
+        case ClosingCurlyBrace(l, r)=> Some((l, r, "ClosingCurlyBrace"))
+        case NewLine(l, r)          => Some((l, r, "NewLine"))
+        case CommaSpace(l, r)       => Some((l, r, "CommaSpace"))
+        case Comma(l, r)                => Some((l, r, "Comma"))
+        case Dot(l, r)                  => Some((l, r, "Dot"))
+        case OpeningSquareBracket(l, r) => Some((l, r, "OpeningSquareBracket"))
+        case s                          => Some((s, "", "NoMatch"))
       }).get
     }
 

@@ -10,28 +10,27 @@ import scala.reflect.internal.util.OffsetPosition
  */
 trait Occurrences extends Selections with CompilerAccess with Indexes {
   import global._
-  
+
   type Occurrence = (Int, Int)
 
   private def termNameDefinition(root: Tree, name: String) = {
     root.collect {
-      case t: DefTree if t.name.decode == name => 
-        val pos = t.pos
+      case t: DefTree if t.name.decode == name =>
         t
     }.headOption
   }
-  
+
   private def defToOccurrence(t: DefTree) = t.namePosition() match {
-    case p: RangePosition => 
+    case p: RangePosition =>
       (p.start, p.end - p.start)
-    case p: OffsetPosition => 
+    case p: OffsetPosition =>
       (p.point, t.name.decode.length)
   }
-  
+
   private def refToOccurrence(t: RefTree) = t.pos match {
-    case p: RangePosition => 
+    case p: RangePosition =>
       (p.start, p.end - p.start)
-    case p: OffsetPosition => 
+    case p: OffsetPosition =>
       (p.point, t.symbol.name.decode.length)
   }
 
@@ -48,7 +47,7 @@ trait Occurrences extends Selections with CompilerAccess with Indexes {
   /**
    * Searches for a definition of `name` in `root` and returns is's position
    * and all positions of references to the definition.
-   * Returns an empty list if the definition of `name` is not in `selection`. 
+   * Returns an empty list if the definition of `name` is not in `selection`.
    */
   def termNameOccurrences(root: Tree, name: String): List[Occurrence] = {
     termNameDefinition(root, name) match {

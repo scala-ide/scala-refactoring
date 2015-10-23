@@ -16,7 +16,7 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
   var index: IndexLookup = null
 
   @Test
-  def validIdentifiers() {
+  def validIdentifiers(): Unit = {
     assertTrue(isValidIdentifier("x"))
     assertTrue(isValidIdentifier("Object"))
     assertTrue(isValidIdentifier("maxIndex"))
@@ -32,7 +32,7 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
   }
 
   @Test
-  def invalidIdentifiers() {
+  def invalidIdentifiers(): Unit = {
     assertFalse(isValidIdentifier("a b"))
     assertFalse(isValidIdentifier("-abcde-"))
     assertFalse(isValidIdentifier("def"))
@@ -58,14 +58,14 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
   }
 
   @Test
-  def localNameCollision() {
+  def localNameCollision(): Unit = {
     val tree = treeFrom("""
     class A {
-      def method1 {
+      def method1: Unit = {
         val a = 5
         val b = 5
       }
-      def method2 {
+      def method2: Unit = {
         val x = 5
       }
     }
@@ -87,26 +87,26 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
   }
 
   @Test
-  def methodNameCollision() {
+  def methodNameCollision(): Unit = {
     val tree = treeFrom("""
     class A {
-      def method1 {
+      def method1: Unit = {
       }
-      def method2 {
+      def method2: Unit = {
       }
     }
 
     class B extends A {
-      def method3 {
+      def method3: Unit = {
       }
     }
 
     class C {
-      def method1 {
+      def method1: Unit = {
       }
-      def method2 {
+      def method2: Unit = {
       }
-      def method4 {
+      def method4: Unit = {
       }
     }
 
@@ -127,7 +127,7 @@ class NameValidationTest extends TestHelper with NameValidation with GlobalIndex
   }
 
   @Test
-  def collisionInPackage() {
+  def collisionInPackage(): Unit = {
     val tree = treeFrom("""
     package justapackage1
 

@@ -4,3 +4,4 @@ bin
 .cache-tests
 .settings
 .attach_pid*
+**/*.tmpBin

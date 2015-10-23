@@ -2,7 +2,6 @@ package scala.tools.refactoring
 package implementations
 
 import scala.tools.refactoring.common.Change
-import transformation.TreeFactory
 
 /**
  * Generates an apply-method in the companion object that matches the primary
@@ -40,9 +39,6 @@ abstract class MoveConstructorToCompanionObject extends MultiStageRefactoring wi
 
     val addConstructorToCompanionObject = transform {
       case m @ ModuleDef(mods, name, t @ Template(parents, self, body)) => {
-        val params = constructor.vparamss.map(_ map (p => p.symbol))
-        val select: Tree = Select(New(Ident(name)), constructor.name)
-        val constructorCall = constructor.vparamss.foldLeft(select)((fun, args) => Apply(fun, args map (p => Ident(p.name))))
         val newBody = makeApply(prep.name.toTermName, constructor) :: body
         ModuleDef(mods, name, Template(parents, self, newBody) replaces t) replaces m
       }

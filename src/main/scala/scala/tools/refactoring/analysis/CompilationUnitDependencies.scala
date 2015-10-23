@@ -381,7 +381,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         }
       }
 
-      override def handleAnnotations(as: List[AnnotationInfo]) {
+      override def handleAnnotations(as: List[AnnotationInfo]): Unit = {
         val recusing = annotationTree.isDefined
 
         if (!recusing) {

@@ -20,7 +20,7 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
   override val global = (new CompilerInstance).compiler
 
   @After
-  def shutdownCompiler() {
+  def shutdownCompiler(): Unit = {
     global.askShutdown
   }
 
@@ -240,12 +240,12 @@ class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  } applyRefactoring (generateHashcodeAndEquals(false, (name: String) =>
+  } applyRefactoring (generateHashcodeAndEquals((false, (name: String) =>
       name match {
         case "p2"|"p3" => true
         case _ => false
       }
-  , false))
+  , false)))
 
   @Test
   def callSuper() = new FileSet {

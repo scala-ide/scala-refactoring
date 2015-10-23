@@ -56,7 +56,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtract
     class A {
-      def extractFrom {
+      def extractFrom: Unit = {
 /*(*/   println("hello")/*)*/
         ()
       }
@@ -65,7 +65,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtract
     class A {
-      def extractFrom {
+      def extractFrom: Unit = {
         myOwnPrint
         ()
       }
@@ -82,7 +82,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package ignoreOtherClass
     class A {
-      def extractFrom {
+      def extractFrom: Unit = {
 /*(*/   println("hello")/*)*/
         ()
       }
@@ -94,7 +94,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package ignoreOtherClass
     class A {
-      def extractFrom {
+      def extractFrom: Unit = {
         prntln
         ()
       }
@@ -114,7 +114,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractOneParameter
     class A {
-      def extractFrom {
+      def extractFrom: Unit = {
         val a = 1
 /*(*/   println(a)  /*)*/
         ()
@@ -124,7 +124,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractOneParameter
     class A {
-      def extractFrom {
+      def extractFrom: Unit = {
         val a = 1
         prntln(a)
         ()
@@ -142,7 +142,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       """
       object ExtractMethod3 {
 
-        def main(args: Array[String]) {
+        def main(args: Array[String]): Unit = {
 
           val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
 
@@ -156,7 +156,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       """ becomes """
       object ExtractMethod3 {
 
-        def main(args: Array[String]) {
+        def main(args: Array[String]): Unit = {
 
           val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
 
@@ -179,7 +179,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractSeveralParameters
     class A {
-      def extractFrom(d: Int) {
+      def extractFrom(d: Int): Unit = {
         val a = 1
         val b = 1
         val c = 1
@@ -191,7 +191,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractSeveralParameters
     class A {
-      def extractFrom(d: Int) {
+      def extractFrom(d: Int): Unit = {
         val a = 1
         val b = 1
         val c = 1
@@ -211,7 +211,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractReturn
     class A {
-      def extractFrom() {
+      def extractFrom(): Unit = {
 /*(*/   val a = 1  /*)*/
         a
       }
@@ -220,7 +220,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractReturn
     class A {
-      def extractFrom() {
+      def extractFrom(): Unit = {
         val a = prntln
         a
       }
@@ -238,7 +238,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractMultipleReturns
     class A {
-      def extractFrom() {
+      def extractFrom(): Unit = {
 /*(*/   val a = 1
         val b = 1  /*)*/
         a + b
@@ -248,7 +248,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractMultipleReturns
     class A {
-      def extractFrom() {
+      def extractFrom(): Unit = {
         val (a, b) = prntln
         a + b
       }
@@ -267,7 +267,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractParametersAndReturns
     class A {
-      def extractFrom() {
+      def extractFrom(): Unit = {
         val a = 1
         val b = 1
         val c = 1
@@ -280,7 +280,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
     package simpleExtractParametersAndReturns
     class A {
-      def extractFrom() {
+      def extractFrom(): Unit = {
         val a = 1
         val b = 1
         val c = 1
@@ -382,7 +382,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
     """
 object ExtractMethod3 {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val start =  0
     /*(*/val end   = 10
     val sum = start to end reduceLeft ((x, y) => x + y)/*)*/
@@ -393,7 +393,7 @@ object ExtractMethod3 {
     """
 object ExtractMethod3 {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val start =  0
     val (end, sum) = test(start)
     println("The sum from %d to %d is %d".format(start, end, sum))
@@ -413,7 +413,7 @@ object ExtractMethod3 {
     """
 object ExtractMethod3 {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val start =  0
     /*(*/val end   = 10
     val sum = start to end reduceLeft (_ + _)/*)*/
@@ -424,7 +424,7 @@ object ExtractMethod3 {
     """
 object ExtractMethod3 {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val start =  0
     val (end, sum) = test(start)
     println("The sum from %d to %d is %d".format(start, end, sum))
@@ -446,7 +446,7 @@ object ExtractMethod3 {
 
   def add(x: Int, y: Int) = x + y
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     /*(*/val sum = 0 to 10 reduceLeft add/*)*/
     println("The sum is %d".format(sum))
   }
@@ -457,7 +457,7 @@ object ExtractMethod3 {
 
   def add(x: Int, y: Int) = x + y
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
     val sum = test
     println("The sum is %d".format(sum))
   }
@@ -602,7 +602,7 @@ object ExtractMethod3 {
     """
           package extractCheckForFalse
       trait Check {
-        def whatIsIt(check: Boolean) {
+        def whatIsIt(check: Boolean): Unit = {
           if (/*(*/check == false/*)*/ /*hi*/)
             println("It's false")
           else
@@ -613,7 +613,7 @@ object ExtractMethod3 {
     """
           package extractCheckForFalse
       trait Check {
-        def whatIsIt(check: Boolean) {
+        def whatIsIt(check: Boolean): Unit = {
           if (isFalse(check))
             println("It's false")
           else
@@ -663,7 +663,7 @@ object ExtractMethod3 {
     """
     package extractAllAtOnce
     object C {
-      def calculate {
+      def calculate: Unit = {
         val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
         val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
         val values = 1 to 10 toList
@@ -677,7 +677,7 @@ object ExtractMethod3 {
   """
     package extractAllAtOnce
     object C {
-      def calculate {
+      def calculate: Unit = {
         val sumList: Seq[Int] => Int = _ reduceLeft (_+_)
         val prodList: Seq[Int] => Int = _ reduceLeft (_*_)
         val values = 1 to 10 toList
@@ -700,28 +700,28 @@ object ExtractMethod3 {
     """
     package extractLarger
     object C {
-      def whatIsIt(check: Boolean) {
+      def whatIsIt(check: Boolean): Unit = {
         if (/*(*/check == false/*)*/ /*hi*/)
           println("It's false")
         else
           println("It's true")
       }
 
-      def unrelated1 {
+      def unrelated1: Unit = {
         println("unrelated1")
       }
 
-      def unrelated2 {
+      def unrelated2: Unit = {
         println("unrelated2")
       }
 
-      def unrelated3 {
+      def unrelated3: Unit = {
         println("unrelated3")
       }
     }
 
     object c2 {
-      def blabla {
+      def blabla: Unit = {
         println("blabla")
       }
     }
@@ -729,7 +729,7 @@ object ExtractMethod3 {
   """
     package extractLarger
     object C {
-      def whatIsIt(check: Boolean) {
+      def whatIsIt(check: Boolean): Unit = {
         if (isFalse(check))
           println("It's false")
         else
@@ -740,21 +740,21 @@ object ExtractMethod3 {
         /*(*/check == false/*)*/ /*hi*/
       }
 
-      def unrelated1 {
+      def unrelated1: Unit = {
         println("unrelated1")
       }
 
-      def unrelated2 {
+      def unrelated2: Unit = {
         println("unrelated2")
       }
 
-      def unrelated3 {
+      def unrelated3: Unit = {
         println("unrelated3")
       }
     }
 
     object c2 {
-      def blabla {
+      def blabla: Unit = {
         println("blabla")
       }
     }
@@ -765,7 +765,7 @@ object ExtractMethod3 {
   def singleIfInMethod() = new FileSet {
     """
 object ExtractMethod2 {
-  def method {
+  def method: Unit = {
     if(true) {
       /*(*/println("true")/*)*/
     }
@@ -774,7 +774,7 @@ object ExtractMethod2 {
     """ becomes
     """
 object ExtractMethod2 {
-  def method {
+  def method: Unit = {
     if(true) {
       /*(*/certainlyTrue/*)*/
     }
@@ -791,7 +791,7 @@ object ExtractMethod2 {
   def localFunctionAsParameter() = new FileSet {
     """
 object ExtractWithLocalFunction {
-  def method {
+  def method: Unit = {
     def add1(x: Int) = x + 1
     val i = 1
     /*(*/add1(i)/*)*/
@@ -801,7 +801,7 @@ object ExtractWithLocalFunction {
     """ becomes
     """
 object ExtractWithLocalFunction {
-  def method {
+  def method: Unit = {
     def add1(x: Int) = x + 1
     val i = 1
     call(add1, i)
@@ -819,7 +819,7 @@ object ExtractWithLocalFunction {
   def localFunctionAsParameter2() = new FileSet {
     """
 object ExtractWithLocalFunction2 {
-  def method {
+  def method: Unit = {
     def add(x: Int, y: Int) = x + y
     val i = 1
     val j = 1
@@ -830,7 +830,7 @@ object ExtractWithLocalFunction2 {
     """ becomes
     """
 object ExtractWithLocalFunction2 {
-  def method {
+  def method: Unit = {
     def add(x: Int, y: Int) = x + y
     val i = 1
     val j = 1
@@ -849,7 +849,7 @@ object ExtractWithLocalFunction2 {
   def localFunctionAsParameter3() = new FileSet {
     """
 object ExtractWithLocalFunction3 {
-  def method {
+  def method: Unit = {
     def one() = 1
     /*(*/one/*)*/
     ()
@@ -858,7 +858,7 @@ object ExtractWithLocalFunction3 {
     """ becomes
     """
 object ExtractWithLocalFunction3 {
-  def method {
+  def method: Unit = {
     def one() = 1
     call(one)
     ()
@@ -875,7 +875,7 @@ object ExtractWithLocalFunction3 {
   def bug18() = new FileSet {
     """
 object Bar {
-  def foo {
+  def foo: Unit = {
     val bubu = "abc"
     bubu.format()
     /*(*/ 10 * 4 - 1 /*)*/
@@ -884,7 +884,7 @@ object Bar {
 """ becomes
     """
 object Bar {
-  def foo {
+  def foo: Unit = {
     val bubu = "abc"
     bubu.format()
     calc
@@ -902,7 +902,7 @@ object Bar {
     """
 package simpleExtract
 class A {
-  def extractFrom {
+  def extractFrom: Unit = {
   for (i <- 0 to 100) yield {
       /*(*/val j = i * 2;
       j/*)*/
@@ -913,7 +913,7 @@ class A {
     """
 package simpleExtract
 class A {
-  def extractFrom {
+  def extractFrom: Unit = {
   for (i <- 0 to 100) yield {
     call(i)
   }
@@ -932,7 +932,7 @@ class A {
     """
 package simpleExtract
 class PathSeparator {
-  def main() {
+  def main(): Unit = {
 
     /*(*/5 -> 10/*)*/
 
@@ -947,7 +947,7 @@ class PathSeparator {
     """
 package simpleExtract
 class PathSeparator {
-  def main() {
+  def main(): Unit = {
     mkTuple
 
     import java.io.{ File => F }
@@ -969,7 +969,7 @@ class PathSeparator {
     """
 package simpleExtract
 class PathSeparator {
-  def main() {
+  def main(): Unit = {
     val (x, y) = {
       /*(*/println("hello")/*)*/
       (1,2)
@@ -980,7 +980,7 @@ class PathSeparator {
     """
 package simpleExtract
 class PathSeparator {
-  def main() {
+  def main(): Unit = {
     val (x, y) = {
       sayHello
       (1,2)
@@ -998,9 +998,9 @@ class PathSeparator {
   def extractFromWithinAnonymousClass() = new FileSet {
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         val o= new Object {
-          def f() {
+          def f(): Unit = {
             val i= /*(*/1 + 2/*)*/
           }
         }
@@ -1009,9 +1009,9 @@ class PathSeparator {
     """ becomes
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         val o= new Object {
-          def f() {
+          def f(): Unit = {
             val i= three/*)*/
           }
 
@@ -1028,14 +1028,14 @@ class PathSeparator {
   def extractFromWithinForExpr() = new FileSet {
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         println(for (i <- /*(*/ List(1,2) /*)*/ ) yield i)
       }
     }
     """ becomes
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         println(for (i <- /*(*/ lst) yield i)
       }
 
@@ -1050,14 +1050,14 @@ class PathSeparator {
   def extractFromWithinForExprFilter() = new FileSet {
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         println(for (i <- List(1,2) if /*(*/ i == 2 /*)*/ ) yield i)
       }
     }
     """ becomes
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         println(for (i <- List(1,2) if test(i)) yield i)
       }
 
@@ -1072,14 +1072,14 @@ class PathSeparator {
   def extractFromWithinForExprBody() = new FileSet {
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         println(for (i <- List(1,2)) yield /*(*/ i + 2 /*)*/ )
       }
     }
     """ becomes
     """
     class ExtractFromAnonClass {
-      def method {
+      def method: Unit = {
         println(for (i <- List(1,2)) yield addTwo(i) /*)*/ )
       }
 

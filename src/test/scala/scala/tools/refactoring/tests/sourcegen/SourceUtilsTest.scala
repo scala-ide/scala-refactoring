@@ -6,7 +6,7 @@ import org.junit.Test
 
 class SourceUtilsTest {
   @Test
-  def testStripCommentWithExampleFromTicket1002166() {
+  def testStripCommentWithExampleFromTicket1002166(): Unit = {
     val source = """
       object Class {
         ("//")
@@ -18,13 +18,13 @@ class SourceUtilsTest {
   }
 
   @Test
-  def testStripCommentWithMinimalExampleFromTicket1002166() {
+  def testStripCommentWithMinimalExampleFromTicket1002166(): Unit = {
     val source = """("\\")"""
     assertEquals(source, SourceUtils.stripComment(source))
   }
 
   @Test
-  def testSplitCommentWithSimpleExamples() {
+  def testSplitCommentWithSimpleExamples(): Unit = {
     testSplitComment("", "", "")
     testSplitComment("//", "  ",  "//")
     testSplitComment("""/**/""", "    ", "/**/")
@@ -33,7 +33,7 @@ class SourceUtilsTest {
   }
 
   @Test
-  def testSplitCommentWithMultilineExamples() {
+  def testSplitCommentWithMultilineExamples(): Unit = {
     val tripleQuote = "\"\"\""
 
     /*

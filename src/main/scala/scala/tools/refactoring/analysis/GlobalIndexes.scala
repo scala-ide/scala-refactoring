@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package analysis
 
-import common.PimpedTrees
 import collection.mutable.ListBuffer
 import collection.mutable.HashSet
 import annotation.tailrec
@@ -131,7 +130,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
 
     def positionToSymbol(p: global.Position): List[global.Symbol] = {
 
-      val hasTreeWithPos: Pair[global.Symbol, List[global.Tree]] => List[global.Symbol] = {
+      val hasTreeWithPos: ((global.Symbol, List[global.Tree])) => List[global.Symbol] = {
         case (sym, trees) if trees.exists(_.pos == p) =>
             List(sym)
         case _ =>

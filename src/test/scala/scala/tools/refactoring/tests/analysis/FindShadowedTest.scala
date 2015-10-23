@@ -7,7 +7,6 @@ package tests.analysis
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import analysis._
 
 class FindShadowedTest extends TestHelper {
 
@@ -15,7 +14,7 @@ class FindShadowedTest extends TestHelper {
 
   @Ignore
   @Test
-  def findSimpleShadowing() {
+  def findSimpleShadowing(): Unit = {
 
     val t = treeFrom("""
     package shadowing
@@ -23,7 +22,7 @@ class FindShadowedTest extends TestHelper {
     object TheShadow {
       val i = 1
 
-      def method {
+      def method: Unit = {
         val i = ""
         ()
       }
@@ -31,7 +30,7 @@ class FindShadowedTest extends TestHelper {
 
     class Xyz(xyzxyz: Long) {
 
-      def method {
+      def method: Unit = {
         val xyzxyz = ""
         val i = xyzxyz
         ()
@@ -72,4 +71,3 @@ class FindShadowedTest extends TestHelper {
     assertEquals(3, results.size)
   }
 }
-

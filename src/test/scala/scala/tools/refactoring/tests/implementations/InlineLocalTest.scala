@@ -8,7 +8,6 @@ package tests.implementations
 import implementations.InlineLocal
 import tests.util.TestRefactoring
 import tests.util.TestHelper
-import org.junit.Assert._
 
 import language.reflectiveCalls
 
@@ -25,7 +24,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           println("Update..")
           /*(*/val isMacOs = platform.toUpperCase.indexOf("MAC") > -1/*)*/
           if(isMacOs) {
@@ -37,7 +36,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           println("Update..")
           if(platform.toUpperCase.indexOf("MAC") > -1) {
             println("We're on a Mac!")
@@ -52,7 +51,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
   object ExtractLocal1 {
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
       args toList match {
         case x :: Nil =>
@@ -66,7 +65,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
   object ExtractLocal1 {
 
-    def main(args: Array[String]) {
+    def main(args: Array[String]): Unit = {
 
       args toList match {
         case x :: Nil =>
@@ -83,7 +82,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printVolume(r: Double, h: Double) {
+        def printVolume(r: Double, h: Double): Unit = {
            /*(*/val gr = 3.14 * r * r/*)*/
 
           val v = gr * h
@@ -95,7 +94,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printVolume(r: Double, h: Double) {
+        def printVolume(r: Double, h: Double): Unit = {
 
           val v = 3.14 * r * r * h
 
@@ -110,7 +109,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printSum(l: List[Int]) {
+        def printSum(l: List[Int]): Unit = {
 
           println("Printing the sum..")
 
@@ -128,7 +127,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printSum(l: List[Int]) {
+        def printSum(l: List[Int]): Unit = {
 
           println("Printing the sum..")
 
@@ -148,7 +147,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineValRhs() = new FileSet {
     """
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           /*(*/val plt = platform/*)*/
           val s = plt
           val t = plt
@@ -159,7 +158,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           val s = platform
           val t = platform
           val u = platform
@@ -173,7 +172,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineFilter() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val list = (1 to 10) toList
 
      /*(*/val largerThree = list filter (_ > 3)/*)*/
@@ -183,7 +182,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val list = (1 to 10) toList
           list filter (_ > 3) filter (_ < 6)
         }
@@ -195,7 +194,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineFilterFunction() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val list = (1 to 10) toList
 
      /*(*/val largerThree = list filter _/*)*/
@@ -205,7 +204,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val list = (1 to 10) toList
           list filter  (_ > 3)
         }
@@ -217,7 +216,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlinePartOfACondition() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val someValue = true
           /*(*/val part2 = "aa".matches("\\w+")/*)*/
           if(someValue && part2) {
@@ -228,7 +227,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val someValue = true
           if(someValue && "aa".matches("\\w+")) {
             println("yay")
@@ -241,7 +240,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromCaseWithMultipleStatements() = new FileSet {
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         Nil match {
           case Nil =>
             val a = 5
@@ -252,7 +251,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       }}
     """ becomes
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         Nil match {
           case Nil =>
             val a = 5
@@ -266,7 +265,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromCaseWithSingleStatement() = new FileSet {
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         Nil match {
           case Nil =>
             println("huhu")
@@ -276,7 +275,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       }}
     """ becomes
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         Nil match {
           case Nil =>
             println("huhu")
@@ -289,13 +288,13 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromCaseWithTwoStatements() = new FileSet {
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         /*(*/val six = 5 + 1/*)*/
         six toString
       }}
     """ becomes
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         5 + 1 toString
       }}
     """
@@ -305,7 +304,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inliningNeedsParens() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           /*(*/val five = 5 toString/*)*/;
           println(five)
           five + "a"
@@ -314,7 +313,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           println(5 toString)
           (5 toString) + "a"
         }
@@ -326,7 +325,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inliningNeedsParens2() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           /*(*/val largerThree = List(1) filter (_ > 3)/*)*/;
           println(largerThree.size)
           largerThree.size + "a"
@@ -335,7 +334,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           println((List(1) filter (_ > 3)).size)
           (List(1) filter (_ > 3)).size + "a"
         }
@@ -347,7 +346,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inliningNeedsNoParens() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           /*(*/val largerThree /*)*/= (List(1) filter (_ > 3))
           println(largerThree.size)
           largerThree.size + "a"
@@ -356,7 +355,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           println((List(1) filter (_ > 3)).size)
           (List(1) filter (_ > 3)).size + "a"
         }
@@ -367,7 +366,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromTry() = new FileSet {
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         try {
           val a = List(1,2,3)
            /*(*/val largerThanTwo = a filter (_> 2)/*)*/
@@ -376,7 +375,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       }}
     """ becomes
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         try {
           val a = List(1,2,3)
           a filter (_> 2) mkString ", "
@@ -388,7 +387,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromFunctionWithCurlyBraces() = new FileSet {
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         List(1,2,3) filter { it =>
           /*(*/val isOdd = it + 1 % 2/*)*/
           isOdd == 0
@@ -396,7 +395,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       }}
     """ becomes
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         List(1,2,3) filter { it =>
           /*(*/
           it + 1 % 2 == 0
@@ -408,7 +407,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromValBlock() = new FileSet {
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         val a = {
           val i = 1
           val addTwo = /*(*/i + 2/*)*/
@@ -417,7 +416,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       }}
     """ becomes
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         val a = {
           val i = 1
           /*(*/i + 2
@@ -429,7 +428,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   @Test
   def inlineFromThen() = new FileSet {
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         if(true) {
           /*(*/val ab = "a" + "b"/*)*/
           ab + "c"
@@ -437,7 +436,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
       }}
     """ becomes
     """
-      class Extr2 { def m {
+      class Extr2 { def m: Unit = {
         if(true) {
           "a" + "b" + "c"
         }
@@ -451,7 +450,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
 
     object ExtractLocal1 {
 
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
 
         println("Detecting OS..")
 
@@ -470,7 +469,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
 
     object ExtractLocal1 {
 
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
 
         println("Detecting OS..")
 
@@ -490,7 +489,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineFromSeveralVals() = new FileSet {
     """
     class InlineTest {
-      def m {
+      def m: Unit = {
         val /*(*//*)*/bbb = 42
         val c = List(bbb)
         c
@@ -499,7 +498,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     class InlineTest {
-      def m {
+      def m: Unit = {
         val c = List(42)
         c
       }
@@ -511,7 +510,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineFromVal() = new FileSet {
     """
     class InlineTest {
-      def m {
+      def m: Unit = {
         val bbb = 42
         val c = List(/*(*/bbb/*)*/)
         c
@@ -520,7 +519,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
     class InlineTest {
-      def m {
+      def m: Unit = {
         val c = List(42/*)*/)
         c
       }
@@ -532,7 +531,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def inlineInListConcatenation() = new FileSet {
     """
      class InlineTest {
-       def m {
+       def m: Unit = {
          val /*(*/as/*)*/ = List(1, 2)
          val concatenated = as:::List(3, 4)
        }
@@ -540,7 +539,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
      class InlineTest {
-       def m {
+       def m: Unit = {
          val concatenated = List(1, 2):::List(3, 4)
        }
      }
@@ -551,7 +550,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   def preserveSomeWhitespace() = new FileSet {
     """
 object Test extends App {
-  def f() {
+  def f(): Unit = {
     val x/*<-*/ = 5
     val y = x       + 3
   }
@@ -559,7 +558,7 @@ object Test extends App {
     """ becomes
     """
 object Test extends App {
-  def f() {
+  def f(): Unit = {
     val y = 5 + 3
   }
 }
@@ -570,7 +569,7 @@ object Test extends App {
   def dontStartInlineFromRhs() = new FileSet {
     """
     object Test extends App {
-      def f() {
+      def f(): Unit = {
         val x = 5
         val y = /*(*/2 + 3/*)*/
       }

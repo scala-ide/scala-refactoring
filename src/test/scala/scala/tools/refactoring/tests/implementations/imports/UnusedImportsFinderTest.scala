@@ -11,7 +11,7 @@ import tests.util.TestHelper
 class UnusedImportsFinderTest extends TestHelper {
   outer =>
 
-  def findUnusedImports(expected: String, src: String) {
+  def findUnusedImports(expected: String, src: String): Unit = {
 
    val unuseds = global.ask { () =>
       new UnusedImportsFinder {

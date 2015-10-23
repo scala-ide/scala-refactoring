@@ -79,7 +79,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(2)).assertEqualTree
-  
+
   @Test
   def extractMethodWithoutParametersAndCreateEmptyParameterList() = new FileSet {
     """
@@ -96,7 +96,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(0)).assertEqualSource
-  
+
   @Test
   def extractMethodWithoutParametersAndCreateEmptyParameterList2() = new FileSet {
     """
@@ -120,7 +120,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       object Demo {
         def fn = {
           import scala.math.Pi
-	  	  /*(*/Pi/*)*/
+          /*(*/Pi/*)*/
         }
       }
     """ becomes
@@ -128,17 +128,17 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       object Demo {
         def fn = {
           import scala.math.Pi
-	  	  extracted()
+          extracted()
         }
 
-    	def extracted() = {
-    	  import scala.math.Pi
-    	  Pi
+        def extracted() = {
+          import scala.math.Pi
+          Pi
         }
       }
     """
   }.performRefactoring(extract(1)).assertEqualTree
-  
+
   @Test
   def extractFromNestedClass() = new FileSet {
     """
@@ -146,7 +146,7 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         trait T{
           val a = 1
           /*(*/a/*)*/
-	    }
+        }
       }
     """ becomes
       """
@@ -154,8 +154,8 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
         trait T{
           val a = 1
           extracted(a)
-	    }
-    	def extracted(a: Int) = a
+        }
+        def extracted(a: Int) = a
       }
     """
   }.performRefactoring(extract(1)).assertEqualTree
@@ -186,49 +186,49 @@ class ExtractMethodTest extends TestHelper with TestRefactoring {
       }
     """
   }.performRefactoring(extract(1)).assertEqualSource
-  
+
   @Test(expected=classOf[IndexOutOfBoundsException])
   def extractWithSideEffects() = new FileSet {
     """
       object Demo {
         def fn = {
           var a = 1
-	  	  /*(*/a += 1/*)*/
+          /*(*/a += 1/*)*/
           a
-	    }
+        }
       }
     """ becomes
       """"""
   }.performRefactoring(extract(1)).assertEqualSource
-  
+
   @Test
   def extractFunction() = new FileSet {
     """
       object Demo {
-	  	def fn(a: Int) = {
+        def fn(a: Int) = {
           List(1, 2).map{/*(*/i => i + a/*)*/}
         }
       }
     """ becomes
       """
       object Demo {
-	  	def fn(a: Int) = {
+        def fn(a: Int) = {
           List(1, 2).map{ extracted(a) }
         }
-    	def extracted(a: Int): Int => Int =
-    	  i => i + a
+        def extracted(a: Int): Int => Int =
+          i => i + a
       }
     """
   }.performRefactoring(extract(1)).assertEqualTree
-  
+
   @Test
-  def avoidNameCollisions = new FileSet{
+  def avoidNameCollisions() = new FileSet{
     """
       object Demo {
         def extracted() = 1
         def fn = /*(*/100/*)*/
       }
-    """ becomes 
+    """ becomes
     """
       object Demo {
         def extracted() = 1

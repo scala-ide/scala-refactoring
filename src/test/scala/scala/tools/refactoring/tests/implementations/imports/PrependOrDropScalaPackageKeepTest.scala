@@ -5,9 +5,7 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-import implementations.OrganizeImports
 import tests.util.TestHelper
-import tests.util.TestRefactoring
 
 import language.reflectiveCalls
 
@@ -27,7 +25,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
     import scala.math.BigDecimal._
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -37,7 +35,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
     import math.BigDecimal._
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -51,7 +49,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
     import math.BigDecimal._
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }
@@ -61,7 +59,7 @@ class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
     import scala.math.BigDecimal._
 
     class C {
-      def m() {
+      def m(): Unit = {
         apply("5")
         apply(5l)
       }

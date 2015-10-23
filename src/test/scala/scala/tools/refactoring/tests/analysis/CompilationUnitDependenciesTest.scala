@@ -16,7 +16,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   import global._
 
-  private def assertTrees(expected: String, src: String, javaSrc: String, addScalaSrc: String, f: Tree => Seq[Tree]) {
+  private def assertTrees(expected: String, src: String, javaSrc: String, addScalaSrc: String, f: Tree => Seq[Tree]): Unit = {
     if (!javaSrc.isEmpty) parseJava(javaSrc)
     if (!addScalaSrc.isEmpty) parseScalaAndVerify(addScalaSrc)
     val tree = parseScalaAndVerify(src)
@@ -95,7 +95,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       import scala.math.BigDecimal._
 
       class C {
-        def m() {
+        def m(): Unit = {
           apply("5")
           apply(5l)
         }
@@ -254,7 +254,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
 
       object CLocalImport {
-        def m(x: A) {
+        def m(x: A): Unit = {
           import x._
           println(B.y)
         }
@@ -272,7 +272,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       }
 
       object ClocalImportNotNeeded {
-        def m(x: A) {
+        def m(x: A): Unit = {
           import x._
           println(B.y)
         }
@@ -523,7 +523,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.util._
       trait Y {
-        def build(ignored: Map[_, _])
+        def build(ignored: Map[_, _]): Unit
       }
       """)
 
@@ -533,7 +533,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.util._
       trait Y {
-        def build(ignored: Map[_, _])
+        def build(ignored: Map[_, _]): Unit
       }
       """)
 
@@ -543,7 +543,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.{ lang => jl, util => ju }
       trait Y {
-        def build(ignored : ju.Map[_, _])
+        def build(ignored : ju.Map[_, _]): Unit
       }
       """)
 
@@ -553,7 +553,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """
       import java.{ lang => jl, util => ju }
       trait Y {
-        def build(ignored : ju.Map[_, _])
+        def build(ignored : ju.Map[_, _]): Unit
       }
       """)
 
@@ -645,7 +645,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
-  def importedImplicitArgument() {
+  def importedImplicitArgument(): Unit = {
 
     addToCompiler("xy.scala", """
       package impl.args
@@ -678,7 +678,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   /*
    * Note:
-   * 	Previous versions of this test expected the dependency `Param.global.X`.
+   *  Previous versions of this test expected the dependency `Param.global.X`.
    *  This is wrong however, as X is satisfied by local imports, that work
    *  as long as `Param` is in scope.
    */
@@ -690,7 +690,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         object global { trait X }
       }
       trait SomeTrait {
-        def method(param: Param) {
+        def method(param: Param): Unit = {
           import param._
           import global._
           var x: X = null
@@ -706,7 +706,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         object global { trait X }
       }
       trait SomeTrait {
-        def method(param: Param) {
+        def method(param: Param): Unit = {
           import param._
           import global._
           var x: X = null
@@ -849,7 +849,6 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       class Foo @Documented() (i: Int)
     """)
 
-
   @Test
   def annotationOnField() = assertDependencies(
     "java.lang.annotation.Documented",
@@ -873,7 +872,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     }""")
 
   @Test
-  def importLocallyDefniedClassNotNeeded = assertNeededImports(
+  def importLocallyDefniedClassNotNeeded() = assertNeededImports(
     "",
     """package test {
           class MyType
@@ -883,7 +882,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithSimpleJavaAnnotation = assertNeededImports(
+  def testWithSimpleJavaAnnotation() = assertNeededImports(
     "test.Foo",
     """import test._
 
@@ -900,7 +899,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithSimpleJavaAnnotationAndLocalClass = assertNeededImports(
+  def testWithSimpleJavaAnnotationAndLocalClass() = assertNeededImports(
     "",
     """package test
 
@@ -915,7 +914,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithSimpleJavaAnnotationOnDef = assertNeededImports(
+  def testWithSimpleJavaAnnotationOnDef() = assertNeededImports(
     "test.Foo",
     """import test._
 
@@ -934,7 +933,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithSimpleJavaAnnotationOnParam = assertNeededImports(
+  def testWithSimpleJavaAnnotationOnParam() = assertNeededImports(
     "test.Foo",
     """import test._
 
@@ -952,7 +951,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithSimpleJavaAnnotationOnCtor = assertNeededImports(
+  def testWithSimpleJavaAnnotationOnCtor() = assertNeededImports(
     "test.Foo",
     """import test._
 
@@ -968,7 +967,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithSimpleJavaAnnotationLocalClassAndMultiplePackages = assertNeededImports(
+  def testWithSimpleJavaAnnotationLocalClassAndMultiplePackages() = assertNeededImports(
     "",
     """package test1 {
 
@@ -987,7 +986,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithMoreComplexJavaAnnotation = assertNeededImports(
+  def testWithMoreComplexJavaAnnotation() = assertNeededImports(
     """test1.Bar
        test1.Foo""",
     """package test1 {
@@ -1022,7 +1021,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @ScalaVersion(matches="2.11")
   @Test
-  def testWithMoreComplexJavaAnnotation_minify = assertNeededImports(
+  def testWithMoreComplexJavaAnnotation_minify() = assertNeededImports(
     """test1.Bar
        test1.Foo""",
     """package test1 {
@@ -1049,7 +1048,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
    */
   @Ignore
   @Test
-  def testWithSimpleJavaAnnotationAndIntConstant = assertNeededImports(
+  def testWithSimpleJavaAnnotationAndIntConstant() = assertNeededImports(
     "test.Constants",
     """import test._
 
@@ -1067,7 +1066,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
        }""")
 
    @Test
-   def testWithFullyQualifiedLocallyDefiniedType = assertNeededImports(
+   def testWithFullyQualifiedLocallyDefiniedType() = assertNeededImports(
      "",
      """package test {
           class LocallyDefined
@@ -1075,7 +1074,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         class Test extends test.LocallyDefined""")
 
    @Test
-   def testWithTailrecAnnotationImportNeeded = assertNeededImports(
+   def testWithTailrecAnnotationImportNeeded() = assertNeededImports(
      "scala.annotation.tailrec",
      """import scala.annotation.tailrec
 
@@ -1086,7 +1085,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
      """)
 
    @Test
-   def testWithTailrecAnnotationImportNotNeeded = assertNeededImports(
+   def testWithTailrecAnnotationImportNotNeeded() = assertNeededImports(
      "",
      """import scala.annotation.tailrec
 
@@ -1096,9 +1095,8 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         }
      """)
 
-
   @Test
-  def testWithCaseObjects = assertNeededImports(
+  def testWithCaseObjects() = assertNeededImports(
     """test.Hund
        test.Ottokar
        test.Waldemar""",
@@ -1118,12 +1116,11 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
         }
       }""")
 
-
   /*
    * See Assembla ticket #1002402
    */
   @Test
-  def testWithTypeOnLazyVal = assertNeededImports(
+  def testWithTypeOnLazyVal() = assertNeededImports(
     "java.util.UUID",
     """import java.util.UUID
 
@@ -1138,7 +1135,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
        }""")
 
   @Test
-  def testWithLocalTypeThatNeedsNoImportOnLazyVal = assertNeededImports(
+  def testWithLocalTypeThatNeedsNoImportOnLazyVal() = assertNeededImports(
     "",
     """package test {
          class LazyType
@@ -1149,7 +1146,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
        }""")
 
   @Test
-  def testWithLocalTypeOnLazyVal = assertNeededImports(
+  def testWithLocalTypeOnLazyVal() = assertNeededImports(
     """test.DarkMagic
        test.Magic""",
     """import test._
@@ -1165,7 +1162,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     "")
 
   @Test
-  def testWithoutTypeOnLazyVal = assertNeededImports(
+  def testWithoutTypeOnLazyVal() = assertNeededImports(
     "",
     """import java.util.UUID
 
@@ -1183,7 +1180,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     * This test is related to Assembla ticket #1002511
     */
    @Test
-   def testWithImportInObject = assertDependencies(
+   def testWithImportInObject() = assertDependencies(
        "p1.O",
        src = """
          package p1
@@ -1201,12 +1198,11 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
          }
        """)
 
-
    /*
     * This test is related to Assembla ticket #1002511
     */
    @Test
-   def testWithScopedImports = assertDependencies(
+   def testWithScopedImports() = assertDependencies(
        "p1.O",
        src = """
          package p1
@@ -1236,7 +1232,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
    /*
     * This test is related to Assembla ticket #1002511
     */
-   def testWithMoreComplexScopedImports = assertDependencies(
+   def testWithMoreComplexScopedImports() = assertDependencies(
        """p1.O
           p1.O.b
           p1.O.OO.b""",
@@ -1276,7 +1272,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     * This test is related to Assembla ticket #1002512
     */
    @Test
-   def testWithScopedImportsOfImplicits = assertDependencies(
+   def testWithScopedImportsOfImplicits() = assertDependencies(
        """p1.O
           p1.X
           p1.Y""",
@@ -1309,7 +1305,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
        """)
 
   @Test
-  def testWithLanguageFeatureImports = assertDependencies(
+  def testWithLanguageFeatureImports() = assertDependencies(
       """java.net.URL
          scala.language.implicitConversions
          scala.language.postfixOps""",

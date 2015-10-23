@@ -95,7 +95,7 @@ trait TreeTraverser {
       select
     }
 
-    def handleAnnotations(as: List[AnnotationInfo]) {
+    def handleAnnotations(as: List[AnnotationInfo]): Unit = {
       as map (_.original) foreach traverse
     }
 

@@ -58,9 +58,9 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     val sel = """
       object O{
         /*(*/
-    	1 + 2
-    	1.toInt.toInt.toInt
-    	/*)*/
+        1 + 2
+        1.toInt.toInt.toInt
+        /*)*/
       }
       """.selection
     assertEquals("", sel.inboundLocalDeps.mkString(", "))
@@ -122,7 +122,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     val sel = """
       object O{
         /*(*/1 match{
-    	  case _ => ()
+          case _ => ()
         }/*)*/
       }
       """.selection
@@ -134,9 +134,9 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     val sel = """
       object O{
         import scala.math.Pi
-    	import scala.collection.mutable
+        import scala.collection.mutable
 
-    	/*(*/(Pi, new mutable.LinkedList)/*)*/
+        /*(*/(Pi, new mutable.LinkedList)/*)*/
       }
       """.selection
     assertEquals("", sel.inboundLocalDeps.mkString(", "))
@@ -161,7 +161,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     val sel = """
       object O{
         def fn(c: Int) = {
-    	  {
+          {
             /*(*/val (a, b) = (1, p)
             val c = a/*)*/
           }
@@ -197,19 +197,18 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     assertEquals("method fm, method fo", sel.outboundLocalDeps.mkString(", "))
   }
 
-  @Test
+  @Test @Ignore("The implementation needs to be fixed in order to pass this test")
   def outboundDepsOfVars() = global.ask { () =>
     val sel = """
       object O{
         def fn = {
           var a = 1
-          {
-            def inner = /*(*/a += 1/*)*/
-          }
-    	  a
+          def inner = /*(*/a += 1/*)*/
+          a
         }
       }
-      """
+      """.selection
+    assertEquals("variable a", sel.outboundLocalDeps.mkString(", "))
   }
 
   @Test
@@ -218,7 +217,7 @@ class SelectionDependenciesTest extends TestHelper with Selections {
       object O{
         def fn = {
           /*(*/import scala.math.Pi/*)*/
-    	  Pi
+          Pi
         }
       }
       """.selection
@@ -230,9 +229,9 @@ class SelectionDependenciesTest extends TestHelper with Selections {
     val sel = """
       object O{
         def fn = {
-    	  var a = 1
+          var a = 1
           /*(*/a += 1/*)*/
-    	  a
+          a
         }
       }
       """.selection

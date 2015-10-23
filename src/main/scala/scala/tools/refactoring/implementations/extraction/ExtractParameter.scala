@@ -1,14 +1,13 @@
 package scala.tools.refactoring.implementations.extraction
 
 import scala.tools.refactoring.analysis.ImportAnalysis
-import scala.tools.refactoring.analysis.Indexes
 
 abstract class ExtractParameter extends ExtractionRefactoring with ParameterExtractions {
   val collector = ParameterExtraction
 }
 
 /**
- * Extracts an expression into a new parameter whose default value is 
+ * Extracts an expression into a new parameter whose default value is
  * the extracted expression.
  */
 trait ParameterExtractions extends Extractions with ImportAnalysis {
@@ -18,14 +17,14 @@ trait ParameterExtractions extends Extractions with ImportAnalysis {
     def isValidExtractionSource(s: Selection) =
       s.representsValue && !s.representsParameter
 
-    override def createInsertionPosition(s: Selection) = 
+    override def createInsertionPosition(s: Selection) =
       atEndOfValueParameterList
 
     def createExtractions(source: Selection, targets: List[ExtractionTarget], name: String) = {
       val validTargets = targets.takeWhile { t =>
         source.inboundLocalDeps.forall(t.scope.sees(_))
       }
-      
+
       validTargets.map(ParameterExtraction(source, _, name))
     }
   }

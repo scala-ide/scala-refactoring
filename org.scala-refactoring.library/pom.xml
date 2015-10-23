@@ -15,24 +15,6 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <version>3.1.6</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <jvmArgs>
-            <jvmArg>-Xms256m</jvmArg>
-            <jvmArg>-Xmx768m</jvmArg>
-          </jvmArgs>
-          <args>
-            <arg>${scalac.options}</arg>
-          </args>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -109,14 +91,6 @@
       </plugin>
     </plugins>
   </build>
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </reporting>
   <profiles>
     <profile>
       <id>release-sign-artifacts</id>

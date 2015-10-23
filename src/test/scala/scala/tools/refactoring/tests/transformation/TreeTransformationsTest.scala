@@ -7,7 +7,6 @@ package tests.transformation
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import common.PimpedTrees
 import language.{ postfixOps, reflectiveCalls }
 import scala.tools.nsc.util.FailedInterrupt
 import scala.tools.refactoring.common.TracingImpl
@@ -127,15 +126,13 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
   @Test(expected = classOf[FailedInterrupt])
   def topdownCanDiverge(): Unit = global.ask { () =>
 
-    var out = List[String]()
-
     val t = transform {
       case t @ Block(stats, expr) => t copy (stats = t :: stats)
     }
 
     val tree = treeFrom("""
     class Class {
-      def block {
+      def block: Unit = {
         println("this is a block")
         println("this is a block")
       }
@@ -148,15 +145,13 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
   @Test
   def bottomUpDoesNotDiverge() = global.ask { () =>
 
-    var out = List[String]()
-
     val t = transform {
       case t @ Block(stats, expr) => t copy (stats = t :: stats)
     }
 
     val tree = treeFrom("""
     class Class {
-      def block {
+      def block: Unit = {
         println("this is a block")
         println("this is a block")
       }
@@ -217,6 +212,7 @@ class TreeTransformationsTest extends TestHelper with TracingImpl {
     try {
       // replacement must not be greater than replaced sequence
       val seq3 = seq.replaceSequencePreservingPositions(seq(2) :: Nil, lit(10) :: lit(11) :: Nil)
+      assertPositions(seq3)
       assertTrue("Expected AssertionError but non thrown", false)
     } catch {
       case e: AssertionError => ()

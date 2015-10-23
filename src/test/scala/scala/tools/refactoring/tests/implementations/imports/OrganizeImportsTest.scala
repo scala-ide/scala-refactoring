@@ -5,9 +5,7 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-import implementations.OrganizeImports
 import tests.util.TestHelper
-import tests.util.TestRefactoring
 import language.reflectiveCalls
 import language.postfixOps
 import scala.collection.mutable.ListBuffer
@@ -44,7 +42,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   }.mkChanges
 
   @Test
-  def testOrganizeOptions() {
+  def testOrganizeOptions(): Unit = {
 
     val src = """
       package tests.importing

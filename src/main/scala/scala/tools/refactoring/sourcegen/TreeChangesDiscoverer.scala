@@ -79,10 +79,10 @@ trait TreeChangesDiscoverer {
         }
       }
 
-      findOriginalTree(newTree) map (oldTree => Pair(oldTree, children(oldTree))) match {
+      findOriginalTree(newTree) map (oldTree => (oldTree, children(oldTree))) match {
         case None =>
           sys.error("should never happen")
-        case Some(Pair(oldTree, oldChildren)) =>
+        case Some((oldTree, oldChildren)) =>
 
           /* Comparing a flat list of children of trees won't let us catch a
            * change in the number of parameter lists in a method definition */

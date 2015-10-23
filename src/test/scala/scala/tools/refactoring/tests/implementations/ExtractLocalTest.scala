@@ -8,7 +8,6 @@ package tests.implementations
 import implementations.ExtractLocal
 import tests.util.TestRefactoring
 import tests.util.TestHelper
-import org.junit.Assert._
 
 import language.reflectiveCalls
 
@@ -27,7 +26,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           val x = new collection.mutable.ListBuffer[String]
      /*(*/x.toList/*)*/ mkString ","
         }
@@ -36,7 +35,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           val x = new collection.mutable.ListBuffer[String]
      /*(*/val asList = x.toList/*)*/ ▒
           asList mkString ","
@@ -50,7 +49,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           println("Update..")
           if(/*(*/platform.toUpperCase.indexOf("MAC") > -1/*)*/) {
             println("We're on a Mac!")
@@ -61,7 +60,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           println("Update..")
           val isMacOs = /*(*/platform.toUpperCase.indexOf("MAC") > -1/*)*/
           if(isMacOs) {
@@ -77,7 +76,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printVolume(r: Double, h: Double) {
+        def printVolume(r: Double, h: Double): Unit = {
 
           val v = /*(*/3.14 * r * r/*)*/ * h
 
@@ -88,7 +87,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printVolume(r: Double, h: Double) {
+        def printVolume(r: Double, h: Double): Unit = {
           val gr = 3.14 * r * r/*)*/ ▒
 
           val v = /*(*/gr * h
@@ -104,7 +103,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printSum(l: List[Int]) {
+        def printSum(l: List[Int]): Unit = {
 
           println("Printing the sum..")
 
@@ -120,7 +119,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
       package extractLocal
       object Demo {
-        def printSum(l: List[Int]) {
+        def printSum(l: List[Int]): Unit = {
 
           println("Printing the sum..")
 
@@ -141,14 +140,14 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   def extractValRhs() = new FileSet {
     """
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           val s = /*(*/platform/*)*/
         }
       }
     """ becomes
     """
       object Demo {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           val plt = /*(*/platform
           val s = plt/*)*/
         }
@@ -160,14 +159,14 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   def extractValRhs2() = new FileSet {
     """
       class Extr {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           val s = ( /*(*/2*3/*)*/) + 1
         }
       }
     """ becomes
     """
       class Extr {
-        def update(platform: String) {
+        def update(platform: String): Unit = {
           val six = 2*3/*)*/
           val s = six + 1
         }
@@ -179,7 +178,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   def extractFilter() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val list = (1 to 10) toList
 
      /*(*/list filter (_ > 3)/*)*/filter (_ < 6)
@@ -188,7 +187,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val list = (1 to 10) toList
 
      /*(*/val largerThree = list filter (_ > 3)/*)*/
@@ -202,7 +201,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   def extractPartOfACondition() = new FileSet {
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val someValue = true
           if(someValue && /*(*/"aa".matches("\\w+")/*)*/) {
             println("yay")
@@ -212,7 +211,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def m {
+        def m: Unit = {
           val someValue = true
           val part2 = "aa".matches("\\w+")
           if(someValue && /*(*/part2/*)*/) {
@@ -440,7 +439,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
 
     object ExtractLocal1 {
 
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
 
         println("Detecting OS..")
 
@@ -458,7 +457,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
 
     object ExtractLocal1 {
 
-      def main(args: Array[String]) {
+      def main(args: Array[String]): Unit = {
 
         println("Detecting OS..")
 
@@ -479,14 +478,14 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   def extractFromSimpleMethod() = new FileSet {
     """
       class Extr2 {
-        def method {
+        def method: Unit = {
           println(/*(*/"Hello World"/*)*/)
         }
       }
     """ becomes
     """
       class Extr2 {
-        def method {
+        def method: Unit = {
           val ab = /*(*/"Hello World"
           println(ab/*)*/)
         }
@@ -498,7 +497,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
   def extractFromMethod() = new FileSet {
     """
       class Extr2 {
-        def method {
+        def method: Unit = {
           println(/*(*/"Hello World"/*)*/)
           println("Hello World!")
         }
@@ -506,7 +505,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       class Extr2 {
-        def method {
+        def method: Unit = {
           val ab = /*(*/"Hello World"
           println(ab/*)*/)
           println("Hello World!")
@@ -520,7 +519,7 @@ class ExtractLocalTest extends TestHelper with TestRefactoring {
     """
 object ExtractMethod2 {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     val a = 1
     val b = /*(*/1/*)*/ //a
@@ -533,7 +532,7 @@ object ExtractMethod2 {
     """
 object ExtractMethod2 {
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]): Unit = {
 
     val a = 1
     val ab = /*(*/1
@@ -601,7 +600,7 @@ object ExtractMethod2 {
   def extractFunctionFromMethodCall() = new FileSet {
     """
       class Extr2 {
-        def main(args : Array[String]) {
+        def main(args : Array[String]): Unit = {
           def concatenate(ls: List[String]) = ls.mkString(", ")
 
           println(/*(*/concatenate/*)*/(List("a", "b")))
@@ -610,7 +609,7 @@ object ExtractMethod2 {
     """ becomes
     """
       class Extr2 {
-        def main(args : Array[String]) {
+        def main(args : Array[String]): Unit = {
           def concatenate(ls: List[String]) = ls.mkString(", ")
           val cc = concatenate/*)*/_
 
@@ -624,13 +623,13 @@ object ExtractMethod2 {
   def extractLastExpressionInUnitMethod() = new FileSet {
     """
     object Bar {
-      def foo {
+      def foo: Unit = {
         /*(*/true/*)*/
       }
     }""" becomes
     """
     object Bar {
-      def foo {
+      def foo: Unit = {
         /*(*/  val t = true
                t/*)*/
       }
@@ -667,7 +666,7 @@ object ExtractMethod2 {
   def extractWithoutSelection() = new FileSet {
     """
     object ExtractLocal {
-      def x() {
+      def x(): Unit = {
         1/*(*//*)*/ + 1
         val test = "hello"
       }
@@ -675,7 +674,7 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractLocal {
-      def x() {
+      def x(): Unit = {
         val one = 1
         1/*(*//*)*/ + one
         val test = "hello"
@@ -864,7 +863,7 @@ object ExtractMethod2 {
   def plusAssignRhs() = new FileSet {
    """
     class ExtractLocalVariable {
-      def f() {
+      def f(): Unit = {
         var i= 3
         i += /*(*/g()/*)*/ // select 'g()' here
       }
@@ -873,7 +872,7 @@ object ExtractMethod2 {
    """ becomes
    """
     class ExtractLocalVariable {
-      def f() {
+      def f(): Unit = {
         var i= 3
         val result_of_g = g()
         i += /*(*/result_of_g/*)*/ // select 'g()' here
@@ -887,14 +886,14 @@ object ExtractMethod2 {
   def fromForExpressionReturningUnit() = new FileSet {
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         for (x <- /*(*/List(1,2,3,4)/*)*/) println(x)
       }
     }
    """ becomes
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         val lst = List(1,2,3,4)
         for (x <- /*(*/lst) println(x)
       }
@@ -906,14 +905,14 @@ object ExtractMethod2 {
   def fromForExpression() = new FileSet {
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         for (x <- /*(*/List(1,2,3,4)/*)*/) yield x
       }
     }
    """ becomes
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         val lst = List(1,2,3,4)
         for (x <- /*(*/lst) yield x
       }
@@ -961,7 +960,7 @@ object ExtractMethod2 {
   def fromForExpressionWithFilter() = new FileSet {
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         for (x <- /*(*/List(1,2,3,4)/*)*/ if x == 2) yield {
           "found it"
         }
@@ -970,7 +969,7 @@ object ExtractMethod2 {
    """ becomes
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         val lst = List(1,2,3,4)
         for (x <- /*(*/lst if x == 2) yield {
           "found it"
@@ -984,7 +983,7 @@ object ExtractMethod2 {
   def fromForExpressionCurly() = new FileSet {
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         for {
           x <- /*(*/List(1,2,3,4)/*)*/
         } yield {
@@ -995,7 +994,7 @@ object ExtractMethod2 {
    """ becomes
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         val lst = List(1,2,3,4)
         for {
           x <- /*(*/lst
@@ -1015,7 +1014,7 @@ object ExtractMethod2 {
   def fromForExpressionMultiple() = new FileSet {
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         for {
           x <- /*(*/List(1,2,3,4)/*)*/
           y <- List(1,2,3,4)
@@ -1032,7 +1031,7 @@ object ExtractMethod2 {
   def fromForBlockBody() = new FileSet {
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         for {
           y <- List(1,2,3,4)
         } yield {
@@ -1044,7 +1043,7 @@ object ExtractMethod2 {
    """ becomes
    """
     class ExtractfromForExpression {
-      def f() {
+      def f(): Unit = {
         for {
           y <- List(1,2,3,4)
         } yield {
@@ -1061,14 +1060,14 @@ object ExtractMethod2 {
   def extractFromForEntireRhs() = new FileSet {
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         for (i <- /*(*/List()/*)*/) println(i)
       }
     }
     """ becomes
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         val extractedValue = List()
         for (i <- /*(*/extractedValue) println(i)
       }
@@ -1080,14 +1079,14 @@ object ExtractMethod2 {
   def extractFromForEntireRhsYield() = new FileSet {
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         println(for (i <- /*(*/List()/*)*/) yield i)
       }
     }
     """ becomes
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         val extractedValue = List()
         println(for (i <- /*(*/extractedValue) yield i)
       }
@@ -1099,14 +1098,14 @@ object ExtractMethod2 {
   def missingTypeNeedsAnnotation() = new FileSet {
     """
     object ExtractmissingTypeNeedsAnnotation {
-      def foo {
+      def foo: Unit = {
         Nil.filter(/*(*/{ case _ => true }/*)*/)
       }
     }
     """ becomes
     """
     object ExtractmissingTypeNeedsAnnotation {
-      def foo {
+      def foo: Unit = {
         val pred: Nothing => Boolean = /*(*/{ case _ => true }
         Nil.filter(pred/*)*/)
       }
@@ -1118,14 +1117,14 @@ object ExtractMethod2 {
   def extractAnonFunctionWithoutTypeAscriptions() = new FileSet {
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         List(1, 2, 3).reduceLeft(/*(*/_ + _/*)*/)
       }
     }
     """ becomes
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         val sum: (Int, Int) => Int = /*(*/_ + _
         List(1, 2, 3).reduceLeft(sum/*)*/)
       }
@@ -1137,14 +1136,14 @@ object ExtractMethod2 {
   def extractAnonFunctionWithoutTypeAscription() = new FileSet {
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         List(1, 2, 3).map(/*(*/_ + 1/*)*/)
       }
     }
     """ becomes
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         val addOne: Int => Int = /*(*/_ + 1
         List(1, 2, 3).map(addOne/*)*/)
       }
@@ -1156,7 +1155,7 @@ object ExtractMethod2 {
   def extractMatchBodyOperatorMap() = new FileSet {
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         List(1, 2, 3) map /*(*/{
           case x => 1
         }/*)*/
@@ -1165,7 +1164,7 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         val toOne: Int => Int = {
           case x => 1
         }
@@ -1179,7 +1178,7 @@ object ExtractMethod2 {
   def extractMatchBody() = new FileSet {
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         List(1, 2, 3).map /*(*/{
           case x => 1
         }/*)*/
@@ -1188,7 +1187,7 @@ object ExtractMethod2 {
     """ becomes
     """
     object ExtractFromFor {
-      def foo {
+      def foo: Unit = {
         val toOne: Int => Int = {
           case x => 1
         }

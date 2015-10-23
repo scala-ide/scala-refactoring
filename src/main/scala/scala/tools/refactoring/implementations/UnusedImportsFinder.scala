@@ -7,7 +7,6 @@ package implementations
 
 import common.CompilerAccess
 import common.PimpedTrees
-import common.SilentTracing
 import common.TreeTraverser
 import sourcegen.SourceGenerator
 import scala.tools.refactoring.common.TracingImpl
@@ -125,7 +124,7 @@ trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeT
 
           selectors foreach { selector =>
             if(!neededImportSelector(unit, expr, selector)) {
-              unuseds += Pair(selector.name.toString, tree.pos.line)
+              unuseds += ((selector.name.toString, tree.pos.line))
             }
           }
 

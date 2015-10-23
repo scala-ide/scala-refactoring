@@ -118,7 +118,7 @@ object EmptyFragment extends EmptyFragment
 
 object Fragment {
 
-  def unapply(f: Fragment) = Some(f.leading, f.center, f.trailing)
+  def unapply(f: Fragment) = Some((f.leading, f.center, f.trailing))
 
   def apply(l: Layout, c: Layout, t: Layout) = new Fragment {
     val leading = l

@@ -14,7 +14,7 @@ import language.postfixOps
 class LayoutTest {
 
   @Test
-  def simpleConcatenation() {
+  def simpleConcatenation(): Unit = {
     assertEquals("ab", Fragment("a") ++ Fragment("b") asText)
     assertEquals("abc", Fragment("a") ++ Fragment("b") ++ Fragment("c")  asText)
     assertEquals("ab", Layout("a") ++ Layout("b") asText)
@@ -23,7 +23,7 @@ class LayoutTest {
   }
 
   @Test
-  def concatenationsWithEmpty() {
+  def concatenationsWithEmpty(): Unit = {
     val N = NoLayout
     val F = EmptyFragment
 
@@ -45,7 +45,7 @@ class LayoutTest {
   }
 
   @Test
-  def complexConcatenations() {
+  def complexConcatenations(): Unit = {
     val a = Layout("a")
     val b = Layout("b")
     val c = Layout("c")
@@ -80,19 +80,18 @@ class LayoutTest {
   }
 
   @Test
-  def preserveRequisites() {
+  def preserveRequisites(): Unit = {
     val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment("a")
     val b = Fragment("b")
     val x = Layout("x")
-    val y = Layout("y")
 
     assertEquals("a,x", a ++ r ++ x asText)
     assertEquals("a,b", a ++ r ++ b asText)
   }
 
   @Test
-  def requisitesAreBetween() {
+  def requisitesAreBetween(): Unit = {
     val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment(Layout("a"), Layout("b"), Layout("c"))
     val b = Fragment(Layout("x"), Layout("y"), Layout("z"))
@@ -101,7 +100,7 @@ class LayoutTest {
   }
 
   @Test
-  def requisitesAreOnlyUsesWhenNeeded1() {
+  def requisitesAreOnlyUsesWhenNeeded1(): Unit = {
     val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment(Layout("a"), Layout("b"), Layout(","))
     val b = Fragment(Layout("x"), Layout("y"), Layout("z"))
@@ -110,7 +109,7 @@ class LayoutTest {
   }
 
   @Test
-  def requisitesAreOnlyUsesWhenNeeded2() {
+  def requisitesAreOnlyUsesWhenNeeded2(): Unit = {
     val r = Requisite.allowSurroundingWhitespace(",")
     val a = Fragment(Layout("a"), Layout("b"), Layout("c"))
     val b = Fragment(Layout(","), Layout("y"), Layout("z"))
@@ -118,4 +117,3 @@ class LayoutTest {
     assertEquals("abc,yzabc", a ++ r ++ b ++ a asText)
   }
 }
-

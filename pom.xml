@@ -164,6 +164,38 @@
         </configuration>
       </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>net.alchim31.maven</groupId>
+          <artifactId>scala-maven-plugin</artifactId>
+          <version>3.2.2</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>compile</goal>
+                <goal>testCompile</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <jvmArgs>
+              <jvmArg>-Xms256m</jvmArg>
+              <jvmArg>-Xmx768m</jvmArg>
+            </jvmArgs>
+            <args>
+              <arg>-feature</arg>
+              <arg>-unchecked</arg>
+              <arg>-language:_</arg>
+              <arg>-Xlint</arg>
+              <arg>-Xfuture</arg>
+              <arg>-Yno-adapted-args</arg>
+              <arg>-Ywarn-dead-code</arg>
+            </args>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <repositories>
     <repository>
@@ -215,11 +247,6 @@
         <artifactId>maven-surefire-report-plugin</artifactId>
         <version>2.5</version>
       </plugin>
-      <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <version>3.1.0</version>
-      </plugin>
     </plugins>
   </reporting>
   <profiles>
@@ -245,6 +272,30 @@
           <version>${scala.parser-combinators.version}</version>
         </dependency>
       </dependencies>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>net.alchim31.maven</groupId>
+              <artifactId>scala-maven-plugin</artifactId>
+              <configuration>
+                <args>
+                  <arg>-feature</arg>
+                  <arg>-unchecked</arg>
+                  <arg>-deprecation:false</arg>
+                  <arg>-language:_</arg>
+                  <arg>-Xlint</arg>
+                  <arg>-Xfuture</arg>
+                  <arg>-Yno-adapted-args</arg>
+                  <arg>-Ywarn-dead-code</arg>
+                  <arg>-Ywarn-unused-import</arg>
+                  <arg>-Ywarn-unused</arg>
+                </args>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
     </profile>
     <profile>
       <id>scala-2.12.x</id>

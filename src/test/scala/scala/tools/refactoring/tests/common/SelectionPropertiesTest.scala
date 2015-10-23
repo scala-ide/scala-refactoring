@@ -6,7 +6,6 @@ import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Assert._
 
 class SelectionPropertiesTest extends TestHelper with Selections {
-  import global._
 
   implicit class StringToSel(src: String) {
     val root = treeFrom(src)
@@ -24,7 +23,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
         def fn = {
           /*(*/val i = 100
           i * 2/*)*/
-    	}
+        }
       }
       """.selection
     assertTrue(sel.representsValue)
@@ -37,7 +36,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
         def fn = {
           /*(*/val i = 100
           val b = i * 2/*)*/
-    	}
+        }
       }
       """.selection
     assertFalse(sel.representsValue)
@@ -70,7 +69,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
       object O{
         def fn = {
           List(/*(*/1, 2/*)*/, 3)
-    	}
+        }
       }
       """.selection
     assertFalse(sel.representsValue)
@@ -84,7 +83,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
       object O{
         def fn(/*(*/a: Int/*)*/) = {
           a
-    	}
+        }
       }
       """.selection
     assertFalse(sel.representsValue)
@@ -98,7 +97,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
       object O{
         def fn(/*(*/a: Int, b: Int/*)*/) = {
           a * b
-    	}
+        }
       }
       """.selection
     assertFalse(sel.representsValue)
@@ -112,7 +111,7 @@ class SelectionPropertiesTest extends TestHelper with Selections {
       object O{
         var a = 1
         /*(*/def fn = {
-    	  a += 1
+          a += 1
           a
         }/*)*/
       }
