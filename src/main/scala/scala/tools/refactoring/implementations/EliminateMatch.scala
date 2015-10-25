@@ -40,7 +40,7 @@ abstract class EliminateMatch extends MultiStageRefactoring with ParameterlessRe
 
   def getMatchElimination(t: Tree): Either[PreparationError, PreparationResult] = {
 
-    /**
+    /*
      * When replacing with `map`, we need to remove the explicit `Some` construction
      * in the case body. There are two possible kinds of case bodies: a simple Apply
      * call and a Block that has the Some at its end.

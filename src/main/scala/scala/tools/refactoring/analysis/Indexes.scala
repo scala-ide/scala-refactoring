@@ -115,10 +115,6 @@ trait Indexes {
         }
       }
     }
-
-    /**
-     * Add more convenience functions here..
-     */
   }
 
   def index: IndexLookup
