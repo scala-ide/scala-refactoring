@@ -31,6 +31,8 @@ publishTo <<= version { (v: String) =>
 
 publishArtifact in Test := false
 
+autoAPIMappings := true
+
 pomExtra := (
  <url>http://scala-refactoring.org</url>
   <licenses>
