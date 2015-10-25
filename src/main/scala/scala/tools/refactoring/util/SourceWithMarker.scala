@@ -280,7 +280,7 @@ object SourceWithMarker {
      */
     class SingleCharMovement(private val acceptChar: Int => Boolean, private val forward: Boolean = true) extends Movement {
       final override def apply(sourceWithMarker: SourceWithMarker): Option[Int] = {
-        if (sourceWithMarker.isDepleted || !acceptChar(sourceWithMarker.current)) None
+        if (sourceWithMarker.isDepleted || !acceptChar(sourceWithMarker.current.toInt)) None
         else Some(nextMarker(sourceWithMarker.marker, forward))
       }
 

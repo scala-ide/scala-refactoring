@@ -77,11 +77,11 @@ object Layout {
     }
 
     private def splitFromLeft(cs: Seq[Char]): Option[Int] = {
-      split(cs, c => withoutComments.indexOf(c))
+      split(cs, c => withoutComments.indexOf(c.toInt))
     }
 
     private def splitFromRight(cs: Seq[Char]): Option[Int] = {
-      split(cs, c => withoutComments.lastIndexOf(c))
+      split(cs, c => withoutComments.lastIndexOf(c.toInt))
     }
 
     private def split(cs: Seq[Char], findIndex: Char => Int): Option[Int] = cs.toList match {
