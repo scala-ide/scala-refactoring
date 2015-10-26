@@ -23,8 +23,6 @@ import scala.tools.refactoring.util.SourceWithMarker.Movements._
 /**
  * A collection of implicit conversions for ASTs and other
  * helper functions that work on trees.
- *
- * @TODO try to make this trait smaller by splitting it into smaller parts
  */
 trait PimpedTrees {
 

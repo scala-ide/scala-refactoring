@@ -411,7 +411,7 @@ trait LayoutHelper {
           case (l, _, r) => split(layout)
         }
 
-        /**
+        /*
          * We remove all leading or trailing commas, they always need to be re-introduced by the printers.
          */
         def removeLeadingOrTrailingComma(s: String) = {

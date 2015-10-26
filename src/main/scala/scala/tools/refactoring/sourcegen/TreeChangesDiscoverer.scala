@@ -26,7 +26,7 @@ trait TreeChangesDiscoverer {
    */
   def findAllChangedTrees(t: Tree): List[(Tree, Position, Set[Tree])] = {
 
-    /**
+    /*
      * This method determines if a leaf-tree in the AST has been changed. It should not be used
      * for trees that enclose other ASTs because this would lead to unnecessarily large changes.
      */
@@ -61,7 +61,7 @@ trait TreeChangesDiscoverer {
       changed
     }
 
-    /**
+    /*
      * Checks whether a tree has any changed children. We don't fully compare
      * the children of the original and changed trees but simply check if they
      * have corresponding types and positions.
