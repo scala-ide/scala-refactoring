@@ -29,6 +29,46 @@ class RenameTest extends TestHelper with TestRefactoring {
     prepareAndRenameTo(name)(pro).changes
   }
 
+  /*
+   * See Assembla Ticket 1002537
+   */
+  @Test
+  def testRenameObjectWithInnerClass1002537Ex1() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    object /*(*/RenameMe/*)*/ {
+      class Class
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    object /*(*/X/*)*/ {
+      class Class
+    }
+    """ -> TaggedAsGlobalRename;
+
+    """
+    package com.github.mlangc.experiments.bug
+
+    import com.github.mlangc.experiments.RenameMe.Class
+
+    class Bug {
+      def x: Class = ???
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.bug
+
+    import com.github.mlangc.experiments.X.Class
+
+    class Bug {
+      def x: Class = ???
+    }
+    """
+  } prepareAndApplyRefactoring(prepareAndRenameTo("X"))
+
   @Test
   def renameOverlapping() = new FileSet {
     """
