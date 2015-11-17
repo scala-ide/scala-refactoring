@@ -2491,4 +2491,33 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("renamed"))
+
+  /*
+   * See Assembla Ticket 1002502
+   */
+  @Test
+  def testRenameWithOverridingLazyVal1002502Ex1() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    abstract class Bug {
+      def /*(*/renameMe/*)*/: Int
+    }
+
+    class Buggy extends Bug {
+      lazy val renameMe = 99
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    abstract class Bug {
+      def /*(*/x/*)*/: Int
+    }
+
+    class Buggy extends Bug {
+      lazy val x = 99
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("x"))
 }

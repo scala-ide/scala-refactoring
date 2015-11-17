@@ -85,30 +85,12 @@ trait Selections extends TreeTraverser with common.PimpedTrees {
      * fully contains a SymTree, if true, the first selected is returned. Otherwise
      * the result of findSelectedOfType[SymTree] is returned.
      */
-    lazy val selectedSymbolTree = eventuallyFixModifierPositionsForLazyVals((root filter (cond(_) {
+    lazy val selectedSymbolTree = (root filter (cond(_) {
       case t: SymTree => contains(t)
     }) filter (t => t.pos.start < t.pos.end) match {
       case (x: SymTree) :: _ => Some(x)
       case _ => None
-    }) orElse findSelectedOfType[SymTree])
-
-    /*
-     * See #1002392 if you wonder why we need this
-     */
-    private def eventuallyFixModifierPositionsForLazyVals(t: Option[SymTree]): Option[SymTree] = t.map {
-        case dd: DefDef if dd.mods.isLazy && dd.mods.positions.isEmpty =>
-          val vd = root.find {
-            case vd: ValDef if vd.mods.isLazy && !vd.mods.positions.isEmpty && dd.pos.point == vd.pos.point => true
-            case _ => false
-          }
-
-          vd.map { vd =>
-            val nDd = dd.copy()
-            nDd.mods.setPositions(vd.asInstanceOf[ValDef].mods.positions)
-            nDd.copyAttrs(dd)
-          }.getOrElse(dd)
-        case other => other
-      }
+    }) orElse findSelectedOfType[SymTree]
 
     /**
      * Finds a selected tree by its type.
