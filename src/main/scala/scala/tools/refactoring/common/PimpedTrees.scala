@@ -416,7 +416,8 @@ trait PimpedTrees {
         if (t samePos tree) t :: l else l
       }
 
-      cuRoot(tree.pos).map(find).getOrElse(Nil)
+      val root = cuRoot(tree.pos)
+      root.map(find).getOrElse(Nil)
     }
   }
 
