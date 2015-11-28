@@ -261,6 +261,21 @@ object SourceWithMarker {
     def ifNotDepleted(impl: (SourceWithMarker, Boolean) => Option[Int]): Movement = {
       Movement((s, f) => MovementHelpers.doIfNotDepleted(s)(impl(s, f)))
     }
+
+    def coveredStringStartingAtEndOf(pos: RangePosition, mvnt: SimpleMovement): String = {
+      coveredString(pos.end, pos.source.content, mvnt)
+    }
+
+    def coveredString(pos: Int, src: IndexedSeq[Char], mvnt: SimpleMovement): String = {
+      val srcStart = SourceWithMarker(src, pos)
+      val srcEnd = srcStart.moveMarker(mvnt)
+      val (start, end) = (srcStart.marker, srcEnd.marker)
+      val (actualStart, actualEnd) = {
+        if (start <= end) (start, end)
+        else (end + 1, start + 1)
+      }
+      src.slice(actualStart, actualEnd).mkString("")
+    }
   }
 
   /**
@@ -494,6 +509,8 @@ object SourceWithMarker {
     val symbolLiteral = ''' ~ plainid
 
     val literalIdentifier = '`' ~ any.butNot('`').atLeastOnce ~ '`'
+
+    val id = plainid | literalIdentifier
 
     val spaces: Movement = space.zeroOrMore
     val comments: Movement = (comment ~ spaces).zeroOrMore

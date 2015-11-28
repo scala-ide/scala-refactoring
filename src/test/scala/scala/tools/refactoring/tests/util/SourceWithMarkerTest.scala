@@ -4,6 +4,9 @@ import org.junit.Assert._
 import scala.tools.refactoring.util.SourceWithMarker
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
+import scala.tools.refactoring.util.SourceWithMarker.SimpleMovement
+import scala.tools.refactoring.util.SourceWithMarker.Movements
+import scala.tools.refactoring.util.SourceWithMarker.Movement
 
 class SourceWithMarkerTest {
   import SourceWithMarker.Movements._
@@ -281,6 +284,19 @@ class SourceWithMarkerTest {
    shouldNotDeplete.foreach { mvnt =>
       assertFalse(src.moveMarker(mvnt).isDepleted)
     }
+  }
+
+  @Test
+  def testCoveredString(): Unit = {
+    def runTest(input: String, start: Int, mvnt: SimpleMovement, expected: String): Unit = {
+      assertEquals(expected, Movement.coveredString(start, input, mvnt))
+    }
+
+    runTest("", 0, any, "")
+    runTest("0", 0, any, "0")
+    runTest("1", 0, any.backward, "1")
+    runTest("1223", 1, '2'.zeroOrMore, "22")
+    runTest("1223", 1, '2'.zeroOrMore.backward, "2")
   }
 
   private implicit class SourceWithMarkerOps(underlying: SourceWithMarker) {
