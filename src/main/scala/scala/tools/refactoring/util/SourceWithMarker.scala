@@ -119,6 +119,13 @@ object SourceWithMarker {
     }
   }
 
+  implicit class SimpleMovementOps(val underlying: SimpleMovement) extends AnyVal {
+    def consumes(str: IndexedSeq[Char]): Boolean = {
+      val srcWithMarker = SourceWithMarker(str).moveMarker(underlying)
+      srcWithMarker.marker > -1 && srcWithMarker.isDepleted
+    }
+  }
+
   private object SimpleMovementHelpers {
     def sequence[MovementT <: SimpleMovement](mvnt1: MovementT, mvnt2: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
       mvnt1(sourceWithMarker).map(newMarker => sourceWithMarker.copy(marker = newMarker)).flatMap(mvnt2.apply)
