@@ -92,13 +92,13 @@ object SourceWithMarker {
   trait SimpleMovement { self =>
     def apply(sourceWithMarker: SourceWithMarker): Option[Int]
 
-    final def ~(other: SimpleMovement): SimpleMovement = SimpleMovementOps.sequence(this, other) _
-    final def |(other: SimpleMovement): SimpleMovement = SimpleMovementOps.or(this, other) _
-    def zeroOrMore: SimpleMovement = SimpleMovementOps.repeat(this) _
+    final def ~(other: SimpleMovement): SimpleMovement = SimpleMovementHelpers.sequence(this, other) _
+    final def |(other: SimpleMovement): SimpleMovement = SimpleMovementHelpers.or(this, other) _
+    def zeroOrMore: SimpleMovement = SimpleMovementHelpers.repeat(this) _
     def atLeastOnce: SimpleMovement = this ~ this.zeroOrMore
-    def nTimes(n: Int): SimpleMovement = SimpleMovementOps.nTimes(this, n) _
-    def butNot(other: SimpleMovement): SimpleMovement = SimpleMovementOps.butNot(this, other) _
-    def optional: SimpleMovement = SimpleMovementOps.optional(this) _
+    def nTimes(n: Int): SimpleMovement = SimpleMovementHelpers.nTimes(this, n) _
+    def butNot(other: SimpleMovement): SimpleMovement = SimpleMovementHelpers.butNot(this, other) _
+    def optional: SimpleMovement = SimpleMovementHelpers.optional(this) _
     def atMostNtimes(n: Int): SimpleMovement = optional.nTimes(n)
   }
 
@@ -119,7 +119,7 @@ object SourceWithMarker {
     }
   }
 
-  private object SimpleMovementOps {
+  private object SimpleMovementHelpers {
     def sequence[MovementT <: SimpleMovement](mvnt1: MovementT, mvnt2: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
       mvnt1(sourceWithMarker).map(newMarker => sourceWithMarker.copy(marker = newMarker)).flatMap(mvnt2.apply)
     }
@@ -209,7 +209,7 @@ object SourceWithMarker {
 
     final def ~(other: Movement) = Movement { (sourceWithMarker, forward) =>
       if (forward) {
-        SimpleMovementOps.sequence(self, other)(sourceWithMarker)
+        SimpleMovementHelpers.sequence(self, other)(sourceWithMarker)
       } else {
        other.backward.apply(sourceWithMarker).map(newMarker => sourceWithMarker.copy(marker = newMarker)).flatMap(self.backward.apply)
       }
@@ -222,14 +222,14 @@ object SourceWithMarker {
 
     final override def zeroOrMore = Movement { (sourceWithMarker, forward) =>
       val mvnt = if (forward) self else self.backward
-      SimpleMovementOps.repeat(mvnt)(sourceWithMarker)
+      SimpleMovementHelpers.repeat(mvnt)(sourceWithMarker)
     }
 
     final override def atLeastOnce: Movement = this ~ this.zeroOrMore
 
     final override def nTimes(n: Int) = Movement { (sourceWithMarker, forward) =>
       val mvnt = if  (forward) self else self.backward
-      SimpleMovementOps.nTimes(mvnt, n)(sourceWithMarker)
+      SimpleMovementHelpers.nTimes(mvnt, n)(sourceWithMarker)
     }
 
     final def butNot(mvnt: Movement) = Movement { (sourceWithMarker, forward) =>
@@ -238,11 +238,11 @@ object SourceWithMarker {
         else (self.backward, mvnt.backward)
       }
 
-      SimpleMovementOps.butNot(actualSelf, actualMvnt)(sourceWithMarker)
+      SimpleMovementHelpers.butNot(actualSelf, actualMvnt)(sourceWithMarker)
     }
 
     final override def optional = Movement { (sourceWithMarker, forward) =>
-      SimpleMovementOps.optional(if (forward) self else self.backward)(sourceWithMarker)
+      SimpleMovementHelpers.optional(if (forward) self else self.backward)(sourceWithMarker)
     }
 
     final override def atMostNtimes(n: Int) = optional.nTimes(n)
