@@ -2623,7 +2623,7 @@ class Blubb
   @Test
   def testRenameWithDefaultArgs1002564Ex3() = new FileSet {
     """
-    package test
+    package test.uniq1
 
     object Bug {
       class Class {
@@ -2635,7 +2635,7 @@ class Blubb
     }
     """ becomes
     """
-    package test
+    package test.uniq1
 
     object Bug {
       class Class {
