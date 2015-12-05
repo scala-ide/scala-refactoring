@@ -2688,4 +2688,138 @@ class Blubb
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("test2"))
 
+  /*
+   * See Assembla Ticket 1002609
+   */
+  @Test
+  def testRenameMemberOfPkgObjs1002609Ex1() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    package object bugs {
+      def /*(*/tryRenameMe/*)*/ = "buggy"
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    package object bugs {
+      def /*(*/ups/*)*/ = "buggy"
+    }
+    """ -> TaggedAsGlobalRename;
+
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = bugs.tryRenameMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = bugs.ups
+    }
+    """
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameMemberOfPkgObjs1002609Ex2() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    package object bugs {
+      val /*(*/tryRenameMe/*)*/ = "buggy"
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    package object bugs {
+      val /*(*/ups/*)*/ = "buggy"
+    }
+    """ -> TaggedAsGlobalRename;
+
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = bugs.tryRenameMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = bugs.ups
+    }
+    """
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameMemberOfPkgObjs1002609Ex3() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    package object bugs {
+      lazy val /*(*/tryRenameMe/*)*/ = "buggy"
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    package object bugs {
+      lazy val /*(*/ups/*)*/ = "buggy"
+    }
+    """ -> TaggedAsGlobalRename;
+
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = bugs.tryRenameMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = bugs.ups
+    }
+    """
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameMemberOfNormalObjectNotAffectedBy1002609Ex1() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    object Bugs {
+      def /*(*/tryRenameMe/*)*/ = "buggy"
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    object Bugs {
+      def /*(*/ups/*)*/ = "buggy"
+    }
+    """ -> TaggedAsGlobalRename;
+
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = Bugs.tryRenameMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    class Bug {
+      val bug = Bugs.ups
+    }
+    """
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
