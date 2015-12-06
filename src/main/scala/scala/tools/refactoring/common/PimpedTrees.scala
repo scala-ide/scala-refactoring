@@ -19,6 +19,7 @@ import scala.annotation.tailrec
 import language.implicitConversions
 import scala.tools.refactoring.util.SourceWithMarker
 import scala.tools.refactoring.util.SourceWithMarker.Movements._
+import scala.util.control.NonFatal
 
 /**
  * A collection of implicit conversions for ASTs and other
@@ -283,8 +284,8 @@ trait PimpedTrees {
           case t => t.pos
         }
       } catch {
-        case _: java.lang.AssertionError =>
-          /*we constructed an illegal position..*/
+        case NonFatal(e) =>
+          logError("Unexptected error - most likely due to an illegal position", e)
           NoPosition
       }
 
