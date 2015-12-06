@@ -251,8 +251,8 @@ trait PimpedTrees {
               t.pos withEnd (t.pos.start + nameString.length)
             } else if (qualifier.pos.isRange && t.symbol != NoSymbol) {
               t.pos withStart (t.pos.end - nameString.length)
-            } else if (qualifier.pos.isRange && (t.pos.point.max(qualifier.pos.end + 1)) <= t.pos.end) {
-              t.pos withStart (t.pos.point.max(qualifier.pos.end + 1))
+            } else if (qualifier.pos.isRange) {
+              t.pos.withStart(t.pos.point)
             } else if (qualifier.pos == NoPosition) {
               t.pos
               /*the name contains symbols:*/
