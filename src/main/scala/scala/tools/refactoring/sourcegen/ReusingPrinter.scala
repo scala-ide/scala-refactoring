@@ -46,7 +46,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
 
       val (leadingParent, trailingParent) = surroundingLayoutFromParentsAndSiblings(t)
 
-      val printedFragment = if (ctx.changeSet hasChanged t) {
+      val printedFragment = if (ctx.changeSet.hasChanged(t)) {
         super.dispatchToPrinter(t, newCtx)
       } else if (t.pos.isTransparent) {
         trace("Not in change set but transparent, continue printing...")

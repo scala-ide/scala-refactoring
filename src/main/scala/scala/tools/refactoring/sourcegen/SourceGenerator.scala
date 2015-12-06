@@ -101,20 +101,21 @@ trait SourceGenerator extends PrettyPrinter with Indentations with ReusingPrinte
       case (source, ts) => (source, findTopLevelTrees(ts))
     }
 
-    val changesPerFile = topLevelTreesByFile flatMap {
+    val refinedChangesByFile = topLevelTreesByFile flatMap {
       case (source, ts) => ts flatMap findAllChangedTrees map {
         case (topLevel, replaceRange, changes) =>
           (source, replaceRange, topLevel, changes)
       }
     }
 
-    if(changesPerFile.isEmpty) {
+    if(refinedChangesByFile.isEmpty) {
       trace("No changes were found.")
     }
 
-    changesPerFile.map {
+    refinedChangesByFile.map {
       case (source, replaceRange, tree, changes) =>
         trace("Creating code for %s. %d tree(s) in changeset.", getSimpleClassName(tree), changes.size)
+
         val f = generate(tree, new ChangeSet {
           def hasChanged(t: Tree) = changes.exists {
             /*
