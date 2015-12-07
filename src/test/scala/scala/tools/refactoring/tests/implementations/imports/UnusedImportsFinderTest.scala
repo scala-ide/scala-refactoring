@@ -7,6 +7,7 @@ package tests.implementations.imports
 
 import implementations.UnusedImportsFinder
 import tests.util.TestHelper
+import scala.tools.refactoring.util.UniqueNames
 
 class UnusedImportsFinderTest extends TestHelper {
   outer =>
@@ -18,7 +19,7 @@ class UnusedImportsFinderTest extends TestHelper {
 
         val global = outer.global
 
-        val unit = global.unitOfFile(addToCompiler(randomFileName(), src))
+        val unit = global.unitOfFile(addToCompiler(UniqueNames.basename(), src))
 
         def compilationUnitOfFile(f: AbstractFile) = Some(unit)
 

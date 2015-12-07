@@ -6,8 +6,8 @@ import implementations.AddMethod
 import org.junit.Assert.assertEquals
 import tests.util.TestHelper
 import scala.tools.refactoring.implementations._
-
 import language.reflectiveCalls
+import scala.tools.refactoring.util.UniqueNames
 
 class AddMethodTest extends TestHelper {
   outer =>
@@ -16,7 +16,7 @@ class AddMethodTest extends TestHelper {
     global.ask { () =>
       val refactoring = new AddMethod {
         val global = outer.global
-        val file = addToCompiler(randomFileName(), src)
+        val file = addToCompiler(UniqueNames.basename(), src)
         val change = addMethod(file, className, methodName, parameters, typeParameters, returnType, target)
       }
       assertEquals(expected, Change.applyChanges(refactoring.change, src))

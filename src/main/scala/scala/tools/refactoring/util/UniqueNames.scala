@@ -4,11 +4,15 @@ import java.util.UUID
 
 object UniqueNames {
   def scalaFile(): String = {
-    s"${uid()}.scala"
+    s"${basename()}.scala"
   }
 
   def srcDir(): String = {
     s"src-${uid()}"
+  }
+
+  def basename(): String = {
+    uid()
   }
 
   def scalaPackage(): String = {

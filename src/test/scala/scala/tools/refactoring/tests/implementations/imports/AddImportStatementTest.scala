@@ -10,8 +10,8 @@ import tests.util.TestHelper
 import common.Change
 import org.junit.Assert._
 import scala.tools.refactoring.common.TextChange
-
 import language.reflectiveCalls
+import scala.tools.refactoring.util.UniqueNames
 
 class AddImportStatementTest extends TestHelper {
   outer =>
@@ -20,7 +20,7 @@ class AddImportStatementTest extends TestHelper {
 
     val refactoring = new AddImportStatement  {
       val global = outer.global
-      val file = addToCompiler(randomFileName(), src)
+      val file = addToCompiler(UniqueNames.basename(), src)
       val change = addImport(file, imp._1 + "." + imp._2)
     }
 
