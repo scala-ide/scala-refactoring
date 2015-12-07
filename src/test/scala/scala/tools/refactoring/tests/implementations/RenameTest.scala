@@ -29,6 +29,8 @@ class RenameTest extends TestHelper with TestRefactoring {
     prepareAndRenameTo(name)(pro).changes
   }
 
+  protected override def nestTestsInUniqueBasePackageByDefault = true
+
   /*
    * See Assembla Ticket 1002537
    */
@@ -2623,7 +2625,7 @@ class Blubb
   @Test
   def testRenameWithDefaultArgs1002564Ex3() = new FileSet {
     """
-    package test.uniq1
+    package test
 
     object Bug {
       class Class {
@@ -2635,7 +2637,7 @@ class Blubb
     }
     """ becomes
     """
-    package test.uniq1
+    package test
 
     object Bug {
       class Class {
