@@ -214,9 +214,10 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
     if (project.expectCompilingCode) {
       trees.foreach { tree =>
-        if (tree.find(_.isErroneous).isDefined) {
+        tree.find(_.isErroneous).foreach { erroneousTree =>
           val src = new String(tree.pos.source.content)
-          throw new AssertionError(s"Expected compiling code but got:\n---------------------\n$src")
+          val sep = "------------------------------------"
+          throw new AssertionError(s"Expected compiling code but got:\n$sep\n$src\n$sep\nErroneous tree: $erroneousTree")
         }
       }
     }
