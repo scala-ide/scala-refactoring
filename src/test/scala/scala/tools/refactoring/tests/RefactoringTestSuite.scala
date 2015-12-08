@@ -10,6 +10,8 @@ import implementations.imports._
 import sourcegen._
 import transformation._
 import util._
+import scala.tools.refactoring.implementations.OrganizeImportsAlgosTest
+
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
     classOf[AddFieldTest],
@@ -72,5 +74,6 @@ import util._
     classOf[TreeTransformationsTest],
     classOf[UnionFindInitTest],
     classOf[UnionFindTest],
-    classOf[UnusedImportsFinderTest]))
+    classOf[UnusedImportsFinderTest],
+    classOf[OrganizeImportsAlgosTest]))
 class RefactoringTestSuite {}

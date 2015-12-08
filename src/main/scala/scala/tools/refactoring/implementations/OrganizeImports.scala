@@ -11,6 +11,40 @@ import transformation.TreeFactory
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
 import scala.util.control.NonFatal
+import scala.collection.immutable.Queue
+
+object OrganizeImports {
+  /**
+   * Abstract algorithms used by the implementation, extracted mostly for testing purposes
+   */
+  private[implementations] object Algos {
+    def groupImports[ImportT](getImportExpression: ImportT => String)(groups: Seq[String], imports: Seq[ImportT]): Seq[List[ImportT]] = {
+      val distinctGroups = groups.distinct
+
+      case class Accumulator(remainingImports: Seq[ImportT] = imports, groups: Map[String, List[ImportT]] = Map()) {
+        def assembleResult: Seq[List[ImportT]] = {
+          val importGroups = distinctGroups.flatMap(groups.get(_))
+          if (remainingImports.isEmpty) importGroups
+          else importGroups :+ remainingImports.toList
+        }
+      }
+
+      distinctGroups.sortBy(-_.length).foldLeft(Accumulator()) { (acc, group) =>
+        val (inGroup, remaining) = acc.remainingImports.partition { imp =>
+          val expr = getImportExpression(imp)
+          expr.startsWith(group + ".") || expr == group
+        }
+
+        val newGroups = {
+          if (inGroup.isEmpty) acc.groups
+          else acc.groups + (group -> inGroup.toList)
+        }
+
+        acc.copy(remainingImports = remaining, groups = newGroups)
+      }.assembleResult
+    }
+  }
+}
 
 /**
  * A refactoring that recomputes and reorganizes import statements in a file.
@@ -19,6 +53,7 @@ import scala.util.control.NonFatal
  */
 abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
 
+  import OrganizeImports.Algos
   import global._
 
   class PreparationResult(val missingTypes: List[String] = Nil)
@@ -151,32 +186,14 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
   case class GroupImports(groups: List[String]) extends Participant {
     protected def doApply(trees: List[Import]) = {
-
-      val grouped = new LinkedHashMap[String, ListBuffer[Import]] {
-        groups.foreach(this += _ → new ListBuffer[Import])
-      }
-      val ungrouped: ListBuffer[Import] = new ListBuffer[Import]
-
-      trees foreach { imp =>
-
-        val inserts = grouped flatMap {
-          case (key, map) if imp.expr.toString.startsWith(key +".") || imp.expr.toString == key =>
-            map += imp
-            Some(key)
-          case _ => None
-        }
-
-        if(inserts.isEmpty) ungrouped += imp
-      }
-
-      val spacer = Import(PlainText.BlankLine, Nil)
-
-      val allImports = (grouped.values.toList.map(_.toList) ::: List(ungrouped.toList)).filterNot(_.isEmpty)
+      def getImportExpression(imp: Import) = imp.expr.toString
+      val allImports = Algos.groupImports(getImportExpression)(groups, trees)
+      val spacer = List(Import(PlainText.BlankLine, Nil))
 
       if(allImports.size > 1) {
-        allImports.reduceLeft ((l1: List[Import], l2: List[Import]) => l1 ++ List(spacer) ++ l2)
+        allImports.reduceLeft(_ ++ spacer ++ _)
       } else {
-        allImports.flatten
+        allImports.flatten.toList
       }
     }
   }
