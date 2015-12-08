@@ -24,18 +24,22 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports, refactoring.SortImports))
   }.mkChanges
 
-  private def organizeWithTypicalParams(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+  private def organizeWithTypicalParams(pro: FileSet) = organizeCustomized()(pro)
+
+  private def organizeCustomized(
+      groupPkgs: List[String] = List("java", "scala", "org", "com"),
+      useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"))(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = {
-      val groupImports = refactoring.GroupImports(List("java", "scala", "org", "com"))
-      val alwaysUseWildcards = refactoring.AlwaysUseWildcards(Set("scalaz", "scalaz.Scalaz"))
+      val groupImports = refactoring.GroupImports(groupPkgs)
+      val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
 
       new refactoring.RefactoringParameters(
           options =
             refactoring.ExpandImports ::
+            refactoring.PrependScalaPackage ::
+            alwaysUseWildcards ::
             refactoring.SortImports ::
             groupImports ::
-            alwaysUseWildcards ::
-            refactoring.PrependScalaPackage ::
             Nil,
           deps = refactoring.Dependencies.FullyRecompute)
     }
@@ -737,4 +741,81 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ isNotModified
   } applyRefactoring organizeWithTypicalParams
 
+  /*
+   * See Assembla Ticket #1002526
+   */
+  @Test
+  def organizeImportsDupesImports1002526Ex1() = new FileSet {
+    """
+    package a.b
+    class X
+    """ isNotModified;
+
+    """
+    package a.c
+    class Y
+    """ isNotModified;
+
+    """
+    /*<-*/
+    package a.p
+
+    import a.b.X
+    import a.c.Y
+
+    class Test {
+
+      val x: X = ???
+      val y: Y = ???
+    }
+    """ becomes
+    """
+    /*<-*/
+    package a.p
+
+    import a.c.Y
+
+    import a.b.X
+
+    class Test {
+
+      val x: X = ???
+      val y: Y = ???
+    }
+    """;
+  } applyRefactoring organizeCustomized(groupPkgs = List("java", "scala", "org", "com", "a.c", "a"))
+
+  @Test
+  def organizeImportsDupesImports1002526Ex2() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.Date
+    import java.text.SimpleDateFormat
+    import java.text.DateFormat
+    import java.util.UUID
+    import java.io.InputStream
+    import java.io.OutputStream
+
+    class Bug {
+      def x: (Date, SimpleDateFormat, DateFormat, UUID, InputStream, OutputStream) = ???
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import java.text.DateFormat
+    import java.text.SimpleDateFormat
+
+    import java.util.Date
+    import java.util.UUID
+
+    import java.io.InputStream
+    import java.io.OutputStream
+
+    class Bug {
+      def x: (Date, SimpleDateFormat, DateFormat, UUID, InputStream, OutputStream) = ???
+    }
+    """
+  } applyRefactoring organizeCustomized(groupPkgs = List("java", "java.util", "java.io"))
 }
