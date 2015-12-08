@@ -818,4 +818,31 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organizeCustomized(groupPkgs = List("java", "java.util", "java.io"))
+
+  @Test
+  def organizeImportsWithDuplicateGroups() = new FileSet {
+    """
+    package test
+
+    import scala.util.Try
+    import java.util.Date
+    import scala.collection.immutable.Queue
+
+    class Bug {
+      def a: (Try[Date], Queue[Date]) = ???
+    }
+    """ becomes
+    """
+    package test
+
+    import java.util.Date
+
+    import scala.collection.immutable.Queue
+    import scala.util.Try
+
+    class Bug {
+      def a: (Try[Date], Queue[Date]) = ???
+    }
+    """
+  } applyRefactoring organizeCustomized(groupPkgs = List("java", "scala", "java"))
 }
