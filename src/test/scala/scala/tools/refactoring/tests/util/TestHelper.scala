@@ -24,6 +24,7 @@ import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.implementations.Rename
 import scala.tools.refactoring.common.TracingImpl
+import scala.tools.refactoring.util.UniqueNames
 
 object TestHelper {
   case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
@@ -49,6 +50,20 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     def apply(codeWithFilename: (String, String)) = new Source(codeWithFilename._1, codeWithFilename._2)
   }
 
+  /**
+   * If this method returns true, all `FileSet` based test cases are nested in unique base packages by default
+   *
+   * Note that this is useful since test cases are usually executed with the same presentation compiler for
+   * performance reasons. By nesting them in unique packages, we minimize the chance that they interfere
+   * with each other.
+   */
+  protected def nestTestsInUniqueBasePackageByDefault = false
+
+  private def defaultFileSetBasePackage = {
+    if (nestTestsInUniqueBasePackageByDefault) Some(UniqueNames.scalaPackage())
+    else None
+  }
+
   protected def parseScalaAndVerify(src: String): global.Tree = {
     val tree = treeFrom(src)
 
@@ -64,17 +79,29 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
    * A project to test multiple compilation units. Add all
    * sources using "add" before using any of the lazy vals.
    */
-  abstract class FileSet(baseName: String = randomFileName(), val expectCompilingCode: Boolean = true) {
+  abstract class FileSet(baseName: String = UniqueNames.srcDir(), val expectCompilingCode: Boolean = true, val basePackage: Option[String] = defaultFileSetBasePackage) {
     private val srcs = ListBuffer[(Source, Source)]()
 
     object TaggedAsGlobalRename
     object TaggedAsLocalRename
     var expectGlobalRename: Option[Boolean] = None
 
+    private def eventuallyNestInBasePgk(src1: Source, src2: Source): (Source, Source) = {
+      basePackage.map { pkg =>
+        def wrapInPkg(src: Source) = {
+          src.copy(code = s"package $pkg\n\n${src.code}")
+        }
+
+        (wrapInPkg(src1), wrapInPkg(src2))
+      }.getOrElse {
+        (src1, src2)
+      }
+    }
+
     implicit class WrapSource(src: String) {
       def becomes(expected: String): Unit = {
         val filename = nextFilename()
-        srcs += Source(src, filename) → Source(stripWhitespacePreservers(expected), filename)
+        srcs += eventuallyNestInBasePgk(Source(src, filename), Source(stripWhitespacePreservers(expected), filename))
       }
 
       def isNotModified(): Unit = {
@@ -98,7 +125,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
     implicit class WrapSourceWithFilename(srcWithName: (String, String)) {
       def becomes(newSrcWithName: (String, String)): Unit = {
-        srcs += Source(srcWithName) -> Source(stripWhitespacePreservers(newSrcWithName._1), newSrcWithName._2)
+        srcs += eventuallyNestInBasePgk(Source(srcWithName), Source(stripWhitespacePreservers(newSrcWithName._1), newSrcWithName._2))
       }
     }
 

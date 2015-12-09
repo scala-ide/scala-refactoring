@@ -73,13 +73,8 @@ trait TreeCreationMethods {
 
   val global: scala.tools.nsc.interactive.Global
 
-  val randomFileName = {
-    val r = new java.util.Random
-    () => "file" + r.nextInt
-  }
-
   protected def treeFromString(src: String, isJava: Boolean = false): global.Tree = {
-    val file = new BatchSourceFile(randomFileName() + (if (isJava) ".java" else ""), src)
+    val file = new BatchSourceFile(UniqueNames.basename() + (if (isJava) ".java" else ""), src)
     treeFrom(file)
   }
 

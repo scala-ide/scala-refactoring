@@ -44,6 +44,9 @@ trait Layout {
     override val trailing = self
     override val post = r
   }
+
+  def isEmpty: Boolean = asText.isEmpty
+  def nonEmpty: Boolean = !isEmpty
 }
 
 case object NoLayout extends Layout {

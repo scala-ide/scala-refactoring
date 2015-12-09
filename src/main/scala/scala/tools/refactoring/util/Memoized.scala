@@ -7,6 +7,10 @@ package util
 
 object Memoized {
 
+   // Use this switch to temporarily turn of memoization for
+   // debugging purposes:
+  private val MemonizationEnabled = true
+
   /**
    *
    * Create a function that memoizes its results in a WeakHashMap.
@@ -26,42 +30,48 @@ object Memoized {
    * @param toMem The function we want to memoize.
    */
   def on[X, Y, Z](mkKey: X => Y)(toMem: X => Z): X => Z = {
+    if (!MemonizationEnabled) {
+      toMem
+    } else {
+      val cache = new java.util.WeakHashMap[Y, Z]
 
-    val cache = new java.util.WeakHashMap[Y, Z]
-
-    { (x: X) =>
-      val k = mkKey(x)
-      if(cache.containsKey(k)) {
-        val n = cache.get(k)
-        if(n == null) {
-          toMem(x)
+      (x: X) => {
+        val k = mkKey(x)
+        if(cache.containsKey(k)) {
+          val n = cache.get(k)
+          if(n == null) {
+            toMem(x)
+          } else {
+            n
+          }
         } else {
+          val n = toMem(x)
+          cache.put(k, n)
           n
         }
-      } else {
-        val n = toMem(x)
-        cache.put(k, n)
-        n
       }
     }
   }
 
   def apply[X, Z](toMem: X => Z): X => Z = {
+    if (!MemonizationEnabled) {
+      toMem
+    } else {
+      val cache = new java.util.WeakHashMap[X, Z]
 
-    val cache = new java.util.WeakHashMap[X, Z]
-
-    { (x: X) =>
-      if(cache.containsKey(x)) {
-        val n = cache.get(x)
-        if(n == null) {
-          toMem(x)
+      (x: X) => {
+        if(cache.containsKey(x)) {
+          val n = cache.get(x)
+          if(n == null) {
+            toMem(x)
+          } else {
+            n
+          }
         } else {
+          val n = toMem(x)
+          cache.put(x, n)
           n
         }
-      } else {
-        val n = toMem(x)
-        cache.put(x, n)
-        n
       }
     }
   }

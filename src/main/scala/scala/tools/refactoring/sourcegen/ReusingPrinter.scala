@@ -5,11 +5,17 @@
 package scala.tools.refactoring
 package sourcegen
 
+import scala.language.implicitConversions
 import scala.reflect.internal.util.RangePosition
+import scala.tools.refactoring.sourcegen.Layout.LayoutFromFile
+import scala.tools.refactoring.util.SourceWithMarker
+import scala.tools.refactoring.util.SourceWithMarker.Movement
+import scala.tools.refactoring.util.SourceWithMarker.Movements
+import scala.tools.refactoring.util.SourceWithMarker.Movements.charToMovement
+import scala.tools.refactoring.util.SourceWithMarker.Movements.commentsAndSpaces
+import scala.tools.refactoring.util.SourceWithMarker.Movements.space
 
-import language.implicitConversions
-
-trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
+trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with ScalaVersionAdapters.CompilerApiAdapters {
 
   outer: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with Formatting with Indentations =>
 
@@ -276,8 +282,53 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
   trait MethodCallPrinters {
     this: TreePrinting with PrintingUtils =>
 
-    override def Select(tree: Select, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext) = {
+    /*
+     * This function takes care of properly printing qualifiers for compiler generated artifacts, that have a
+     * corresponding qualifier in the original source code. To understand what that means, consider the statement
+     *
+     *   O().test.meth()
+     *
+     * where meth has default arguments, like
+     *
+     *   def meth(j: Int = 0) = j
+     *
+     * After typing, the compiler transforms the statement from above into something like
+     *
+     *   <artifact> val qual$1: C = O.apply().test;
+     *   <artifact> val x$1: Int = qual$1.meth$default$1;
+     *   qual$1.meth(x$1)
+     *
+     * with 'qual$1' from the last line pointing to the position of the qualifier 'test' in the original source.
+     *
+     * Note that simply reading the qualifier from the original source would be wrong if exactly this qualifier
+     * was renamed. The reason that this doesn't cause problems is that if 'test' is renamed, 'qual$1.meth(x$1)'
+     * remains unchanged, and therefore is not printed at all.
+     */
+    private def printArtifactQualifierFromSource(q: Tree): Fragment = {
+      def mkLayout(start: SourceWithMarker, end: SourceWithMarker): Layout = {
+        LayoutFromFile(q.pos.source, start.marker, end.marker)
+      }
 
+      val srcStartQ = SourceWithMarker(q.pos.source.content, q.pos.point)
+      val srcEndQ = srcStartQ.moveMarker(Movements.id)
+
+      val srcStartSep = srcEndQ
+      val srcEndSep = srcStartSep.moveMarker(Movements.until(Movements.id))
+
+      Fragment(NoLayout, mkLayout(srcStartQ, srcEndQ), mkLayout(srcStartSep, srcEndSep))
+    }
+
+    private def artifactQualifierIndirectlyRepresentedInSource(q: Tree) = q.pos match {
+      case _: RangePosition | NoPosition => false
+      case pos => q match {
+        case _: This => false
+        case _ =>
+          val sym = q.symbol
+          !sym.isOmittablePrefix && isImplementationArtifact(sym)
+      }
+    }
+
+    override def Select(tree: Select, qualifier: Tree, selector: Name)(implicit ctx: PrintingContext) = {
       lazy val nameOrig = nameOf(tree)
 
       qualifier match {
@@ -333,6 +384,8 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
             // Workaround for SI-5064
             if (tree.pos.sameRange(qualifier.pos) && qualifier.pos.isTransparent)
               EmptyFragment
+            else if (artifactQualifierIndirectlyRepresentedInSource(qualifier))
+              printArtifactQualifierFromSource(qualifier)
             else
               p(qualifier)
           }
@@ -553,13 +606,29 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter {
           }
 
         case (fun, Nil) =>
-
-          // Calls to methods without `()` are represented by a select and no apply.
-          if (r.matches("""^\s*\)""")) {
-            l ++ p(fun) ++ "(" ++ r
-          } else {
-            l ++ p(fun) ++ r
+          val trailingLayout: Layout = {
+            val rr = r
+            if (rr.nonEmpty) {
+              if ((commentsAndSpaces ~ ')').consumes(rr.asText)) {
+                // Needed for IndividualSourceGenTest.testPrintParentheses
+                Layout("(") ++ rr
+              } else {
+                rr
+              }
+            } else {
+              fun.pos match {
+                case pos: RangePosition =>
+                  // If fun is part of an expression involving default arguments, it might be
+                  // necessary to manually make sure that parenthesis and '.' is printed out.
+                  // See #1002564
+                  val parensAndSep = commentsAndSpaces ~ '(' ~ commentsAndSpaces ~ ')' ~ '.'.optional
+                  Layout(Movement.coveredStringStartingAtEndOf(pos, parensAndSep))
+                case _ => NoLayout
+              }
+            }
           }
+
+          l ++ p(fun) ++ trailingLayout
 
         case (fun, args) if !keepTree(fun) /* Constructors, Tuples */ =>
           val _args = pp(args, separator = ("," ++ Requisite.Blank), before = Requisite.anywhere("("), after = Requisite.anywhere(")"))

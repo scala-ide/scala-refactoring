@@ -29,6 +29,8 @@ class RenameTest extends TestHelper with TestRefactoring {
     prepareAndRenameTo(name)(pro).changes
   }
 
+  protected override def nestTestsInUniqueBasePackageByDefault = true
+
   /*
    * See Assembla Ticket 1002537
    */
@@ -2520,4 +2522,170 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("x"))
+
+  /*
+   * See Assembla Ticket 1002564
+   */
+  @Test
+  def testRenameWithDefaultArgs1002564Ex1() = new FileSet {
+    """
+    object X extends App {
+      O().test.meth()
+    }
+    class C {
+      def meth(j: Int = 0) = j
+    }
+    class O {
+      def /*(*/test/*)*/: C = ???
+    }
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O().test2.meth()
+    }
+    class C {
+      def meth(j: Int = 0) = j
+    }
+    class O {
+      def /*(*/test2/*)*/: C = ???
+    }
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("test2"))
+
+  @Test
+  def testRenameSimilarTo1002564Ex1WithoutDefaultArgs() = new FileSet {
+    """
+    object X extends App {
+      O().test.meth()
+    }
+    class C {
+      def meth() = 0
+    }
+    class O {
+      def /*(*/test/*)*/: C = ???
+    }
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O().test2.meth()
+    }
+    class C {
+      def meth() = 0
+    }
+    class O {
+      def /*(*/test2/*)*/: C = ???
+    }
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("test2"))
+
+  @Test
+  def testRenameWithDefaultArgs1002564Ex2() = new FileSet {
+    """
+    object X extends App {
+      O().test.meth()
+    }
+    class C {
+      def /*(*/meth/*)*/(j: Int = 0) = j
+    }
+    class O {
+      def test: C = ???
+    }
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O().test.meth2()
+    }
+    class C {
+      def /*(*/meth2/*)*/(j: Int = 0) = j
+    }
+    class O {
+      def test: C = ???
+    }
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("meth2"))
+
+  @Test
+  def testRenameWithDefaultArgs1002564Ex3() = new FileSet {
+    """
+    package test
+
+    object Bug {
+      class Class {
+        def /*(*/renameMe/*)*/(i: Int = 42) = i
+      }
+
+      def cl = new Class
+      cl.renameMe()
+    }
+    """ becomes
+    """
+    package test
+
+    object Bug {
+      class Class {
+        def /*(*/ohNo/*)*/(i: Int = 42) = i
+      }
+
+      def cl = new Class
+      cl.ohNo()
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ohNo"))
+
+  @Test
+  def testRenameWithDefaultArgs1002564Ex4() = new FileSet {
+    """
+    object X3 {
+      O3().test.meth(0)
+    }
+
+    class C3 {
+      def meth(i: Int = 0, j: Int = 1) = i + j
+    }
+
+    class O3 {
+      def /*(*/test/*)*/: C3 = ???
+    }
+
+    object O3 {
+      def apply(): O3 = ???
+    }
+    """ becomes
+    """
+    object X3 {
+      O3().test2.meth(0)
+    }
+
+    class C3 {
+      def meth(i: Int = 0, j: Int = 1) = i + j
+    }
+
+    class O3 {
+      def /*(*/test2/*)*/: C3 = ???
+    }
+
+    object O3 {
+      def apply(): O3 = ???
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("test2"))
+
 }
