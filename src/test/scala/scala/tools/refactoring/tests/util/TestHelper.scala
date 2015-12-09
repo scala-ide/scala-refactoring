@@ -28,6 +28,8 @@ import scala.tools.refactoring.util.UniqueNames
 
 object TestHelper {
   case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
+
+  private val PtnIndentedLine = """(\s*)[^\s].*""".r
 }
 
 trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler with TracingImpl {
@@ -89,7 +91,11 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     private def eventuallyNestInBasePgk(src1: Source, src2: Source): (Source, Source) = {
       basePackage.map { pkg =>
         def wrapInPkg(src: Source) = {
-          src.copy(code = s"package $pkg\n\n${src.code}")
+          val initialIndent = src.code.lines.collectFirst {
+            case PtnIndentedLine(indent) => indent
+          }.getOrElse("")
+
+          src.copy(code = s"${initialIndent}package $pkg\n\n${src.code}")
         }
 
         (wrapInPkg(src1), wrapInPkg(src2))
