@@ -121,15 +121,16 @@ trait TreeChangesDiscoverer {
       children(parent) flatMap (findChildren(_, Nil))
     }
 
-    /*the default result when the tree has changed*/
-    def resultWhenChanged = List((t, t.pos, Set(t) ++ searchChildrenForChanges(t)))
+    def defaultResultWhenChanged = {
+      List((t, t.pos, Set(t) ++ searchChildrenForChanges(t)))
+    }
 
     if (isSameAsOriginalTree(t)) {
       trace("Top tree %s is unchanged.", getSimpleClassName(t))
       Nil
     } else if (hasTreeInternallyChanged(t)) {
       trace("Top tree %s has changed internally.", getSimpleClassName(t))
-      resultWhenChanged
+      defaultResultWhenChanged
     } else if (hasChangedChildren(t)) {
       trace("Top tree %s has changed children.", getSimpleClassName(t))
 
@@ -164,10 +165,10 @@ trait TreeChangesDiscoverer {
             // because of things like the extends keyword.
             replaceSingleDef(orig, changed)
           case _ =>
-            resultWhenChanged
+            defaultResultWhenChanged
         }
       } else {
-        resultWhenChanged
+        defaultResultWhenChanged
       }
     } else {
       children(t) flatMap (c => findAllChangedTrees(c))
