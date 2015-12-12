@@ -148,6 +148,44 @@ class RenameTest extends TestHelper with TestRefactoring {
     """ -> TaggedAsGlobalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 
+  @Test
+  def testRenameSimilarButNotAffectedBy1002611Ex1() = new FileSet {
+    """
+    object X extends App {
+      O()./**/test/**/ /*Please don't forget about me!!!!*/ /*(*/.renameMe/*)*/(0)
+    }
+
+    class C {
+      def renameMe(j: Int) = j
+    }
+
+    class O {
+      def test: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O()./**/test/**/ /*Please don't forget about me!!!!*/ /*(*/.ups/*)*/(0)
+    }
+
+    class C {
+      def ups(j: Int) = j
+    }
+
+    class O {
+      def test: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
   /*
    * See Assembla Ticket 1002537
    */
