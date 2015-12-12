@@ -258,7 +258,15 @@ trait PimpedTrees {
             } else if (t.name.decode != t.name.toString) {
               t.pos withEnd (t.pos.start + nameString.length)
             } else {
-              t.pos withEnd (t.pos.start + t.name.length)
+              t.pos match {
+                case rpos: RangePosition =>
+                  val nameStart = SourceWithMarker.atStartOf(rpos).moveMarker(commentsAndSpaces ~ '.'.optional ~ commentsAndSpaces)
+                  val nameEnd = nameStart.moveMarker(id)
+                  t.pos.withStart(nameStart.marker).withEnd(nameEnd.marker)
+                case opos =>
+                   logError(s"Expected RangePosition but got $opos", new AssertionError)
+                   opos
+              }
             }
 
           case t @ Bind(name, body) =>
