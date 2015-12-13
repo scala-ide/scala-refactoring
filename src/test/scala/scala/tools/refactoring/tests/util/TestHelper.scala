@@ -29,7 +29,7 @@ import scala.tools.refactoring.util.UniqueNames
 object TestHelper {
   case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
 
-  private val PtnIndentedLine = """(\s*)[^\s].*""".r
+  private val IndentedLine = """(\s*)[^\s].*""".r
 }
 
 trait TestHelper extends TestRules with Refactoring with CompilerProvider with common.InteractiveScalaCompiler with TracingImpl {
@@ -92,7 +92,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
       basePackage.map { pkg =>
         def wrapInPkg(src: Source) = {
           val initialIndent = src.code.lines.collectFirst {
-            case PtnIndentedLine(indent) => indent
+            case IndentedLine(indent) => indent
           }.getOrElse("")
 
           src.copy(code = s"${initialIndent}package $pkg\n\n${src.code}")
