@@ -38,6 +38,12 @@ echoErr() {
   cat <<< "$@" 1>&2
 }
 
+isBuildForScala211() {
+  local JAR="$1"
+  unzip -p "$JAR" META-INF/MANIFEST.MF | egrep 'Bundle-Version:\s*\S+\b2_11\b' -q
+  return $?
+}
+
 KEEP_REFACTORING_LIBRARY_BACKUP=${KEEP_REFACTORING_LIBRARY_BACKUP:-true}
 
 if [[ -z "$SCALA_IDE_HOME" ]]; then
@@ -63,6 +69,7 @@ fi
 
 TSTAMP="$(date +%Y-%m-%dT%H-%M-%S)"
 
+shopt -s nullglob
 for oldRefactoringJar in "$SCALA_IDE_PLUGINS_DIR/"org.scala-refactoring.library_*.jar; do
   if [[ "$KEEP_REFACTORING_LIBRARY_BACKUP" == "true" ]]; then
     backupRefactoringJar="$oldRefactoringJar.$TSTAMP.bak"
@@ -75,4 +82,8 @@ done
 REFACTORING_JAR_DEST_NAME="org.scala-refactoring.library_localbuild-$TSTAMP-SNAPSHOT.jar"
 REFACTORING_JAR_DESTINATION="$SCALA_IDE_PLUGINS_DIR/$REFACTORING_JAR_DEST_NAME"
 
-cp "$NEW_REFACTORING_JAR" "$REFACTORING_JAR_DESTINATION"
+if isBuildForScala211 "$NEW_REFACTORING_JAR"; then
+  cp "$NEW_REFACTORING_JAR" "$REFACTORING_JAR_DESTINATION"
+else
+  echoErr "$NEW_REFACTORING_JAR is not build for Scala-2.11; refusing to perform update"
+fi
