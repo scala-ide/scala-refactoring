@@ -32,6 +32,161 @@ class RenameTest extends TestHelper with TestRefactoring {
   protected override def nestTestsInUniqueBasePackageByDefault = true
 
   /*
+   * See Assembla Ticket 1002611
+   */
+  @Test
+  def testRenameWithDefaultArgs1002611Ex1() = new FileSet {
+    """
+    object X extends App {
+      O() /*Please*/ . /*let me survive!*/ /*(*/renameMe/*)*/meth()
+    }
+
+    class C {
+      def meth(j: Int = 0) = j
+    }
+
+    class O {
+      def renameMe: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O() /*Please*/ . /*let me survive!*/ /*(*/ups/*)*/meth()
+    }
+
+    class C {
+      def meth(j: Int = 0) = j
+    }
+
+    class O {
+      def ups: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithDefaultArgs1002611Ex2() = new FileSet {
+    """
+    object X extends App {
+      O()./**/test/**/ /*Please don't forget about me!!!!*/ /*(*/.renameMe/*)*/()
+    }
+
+    class C {
+      def renameMe(j: Int = 0) = j
+    }
+
+    class O {
+      def test: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O()./**/test/**/ /*Please don't forget about me!!!!*/ /*(*/.ups/*)*/()
+    }
+
+    class C {
+      def ups(j: Int = 0) = j
+    }
+
+    class O {
+      def test: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithDefaultArgs1002611Ex3() = new FileSet {
+    """
+    object X extends App {
+      O(). /*let me survive!*/ /*(*/renameMe/*)*/meth()
+    }
+
+    class C {
+      def meth(j: Int = 0) = j
+    }
+
+    class O {
+      def renameMe: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O(). /*let me survive!*/ /*(*/ups/*)*/meth()
+    }
+
+    class C {
+      def meth(j: Int = 0) = j
+    }
+
+    class O {
+      def ups: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameSimilarButNotAffectedBy1002611Ex1() = new FileSet {
+    """
+    object X extends App {
+      O()./**/test/**/ /*Please don't forget about me!!!!*/ /*(*/.renameMe/*)*/(0)
+    }
+
+    class C {
+      def renameMe(j: Int) = j
+    }
+
+    class O {
+      def test: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ becomes
+    """
+    object X extends App {
+      O()./**/test/**/ /*Please don't forget about me!!!!*/ /*(*/.ups/*)*/(0)
+    }
+
+    class C {
+      def ups(j: Int) = j
+    }
+
+    class O {
+      def test: C = ???
+    }
+
+    object O {
+      def apply(): O = ???
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
    * See Assembla Ticket 1002537
    */
   @Test

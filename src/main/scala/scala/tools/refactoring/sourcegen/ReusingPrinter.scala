@@ -620,8 +620,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
                 case pos: RangePosition =>
                   // If fun is part of an expression involving default arguments, it might be
                   // necessary to manually make sure that parenthesis and '.' is printed out.
-                  // See #1002564
-                  val parensAndSep = commentsAndSpaces ~ '(' ~ commentsAndSpaces ~ ')' ~ '.'.optional
+                  // See #1002564 and #1002611
+                  val cs = commentsAndSpaces
+                  val parensAndSep = cs ~ '(' ~ cs ~ ')' ~ (cs ~ '.' ~ cs).optional
                   Layout(Movement.coveredStringStartingAtEndOf(pos, parensAndSep))
                 case _ => NoLayout
               }

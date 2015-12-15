@@ -77,7 +77,15 @@ object SourceWithMarker {
     SourceWithMarker(pos.source.content, pos.start - 1)
   }
 
+  def atStartOf(pos: RangePosition): SourceWithMarker = {
+    SourceWithMarker(pos.source.content, pos.start)
+  }
+
   def afterEndOf(pos: RangePosition): SourceWithMarker = {
+    SourceWithMarker(pos.source.content, pos.end + 1)
+  }
+
+  def atEndOf(pos: RangePosition): SourceWithMarker = {
     SourceWithMarker(pos.source.content, pos.end + 1)
   }
 
