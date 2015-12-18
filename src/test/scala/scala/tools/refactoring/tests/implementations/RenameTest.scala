@@ -2977,4 +2977,35 @@ class Blubb
     }
     """
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1001932
+   */
+  @Test
+  def testRenameAddsErroneusBrackets1001932() = new FileSet {
+    """
+    class /*(*/RenameMe/*)*/ {
+      def testFn: (List[RenameMe], Int) = ???
+    }
+    """ becomes
+    """
+    class /*(*/Hanswurst/*)*/ {
+      def testFn: (List[Hanswurst], Int) = ???
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Hanswurst"))
+
+  @Test
+  def testSimilarButNotAffectedBy1001932() = new FileSet {
+    """
+    class /*(*/RenameMe/*)*/ {
+      def testFn: Tuple2[List[RenameMe], Int] = ???
+    }
+    """ becomes
+    """
+    class /*(*/Hanswurst/*)*/ {
+      def testFn: Tuple2[List[Hanswurst], Int] = ???
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Hanswurst"))
 }
