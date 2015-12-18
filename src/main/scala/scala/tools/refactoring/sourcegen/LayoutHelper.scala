@@ -296,10 +296,9 @@ trait LayoutHelper {
   def splitLayoutBetweenSiblings(parent: Tree, left: Tree, right: Tree): (Layout, Layout) = {
 
     def mergeLayoutWithComment(l: Seq[Char], c: Seq[Char]) = l.zip(c).map {
-      case (' ', _1) => _1
-      case (_1, ' ') => _1
-      case ('\n', '\n') => '\n'
-      case ('\r', '\r') => '\r'
+      case (' ', cc) => cc
+      case (ll, ' ') => ll
+      case (a, b) if a == b => a
     }.mkString
 
     def split(layout: String): (String, String, String) = {
@@ -309,27 +308,27 @@ trait LayoutHelper {
        * kinds of layout that contain an @. */
       def layoutDoesNotIncludeAnnotation = !layout.contains("@")
 
-      (layout match {
-        case Else(l, r)             => Some((l, r, "else"))
-        case Match(l, r)            => Some((l, r, "match"))
-        case StartComment(l, r)     => Some((l, r, "StartComment"))
-        case Class(l, r)            => Some((l, r, "Class"))
-        case Colon(l, r)            => Some((l, r, "Colon"))
-        case EmptyParens(l, r)      => Some((l, r, "EmptyParens"))
-        case OpeningBrace(l, r)     => Some((l, r, "OpeningBrace"))
-        case Arrow(l, r)            => Some((l, r, "`=>`"))
-        case ClosingBrace(l, r) if layoutDoesNotIncludeAnnotation => Some((l, r, "ClosingBrace"))
-        case Equals(l, r)       if layoutDoesNotIncludeAnnotation => Some((l, r, "Equals"))
-        case ImportStatementNewline(l, r) => Some((l, r, "ImportStatement Newline"))
-        case ImportStatement(l, r)  => Some((l, r, "ImportStatement"))
-        case ClosingCurlyBrace(l, r)=> Some((l, r, "ClosingCurlyBrace"))
-        case NewLine(l, r)          => Some((l, r, "NewLine"))
-        case CommaSpace(l, r)       => Some((l, r, "CommaSpace"))
-        case Comma(l, r)                => Some((l, r, "Comma"))
-        case Dot(l, r)                  => Some((l, r, "Dot"))
-        case OpeningSquareBracket(l, r) => Some((l, r, "OpeningSquareBracket"))
-        case s                          => Some((s, "", "NoMatch"))
-      }).get
+      layout match {
+        case Else(l, r)             => (l, r, "else")
+        case Match(l, r)            => (l, r, "match")
+        case StartComment(l, r)     => (l, r, "StartComment")
+        case Class(l, r)            => (l, r, "Class")
+        case Colon(l, r)            => (l, r, "Colon")
+        case EmptyParens(l, r)      => (l, r, "EmptyParens")
+        case OpeningBrace(l, r)     => (l, r, "OpeningBrace")
+        case Arrow(l, r)            => (l, r, "`=>`")
+        case ClosingBrace(l, r) if layoutDoesNotIncludeAnnotation => (l, r, "ClosingBrace")
+        case Equals(l, r)       if layoutDoesNotIncludeAnnotation => (l, r, "Equals")
+        case ImportStatementNewline(l, r) => (l, r, "ImportStatement Newline")
+        case ImportStatement(l, r)  => (l, r, "ImportStatement")
+        case ClosingCurlyBrace(l, r)=> (l, r, "ClosingCurlyBrace")
+        case NewLine(l, r)          => (l, r, "NewLine")
+        case CommaSpace(l, r)       => (l, r, "CommaSpace")
+        case Comma(l, r)                => (l, r, "Comma")
+        case Dot(l, r)                  => (l, r, "Dot")
+        case OpeningSquareBracket(l, r) => (l, r, "OpeningSquareBracket")
+        case s                          => (s, "", "NoMatch")
+      }
     }
 
     (fixValDefPosition(left), fixValDefPosition(right)) match {
