@@ -74,7 +74,9 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
         } else {
           Fragment(leadingParent, printedFragment.toLayout, trailingParent)
         }
-      } \\ (trace("Result " + getSimpleClassName(t) + ": %s", _))
+      } \\ { res =>
+        trace("Result " + getSimpleClassName(t) + ": %s", res)
+      }
 
       indentedFragment
     }
