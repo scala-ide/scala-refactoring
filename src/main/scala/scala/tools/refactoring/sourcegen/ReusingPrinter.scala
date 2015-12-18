@@ -716,7 +716,12 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
         case EmptyTree =>
           printFunctionType()
         case _ =>
-          l ++ p(tpt) ++ pp(args, before = "[", separator = ", ", after = "]") ++ r
+          val (beforeArgs, afterArgs) = {
+            if (!tpt.pos.isRange) ("", "") //<-- No brackets for tuples like (X, Y) - see #1001932
+            else ("[", "]")
+          }
+
+          l ++ p(tpt) ++ pp(args, before = beforeArgs, separator = ", ", after = afterArgs) ++ r
       }
     }
 
