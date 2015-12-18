@@ -3008,4 +3008,76 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("Hanswurst"))
+
+  /*
+   * See Assembla Ticket 1002618
+   */
+  @Test
+  def testRenameBreaksCodeInGenericWithComments1002618Ex1() = new FileSet {
+    """
+    trait /*(*/RenameMe/*)*/ {
+      def works1: Map[Int, RenameMe]
+      def works2: Map[Int, /**/RenameMe]
+      def works3: Map[/**/ Int/**/, /**/RenameMe /**/ ]
+
+      def breaksFormat1: Map[Int,RenameMe]
+
+      def breaksCompile1: Map[Int,/**/RenameMe]
+      def breaksCompile2: Map[Int,/**/ RenameMe]
+
+      def breaksCompile3: Map[Int,/**/
+        RenameMe]
+    }
+    """ becomes
+    """
+    trait /*(*/Ups/*)*/ {
+      def works1: Map[Int, Ups]
+      def works2: Map[Int, /**/Ups]
+      def works3: Map[/**/ Int/**/, /**/Ups /**/ ]
+
+      def breaksFormat1: Map[Int,Ups]
+
+      def breaksCompile1: Map[Int,/**/Ups]
+      def breaksCompile2: Map[Int,/**/ Ups]
+
+      def breaksCompile3: Map[Int,/**/
+        Ups]
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  @Test
+  def testRenameBreaksCodeInGenericWithComments1002618Ex2() = new FileSet {
+    """
+    trait /*(*/RenameMe/*)*/ {
+      def works1: (Int, RenameMe)
+      def works2: (Int, /**/RenameMe)
+      def works3: (/**/ Int/**/, /**/RenameMe /**/ )
+
+      def breaksFormat1: (Int,RenameMe)
+
+      def breaksCompile1: (Int,/**/RenameMe)
+      def breaksCompile2: (Int,/**/ RenameMe)
+
+      def breaksCompile3: (Int,/**/
+        RenameMe)
+    }
+    """ becomes
+    """
+    trait /*(*/Ups/*)*/ {
+      def works1: (Int, Ups)
+      def works2: (Int, /**/Ups)
+      def works3: (/**/ Int/**/, /**/Ups /**/ )
+
+      def breaksFormat1: (Int,Ups)
+
+      def breaksCompile1: (Int,/**/Ups)
+      def breaksCompile2: (Int,/**/ Ups)
+
+      def breaksCompile3: (Int,/**/
+        Ups)
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
 }
