@@ -480,7 +480,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           p(impl)
       }
 
-      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = ", ", after = "]") ++ body.ifNotEmpty {
+      Fragment(mods_ + keyword + name) ++ pp(tparams, before = "[", separator = "," ++ Requisite.Blank, after = "]") ++ body.ifNotEmpty {
         case body if body.asText.startsWith("{") =>
           Layout(" ") ++ body
         case body =>
@@ -584,7 +584,7 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         // Finalize this fragment so that the anywhere-requisite gets applied here
         // and does not match on ] that might come later (see testNewDefDefWithOriginalContent3
         // and testDefDefWithTypeParams).
-        pp(tparams, before = "[", after = anywhere("]"), separator = ", ").toLayout
+        pp(tparams, before = "[", after = anywhere("]"), separator = "," ++ Requisite.Blank).toLayout
       }
 
       // if there's existing layout, the type parameter's layout might already contain "()"

@@ -269,7 +269,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
     }
 
     override def UnApply(tree: UnApply, fun: Tree, args: List[Tree])(implicit ctx: PrintingContext) = {
-      l ++ p(fun) ++ pp(args, separator = ", ", before = "(", after = ")") ++ r
+      l ++ p(fun) ++ pp(args, separator = ",", before = "(", after = ")") ++ r
     }
 
     override def Match(tree: Match, selector: Tree, cases: List[Tree])(implicit ctx: PrintingContext) = {
@@ -702,7 +702,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
         } else {
           val arguments = args.init
           val ret = args.last
-          l ++ pp(arguments, before = "(", separator = ", ", after = Requisite.anywhere(")")) ++ p(ret) ++ r
+          l ++ pp(arguments, before = "(", separator = ",", after = Requisite.anywhere(")")) ++ p(ret) ++ r
         }
       }
 
@@ -721,7 +721,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
             else ("[", "]")
           }
 
-          l ++ p(tpt) ++ pp(args, before = beforeArgs, separator = ", ", after = afterArgs) ++ r
+          l ++ p(tpt) ++ pp(args, before = beforeArgs, separator = Requisite.allowSurroundingWhitespace(","), after = afterArgs) ++ r
       }
     }
 
@@ -1023,14 +1023,14 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
           case (x: TypeDef) :: Nil =>
             p(x)
           case (x: TypeDef) :: (y: TypeDef) :: rest =>
-            p(x) ++ ", " ++ mergeTypeParameters(y :: rest)
+            p(x) ++ "," ++ mergeTypeParameters(y :: rest)
           case (x: TypeDef) :: rest =>
             val (bounds, next) = rest.span(!_.isInstanceOf[TypeDef])
             val current = pp(x :: bounds, separator = ": ")
             if (next.isEmpty) {
               current
             } else {
-              current ++ ", " ++ mergeTypeParameters(next)
+              current ++ "," ++ mergeTypeParameters(next)
             }
           case _ =>
             EmptyFragment
@@ -1096,7 +1096,7 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
     this: TreePrinting with PrintingUtils =>
 
     override def SuperConstructorCall(tree: SuperConstructorCall, clazz: global.Tree, args: List[global.Tree])(implicit ctx: PrintingContext) = {
-      l ++ p(clazz) ++ pp(args, separator = ", ", before = "(", after = ")") ++ r
+      l ++ p(clazz) ++ pp(args, separator = ",", before = "(", after = ")") ++ r
     }
 
     override def Super(tree: Super, qual: Tree, mix: Name)(implicit ctx: PrintingContext) = {

@@ -287,7 +287,7 @@ trait LayoutHelper {
   private val Equals = """(?ms)(.*?=\s?)(.*)""".r
   private val ClosingBrace = """(?ms)(.*?)\)(.*)""".r
   private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\r?\n.*)""".r
-  private val Comma = """(.*?),(.*)""".r
+  private val Comma = """(?ms)(.*?),(.*)""".r
   private val CommaSpace = """(.*?), (.*)""".r
   private val NewLine = """(?ms)(.*?)(\r?\n.*)""".r
   private val ImportStatementNewline = """(?ms)(.*)(\r?\n.*?import.*)""".r
@@ -322,11 +322,10 @@ trait LayoutHelper {
         case ImportStatementNewline(l, r) => (l, r, "ImportStatement Newline")
         case ImportStatement(l, r)  => (l, r, "ImportStatement")
         case ClosingCurlyBrace(l, r)=> (l, r, "ClosingCurlyBrace")
-        case NewLine(l, r)          => (l, r, "NewLine")
-        case CommaSpace(l, r)       => (l, r, "CommaSpace")
         case Comma(l, r)                => (l, r, "Comma")
         case Dot(l, r)                  => (l, r, "Dot")
         case OpeningSquareBracket(l, r) => (l, r, "OpeningSquareBracket")
+        case NewLine(l, r)          => (l, r, "NewLine")
         case s                          => (s, "", "NoMatch")
       }
     }
@@ -414,8 +413,8 @@ trait LayoutHelper {
          * We remove all leading or trailing commas, they always need to be re-introduced by the printers.
          */
         def removeLeadingOrTrailingComma(s: String) = {
-          val CommaAtStart = "(?ms),\\s?(.*)".r
-          val CommaAtEnd   = "(?ms)(.*),\\s?".r
+          val CommaAtStart = """(?ms),(\s*)""".r
+          val CommaAtEnd   = """(?ms)(\s*),\s*""".r
           s match {
             case CommaAtStart(rest) => rest
             case CommaAtEnd(rest) => rest
