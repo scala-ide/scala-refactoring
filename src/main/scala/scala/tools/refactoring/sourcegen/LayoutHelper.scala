@@ -287,6 +287,11 @@ trait LayoutHelper {
   private val Equals = """(?ms)(.*?=\s?)(.*)""".r
   private val ClosingBrace = """(?ms)(.*?)\)(.*)""".r
   private val ClosingCurlyBrace = """(?ms)(.*?\}\s*)(\r?\n.*)""".r
+
+  // Here to make IndividualSourceGenTest.changeMethodInvocation3 happy;
+  // I'm not sure if I like this, because I'd prefer splitting at ",".
+  private val NewlineComma = """(?ms)(.*?)(\r?\n\s*,.*)""".r
+
   private val Comma = """(?ms)(.*?),(.*)""".r
   private val CommaSpace = """(.*?), (.*)""".r
   private val NewLine = """(?ms)(.*?)(\r?\n.*)""".r
@@ -322,6 +327,7 @@ trait LayoutHelper {
         case ImportStatementNewline(l, r) => (l, r, "ImportStatement Newline")
         case ImportStatement(l, r)  => (l, r, "ImportStatement")
         case ClosingCurlyBrace(l, r)=> (l, r, "ClosingCurlyBrace")
+        case NewlineComma(l, r)         => (l, r, "NewlineComma")
         case Comma(l, r)                => (l, r, "Comma")
         case Dot(l, r)                  => (l, r, "Dot")
         case OpeningSquareBracket(l, r) => (l, r, "OpeningSquareBracket")
