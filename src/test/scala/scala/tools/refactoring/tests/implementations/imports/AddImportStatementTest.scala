@@ -19,7 +19,7 @@ class AddImportStatementTest extends TestHelper {
   def addImport(imp: (String, String), src: String, expected: String) = global.ask { () =>
 
     val refactoring = new AddImportStatement  {
-      val global = outer.global
+      override val global = outer.global
       val file = addToCompiler(UniqueNames.basename(), src)
       val change = addImport(file, imp._1 + "." + imp._2)
     }
@@ -304,7 +304,6 @@ object T
     """)
   }
 
-
   /*
    * See Assembla ticket #1002088
    */
@@ -417,5 +416,24 @@ object T
       val a: ActionX = null
     }
     """)
+  }
+
+  @Test
+  def doNotAddClosingParenOnImportWhenClosingParenIsMissingInDocument() = {
+    addImport(("java.io", "InputStream"), """
+      object X {
+        def f(is: InputStream
+      }
+
+      class X
+      """, """
+      import java.io.InputStream
+
+      object X {
+        def f(is: InputStream
+      }
+
+      class X
+      """)
   }
 }

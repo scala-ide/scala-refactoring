@@ -118,7 +118,6 @@ trait SourceUtils {
     (openingBraces, closingBraces)
   }
 
-
   def stripFromCode(source: String, c: Char) = {
 
     val (rest, comments) = splitComment(source)
