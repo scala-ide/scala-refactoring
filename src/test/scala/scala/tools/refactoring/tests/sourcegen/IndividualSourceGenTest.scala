@@ -1136,8 +1136,8 @@ class A(a: Int) {
     package abc
     object primitive {
       def append[A](li1: List[A], li2: List[A]) = Nil
-      ▒
-      List("Def").append(List("asd"))
+       List("Def").append(List("asd")
+          )
     }
     """), generateText(result.get))
   }
