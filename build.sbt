@@ -1,6 +1,6 @@
 name := "org.scala-refactoring.library"
 
-version := "0.8.0"
+version := "0.9.0-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
@@ -8,7 +8,7 @@ moduleName := name.value
 
 organization := "org.scala-refactoring"
 
-crossScalaVersions := Seq("2.10.5", "2.11.7")
+crossScalaVersions := Seq("2.10.6", "2.11.7")
 
 scalacOptions ++= (scalaBinaryVersion.value match {
   case "2.11" => Seq(
