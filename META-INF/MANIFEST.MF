@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Scala Refactoring
 Bundle-SymbolicName: org.scala-refactoring.library
-Bundle-Version: 0.8.0.qualifier
+Bundle-Version: 0.9.0.qualifier
 Require-Bundle: org.junit;bundle-version="4.11.0",
  org.scala-lang.scala-library
 Export-Package: scala.tools.refactoring,scala.tools.refactoring.analys

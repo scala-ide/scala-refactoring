@@ -9,7 +9,7 @@
     <artifactId>oss-parent</artifactId>
     <version>7</version>
   </parent>
-  <version>0.8.0-SNAPSHOT</version>
+  <version>0.9.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Scala Refactoring Library</name>
   <url>http://scala-refactoring.org</url>
