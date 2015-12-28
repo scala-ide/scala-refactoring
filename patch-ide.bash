@@ -13,12 +13,12 @@ showHelp() {
   echo "  KEEP_REFACTORING_LIBRARY_BACKUP (defaults to true):"
   echo "    Tells the script weather to keep a backup of the old library"
   echo ""
-  echo "Examples: " 
+  echo "Examples: "
   echo "  SCALA_IDE_HOME=\"/path/to/scala-ide\" $SCRIPT_NAME"
   echo "  SCALA_IDE_HOME=\"/path/to/scala-ide\" KEEP_REFACTORING_LIBRARY_BACKUP=true $SCRIPT_NAME"
   echo ""
   echo "Best practice:"
-  echo "  If you use the script regularly, it is recommended to to export"
+  echo "  If you use the script regularly, it is recommended to export"
   echo "  appropriate values for SCALA_IDE_HOME and"
   echo "  KEEP_REFACTORING_LIBRARY_BACKUP via your bashrc, so that you"
   echo "  don't have to specify these values repeatedly."
@@ -38,12 +38,6 @@ echoErr() {
   cat <<< "$@" 1>&2
 }
 
-isBuildForScala211() {
-  local JAR="$1"
-  unzip -p "$JAR" META-INF/MANIFEST.MF | egrep 'Bundle-Version:\s*\S+\b2_11\b' -q
-  return $?
-}
-
 KEEP_REFACTORING_LIBRARY_BACKUP=${KEEP_REFACTORING_LIBRARY_BACKUP:-true}
 
 if [[ -z "$SCALA_IDE_HOME" ]]; then
@@ -57,7 +51,7 @@ if [[ ! -d "$SCALA_IDE_PLUGINS_DIR" || ! -w "$SCALA_IDE_PLUGINS_DIR" ]]; then
   exit 1
 fi
 
-TARGET_FOLDER="./org.scala-refactoring.library/target/"
+TARGET_FOLDER="./target/scala-2.11/"
 
 _newRefactoringJars=("$TARGET_FOLDER"*SNAPSHOT.jar)
 NEW_REFACTORING_JAR="${_newRefactoringJars[0]}"
@@ -82,8 +76,4 @@ done
 REFACTORING_JAR_DEST_NAME="org.scala-refactoring.library_localbuild-$TSTAMP-SNAPSHOT.jar"
 REFACTORING_JAR_DESTINATION="$SCALA_IDE_PLUGINS_DIR/$REFACTORING_JAR_DEST_NAME"
 
-if isBuildForScala211 "$NEW_REFACTORING_JAR"; then
-  cp "$NEW_REFACTORING_JAR" "$REFACTORING_JAR_DESTINATION"
-else
-  echoErr "$NEW_REFACTORING_JAR is not build for Scala-2.11; refusing to perform update"
-fi
+cp "$NEW_REFACTORING_JAR" "$REFACTORING_JAR_DESTINATION"
