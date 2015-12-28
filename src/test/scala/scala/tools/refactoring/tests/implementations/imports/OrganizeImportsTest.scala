@@ -845,4 +845,113 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organizeCustomized(groupPkgs = List("java", "scala", "java"))
+
+  /*
+   * See Assembla Ticket 1002613
+   */
+  @Test
+  def organizeImportsRemovesNeededImport1002613Ex1() = new FileSet {
+    """
+    package test
+
+    import java.util.Collections
+
+    class Bug {
+      import Collections.emptyList
+
+      def test = emptyList
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsRemovesNeededImport1002613Ex2() = new FileSet {
+    """
+    package test
+
+    import java.util.Collections
+
+    class Bug {
+      import java.util.Collections.emptyList
+
+      def test = emptyList
+    }
+    """ becomes
+    """
+    package test
+
+    class Bug {
+      import java.util.Collections.emptyList
+
+      def test = emptyList
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsRemovesNeededImport1002613Ex3() = new FileSet {
+    """
+    package test
+
+    import java.util.Collections.emptyList
+
+    class Bug {
+      import java.util.Collections.emptyList
+
+      def test = emptyList
+    }
+    """ becomes
+    """
+    package test
+
+    class Bug {
+      import java.util.Collections.emptyList
+
+      def test = emptyList
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsRemovesNeededImport1002613Ex4() = new FileSet {
+    """
+    package test
+
+    import java.util.Collections
+
+    class Bug {
+      def test = {
+        import Collections.emptyList
+        emptyList
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsSimilarButNotAffectedBy1002613Ex1() = new FileSet {
+    """
+    package test
+
+    import java.util.Collections.emptyList
+
+    class Bug {
+      import java.util.Collections
+      import Collections.emptyList
+
+      def test = emptyList
+    }
+    """ becomes
+    """
+    package test
+
+    class Bug {
+      import java.util.Collections
+      import Collections.emptyList
+
+      def test = emptyList
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
 }
