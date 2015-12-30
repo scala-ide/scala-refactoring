@@ -169,7 +169,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         t match {
           case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX =>
             ()
-          case t @ Select(qual, _) if !isQualifierFromLocalImport(qual) =>
+          case t @ Select(qual, _) if !isRelativeToLocalImports(qual) =>
             addToResult(t)
           case _ =>
             ()
@@ -199,14 +199,6 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         t.qualifier.symbol != null && (!t.qualifier.symbol.isTerm || t.qualifier.symbol.isStable)
       }
 
-      @tailrec
-      def isRelativeToPreviousImports(tree: Tree): Boolean = tree match {
-        case Select(qualifier, _) =>
-          if (qualifier.pos.isRange) isRelativeToPreviousImports(qualifier)
-          else true
-        case _ => false
-      }
-
       val language = newTermName("language")
 
       def isScopeForLocalImports(tree: Tree) = tree match {
@@ -217,16 +209,68 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
       var inScopeForLocalImports = false
       var localImports: List[Import] = Nil
       var localImportsForParent: List[Import] = Nil
+      var topLevelImports: List[Import] = Nil
+      var pkgDefStack: List[RefTree] = Nil
 
-      def isQualifierFromLocalImport(qualifier: Tree): Boolean = {
-        localImports.exists { imp =>
-          imp.expr.symbol == qualifier.symbol
+      def isRelativeToLocalImports(tree: Tree): Boolean = {
+        (hasImplicitQualifier(tree) && isRelativeTo(localImports, tree)) \\ { res =>
+          trace("Tree %s is relative to local imports: %s", tree, res)
         }
+      }
+
+      def isRelativeToTopLevelImports(tree: Tree): Boolean = {
+        (hasImplicitQualifier(tree) && !isRelativeTo(localImports, tree) && isRelativeTo(topLevelImports, tree)) \\ { res =>
+          trace("Tree %s is relative to top level imports: %s", tree, res)
+        }
+      }
+
+      def isRelativeToEnclosingPackage(tree: Tree): Boolean = {
+        !hasImplicitQualifier(tree) && {
+          val owningPkg = getOwningPkg(tree.symbol)
+
+          pkgDefStack.exists { pid =>
+            owningPkg.toString == pid.symbol.toString
+          }
+        }
+      } \\ { res =>
+        trace("Tree %s is relative to enclosing package: %s", tree, res)
+      }
+
+      @tailrec
+      def getOwningPkg(symbol: Symbol): Symbol = {
+        if (symbol.hasPackageFlag) symbol
+        else getOwningPkg(symbol.owner)
+      }
+
+      def isRelativeTo(imports: List[Import], tree: Tree): Boolean = {
+        imports.exists { imp =>
+          def compareSyms = imp.expr.symbol == tree.symbol
+
+          imp.selectors match {
+            case List(singleSelector) =>
+              tree match {
+                case Select(q, n) =>
+                  compareSyms || (q.symbol == imp.expr.symbol && (n == singleSelector.name || singleSelector.name == nme.WILDCARD))
+                case _ => compareSyms
+              }
+            case _ => compareSyms
+          }
+        }
+      }
+
+      @tailrec
+      def hasImplicitQualifier(tree: Tree): Boolean = tree match {
+        case Select(q, _) =>
+          if (q.pos.isRange) hasImplicitQualifier(q)
+          else true
+        case _: Ident => !tree.pos.isRange
+        case _ => false
       }
 
       override def traverse(tree: Tree) = {
         var resetInScopeForLocalImports = false
         var restoreLocalImports = false
+        var popPkgDefStack = false
 
         if (isScopeForLocalImports(tree)) {
           localImportsForParent = localImports
@@ -245,15 +289,18 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
               feature foreach (selector => addToResult(Select(select, selector.name)))
 
             case imp @ Import(qualifier, selector)  => {
-              if (inScopeForLocalImports && !qualifier.symbol.isLocal) {
-                localImports ::= imp
-
-                if (!isRelativeToPreviousImports(qualifier)) {
-                  fakeSelectTree(qualifier.tpe, qualifier.symbol, qualifier) match {
-                    case select: Select => addToResult(select)
-                    case _ => ()
+              if (inScopeForLocalImports) {
+                if (!qualifier.symbol.isLocal && !qualifier.symbol.isVal) {
+                  if (isRelativeToTopLevelImports(qualifier) || isRelativeToEnclosingPackage(qualifier)) {
+                    fakeSelectTree(qualifier.tpe, qualifier.symbol, qualifier) match {
+                      case select: Select => addToResult(select)
+                      case _ => ()
+                    }
                   }
                 }
+                localImports ::= imp
+              } else {
+                topLevelImports ::= imp
               }
             }
 
@@ -318,7 +365,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                   && t.name != nme.WILDCARD
                   && hasStableQualifier(t)
                   && !t.symbol.isLocal
-                  && !isQualifierFromLocalImport(qual)
+                  && !isRelativeToLocalImports(qual)
                   && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)) {
                 addToResult(t)
               }
@@ -367,6 +414,11 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
               super.traverse(tree)
             }
 
+            case t @ PackageDef(pid, stats) =>
+              pkgDefStack ::= pid
+              popPkgDefStack = true
+              stats.foreach(traverse)
+
             case _ =>
               super.traverse(tree)
           }
@@ -377,6 +429,10 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
           if (restoreLocalImports) {
             localImports = localImportsForParent
+          }
+
+          if (popPkgDefStack && pkgDefStack.nonEmpty) {
+            pkgDefStack = pkgDefStack.tail
           }
         }
       }
