@@ -250,7 +250,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
             case List(singleSelector) =>
               tree match {
                 case Select(q, n) =>
-                  compareSyms || (q.symbol == imp.expr.symbol && (n == singleSelector.name || singleSelector.name == nme.WILDCARD))
+                  q.symbol == imp.expr.symbol && (n == singleSelector.name || singleSelector.name == nme.WILDCARD)
                 case _ => compareSyms
               }
             case _ => compareSyms
@@ -365,7 +365,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                   && t.name != nme.WILDCARD
                   && hasStableQualifier(t)
                   && !t.symbol.isLocal
-                  && !isRelativeToLocalImports(qual)
+                  && !isRelativeToLocalImports(t)
                   && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)) {
                 addToResult(t)
               }
