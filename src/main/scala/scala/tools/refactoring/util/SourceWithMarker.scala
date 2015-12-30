@@ -25,7 +25,16 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
     moveMarker(movement.backward)
   }
 
+  def withMarkerAtLastChar: SourceWithMarker = {
+    copy(marker = source.size - 1)
+  }
+
   def current: Char = source(marker)
+
+  def currentOption: Option[Char] = {
+    if (isDepleted) None
+    else Some(source(marker))
+  }
 
   def isInRange(i: Int): Boolean = {
     i >= 0 && i < source.length

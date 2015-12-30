@@ -1006,7 +1006,12 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
       val parameters = {
         // The `)` is always removed from the layout, so if we have an empty
         // parameter list and `()` in the source, we need to insert it here.
-        if (vparamss == List(List()) && modsAndName.asText.endsWith("(")) {
+        def modsAndNameEndsWithOpenParen = {
+          val srcAtEnd = SourceWithMarker(modsAndName.asText).withMarkerAtLastChar
+          srcAtEnd.moveMarkerBack(commentsAndSpaces).currentOption == Some('(')
+        }
+
+        if (vparamss == List(List()) && modsAndNameEndsWithOpenParen) {
           Fragment(")")
         } else {
           tree.explicitVParamss.map { vparams =>

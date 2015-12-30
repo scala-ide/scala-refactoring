@@ -3080,4 +3080,81 @@ class Blubb
     """ -> TaggedAsGlobalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
 
+  @Test
+  def testRenameFunWithMultlineParen1002620Ex1() = new FileSet {
+    """
+    class Bug {
+      def /*(*/renameMe/*)*/(
+          ) = 1
+    }
+    """ becomes
+    """
+    class Bug {
+      def /*(*/ups/*)*/(
+          ) = 1
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameFunWithMultlineParen1002620Ex2() = new FileSet {
+    """
+    class Bug {
+      def /*(*/renameMe/*)*/(//..
+          //..
+          ) = 1
+    }
+    """ becomes
+    """
+    class Bug {
+      def /*(*/ups/*)*/(//..
+          //..
+          ) = 1
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameFunWithMultlineParen1002620Ex3() = new FileSet {
+    """
+    class Bug {
+      def /*(*/renameMe/*)*/( /*....*/ //..
+          //..
+          /* :-) :-() :-)*/
+
+          /*
+           * ???
+           */
+
+          ) = 1
+    }
+    """ becomes
+    """
+    class Bug {
+      def /*(*/ups/*)*/( /*....*/ //..
+          //..
+          /* :-) :-() :-)*/
+
+          /*
+           * ???
+           */
+
+          ) = 1
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameSimilarButNotAffectedBy1002620() = new FileSet {
+    """
+    class Bug {
+      def /*(*/renameMe/*)*/() = 1
+    }
+    """ becomes
+    """
+    class Bug {
+      def /*(*/ups/*)*/() = 1
+    }
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
