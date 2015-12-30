@@ -431,7 +431,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
             localImports = localImportsForParent
           }
 
-          if (popPkgDefStack && pkgDefStack.nonEmpty) {
+          if (popPkgDefStack) {
             pkgDefStack = pkgDefStack.tail
           }
         }
