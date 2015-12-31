@@ -264,13 +264,25 @@ trait TreePrintingTraversals {
       before: Requisite,
       after: Requisite)(implicit ctx: PrintingContext): Fragment = {
 
+      /*
+       * We need to catch match errors because internally this function calls
+       * [[scala.reflect.api.Trees.xtraverse(Traverser, Tree)]], a function that
+       * we can't easily override for our own trees in
+       * [[scala.tools.refactoring.common.PimpedTrees]].
+       */
+      def isErroneous(t: Tree) =
+        try t.isErroneous || t.exists(_.isErroneous)
+        catch { case _: MatchError => false }
+
       val fragment = trees.foldRight(EmptyFragment: Fragment) {
         case (t, r) =>
           printSingleTree(t, NoRequisite, NoRequisite) match {
             case l if l.isEmpty || l.asText.isEmpty => r
             case l if r.asText.isEmpty => l
             case l =>
-              val leftCenter = balanceBracketsInLayout('(', ')', l.center)
+              val leftCenter =
+                if (isErroneous(t)) l.center
+                else balanceBracketsInLayout('(', ')', l.center)
               val rightCenter = balanceBracketsInLayout('(', ')', r.center)
 
               val left = l.post(leftCenter ++ l.trailing, NoLayout)

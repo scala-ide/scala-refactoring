@@ -418,6 +418,9 @@ object T
     """)
   }
 
+  /*
+   * See Assembla Ticket #1002619
+   */
   @Test
   def doNotAddClosingParenOnImportWhenClosingParenIsMissingInDocument() = {
     addImport(("java.io", "InputStream"), """
