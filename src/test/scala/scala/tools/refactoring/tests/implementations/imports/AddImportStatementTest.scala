@@ -439,4 +439,23 @@ object T
       class X
       """)
   }
+
+  @Test
+  def doNotAddOpeningParenOnImportWhenOpeningParenIsMissingInDocument() = {
+    addImport(("java.io", "InputStream"), """
+      object X {
+        def f is: InputStream)
+      }
+
+      class X
+      """, """
+      import java.io.InputStream
+
+      object X {
+        def f is: InputStream)
+      }
+
+      class X
+      """)
+  }
 }

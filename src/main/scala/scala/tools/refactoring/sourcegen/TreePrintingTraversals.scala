@@ -271,7 +271,8 @@ trait TreePrintingTraversals {
        * [[scala.tools.refactoring.common.PimpedTrees]].
        */
       def isErroneous(t: Tree) =
-        try t.isErroneous || t.exists(_.isErroneous)
+        try t.isErroneous || t.tpe != null && t.tpe =:= definitions.NullTpe ||
+            t.exists(t => t.isErroneous || t.tpe != null && t.tpe =:= definitions.NullTpe)
         catch { case _: MatchError => false }
 
       val fragment = trees.foldRight(EmptyFragment: Fragment) {
@@ -280,10 +281,11 @@ trait TreePrintingTraversals {
             case l if l.isEmpty || l.asText.isEmpty => r
             case l if r.asText.isEmpty => l
             case l =>
-              val leftCenter =
-                if (isErroneous(t)) l.center
-                else balanceBracketsInLayout('(', ')', l.center)
-              val rightCenter = balanceBracketsInLayout('(', ')', r.center)
+              val (leftCenter, rightCenter) =
+                if (isErroneous(t))
+                  (l.center, r.center)
+                else
+                  (balanceBracketsInLayout('(', ')', l.center), balanceBracketsInLayout('(', ')', r.center))
 
               val left = l.post(leftCenter ++ l.trailing, NoLayout)
               val right = r.pre(NoLayout, r.leading ++ rightCenter)
