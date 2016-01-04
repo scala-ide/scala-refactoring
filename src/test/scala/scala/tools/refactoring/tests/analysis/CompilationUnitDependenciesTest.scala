@@ -244,8 +244,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
 
   @Test
   def localImport() = assertDependencies(
-    """scala.this.Predef.println
-       x.B""",
+    """scala.this.Predef.println""",
     """
       class A {
         val B = new {
