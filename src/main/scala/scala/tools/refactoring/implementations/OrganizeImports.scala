@@ -44,19 +44,6 @@ object OrganizeImports {
       }.assembleResult
     }
   }
-}
-
-/**
- * A refactoring that recomputes and reorganizes import statements in a file.
- *
- *
- */
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
-
-  import OrganizeImports.Algos
-  import global._
-
-  class PreparationResult(val missingTypes: List[String] = Nil)
 
   object Dependencies extends Enumeration {
     /**
@@ -82,6 +69,21 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
      */
     val RemoveUnneeded = Value
   }
+}
+
+/**
+ * A refactoring that recomputes and reorganizes import statements in a file.
+ *
+ *
+ */
+abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
+
+  import OrganizeImports.Algos
+  import global._
+
+  val Dependencies = OrganizeImports.Dependencies
+
+  class PreparationResult(val missingTypes: List[String] = Nil)
 
   trait Participant extends (List[Import] => List[Import]) {
     protected final def importAsString(t: Tree) = {
