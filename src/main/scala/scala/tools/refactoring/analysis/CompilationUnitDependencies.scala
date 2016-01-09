@@ -15,15 +15,21 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
   import global._
 
-  def isQualifierDefaultImported(t: Tree) = t match {
-    case t: Select =>
-      val Scala = newTypeName("scala")
-      t.qualifier match {
-        case Select(This(Scala), _) => true
-        case qual if qual.nameString == "ClassTag" => true
-        case q => q.symbol.isOmittablePrefix
-      }
-    case _ => false
+  def isQualifierDefaultImported(t: Tree) = {
+    t match {
+      case t: Select =>
+        val Scala = newTypeName("scala")
+        t.qualifier match {
+          case Select(This(Scala), _) => true
+          case qual if qual.nameString == "ClassTag" => true
+          case q => q.symbol.isOmittablePrefix
+        }
+      case _ => false
+    }
+  } \\ { res =>
+    if (res) {
+      trace(s"Qualifier $t is default imported")
+    }
   }
 
   /**
@@ -40,6 +46,10 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
       false
     } else {
       !isQualifierDefaultImported(t)
+    }
+  } \\ { res =>
+    if (!res) {
+      trace(s"Import $t not really needed")
     }
   }
 
