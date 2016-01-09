@@ -16,13 +16,24 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
   import global._
 
   def isQualifierDefaultImported(t: Tree) = {
+    def nameIsDirectlyRepresentedInSource = {
+      val namePos = t.namePosition()
+
+      def nameIsNotFromImportAlias = {
+        val nameInSource = t.pos.source.content.view(namePos.start, namePos.end).mkString("")
+        nameInSource == t.nameString
+      }
+
+      namePos.isRange && nameIsNotFromImportAlias
+    }
+
     t match {
       case t: Select =>
         val Scala = newTypeName("scala")
         t.qualifier match {
           case Select(This(Scala), _) => true
           case qual if qual.nameString == "ClassTag" => true
-          case q => q.symbol.isOmittablePrefix
+          case q => q.symbol.isOmittablePrefix && nameIsDirectlyRepresentedInSource
         }
       case _ => false
     }
