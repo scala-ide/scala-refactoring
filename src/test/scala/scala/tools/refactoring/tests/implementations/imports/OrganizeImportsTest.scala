@@ -9,9 +9,9 @@ import tests.util.TestHelper
 import language.reflectiveCalls
 import language.postfixOps
 import scala.collection.mutable.ListBuffer
+import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
-
   private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = new RefactoringParameters()
   }.mkChanges
@@ -28,7 +28,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   private def organizeCustomized(
       groupPkgs: List[String] = List("java", "scala", "org", "com"),
-      useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"))(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+      useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"),
+      dependencies: Dependencies.Value = Dependencies.FullyRecompute)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = {
       val groupImports = refactoring.GroupImports(groupPkgs)
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
@@ -41,7 +42,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
             refactoring.SortImports ::
             groupImports ::
             Nil,
-          deps = refactoring.Dependencies.FullyRecompute)
+          deps = dependencies)
     }
   }.mkChanges
 
@@ -998,4 +999,176 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organizeWithTypicalParams
+
+  /*
+   * See Assembla Ticket #1002626
+   */
+  @Test
+  def organizeImportsWithRenameClauses1002626Ex1() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.{concurrent => javaConcurrent}
+    import scala.{concurrent => scalaConcurrent}
+
+    trait Bug1 {
+      def tryOrganizeImportsHere(x: javaConcurrent.atomic.AtomicBoolean): scalaConcurrent.Future[Unit]
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.{concurrent => javaConcurrent}
+
+    import scala.{concurrent => scalaConcurrent}
+
+    trait Bug1 {
+      def tryOrganizeImportsHere(x: javaConcurrent.atomic.AtomicBoolean): scalaConcurrent.Future[Unit]
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsSimlarTo1002626Ex1ButNoRenameClauses() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import java.util
+    import scala.concurrent
+
+    trait Bug1 {
+      def tryOrganizeImportsHere(x: util.concurrent.atomic.AtomicBoolean): concurrent.Future[Unit]
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import java.util
+
+    trait Bug1 {
+      def tryOrganizeImportsHere(x: util.concurrent.atomic.AtomicBoolean): concurrent.Future[Unit]
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsWithRenameClauses1002626Ex2() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+    import java.util.concurrent.atomic.AtomicBoolean
+    import java.util.{concurrent => javaConcurrent}
+    import scala.{concurrent => scalaConcurrent}
+
+    object Bug2 {
+      implicit def tryOrganizeImportsHere[T](scalaFuture: scalaConcurrent.Future[T]): javaConcurrent.Future[T] = ???
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.{concurrent => javaConcurrent}
+
+    import scala.{concurrent => scalaConcurrent}
+    import scala.language.implicitConversions
+
+    object Bug2 {
+      implicit def tryOrganizeImportsHere[T](scalaFuture: scalaConcurrent.Future[T]): javaConcurrent.Future[T] = ???
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsWithRenameClauses1002626Ex3() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+    import java.util.concurrent.atomic.AtomicBoolean
+    import java.util.{concurrent => javaConcurrent}
+    import scala.{concurrent => scalaConcurrent}
+
+    object Bug2 {
+      implicit def tryOrganizeImportsHere[T](scalaFuture: scalaConcurrent.Future[T]): javaConcurrent.Future[T] = ???
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.{concurrent => javaConcurrent}
+
+    import scala.{concurrent => scalaConcurrent}
+    import scala.language.implicitConversions
+
+    object Bug2 {
+      implicit def tryOrganizeImportsHere[T](scalaFuture: scalaConcurrent.Future[T]): javaConcurrent.Future[T] = ???
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def organizeImportsWithRenameClauses1002626Ex4() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+    import scala.concurrent.{Future => ScalaFuture}
+    import java.util.concurrent.{Future => JavaFuture}
+    import java.util.concurrent.atomic.AtomicBoolean
+
+    trait Bug3 {
+      implicit def tryOrganizeImportsHere[T](javaFuture: JavaFuture[T]): ScalaFuture[T]
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.concurrent.{Future => JavaFuture}
+
+    import scala.concurrent.{Future => ScalaFuture}
+    import scala.language.implicitConversions
+
+    trait Bug3 {
+      implicit def tryOrganizeImportsHere[T](javaFuture: JavaFuture[T]): ScalaFuture[T]
+    }
+    """
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def organizeImportsWithRenameClauses1002626Ex5() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.concurrent.atomic.{AtomicBoolean => Aboolean, AtomicInteger => Aint, AtomicLong => Along}
+
+    trait Bug4 {
+      def tryOrganizeImportsHere(b: Aboolean, i: Aint, l: Along): Double
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import java.util.concurrent.atomic.{AtomicBoolean => Aboolean}
+    import java.util.concurrent.atomic.{AtomicInteger => Aint}
+    import java.util.concurrent.atomic.{AtomicLong => Along}
+
+    trait Bug4 {
+      def tryOrganizeImportsHere(b: Aboolean, i: Aint, l: Along): Double
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def organizeImportsWithRenameClauses1002626Ex6() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+
+    trait Bug5 {
+      implicit def intToString(i: Int) = i.toString
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }
