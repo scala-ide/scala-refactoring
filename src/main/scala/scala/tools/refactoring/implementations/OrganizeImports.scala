@@ -86,9 +86,20 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   class PreparationResult(val missingTypes: List[String] = Nil)
 
   trait Participant extends (List[Import] => List[Import]) {
-    protected final def importAsString(t: Tree) = {
-      val ancestorSyms = ancestorSymbols(t)
-      ancestorSyms map (_.nameString) filterNot (_ == "package") mkString  (".")
+    protected final def importAsString(t: Tree): String = {
+      ancestorSymbols(t) match {
+        case syms if syms.nonEmpty =>
+          syms.map(_.nameString).filterNot(_ == "package").mkString (".")
+        case Nil =>
+          // Imports without symbols, like Scala feature flags, aka "import scala.language.featureX",
+          // have no symbol and are handled by the code blow:
+          t match {
+            case Select(q, n) => importAsString(q) + "." + n
+            case _ =>
+              logError("Unexpected tree", new AssertionError(s"Tree without symbol that is not a select: $t"))
+              ""
+          }
+      }
     }
 
     protected final def stripPositions(t: Tree) = {
