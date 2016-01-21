@@ -484,9 +484,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
     def organizeImportsInNonPackageBlocks(tree: Tree): Tree = new Transformer {
       override def transform(t: Tree) = t match {
-        case b @ Block(stats, expr) if !currentOwner.hasPackageFlag =>
+        case b @ Block(stats, _) if !currentOwner.hasPackageFlag =>
           val (imports, others) = stats.partition { _.isInstanceOf[Import] }
-          b.copy(stats = scala.Function.chain(participants)(imports.asInstanceOf[List[Import]]) ::: others)
+          b.copy(stats = scala.Function.chain(participants)(imports.asInstanceOf[List[Import]]) ::: others).replaces(b)
+        case skipPlainText: PlainText => skipPlainText
         case t => super.transform(t)
       }
     }.transform(tree)
