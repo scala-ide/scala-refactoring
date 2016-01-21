@@ -466,7 +466,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         p copy (stats = imports ::: others) replaces p
     } &> transformation[Tree, Tree] {
       case p: PackageDef =>
-        InnerImports.organizeImportsInDefValVarBlocks(p).replaces(p)
+        InnerImports.organizeImportsInMethodBlocks(p).replaces(p)
     }
 
     Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
@@ -482,15 +482,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
     val participants = SortImportSelectors :: SortImports :: Nil
 
-    def organizeImportsInDefValVarBlocks(tree: Tree): Tree = new Transformer {
-      def isVarValOrMethod = currentOwner.isVariable ||
-        (currentOwner.isValue && !currentOwner.isLazy && !currentOwner.isAnonymousFunction) ||
-        currentOwner.isMethod
-
+    def organizeImportsInMethodBlocks(tree: Tree): Tree = new Transformer {
       override def transform(t: Tree) = t match {
-        case b @ Block(stats, _) if isVarValOrMethod =>
-          val a = currentOwner.tpe
-          println(a)
+        case b @ Block(stats, _) if currentOwner.isMethod && !currentOwner.isLazy =>
           val (imports, others) = stats.partition { _.isInstanceOf[Import] }
           val visitedOthers = others.map { t =>
             transform(t).replaces(t)

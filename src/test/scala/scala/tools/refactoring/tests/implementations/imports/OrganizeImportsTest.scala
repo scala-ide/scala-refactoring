@@ -1324,7 +1324,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def importsScatteredInValAndVarShouldBeProcessedLikeForDef() = new FileSet {
+  def importsShouldNotBeModifiedInVarValLazyValAndLambda() = new FileSet {
     """
     package acme
 
@@ -1359,26 +1359,17 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         import acme.Acme.B
         B + C + bar
       }
-    }
-    """ becomes {
-    """
-    /*<-*/
-    package test
-
-    class Bar {
-      var bar = {
-        import acme.Acme.A
-        import fake.Acme.D
-        val d = D
-        A + d
-      }
-      val foo = {
-        import acme.Acme.B
+      lazy val baz = {
         import fake.Acme.C
+        import acme.Acme.B
+        B + C + bar
+      }
+      def foe = List(1).map { _ =>
+        import fake.Acme.C
+        import acme.Acme.B
         B + C + bar
       }
     }
-    """
-    }
-  } applyRefactoring organizeWithTypicalParams
+    """ isNotModified
+    } applyRefactoring organizeWithTypicalParams
 }
