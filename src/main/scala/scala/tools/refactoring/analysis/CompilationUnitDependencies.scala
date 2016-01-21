@@ -267,13 +267,10 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         imports.exists { imp =>
           def compareSyms = imp.expr.symbol == tree.symbol
 
-          imp.selectors match {
-            case List(singleSelector) =>
-              tree match {
-                case Select(q, n) =>
-                  q.symbol == imp.expr.symbol && (n == singleSelector.name || singleSelector.name == nme.WILDCARD)
-                case _ => compareSyms
-              }
+          val impSelectorNames = imp.selectors.map { _.name }
+          tree match {
+            case Select(q, n) =>
+              q.symbol == imp.expr.symbol && impSelectorNames.exists { name => name == nme.WILDCARD || name == n }
             case _ => compareSyms
           }
         }
@@ -481,7 +478,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
     val deps = result.values.toList
 
-    deps.filterNot(_.symbol.isPackage).toList
+    deps.filterNot(_.symbol.hasPackageFlag).toList
   }
 }
 

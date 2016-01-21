@@ -464,8 +464,31 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       case (p, existingImports, others) =>
         val imports = scala.Function.chain(participants)(existingImports)
         p copy (stats = imports ::: others) replaces p
+    } &> transformation[Tree, Tree] {
+      case p: PackageDef =>
+        InnerImports.organizeImportsInNonPackageBlocks(p).replaces(p)
     }
 
     Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
+  }
+
+  object InnerImports {
+    object SortImportSelectors extends Participant {
+      protected def doApply(trees: List[Import]) = trees.map {
+        case i @ Import(expr, selectors) =>
+          i.copy(expr, selectors.sortBy { _.name })
+      }
+    }
+
+    val participants = SortImportSelectors :: SortImports :: Nil
+
+    def organizeImportsInNonPackageBlocks(tree: Tree): Tree = new Transformer {
+      override def transform(t: Tree) = t match {
+        case b @ Block(stats, expr) if !currentOwner.hasPackageFlag =>
+          val (imports, others) = stats.partition { _.isInstanceOf[Import] }
+          b.copy(stats = scala.Function.chain(participants)(imports.asInstanceOf[List[Import]]) ::: others)
+        case t => super.transform(t)
+      }
+    }.transform(tree)
   }
 }

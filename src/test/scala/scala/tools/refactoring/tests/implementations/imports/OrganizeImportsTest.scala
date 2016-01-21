@@ -1171,4 +1171,50 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def organizeImportsInDefShouldSortImports() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.C
+        import acme.Acme.{B, A}
+        A + B + C
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.{A, B}
+        import fake.Acme.C
+        A + B + C
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
