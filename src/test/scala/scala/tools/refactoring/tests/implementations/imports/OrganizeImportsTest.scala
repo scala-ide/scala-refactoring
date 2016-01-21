@@ -1173,7 +1173,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
   @Test
-  def organizeImportsInDefShouldSortImports() = new FileSet {
+  def importsInDefShouldBeSorted() = new FileSet {
     """
     package acme
 
@@ -1212,6 +1212,170 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         import acme.Acme.{A, B}
         import fake.Acme.C
         A + B + C
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsScatteredInDefShouldBeGatheredAndThenSorted() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.C
+        val c = C
+        import acme.Acme.{B, A}
+        A + B + c
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.{A, B}
+        import fake.Acme.C
+        val c = C
+        A + B + c
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsScatteredInDifferentDefsShouldBeProcessedSeparately() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.D
+        val d = D
+        import acme.Acme.A
+        def k = {
+          import fake.Acme.C
+          import acme.Acme.B
+          A + B + C + d
+        }
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.A
+        import fake.Acme.D
+        val d = D
+        def k = {
+          import acme.Acme.B
+          import fake.Acme.C
+          A + B + C + d
+        }
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsScatteredInValAndVarShouldBeProcessedLikeForDef() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      var bar = {
+        import fake.Acme.D
+        val d = D
+        import acme.Acme.A
+        A + d
+      }
+      val foo = {
+        import fake.Acme.C
+        import acme.Acme.B
+        B + C + bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      var bar = {
+        import acme.Acme.A
+        import fake.Acme.D
+        val d = D
+        A + d
+      }
+      val foo = {
+        import acme.Acme.B
+        import fake.Acme.C
+        B + C + bar
       }
     }
     """

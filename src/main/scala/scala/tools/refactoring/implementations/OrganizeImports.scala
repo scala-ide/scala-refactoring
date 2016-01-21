@@ -466,7 +466,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         p copy (stats = imports ::: others) replaces p
     } &> transformation[Tree, Tree] {
       case p: PackageDef =>
-        InnerImports.organizeImportsInNonPackageBlocks(p).replaces(p)
+        InnerImports.organizeImportsInDefValVarBlocks(p).replaces(p)
     }
 
     Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
@@ -482,11 +482,20 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
     val participants = SortImportSelectors :: SortImports :: Nil
 
-    def organizeImportsInNonPackageBlocks(tree: Tree): Tree = new Transformer {
+    def organizeImportsInDefValVarBlocks(tree: Tree): Tree = new Transformer {
+      def isVarValOrMethod = currentOwner.isVariable ||
+        (currentOwner.isValue && !currentOwner.isLazy && !currentOwner.isAnonymousFunction) ||
+        currentOwner.isMethod
+
       override def transform(t: Tree) = t match {
-        case b @ Block(stats, _) if !currentOwner.hasPackageFlag =>
+        case b @ Block(stats, _) if isVarValOrMethod =>
+          val a = currentOwner.tpe
+          println(a)
           val (imports, others) = stats.partition { _.isInstanceOf[Import] }
-          b.copy(stats = scala.Function.chain(participants)(imports.asInstanceOf[List[Import]]) ::: others).replaces(b)
+          val visitedOthers = others.map { t =>
+            transform(t).replaces(t)
+          }
+          b.copy(stats = scala.Function.chain(participants)(imports.asInstanceOf[List[Import]]) ::: visitedOthers).replaces(b)
         case skipPlainText: PlainText => skipPlainText
         case t => super.transform(t)
       }
