@@ -480,16 +480,25 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       }
     }
 
-    val participants = SortImportSelectors :: SortImports :: Nil
+    val participants = scala.Function.chain(SortImportSelectors :: SortImports :: Nil)
+
+    private def organizeImportsIfNoImportInSameLine(imports: List[Import])(organizeImports: List[Import] => List[Import]): List[Import] = {
+      val importsWithPosition = imports.filter { _.pos.isDefined }
+      if (importsWithPosition.nonEmpty &&
+          importsWithPosition.size != importsWithPosition.map { _.pos.line }.distinct.size)
+        imports
+      else organizeImports(imports)
+    }
 
     def organizeImportsInMethodBlocks(tree: Tree): Tree = new Transformer {
       override def transform(t: Tree) = t match {
         case b @ Block(stats, _) if currentOwner.isMethod && !currentOwner.isLazy =>
-          val (imports, others) = stats.partition { _.isInstanceOf[Import] }
+          val (rawImports, others) = stats.partition { _.isInstanceOf[Import] }
+          val imports = rawImports.asInstanceOf[List[Import]]
           val visitedOthers = others.map { t =>
             transform(t).replaces(t)
           }
-          b.copy(stats = scala.Function.chain(participants)(imports.asInstanceOf[List[Import]]) ::: visitedOthers).replaces(b)
+          b.copy(stats = organizeImportsIfNoImportInSameLine(imports)(participants) ::: visitedOthers).replaces(b)
         case skipPlainText: PlainText => skipPlainText
         case t => super.transform(t)
       }

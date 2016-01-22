@@ -1374,7 +1374,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def importsScatteredInSameLineOfDefShouldBeRearranged() = new FileSet {
+  def importsScatteredInSameLineOfDefShouldNotBeRearranged() = new FileSet {
     """
     package acme
 
@@ -1405,24 +1405,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         A + B + C
       }
     }
-    """ becomes {
-    """
-    /*<-*/
-    package test
-
-    class Bar {
-      def foo = {
-        import fake.Acme.C
-        import fake.Acme.D
-        C + D}
-      def k = {
-        import acme.Acme.A
-        import acme.Acme.B
-        import fake.Acme.C
-        A + B + C
-      }
-    }
-    """
-    }
+    """ isNotModified
   } applyRefactoring organizeWithTypicalParams
 }
