@@ -89,7 +89,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     protected final def importAsString(t: Tree): String = {
       ancestorSymbols(t) match {
         case syms if syms.nonEmpty =>
-          syms.map(_.nameString).filterNot(_ == "package").mkString (".")
+          syms.map(_.nameString).filterNot(_ == "package").mkString(".")
         case Nil =>
           // Imports without symbols, like Scala feature flags, aka "import scala.language.featureX",
           // have no symbol and are handled by the code blow:
@@ -186,7 +186,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       val seen = collection.mutable.HashSet[String]()
       trees flatMap {
         case imp @ Import(qual, selectors) if imports.contains(asSelectorString(qual)) && !selectors.exists(renames) =>
-          if(seen.contains(asSelectorString(qual))) {
+          if (seen.contains(asSelectorString(qual))) {
             None
           } else {
             seen += asSelectorString(qual)
@@ -203,7 +203,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       val allImports = Algos.groupImports(getImportExpression)(groups, trees)
       val spacer = List(Import(PlainText.BlankLine, Nil))
 
-      if(allImports.size > 1) {
+      if (allImports.size > 1) {
         allImports.reduceLeft(_ ++ spacer ++ _)
       } else {
         allImports.flatten.toList
@@ -243,7 +243,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
       trees flatMap {
         case imp @ Import(expr, selectors) =>
-          val pkgName = importAsString(expr) +"."
+          val pkgName = importAsString(expr) + "."
 
           val neededSelectors = selectors.filter { selector =>
             selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
@@ -260,9 +260,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
             findDeepestNeededSelect(expr) exists isQualifierDefaultImported
           }
 
-          if(neededSelectors.size == selectors.size && (exprIsAllRangePos || invisiblePartIsDefaultImported)) {
+          if (neededSelectors.size == selectors.size && (exprIsAllRangePos || invisiblePartIsDefaultImported)) {
             Some(imp)
-          } else if(neededSelectors.nonEmpty) {
+          } else if (neededSelectors.nonEmpty) {
 
             /* Imports from the scala package don't have to start with `scala`,
              * and we don't want to enforce this, so we just keep the expr as
@@ -270,7 +270,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
              * package, we set all positions to NoPos to make the visible in
              * the generated code.
              */
-            val fullExpr = if(isImportFromScalaPackage(expr)) {
+            val fullExpr = if (isImportFromScalaPackage(expr)) {
               expr
             } else {
               stripPositions(expr)
@@ -292,10 +292,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
           val neededSelectors = selectors.filter { s =>
             neededImportSelector(unit, expr, s) ||
-            additionallyImportedTypes.contains(s.name.toString)
+              additionallyImportedTypes.contains(s.name.toString)
           }
 
-          if(neededSelectors.nonEmpty) {
+          if (neededSelectors.nonEmpty) {
             Import(stripPositions(expr), neededSelectors)
           } else {
             Import(EmptyTree, Nil)
@@ -334,7 +334,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
             }
           }
 
-          t copy (expr = transformation(expr).get /*safe becaues of pattern guard*/)
+          t copy (expr = transformation(expr).get /*safe becaues of pattern guard*/ )
         case t => t
       }
     }
@@ -401,9 +401,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
    * ("package.declaration", "TypeName")
    */
   class RefactoringParameters(
-      val importsToAdd: List[(String, String)] = Nil,
-      val options: List[Participant] = DefaultOptions,
-      val deps: Dependencies.Value = Dependencies.RemoveUnneeded)
+    val importsToAdd: List[(String, String)] = Nil,
+    val options: List[Participant] = DefaultOptions,
+    val deps: Dependencies.Value = Dependencies.RemoveUnneeded)
 
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
 
@@ -421,7 +421,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           t.nameString
       }
     } catch {
-      case NonFatal(_) => "Unhandled tree: "+ getSimpleClassName(t) +". You found a bug! Please report it."
+      case NonFatal(_) => "Unhandled tree: " + getSimpleClassName(t) + ". You found a bug! Please report it."
     }
 
     val erroneousTrees = s.root.filter {
@@ -437,7 +437,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   }
 
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-
+    val unit = compilationUnitOfFile(selection.pos.source.file).get
     val importStrategy = params.deps match {
       case Dependencies.FullyRecompute =>
 
@@ -454,7 +454,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         new RecomputeAndModifyUnused(neededImports(selection.root)) :: RemoveDuplicates :: Nil
 
       case Dependencies.RemoveUnneeded =>
-        val unit = compilationUnitOfFile(selection.pos.source.file).get
         new AddNewImports(params.importsToAdd) :: SortImports :: new RemoveUnused(unit, params.importsToAdd) :: Nil
     }
 
@@ -473,19 +472,56 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
   }
 
   object InnerImports {
-    object SortImportSelectors extends Participant {
-      protected def doApply(trees: List[Import]) = trees.map {
-        case i @ Import(expr, selectors) =>
-          i.copy(expr, selectors.sortBy { _.name })
+    class RemoveUnused(block: Tree) extends Participant {
+      private def asText(t: Tree) = createText(stripPositions(t))
+
+      private def treeWithoutImports(tree: Tree) = new Transformer {
+        override def transform(tree: Tree): Tree = tree match {
+          case Import(_, _) => EmptyTree
+          case t => super.transform(t)
+        }
+      }.transform(tree)
+
+      private def allSelects(block: Tree) = {
+        val selectsTraverser = new Traverser {
+          import scala.collection.mutable
+          val selects = mutable.ListBuffer[Select]()
+          override def traverse(tree: Tree): Unit = tree match {
+            case s @ Select(qual, _) =>
+              selects += s
+              traverse(qual)
+            case t => super.traverse(t)
+          }
+        }
+        selectsTraverser.traverse(treeWithoutImports(block))
+        selectsTraverser.selects.map { asText }.toList
+      }
+
+      val allSelectsAsText = allSelects(block)
+
+      private def mkImportPath(prefix: String)(selector: ImportSelector) = selector.name match {
+        case name if name == nme.WILDCARD => prefix
+        case name => prefix + "." + name
+      }
+
+      protected def doApply(trees: List[Import]) = trees.map { imp =>
+        val Import(expr, sels) = imp
+        val importPath = mkImportPath(asText(expr))(_)
+        val usedSelectors = sels.filter { sel =>
+          val wholeImportAsText = importPath(sel)
+          allSelectsAsText.exists { _.startsWith(wholeImportAsText) }
+        }
+        usedSelectors match {
+          case Nil => Import(EmptyTree, Nil)
+          case _ => imp.copy(selectors = usedSelectors)
+        }
       }
     }
-
-    val participants = scala.Function.chain(SortImportSelectors :: SortImports :: Nil)
 
     private def organizeImportsIfNoImportInSameLine(imports: List[Import])(organizeImports: List[Import] => List[Import]): List[Import] = {
       val importsWithPosition = imports.filter { _.pos.isDefined }
       if (importsWithPosition.nonEmpty &&
-          importsWithPosition.size != importsWithPosition.map { _.pos.line }.distinct.size)
+        importsWithPosition.size != importsWithPosition.map { _.pos.line }.distinct.size)
         imports
       else organizeImports(imports)
     }
@@ -495,10 +531,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         case b @ Block(stats, _) if currentOwner.isMethod && !currentOwner.isLazy =>
           val (rawImports, others) = stats.partition { _.isInstanceOf[Import] }
           val imports = rawImports.asInstanceOf[List[Import]]
+          val importsOrganizer = scala.Function.chain(new RemoveUnused(b) :: SortImportSelectors :: SortImports :: Nil)
           val visitedOthers = others.map { t =>
             transform(t).replaces(t)
           }
-          b.copy(stats = organizeImportsIfNoImportInSameLine(imports)(participants) ::: visitedOthers).replaces(b)
+          b.copy(stats = organizeImportsIfNoImportInSameLine(imports)(importsOrganizer) ::: visitedOthers).replaces(b)
         case skipPlainText: PlainText => skipPlainText
         case t => super.transform(t)
       }
