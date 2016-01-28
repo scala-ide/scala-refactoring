@@ -1534,7 +1534,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bar {
       def foo = {
-        import fake.Acme.{C => V, D => U}
+        import fake.Acme.{D => U, C => V}
+        import acme.Acme.{A => W}
         val d = U
       }
     }
@@ -1546,7 +1547,77 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     class Bar {
       def foo = {
         import fake.Acme.{D => U}
-        val d = D
+        val d = U
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsWithImplicitAsWildcardInDefShouldNotBeRemovedBecauseAreUsed() = new FileSet {
+    """
+    package acme
+
+    class A(i: Int) {
+      def foo(implicit b: Int) = i + b
+    }
+
+    object A {
+      implicit def intToA(i: Int): A = new A(i)
+      implicit val B = 6
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.A._
+        5.foo
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsWithImplicitInDefShouldBeSorted() = new FileSet {
+    """
+    package acme
+
+    class A(i: Int) {
+      def foo(implicit b: Int) = i + b
+    }
+
+    object A {
+      implicit def intToA(i: Int): A = new A(i)
+      implicit val B = 6
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.A.intToA
+        import acme.A.B
+        5.foo
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.A.B
+        import acme.A.intToA
+        5.foo
       }
     }
     """
