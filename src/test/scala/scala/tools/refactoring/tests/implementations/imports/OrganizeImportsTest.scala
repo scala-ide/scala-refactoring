@@ -1171,4 +1171,456 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def importsInDefShouldBeSorted() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.C
+        import acme.Acme.{B, A}
+        A + B + C
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.{A, B}
+        import fake.Acme.C
+        A + B + C
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsScatteredInDefShouldBeGatheredAndThenSorted() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.C
+        val c = C
+        import acme.Acme.{B, A}
+        A + B + c
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.{A, B}
+        import fake.Acme.C
+        val c = C
+        A + B + c
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsScatteredInDifferentDefsShouldBeProcessedSeparately() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.D
+        val d = D
+        import acme.Acme.A
+        def k = {
+          import fake.Acme.C
+          import acme.Acme.B
+          A + B + C + d
+        }
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.A
+        import fake.Acme.D
+        val d = D
+        def k = {
+          import acme.Acme.B
+          import fake.Acme.C
+          A + B + C + d
+        }
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsShouldNotBeModifiedInVarValLazyValAndLambda() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      var bar = {
+        import fake.Acme.D
+        val d = D
+        import acme.Acme.A
+        A + d
+      }
+      val foo = {
+        import fake.Acme.C
+        import acme.Acme.B
+        B + C + bar
+      }
+      lazy val baz = {
+        import fake.Acme.C
+        import acme.Acme.B
+        B + C + bar
+      }
+      def foe = List(1).map { _ =>
+        import fake.Acme.C
+        import acme.Acme.B
+        B + C + bar
+      }
+    }
+    """ isNotModified
+    } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsScatteredInSameLineOfDefShouldNotBeRearranged() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {import fake.Acme.D; import fake.Acme.C; C + D}
+      def k = {
+        import fake.Acme.C; import acme.Acme.A
+        import acme.Acme.B
+        A + B + C
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def unusedImportsInDefShouldBeRemoved() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.D
+        val d = D
+        import acme.Acme.A
+        def k = {
+          import fake.Acme.C
+          import acme.Acme.B
+          B + d
+        }
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.D
+        val d = D
+        def k = {
+          import acme.Acme.B
+          B + d
+        }
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def unusedImportsInDefInImportSelectorsShouldBeRemoved() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.{C, D}
+        val d = D
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.D
+        val d = D
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def unusedRenamedImportsInDefInImportSelectorsShouldBeRemoved() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.{D => U, C => V}
+        import acme.Acme.{A => W}
+        val d = U
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.{D => U}
+        val d = U
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsWithImplicitAsWildcardInDefShouldNotBeRemovedBecauseAreUsed() = new FileSet {
+    """
+    package acme
+
+    class A(i: Int) {
+      def foo(implicit b: Int) = i + b
+    }
+
+    object A {
+      implicit def intToA(i: Int): A = new A(i)
+      implicit val B = 6
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.A._
+        5.foo
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def importsWithImplicitInDefShouldBeSorted() = new FileSet {
+    """
+    package acme
+
+    class A(i: Int) {
+      def foo(implicit b: Int) = i + b
+    }
+
+    object A {
+      implicit def intToA(i: Int): A = new A(i)
+      implicit val B = 6
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.A.intToA
+        import acme.A.B
+        5.foo
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.A.B
+        import acme.A.intToA
+        5.foo
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }

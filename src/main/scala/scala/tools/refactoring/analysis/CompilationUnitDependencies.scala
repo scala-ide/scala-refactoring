@@ -190,7 +190,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         t match {
           case Select(Ident(name), _) if name startsWith nme.EVIDENCE_PARAM_PREFIX =>
             ()
-          case t @ Select(qual, _) if !isRelativeToLocalImports(qual) =>
+          case t: Select if !isRelativeToLocalImports(t) =>
             addToResult(t)
           case _ =>
             ()
@@ -267,13 +267,12 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         imports.exists { imp =>
           def compareSyms = imp.expr.symbol == tree.symbol
 
-          imp.selectors match {
-            case List(singleSelector) =>
-              tree match {
-                case Select(q, n) =>
-                  q.symbol == imp.expr.symbol && (n == singleSelector.name || singleSelector.name == nme.WILDCARD)
-                case _ => compareSyms
-              }
+          val namesAndAliases = imp.selectors.flatMap {
+            case ImportSelector(name, _, rename, _) => Seq(name, rename).filter { _ ne null }
+          }
+          tree match {
+            case Select(q, n) =>
+              q.symbol == imp.expr.symbol && namesAndAliases.exists { name => name == nme.WILDCARD || name == n }
             case _ => compareSyms
           }
         }
@@ -481,7 +480,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
     val deps = result.values.toList
 
-    deps.filterNot(_.symbol.isPackage).toList
+    deps.filterNot(_.symbol.hasPackageFlag).toList
   }
 }
 
