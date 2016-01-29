@@ -3157,4 +3157,89 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002643
+   */
+  @Test
+  def testRenameClassAddsParen1002643Ex1() = new FileSet {
+    """
+    object /*(*/TryRenameMe/*)*/ {
+      object Listings {
+        case class Info(plausiblePrices: Seq[(String, Double)] = Seq(), unplausiblePrices: Seq[(String, Double)] = Seq())
+      }
+
+      case class RegionInfo(regionName: String, listings: Listings.Info)
+
+      case class Listings(
+          forRegion: RegionInfo,
+          forSupRegion: Option[RegionInfo] = None,
+          forNeighbours: Seq[RegionInfo] = Seq())
+    }
+
+    case class TryRenameMe(
+        sqmPrice: Double,
+        regionName: String,
+        listingCategory: String,
+        listings: TryRenameMe.Listings)
+    """ becomes
+    """
+    object /*(*/Ups/*)*/ {
+      object Listings {
+        case class Info(plausiblePrices: Seq[(String, Double)] = Seq(), unplausiblePrices: Seq[(String, Double)] = Seq())
+      }
+
+      case class RegionInfo(regionName: String, listings: Listings.Info)
+
+      case class Listings(
+          forRegion: RegionInfo,
+          forSupRegion: Option[RegionInfo] = None,
+          forNeighbours: Seq[RegionInfo] = Seq())
+    }
+
+    case class Ups(
+        sqmPrice: Double,
+        regionName: String,
+        listingCategory: String,
+        listings: Ups.Listings)
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  @Test
+  def testRenameClassAddsParen1002643Ex2() = new FileSet {
+    """
+    object /*(*/TryRenameMeToo/*)*/ {
+      class Listings
+    }
+
+    case class TryRenameMeToo(
+        buggy: TryRenameMeToo.Listings)
+    """ becomes
+    """
+    object /*(*/Ups/*)*/ {
+      class Listings
+    }
+
+    case class Ups(
+        buggy: Ups.Listings)
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  @Test
+  def testRenameSimilarButNotAffected1002643() = new FileSet {
+    """
+    object /*(*/TryRenameMeToo/*)*/ {
+      class Listings
+    }
+
+    case class TryRenameMeToo(buggy: TryRenameMeToo.Listings)
+    """ becomes
+    """
+    object /*(*/Ups/*)*/ {
+      class Listings
+    }
+
+    case class Ups(buggy: Ups.Listings)
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
 }
