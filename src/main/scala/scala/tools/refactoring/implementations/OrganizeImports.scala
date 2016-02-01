@@ -497,7 +497,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         selectsTraverser.selects.map { asText }.toList
       }
 
-      val allSelectsAsText = allSelects(block)
+      private val allSelectsAsText = allSelects(block)
 
       private def mkImportPath(prefix: String)(selector: ImportSelector) = selector.name match {
         case name if name == nme.WILDCARD => prefix
@@ -518,6 +518,25 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       }
     }
 
+    object RemoveDuplicatedByWildcard extends Participant {
+      protected def doApply(trees: List[Import]) = trees.map { imp =>
+        val wild = imp.selectors.find(_.name == nme.WILDCARD)
+        if (wild.nonEmpty)
+          imp.copy(selectors = wild.toList)
+        else
+          imp
+      }.groupBy {
+        _.expr.toString
+      }.collect {
+        case (_, imports) =>
+          val (wild, rest) = imports.partition(_.selectors.exists(_.name == nme.WILDCARD))
+          if (wild.nonEmpty)
+            wild
+          else
+            rest
+      }.flatten.toList
+    }
+
     private def organizeImportsIfNoImportInSameLine(imports: List[Import])(organizeImports: List[Import] => List[Import]): List[Import] = {
       val importsWithPosition = imports.filter { _.pos.isDefined }
       if (importsWithPosition.nonEmpty &&
@@ -531,7 +550,8 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         case b @ Block(stats, _) if currentOwner.isMethod && !currentOwner.isLazy =>
           val (rawImports, others) = stats.partition { _.isInstanceOf[Import] }
           val imports = rawImports.asInstanceOf[List[Import]]
-          val importsOrganizer = scala.Function.chain(new RemoveUnused(b) :: SortImportSelectors :: SortImports :: Nil)
+          val importsOrganizer = scala.Function.chain(new RemoveUnused(b) :: RemoveDuplicatedByWildcard ::
+              RemoveDuplicates :: SortImportSelectors :: SortImports :: Nil)
           val visitedOthers = others.map { t =>
             transform(t).replaces(t)
           }

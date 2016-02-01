@@ -1623,4 +1623,165 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def duplicateImportsInDefShouldBeRemoved() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme.D
+        import acme.Acme.{A, D}
+        import fake.Acme.D
+        val d = D
+        def k = {
+          import fake.Acme.{C, B, B}
+          import acme.Acme.B
+          A + B + C + d
+        }
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.A
+        import fake.Acme.D
+        val d = D
+        def k = {
+          import acme.Acme.B
+          import fake.Acme.C
+          A + B + C + d
+        }
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def wildcardDuplicateImportsInDefShouldBeRemoved() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import fake.Acme._
+        import acme.Acme.{A, D}
+        import fake.Acme.D
+        val d = D
+        import fake.Acme.{C, B, B}
+        import acme.Acme.B
+        A + B + C + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.A
+        import acme.Acme.B
+        import fake.Acme._
+        val d = D
+        A + B + C + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def wildcardDuplicateImportsInSelectorInDefShouldBeRemoved() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val C = 7
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme.B
+        import acme.Acme.{A, _}
+        import fake.Acme.D
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      def foo = {
+        import acme.Acme._
+        import fake.Acme.D
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
