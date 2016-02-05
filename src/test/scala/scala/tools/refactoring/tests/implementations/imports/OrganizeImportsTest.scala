@@ -1784,4 +1784,147 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImports() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    trait A {
+      def foo: (Try[Unit], _)
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Try
+
+    trait A {
+      def foo: (Try[Unit], _)
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfClassDeclarationAndNotRemoveItFromImports() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    class TestTE(val a: (Try[_], _))
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Try
+
+    class TestTE(val a: (Try[_], _))
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldDiscoverArgTypeInInnerExistentialTypeOfClassDeclarationAndNotRemoveItFromImports() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    class TestTE(val a: (Try[_], Int))
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Try
+
+    class TestTE(val a: (Try[_], Int))
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfHigherKindedTypeAndNotRemoveItFromImports() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    trait Test[Try, B]
+    class ParamCheck[A]
+    class Verify extends ParamCheck[Test[_, Either[_, _]]]
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+
+    trait Test[Try, B]
+    class ParamCheck[A]
+    class Verify extends ParamCheck[Test[_, Either[_, _]]]
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfDeepInHigherKindedTypeAndNotRemoveItFromImports() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    trait Test[Try, B]
+    class ParamCheck[A]
+    class Verify extends ParamCheck[Test[_, Either[_, Try[_]]]]
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    trait Test[Try, B]
+    class ParamCheck[A]
+    class Verify extends ParamCheck[Test[_, Either[_, Try[_]]]]
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDiscoverArgTypeInExistentialTypeOfClassDeclarationAndRemoveItFromImports() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    class TestTE(val a: (_, _))
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class TestTE(val a: (_, _))
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }

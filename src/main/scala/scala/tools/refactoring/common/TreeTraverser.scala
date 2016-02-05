@@ -164,8 +164,13 @@ trait TreeTraverser {
               handleAnnotations(at.annotations)
               traverse(t.original)
 
-            case (ExistentialType(quantified, TypeRef(_, sym, _)), ExistentialTypeTree(AppliedTypeTree(tpt, _), _)) =>
-              fakeSelectTree(sym.tpe, sym, tpt) foreach traverse
+            case (ExistentialType(quantified, TypeRef(typ, sym, args)), ExistentialTypeTree(AppliedTypeTree(tpt, argsTrees), _)) =>
+              argsTrees.foreach {
+                traverse
+              }
+              fakeSelectTree(sym.tpe, sym, tpt).foreach {
+                traverse
+              }
 
             case (tpe: TypeRef, ident: Ident)
                 if tpe.sym.pos == NoPosition || (tpe.sym.pos != NoPosition && tpe.sym.pos.source != t.pos.source) =>
