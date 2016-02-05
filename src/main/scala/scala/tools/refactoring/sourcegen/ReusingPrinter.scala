@@ -169,17 +169,76 @@ trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with Sc
       } else {
         val body_ = ppi(body, separator = newline)
         val trailing = r
-        val hasOpeningBrace = body_.leading.contains("{") || trailing.contains("{")
+        val hasOpeningBrace = preBody.asText.contains("{") || body_.leading.contains("{") || trailing.contains("{")
         val needToPrintOpeningBrace = !hasOpeningBrace && trailing.contains("}") && !preBody.asText.endsWith("{")
 
-        val self_ = if (needToPrintOpeningBrace) {
-          EmptyFragment ++ " {" ++ p(self) ++ indentedNewline
-        } else if (hasOpeningBrace) {
-          p(self) // if the opening brace already exists, there's also a newline present
-        } else {
-          p(self) ++ indentedNewline
+        /*
+         * In some cases, (see for example ExplicitGettersSettersTest.oneVarFromMany() or
+         * IndividualSourceGenTest.addMethodToEmptyTraitWithSelfTypeAnnotation()), it is necessary, it insert
+         * an extra newline after 'self'. Unfortunately, finding out when an extra newline is needed exactly
+         * is not easy, and the solution that you find below is nothing but a hack, that happens to satisfy
+         * our test suite. It replaces an earlier hack, that was causing #1002643. The reason for this bug was,
+         * that library wrongly inserted a newline after the ')', which then caused ')' not to be matched by
+         * preceding requisites, resulting in a surplus ')' being added after the newline.
+         *
+         * Note that we could remove all the complicated logic below and replace it with
+         * 'p(self)' if we were only interested in 'Rename', 'Move class' and
+         * 'Organize Imports' (just replace printSelfConsideringTrailingNewline with p(self)
+         * to see the tests that fail without this hack).
+         */
+        def printSelfConsideringTrailingNewline = {
+          def mvntToCheckIfNewlineAfterSelfIsNeeded(beforeNewline: Boolean) = {
+            import Movements._
+            val commentsAndSpacesNoNewline = (character(' ') | '\t' | comment).zeroOrMore
+
+            if (beforeNewline) {
+              ')'.optional ~ commentsAndSpaces ~ '{'.optional ~
+                (commentsAndSpaces ~ Movements.string("=>")).optional ~
+                commentsAndSpacesNoNewline.zeroOrMore ~ '\n'
+            } else {
+              ('\n' ~ commentsAndSpacesNoNewline).backward
+            }
+          }
+
+          val needNewlineAfterSelf = {
+            val posWithMvntToCheck = self.pos match {
+              case rp: RangePosition =>
+                Some((rp.end, mvntToCheckIfNewlineAfterSelfIsNeeded(beforeNewline = true)))
+              case _ => body.map(_.pos).collectFirst {
+                case rp: RangePosition =>
+                  (rp.start - 1, mvntToCheckIfNewlineAfterSelfIsNeeded(beforeNewline = false))
+              }.orElse {
+                (params.flatten ++ earlyBody ++ parents).reverse.map(_.pos).collectFirst {
+                  case rp: RangePosition =>
+                    (rp.end, mvntToCheckIfNewlineAfterSelfIsNeeded(beforeNewline = true))
+                }
+              }
+            }
+
+            posWithMvntToCheck.map { case (pos, mvnToCheck) =>
+              val srcAfterSelf = SourceWithMarker(t.pos.source.content, pos)
+              mvnToCheck(srcAfterSelf).isDefined
+            }.getOrElse(true)
+          }
+
+          if (needToPrintOpeningBrace) {
+            EmptyFragment ++ " {" ++ p(self) ++ indentedNewline
+          } else if (needNewlineAfterSelf) {
+            val preliminaryRes = p(self)
+            val newlineAlreadyPresent = {
+              preliminaryRes.trailing.asText.contains("\n") ||
+                body_.leading.asText.contains("\n") ||
+                (body_.isEmpty && trailing.asText.contains("\n"))
+            }
+
+            if (newlineAlreadyPresent) preliminaryRes
+            else preliminaryRes ++ indentedNewline
+          } else {
+            p(self)
+          }
         }
 
+        val self_ = printSelfConsideringTrailingNewline
         preBody ++ self_ ++ body_ ++ trailing
       }
     }
