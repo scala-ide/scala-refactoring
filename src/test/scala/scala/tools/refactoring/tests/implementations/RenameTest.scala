@@ -3198,11 +3198,11 @@ class Blubb
     }
 
     case class Ups(
-        sqmPrice: Double,
-        regionName: String,
-        listingCategory: String,
+        sqmPrice: Double,#TrailingSpaceIgnoredForNow#
+        regionName: String,#TrailingSpaceIgnoredForNow#
+        listingCategory: String,#TrailingSpaceIgnoredForNow#
         listings: Ups.Listings)
-    """ -> TaggedAsGlobalRename;
+    """.replace("#TrailingSpaceIgnoredForNow#", " ") -> TaggedAsGlobalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
 
   @Test
