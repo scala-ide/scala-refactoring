@@ -76,7 +76,13 @@ object OrganizeImports {
  *
  *
  */
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
+abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
+                                                             with TreeTraverser
+                                                             with UnusedImportsFinder
+                                                             with analysis.CompilationUnitDependencies
+                                                             with common.InteractiveScalaCompiler
+                                                             with common.TreeExtractors
+                                                             with ClassDefOrganizeImports {
 
   import OrganizeImports.Algos
   import global._
@@ -466,6 +472,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     } &> transformation[Tree, Tree] {
       case p: PackageDef =>
         InnerImports.organizeImportsInMethodBlocks(p).replaces(p)
+    } &> transformation[Tree, Tree] {
+      case p: PackageDef =>
+        organizeImportsInClassDefs(p).replaces(p)
     }
 
     Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
