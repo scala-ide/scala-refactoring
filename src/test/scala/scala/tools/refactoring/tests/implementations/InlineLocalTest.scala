@@ -15,7 +15,7 @@ class InlineLocalTest extends TestHelper with TestRefactoring {
   outer =>
 
   def inline(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new InlineLocal with TestProjectIndex
+    override val refactoring = new InlineLocal with TestProjectIndex
     val changes = performRefactoring()
   }.changes
 
