@@ -576,4 +576,24 @@ object Test extends App {
     }
     """ becomes ""
   } applyRefactoring(inline)
+
+  @Test
+  def inlinePrivateValue() = new FileSet {
+    """
+    class A {
+      /*(*/private val n = 1/*)*/
+
+      val x = n + 1
+
+      def f = n
+    }
+    """ becomes """
+    class A {
+
+      val x = 1 + 1
+
+      def f = 1
+    }
+    """
+  } applyRefactoring(inline)
 }

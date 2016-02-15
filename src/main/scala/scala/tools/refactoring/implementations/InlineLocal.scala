@@ -28,8 +28,7 @@ abstract class InlineLocal extends MultiStageRefactoring with ParameterlessRefac
 
     selectedValue match {
       case Some(t) if (t.symbol.isPrivate || t.symbol.isLocal)
-        && !t.symbol.isMutable && !t.symbol.isValueParameter
-        && t.symbol.enclMethod != NoSymbol => Right(t)
+        && !t.symbol.isMutable && !t.symbol.isValueParameter => Right(t)
       case Some(t) =>
         Left(PreparationError("The selected value cannot be inlined."))
       case None =>
