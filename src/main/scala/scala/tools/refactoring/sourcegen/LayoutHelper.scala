@@ -57,7 +57,7 @@ trait LayoutHelper {
   }
 
   def trailingLayoutForTree(t: Tree): Layout = {
-    findOriginalTree(t) map { t =>
+    findOriginalTree(t).map { t =>
       children(t) match {
         case Nil =>
           NoLayout
@@ -66,7 +66,7 @@ trait LayoutHelper {
         case c =>
           splitLayoutBetweenLastChildAndParent (parent = t, child = c.last)._2
       }
-    } getOrElse NoLayout \\ (l => trace("trailing layout for tree:  %s", l.toString))
+    }.getOrElse(NoLayout) \\ (l => trace("trailing layout for tree:  %s", l.toString))
   }
 
   def layout(start: Int, end: Int)(implicit s: SourceFile) = Layout(s, start, end)

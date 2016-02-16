@@ -51,7 +51,7 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
       chars.mkString("").replace("\r\n", "\\r\\n").replace("\n", "\\n")
     }
 
-    val lrChars = 3
+    val lrChars = 15
     val nChars = lrChars*2 + 1
 
     def leftDots = if (marker - lrChars > 0) "..." else ""
