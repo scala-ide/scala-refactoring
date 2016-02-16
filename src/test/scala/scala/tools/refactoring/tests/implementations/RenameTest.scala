@@ -3241,4 +3241,49 @@ class Blubb
     case class Ups(buggy: Ups.Listings)
     """ -> TaggedAsGlobalRename;
   } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  /*
+   * See Assembla Ticket 1002622
+   */
+  @Test
+  def testRenameWithDefaultArgsAndImplicits1002622() = new FileSet {
+    """
+    trait ImplicitVals {
+      implicit def x = 42
+    }
+
+    object Bug {
+      class Ret(x: Int) {
+        def withDefault(a: String = "") = a + x
+      }
+
+      def apply()(implicit x: Int) = {
+        new Ret(x)
+      }
+    }
+
+    class Bug extends ImplicitVals {
+      val /*(*/tryRenameMe/*)*/ = Bug().withDefault()
+    }
+    """ becomes
+    """
+    trait ImplicitVals {
+      implicit def x = 42
+    }
+
+    object Bug {
+      class Ret(x: Int) {
+        def withDefault(a: String = "") = a + x
+      }
+
+      def apply()(implicit x: Int) = {
+        new Ret(x)
+      }
+    }
+
+    class Bug extends ImplicitVals {
+      val /*(*/ups/*)*/ = Bug().withDefault()
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
