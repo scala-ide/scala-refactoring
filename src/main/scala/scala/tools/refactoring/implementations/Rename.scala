@@ -11,6 +11,13 @@ import analysis.TreeAnalysis
 import tools.nsc.symtab.Flags
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.common.PositionDebugging
+import scala.reflect.internal.util.RangePosition
+import scala.tools.refactoring.util.SourceWithMarker
+import scala.tools.refactoring.util.SourceWithMarker.Movements
+import scala.tools.refactoring.util.SourceWithMarker.MovementHelpers
+import scala.tools.refactoring.util.SourceWithMarker.Movement
+import scala.tools.refactoring.common.TextChange
+import scala.tools.refactoring.common.RenameSourceFileChange
 
 abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler {
 
@@ -81,59 +88,67 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     }
 
     trace("Selected tree is %s", prepared.selectedTree)
-
     val sym = prepared.selectedTree.symbol
-
-    val occurences = index.occurences(sym)
-
-    occurences.foreach { s =>
-      trace("Symbol is referenced at %s", PositionDebugging.formatCompact(s.pos))
-      eventuallyFixModifierPositionsForLazyVals(s)
-    }
-
-    val isInTheIndex = filter {
-      case t: Tree => occurences contains t
-    }
-
-    val renameTree = transform {
-      case t: ImportSelectorTree =>
-        mkRenamedImportTree(t, newName)
-      case t: SymTree =>
-        mkRenamedSymTree(t, newName) setPos (t.pos withStart t.pos.start)
-      case t: TypeTree =>
-        mkRenamedTypeTree(t, newName, prepared.selectedTree.symbol)
-      case t @ Literal(Constant(value: TypeRef)) if isClassTag(t.value) =>
-        val OriginalSymbol = prepared.selectedTree.symbol
-        val newType = value map {
-          case TypeRef(pre, OriginalSymbol, args) =>
-            // Uh..
-            new Type {
-              override def safeToString: String = newName
-            }
-          case t => t
+    val oldName = {
+      // We try to read the old name from the name position of the original symbol, since this seems to be the most
+      // reliable strategy that seems to work well with `backtick-identifiers`.
+      index.declaration(sym).flatMap { tree =>
+        tree.namePosition() match {
+          case rp: RangePosition => Some(rp.source.content.slice(rp.start, rp.end).mkString(""))
+          case _ => None
         }
-        Literal(Constant(newType)) replaces t
+      }.getOrElse {
+        trace("Cannot find old name of symbol reliably; attempting fallback")
+        prepared.selectedTree.nameString
+      }
     }
 
-    val rename = topdown(isInTheIndex &> renameTree |> id)
+    trace(s"Old name is $oldName")
 
-    val renamedTreesWithOriginals = occurences.flatMap { tree =>
-      rename(tree).map((_, tree))
+    if (oldName == newName) {
+      Right(Nil)
+    } else {
+      val occurences = index.occurences(sym)
+
+      occurences.foreach { s =>
+        trace("Symbol is referenced at %s", PositionDebugging.formatCompact(s.pos))
+        eventuallyFixModifierPositionsForLazyVals(s)
+      }
+
+      import Movements._
+      val mvToSymStart = Movements.until(oldName, skipping = (comment | space | reservedName))
+      val textChangesWithTrees = occurences.flatMap { occ =>
+        occ.namePosition() match {
+          case np: RangePosition =>
+            // Unfortunately, there are cases when the name position cannot be used directly.
+            // Therefore we have to use an appropriate movement to make sure we capture the correct range.
+            val srcAtStart = SourceWithMarker.atStartOf(np)
+            mvToSymStart(srcAtStart).map { markerAtSymStart =>
+              (TextChange(np.source, markerAtSymStart, markerAtSymStart + oldName.length, newName), occ)
+            }
+
+          case _ =>
+            None
+        }
+      }
+
+      // Since the ASTs do not directly represent the user source code, it might be easily possible that
+      // some text changes are duplicated. The code below removes them.
+      val uniqTextChangesWithTrees = textChangesWithTrees.groupBy(_._1).map { case (change, changesWithTrees) =>
+        (change, changesWithTrees.head._2)
+      }.toList
+
+      val textChanges = uniqTextChangesWithTrees.map(_._1)
+
+      val newSourceChanges = uniqTextChangesWithTrees.flatMap { case (textChange, tree) =>
+        if (tree.pos.source.file.name == oldName + ".scala") {
+          Some(RenameSourceFileChange(tree.pos.source.file, newName + ".scala"))
+        } else {
+          None
+        }
+      }.distinct
+
+      Right(textChanges ::: newSourceChanges)
     }
-
-    val renameSourceChanges = renamedTreesWithOriginals.collect {
-      case (newTree: ImplDef, oldTree: ImplDef) if sourceShouldBeRenamed(newTree, oldTree) =>
-        RenameSourceFileChange(oldTree.pos.source.file, newTree.name.toString() + ".scala")
-    }.distinct
-
-    Right(refactor(renamedTreesWithOriginals.map(_._1)) ++ renameSourceChanges)
-  }
-
-  private def sourceShouldBeRenamed(newTree: ImplDef, oldTree: ImplDef) = {
-    lazy val namesDefined = newTree.name != null && oldTree.name != null
-    lazy val namesDifferent = newTree.name != oldTree.name
-    lazy val fileNamedLikeOldTree = oldTree.pos.isDefined && oldTree.pos.source.file.name == oldTree.name.toString + ".scala"
-
-    namesDefined && namesDifferent & fileNamedLikeOldTree
   }
 }
