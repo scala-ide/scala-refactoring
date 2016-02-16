@@ -185,9 +185,13 @@ object SourceWithMarker {
     }
 
     def butNot[MovementT <: SimpleMovement](mvnt: MovementT, notMvnt: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
-      notMvnt(sourceWithMarker) match {
-        case None => mvnt(sourceWithMarker)
-        case Some(_) => None
+      mvnt(sourceWithMarker) match {
+        case Some(newMarker) =>
+          notMvnt(sourceWithMarker) match {
+            case Some(`newMarker`) => None
+            case _ => Some(newMarker)
+          }
+        case None => None
       }
     }
 
@@ -291,14 +295,17 @@ object SourceWithMarker {
     }
 
     def coveredString(pos: Int, src: IndexedSeq[Char], mvnt: SimpleMovement): String = {
-      val srcStart = SourceWithMarker(src, pos)
-      val srcEnd = srcStart.moveMarker(mvnt)
-      val (start, end) = (srcStart.marker, srcEnd.marker)
+      coveredString(SourceWithMarker(src, pos), mvnt)
+    }
+
+    def coveredString(sourceWithMarker: SourceWithMarker, mvnt: SimpleMovement): String = {
+      val srcEnd = sourceWithMarker.moveMarker(mvnt)
+      val (start, end) = (sourceWithMarker.marker, srcEnd.marker)
       val (actualStart, actualEnd) = {
         if (start <= end) (start, end)
         else (end + 1, start + 1)
       }
-      src.slice(actualStart, actualEnd).mkString("")
+      sourceWithMarker.source.slice(actualStart, actualEnd).mkString("")
     }
   }
 
@@ -534,7 +541,18 @@ object SourceWithMarker {
 
     val literalIdentifier = '`' ~ any.butNot('`').atLeastOnce ~ '`'
 
-    val id = plainid | literalIdentifier
+    val reservedName = string("abstract") | "case" | "catch" | "class" | "def" |
+      "do" | "else" | "extends" | "false" | "final" |
+      "finally" | "for" | "forSome" | "if" | "implicit" |
+      "import" | "lazy" | "macro" | "match" | "new" |
+      "null" | "object" | "override" | "package" | "private" |
+      "protected" | "return" | "sealed" | "super" | "this" |
+      "throw" | "trait" | "try" | "true" | "type" |
+      "val" | "var" | "while" | "with" | "yield" |
+      "_" | ":" | "=" | "=>" | "<-" | "<:" | "<%" | ">:" | "#" | "@" |
+      "\u21D2" | "\u2190"
+
+    val id = (plainid | literalIdentifier).butNot(reservedName)
 
     val spaces: Movement = space.zeroOrMore
     val comments: Movement = (comment ~ spaces).zeroOrMore

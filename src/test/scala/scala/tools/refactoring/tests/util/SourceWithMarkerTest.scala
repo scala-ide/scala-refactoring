@@ -286,17 +286,28 @@ class SourceWithMarkerTest {
     }
   }
 
+  private def runCoveredStringTest(input: String, start: Int, mvnt: SimpleMovement, shouldBeCovered: String): Unit = {
+    assertEquals(shouldBeCovered, Movement.coveredString(start, input, mvnt))
+  }
+
   @Test
   def testCoveredString(): Unit = {
-    def runTest(input: String, start: Int, mvnt: SimpleMovement, expected: String): Unit = {
-      assertEquals(expected, Movement.coveredString(start, input, mvnt))
-    }
+    runCoveredStringTest("", 0, any, "")
+    runCoveredStringTest("0", 0, any, "0")
+    runCoveredStringTest("1", 0, any.backward, "1")
+    runCoveredStringTest("1223", 1, '2'.zeroOrMore, "22")
+    runCoveredStringTest("1223", 1, '2'.zeroOrMore.backward, "2")
+  }
 
-    runTest("", 0, any, "")
-    runTest("0", 0, any, "0")
-    runTest("1", 0, any.backward, "1")
-    runTest("1223", 1, '2'.zeroOrMore, "22")
-    runTest("1223", 1, '2'.zeroOrMore.backward, "2")
+  @Test
+  def testScalaId(): Unit = {
+    def runIdTest(input: String, shouldBeCovered: String) = runCoveredStringTest(input, 0, Movements.id, shouldBeCovered)
+
+    runIdTest("", "")
+    runIdTest("x", "x")
+    runIdTest("privateval", "privateval")
+    runIdTest("val x = 3", "")
+    runIdTest("->", "->")
   }
 
   private implicit class SourceWithMarkerOps(underlying: SourceWithMarker) {
