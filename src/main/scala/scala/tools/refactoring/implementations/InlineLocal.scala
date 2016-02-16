@@ -13,9 +13,9 @@ abstract class InlineLocal extends MultiStageRefactoring with ParameterlessRefac
 
   import global._
 
-  type PreparationResult = ValDef
+  override type PreparationResult = ValDef
 
-  def prepare(s: Selection) = {
+  override def prepare(s: Selection) = {
 
     val selectedValue = s.findSelectedOfType[RefTree] match {
       case Some(t) =>
@@ -26,10 +26,12 @@ abstract class InlineLocal extends MultiStageRefactoring with ParameterlessRefac
       case None => s.findSelectedOfType[ValDef]
     }
 
+    def isInliningAllowed(sym: Symbol) =
+      (sym.isPrivate || sym.isLocal) && !sym.isMutable && !sym.isValueParameter
+
     selectedValue match {
-      case Some(t) if (t.symbol.isPrivate || t.symbol.isLocal)
-        && !t.symbol.isMutable && !t.symbol.isValueParameter
-        && t.symbol.enclMethod != NoSymbol => Right(t)
+      case Some(t) if isInliningAllowed(t.symbol) =>
+        Right(t)
       case Some(t) =>
         Left(PreparationError("The selected value cannot be inlined."))
       case None =>
@@ -37,7 +39,7 @@ abstract class InlineLocal extends MultiStageRefactoring with ParameterlessRefac
     }
   }
 
-  def perform(selection: Selection, selectedValue: PreparationResult): Either[RefactoringError, List[Change]] = {
+  override def perform(selection: Selection, selectedValue: PreparationResult): Either[RefactoringError, List[Change]] = {
 
     trace("Selected: %s", selectedValue)
 
@@ -58,7 +60,6 @@ abstract class InlineLocal extends MultiStageRefactoring with ParameterlessRefac
     val references = index references selectedValue.symbol
 
     val replaceReferenceWithRhs = {
-
 
       val replacement = selectedValue.rhs match {
         // inlining `list.filter _` should not include the `_`
