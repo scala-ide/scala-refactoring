@@ -270,10 +270,10 @@ trait TreePrintingTraversals {
        * we can't easily override for our own trees in
        * [[scala.tools.refactoring.common.PimpedTrees]].
        */
-      def isErroneous(t: Tree) =
-        try t.isErroneous || t.tpe != null && t.tpe =:= definitions.NullTpe ||
-            t.exists(t => t.isErroneous || t.tpe != null && t.tpe =:= definitions.NullTpe)
-        catch { case _: MatchError => false }
+      def isProbablyErroneous(t: Tree) = {
+        def isErroneous(t: Tree) = t.isErroneous || t.tpe != null && t.tpe =:= definitions.NullTpe
+        try isErroneous(t) || t.exists(isErroneous) catch { case _: MatchError => true }
+      }
 
       val fragment = trees.foldRight(EmptyFragment: Fragment) {
         case (t, r) =>
@@ -282,7 +282,7 @@ trait TreePrintingTraversals {
             case l if r.asText.isEmpty => l
             case l =>
               val (leftCenter, rightCenter) =
-                if (isErroneous(t))
+                if (isProbablyErroneous(t))
                   (l.center, r.center)
                 else
                   (balanceBracketsInLayout('(', ')', l.center), balanceBracketsInLayout('(', ')', r.center))
