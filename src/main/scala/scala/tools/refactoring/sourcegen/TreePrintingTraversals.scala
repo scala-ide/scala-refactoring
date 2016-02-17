@@ -264,22 +264,36 @@ trait TreePrintingTraversals {
       before: Requisite,
       after: Requisite)(implicit ctx: PrintingContext): Fragment = {
 
-      trees.map { t =>
-        printSingleTree(t, NoRequisite, NoRequisite)
-      }.filterNot(_.isEmpty).foldRight(EmptyFragment: Fragment) {
-        case (l, r) if l.asText == "" => r
-        case (l, r) if r.asText == "" => l
-        case (l, r) =>
+      /*
+       * We need to catch match errors because internally this function calls
+       * [[scala.reflect.api.Trees.xtraverse(Traverser, Tree)]], a function that
+       * we can't easily override for our own trees in
+       * [[scala.tools.refactoring.common.PimpedTrees]].
+       */
+      def isProbablyErroneous(t: Tree) = {
+        def isErroneous(t: Tree) = t.isErroneous || t.tpe != null && t.tpe =:= definitions.NullTpe
+        try isErroneous(t) || t.exists(isErroneous) catch { case _: MatchError => true }
+      }
 
-          val leftCenter = balanceBracketsInLayout('(', ')', l.center)
-          val rightCenter = balanceBracketsInLayout('(', ')', r.center)
+      val fragment = trees.foldRight(EmptyFragment: Fragment) {
+        case (t, r) =>
+          printSingleTree(t, NoRequisite, NoRequisite) match {
+            case l if l.isEmpty || l.asText.isEmpty => r
+            case l if r.asText.isEmpty => l
+            case l =>
+              val (leftCenter, rightCenter) =
+                if (isProbablyErroneous(t))
+                  (l.center, r.center)
+                else
+                  (balanceBracketsInLayout('(', ')', l.center), balanceBracketsInLayout('(', ')', r.center))
 
-          val left = l.post(leftCenter ++ l.trailing, NoLayout)
-          val right = r.pre(NoLayout, r.leading ++ rightCenter)
-          val middle = (left ++ separator ++ right).toLayout
-          val f = Fragment(l.leading, middle, r.trailing) ++ (r.post, l.pre)
-          f
-      } ifNotEmpty (_ ++ (after, before))
+              val left = l.post(leftCenter ++ l.trailing, NoLayout)
+              val right = r.pre(NoLayout, r.leading ++ rightCenter)
+              val middle = (left ++ separator ++ right).toLayout
+              Fragment(l.leading, middle, r.trailing) ++ (r.post, l.pre)
+           }
+      }
+      fragment ifNotEmpty (_ ++ (after, before))
     }
 
     def getChildrenIndentation(parent: Tree, t: Tree): Option[String] = {

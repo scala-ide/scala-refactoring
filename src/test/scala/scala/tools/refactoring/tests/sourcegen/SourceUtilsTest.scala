@@ -133,7 +133,6 @@ class SourceUtilsTest {
           """
       ) :: Nil
 
-
       testCases.foreach((testSplitComment _).tupled)
   }
 
