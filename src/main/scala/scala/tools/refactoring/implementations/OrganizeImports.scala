@@ -556,7 +556,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
 
     private def collectStableLocalIdents(b: Block): List[Symbol] =
       b.collect {
-        case tree if tree.symbol != null && tree.symbol.isStable && tree.symbol.isLocalToBlock => tree.symbol
+        case tree if tree.symbol != null && tree.symbol.isStable && tree.symbol.isLocal => tree.symbol
       }
 
     def organizeImportsInMethodBlocks(tree: Tree): Tree = new Transformer {

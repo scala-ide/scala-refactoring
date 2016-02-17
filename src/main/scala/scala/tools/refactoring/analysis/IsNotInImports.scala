@@ -13,7 +13,7 @@ trait IsNotInImports { _: CompilationUnitDependencies with common.PimpedTrees =>
       override def traverse(t: Tree) = {
         owns = currentOwner :: owns
         t match {
-          case t if t.pos != NoPosition && t.pos.start > upToPosition =>
+          case t if !t.pos.isRange || t.pos.isRange && t.pos.start > upToPosition =>
           case Of => owners = owns.distinct
           case t =>
             super.traverse(t)
@@ -28,7 +28,7 @@ trait IsNotInImports { _: CompilationUnitDependencies with common.PimpedTrees =>
   def isSelectNotInRelativeImports(tested: Select, wholeTree: Tree): Boolean = {
     val doesNameFitInTested = compareNameWith(tested)(_)
     val nonPackageOwners = collectPotentialOwners(tested, wholeTree).filterNot { _.hasPackageFlag }
-    def isValidPosition(t: Import): Boolean = t.pos.start < tested.pos.start
+    def isValidPosition(t: Import): Boolean = t.pos.isRange && t.pos.start < tested.pos.start
     val isImportForTested = new Traverser {
       var found = false
       override def traverse(t: Tree) = t match {
