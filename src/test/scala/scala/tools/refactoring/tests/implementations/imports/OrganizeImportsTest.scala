@@ -10,6 +10,7 @@ import language.reflectiveCalls
 import language.postfixOps
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
+import org.junit.Ignore
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
@@ -1928,7 +1929,226 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
+  @Test
+  def shouldNotOrganizeImportsForLocalStableInMethodBlock() = new FileSet {
+    """
+    package acme
 
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    object AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import org.Acne
+        import acme.Acme
+
+        val tested = new Acme((new Acne(4)).A)
+        import tested._
+
+        import acme.AcmeHelper.H
+
+        A + H
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.Acme
+        import acme.AcmeHelper.H
+        import org.Acne
+
+        val tested = new Acme((new Acne(4)).A)
+        import tested._
+
+        A + H
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotOrganizeImportsForLocalStableInNestedMethodBlockWhenImportIsInOuterToo() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    class AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+
+        def bar = {
+          import org.Acne
+          import acme.Acme
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+
+        def bar = {
+          import acme.Acme
+          import org.Acne
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotOrganizeImportsForLocalStableInNestedMethodBlock() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    class AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        def bar = {
+          import org.Acne
+          import acme.Acme
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          import acme.AcmeHelper
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        def bar = {
+          import acme.Acme
+          import acme.AcmeHelper
+          import org.Acne
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("under construction")
   @Test
   def shouldOrganizeImportsInClassDefBySorting() = new FileSet {
     """
