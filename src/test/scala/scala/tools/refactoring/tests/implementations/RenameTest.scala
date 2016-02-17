@@ -32,6 +32,22 @@ class RenameTest extends TestHelper with TestRefactoring {
   protected override def nestTestsInUniqueBasePackageByDefault = true
 
   /*
+   * See Assembla Ticket 1001966
+   */
+  @Test
+  def testRenameWithContextBounds1001966() = new FileSet {
+    """
+    trait Bar[T]
+    class /*(*/TryRenameMe/*)*/[T : Bar]
+    """ becomes
+    """
+    trait Bar[T]
+    class /*(*/Ups/*)*/[T : Bar]
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+
+  /*
    * See Assembla Ticket 1002611
    */
   @Test
