@@ -2054,7 +2054,6 @@ class Blubb
    * Correctly renaming package private lazy vals is not as easy as one might hope,
    * because of their representation in the ASTs, both as "ValDef"s and "DefDef"s.
    */
-  @Ignore
   @Test
   def testRenamePkgProtectedLazyVal() = new FileSet {
     """
