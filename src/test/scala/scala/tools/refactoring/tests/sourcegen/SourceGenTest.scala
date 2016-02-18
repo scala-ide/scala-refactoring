@@ -403,22 +403,22 @@ class SourceGenTest extends TestHelper {
     val tree = treeFrom("""
     package common {
       trait Tracing
-      trait PimpedTrees
+      trait EnrichedTrees
     }
 
     trait AbstractPrinter {
-      this: common.Tracing with common.PimpedTrees =>
+      this: common.Tracing with common.EnrichedTrees =>
     }
     """)
 
     assertEquals("""
     package common {
       trait Tracing
-      trait PimpedTrees
+      trait EnrichedTrees
     }
 
     trait AbstractPrinter {
-      this: common.Tracing with common.PimpedTrees =>
+      this: common.Tracing with common.EnrichedTrees =>
     }
     """, generateText(tree))
   }

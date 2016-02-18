@@ -9,7 +9,7 @@ import language.implicitConversions
 
 trait TreeTransformations extends Transformations with TreeFactory {
 
-  this: common.PimpedTrees with common.CompilerAccess =>
+  this: common.EnrichedTrees with common.CompilerAccess =>
 
   import global._
 

@@ -7,7 +7,7 @@ package sourcegen
 
 trait TreePrintingTraversals {
 
-  self: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with AbstractPrinter =>
+  self: common.Tracing with common.EnrichedTrees with Indentations with common.CompilerAccess with AbstractPrinter =>
 
   import global._
 
@@ -268,7 +268,7 @@ trait TreePrintingTraversals {
        * We need to catch match errors because internally this function calls
        * [[scala.reflect.api.Trees.xtraverse(Traverser, Tree)]], a function that
        * we can't easily override for our own trees in
-       * [[scala.tools.refactoring.common.PimpedTrees]].
+       * [[scala.tools.refactoring.common.EnrichedTrees]].
        */
       def isProbablyErroneous(t: Tree) = {
         def isErroneous(t: Tree) = t.isErroneous || t.tpe != null && t.tpe =:= definitions.NullTpe

@@ -18,7 +18,7 @@ import collection.mutable.ListBuffer
  */
 trait CompilationUnitIndexes {
 
-  this: common.PimpedTrees with common.CompilerAccess with common.TreeTraverser =>
+  this: common.EnrichedTrees with common.CompilerAccess with common.TreeTraverser =>
 
   import global._
 

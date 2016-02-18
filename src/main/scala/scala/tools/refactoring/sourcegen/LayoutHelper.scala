@@ -5,13 +5,13 @@
 package scala.tools.refactoring
 package sourcegen
 
-import common.PimpedTrees
+import common.EnrichedTrees
 import common.Tracing
 import scala.reflect.internal.util.SourceFile
 
 trait LayoutHelper {
 
-  self: Formatting with Tracing with PimpedTrees with common.CompilerAccess =>
+  self: Formatting with Tracing with EnrichedTrees with common.CompilerAccess =>
 
   import global._
 

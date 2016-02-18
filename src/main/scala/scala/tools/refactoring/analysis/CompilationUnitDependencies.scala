@@ -11,7 +11,7 @@ import scala.annotation.tailrec
 
 trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersionAdapters.CompilerApiAdapters with TracingImpl {
   // we need to interactive compiler because we work with RangePositions
-  this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors with common.PimpedTrees =>
+  this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors with common.EnrichedTrees =>
 
   import global._
 

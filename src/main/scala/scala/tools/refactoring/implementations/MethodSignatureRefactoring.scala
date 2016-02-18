@@ -6,7 +6,7 @@ import scala.tools.refactoring.MultiStageRefactoring
 
 import analysis.PartiallyAppliedMethodsFinder
 import common.Change
-import common.PimpedTrees
+import common.EnrichedTrees
 
 /**
  * Generic implementation of a refactoring that changes a method signature
@@ -17,7 +17,7 @@ import common.PimpedTrees
  * An concrete implementation of a method signature refactoring only has to provide the
  * actual transformations of a definition and an application of a method.
  */
-abstract class MethodSignatureRefactoring extends MultiStageRefactoring with common.InteractiveScalaCompiler with PimpedTrees with analysis.Indexes with common.TreeTraverser with PartiallyAppliedMethodsFinder {
+abstract class MethodSignatureRefactoring extends MultiStageRefactoring with common.InteractiveScalaCompiler with EnrichedTrees with analysis.Indexes with common.TreeTraverser with PartiallyAppliedMethodsFinder {
 
   import global._
 

@@ -54,7 +54,7 @@ import scala.tools.refactoring.implementations.OrganizeImportsAlgosTest
     classOf[OrganizeImportsTest],
     classOf[OrganizeImportsWildcardsTest],
     classOf[OrganizeMissingImportsTest],
-    classOf[PimpedTreesTest],
+    classOf[EnrichedTreesTest],
     classOf[PrependOrDropScalaPackageFromRecomputedTest],
     classOf[PrependOrDropScalaPackageKeepTest],
     classOf[PrettyPrinterTest],

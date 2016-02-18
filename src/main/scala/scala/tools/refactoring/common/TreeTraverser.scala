@@ -11,7 +11,7 @@ import tools.nsc.Global
 
 trait TreeTraverser {
 
-  this: CompilerAccess with common.PimpedTrees =>
+  this: CompilerAccess with common.EnrichedTrees =>
 
   import global._
 

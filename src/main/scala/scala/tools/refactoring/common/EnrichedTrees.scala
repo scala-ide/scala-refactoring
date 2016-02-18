@@ -25,16 +25,16 @@ import scala.util.control.NonFatal
  * A collection of implicit conversions for ASTs and other
  * helper functions that work on trees.
  */
-trait PimpedTrees {
+trait EnrichedTrees {
 
-  pimpedTrees: CompilerAccess =>
+  enrichedTrees: CompilerAccess =>
 
   import global._
 
   /**
    * Represent an import selector as a tree, including both names as trees.
    */
-  case class ImportSelectorTree(name: pimpedTrees.NameTree, rename: global.Tree) extends global.Tree
+  case class ImportSelectorTree(name: enrichedTrees.NameTree, rename: global.Tree) extends global.Tree
 
   /**
    * Import selectors are not trees, but we can provide an extractor
@@ -567,11 +567,11 @@ trait PimpedTrees {
     def unapply(t: Tree): Option[(List[List[ValDef]], List[Tree], List[Tree], Tree, List[Tree])] = t match {
       case tpl: Template =>
 
-        val pimpedTpl = additionalTemplateMethods(tpl)
+        val enrichedTpl = additionalTemplateMethods(tpl)
 
         val classParams = {
 
-          val primaryConstructorArgs = pimpedTpl.primaryConstructor flatMap (_.vparamss) map (_.size)
+          val primaryConstructorArgs = enrichedTpl.primaryConstructor flatMap (_.vparamss) map (_.size)
 
           def groupPrimaryConstructorArgs(groups: List[Int], fields: List[ValDef]): List[List[ValDef]] = groups match {
             case Nil => Nil
@@ -580,7 +580,7 @@ trait PimpedTrees {
               current :: groupPrimaryConstructorArgs(ns, rest)
           }
 
-          val constructorParameters = pimpedTpl.constructorParameters
+          val constructorParameters = enrichedTpl.constructorParameters
           if (primaryConstructorArgs.sum != constructorParameters.size) {
             List(constructorParameters)
           } else {
@@ -589,12 +589,12 @@ trait PimpedTrees {
         }
 
         val body = {
-          val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot ((pimpedTpl.primaryConstructor ::: pimpedTpl.constructorParameters).contains)
+          val bodyWithoutPrimaryConstructorAndArgs = tpl.body filterNot ((enrichedTpl.primaryConstructor ::: enrichedTpl.constructorParameters).contains)
           val removeGeneratedTrees = bodyWithoutPrimaryConstructorAndArgs filter keepTree
           removeCompilerTreesForMultipleAssignment(removeGeneratedTrees)
         }
 
-        val parents = (pimpedTpl.superConstructorParameters match {
+        val parents = (enrichedTpl.superConstructorParameters match {
           case Nil =>
             tpl.parents
           case params =>
@@ -624,7 +624,7 @@ trait PimpedTrees {
           }
         }
 
-        Some(Tuple5(classParams, pimpedTpl.earlyDefs, parents, self, body))
+        Some(Tuple5(classParams, enrichedTpl.earlyDefs, parents, self, body))
 
       case _ =>
         None
@@ -1016,9 +1016,9 @@ trait PimpedTrees {
    *   self: A with B =>
    *   ^^^^^^^^^^^^^^
    */
-  case class SelfTypeTree(name: pimpedTrees.NameTree, tpt: Tree) extends global.Tree
+  case class SelfTypeTree(name: enrichedTrees.NameTree, tpt: Tree) extends global.Tree
 
-  case class NamedArgument(nameTree: pimpedTrees.NameTree, rhs: Tree) extends global.RefTree {
+  case class NamedArgument(nameTree: enrichedTrees.NameTree, rhs: Tree) extends global.RefTree {
     def qualifier = EmptyTree
     val name = nameTree.name
   }

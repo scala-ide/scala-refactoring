@@ -6,7 +6,7 @@ package scala.tools.refactoring
 
 import scala.tools.nsc.io.AbstractFile
 import scala.tools.refactoring.common.Selections
-import scala.tools.refactoring.common.PimpedTrees
+import scala.tools.refactoring.common.EnrichedTrees
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.sourcegen.SourceGenerator
 import scala.tools.refactoring.transformation.TreeTransformations
@@ -18,7 +18,7 @@ import scala.tools.refactoring.common.TracingImpl
  * their dependencies. Refactoring is mixed in by all concrete refactorings and can be
  * used by users of the library.
  */
-trait Refactoring extends Selections with TreeTransformations with TracingImpl with SourceGenerator with PimpedTrees {
+trait Refactoring extends Selections with TreeTransformations with TracingImpl with SourceGenerator with EnrichedTrees {
 
   this: common.CompilerAccess =>
 

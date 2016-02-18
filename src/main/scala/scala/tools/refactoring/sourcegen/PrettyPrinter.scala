@@ -13,7 +13,7 @@ import language.implicitConversions
 
 trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
 
-  outer: common.PimpedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper with Formatting =>
+  outer: common.EnrichedTrees with common.CompilerAccess with common.Tracing with Indentations with LayoutHelper with Formatting =>
 
   import global._
 

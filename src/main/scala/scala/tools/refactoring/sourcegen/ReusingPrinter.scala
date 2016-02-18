@@ -17,7 +17,7 @@ import scala.tools.refactoring.util.SourceWithMarker.Movements.space
 
 trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with ScalaVersionAdapters.CompilerApiAdapters {
 
-  outer: LayoutHelper with common.Tracing with common.PimpedTrees with common.CompilerAccess with Formatting with Indentations =>
+  outer: LayoutHelper with common.Tracing with common.EnrichedTrees with common.CompilerAccess with Formatting with Indentations =>
 
   import global._
 
