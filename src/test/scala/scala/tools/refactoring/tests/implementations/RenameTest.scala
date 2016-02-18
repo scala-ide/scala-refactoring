@@ -32,6 +32,22 @@ class RenameTest extends TestHelper with TestRefactoring {
   protected override def nestTestsInUniqueBasePackageByDefault = true
 
   /*
+   * See Assembla Ticket 1001966
+   */
+  @Test
+  def testRenameWithContextBounds1001966() = new FileSet {
+    """
+    trait Bar[T]
+    class /*(*/TryRenameMe/*)*/[T : Bar]
+    """ becomes
+    """
+    trait Bar[T]
+    class /*(*/Ups/*)*/[T : Bar]
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+
+  /*
    * See Assembla Ticket 1002611
    */
   @Test
@@ -2054,7 +2070,6 @@ class Blubb
    * Correctly renaming package private lazy vals is not as easy as one might hope,
    * because of their representation in the ASTs, both as "ValDef"s and "DefDef"s.
    */
-  @Ignore
   @Test
   def testRenamePkgProtectedLazyVal() = new FileSet {
     """
@@ -3156,5 +3171,135 @@ class Blubb
       def /*(*/ups/*)*/() = 1
     }
     """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002643
+   */
+  @Test
+  def testRenameClassAddsParen1002643Ex1() = new FileSet {
+    """
+    object /*(*/TryRenameMe/*)*/ {
+      object Listings {
+        case class Info(plausiblePrices: Seq[(String, Double)] = Seq(), unplausiblePrices: Seq[(String, Double)] = Seq())
+      }
+
+      case class RegionInfo(regionName: String, listings: Listings.Info)
+
+      case class Listings(
+          forRegion: RegionInfo,
+          forSupRegion: Option[RegionInfo] = None,
+          forNeighbours: Seq[RegionInfo] = Seq())
+    }
+
+    case class TryRenameMe(
+        sqmPrice: Double,
+        regionName: String,
+        listingCategory: String,
+        listings: TryRenameMe.Listings)
+    """ becomes
+    """
+    object /*(*/Ups/*)*/ {
+      object Listings {
+        case class Info(plausiblePrices: Seq[(String, Double)] = Seq(), unplausiblePrices: Seq[(String, Double)] = Seq())
+      }
+
+      case class RegionInfo(regionName: String, listings: Listings.Info)
+
+      case class Listings(
+          forRegion: RegionInfo,
+          forSupRegion: Option[RegionInfo] = None,
+          forNeighbours: Seq[RegionInfo] = Seq())
+    }
+
+    case class Ups(
+        sqmPrice: Double,
+        regionName: String,
+        listingCategory: String,
+        listings: Ups.Listings)
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  @Test
+  def testRenameClassAddsParen1002643Ex2() = new FileSet {
+    """
+    object /*(*/TryRenameMeToo/*)*/ {
+      class Listings
+    }
+
+    case class TryRenameMeToo(
+        buggy: TryRenameMeToo.Listings)
+    """ becomes
+    """
+    object /*(*/Ups/*)*/ {
+      class Listings
+    }
+
+    case class Ups(
+        buggy: Ups.Listings)
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  @Test
+  def testRenameSimilarButNotAffected1002643() = new FileSet {
+    """
+    object /*(*/TryRenameMeToo/*)*/ {
+      class Listings
+    }
+
+    case class TryRenameMeToo(buggy: TryRenameMeToo.Listings)
+    """ becomes
+    """
+    object /*(*/Ups/*)*/ {
+      class Listings
+    }
+
+    case class Ups(buggy: Ups.Listings)
+    """ -> TaggedAsGlobalRename;
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  /*
+   * See Assembla Ticket 1002622
+   */
+  @Test
+  def testRenameWithDefaultArgsAndImplicits1002622() = new FileSet {
+    """
+    trait ImplicitVals {
+      implicit def x = 42
+    }
+
+    object Bug {
+      class Ret(x: Int) {
+        def withDefault(a: String = "") = a + x
+      }
+
+      def apply()(implicit x: Int) = {
+        new Ret(x)
+      }
+    }
+
+    class Bug extends ImplicitVals {
+      val /*(*/tryRenameMe/*)*/ = Bug().withDefault()
+    }
+    """ becomes
+    """
+    trait ImplicitVals {
+      implicit def x = 42
+    }
+
+    object Bug {
+      class Ret(x: Int) {
+        def withDefault(a: String = "") = a + x
+      }
+
+      def apply()(implicit x: Int) = {
+        new Ret(x)
+      }
+    }
+
+    class Bug extends ImplicitVals {
+      val /*(*/ups/*)*/ = Bug().withDefault()
+    }
+    """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
