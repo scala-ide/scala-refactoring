@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package implementations
 
-import common.Change
 import transformation.TreeFactory
 import analysis.TreeAnalysis
 import tools.nsc.symtab.Flags
@@ -18,6 +17,7 @@ import scala.tools.refactoring.util.SourceWithMarker.MovementHelpers
 import scala.tools.refactoring.util.SourceWithMarker.Movement
 import scala.tools.refactoring.common.TextChange
 import scala.tools.refactoring.common.RenameSourceFileChange
+import scala.tools.refactoring.common.Change
 
 abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler {
 
@@ -91,7 +91,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
     val sym = prepared.selectedTree.symbol
     val oldName = {
       // We try to read the old name from the name position of the original symbol, since this seems to be the most
-      // reliable strategy that seems to work well with `backtick-identifiers`.
+      // reliable strategy that also works well in the presence of `backtick-identifiers`.
       index.declaration(sym).flatMap { tree =>
         tree.namePosition() match {
           case rp: RangePosition => Some(rp.source.content.slice(rp.start, rp.end).mkString(""))
@@ -103,11 +103,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
       }
     }
 
-    trace(s"Old name is $oldName")
-
-    if (oldName == newName) {
-      Right(Nil)
-    } else {
+    def generateChanges: List[Change] = {
       val occurences = index.occurences(sym)
 
       occurences.foreach { s =>
@@ -148,7 +144,11 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
         }
       }.distinct
 
-      Right(textChanges ::: newSourceChanges)
+      textChanges ::: newSourceChanges
     }
+
+    trace(s"Old name is $oldName")
+    if (oldName == newName) Right(Nil)
+    else Right(generateChanges)
   }
 }
