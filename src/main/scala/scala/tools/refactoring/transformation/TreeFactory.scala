@@ -6,12 +6,12 @@ package scala.tools.refactoring
 package transformation
 
 import tools.nsc.symtab.Flags
-import common.PimpedTrees
+import common.EnrichedTrees
 import scala.tools.nsc.ast.parser.Tokens
 
 trait TreeFactory {
 
-  this: PimpedTrees with common.CompilerAccess with TreeTransformations =>
+  this: EnrichedTrees with common.CompilerAccess with TreeTransformations =>
 
   import global._
 

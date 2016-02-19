@@ -2,10 +2,10 @@ package scala.tools.refactoring.analysis
 
 import scala.tools.refactoring.common.CompilerAccess
 import scala.tools.refactoring.transformation.TreeFactory
-import scala.tools.refactoring.common.PimpedTrees
+import scala.tools.refactoring.common.EnrichedTrees
 import scala.tools.refactoring.transformation.TreeTransformations
 
-trait ImportAnalysis extends TreeFactory with PimpedTrees with TreeTransformations with CompilerAccess {
+trait ImportAnalysis extends TreeFactory with EnrichedTrees with TreeTransformations with CompilerAccess {
   import global._
 
   /**

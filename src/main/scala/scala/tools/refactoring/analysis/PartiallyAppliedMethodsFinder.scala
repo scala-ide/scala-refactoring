@@ -7,7 +7,7 @@ package analysis
  */
 trait PartiallyAppliedMethodsFinder {
 
-  this: Indexes with common.CompilerAccess with common.PimpedTrees =>
+  this: Indexes with common.CompilerAccess with common.EnrichedTrees =>
 
   import global._
 

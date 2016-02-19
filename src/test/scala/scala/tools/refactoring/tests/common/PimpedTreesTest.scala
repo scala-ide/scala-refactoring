@@ -7,9 +7,9 @@ package tests.common
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import common.PimpedTrees
+import common.EnrichedTrees
 
-class PimpedTreesTest extends TestHelper with PimpedTrees {
+class EnrichedTreesTest extends TestHelper with EnrichedTrees {
 
   import global._
 

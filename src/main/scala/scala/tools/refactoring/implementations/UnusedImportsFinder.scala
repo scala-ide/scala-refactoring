@@ -6,12 +6,12 @@ package scala.tools.refactoring
 package implementations
 
 import common.CompilerAccess
-import common.PimpedTrees
+import common.EnrichedTrees
 import common.TreeTraverser
 import sourcegen.SourceGenerator
 import scala.tools.refactoring.common.TracingImpl
 
-trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeTraverser with PimpedTrees with TracingImpl {
+trait UnusedImportsFinder extends SourceGenerator with CompilerAccess with TreeTraverser with EnrichedTrees with TracingImpl {
 
   import global._
 

@@ -8,7 +8,7 @@ package implementations
 import scala.reflect.internal.util.RangePosition
 import scala.util.control.NonFatal
 
-abstract class MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.PimpedTrees {
+abstract class MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.EnrichedTrees {
 
   val global: tools.nsc.interactive.Global
   import global._

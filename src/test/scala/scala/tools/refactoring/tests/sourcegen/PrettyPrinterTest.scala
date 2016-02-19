@@ -350,7 +350,7 @@ class ATest {
   }
 
   @Test
-  def multipleAssignmentWithPimpedTuple() = global.ask { () =>
+  def multipleAssignmentWithEnrichedTuple() = global.ask { () =>
     treeFrom("""
     class Test {
       val (a, b) = 1 -> 2
@@ -530,11 +530,11 @@ class B(t: A#T)"""
     val tree = treeFrom("""
     package common {
       trait Tracing
-      trait PimpedTrees
+      trait EnrichedTrees
     }
 
     trait AbstractPrinter {
-      this: common.Tracing with common.PimpedTrees =>
+      this: common.Tracing with common.EnrichedTrees =>
     }
     """)
 
@@ -543,10 +543,10 @@ class B(t: A#T)"""
 
 trait Tracing
 
-trait PimpedTrees
+trait EnrichedTrees
 
 trait AbstractPrinter {
-  this: common.Tracing with common.PimpedTrees =>
+  this: common.Tracing with common.EnrichedTrees =>
 }"""
   }
 

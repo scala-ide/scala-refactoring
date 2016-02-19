@@ -6,7 +6,7 @@ import scala.tools.refactoring.common.TracingImpl
 
 trait ImportsHelper extends TracingImpl {
 
-  self: common.InteractiveScalaCompiler with analysis.Indexes with transformation.Transformations with transformation.TreeTransformations with common.PimpedTrees =>
+  self: common.InteractiveScalaCompiler with analysis.Indexes with transformation.Transformations with transformation.TreeTransformations with common.EnrichedTrees =>
 
   import global._
 

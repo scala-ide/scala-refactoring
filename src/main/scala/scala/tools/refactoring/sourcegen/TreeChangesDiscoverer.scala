@@ -6,7 +6,7 @@ package scala.tools.refactoring
 package sourcegen
 
 import common.Tracing
-import common.PimpedTrees
+import common.EnrichedTrees
 
 /**
  * Provides a function that discovers all trees that have changed
@@ -14,7 +14,7 @@ import common.PimpedTrees
  */
 trait TreeChangesDiscoverer {
 
-  this: Tracing with PimpedTrees with common.CompilerAccess =>
+  this: Tracing with EnrichedTrees with common.CompilerAccess =>
 
   import global._
 

@@ -16,7 +16,7 @@ import annotation.tailrec
  * indexed, and all further work is only done on demand.
  *
  */
-trait GlobalIndexes extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes with common.PimpedTrees with common.InteractiveScalaCompiler with common.TreeTraverser {
+trait GlobalIndexes extends Indexes with DependentSymbolExpanders with CompilationUnitIndexes with common.EnrichedTrees with common.InteractiveScalaCompiler with common.TreeTraverser {
 
   import global._
   import scala.tools.refactoring.util.UnionFind

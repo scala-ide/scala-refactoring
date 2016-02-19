@@ -9,7 +9,7 @@ import scala.reflect.internal.util.SourceFile
 
 trait AbstractPrinter extends CommonPrintUtils {
 
-  this: common.Tracing with common.PimpedTrees with Indentations with common.CompilerAccess with Formatting =>
+  this: common.Tracing with common.EnrichedTrees with Indentations with common.CompilerAccess with Formatting =>
 
   import global._
 
