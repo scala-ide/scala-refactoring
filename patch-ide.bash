@@ -10,8 +10,6 @@ showHelp() {
   echo "The script is controlled by the following environment variables:"
   echo "  SCALA_IDE_HOME (mandatory):"
   echo "    Path to you local ScalaIDE installation"
-  echo "  KEEP_REFACTORING_LIBRARY_BACKUP (defaults to true):"
-  echo "    Tells the script weather to keep a backup of the old library"
   echo ""
   echo "Examples: "
   echo "  SCALA_IDE_HOME=\"/path/to/scala-ide\" $SCRIPT_NAME"
@@ -19,9 +17,8 @@ showHelp() {
   echo ""
   echo "Best practice:"
   echo "  If you use the script regularly, it is recommended to export"
-  echo "  appropriate values for SCALA_IDE_HOME and"
-  echo "  KEEP_REFACTORING_LIBRARY_BACKUP via your bashrc, so that you"
-  echo "  don't have to specify these values repeatedly."
+  echo "  an appropriate value for SCALA_IDE_HOME via your bashrc, so that you"
+  echo "  don't have to specify this setting repeatedly."
   echo ""
   echo "Warning:"
   echo "  Note that patching the IDE like this only works as long as"
@@ -53,6 +50,7 @@ fi
 
 TARGET_FOLDER="./target/scala-2.11/"
 
+shopt -s nullglob
 _newRefactoringJars=("$TARGET_FOLDER"*SNAPSHOT.jar)
 NEW_REFACTORING_JAR="${_newRefactoringJars[0]}"
 
@@ -63,17 +61,19 @@ fi
 
 TSTAMP="$(date +%Y-%m-%dT%H-%M-%S)"
 
-shopt -s nullglob
-for oldRefactoringJar in "$SCALA_IDE_PLUGINS_DIR/"org.scala-refactoring.library_*.jar; do
-  if [[ "$KEEP_REFACTORING_LIBRARY_BACKUP" == "true" ]]; then
-    backupRefactoringJar="$oldRefactoringJar.$TSTAMP.bak"
-    mv "$oldRefactoringJar" "$backupRefactoringJar"
-  else
-    rm "$oldRefactoringJar"
-  fi
-done
+_oldRefactoringJar=($SCALA_IDE_PLUGINS_DIR/org.scala-refactoring.library*.jar)
+if [[ ${#_oldRefactoringJar[@]} == 0 ]]; then
+  echoErr "Cannot find the refactoring library in $SCALA_IDE_PLUGINS_DIR"
+  exit 1
+elif [[ ${#_oldRefactoringJar[@]} -gt 1 ]]; then
+  echoErr "Multiple copies of the refactoring library found in $SCALA_IDE_PLUGINS_DIR:"
+  for jarFile in "${_oldRefactoringJar[@]}"; do 
+    echoErr "  $jarFile"
+  done
+  exit 1
+fi
 
-REFACTORING_JAR_DEST_NAME="org.scala-refactoring.library_localbuild-$TSTAMP-SNAPSHOT.jar"
-REFACTORING_JAR_DESTINATION="$SCALA_IDE_PLUGINS_DIR/$REFACTORING_JAR_DEST_NAME"
-
-cp "$NEW_REFACTORING_JAR" "$REFACTORING_JAR_DESTINATION"
+OLD_REFACTORING_JAR="${_oldRefactoringJar[0]}"
+BACKUP_REFACTORING_JAR="$OLD_REFACTORING_JAR.$TSTAMP.bak"
+cp "$OLD_REFACTORING_JAR" "$BACKUP_REFACTORING_JAR"
+cp -i "$NEW_REFACTORING_JAR" "$OLD_REFACTORING_JAR"
