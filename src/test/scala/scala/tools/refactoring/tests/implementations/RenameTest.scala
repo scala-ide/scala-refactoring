@@ -1522,7 +1522,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("booh"))
 
-  @Ignore
   @Test
   def namedParameter() = new FileSet {
     """
@@ -1543,7 +1542,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def namedParameterAndDefault() = new FileSet {
     """
@@ -1564,7 +1562,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def namedParameterInDeclaredOrder() = new FileSet {
     """
@@ -1585,7 +1582,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def namedParameterInSecondArgsList() = new FileSet {
     """
@@ -1606,7 +1602,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def updateMethodAndNamedArgument() = new FileSet {
     """
@@ -3297,6 +3292,54 @@ class Blubb
 
     class Bug extends ImplicitVals {
       val /*(*/ups/*)*/ = Bug().withDefault()
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex1() = new FileSet {
+    """
+    class Bug {
+      def f(/*(*/tryRenameMe/*)*/: Int) = tryRenameMe
+      def g(a: Int, b: Int) = f(tryRenameMe = a) + b
+    }
+    """ becomes
+    """
+    class Bug {
+      def f(/*(*/ups/*)*/: Int) = ups
+      def g(a: Int, b: Int) = f(ups = a) + b
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex2() = new FileSet {
+    """
+    class Bug {
+      def f(tryRenameMe: Int) = /*(*/tryRenameMe/*)*/
+      def g(a: Int, b: Int) = f(tryRenameMe = a) + b
+    }
+    """ becomes
+    """
+    class Bug {
+      def f(ups: Int) = /*(*/ups/*)*/
+      def g(a: Int, b: Int) = f(ups = a) + b
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex3() = new FileSet {
+    """
+    class Bug {
+      def f(tryRenameMe: Int) = tryRenameMe
+      def g(a: Int, b: Int) = f(/*(*/tryRenameMe/*)*/ = a) + b
+    }
+    """ becomes
+    """
+    class Bug {
+      def f(ups: Int) = ups
+      def g(a: Int, b: Int) = f(/*(*/ups/*)*/ = a) + b
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
