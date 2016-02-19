@@ -13,7 +13,7 @@ trait IsNotInImports { _: CompilationUnitDependencies with common.PimpedTrees =>
       override def traverse(t: Tree) = {
         owns = currentOwner :: owns
         t match {
-          case t if !t.pos.isRange || t.pos.isRange && t.pos.start > upToPosition =>
+          case t if !t.pos.isRange || t.pos.start > upToPosition =>
           case Of => owners = owns.distinct
           case t =>
             super.traverse(t)

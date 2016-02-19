@@ -2148,6 +2148,75 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
+  @Test
+  def shouldOrganizeImportsForMethodBlockForSomeMoreTrickyCase() = new FileSet {
+    """
+    package acme
+
+    class A(val a: Int = 2)
+    class B(val b: Int = 3)
+    class F(val f: Int = 5)
+    """ isNotModified
+
+    """
+    package orgs
+
+    class C(val c: Int = 7)
+    class D(val d: Int = 11)
+    class E(val e: Int = 13)
+    class G(val g: Int = 17)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    import orgs.C
+    import acme.A
+
+    class Test {
+
+      def foo = {
+        import orgs.D
+        import acme.B
+        import orgs.G
+
+        def bar = {
+          import orgs.E
+          import acme.F
+
+          {new A}.a + (new B).b + (new C).c + (new D).d + (new E).e + (new F).f
+        }
+        bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import acme.A
+    import orgs.C
+
+    class Test {
+
+      def foo = {
+        import acme.B
+        import orgs.D
+
+        def bar = {
+          import acme.F
+          import orgs.E
+
+          {new A}.a + (new B).b + (new C).c + (new D).d + (new E).e + (new F).f
+        }
+        bar
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
   @Ignore("under construction")
   @Test
   def shouldNotThrowAnExceptionForComplexExpressionsInMethodBody() = new FileSet {
