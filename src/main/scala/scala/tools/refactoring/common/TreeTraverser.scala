@@ -309,12 +309,12 @@ trait TreeTraverser {
 
           f(t.symbol, t)
 
-//        case BlockExtractor(stats) =>
-//          stats foreach traverse
-//
-//        case ApplyExtractor(fun, args) =>
-//          traverse(fun)
-//          args foreach traverse
+        case BlockExtractor(stats) =>
+          stats foreach traverse
+
+        case ApplyExtractor(fun, args) =>
+          traverse(fun)
+          args foreach traverse
 
         case t: DefTree if t.symbol != NoSymbol =>
           f(t.symbol, t)

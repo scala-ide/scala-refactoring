@@ -670,7 +670,7 @@ trait EnrichedTrees {
 
       case _: Literal | _: Ident | _: ModifierTree | _: NameTree | _: This | _: Super => Nil
 
-      case Apply(fun, args) =>
+      case ApplyExtractor(fun, args) =>
         fun :: args
 
       case t @ Select(qualifier, selector) if selector.toString.startsWith("unary_") =>
