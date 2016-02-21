@@ -370,8 +370,10 @@ trait TreeTraverser extends TracingImpl {
           stats foreach traverse
 
         case ApplyExtractor(fun, args) =>
-          traverse(fun)
-          args foreach traverse
+          args.foreach {
+            case arg: NamedArgument => f(arg.symbol, arg)
+            case _ => ()
+          }
 
         case t: DefTree if t.symbol != NoSymbol =>
           f(t.symbol, t)
