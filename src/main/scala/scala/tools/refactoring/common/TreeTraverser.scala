@@ -6,7 +6,7 @@ package scala.tools.refactoring
 package common
 
 
-trait TreeTraverser {
+trait TreeTraverser extends TracingImpl {
 
   this: CompilerAccess with common.EnrichedTrees =>
 
@@ -25,11 +25,68 @@ trait TreeTraverser {
   }
 
   /**
+   * Use [[TraversalTracing]] for debugging and [[PlainTraversals]] for production
+   */
+  protected type TraversalInstrumentation = PlainTraversals
+
+  protected trait PlainTraversals extends global.Traverser
+
+  protected trait TraversalTracing extends global.Traverser {
+    private var indent = 0
+
+    protected def traceIndividualVisits = false
+
+    override def traverse(t: Tree) = {
+      def doTraverse() = {
+        indent += 2
+        try {
+          super.traverse(t)
+        } finally {
+          indent -= 2
+        }
+      }
+
+      def treeAsString = t.summaryString
+
+      def sourceFileAsString = t.pos match {
+        case null | NoPosition => "<no-source-file>"
+        case properPos => properPos.source.file.name
+      }
+
+      def explainStack = {
+        def stackElemToString(elem: StackTraceElement) = {
+          s"${elem.getFileName}:${elem.getLineNumber}"
+        }
+
+        val stackTrace = Thread.currentThread().getStackTrace.drop(3).take(5)
+        stackTrace.map("  -- " + stackElemToString(_)).mkString("\n")
+      }
+
+      if (indent == 0) {
+        context(s"Starting traversal in $sourceFileAsString at $treeAsString initiated from\n$explainStack\n") {
+          val start = System.currentTimeMillis()
+          doTraverse()
+          val stop = System.currentTimeMillis()
+          val millis = stop - start
+          trace(s"Finished traversal after ${millis}ms")
+        }
+      } else {
+        if (traceIndividualVisits) {
+          val leadingSpaces = " " * indent
+          trace(s"$leadingSpaces visiting $treeAsString")
+        }
+
+        doTraverse()
+      }
+    }
+  }
+
+  /**
    *  A traverser that creates fake trees for various
    *  type trees so they can be treated as if they were
    *  regular trees.
    */
-  trait TraverserWithFakedTrees extends global.Traverser {
+  trait TraverserWithFakedTrees extends global.Traverser with TraversalInstrumentation {
 
     def fakeSelectTreeFromType(tpe: Type, sym: Symbol, pos: Position) = {
       // we fake our own Select(Ident(..), ..) tree from the type
@@ -182,14 +239,14 @@ trait TreeTraverser {
     }
   }
 
-  class FilterTreeTraverser(p: Tree => Boolean) extends global.FilterTreeTraverser(p) with Traverser
+  class FilterTreeTraverser(p: Tree => Boolean) extends global.FilterTreeTraverser(p) with Traverser with TraversalInstrumentation
 
   def filterTree(t: Tree, traverser: global.FilterTreeTraverser) = {
     traverser.traverse(t)
     traverser.hits.toList
   }
 
-  class TreeWithSymbolTraverser(f: (Symbol, Tree) => Unit) extends Traverser {
+  class TreeWithSymbolTraverser(f: (Symbol, Tree) => Unit) extends Traverser with TraversalInstrumentation {
 
     override def traverse(t: Tree) = {
 
