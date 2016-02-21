@@ -27,21 +27,33 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
   def prepare(s: Selection) = {
 
     def isLocalRename(t: Tree) = {
-      def isHiddenOrNoAccessor(s: Symbol) = {
-        s == NoSymbol || s.isPrivate
-      }
+      def isLocalSymbol(symbol: Symbol) = {
+        def isHiddenOrNoAccessor(symbol: Symbol) = symbol == NoSymbol || symbol.isPrivate
 
-      def hasHiddenOrNoAccessor = {
-        if (t.symbol.isVal || t.symbol.isVar) {
-          def getter = t.symbol.getter(t.symbol.owner)
-          def setter = t.symbol.setter(t.symbol.owner)
-          isHiddenOrNoAccessor(getter) && isHiddenOrNoAccessor(setter)
-        } else {
-          true
+        def hasHiddenOrNoAccessor = {
+          if (symbol.isVal || symbol.isVar) {
+            def getter = symbol.getter(symbol.owner)
+            def setter = symbol.setter(symbol.owner)
+            isHiddenOrNoAccessor(getter) && isHiddenOrNoAccessor(setter)
+          } else {
+            true
+          }
         }
+
+        def isParamThatIsVisibleInOtherFiles = {
+          symbol.isParameter && {
+            val symOwner = symbol.owner
+            !(symOwner.isPrivate || symOwner.isPrivateLocal)
+          }
+        }
+
+        (symbol.isLocal || (symbol.isPrivate && hasHiddenOrNoAccessor)) && !isParamThatIsVisibleInOtherFiles
       }
 
-      t.symbol.isLocal || (t.symbol.isPrivate && hasHiddenOrNoAccessor)
+      t.symbol match {
+        case null | NoSymbol => true
+        case properSymbol => isLocalSymbol(properSymbol)
+      }
     }
 
     s.selectedSymbolTree match {
