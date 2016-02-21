@@ -19,6 +19,7 @@ import language.implicitConversions
 import scala.tools.refactoring.util.SourceWithMarker
 import scala.tools.refactoring.util.SourceWithMarker.Movements._
 import scala.util.control.NonFatal
+import scala.tools.refactoring.util.SourceWithMarker.Movements
 
 /**
  * A collection of implicit conversions for ASTs and other
@@ -1025,6 +1026,8 @@ trait EnrichedTrees {
   object ApplyExtractor {
 
     def couldHaveDefaultArguments(t: Tree) = t match {
+      case _: ApplyImplicitView => false
+
       case Apply(qualifier, args) =>
 
         def isSetter = PartialFunction.cond(qualifier) {
@@ -1048,7 +1051,7 @@ trait EnrichedTrees {
 
     def unapply(t: Apply): Option[(Tree, List[Tree])] = extract(t)
 
-    val extract: Apply => Option[(Tree, List[Tree])] = Memoized {
+    private def extract: Apply => Option[(Tree, List[Tree])] = {
 
       case t @ Apply(qualifier, args) if couldHaveDefaultArguments(t) =>
 
@@ -1058,26 +1061,21 @@ trait EnrichedTrees {
 
         val transformedArgs = argsWithPreviousTree zip declaredParameterSyms map {
           case (List(leading, argument), sym) if argument.pos.isRange =>
-
-            val src = Layout(leading.pos.source, leading.pos.end, argument.pos.start).withoutComments
-            val isNamedArgument = {
-              // The second clause tests for the case where there's an update method
-              // that's called without named arguments, like `obj() = 1'.
-              src.contains("=") && !src.matches(".*\\).*=.*")
+            val leadingPos = leading.pos
+            val srcAtArgStart = SourceWithMarker(leadingPos.source.content, leadingPos.end + 1).moveMarker(commentsAndSpaces)
+            val paramNamePos = for {
+              srcAtArgEnd <- srcAtArgStart.applyMovement(sym.decodedName)
+              _ <- srcAtArgEnd.applyMovement(commentsAndSpaces ~ '=')
+            } yield {
+              new RangePosition(leadingPos.source, srcAtArgStart.marker, srcAtArgStart.marker, srcAtArgEnd.marker)
             }
 
-            if (isNamedArgument) {
-              val start = leading.pos.end + src.indexOf(sym.decodedName)
-              val end = start + sym.decodedName.length
-              val namePos = argument.pos withStart start withPoint start withEnd end
-
-              new NamedArgument(NameTree(sym.name) setPos namePos, argument) {
-                setSymbol(sym)
-                setPos(argument.pos withStart start withPoint argument.pos.start)
+            paramNamePos.map { paramNamePos =>
+              new NamedArgument(NameTree(sym.name).setPos(paramNamePos), argument) {
+                  setSymbol(sym)
+                  setPos(paramNamePos.withEnd(argument.pos.end))
               }
-            } else {
-              argument
-            }
+            }.getOrElse(argument)
 
           case (List(leading, argument), sym) => argument
         }

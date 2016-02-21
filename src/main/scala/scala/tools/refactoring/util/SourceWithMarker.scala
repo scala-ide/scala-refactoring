@@ -14,12 +14,16 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
   import SourceWithMarker._
 
   def moveMarker(movement: SimpleMovement): SourceWithMarker = {
-    if (isDepleted) this
-    else movement(this).map(m => copy(marker = m)).getOrElse(this)
+    applyMovement(movement).getOrElse(this)
   }
 
   def moveMarkerBack(movement: Movement): SourceWithMarker = {
     moveMarker(movement.backward)
+  }
+
+  def applyMovement(movement: SimpleMovement): Option[SourceWithMarker] = {
+    if (isDepleted) None
+    else movement(this).map(m => copy(marker = m))
   }
 
   def withMarkerAtLastChar: SourceWithMarker = {
