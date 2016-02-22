@@ -39,12 +39,12 @@ useGpg := true
 
 fork := true
 
-publishTo <<= version { (v: String) =>
-  val nexus = "https://oss.sonatype.org/"
-  if (v.trim.endsWith("SNAPSHOT"))
-    Some("snapshots" at nexus + "content/repositories/snapshots")
+publishTo <<= isSnapshot { isSnapshot =>
+  val nexus = "https://oss.sonatype.org"
+  if (isSnapshot)
+    Some("snapshots" at s"$nexus/content/repositories/snapshots")
   else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    Some("releases"  at s"$nexus/service/local/staging/deploy/maven2")
 }
 
 publishArtifact in Test := false
@@ -76,11 +76,10 @@ pomExtra := (
 
 credentials += Credentials(Path.userHome / ".m2" / "credentials")
 
-libraryDependencies += {
-  "org.scala-lang" % "scala-compiler" % scalaVersion.value
-}
-
-libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
+libraryDependencies ++= Seq(
+  "org.scala-lang"  % "scala-compiler"    % scalaVersion.value,
+  "com.novocode"    % "junit-interface"   % "0.10"              % "test"
+)
 
 parallelExecution in Test := false
 
