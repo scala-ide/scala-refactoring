@@ -124,7 +124,7 @@ trait SourceUtils {
 
     (rest zip comments) map {
       case (' ', _1) => ""+ _1
-      case (`c`, _ ) => ""
+      case (`c`, _) => ""
       case (_1, ' ') => ""+ _1
       case ('\n', '\n') => "\n"
       case _ => assert(false)
