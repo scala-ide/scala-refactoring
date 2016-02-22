@@ -73,7 +73,12 @@ object OrganizeImports {
  *
  *
  */
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory with TreeTraverser with UnusedImportsFinder with analysis.CompilationUnitDependencies with common.InteractiveScalaCompiler with common.TreeExtractors {
+abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
+                                                             with TreeTraverser
+                                                             with UnusedImportsFinder
+                                                             with analysis.CompilationUnitDependencies
+                                                             with common.InteractiveScalaCompiler
+                                                             with common.TreeExtractors {
 
   import OrganizeImports.Algos
   import global._
@@ -462,74 +467,15 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         p copy (stats = imports ::: others) replaces p
     } &> transformation[Tree, Tree] {
       case p: PackageDef =>
-        InnerImports.organizeImportsInMethodBlocks(p).replaces(p)
+        MethodImportsOrganizer.organizeImportsInMethodBlocks(p).replaces(p)
     }
 
     Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
 
-  object InnerImports {
-    class RemoveUnused(block: Tree) extends Participant {
-      private def treeWithoutImports(tree: Tree) = new Transformer {
-        override def transform(tree: Tree): Tree = tree match {
-          case Import(_, _) => EmptyTree
-          case t => super.transform(t)
-        }
-      }.transform(tree)
-
-      private lazy val allSelects = {
-        import scala.collection.mutable
-        val selects = mutable.ListBuffer[Select]()
-        val selectsTraverser = new Traverser {
-          override def traverse(tree: Tree): Unit = tree match {
-            case s @ Select(qual, _) =>
-              selects += s
-              traverse(qual)
-            case t => super.traverse(t)
-          }
-        }
-        selectsTraverser.traverse(treeWithoutImports(block))
-        selects.toList
-      }
-
-      protected def doApply(trees: List[Import]) = trees collect {
-        case imp @ Import(importQualifier: Select, importSelections) =>
-          val usedSelectors = importSelections filter { importSel =>
-            val importName = importSel.name.toString
-            val importSym = importQualifier.symbol
-            val isWildcard = importSel.name == nme.WILDCARD
-
-            allSelects.exists { foundSel =>
-              val foundName = foundSel.symbol.nameString
-              val foundSym = foundSel.qualifier.symbol
-              (isWildcard || foundName == importName) && foundSym == importSym
-            }
-          }
-          usedSelectors match {
-            case Nil => Import(EmptyTree, Nil)
-            case _ => imp.copy(selectors = usedSelectors)
-          }
-      }
-    }
-
-    object RemoveDuplicatedByWildcard extends Participant {
-      protected def doApply(trees: List[Import]) = trees.map { imp =>
-        val wild = imp.selectors.find(_.name == nme.WILDCARD)
-        if (wild.nonEmpty)
-          imp.copy(selectors = wild.toList)
-        else
-          imp
-      }.groupBy {
-        _.expr.toString
-      }.collect {
-        case (_, imports) =>
-          val (wild, rest) = imports.partition(_.selectors.exists(_.name == nme.WILDCARD))
-          if (wild.nonEmpty)
-            wild
-          else
-            rest
-      }.flatten.toList
-    }
+  object MethodImportsOrganizer {
+    val methodOrganizeImportsParticipants = new NotPackageImportParticipants(OrganizeImports.this.global, OrganizeImports.this)
+    import methodOrganizeImportsParticipants.RemoveDuplicatedByWildcard
 
     private def organizeImportsIfNoImportInSameLine(imports: List[Import])(organizeImports: List[Import] => List[Import]): List[Import] = {
       val importsWithPosition = imports.filter { _.pos.isDefined }
@@ -539,17 +485,39 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
       else organizeImports(imports)
     }
 
+    private def organizeGroupedImports(stats: List[Tree])(importsOrganizer: List[Import] => List[Import])(transformer: Transformer): List[Tree] = {
+      val treeListTurnedToListOfSingleTreeElementList = stats.map { tree => List(tree) }
+      val mergeNeighborImportLists = treeListTurnedToListOfSingleTreeElementList.foldLeft(List.empty[List[Tree]]) { (zero, elem) =>
+        elem.head match {
+          case addToProceedingImports: Import =>
+            def isZeroHeadAListOfImports(zeroHead: List[Tree]) = zeroHead.forall { _.isInstanceOf[Import] }
+            zero match {
+              case head :: tail if isZeroHeadAListOfImports(head) => (addToProceedingImports :: head) :: tail
+              case _ => elem :: zero
+            }
+          case _ => elem :: zero
+        }
+      }
+      val restoreOrderAfterFoldLeft = mergeNeighborImportLists.reverse.map {
+        _.reverse
+      }
+      val applyImportsOrganizerToImportsLists = restoreOrderAfterFoldLeft.map {
+        case imps @ (head: Import) :: _ =>
+          organizeImportsIfNoImportInSameLine(imps.asInstanceOf[List[Import]])(importsOrganizer)
+        case t => t.map { transformer.transform }
+      }
+      applyImportsOrganizerToImportsLists.flatten
+    }
+
     def organizeImportsInMethodBlocks(tree: Tree): Tree = new Transformer {
       override def transform(t: Tree) = t match {
         case b @ Block(stats, _) if currentOwner.isMethod && !currentOwner.isLazy =>
-          val (rawImports, others) = stats.partition { _.isInstanceOf[Import] }
-          val imports = rawImports.asInstanceOf[List[Import]]
-          val importsOrganizer = scala.Function.chain(new RemoveUnused(b) :: RemoveDuplicatedByWildcard ::
-              RemoveDuplicates :: SortImportSelectors :: SortImports :: Nil)
-          val visitedOthers = others.map { t =>
-            transform(t).replaces(t)
-          }
-          b.copy(stats = organizeImportsIfNoImportInSameLine(imports)(importsOrganizer) ::: visitedOthers).replaces(b)
+          val participants = (new methodOrganizeImportsParticipants.RemoveUnused(b)).asInstanceOf[Participant] ::
+            RemoveDuplicatedByWildcard.asInstanceOf[Participant] ::
+            RemoveDuplicates :: SortImportSelectors :: SortImports :: Nil
+          val importsOrganizer = scala.Function.chain(participants)
+          val reorganizedStats = organizeGroupedImports(stats)(importsOrganizer)(this)
+          b.copy(stats = reorganizedStats).replaces(b)
         case skipPlainText: PlainText => skipPlainText
         case t => super.transform(t)
       }
