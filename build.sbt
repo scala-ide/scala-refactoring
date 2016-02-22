@@ -84,8 +84,22 @@ libraryDependencies += "com.novocode" % "junit-interface" % "0.10" % "test"
 
 parallelExecution in Test := false
 
-// sbt doesn't automatically load the content of the MANIFST.MF file, therefore we have to do it here by ourselves
+// sbt doesn't automatically load the content of the MANIFST.MF file, therefore
+// we have to do it here by ourselves Furthermore, the version format in the
+// MANIFEST.MF is `x.y.z.qualifier` but we need to replace the `qualifier` part
+// with a unique identifier otherwise OSGi can't find out which nightly build
+// is newest and therefore not all caches are updated with the correct version
+// of a nightly.
 packageOptions in Compile in packageBin += {
-  val m = Using.fileInputStream(new java.io.File("META-INF/MANIFEST.MF"))(in => new java.util.jar.Manifest(in))
+  val m = Using.fileInputStream(new java.io.File("META-INF/MANIFEST.MF")) { in =>
+    val manifest = new java.util.jar.Manifest(in)
+    val attr = manifest.getMainAttributes
+    val key = "Bundle-Version"
+    val versionSuffix = scalaBinaryVersion.value.replace('.', '_')
+    val date = new java.text.SimpleDateFormat("yyyyMMddHHmm").format(new java.util.Date)
+    val sha = "git rev-parse --short HEAD".!!.trim
+    attr.putValue(key, attr.getValue(key).replace("qualifier", s"$versionSuffix-$date-$sha"))
+    manifest
+  }
   Package.JarManifest(m)
 }
