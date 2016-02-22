@@ -552,25 +552,27 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
 
     private def organizeGroupedImports(stats: List[Tree])(importsOrganizer: List[Import] => List[Import])(transformer: Transformer): List[Tree] = {
-      stats.map { tree =>
-        List(tree)
-      }.foldLeft(List.empty[List[Tree]]) { (zero, elem) =>
+      val treeListTurnedToListOfSingleTreeElementList = stats.map { tree => List(tree) }
+      val mergeNeighborImportLists = treeListTurnedToListOfSingleTreeElementList.foldLeft(List.empty[List[Tree]]) { (zero, elem) =>
         elem.head match {
           case addToProceedingImports: Import =>
-            def isZeroHeadAListOfImports(zeroHead: List[Tree]) = zeroHead.head.isInstanceOf[Import]
+            def isZeroHeadAListOfImports(zeroHead: List[Tree]) = zeroHead.forall { _.isInstanceOf[Import] }
             zero match {
               case head :: tail if isZeroHeadAListOfImports(head) => (addToProceedingImports :: head) :: tail
               case _ => elem :: zero
             }
           case _ => elem :: zero
         }
-      }.reverse.map {
+      }
+      val restoreOrderAfterFoldLeft = mergeNeighborImportLists.reverse.map {
         _.reverse
-      }.map {
-        case imps @ head :: _ if head.isInstanceOf[Import] =>
+      }
+      val applyImportsOrganizerToImportsLists = restoreOrderAfterFoldLeft.map {
+        case imps @ (head: Import) :: _ =>
           organizeImportsIfNoImportInSameLine(imps.asInstanceOf[List[Import]])(importsOrganizer)
         case t => t.map { transformer.transform }
-      }.flatten
+      }
+      applyImportsOrganizerToImportsLists.flatten
     }
 
     def organizeImportsInMethodBlocks(tree: Tree): Tree = new Transformer {

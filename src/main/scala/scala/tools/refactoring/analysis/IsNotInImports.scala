@@ -6,7 +6,6 @@ trait IsNotInImports { _: CompilationUnitDependencies with common.EnrichedTrees 
 
   private def collectPotentialOwners(of: Select, inWholeTree: Tree): List[Symbol] = {
     val upToPosition = of.pos.start
-    val Of = of
     var owners = List.empty[Symbol]
     val collectPotentialOwners = new Traverser {
       var owns = List.empty[Symbol]
@@ -14,7 +13,7 @@ trait IsNotInImports { _: CompilationUnitDependencies with common.EnrichedTrees 
         owns = currentOwner :: owns
         t match {
           case t if !t.pos.isRange || t.pos.start > upToPosition =>
-          case Of => owners = owns.distinct
+          case `of` => owners = owns.distinct
           case t =>
             super.traverse(t)
             owns = owns.tail
