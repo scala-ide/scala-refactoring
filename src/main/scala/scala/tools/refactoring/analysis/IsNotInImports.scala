@@ -1,7 +1,7 @@
 package scala.tools.refactoring
 package analysis
 
-trait IsNotInImports { _: CompilationUnitDependencies with common.PimpedTrees =>
+trait IsNotInImports { _: CompilationUnitDependencies with common.EnrichedTrees =>
   import global._
 
   private def collectPotentialOwners(of: Select, inWholeTree: Tree): List[Symbol] = {
@@ -26,7 +26,7 @@ trait IsNotInImports { _: CompilationUnitDependencies with common.PimpedTrees =>
   }
 
   def isSelectNotInRelativeImports(tested: Select, wholeTree: Tree): Boolean = {
-    val doesNameFitInTested = compareNameWith(tested)(_)
+    val doesNameFitInTested = compareNameWith(tested) _
     val nonPackageOwners = collectPotentialOwners(tested, wholeTree).filterNot { _.hasPackageFlag }
     def isValidPosition(t: Import): Boolean = t.pos.isRange && t.pos.start < tested.pos.start
     val isImportForTested = new Traverser {

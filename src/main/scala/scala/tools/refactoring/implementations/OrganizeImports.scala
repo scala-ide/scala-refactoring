@@ -551,26 +551,35 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       else organizeImports(imports)
     }
 
-    private def collectStableLocalIdents(b: Block): List[Symbol] =
-      b.collect {
-        case tree if tree.symbol != null && tree.symbol.isStable && tree.symbol.isLocal => tree.symbol
-      }
+    private def organizeGroupedImports(stats: List[Tree])(importsOrganizer: List[Import] => List[Import])(transformer: Transformer): List[Tree] = {
+      stats.map { tree =>
+        List(tree)
+      }.foldLeft(List.empty[List[Tree]]) { (zero, elem) =>
+        elem.head match {
+          case addToProceedingImports: Import =>
+            def isZeroHeadAListOfImports(zeroHead: List[Tree]) = zeroHead.head.isInstanceOf[Import]
+            zero match {
+              case head :: tail if isZeroHeadAListOfImports(head) => (addToProceedingImports :: head) :: tail
+              case _ => elem :: zero
+            }
+          case _ => elem :: zero
+        }
+      }.reverse.map {
+        _.reverse
+      }.map {
+        case imps @ head :: _ if head.isInstanceOf[Import] =>
+          organizeImportsIfNoImportInSameLine(imps.asInstanceOf[List[Import]])(importsOrganizer)
+        case t => t.map { transformer.transform }
+      }.flatten
+    }
 
     def organizeImportsInMethodBlocks(tree: Tree): Tree = new Transformer {
       override def transform(t: Tree) = t match {
         case b @ Block(stats, _) if currentOwner.isMethod && !currentOwner.isLazy =>
-          val stableIdents = collectStableLocalIdents(b)
-          val (rawImports, others) = stats.partition { tree =>
-            tree.isInstanceOf[Import] && !stableIdents.contains(tree.asInstanceOf[Import].expr.symbol)
-          }
-          val imports = rawImports.asInstanceOf[List[Import]]
           val importsOrganizer = scala.Function.chain(new RemoveUnused(b) :: RemoveDuplicatedByWildcard ::
               RemoveDuplicates :: SortImportSelectors :: SortImports :: Nil)
-          val visitedOthers = others.map { t =>
-            transform(t).replaces(t)
-          }
-          val organizedImports = organizeImportsIfNoImportInSameLine(imports)(importsOrganizer)
-          b.copy(stats = organizedImports ::: visitedOthers).replaces(b)
+          val reorganizedStats = organizeGroupedImports(stats)(importsOrganizer)(this)
+          b.copy(stats = reorganizedStats).replaces(b)
         case skipPlainText: PlainText => skipPlainText
         case t => super.transform(t)
       }

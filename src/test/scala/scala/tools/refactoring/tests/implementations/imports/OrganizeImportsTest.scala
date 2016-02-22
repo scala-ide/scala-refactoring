@@ -1257,9 +1257,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bar {
       def foo = {
-        import acme.Acme.{A, B}
         import fake.Acme.C
         val c = C
+        import acme.Acme.{A, B}
         A + B + c
       }
     }
@@ -1310,9 +1310,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bar {
       def foo = {
-        import acme.Acme.A
         import fake.Acme.D
         val d = D
+        import acme.Acme.A
         def k = {
           import acme.Acme.B
           import fake.Acme.C
@@ -1712,9 +1712,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         import fake.Acme._
         import acme.Acme.{A, D}
         import fake.Acme.D
-        val d = D
         import fake.Acme.{C, B, B}
         import acme.Acme.B
+        val d = D
         A + B + C + d
       }
     }
@@ -1930,7 +1930,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def shouldNotOrganizeImportsForLocalStableInMethodBlock() = new FileSet {
+  def shouldNotOrganizeImportsForDetachedImportsInDefBlock() = new FileSet {
     """
     package acme
 
@@ -1956,14 +1956,14 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     class A {
       def foo = {
         import org.Acne
-        import acme.Acme
+        import acme._
 
         val tested = new Acme((new Acne(4)).A)
         import tested._
 
         import acme.AcmeHelper.H
 
-        A + H
+        B + H
     }
     """ becomes {
     """
@@ -1972,21 +1972,78 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class A {
       def foo = {
-        import acme.Acme
-        import acme.AcmeHelper.H
+        import acme._
         import org.Acne
 
         val tested = new Acme((new Acne(4)).A)
+        import acme.AcmeHelper.H
         import tested._
 
-        A + H
+        B + H
     }
     """
     }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def shouldNotOrganizeImportsForLocalStableInNestedMethodBlockWhenImportIsInOuterToo() = new FileSet {
+  def shouldOrganizeImportsForRelativeImport() = new FileSet {
+    """
+    package acme
+
+    class Acme {
+      val B = 6
+    }
+
+    object AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package acme.abefore
+
+    class Abscess(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import abefore._
+        import acme.AcmeHelper.H
+
+        val tested = new Acme
+        import tested._
+
+        B + H + (new Abscess(3)).A
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import acme.AcmeHelper.H
+        import abefore._
+
+        val tested = new Acme
+        import tested._
+
+        B + H + (new Abscess(3)).A
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotOrganizeImportsForDetachedImportsInNestedDefBlockWhenImportIsInOuterToo() = new FileSet {
     """
     package acme
 
@@ -2056,7 +2113,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
           object inner {
             val I = 5
           }
-
           import inner.I
 
           A + H + I
@@ -2069,7 +2125,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def shouldNotOrganizeImportsForLocalStableInNestedMethodBlock() = new FileSet {
+  def shouldOrganizeImportsForOuterAndInnerDefBlocks() = new FileSet {
     """
     package acme
 
@@ -2086,6 +2142,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package org
 
     class Acne(val A: Int)
+    class AcneHelper(val AH: Int)
     """ isNotModified
 
     """
@@ -2094,6 +2151,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class A {
       def foo = {
+        import org.AcneHelper
+        import acme.AcmeHelper
+
         def bar = {
           import org.Acne
           import acme.Acme
@@ -2101,7 +2161,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
           val tested = new Acme((new Acne(4)).A)
           import tested._
 
-          import acme.AcmeHelper
           val help = new AcmeHelper
           import help._
 
@@ -2111,7 +2170,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
           import inner.I
 
-          A + H + I
+          A + H + I + (new AcneHelper(5)).AH
         }
         bar
       }
@@ -2123,92 +2182,25 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class A {
       def foo = {
+        import acme.AcmeHelper
+        import org.AcneHelper
+
         def bar = {
           import acme.Acme
-          import acme.AcmeHelper
           import org.Acne
 
           val tested = new Acme((new Acne(4)).A)
           import tested._
+
           val help = new AcmeHelper
           import help._
 
           object inner {
             val I = 5
           }
-
           import inner.I
 
-          A + H + I
-        }
-        bar
-      }
-    }
-    """
-    }
-  } applyRefactoring organizeWithTypicalParams
-
-  @Test
-  def shouldOrganizeImportsForMethodBlockForSomeMoreTrickyCase() = new FileSet {
-    """
-    package acme
-
-    class A(val a: Int = 2)
-    class B(val b: Int = 3)
-    class F(val f: Int = 5)
-    """ isNotModified
-
-    """
-    package orgs
-
-    class C(val c: Int = 7)
-    class D(val d: Int = 11)
-    class E(val e: Int = 13)
-    class G(val g: Int = 17)
-    """ isNotModified
-
-    """
-    /*<-*/
-    package test
-
-    import orgs.C
-    import acme.A
-
-    class Test {
-
-      def foo = {
-        import orgs.D
-        import acme.B
-        import orgs.G
-
-        def bar = {
-          import orgs.E
-          import acme.F
-
-          {new A}.a + (new B).b + (new C).c + (new D).d + (new E).e + (new F).f
-        }
-        bar
-      }
-    }
-    """ becomes {
-    """
-    /*<-*/
-    package test
-
-    import acme.A
-    import orgs.C
-
-    class Test {
-
-      def foo = {
-        import acme.B
-        import orgs.D
-
-        def bar = {
-          import acme.F
-          import orgs.E
-
-          {new A}.a + (new B).b + (new C).c + (new D).d + (new E).e + (new F).f
+          A + H + I + (new AcneHelper(5)).AH
         }
         bar
       }
