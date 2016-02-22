@@ -473,8 +473,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
 
   object InnerImports {
     class RemoveUnused(block: Tree) extends Participant {
-      private def asText(t: Tree) = createText(stripPositions(t))
-
       private def treeWithoutImports(tree: Tree) = new Transformer {
         override def transform(tree: Tree): Tree = tree match {
           case Import(_, _) => EmptyTree
@@ -482,10 +480,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         }
       }.transform(tree)
 
-      private def allSelects(block: Tree) = {
+      private lazy val allSelects = {
+        import scala.collection.mutable
+        val selects = mutable.ListBuffer[Select]()
         val selectsTraverser = new Traverser {
-          import scala.collection.mutable
-          val selects = mutable.ListBuffer[Select]()
           override def traverse(tree: Tree): Unit = tree match {
             case s @ Select(qual, _) =>
               selects += s
@@ -494,27 +492,26 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
           }
         }
         selectsTraverser.traverse(treeWithoutImports(block))
-        selectsTraverser.selects.map { asText }.toList
+        selects.toList
       }
 
-      private val allSelectsAsText = allSelects(block)
+      protected def doApply(trees: List[Import]) = trees collect {
+        case imp @ Import(importQualifier: Select, importSelections) =>
+          val usedSelectors = importSelections filter { importSel =>
+            val importName = importSel.name.toString
+            val importSym = importQualifier.symbol
+            val isWildcard = importSel.name == nme.WILDCARD
 
-      private def mkImportPath(prefix: String)(selector: ImportSelector) = selector.name match {
-        case name if name == nme.WILDCARD => prefix
-        case name => prefix + "." + name
-      }
-
-      protected def doApply(trees: List[Import]) = trees.map { imp =>
-        val Import(expr, sels) = imp
-        val importPath = mkImportPath(asText(expr))(_)
-        val usedSelectors = sels.filter { sel =>
-          val wholeImportAsText = importPath(sel)
-          allSelectsAsText.exists { _.startsWith(wholeImportAsText) }
-        }
-        usedSelectors match {
-          case Nil => Import(EmptyTree, Nil)
-          case _ => imp.copy(selectors = usedSelectors)
-        }
+            allSelects.exists { foundSel =>
+              val foundName = foundSel.symbol.nameString
+              val foundSym = foundSel.qualifier.symbol
+              (isWildcard || foundName == importName) && foundSym == importSym
+            }
+          }
+          usedSelectors match {
+            case Nil => Import(EmptyTree, Nil)
+            case _ => imp.copy(selectors = usedSelectors)
+          }
       }
     }
 
