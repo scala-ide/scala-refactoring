@@ -13,7 +13,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
 
   private def createRefactoring(pro: FileSet) = {
     new TestRefactoringImpl(pro) {
-      val refactoring = new MoveClass with TestProjectIndex
+      override val refactoring = new MoveClass with TestProjectIndex
     }
   }
 
@@ -666,7 +666,6 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package a.b.c
 
       import x.y.ToMove
-
       class User extends ToMove
     """
   } applyRefactoring(moveTo("x.y"))
@@ -875,7 +874,6 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     }
     """ becomes """
     import bar.Bar64
-
     class Foo64 {
       import Bar64.instance
 
@@ -934,7 +932,6 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package c
 
       import x.y.ToMove
-
       trait Xy {
         val other: ToMove
       }

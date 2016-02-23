@@ -12,7 +12,7 @@ import scala.tools.refactoring.common.TextChange
 
 abstract class AddImportStatement extends Refactoring with InteractiveScalaCompiler {
 
-  val global: tools.nsc.interactive.Global
+  override val global: tools.nsc.interactive.Global
 
   def addImport(file: AbstractFile, fqName: String): List[TextChange] = addImports(file, List(fqName))
 
@@ -20,9 +20,7 @@ abstract class AddImportStatement extends Refactoring with InteractiveScalaCompi
 
     val astRoot = abstractFileToTree(file)
 
-    refactor((addImportTransformation(importsToAdd) apply astRoot).toList) collect {
-      case tc: TextChange => tc
-    }
+    addImportTransformation(importsToAdd.toSeq)(astRoot).toList
   }
 
   @deprecated("Use addImport(file, ..) instead", "0.4.0")
