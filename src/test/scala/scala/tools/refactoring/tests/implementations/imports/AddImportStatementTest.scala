@@ -486,4 +486,49 @@ class AddImportStatementTest extends TestHelper {
       }
       """)
   }
+
+  /**
+   * See Assembla Ticket #1001848
+   */
+  @Test
+  def doNotRemoveComments() = {
+    addImport(("scala.collection.mutable", "ListBuffer"), """
+      // comment
+      import java.io.File // comment
+      // comment
+
+      import scala.collection.mutable.Buffer // comment
+      import scala.collection.mutable.HashMap // comment
+      // comment
+
+      // comment
+      object Y {
+
+        val a = Buffer
+        val b = HashMap
+        val c = ListBuffer
+
+        val d = new File("")
+      }
+      """, """
+      // comment
+      import java.io.File // comment
+      // comment
+
+      import scala.collection.mutable.Buffer // comment
+      import scala.collection.mutable.HashMap // comment
+      import scala.collection.mutable.ListBuffer
+      // comment
+
+      // comment
+      object Y {
+
+        val a = Buffer
+        val b = HashMap
+        val c = ListBuffer
+
+        val d = new File("")
+      }
+      """)
+  }
 }

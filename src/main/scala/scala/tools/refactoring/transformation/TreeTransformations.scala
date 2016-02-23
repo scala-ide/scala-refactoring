@@ -189,9 +189,10 @@ trait TreeTransformations extends Transformations with TreeFactory {
     }
 
     def insertAfter(pos: Position) = {
-      val line = pos.source.lineToString(pos.source.offsetToLine(pos.start))
+      val lineNumber = pos.source.offsetToLine(pos.start)
+      val line = pos.source.lineToString(lineNumber)
       val indent = line.takeWhile(Character.isWhitespace)
-      val insertPos = pos.end
+      val insertPos = pos.source.lineToOffset(lineNumber) + line.length
       TextChange(pos.source, insertPos, insertPos, "\n" + importsAsSrc(indent))
     }
 
