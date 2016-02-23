@@ -156,12 +156,14 @@ trait TreeChangesDiscoverer {
           List((changed, orig.pos, Set(changed) ++ searchChildrenForChanges(changed)))
         }
 
-        def drillDownChildrenAndCollectChangesWithPosition(parent: Tree): List[(Tree, Position, Set[Tree])] =
-          children(parent).flatMap {
+        def drillDownChildrenAndCollectChangesWithPosition(parent: Tree): List[(Tree, Position, Set[Tree])] = {
+          val allPotentials = children(parent).flatMap {
             findAllChangedTrees
-          }.filterNot {
+          }
+          allPotentials.filterNot {
             case (_, position, _) => position == NoPosition
           }
+        }
 
         (t, onlyDifferentChildren) match {
           case (t: Block   , (orig, changed) :: Nil) if changed.pos == NoPosition =>

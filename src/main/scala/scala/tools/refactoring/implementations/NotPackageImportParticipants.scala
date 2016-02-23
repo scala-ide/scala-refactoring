@@ -30,16 +30,23 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
     }
 
     protected def doApply(trees: List[organizeImportsInstance.global.Import]) = trees.asInstanceOf[List[Import]] collect {
-      case imp @ Import(importQualifier: Select, importSelections) =>
+      case imp @ Import(importQualifier, importSelections) =>
         val usedSelectors = importSelections filter { importSel =>
-          val importName = importSel.name.toString
-          val importSym = importQualifier.symbol
+          val importSym = importQualifier.symbol.fullName
           val isWildcard = importSel.name == nme.WILDCARD
 
           allSelects.exists { foundSel =>
-            val foundName = foundSel.symbol.nameString
-            val foundSym = foundSel.qualifier.symbol
-            (isWildcard || foundName == importName) && foundSym == importSym
+            def downToPackage(selectQualifierSymbol: Symbol): Symbol =
+              if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol
+                  || selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
+                  || selectQualifierSymbol.isStable)
+                selectQualifierSymbol
+              else
+                downToPackage(selectQualifierSymbol.owner)
+            val foundName = foundSel.name.toString
+            val foundSym = downToPackage(foundSel.qualifier.symbol)
+            (isWildcard || foundName == importSel.name.toString || foundName == importSel.rename.toString) &&
+              foundSym != null && foundSym.fullName == importSym
           }
         }
         val result = usedSelectors match {
