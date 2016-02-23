@@ -6,7 +6,7 @@ import scala.tools.nsc.interactive.Global
 class NotPackageImportParticipants(val global: Global, val organizeImportsInstance: OrganizeImports) {
   import global._
 
-  class RemoveUnused(block: Tree) extends organizeImportsInstance.Participant {
+  class RemoveUnused(block: Global#Tree) extends organizeImportsInstance.Participant {
     private def treeWithoutImports(tree: Tree) = new Transformer {
       override def transform(tree: Tree): Tree = tree match {
         case Import(_, _) => EmptyTree
@@ -25,7 +25,7 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
           case t => super.traverse(t)
         }
       }
-      selectsTraverser.traverse(treeWithoutImports(block))
+      selectsTraverser.traverse(treeWithoutImports(block.asInstanceOf[Tree]))
       selects.toList
     }
 

@@ -9,7 +9,7 @@ import scala.tools.refactoring.common.CompilerApiExtensions
 import scala.tools.refactoring.common.TracingImpl
 import scala.annotation.tailrec
 
-trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersionAdapters.CompilerApiAdapters with TracingImpl with IsNotInImports {
+trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersionAdapters.CompilerApiAdapters with TracingImpl {
   // we need to interactive compiler because we work with RangePositions
   this: common.InteractiveScalaCompiler with common.TreeTraverser with common.TreeExtractors with common.EnrichedTrees =>
 
@@ -157,6 +157,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
     }
 
     val traverser = new TraverserWithFakedTrees {
+      val isNotInImports = new IsNotInImports(CompilationUnitDependencies.this.global, CompilationUnitDependencies.this);
       var annotationTree: Option[Tree] = None
 
       def traversingAnnotation() = annotationTree.isDefined
@@ -387,7 +388,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                   && !t.symbol.isLocal
                   && !isRelativeToLocalImports(t)
                   && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)
-                  && isSelectNotInRelativeImports(t, wholeTree)) {
+                  && isNotInImports.isSelectNotInRelativeImports(t, wholeTree)) {
                 addToResult(t)
               }
 

@@ -479,7 +479,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
   object MethodImportsOrganizer {
     val methodOrganizeImportsParticipants = new NotPackageImportParticipants(OrganizeImports.this.global, OrganizeImports.this)
     import methodOrganizeImportsParticipants.RemoveDuplicatedByWildcard
-    import methodOrganizeImportsParticipants.global.{ Block => MBlock }
 
     private def organizeImportsIfNoImportInSameLine(imports: List[Import])(organizeImports: List[Import] => List[Import]): List[Import] = {
       val importsWithPosition = imports.filter { _.pos.isDefined }
@@ -516,10 +515,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     def organizeImportsInMethodBlocks(tree: Tree): Tree = new Transformer {
       override def transform(t: Tree) = t match {
         case b @ Block(stats, _) if currentOwner.isMethod && !currentOwner.isLazy =>
-          val participants = (new methodOrganizeImportsParticipants.RemoveUnused(b.asInstanceOf[MBlock])).asInstanceOf[Participant] ::
+          val participants = (new methodOrganizeImportsParticipants.RemoveUnused(b)).asInstanceOf[Participant] ::
             RemoveDuplicatedByWildcard.asInstanceOf[Participant] ::
             RemoveDuplicates :: SortImportSelectors :: SortImports :: Nil
-          val importsOrganizer = scala.Function.chain(participants).asInstanceOf[List[Import] => List[Import]]
+          val importsOrganizer = scala.Function.chain(participants)
           val reorganizedStats = organizeGroupedImports(stats)(importsOrganizer)(this)
           b.copy(stats = reorganizedStats).replaces(b)
         case skipPlainText: PlainText => skipPlainText
