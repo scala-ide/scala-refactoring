@@ -2209,6 +2209,85 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
+  @Test
+  def shouldNotDisplaceDetachedImport() = new FileSet {
+    """
+    package acme
+
+    class Map
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import acme.Map
+        val acmeMap: Map = new Map
+        acmeMap
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedImportForParameterizedType() = new FileSet {
+    """
+    package acme
+
+    class Map[K, V]
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import acme.Map
+        val acmeMap: Map[Int, String] = new Map[Int, String]
+        acmeMap
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedShadowingImport() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import java.util.Map
+        import java.util.HashMap
+        val javaMap: Map[Int, Int] = new HashMap[Int, Int]()
+        scalaMap
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import java.util.HashMap
+        import java.util.Map
+        val javaMap: Map[Int, Int] = new HashMap[Int, Int]()
+        scalaMap
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
   @Ignore("under construction")
   @Test
   def shouldNotThrowAnExceptionForComplexExpressionsInMethodBody() = new FileSet {

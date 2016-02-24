@@ -16,16 +16,16 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
 
     private lazy val allSelects = {
       import scala.collection.mutable
-      val selects = mutable.ListBuffer[Select]()
-      val selectsTraverser = new Traverser {
-        override def traverse(tree: Tree): Unit = tree match {
-          case s @ Select(qual, _) =>
+      val selects = mutable.ListBuffer[Global#Select]()
+      val selectsTraverser = new organizeImportsInstance.TraverserWithFakedTrees {
+        override def traverse(tree: organizeImportsInstance.global.Tree): Unit = tree match {
+          case s @ organizeImportsInstance.global.Select(qual, _) =>
             selects += s
             traverse(qual)
           case t => super.traverse(t)
         }
       }
-      selectsTraverser.traverse(treeWithoutImports(block.asInstanceOf[Tree]))
+      selectsTraverser.traverse(treeWithoutImports(block.asInstanceOf[Tree]).asInstanceOf[organizeImportsInstance.global.Tree])
       selects.toList
     }
 
@@ -34,18 +34,19 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
         val usedSelectors = importSelections filter { importSel =>
           val importSym = importQualifier.symbol.fullName
           val isWildcard = importSel.name == nme.WILDCARD
+          val importSelNames = Set(importSel.name, importSel.rename).filterNot { _ == null }.map { _.toString }
 
           allSelects.exists { foundSel =>
-            def downToPackage(selectQualifierSymbol: Symbol): Symbol =
+            def downToPackage(selectQualifierSymbol: Global#Symbol): Global#Symbol =
               if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol
                   || selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
                   || selectQualifierSymbol.isStable)
                 selectQualifierSymbol
               else
                 downToPackage(selectQualifierSymbol.owner)
-            val foundName = foundSel.name.toString
-            val foundSym = downToPackage(foundSel.qualifier.symbol)
-            (isWildcard || foundName == importSel.name.toString || foundName == importSel.rename.toString) &&
+            val foundNames = Set(foundSel.name.toString, foundSel.symbol.owner.nameString)
+            val foundSym = Option(downToPackage(foundSel.qualifier.symbol)).getOrElse(downToPackage(foundSel.symbol))
+            (isWildcard || foundNames.&(importSelNames).nonEmpty) &&
               foundSym != null && foundSym.fullName == importSym
           }
         }
