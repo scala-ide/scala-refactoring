@@ -1,15 +1,12 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.tools.refactoring.analysis.CompilationUnitDependencies
-import scala.tools.refactoring.common.TreeExtractors
-import scala.tools.refactoring.common.NewFileChange
-import scala.tools.refactoring.common.InteractiveScalaCompiler
-import scala.tools.refactoring.common.Change
-import scala.tools.refactoring.transformation.TreeFactory
-import scala.collection.mutable.ListBuffer
-import scala.tools.refactoring.common.TextChange
 import scala.reflect.internal.util.SourceFile
+import scala.tools.refactoring.analysis.CompilationUnitDependencies
+import scala.tools.refactoring.common.Change
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.TreeExtractors
+import scala.tools.refactoring.transformation.TreeFactory
 
 abstract class MoveClass extends MultiStageRefactoring with TreeFactory with analysis.Indexes with TreeExtractors with InteractiveScalaCompiler with CompilationUnitDependencies with ImportsHelper {
 
@@ -19,13 +16,13 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
    * Returns Some if the user selected a single ImplDef in the source file.
    * None means that all ImplDefs should be moved.
    */
-  type PreparationResult = Option[ImplDef]
+  override type PreparationResult = Option[ImplDef]
 
   /**
    * We don't really need the preparation result in the refactoring, instead
    * the user has the option of ignoring the selected ImplDef, therefore we
    * take a copy of the PreparationResult as a parameter.
-   * */
+   */
   case class RefactoringParameters(packageName: String, moveSingleImpl: PreparationResult)
 
   /**
@@ -43,7 +40,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
    *
    * is not.
    */
-  def prepare(s: Selection) = {
+  override def prepare(s: Selection) = {
     def hasSinglePackageDeclaration = topPackageDef(s.root.asInstanceOf[PackageDef]) match {
       case PackageDef(_, stats) => stats forall (stmt => stmt.isInstanceOf[ImplDef] || stmt.isInstanceOf[Import])
       case _ => false
@@ -90,7 +87,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
     }
   }
 
-  def perform(selection: Selection, preparationResult: PreparationResult, parameters: RefactoringParameters): Either[RefactoringError, List[Change]] = {
+  override def perform(selection: Selection, preparationResult: PreparationResult, parameters: RefactoringParameters): Either[RefactoringError, List[Change]] = {
 
     val toMove = parameters.moveSingleImpl
 
@@ -106,7 +103,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
      *
      *  2) The complete file is moved, this is easier because we simply move
      *     the file and don't need to create a new source file.
-     * */
+     */
     val movedClassChanges = if(moveOnlyPartOfSourceFile(selection, parameters)) {
       trace("Moving only a part of %s", selection.file.name)
 
@@ -131,7 +128,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
     /*
      * We need to adapt the imports of all the files that reference one of the moved classes.
      * This include imports to the moved classes and fully qualified names.
-     * */
+     */
     val otherFiles = adaptDependentFiles(selection, toMove, parameters.packageName)
 
     Right(movedClassChanges ++ otherFiles)
@@ -143,7 +140,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
   /**
    * Returns a transformation that creates the contents of the target file.
-   * */
+   */
   private def createRenamedTargetPackageTransformation(parameters: RefactoringParameters, implsToMove: List[Tree], importsFor: Tree) = {
 
     val targetPackages = parameters.packageName.split("\\.").toList
@@ -189,7 +186,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
   /**
    * Returns the list of changes that adapt the old file (only when we don't move the complete file)
-   * */
+   */
   private def removeClassFromOldFileAndAddImportToNewIfNecessary(selection: Selection, parameters: RefactoringParameters) = {
 
     val toMove = parameters.moveSingleImpl.get
@@ -207,14 +204,15 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
     }
 
     val removeClassFromOldFile = replaceTree(toMove, EmptyTree)
+    val moveClassChange = transformFile(selection.file, removeClassFromOldFile).toList
 
-    val trans = if(hasRelativeReferenceToMovedClass) {
-      removeClassFromOldFile &> addImportTransformation(List(parameters.packageName + "." + toMove.nameString))
-    } else {
-      removeClassFromOldFile
+    if(hasRelativeReferenceToMovedClass) {
+      val trans = addImportTransformation(List(parameters.packageName + "." + toMove.nameString))
+      val addImportChange = trans(abstractFileToTree(selection.file)).toList
+      moveClassChange ++ addImportChange
     }
-
-    transformFile(selection.file, trans)
+    else
+      moveClassChange
   }
 
   private def topLevelStats(selection: Selection): List[Tree] = {
@@ -280,7 +278,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
         }
 
         if(!alreadyHasImportSelector && hasReferenceWithoutFullName) {
-          val addImport = new AddImportStatement { val global = MoveClass.this.global }
+          val addImport = new AddImportStatement { override val global = MoveClass.this.global }
           addImport.addImport(sourceFile.file, newFullPackageName + "." + referencedName)
         } else {
 

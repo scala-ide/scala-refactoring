@@ -34,7 +34,6 @@ class AddImportStatementTest extends TestHelper {
     """,
     """
       import whatever.`type`.Bla
-
       object Main
     """)
   }
@@ -43,26 +42,28 @@ class AddImportStatementTest extends TestHelper {
   def importAnnotationOnClassWithoutPackage() = {
     addImport(("scala.annotation.unchecked", "uncheckedStable"),
     """
-      @uncheckedStable
-      class T
-    """,
-    """import scala.annotation.unchecked.uncheckedStable
-@uncheckedStable
-class T
-    """)
+      |@uncheckedStable
+      |class T
+    """.stripMargin.trim,
+    """
+      |import scala.annotation.unchecked.uncheckedStable
+      |@uncheckedStable
+      |class T
+    """.stripMargin.trim)
   }
 
   @Test
   def importAnnotationOnObjectWithoutPackage() = {
     addImport(("scala.annotation.unchecked", "uncheckedStable"),
     """
-      @uncheckedStable
-      object T
-    """,
-    """import scala.annotation.unchecked.uncheckedStable
-@uncheckedStable
-object T
-    """)
+      |@uncheckedStable
+      |object T
+    """.stripMargin.trim,
+    """
+      |import scala.annotation.unchecked.uncheckedStable
+      |@uncheckedStable
+      |object T
+    """.stripMargin.trim)
   }
 
   @Test
@@ -106,7 +107,6 @@ object T
     """,
     """
       import collection.mutable.ListBuffer
-
       object Main {val lb = ListBuffer(1)}
     """)
   }
@@ -122,7 +122,6 @@ object T
       package xy
 
       import collection.mutable.ListBuffer
-
       object Main {val lb = ListBuffer(1)}
     """)
   }
@@ -151,6 +150,7 @@ object T
     """,
     """
       import collection.mutable.HashMap
+
       import collection.mutable.HashMap
       import collection.mutable.ListBuffer
 
@@ -175,6 +175,7 @@ object T
       package pckg
 
       import collection.mutable.HashMap
+
       import collection.mutable.HashMap
       import collection.mutable.ListBuffer
 
@@ -200,11 +201,11 @@ object T
 
       import collection.mutable.HashMap
 
+      package pckg
+
       import collection.mutable.HashMap
       import collection.mutable.HashMap
       import collection.mutable.ListBuffer
-
-      package pckg
 
       object Main {}
     """)
@@ -221,7 +222,6 @@ object T
       package just.some.pkg
 
       import collection.mutable.ListBuffer
-
       object Main {val lb = ListBuffer(1)}
     """)
   }
@@ -241,7 +241,6 @@ object T
       package pkg
 
       import collection.mutable.ListBuffer
-
       object Main {val lb = ListBuffer(1)}
     """)
   }
@@ -263,7 +262,6 @@ object T
       package pkg {
 
       import collection.mutable.ListBuffer
-
       object Main {val lb = ListBuffer(1)}
 
       }
@@ -289,7 +287,6 @@ object T
     """
       package just
       package some
-
       import collection.mutable.ListBuffer
       package pkg1 {
 
@@ -321,7 +318,6 @@ object T
       """,
       """
       import scala.util.matching.Regex
-
       object X
 
       class Y {
@@ -353,7 +349,6 @@ object T
       """,
       """
       import scala.util.matching.Regex
-
       object X
 
       ")"
@@ -377,7 +372,6 @@ object T
       """,
       """
       import scala.collection.mutable.LinkedHashSet
-
       object DummyObject
 
       class WrongFormatting {
@@ -407,7 +401,6 @@ object T
     package a.b.c
 
     import a.b.c.actions.ActionX
-
     package actions {
       class ActionX
     }
@@ -431,7 +424,6 @@ object T
       class X
       """, """
       import java.io.InputStream
-
       object X {
         def f(is: InputStream
       }
@@ -450,12 +442,93 @@ object T
       class X
       """, """
       import java.io.InputStream
-
       object X {
         def f is: InputStream)
       }
 
       class X
+      """)
+  }
+
+  /**
+   * See Assembla Ticket #1002514
+   */
+  @Test
+  def doNotRemoveExistingImportGroups() = {
+    addImport(("scala.collection.mutable", "ListBuffer"), """
+      import java.io.File
+
+      import scala.collection.mutable.Buffer
+      import scala.collection.mutable.HashMap
+
+      object Y {
+
+        val a = Buffer
+        val b = HashMap
+        val c = ListBuffer
+
+        val d = new File("")
+      }
+      """, """
+      import java.io.File
+
+      import scala.collection.mutable.Buffer
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+
+      object Y {
+
+        val a = Buffer
+        val b = HashMap
+        val c = ListBuffer
+
+        val d = new File("")
+      }
+      """)
+  }
+
+  /**
+   * See Assembla Ticket #1001848
+   */
+  @Test
+  def doNotRemoveComments() = {
+    addImport(("scala.collection.mutable", "ListBuffer"), """
+      // comment
+      import java.io.File // comment
+      // comment
+
+      import scala.collection.mutable.Buffer // comment
+      import scala.collection.mutable.HashMap // comment
+      // comment
+
+      // comment
+      object Y {
+
+        val a = Buffer
+        val b = HashMap
+        val c = ListBuffer
+
+        val d = new File("")
+      }
+      """, """
+      // comment
+      import java.io.File // comment
+      // comment
+
+      import scala.collection.mutable.Buffer // comment
+      import scala.collection.mutable.HashMap // comment
+      import scala.collection.mutable.ListBuffer
+      // comment
+
+      // comment
+      object Y {
+
+        val a = Buffer
+        val b = HashMap
+        val c = ListBuffer
+
+        val d = new File("")
+      }
       """)
   }
 }

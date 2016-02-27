@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package transformation
 
-import language.implicitConversions
+import scala.tools.refactoring.common.TextChange
 
 trait TreeTransformations extends Transformations with TreeFactory {
 
@@ -13,7 +13,7 @@ trait TreeTransformations extends Transformations with TreeFactory {
 
   import global._
 
-  def traverse(tree: Tree, f: Tree => Tree): Tree = {
+  override def traverse(tree: Tree, f: Tree => Tree): Tree = {
 
     /**
      * Hooks into the Scala compiler's Transformer but applies only
@@ -177,40 +177,80 @@ trait TreeTransformations extends Transformations with TreeFactory {
     case t: global.Tree => t.pos = global.NoPosition; t
   }
 
-  def addImportTransformation(importsToAdd: Iterable[String]): Transformation[Tree, Tree] = {
-
-    import global._
-
-    def importTrees = {
-      val SplitAtDot = "(.*)\\.(.*?)".r
-      importsToAdd.map {
-        case SplitAtDot(pkg, name) => mkImportFromStrings(pkg, name)
-      }.toList
+  def addImportTransformation(importsToAdd: Seq[String]): Transformation[Tree, TextChange] = {
+    def splitImports(p: PackageDef, stats: List[Tree]) = {
+      val (imports, others) = stats partition (_.isInstanceOf[Import])
+      (p, imports map (_.asInstanceOf[Import]), others)
     }
 
-    val addImportStatement = once(findBestPackageForImports &> transformation[(PackageDef, List[Import], List[Tree]), Tree] {
+    def importsAsSrc(indent: String) = {
+      def escaped(imp: String) = imp.split('.').map(escapeScalaKeywordsForImport).mkString(".")
+      importsToAdd.map(imp ⇒ s"${indent}import ${escaped(imp)}").mkString("\n")
+    }
 
-      // For an empty PackageDef, with no exiting imports but with an Impl that has an annotation, we need to
-      // modify positions so that the annotation, which is not in the AST, doesn't get assigned to the PackageDef
-      // but to the Impl
-      case (p @ PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _), Nil, others @ (impl :: _)) if !impl.symbol.annotations.isEmpty =>
+    def insertAfter(pos: Position) = {
+      val lineNumber = pos.source.offsetToLine(pos.start)
+      val line = pos.source.lineToString(lineNumber)
+      val indent = line.takeWhile(Character.isWhitespace)
+      val insertPos = pos.source.lineToOffset(lineNumber) + line.length
+      TextChange(pos.source, insertPos, insertPos, "\n" + importsAsSrc(indent))
+    }
 
-        // The `pid` is invisible anyway, but by erasing its position we make sure
-        // it doesn't get any layout associated
-        val ignoredPid = p.pid setPos NoPosition
+    def insertBefore(pos: Position) = {
+      val lineNumber = pos.source.offsetToLine(pos.start)
+      val line = pos.source.lineToString(lineNumber)
+      val indent = line.takeWhile(Character.isWhitespace)
+      val insertPos = pos.source.lineToOffset(lineNumber)
+      TextChange(pos.source, insertPos, insertPos, importsAsSrc(indent) + "\n")
+    }
 
-        // The empty PackageDef starts at the position of its first child, so the annotation of the Impl
-        // is outside its parent's range. The Source Generator can't handle this, so we let the PackageDef
-        // start at position 0 so that the annotation gets associated to the child.
-        val pos = p.pos withStart 0
+    /*
+     * `foundPackage` is a big fat hack to remember the `PackageDef` that is
+     * found in `findBestPackageForImports`. For some reason the transformation
+     * is run multiple times, even though, the `once` call later should prevent
+     * that. Therefore the `PackageDef` that is returned by
+     * `findBestPackageForImports` is not the same as the one that is found
+     * inside of it (and I don't really understand why).
+     */
+    var foundPackage: PackageDef = null
+    val findBestPackageForImports = {
+      def isPackageDef(tree: Tree) = tree.isInstanceOf[PackageDef]
 
-        p copy (pid = ignoredPid, stats = (importTrees ::: others)) setPos pos
+      def isBestPlaceForImports(trees: List[Tree]) = {
+        val (pkgDefs, otherTrees) = trees.partition(isPackageDef)
+        otherTrees.nonEmpty || pkgDefs.size >= 2
+      }
 
-      case (p, imports, others) =>
-        p copy (stats = (imports ::: importTrees ::: others)) replaces p
-    })
+      transformation[Tree, Tree] {
+        case p @ PackageDef(_, stats) if isBestPlaceForImports(stats) =>
+          if (foundPackage == null)
+            foundPackage = p
+          p
+      }
+    }
 
     // first try it at the top level to avoid traversing the complete AST
-    addImportStatement |> topdown(matchingChildren(addImportStatement))
+    val insertLocation = findBestPackageForImports |> topdown(matchingChildren(findBestPackageForImports))
+
+    val addImportStatement = once(insertLocation) &> transformation { case _ ⇒
+      splitImports(foundPackage, foundPackage.stats) match {
+        // For an empty PackageDef, with no exiting imports but with an Impl that has an annotation, we need to
+        // modify positions so that the annotation, which is not in the AST, doesn't get assigned to the PackageDef
+        // but to the Impl
+        case (p @ PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _), Nil, others @ (impl :: _)) if !impl.symbol.annotations.isEmpty ⇒
+          // The empty PackageDef starts at the position of its first child, so the annotation of the Impl
+          // is outside its parent's range. The Source Generator can't handle this, so we let the PackageDef
+          // start at position 0 so that the annotation gets associated to the child.
+          val pos = p.pos withStart 0
+          insertBefore(pos)
+        case (p, imports, others) ⇒
+          if (imports.nonEmpty)
+            insertAfter(imports.last.pos)
+          else
+            insertBefore(others.head.pos)
+      }
+    }
+
+    addImportStatement
   }
 }
