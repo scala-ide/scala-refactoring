@@ -132,11 +132,11 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
       }
 
       val arrowReq = new Requisite {
-        def isRequired(l: Layout, r: Layout) = {
+        override def isRequired(l: Layout, r: Layout) = {
           !(l.contains("=>") || r.contains("=>"))
         }
 
-        def getLayout = Layout(" => ")
+        override def getLayout = Layout(" => ")
       }
 
       Layout("case ") ++ patFrag ++ p(guard, before = " if ") ++ p(body, before = arrowReq)
@@ -416,6 +416,13 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
           Layout("import ") ++ Fragment(expr_) ++ Requisite.allowSurroundingWhitespace(".") ++ Fragment(selectors_)
       }
     }
+
+    override def ImportSelectorTree(tree: ImportSelectorTree, name: NameTree, rename: Tree)(implicit ctx: PrintingContext) = {
+      if (rename.isEmpty)
+        Fragment(name.nameString)
+      else
+        Fragment(s"${name.nameString} => ${rename.nameString}")
+    }
   }
 
   trait PackagePrinters {
@@ -601,12 +608,12 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         // so we have to check several places: if the parameter list is empty, it could
         // even be part of the tparams.
         val colon = new Requisite {
-          def isRequired(l: Layout, r: Layout) = {
+          override def isRequired(l: Layout, r: Layout) = {
             !(l.contains(":") || r.contains(":") || {
               (tparams_.withoutComments + params_.withoutComments).matches(".*:\\s*")
             })
           }
-          def getLayout = Layout(": ")
+          override def getLayout = Layout(": ")
         }
         // Finalize the layout so the `:` won't be searched in the rhs.
         p(tpt, before = colon).toLayout
