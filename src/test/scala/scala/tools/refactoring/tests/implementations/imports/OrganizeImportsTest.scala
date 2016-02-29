@@ -1962,4 +1962,37 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """.replace("$", "")
     }
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotThrowAnExceptionWhenImportsAreCollapsedToWildcardImport() = new FileSet {
+    """
+    package a.b
+    class C1
+    class C2
+    """ isNotModified
+
+    """
+    /*<-*/
+    package d.e
+
+    import a.b.C1
+    import a.b.C2
+
+    object X {
+      val c1 = new C1
+      val c2 = new C2
+    }
+    """ becomes
+    """
+    /*<-*/
+    package d.e
+
+    import a.b._
+
+    object X {
+      val c1 = new C1
+      val c2 = new C2
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify, useWildcards = Set("a.b"))
 }
