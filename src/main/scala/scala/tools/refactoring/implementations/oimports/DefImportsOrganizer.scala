@@ -32,22 +32,21 @@ class DefImportsOrganizer(val global: Global) {
   }
 
   import scala.collection._
-  /** Try to fetch `CollectTreeTraverser` */
-  private class TreeCollector[T <: Global#Tree](traverserBody: mutable.ListBuffer[T] => PartialFunction[Tree, Unit]) extends Traverser {
+  private class TreeCollector[T <: Global#Tree](traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]) extends Traverser {
     val collected = mutable.ListBuffer.empty[T]
-    override def traverse(tree: Tree): Unit = traverserBody(collected).orElse[Tree, Unit] {
+    override def traverse(tree: Tree): Unit = traverserBody(collected, currentOwner).orElse[Tree, Unit] {
       case t => super.traverse(t)
     }(tree)
   }
 
-  private def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: mutable.ListBuffer[T] => PartialFunction[Tree, Unit]): List[T] = {
+  private def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]): List[T] = {
     val treeTraverser = new TreeCollector[T](traverserBody)
     treeTraverser.traverse(tree.asInstanceOf[Tree])
     treeTraverser.collected.toList
   }
 
-  private def forTreesOfBlocks(tree: Global#Tree) = forTreesOfKind[Global#Block](tree) { collected => {
-      case b: Block =>
+  private def forTreesOfBlocks(tree: Global#Tree) = forTreesOfKind[Global#Block](tree) { (collected, currentOwner) => {
+      case b: Block if currentOwner.isMethod && !currentOwner.isLazy =>
         collected += b
     }
   }
