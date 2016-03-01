@@ -1,7 +1,9 @@
 package scala.tools.refactoring
-package implementations
+package implementations.oimports
 
 import scala.tools.nsc.interactive.Global
+import scala.collection.mutable
+import scala.tools.refactoring.implementations.OrganizeImports
 
 class NotPackageImportParticipants(val global: Global, val organizeImportsInstance: OrganizeImports) {
   import global._
@@ -61,9 +63,12 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
   object RemoveDuplicatedByWildcard extends organizeImportsInstance.Participant {
     protected def doApply(trees: List[organizeImportsInstance.global.Import]) = trees.asInstanceOf[List[Import]].map { imp =>
       val wild = imp.selectors.find(_.name == nme.WILDCARD)
-      if (wild.nonEmpty)
-        imp.copy(selectors = wild.toList)
-      else
+      if (wild.nonEmpty) {
+        val newImp = imp.copy(selectors = wild.toList)
+        newImp.pos = imp.pos
+        newImp.symbol = imp.symbol
+        newImp
+      } else
         imp
     }.groupBy {
       _.expr.toString

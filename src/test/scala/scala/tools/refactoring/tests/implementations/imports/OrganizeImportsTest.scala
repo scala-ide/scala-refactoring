@@ -2351,7 +2351,58 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("under construction")
+  @Test
+  def shouldSortImportsInClassBody() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import fake.Acme.D
+      import acme.Acme.A
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+    import acme.Acme.A
+      import acme.Acme.B
+      import fake.Acme.D
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
   @Test
   def shouldOrganizeImportsInClassDefBySorting() = new FileSet {
 
