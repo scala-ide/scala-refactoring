@@ -156,9 +156,18 @@ trait TreeChangesDiscoverer {
           List((changed, orig.pos, Set(changed) ++ searchChildrenForChanges(changed)))
         }
 
+        def drillDownChildrenAndCollectChangesWithPosition(parent: Tree): List[(Tree, Position, Set[Tree])] = {
+          val allPotentials = children(parent).flatMap {
+            findAllChangedTrees
+          }
+          allPotentials.filterNot {
+            case (_, position, _) => position == NoPosition
+          }
+        }
+
         (t, onlyDifferentChildren) match {
           case (t: Block   , (orig, changed) :: Nil) if changed.pos == NoPosition =>
-            replaceSingleDef(orig, changed)
+            replaceSingleDef(orig, changed) ++ drillDownChildrenAndCollectChangesWithPosition(t)
           case (t: Template, (orig, changed) :: Nil) if changed.pos == NoPosition && t.body.contains(changed) =>
             // Only use the efficient replace when the changed tree is in the template body,
             // if it's e.g. a parent type, then we still need to print the whole template

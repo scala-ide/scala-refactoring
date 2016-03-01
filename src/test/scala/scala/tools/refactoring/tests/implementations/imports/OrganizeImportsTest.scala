@@ -10,6 +10,7 @@ import language.reflectiveCalls
 import language.postfixOps
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
+import org.junit.Ignore
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
@@ -1256,9 +1257,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bar {
       def foo = {
-        import acme.Acme.{A, B}
         import fake.Acme.C
         val c = C
+        import acme.Acme.{A, B}
         A + B + c
       }
     }
@@ -1309,9 +1310,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bar {
       def foo = {
-        import acme.Acme.A
         import fake.Acme.D
         val d = D
+        import acme.Acme.A
         def k = {
           import acme.Acme.B
           import fake.Acme.C
@@ -1711,9 +1712,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         import fake.Acme._
         import acme.Acme.{A, D}
         import fake.Acme.D
-        val d = D
         import fake.Acme.{C, B, B}
         import acme.Acme.B
+        val d = D
         A + B + C + d
       }
     }
@@ -1929,7 +1930,419 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
+  def shouldNotOrganizeImportsForDetachedImportsInDefBlock() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    object AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import org.Acne
+        import acme._
+
+        val tested = new Acme((new Acne(4)).A)
+        import tested._
+
+        import acme.AcmeHelper.H
+
+        B + H
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import org.Acne
+
+        val tested = new Acme((new Acne(4)).A)
+        import acme.AcmeHelper.H
+        import tested._
+
+        B + H
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldOrganizeImportsForRelativeImport() = new FileSet {
+    """
+    package acme
+
+    class Acme {
+      val B = 6
+    }
+
+    object AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package acme.abefore
+
+    class Abscess(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import abefore._
+        import acme.AcmeHelper.H
+
+        val tested = new Acme
+        import tested._
+
+        B + H + (new Abscess(3)).A
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import acme.AcmeHelper.H
+        import abefore._
+
+        val tested = new Acme
+        import tested._
+
+        B + H + (new Abscess(3)).A
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotOrganizeImportsForDetachedImportsInNestedDefBlockWhenImportIsInOuterToo() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    class AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+
+        def bar = {
+          import org.Acne
+          import acme.Acme
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+
+        def bar = {
+          import acme.Acme
+          import org.Acne
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldOrganizeImportsForOuterAndInnerDefBlocks() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    class AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    class AcneHelper(val AH: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import org.AcneHelper
+        import acme.AcmeHelper
+
+        def bar = {
+          import org.Acne
+          import acme.Acme
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I + (new AcneHelper(5)).AH
+        }
+        bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+        import org.AcneHelper
+
+        def bar = {
+          import acme.Acme
+          import org.Acne
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+          import inner.I
+
+          A + H + I + (new AcneHelper(5)).AH
+        }
+        bar
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedImport() = new FileSet {
+    """
+    package acme
+
+    class Map
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import acme.Map
+        val acmeMap: Map = new Map
+        acmeMap
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedImportForParameterizedType() = new FileSet {
+    """
+    package acme
+
+    class Map[K, V]
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import acme.Map
+        val acmeMap: Map[Int, String] = new Map[Int, String]
+        acmeMap
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedShadowingImport() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import java.util.Map
+        import java.util.HashMap
+        val javaMap: Map[Int, Int] = new HashMap[Int, Int]()
+        scalaMap
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import java.util.HashMap
+        import java.util.Map
+        val javaMap: Map[Int, Int] = new HashMap[Int, Int]()
+        scalaMap
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("under construction")
+  @Test
   def shouldNotThrowAnExceptionForComplexExpressionsInMethodBody() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import fake.Acme.D
+      import acme.Acme.A
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+    class Bar {
+      import acme.Acme.A
+      import acme.Acme.B
+      import fake.Acme.D
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldOrganizeImportsInClassDefBySorting() = new FileSet {
+
     """
     /*<-*/
     package test
