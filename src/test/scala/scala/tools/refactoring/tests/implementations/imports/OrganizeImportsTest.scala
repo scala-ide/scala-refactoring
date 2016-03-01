@@ -2019,6 +2019,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     """
     /*<-*/
+    package test
+
     class A {
       def foo = {
         import org.Acne
@@ -2179,6 +2181,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
           object inner {
             val I = 5
           }
+
           import inner.I
 
           A + H + I
@@ -2264,6 +2267,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
           object inner {
             val I = 5
           }
+
           import inner.I
 
           A + H + I + (new AcneHelper(5)).AH
