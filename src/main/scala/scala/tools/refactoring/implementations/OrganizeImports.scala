@@ -12,6 +12,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
 import scala.util.control.NonFatal
 import scala.collection.immutable.Queue
+import scala.util.Properties
 
 object OrganizeImports {
   /**
@@ -468,7 +469,12 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         InnerImports.organizeImportsInMethodBlocks(p).replaces(p)
     }
 
-    Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
+    val spacer = new OrganizeImportsSpacer(this)
+    import spacer.AddSpacer
+    import spacer.ReduceSpacer
+
+    val spacerChanges = AddSpacer(abstractFileToTree(selection.file)) ::: ReduceSpacer(abstractFileToTree(selection.file))
+    Right(spacerChanges ::: transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
 
   object InnerImports {
@@ -557,5 +563,79 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         case t => super.transform(t)
       }
     }.transform(tree)
+  }
+}
+
+class OrganizeImportsSpacer(val oiInstance: OrganizeImports) {
+  import oiInstance.global._
+  import scala.tools.nsc.interactive.Global
+
+  private def topMostClassOrModule(stats: List[Tree]): Option[ImplDef] = stats.find {
+    case classDefOrModuleDef: ImplDef => true
+    case _ => false
+  }.asInstanceOf[Option[ImplDef]]
+
+  private def linesDiffInOrigFile(classOrModule: Option[ImplDef], importt: Option[Import]): Option[Int] =
+    for {
+      cm <- classOrModule
+      imp <- importt
+      sourceFile = cm.pos.source
+      cmLine = sourceFile.offsetToLine(cm.pos.start)
+      impLine = sourceFile.offsetToLine(imp.pos.end)
+    } yield cmLine - impLine
+
+  private def lastImportInPackageScope(stats: List[Tree]): Option[Import] = topMostClassOrModule(stats).flatMap { topMost =>
+    val index = stats.indexOf(topMost)
+    stats.take(index).reverse.dropWhile { !_.isInstanceOf[Import] }.headOption.asInstanceOf[Option[Import]]
+  }
+
+  object AddSpacer {
+    import scala.tools.refactoring.common.TextChange
+
+    private def areNeighborLinesInOrigFile(classOrModule: Option[ImplDef], importt: Option[Import]): Boolean =
+      linesDiffInOrigFile(classOrModule, importt).map { _ == 1 }.getOrElse(false)
+
+    def apply(tree: Global#Tree): List[Change] = tree match {
+      case pkgDef @ PackageDef(_, stats) =>
+        val cm = topMostClassOrModule(stats)
+        val limp = lastImportInPackageScope(stats)
+        if (areNeighborLinesInOrigFile(cm, limp)) {
+          val pcm = cm.get
+          val sourceFile = pcm.pos.source
+          val from = pcm.pos.start - pcm.pos.lineContent.takeWhile { _.isWhitespace }.size
+          List(TextChange(sourceFile, from, from, Properties.lineSeparator))
+        } else Nil
+    }
+  }
+
+  object ReduceSpacer {
+    import scala.tools.refactoring.common.TextChange
+
+    private def isNeededToReduceEmptyLines(classOrModule: Option[ImplDef], importt: Option[Import], stats: List[Tree]): Boolean = {
+      def shouldSkipIfClassOrModuleAnnotated(cm: ImplDef): Boolean =
+        cm.symbol.annotations.nonEmpty
+      for {
+        distInFile <- linesDiffInOrigFile(classOrModule, importt)
+        cm <- classOrModule
+        imp <- importt
+        distInTree = stats.indexOf(cm) - stats.indexOf(imp)
+      } yield !shouldSkipIfClassOrModuleAnnotated(cm) && distInFile > 2 && distInTree == 1
+    }.getOrElse(false)
+
+    def apply(tree: Global#Tree): List[Change] = tree match {
+      case pkgDef @ PackageDef(_, stats) =>
+        val cm = topMostClassOrModule(stats)
+        val limp = lastImportInPackageScope(stats)
+        if (isNeededToReduceEmptyLines(cm, limp, stats)) {
+          val sourceFile = cm.get.pos.source
+          val from = sourceFile.offsetToLine(limp.get.pos.end) + 2
+          val to = sourceFile.offsetToLine(cm.get.pos.start)
+          (from until to).map { line =>
+            val from = sourceFile.lineToOffset(line)
+            val to = from + sourceFile.lineToString(line).length + Properties.lineSeparator.length
+            TextChange(sourceFile, from, to, "")
+          }.toList
+        } else Nil
+    }
   }
 }
