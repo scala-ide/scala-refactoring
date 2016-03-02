@@ -436,6 +436,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     import scala.beans.BeanProperty
+
     case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
     """
   } applyRefactoring organize
@@ -450,6 +451,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     import java.util.Observer
+
     trait X {
       self: Observer =>
     }
@@ -469,6 +471,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """
     import java.{util => ju}
     import java.util.{ArrayList => AL}
+
     trait Y {
       def build(ignored : ju.Map[_, _]): Unit
         def build2(ignored : AL[Int]): Unit
@@ -628,6 +631,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     class MyClass[T]""" becomes
     """
     ▒
+
     class MyClass[T]"""
   } applyRefactoring organize
 
@@ -638,6 +642,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     class MyClass(i: Int)""" becomes
     """
     ▒
+
     class MyClass(i: Int)"""
   } applyRefactoring organize
 
