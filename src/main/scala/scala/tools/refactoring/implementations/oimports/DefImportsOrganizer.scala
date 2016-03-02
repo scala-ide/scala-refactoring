@@ -31,22 +31,11 @@ class DefImportsOrganizer(val global: Global) {
     impTraverser.groupedImports
   }
 
-  import scala.collection._
-  private class TreeCollector[T <: Global#Tree](traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]) extends Traverser {
-    val collected = mutable.ListBuffer.empty[T]
-    override def traverse(tree: Tree): Unit = traverserBody(collected, currentOwner).orElse[Tree, Unit] {
-      case t => super.traverse(t)
-    }(tree)
-  }
-
-  private def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]): List[T] = {
-    val treeTraverser = new TreeCollector[T](traverserBody)
-    treeTraverser.traverse(tree.asInstanceOf[Tree])
-    treeTraverser.collected.toList
-  }
+  private val util = new Util(global)
+  import util.forTreesOfKind
 
   private def forTreesOfBlocks(tree: Global#Tree) = forTreesOfKind[Global#Block](tree) { (collected, currentOwner) => {
-      case b: Block if currentOwner.isMethod && !currentOwner.isLazy =>
+      case b: util.global.Block if currentOwner.isMethod && !currentOwner.isLazy =>
         collected += b
     }
   }
@@ -64,6 +53,24 @@ class DefImportsOrganizer(val global: Global) {
       noAnyTwoImportsInSameLine
     }
   })
+}
+
+class Util(val global: Global) {
+  import global._
+  import scala.collection._
+
+  private class TreeCollector[T <: Global#Tree](traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]) extends Traverser {
+    val collected = mutable.ListBuffer.empty[T]
+    override def traverse(tree: Tree): Unit = traverserBody(collected, currentOwner).orElse[Tree, Unit] {
+      case t => super.traverse(t)
+    }(tree)
+  }
+
+  def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]): List[T] = {
+    val treeTraverser = new TreeCollector[T](traverserBody)
+    treeTraverser.traverse(tree.asInstanceOf[Tree])
+    treeTraverser.collected.toList
+  }
 }
 
 case class Region private (val imports: List[Global#Import], val startPos: Global#Position, val endPos: Global#Position) {
