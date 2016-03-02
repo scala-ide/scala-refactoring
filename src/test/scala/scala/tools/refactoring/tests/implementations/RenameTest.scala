@@ -3344,4 +3344,20 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex4() = new FileSet {
+    """
+    object Bug {
+      class SomeClass(/*(*/tryRenameMe/*)*/: Int)
+      new SomeClass(tryRenameMe = 22)
+    }
+    """ becomes
+    """
+    object Bug {
+      class SomeClass(/*(*/ups/*)*/: Int)
+      new SomeClass(ups = 22)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
