@@ -570,10 +570,9 @@ class OrganizeImportsSpacer(val oiInstance: OrganizeImports) {
   import oiInstance.global._
   import scala.tools.nsc.interactive.Global
 
-  private def topMostClassOrModule(stats: List[Tree]): Option[ImplDef] = stats.find {
-    case classDefOrModuleDef: ImplDef => true
-    case _ => false
-  }.asInstanceOf[Option[ImplDef]]
+  private def topMostClassOrModule(stats: List[Tree]): Option[ImplDef] = stats.collectFirst {
+    case classDefOrModuleDef: ImplDef => classDefOrModuleDef
+  }
 
   private def linesDiffInOrigFile(classOrModule: Option[ImplDef], importt: Option[Import]): Option[Int] =
     for {
@@ -586,7 +585,9 @@ class OrganizeImportsSpacer(val oiInstance: OrganizeImports) {
 
   private def lastImportInPackageScope(stats: List[Tree]): Option[Import] = topMostClassOrModule(stats).flatMap { topMost =>
     val index = stats.indexOf(topMost)
-    stats.take(index).reverse.dropWhile { !_.isInstanceOf[Import] }.headOption.asInstanceOf[Option[Import]]
+    stats.take(index).reverse.collectFirst {
+      case imp: Import => imp
+    }
   }
 
   object AddSpacer {
@@ -628,13 +629,15 @@ class OrganizeImportsSpacer(val oiInstance: OrganizeImports) {
         val limp = lastImportInPackageScope(stats)
         if (isNeededToReduceEmptyLines(cm, limp, stats)) {
           val sourceFile = cm.get.pos.source
-          val from = sourceFile.offsetToLine(limp.get.pos.end) + 2
-          val to = sourceFile.offsetToLine(cm.get.pos.start)
-          (from until to).map { line =>
-            val from = sourceFile.lineToOffset(line)
-            val to = from + sourceFile.lineToString(line).length + Properties.lineSeparator.length
-            TextChange(sourceFile, from, to, "")
-          }.toList
+          val fromLastImportWithSpacerLine = sourceFile.offsetToLine(limp.get.pos.end) + 2
+          val toJustAboveTopClassModuleLine = sourceFile.offsetToLine(cm.get.pos.start) - 1
+          val fromOffset = sourceFile.lineToOffset(fromLastImportWithSpacerLine)
+          val toOffset = sourceFile.lineToOffset(toJustAboveTopClassModuleLine) +
+            sourceFile.lineToString(toJustAboveTopClassModuleLine).length + Properties.lineSeparator.length
+          if (fromOffset <= toOffset)
+            List(TextChange(sourceFile, fromOffset, toOffset, ""))
+          else
+            Nil
         } else Nil
     }
   }

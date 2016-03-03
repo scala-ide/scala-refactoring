@@ -2148,8 +2148,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     import scala.collection.mutable.Buffer
     import scala.collection.mutable.ListBuffer
-  
-  
+  $
+  $
     object X extends App {
       Buffer
       ListBuffer
@@ -2161,7 +2161,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     import scala.collection.mutable.Buffer
     import scala.collection.mutable.ListBuffer
-  
+  $
     object X extends App {
       Buffer
       ListBuffer
