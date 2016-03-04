@@ -172,6 +172,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     import java.util.Observer
+
     trait X {
       self: Observer =>
     }
@@ -191,6 +192,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """
     import java.{util => ju}
     import java.util.{ArrayList => AL}
+
     trait Y {
       def build(ignored : ju.Map[_, _]): Unit
         def build2(ignored : AL[Int]): Unit

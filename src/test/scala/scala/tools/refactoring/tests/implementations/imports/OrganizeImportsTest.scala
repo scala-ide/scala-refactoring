@@ -82,7 +82,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.io.Source
       import scala.math._
       import scala.math.BigInt
-      """ + restOfFile
+""" + restOfFile
     } applyRefactoring organizeWithoutCollapsing
 
     new FileSet(expectCompilingCode = false) {
@@ -95,7 +95,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.io.Source
       import scala.math._
       import scala.math.BigInt
-      """ + restOfFile
+""" + restOfFile
     } applyRefactoring organizeExpand
 
     new FileSet(expectCompilingCode = false) {
@@ -106,7 +106,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.{HashMap, ListBuffer}
       import scala.io.Source
       import scala.math._
-      """ + restOfFile
+""" + restOfFile
     } applyRefactoring organize
   }
 
@@ -515,14 +515,10 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def finalBraceShouldNotBeRemoved() = new FileSet {
     """
       import java.io.Serializable
+
       object A extends Serializable {
 
-      }""" becomes
-      """
-      import java.io.Serializable
-      object A extends Serializable {
-
-      }"""
+      }""" isNotModified
   } applyRefactoring organize
 
   /*
@@ -1995,4 +1991,240 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify, useWildcards = Set("a.b"))
+
+  @Test
+  def shouldInsertEmptyLineBetweenImportsAndTopClassDef() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+    class X {
+      val b = Buffer()
+      val lb = ListBuffer()
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    class X {
+      val b = Buffer()
+      val lb = ListBuffer()
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldInsertEmptyLineBetweenImportsAndTopModuleDef() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldKeepExistingEmptyLineBetweenImportsAndTopClassDef() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    class X {
+      val b = Buffer()
+      val lb = ListBuffer()
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldKeepExistingEmptyLineBetweenImportsAndTopModuleDef() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldReduceExistingEmptyLinesBetweenImportsAndTopClassDefToOne() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+
+    class X {
+      val b = Buffer()
+      val lb = ListBuffer()
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    class X {
+      val b = Buffer()
+      val lb = ListBuffer()
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldReduceExistingEmptyLinesBetweenImportsAndTopModuleDefToOne() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldReduceExistingEmptyLinesWithWhitespacesBetweenImportsAndTopModuleDefToOne() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+  
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldKeepCommentBetweenImportsAndTopModuleDefAndAddsSingleSpacer() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+
+    /** Comment */
+    // Line 2
+
+    /**
+     *
+     */
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    /** Comment */
+    // Line 2
+    /**
+     *
+     */
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """
+    }
+    } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldKeepCommentBetweenImportsAndTopClassDef() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    // Comment
+    /** Line 2 */
+    class X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ isNotModified
+    } applyRefactoring organizeWithTypicalParams
 }

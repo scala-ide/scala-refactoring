@@ -12,6 +12,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
 import scala.util.control.NonFatal
 import scala.collection.immutable.Queue
+import scala.util.Properties
 
 object OrganizeImports {
   /**
@@ -468,7 +469,13 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         InnerImports.organizeImportsInMethodBlocks(p).replaces(p)
     }
 
-    Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
+    val spacer = new OrganizeImportsSpacer(this)
+    import spacer.AddSpacer
+    import spacer.ReduceSpacer
+    import spacer.OverlapRejector
+
+    val spacerChanges = AddSpacer(abstractFileToTree(selection.file)) ::: ReduceSpacer(abstractFileToTree(selection.file))
+    Right(OverlapRejector(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))), spacerChanges))
   }
 
   object InnerImports {
@@ -557,5 +564,84 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
         case t => super.transform(t)
       }
     }.transform(tree)
+  }
+}
+
+class OrganizeImportsSpacer(val oiInstance: OrganizeImports) {
+  import oiInstance.global._
+  import scala.tools.nsc.interactive.Global
+
+  private def topMostClassOrModule(stats: List[Tree]): Option[ImplDef] = stats.collectFirst {
+    case classDefOrModuleDef: ImplDef => classDefOrModuleDef
+  }
+
+  private def areLastImportAndTopClassModuleNeighborsInTree(stats: List[Tree]): Boolean = {
+    for {
+      limp <- lastImportInPackageScope(stats)
+      tm <- topMostClassOrModule(stats)
+    } yield stats.indexOf(tm) - stats.indexOf(limp) == 1
+  }.getOrElse(false)
+
+  private def lastImportInPackageScope(stats: List[Tree]): Option[Import] = topMostClassOrModule(stats).flatMap { topMost =>
+    val index = stats.indexOf(topMost)
+    stats.take(index).reverse.collectFirst {
+      case imp: Import => imp
+    }
+  }
+
+  object AddSpacer {
+    import scala.tools.refactoring.common.TextChange
+
+    def apply(tree: Global#Tree): List[Change] = tree match {
+      case pkgDef @ PackageDef(_, stats) =>
+        if (areLastImportAndTopClassModuleNeighborsInTree(stats)) {
+          lastImportInPackageScope(stats).map { limp =>
+            val sourceFile = limp.pos.source
+            val from = sourceFile.lineToOffset(sourceFile.offsetToLine(limp.pos.end) + 1)
+            TextChange(sourceFile, from, from, Properties.lineSeparator)
+          }.toList
+        } else Nil
+    }
+  }
+
+  object OverlapRejector {
+    import scala.tools.refactoring.common.TextChange
+    def apply(modifiedList: List[Change], spacerList: List[Change]): List[Change] = {
+      val modifieds = modifiedList.collect { case tc: TextChange => tc }
+      val spacers = spacerList.collect { case tc: TextChange => tc }
+      val correctSpacers = spacers.filter { spacer =>
+        val TextChange(_, sfrom, sto, _) = spacer
+        modifieds.exists { m =>
+          val TextChange(_, mfrom, mto, _) = m
+          (sfrom to sto).toList.intersect((mfrom to mto)).isEmpty
+        }
+      }
+      modifieds ::: correctSpacers
+    }
+  }
+
+  object ReduceSpacer {
+    import scala.tools.refactoring.common.TextChange
+
+    def apply(tree: Global#Tree): List[Change] = tree match {
+      case pkgDef @ PackageDef(_, stats) =>
+        if (areLastImportAndTopClassModuleNeighborsInTree(stats)) {
+          (for {
+            cm <- topMostClassOrModule(stats)
+            limp <- lastImportInPackageScope(stats)
+            sourceFile = cm.pos.source
+            from = sourceFile.offsetToLine(limp.pos.end) + 1
+            to = sourceFile.offsetToLine(cm.pos.start)
+            tcs = (from until to).filter { lineNumber =>
+              val content = sourceFile.lineToString(lineNumber)
+              content.isEmpty || content.forall { _.isWhitespace }
+            }.map { lineNumber =>
+              val from = sourceFile.lineToOffset(lineNumber)
+              val to = from + sourceFile.lineToString(lineNumber).length + Properties.lineSeparator.length
+              TextChange(sourceFile, from, to, "")
+            }.toList
+          } yield tcs).getOrElse(Nil)
+        } else Nil
+    }
   }
 }
