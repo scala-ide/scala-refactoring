@@ -3360,4 +3360,38 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithPrivateClassVal() = new FileSet {
+    """
+    class SomeClass {
+      private val /*(*/tryRenameMe/*)*/ = 42
+    }
+    """ becomes
+    """
+    class SomeClass {
+      private val /*(*/ups/*)*/ = 42
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithPrivateClassCtorParam() = new FileSet {
+    """
+    class SomeClass private (/*(*/tryRenameMe/*)*/: Int)
+    """ becomes
+    """
+    class SomeClass private (/*(*/ups/*)*/: Int)
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithProtectedClassCtorParam() = new FileSet {
+    """
+    class SomeClass protected (/*(*/tryRenameMe/*)*/: Int)
+    """ becomes
+    """
+    class SomeClass protected (/*(*/ups/*)*/: Int)
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }

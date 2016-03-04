@@ -34,6 +34,8 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
           if (symbol.isVal || symbol.isVar) {
             def getter = symbol.getter(symbol.owner)
             def setter = symbol.setter(symbol.owner)
+
+
             isHiddenOrNoAccessor(getter) && isHiddenOrNoAccessor(setter)
           } else {
             true
@@ -41,7 +43,26 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
         }
 
         def isParamThatIsVisibleInOtherFiles = {
-          symbol.isParameter && {
+          val relatedCtor = s.root.find {
+            case dd: DefDef if dd.symbol.isConstructor && !dd.mods.isPrivate && !dd.mods.isPrivateLocal =>
+              val relatedParam = dd.vparamss.flatten.find { p =>
+                (p.symbol.pos, t.symbol.pos) match {
+                  case (p1: RangePosition, p2: RangePosition) =>
+                    // Note that p1.end and p2.end might differ if default arguments are involved,
+                    // even for related symbols.
+                    p1.start == p2.start
+                  case _ => false
+                }
+              }
+
+              relatedParam.nonEmpty
+
+            case _ => false
+          }
+
+          val isVisibleCtorArg = relatedCtor.nonEmpty
+
+          isVisibleCtorArg || symbol.isParameter && {
             val symOwner = symbol.owner
             !(symOwner.isPrivate || symOwner.isPrivateLocal)
           }
