@@ -95,6 +95,47 @@ trait DependentSymbolExpanders extends TracingImpl {
     }
   }
 
+  /**
+   * Associates class vals with constructor parameters
+   */
+  trait ClassVals extends SymbolExpander { this: IndexLookup =>
+    protected abstract override def doExpand(s: Symbol) = {
+      findRelatedCtorParamSymbol(s).toList ::: super.doExpand(s)
+    }
+
+    private def findRelatedCtorParamSymbol(s: Symbol): Option[Symbol] = s match {
+      case ts: TermSymbol if ts.isVal && ts.owner.isClass && ts.pos.isRange =>
+        declaration(s.owner).flatMap(findRelatedCtorParamSymbolIn(_, s))
+      case _ => None
+    }
+
+    private def findRelatedCtorParamSymbolIn(parent: Tree, valSym: Symbol): Option[Symbol] = {
+      parent.foreach {
+        case dd: DefDef if dd.symbol.isConstructor =>
+          def correspondsToVal(param: Tree) = {
+            val (pSym, vSym) = (param.symbol, valSym)
+            val (pPos, vPos) = (param.symbol.pos, valSym.pos)
+
+            // Note that we intentionally look at 'start' only, because ends might differ
+            // if default arguments are involved.
+            pSym != vSym && pPos.start == vPos.start
+          }
+
+          val res = dd.vparamss.flatten.collectFirst {
+            case p if correspondsToVal(p) => p.symbol
+          }
+
+          if (res.nonEmpty) {
+            return res
+          }
+
+        case _ => ()
+      }
+
+      None
+    }
+  }
+
   trait OverridesInSuperClasses extends SymbolExpander {
     this : IndexLookup =>
 
@@ -105,5 +146,4 @@ trait DependentSymbolExpanders extends TracingImpl {
       case _ => Nil
     })
   }
-
 }

@@ -3362,6 +3362,70 @@ class Blubb
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 
   @Test
+  def testRenameWithNamedArgs1002501Ex5() = new FileSet {
+    """
+    object Tests {
+      class SomeClass(a: Int = 1, b: Int, /*(*/tryRenameMe/*)*/: Int = 99)
+      new SomeClass(b = 5, tryRenameMe = 33)
+    }
+    """ becomes
+    """
+    object Tests {
+      class SomeClass(a: Int = 1, b: Int, /*(*/ups/*)*/: Int = 99)
+      new SomeClass(b = 5, ups = 33)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex6() = new FileSet {
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(/*(*/tryRenameMe: Int/*)*/) {
+        def this(tryRenameMe: Long) = this(tryRenameMe.toInt)
+      }
+
+      new ClassWithSecondaryCtor(tryRenameMe = 3L)
+      new ClassWithSecondaryCtor(tryRenameMe = 3)
+    }
+    """ becomes
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(/*(*/ups: Int/*)*/) {
+        def this(tryRenameMe: Long) = this(tryRenameMe.toInt)
+      }
+
+      new ClassWithSecondaryCtor(tryRenameMe = 3L)
+      new ClassWithSecondaryCtor(ups = 3)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex7() = new FileSet {
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(tryRenameMe: Int) {
+        def this(/*(*/tryRenameMe/*)*/: Long) = this(tryRenameMe.toInt)
+      }
+
+      new ClassWithSecondaryCtor(tryRenameMe = 3L)
+      new ClassWithSecondaryCtor(tryRenameMe = 3)
+    }
+    """ becomes
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(tryRenameMe: Int) {
+        def this(/*(*/ups/*)*/: Long) = this(ups.toInt)
+      }
+
+      new ClassWithSecondaryCtor(ups = 3L)
+      new ClassWithSecondaryCtor(tryRenameMe = 3)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
   def testRenameWithPrivateClassVal() = new FileSet {
     """
     class SomeClass {

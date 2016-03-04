@@ -34,7 +34,7 @@ trait TreeTraverser extends TracingImpl {
   protected trait TraversalTracing extends global.Traverser {
     private var indent = 0
 
-    protected def traceIndividualVisits = false
+    protected def traceIndividualVisits = true
 
     override def traverse(t: Tree) = {
       def doTraverse() = {
