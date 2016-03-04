@@ -472,9 +472,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory wi
     val spacer = new OrganizeImportsSpacer(this)
     import spacer.AddSpacer
     import spacer.ReduceSpacer
+    import spacer.OverlapRejector
 
     val spacerChanges = AddSpacer(abstractFileToTree(selection.file)) ::: ReduceSpacer(abstractFileToTree(selection.file))
-    Right(spacerChanges ::: transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
+    Right(OverlapRejector(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))), spacerChanges))
   }
 
   object InnerImports {
@@ -574,14 +575,12 @@ class OrganizeImportsSpacer(val oiInstance: OrganizeImports) {
     case classDefOrModuleDef: ImplDef => classDefOrModuleDef
   }
 
-  private def linesDiffInOrigFile(classOrModule: Option[ImplDef], importt: Option[Import]): Option[Int] =
+  private def areLastImportAndTopClassModuleNeighborsInTree(stats: List[Tree]): Boolean = {
     for {
-      cm <- classOrModule
-      imp <- importt
-      sourceFile = cm.pos.source
-      cmLine = sourceFile.offsetToLine(cm.pos.start)
-      impLine = sourceFile.offsetToLine(imp.pos.end)
-    } yield cmLine - impLine
+      limp <- lastImportInPackageScope(stats)
+      tm <- topMostClassOrModule(stats)
+    } yield stats.indexOf(tm) - stats.indexOf(limp) == 1
+  }.getOrElse(false)
 
   private def lastImportInPackageScope(stats: List[Tree]): Option[Import] = topMostClassOrModule(stats).flatMap { topMost =>
     val index = stats.indexOf(topMost)
@@ -593,51 +592,55 @@ class OrganizeImportsSpacer(val oiInstance: OrganizeImports) {
   object AddSpacer {
     import scala.tools.refactoring.common.TextChange
 
-    private def areNeighborLinesInOrigFile(classOrModule: Option[ImplDef], importt: Option[Import]): Boolean =
-      linesDiffInOrigFile(classOrModule, importt).map { _ == 1 }.getOrElse(false)
-
     def apply(tree: Global#Tree): List[Change] = tree match {
       case pkgDef @ PackageDef(_, stats) =>
-        val cm = topMostClassOrModule(stats)
-        val limp = lastImportInPackageScope(stats)
-        if (areNeighborLinesInOrigFile(cm, limp)) {
-          val pcm = cm.get
-          val sourceFile = pcm.pos.source
-          val from = pcm.pos.start - pcm.pos.lineContent.takeWhile { _.isWhitespace }.size
-          List(TextChange(sourceFile, from, from, Properties.lineSeparator))
+        if (areLastImportAndTopClassModuleNeighborsInTree(stats)) {
+          lastImportInPackageScope(stats).map { limp =>
+            val sourceFile = limp.pos.source
+            val from = sourceFile.lineToOffset(sourceFile.offsetToLine(limp.pos.end) + 1)
+            TextChange(sourceFile, from, from, Properties.lineSeparator)
+          }.toList
         } else Nil
+    }
+  }
+
+  object OverlapRejector {
+    import scala.tools.refactoring.common.TextChange
+    def apply(modifiedList: List[Change], spacerList: List[Change]): List[Change] = {
+      val modifieds = modifiedList.collect { case tc: TextChange => tc }
+      val spacers = spacerList.collect { case tc: TextChange => tc }
+      val correctSpacers = spacers.filter { spacer =>
+        val TextChange(_, sfrom, sto, _) = spacer
+        modifieds.exists { m =>
+          val TextChange(_, mfrom, mto, _) = m
+          (sfrom to sto).toList.intersect((mfrom to mto)).isEmpty
+        }
+      }
+      modifieds ::: correctSpacers
     }
   }
 
   object ReduceSpacer {
     import scala.tools.refactoring.common.TextChange
 
-    private def isNeededToReduceEmptyLines(classOrModule: Option[ImplDef], importt: Option[Import], stats: List[Tree]): Boolean = {
-      def shouldSkipIfClassOrModuleAnnotated(cm: ImplDef): Boolean =
-        cm.symbol.annotations.nonEmpty
-      for {
-        distInFile <- linesDiffInOrigFile(classOrModule, importt)
-        cm <- classOrModule
-        imp <- importt
-        distInTree = stats.indexOf(cm) - stats.indexOf(imp)
-      } yield !shouldSkipIfClassOrModuleAnnotated(cm) && distInFile > 2 && distInTree == 1
-    }.getOrElse(false)
-
     def apply(tree: Global#Tree): List[Change] = tree match {
       case pkgDef @ PackageDef(_, stats) =>
-        val cm = topMostClassOrModule(stats)
-        val limp = lastImportInPackageScope(stats)
-        if (isNeededToReduceEmptyLines(cm, limp, stats)) {
-          val sourceFile = cm.get.pos.source
-          val fromLastImportWithSpacerLine = sourceFile.offsetToLine(limp.get.pos.end) + 2
-          val toJustAboveTopClassModuleLine = sourceFile.offsetToLine(cm.get.pos.start) - 1
-          val fromOffset = sourceFile.lineToOffset(fromLastImportWithSpacerLine)
-          val toOffset = sourceFile.lineToOffset(toJustAboveTopClassModuleLine) +
-            sourceFile.lineToString(toJustAboveTopClassModuleLine).length + Properties.lineSeparator.length
-          if (fromOffset <= toOffset)
-            List(TextChange(sourceFile, fromOffset, toOffset, ""))
-          else
-            Nil
+        if (areLastImportAndTopClassModuleNeighborsInTree(stats)) {
+          (for {
+            cm <- topMostClassOrModule(stats)
+            limp <- lastImportInPackageScope(stats)
+            sourceFile = cm.pos.source
+            from = sourceFile.offsetToLine(limp.pos.end) + 1
+            to = sourceFile.offsetToLine(cm.pos.start)
+            tcs = (from until to).filter { lineNumber =>
+              val content = sourceFile.lineToString(lineNumber)
+              content.isEmpty || content.forall { _.isWhitespace }
+            }.map { lineNumber =>
+              val from = sourceFile.lineToOffset(lineNumber)
+              val to = from + sourceFile.lineToString(lineNumber).length + Properties.lineSeparator.length
+              TextChange(sourceFile, from, to, "")
+            }.toList
+          } yield tcs).getOrElse(Nil)
         } else Nil
     }
   }

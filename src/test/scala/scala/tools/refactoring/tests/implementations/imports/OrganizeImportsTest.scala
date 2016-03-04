@@ -82,7 +82,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.io.Source
       import scala.math._
       import scala.math.BigInt
-      """ + restOfFile
+""" + restOfFile
     } applyRefactoring organizeWithoutCollapsing
 
     new FileSet(expectCompilingCode = false) {
@@ -95,7 +95,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.io.Source
       import scala.math._
       import scala.math.BigInt
-      """ + restOfFile
+""" + restOfFile
     } applyRefactoring organizeExpand
 
     new FileSet(expectCompilingCode = false) {
@@ -106,7 +106,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.{HashMap, ListBuffer}
       import scala.io.Source
       import scala.math._
-      """ + restOfFile
+""" + restOfFile
     } applyRefactoring organize
   }
 
@@ -2148,8 +2148,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     import scala.collection.mutable.Buffer
     import scala.collection.mutable.ListBuffer
-  $
-  $
+  
     object X extends App {
       Buffer
       ListBuffer
@@ -2161,7 +2160,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     import scala.collection.mutable.Buffer
     import scala.collection.mutable.ListBuffer
-  $
+
     object X extends App {
       Buffer
       ListBuffer
@@ -2169,4 +2168,63 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldKeepCommentBetweenImportsAndTopModuleDefAndAddsSingleSpacer() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+
+    /** Comment */
+    // Line 2
+
+    /**
+     *
+     */
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    /** Comment */
+    // Line 2
+    /**
+     *
+     */
+    object X extends App {
+      Buffer
+      ListBuffer
+    }
+    """
+    }
+    } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldKeepCommentBetweenImportsAndTopClassDef() = new FileSet {
+    """
+    /*<-*/
+    package x
+
+    import scala.collection.mutable.Buffer
+    import scala.collection.mutable.ListBuffer
+
+    // Comment
+    /** Line 2 */
+    class X extends App {
+      Buffer
+      ListBuffer
+    }
+    """ isNotModified
+    } applyRefactoring organizeWithTypicalParams
 }
