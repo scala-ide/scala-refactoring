@@ -5,6 +5,7 @@ import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
+import scala.annotation.implicitNotFound
 
 class DefImportsOrganizer(val global: Global) {
   import global._
@@ -104,5 +105,20 @@ object Region {
   def apply(imports: List[Global#Import]): Region = {
     assert(imports.nonEmpty)
     Region(imports, imports.head.pos, imports.last.pos)
+  }
+}
+
+object ImportPrinters {
+  @implicitNotFound("ImportPrinter[${I}] not found in scope")
+  trait ImportPrinter[I <: Global#Import] {
+    def print(imp: I): List[Change]
+  }
+
+  object ImportPrinter {
+    def apply[I <: Global#Import : ImportPrinter]: ImportPrinter[I] = implicitly[ImportPrinter[I]]
+  }
+
+  object Printer {
+    def print[I <: Global#Import : ImportPrinter](imp: I) = ImportPrinter[I].print(imp)
   }
 }
