@@ -2409,40 +2409,4 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
-
-  @Test
-  def shouldOrganizeImportsInClassDefBySorting() = new FileSet {
-
-    """
-    /*<-*/
-    package test
-
-    object X {
-      val m = Map[String, String]()
-
-      def f = {
-        import scala.util.Try
-        for ((a, b) ← m)
-          println((a,b))
-        0
-      }
-    }
-    """ becomes {
-    """
-    /*<-*/
-    package test
-
-    object X {
-      val m = Map[String, String]()
-
-      def f = {
-        $
-        for ((a, b) ← m)
-          println((a,b))
-        0
-      }
-    }
-    """.replace("$", "")
-    }
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }
