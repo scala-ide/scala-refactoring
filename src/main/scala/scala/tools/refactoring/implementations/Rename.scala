@@ -46,13 +46,8 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
           val relatedCtor = s.root.find {
             case dd: DefDef if dd.symbol.isConstructor && !dd.mods.isPrivate && !dd.mods.isPrivateLocal =>
               val relatedParam = dd.vparamss.flatten.find { p =>
-                (p.symbol.pos, t.symbol.pos) match {
-                  case (p1: RangePosition, p2: RangePosition) =>
-                    // Note that p1.end and p2.end might differ if default arguments are involved,
-                    // even for related symbols.
-                    p1.start == p2.start
-                  case _ => false
-                }
+                val (p1, p2) = (p.symbol.pos, t.symbol.pos)
+                p1.isDefined && p2.isDefined && p1.point == p2.point
               }
 
               relatedParam.nonEmpty

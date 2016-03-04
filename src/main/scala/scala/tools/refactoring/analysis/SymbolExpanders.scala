@@ -104,7 +104,7 @@ trait DependentSymbolExpanders extends TracingImpl {
     }
 
     private def findRelatedCtorParamSymbol(s: Symbol): Option[Symbol] = s match {
-      case ts: TermSymbol if ts.isVal && ts.owner.isClass && ts.pos.isRange =>
+      case ts: TermSymbol if ts.isVal && ts.owner.isClass =>
         declaration(s.owner).flatMap(findRelatedCtorParamSymbolIn(_, s))
       case _ => None
     }
@@ -115,10 +115,7 @@ trait DependentSymbolExpanders extends TracingImpl {
           def correspondsToVal(param: Tree) = {
             val (pSym, vSym) = (param.symbol, valSym)
             val (pPos, vPos) = (param.symbol.pos, valSym.pos)
-
-            // Note that we intentionally look at 'start' only, because ends might differ
-            // if default arguments are involved.
-            pSym != vSym && pPos.start == vPos.start
+            pSym != vSym && pPos.isDefined && vPos.isDefined && pPos.point == vPos.point
           }
 
           val res = dd.vparamss.flatten.collectFirst {
