@@ -53,11 +53,11 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
           }
         }
         val result = usedSelectors match {
-          case Nil => Import(EmptyTree, Nil)
-          case _ => imp.copy(selectors = usedSelectors)
+          case Nil => null
+          case s => imp.copy(selectors = usedSelectors).setPos(imp.pos)
         }
         result.asInstanceOf[organizeImportsInstance.global.Import]
-    }
+    } filter { _ ne null }
   }
 
   object RemoveDuplicatedByWildcard extends organizeImportsInstance.Participant {
