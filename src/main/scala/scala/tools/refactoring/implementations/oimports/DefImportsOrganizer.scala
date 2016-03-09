@@ -43,7 +43,7 @@ class DefImportsOrganizer(val global: Global) {
 
   private def toRegions(groupedImports: List[List[Global#Import]]): List[Region] =
     groupedImports.map {
-      case imports @ h :: _ => Some(Region(imports))
+      case imports @ h :: _ => Some(Region(imports, global))
       case _ => None
     }.filter {
       _.nonEmpty
@@ -74,51 +74,51 @@ class Util(val global: Global) {
   }
 }
 
-case class Region private (val imports: List[Global#Import], val startPos: Global#Position, val endPos: Global#Position) {
+import scala.reflect.internal.util.SourceFile
+case class Region private (imports: List[Global#Import], startPos: Global#Position, endPos: Global#Position, source: SourceFile, indentation: String, printImport: Global#Import => String) {
   def transform(transformation: List[Global#Import] => List[Global#Import]): Region =
     copy(imports = transformation(imports))
 
   def print: Change = {
-    val sourceFile = imports.head.pos.source
     val from = startPos.pos.start
     val to = endPos.pos.end
     val text = imports.zipWithIndex.foldLeft("") { (acc, imp) =>
-      def indentation(imp: Global#Import): String =
-        sourceFile.lineToString(sourceFile.offsetToLine(imp.pos.start)).takeWhile { _.isWhitespace }
       def isLast(idx: Int) = idx == imports.size - 1
       imp match {
         case (imp, 0) if isLast(0) =>
-          acc + sourceFile.content.slice(imp.pos.start, imp.pos.end).mkString
+          acc + printImport(imp)
         case (imp, 0) =>
-          acc + sourceFile.content.slice(imp.pos.start, imp.pos.end).mkString + Properties.lineSeparator
+          acc + printImport(imp) + Properties.lineSeparator
         case (imp, idx) if isLast(idx) =>
-          acc + indentation(imp) + sourceFile.content.slice(imp.pos.start, imp.pos.end).mkString
+          acc + indentation + printImport(imp)
         case (imp, _) =>
-          acc + indentation(imp) + sourceFile.content.slice(imp.pos.start, imp.pos.end).mkString + Properties.lineSeparator
+          acc + indentation + printImport(imp) + Properties.lineSeparator
       }
     }
-    TextChange(sourceFile, from, to, text)
+    TextChange(source, from, to, text)
   }
 }
 
 object Region {
-  def apply(imports: List[Global#Import]): Region = {
+  def indentation(imp: Global#Import): String = {
+    val sourceFile = imp.pos.source
+    sourceFile.lineToString(sourceFile.offsetToLine(imp.pos.start)).takeWhile { _.isWhitespace }
+  }
+
+  def apply(imports: List[Global#Import], global: Global): Region = {
+    val source = imports.head.pos.source
+    def printImport(imp: Global#Import): String = {
+      import global._
+      val prefix = source.content.slice(imp.pos.start, imp.pos.end).mkString.reverse.dropWhile { _ != '.' }.reverse
+      val suffix = imp.selectors.map { sel =>
+        if (sel.name == sel.rename || sel.name == nme.WILDCARD)
+          sel.name
+        else
+          sel.name + " => " + sel.rename
+      }.mkString(if (imp.selectors.size > 1) "{" else "", ", ", if (imp.selectors.size > 1) "}" else "")
+      prefix + suffix
+    }
     assert(imports.nonEmpty)
-    Region(imports, imports.head.pos, imports.last.pos)
-  }
-}
-
-object ImportPrinters {
-  @implicitNotFound("ImportPrinter[${I}] not found in scope")
-  trait ImportPrinter[I <: Global#Import] {
-    def print(imp: I): List[Change]
-  }
-
-  object ImportPrinter {
-    def apply[I <: Global#Import : ImportPrinter]: ImportPrinter[I] = implicitly[ImportPrinter[I]]
-  }
-
-  object Printer {
-    def print[I <: Global#Import : ImportPrinter](imp: I) = ImportPrinter[I].print(imp)
+    Region(imports, imports.head.pos, imports.last.pos, source, indentation(imports.head), printImport)
   }
 }

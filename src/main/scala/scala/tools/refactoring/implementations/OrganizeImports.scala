@@ -232,7 +232,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
           def removeDuplicates(l: List[ImportSelector]) = {
             l.groupBy(_.name.toString).map(_._2.head).toList
           }
-          imp.copy(selectors = removeDuplicates(selectors).sortBy(_.name.toString))
+          imp.copy(selectors = removeDuplicates(selectors).sortBy(_.name.toString)).setPos(imp.pos)
       }
     }
   }
@@ -472,10 +472,12 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     import oimports.NotPackageImportParticipants
     val notPackageParticipants = new NotPackageImportParticipants(global, this)
     import notPackageParticipants.RemoveDuplicatedByWildcard
+    import notPackageParticipants.{ RemoveUnused => NPRemovedUnused }
     val regions = new DefImportsOrganizer(global).transformTreeToRegions(rootTree).map {
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard.asInstanceOf[Participant] ::
-          //SortImportSelectors ::
+          (new NPRemovedUnused(rootTree)).asInstanceOf[Participant] ::
+          SortImportSelectors ::
           SortImports ::
           Nil }(i.asInstanceOf[List[Import]])
       }
