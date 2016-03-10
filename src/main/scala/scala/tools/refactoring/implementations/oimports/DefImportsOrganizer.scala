@@ -5,7 +5,6 @@ import scala.tools.nsc.interactive.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
-import scala.annotation.implicitNotFound
 
 class DefImportsOrganizer(val global: Global) {
   import global._
@@ -32,7 +31,7 @@ class DefImportsOrganizer(val global: Global) {
     impTraverser.groupedImports
   }
 
-  private val util = new Util(global)
+  private val util = new TreeToolbox(global)
   import util.forTreesOfKind
 
   private def forTreesOfBlocks(tree: Global#Tree) = forTreesOfKind[Global#Block](tree) { (collected, currentOwner) => {
@@ -43,7 +42,7 @@ class DefImportsOrganizer(val global: Global) {
 
   private def toRegions(groupedImports: List[List[Global#Import]]): List[Region] =
     groupedImports.map {
-      case imports @ h :: _ => Some(Region(imports, global))
+      case imports @ h :: _ => Some(Region(imports)(global))
       case _ => None
     }.filter {
       _.nonEmpty
@@ -56,9 +55,9 @@ class DefImportsOrganizer(val global: Global) {
   })
 }
 
-class Util(val global: Global) {
-  import global._
+class TreeToolbox(val global: Global) {
   import scala.collection._
+  import global._
 
   private class TreeCollector[T <: Global#Tree](traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]) extends Traverser {
     val collected = mutable.ListBuffer.empty[T]
@@ -75,11 +74,20 @@ class Util(val global: Global) {
 }
 
 import scala.reflect.internal.util.SourceFile
-case class Region private (imports: List[Global#Import], startPos: Global#Position, endPos: Global#Position, source: SourceFile, indentation: String, printImport: Global#Import => String) {
+case class Region private (imports: List[Global#Import], startPos: Global#Position, endPos: Global#Position,
+    source: SourceFile, indentation: String, printImport: Global#Import => String) {
   def transform(transformation: List[Global#Import] => List[Global#Import]): Region =
     copy(imports = transformation(imports))
 
-  def print: Change = {
+  private def printEmptyImports: Change = {
+    val fromBeginningOfLine = source.lineToOffset(source.offsetToLine(startPos.start))
+    val toEndOfLine = endPos.end + Properties.lineSeparator.length
+    TextChange(source, fromBeginningOfLine, toEndOfLine, "")
+  }
+
+  def print: Change = if (imports.nonEmpty) printNonEmptyImports else printEmptyImports
+
+  private def printNonEmptyImports: Change = {
     val from = startPos.pos.start
     val to = endPos.pos.end
     val text = imports.zipWithIndex.foldLeft("") { (acc, imp) =>
@@ -100,25 +108,27 @@ case class Region private (imports: List[Global#Import], startPos: Global#Positi
 }
 
 object Region {
-  def indentation(imp: Global#Import): String = {
+  private def indentation(imp: Global#Import): String = {
     val sourceFile = imp.pos.source
     sourceFile.lineToString(sourceFile.offsetToLine(imp.pos.start)).takeWhile { _.isWhitespace }
   }
 
-  def apply(imports: List[Global#Import], global: Global): Region = {
+  def apply(imports: List[Global#Import])(global: Global): Region = {
+    assert(imports.nonEmpty)
     val source = imports.head.pos.source
     def printImport(imp: Global#Import): String = {
       import global._
+      val RenameArrow = " => "
       val prefix = source.content.slice(imp.pos.start, imp.pos.end).mkString.reverse.dropWhile { _ != '.' }.reverse
       val suffix = imp.selectors.map { sel =>
         if (sel.name == sel.rename || sel.name == nme.WILDCARD)
-          sel.name
+          sel.name.toString
         else
-          sel.name + " => " + sel.rename
-      }.mkString(if (imp.selectors.size > 1) "{" else "", ", ", if (imp.selectors.size > 1) "}" else "")
-      prefix + suffix
+          sel.name + RenameArrow + sel.rename
+      }
+      val areBracesNeeded = suffix.size > 1 || suffix.exists { _ contains RenameArrow }
+      prefix + suffix.mkString(if (areBracesNeeded) "{" else "", ", ", if (areBracesNeeded) "}" else "")
     }
-    assert(imports.nonEmpty)
     Region(imports, imports.head.pos, imports.last.pos, source, indentation(imports.head), printImport)
   }
 }

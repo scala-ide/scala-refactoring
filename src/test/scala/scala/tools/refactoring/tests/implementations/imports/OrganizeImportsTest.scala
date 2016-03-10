@@ -1954,13 +1954,12 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val m = Map[String, String]()
 
       def f = {
-        $
         for ((a, b) ← m)
           println((a,b))
         0
       }
     }
-    """.replace("$", "")
+    """
     }
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
@@ -2359,6 +2358,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
+  @Ignore("implement me")
   def shouldSortImportsInClassBody() = new FileSet {
     """
     package acme
