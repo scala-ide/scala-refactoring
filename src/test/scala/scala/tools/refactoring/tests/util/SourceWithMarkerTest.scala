@@ -286,7 +286,7 @@ class SourceWithMarkerTest {
 
     assertEquals("b",
         src5.withMarkerAtLastChar.moveMarker(
-            until(Movements.id ~ commentsAndSpaces ~ ('(' | space), skipping = (curlyBracesWithContents | comment)).backward ~ '(').currentStr)
+            until(Movements.id ~ commentsAndSpaces ~ '(', skipping = (curlyBracesWithContents | comment)).backward ~ '(').currentStr)
   }
 
   @Test
@@ -421,6 +421,66 @@ class SourceWithMarkerTest {
     {
       val src = SourceWithMarker("abc").withMarkerAtLastChar
       assertTrue(src.withMarkerAtLastChar.moveMarkerBack(varid).isDepleted)
+    }
+  }
+
+  @Test
+  def testWithSimpleExamplesWhereBacktrackingIsNeeded(): Unit = {
+    {
+      val src = SourceWithMarker("aaaab")
+      assertTrue(src.moveMarker('a'.zeroOrMore ~ 'a' ~ 'b').isDepleted)
+      assertTrue(src.moveMarker('a'.zeroOrMore ~ 'a'.nTimes(4) ~ 'b').isDepleted)
+    }
+
+    {
+      val src = SourceWithMarker("aaaab").withMarkerAtLastChar
+      val asOrBs = ('a'.zeroOrMore || 'b'.zeroOrMore)
+      assertTrue(src.moveMarkerBack(asOrBs ~ 'a' ~ 'b').isDepleted)
+      assertTrue(src.moveMarkerBack(asOrBs.zeroOrMore ~ asOrBs.nTimes(4) ~ 'b').isDepleted)
+    }
+
+    {
+      val src = SourceWithMarker("aaab")
+      val mvnt = 'a' ~ 'a'.atLeastOnce
+      assertTrue(src.moveMarker(mvnt ~ (mvnt ~ 'b').backward ~ mvnt ~ 'b').isDepleted)
+    }
+  }
+
+  @Test
+  def testZeroOrMore(): Unit = {
+    {
+      val src = SourceWithMarker("aaa")
+      assertEquals(Seq(3, 2, 1, 0), 'a'.zeroOrMore.compute(src))
+    }
+
+    {
+      val src = SourceWithMarker("")
+      assertTrue(src.applyMovement('a'.zeroOrMore).isDefined)
+    }
+
+    {
+      val src = SourceWithMarker("a")
+      assertTrue(src.moveMarker('a'.zeroOrMore).isDepleted)
+    }
+
+    {
+      val src = SourceWithMarker("aaaa")
+      assertTrue(src.moveMarker('a'.zeroOrMore).isDepleted)
+    }
+
+    {
+      val src = SourceWithMarker("aaaa")
+      assertTrue(src.moveMarker(('a' || 'b').zeroOrMore).isDepleted)
+    }
+
+    {
+      val src = SourceWithMarker("aaaa")
+      assertTrue(src.moveMarker('a'.zeroOrMore.zeroOrMore).isDepleted)
+    }
+
+    {
+      val src = SourceWithMarker("abaabbbaaabaaabaa")
+      assertTrue(src.moveMarker(('a' ~ 'b'.zeroOrMore ~ 'a'.zeroOrMore).zeroOrMore).isDepleted)
     }
   }
 

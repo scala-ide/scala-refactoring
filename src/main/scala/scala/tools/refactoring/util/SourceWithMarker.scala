@@ -3,6 +3,7 @@ package scala.tools.refactoring.util
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scala.reflect.internal.util.RangePosition
+import scala.reflect.internal.util.OffsetPosition
 
 /**
  * Represents source code with a movable marker.
@@ -22,8 +23,11 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
   }
 
   def applyMovement(movement: SimpleMovement): Option[SourceWithMarker] = {
-    if (isDepleted) None
-    else movement(this).map(m => copy(marker = m))
+    movement(this).map(m => copy(marker = m)).orElse(None)
+  }
+
+  def withMarkerAt(pos: Int): SourceWithMarker = {
+    copy(marker = pos)
   }
 
   def withMarkerAtLastChar: SourceWithMarker = {
@@ -45,6 +49,13 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
     !isInRange(marker)
   }
 
+  def step(forward: Boolean): SourceWithMarker = {
+    val delta = if (forward) 1 else -1
+    copy(marker = marker + delta)
+  }
+
+  def stepForward: SourceWithMarker = step(true)
+
   def length = source.length
 
   override def toString = {
@@ -52,7 +63,7 @@ final case class SourceWithMarker(source: IndexedSeq[Char] = IndexedSeq(), marke
       chars.mkString("").replace("\r\n", "\\r\\n").replace("\n", "\\n")
     }
 
-    val lrChars = 3
+    val lrChars = 10
     val nChars = lrChars*2 + 1
 
     def leftDots = if (marker - lrChars > 0) "..." else ""
@@ -99,6 +110,10 @@ object SourceWithMarker {
     SourceWithMarker(pos.source.content, pos.end + 1)
   }
 
+  def atPoint(pos: OffsetPosition): SourceWithMarker = {
+    SourceWithMarker(pos.source.content, pos.point)
+  }
+
   /**
    * A [[Movement]] that can be applied in one direction.
    *
@@ -108,10 +123,24 @@ object SourceWithMarker {
    * implement a full movement unless you need it.
    */
   trait SimpleMovement { self =>
-    def apply(sourceWithMarker: SourceWithMarker): Option[Int]
+    final def apply(sourceWithMarker: SourceWithMarker): Option[Int] = {
+      compute(sourceWithMarker).headOption
+    }
+
+    /**
+     * The actual implementation of the movement
+     *
+     * Returns a possibly empty sequence of markers, that this movement could lead to,
+     * starting at the given argument. For example, the movement `'a'.atLeastOnce` applied
+     * to the beginning of "aaa", would return `Seq(2, 1)`. Note that elements at the start
+     * of the returned sequence are favored over elements coming later, so greedy movements
+     * should always return the biggest jumps at the beginning.
+     */
+    def compute(sourceWithMarker: SourceWithMarker): Seq[Int]
 
     final def ~(other: SimpleMovement): SimpleMovement = SimpleMovementHelpers.sequence(this, other) _
     final def |(other: SimpleMovement): SimpleMovement = SimpleMovementHelpers.or(this, other) _
+    final def ||(other: SimpleMovement): SimpleMovement = SimpleMovementHelpers.or(this, other) _
     def zeroOrMore: SimpleMovement = SimpleMovementHelpers.repeat(this) _
     def atLeastOnce: SimpleMovement = this ~ this.zeroOrMore
     def nTimes(n: Int): SimpleMovement = SimpleMovementHelpers.nTimes(this, n) _
@@ -121,18 +150,18 @@ object SourceWithMarker {
   }
 
   object SimpleMovement {
-    implicit class WrapSimpleMovementImpl(impl: SourceWithMarker => Option[Int]) extends SimpleMovement {
-      override def apply(sourceWithMarker: SourceWithMarker) = impl(sourceWithMarker)
+    implicit class WrapSimpleMovementImpl(impl: SourceWithMarker => Seq[Int]) extends SimpleMovement {
+      override def compute(sourceWithMarker: SourceWithMarker) = impl(sourceWithMarker)
     }
 
-    def apply(impl: SourceWithMarker => Option[Int]): SimpleMovement = impl
+    def apply(impl: SourceWithMarker => Seq[Int]): SimpleMovement = impl
 
-    def startingWith(c: Char)(impl: SourceWithMarker => Option[Int]) = SimpleMovement { sourceWithMarker =>
+    def startingWith(c: Char)(impl: SourceWithMarker => Seq[Int]) = SimpleMovement { sourceWithMarker =>
       if (sourceWithMarker.current == c) impl(sourceWithMarker)
-      else None
+      else Nil
     }
 
-    def ifNotDepleted(impl: SourceWithMarker => Option[Int]): SimpleMovement = {
+    def ifNotDepleted(impl: SourceWithMarker => Seq[Int]): SimpleMovement = {
       SimpleMovement(s => MovementHelpers.doIfNotDepleted(s)(impl(s)))
     }
   }
@@ -145,59 +174,75 @@ object SourceWithMarker {
   }
 
   private object SimpleMovementHelpers {
-    def sequence[MovementT <: SimpleMovement](mvnt1: MovementT, mvnt2: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
-      mvnt1(sourceWithMarker).map(newMarker => sourceWithMarker.copy(marker = newMarker)).flatMap(mvnt2.apply)
+    def sequence[MovementT <: SimpleMovement](mvnt1: MovementT, mvnt2: MovementT)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
+      mvnt1.compute(sourceWithMarker).flatMap { marker =>
+        val sourceAfterMvnt1 = sourceWithMarker.withMarkerAt(marker)
+        mvnt2.compute(sourceAfterMvnt1)
+      }.distinct
     }
 
-    def or[MovementT <: SimpleMovement](mvnt1: MovementT, mvnt2: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
-      mvnt1(sourceWithMarker).orElse(mvnt2(sourceWithMarker))
+    def or[MovementT <: SimpleMovement](mvnt1: MovementT, mvnt2: MovementT)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
+      val res1 = mvnt1.compute(sourceWithMarker)
+
+      if (res1.isEmpty) mvnt2.compute(sourceWithMarker)
+      else res1
     }
 
-    def repeat[MovementT <: SimpleMovement](mvnt: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
+    def repeat[MovementT <: SimpleMovement](mvnt: MovementT)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
       @tailrec
-      def go(sourceWithMarker: SourceWithMarker): Option[Int] = {
-        mvnt(sourceWithMarker) match {
-          case Some(marker) =>
-            if (marker != sourceWithMarker.marker) go(sourceWithMarker.copy(marker = marker))
-            else Some(marker)
-          case None => Some(sourceWithMarker.marker)
+      def go(lastResults: Seq[Int] = Seq(sourceWithMarker.marker), acc: Seq[Int] = Seq()): Seq[Int] = {
+        val newResults = lastResults.flatMap { marker =>
+          mvnt.compute(sourceWithMarker.withMarkerAt(marker)).filterNot(lastResults.contains(_))
         }
+
+        if (newResults.isEmpty) lastResults ++ acc
+        else go(newResults, lastResults ++ acc)
       }
 
-      go(sourceWithMarker)
+      go()
     }
 
-    @tailrec
-    def nTimes[MovementT <: SimpleMovement](mvnt: MovementT, n: Int)(sourceWithMarker: SourceWithMarker): Option[Int] = {
+    def nTimes[MovementT <: SimpleMovement](mvnt: MovementT, n: Int)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
       if (n == 0) {
-        Some(sourceWithMarker.marker)
+        Seq(sourceWithMarker.marker)
       } else if (n == 1) {
-        mvnt(sourceWithMarker)
+        mvnt.compute(sourceWithMarker)
       } else if (n > 1) {
-        mvnt(sourceWithMarker) match {
-          case Some(newMarker) =>
-            if (newMarker == sourceWithMarker.marker) Some(newMarker)
-            else nTimes(mvnt, n-1)(sourceWithMarker.copy(marker = newMarker))
-          case _ => None
+        val res = mvnt.compute(sourceWithMarker)
+
+        if (res.isEmpty) {
+          Nil
+        } else {
+          res.flatMap { marker =>
+            nTimes(mvnt, n - 1)(sourceWithMarker.withMarkerAt(marker))
+          }.distinct
         }
       } else {
         throw new IllegalArgumentException(s"$n")
       }
     }
 
-    def butNot[MovementT <: SimpleMovement](mvnt: MovementT, notMvnt: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
-      mvnt(sourceWithMarker) match {
-        case Some(newMarker) =>
-          notMvnt(sourceWithMarker) match {
-            case Some(`newMarker`) => None
-            case _ => Some(newMarker)
-          }
-        case None => None
+    def butNot[MovementT <: SimpleMovement](mvnt: MovementT, notMvnt: MovementT, forward: Boolean = true)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
+      def isBehind(m1: Int)(m2: Int) = {
+        if (forward) m1 < m2
+        else m1 > m2
+      }
+
+      mvnt.compute(sourceWithMarker) match {
+        case Seq() => Nil
+
+        case res =>
+          val nRes = notMvnt.compute(sourceWithMarker)
+          if (nRes.isEmpty) res
+          else res.filter(isBehind(nRes.head))
       }
     }
 
-    def optional[MovementT <: SimpleMovement](mvnt: MovementT)(sourceWithMarker: SourceWithMarker): Option[Int] = {
-      mvnt(sourceWithMarker).orElse(Some(sourceWithMarker.marker))
+    def optional[MovementT <: SimpleMovement](mvnt: MovementT)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
+      mvnt.compute(sourceWithMarker) match {
+        case Seq() => Seq(sourceWithMarker.marker)
+        case res => res
+      }
     }
   }
 
@@ -240,21 +285,33 @@ object SourceWithMarker {
       if (forward) {
         SimpleMovementHelpers.sequence(self, other)(sourceWithMarker)
       } else {
-       other.backward.apply(sourceWithMarker).map(newMarker => sourceWithMarker.copy(marker = newMarker)).flatMap(self.backward.apply)
+        SimpleMovementHelpers.sequence(other.backward, self.backward)(sourceWithMarker)
       }
     }
 
     final def |(other: Movement) = Movement { (sourceWithMarker, forward) =>
-      if (forward) self(sourceWithMarker).orElse(other(sourceWithMarker))
-      else (other.backward(sourceWithMarker)).orElse(self.backward(sourceWithMarker))
+      if (forward) SimpleMovementHelpers.or(this, other)(sourceWithMarker)
+      else SimpleMovementHelpers.or(this.backward, other.backward)(sourceWithMarker)
     }
+
+    final def ||(other: Movement) = this | other
 
     final override def zeroOrMore = Movement { (sourceWithMarker, forward) =>
       val mvnt = if (forward) self else self.backward
       SimpleMovementHelpers.repeat(mvnt)(sourceWithMarker)
     }
 
-    final override def atLeastOnce: Movement = this ~ this.zeroOrMore
+    final override def atLeastOnce: Movement = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
+      val mvnt = if (forward) self else self.backward
+
+      mvnt.compute(sourceWithMarker) match {
+        case Seq() => Nil
+        case res =>
+          res.flatMap { marker =>
+            SimpleMovementHelpers.repeat(mvnt)(sourceWithMarker.withMarkerAt(marker))
+          }.distinct
+      }
+    }
 
     final override def nTimes(n: Int) = Movement { (sourceWithMarker, forward) =>
       val mvnt = if  (forward) self else self.backward
@@ -267,7 +324,7 @@ object SourceWithMarker {
         else (self.backward, mvnt.backward)
       }
 
-      SimpleMovementHelpers.butNot(actualSelf, actualMvnt)(sourceWithMarker)
+      SimpleMovementHelpers.butNot(actualSelf, actualMvnt, forward)(sourceWithMarker)
     }
 
     final override def optional = Movement { (sourceWithMarker, forward) =>
@@ -278,16 +335,16 @@ object SourceWithMarker {
   }
 
   object Movement {
-    def apply(impl: (SourceWithMarker, Boolean) => Option[Int]): Movement = {
+    def apply(impl: (SourceWithMarker, Boolean) => Seq[Int]): Movement = {
       class MovementImpl(forward: Boolean) extends Movement {
-        override def apply(sourceWithMarker: SourceWithMarker) = impl(sourceWithMarker, forward)
+        override def compute(sourceWithMarker: SourceWithMarker) = impl(sourceWithMarker, forward)
         override def backward = new MovementImpl(!forward)
       }
 
       return new MovementImpl(true)
     }
 
-    def ifNotDepleted(impl: (SourceWithMarker, Boolean) => Option[Int]): Movement = {
+    def ifNotDepleted(impl: (SourceWithMarker, Boolean) => Seq[Int]): Movement = {
       Movement((s, f) => MovementHelpers.doIfNotDepleted(s)(impl(s, f)))
     }
 
@@ -326,9 +383,9 @@ object SourceWithMarker {
      * Note the we represent characters as ints to avoid needless boxing ([[Function1]] is not specialized for [[Char]]).
      */
     class SingleCharMovement(private val acceptChar: Int => Boolean, private val forward: Boolean = true) extends Movement {
-      final override def apply(sourceWithMarker: SourceWithMarker): Option[Int] = {
-        if (sourceWithMarker.isDepleted || !acceptChar(sourceWithMarker.current.toInt)) None
-        else Some(nextMarker(sourceWithMarker.marker, forward))
+      final override def compute(sourceWithMarker: SourceWithMarker): Seq[Int] = {
+        if (sourceWithMarker.isDepleted || !acceptChar(sourceWithMarker.current.toInt)) Nil
+        else Seq(nextMarker(sourceWithMarker.marker, forward))
       }
 
       final def |(other: SingleCharMovement): SingleCharMovement = {
@@ -375,7 +432,7 @@ object SourceWithMarker {
         }
       }
 
-      go(sourceWithMarker.marker)
+      go(sourceWithMarker.marker).toSeq
     }
 
     val comment = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
@@ -418,33 +475,41 @@ object SourceWithMarker {
         }
       }
 
-      if(!forward) go(sourceWithMarker.marker, inSingleLineComment = true).orElse(go(sourceWithMarker.marker, inSingleLineComment = false))
-      else go(sourceWithMarker.marker)
+      if(!forward) go(sourceWithMarker.marker, inSingleLineComment = true).orElse(go(sourceWithMarker.marker, inSingleLineComment = false)).toSeq
+      else go(sourceWithMarker.marker).toSeq
     }
 
     def inBrackets(open: Char, close: Char) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
-      val (br1, br2) = if (forward) (open, close) else (close, open)
-      if (sourceWithMarker.isDepleted || sourceWithMarker.current != br1) {
-        None
+      val br1 = if (forward) open else close
+
+      if (sourceWithMarker.current != br1) {
+        Nil
       } else {
-        val eventuallyReversedCommentsAndSpaces = {
-          if (forward) commentsAndSpaces
-          else commentsAndSpaces.backward
+        val toNextBr = {
+          val toNextBr = until(character(open) | close, skipping = comment)
+
+          if (forward) toNextBr
+          else toNextBr.backward
         }
 
         @tailrec
-        def go(m: Int): Option[Int] = {
-          val mm = sourceWithMarker.copy(marker = m).moveMarker(eventuallyReversedCommentsAndSpaces).marker
-          if (wouldBeDepleted(mm, sourceWithMarker)) {
-            None
-          } else {
-            val nm = if (mm == m) nextMarker(mm, forward) else mm
-            if(sourceWithMarker.source(nm) == br2) Some(nextMarker(nm, forward))
-            else go(nm)
+        def go(sourceWithMarker: SourceWithMarker = sourceWithMarker.step(forward), level: Int = 1): Option[Int] = {
+          sourceWithMarker.applyMovement(toNextBr) match {
+            case Some(srcAtBr) =>
+              val newLevel = {
+                if (srcAtBr.current == br1) level + 1
+                else level - 1
+              }
+
+              if (newLevel == 0) Some(nextMarker(srcAtBr.marker, forward))
+              else go(srcAtBr.step(forward), newLevel)
+
+            case None => None
           }
+
         }
 
-        go(nextMarker(sourceWithMarker.marker, forward))
+        go().toSeq
       }
     }
 
@@ -464,22 +529,30 @@ object SourceWithMarker {
      * will leave the marker at ''0'', since ''digit.zeroOrMore'' will consume the entire string,
      * after matching ''5'' against ''0'' has failed.
      */
-    def until(mvnt: SimpleMovement, skipping: SimpleMovement = none) = SimpleMovement { sourceWithMarker =>
+    def until(mvnt: Movement, skipping: Movement = none) = Movement.ifNotDepleted { (sourceWithMarker, forward) =>
+      val (actualMvnt, actualSkipping) = {
+        if (forward) (mvnt, skipping)
+        else (mvnt.backward, skipping.backward)
+      }
+
       @tailrec
       def go(sourceWithMarker: SourceWithMarker = sourceWithMarker): Option[Int] = {
-        mvnt(sourceWithMarker) match {
+        actualMvnt(sourceWithMarker) match {
           case Some(_) => Some(sourceWithMarker.marker)
           case _ =>
             if (sourceWithMarker.isDepleted) {
               None
             } else {
-              val newMarker = skipping(sourceWithMarker).getOrElse(sourceWithMarker.marker + 1)
-              go(sourceWithMarker.copy(marker = newMarker))
+              val newSourceWithMarker = sourceWithMarker.applyMovement(actualSkipping).getOrElse {
+                sourceWithMarker.step(forward)
+              }
+
+              go(newSourceWithMarker)
             }
         }
       }
 
-      go()
+      go().toSeq
     }
 
     def charOfClass(inClass: Int => Boolean) = new SingleCharMovement(inClass)
@@ -556,8 +629,8 @@ object SourceWithMarker {
     val id = (plainid | literalIdentifier).butNot(reservedName)
 
     val spaces: Movement = space.zeroOrMore
-    val comments: Movement = (comment ~ spaces).zeroOrMore
-    val commentsAndSpaces: Movement = (spaces ~ comments).zeroOrMore
+    val comments: Movement = comment.zeroOrMore
+    val commentsAndSpaces: Movement = (comments ~ spaces).zeroOrMore
     val bracketsWithContents = inBrackets('[', ']')
     val curlyBracesWithContents = inBrackets('{', '}')
 
@@ -575,8 +648,8 @@ object SourceWithMarker {
       !sourceWithMarker.isInRange(potentialMarker)
     }
 
-    def doIfNotDepleted(sourceWithMarker: SourceWithMarker)(op: => Option[Int]): Option[Int] = {
-      if (sourceWithMarker.isDepleted) None
+    def doIfNotDepleted(sourceWithMarker: SourceWithMarker)(op: => Seq[Int]): Seq[Int] = {
+      if (sourceWithMarker.isDepleted) Nil
       else op
     }
   }
