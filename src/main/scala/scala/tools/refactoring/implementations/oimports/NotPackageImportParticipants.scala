@@ -64,8 +64,7 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
     protected def doApply(trees: List[organizeImportsInstance.global.Import]) = trees.asInstanceOf[List[Import]].map { imp =>
       val wild = imp.selectors.find(_.name == nme.WILDCARD)
       if (wild.nonEmpty) {
-        val newImp = imp.copy(selectors = wild.toList)
-        newImp.pos = imp.pos
+        val newImp = imp.copy(selectors = wild.toList).setPos(imp.pos)
         newImp.symbol = imp.symbol
         newImp
       } else

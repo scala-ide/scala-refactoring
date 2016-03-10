@@ -477,6 +477,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard.asInstanceOf[Participant] ::
           (new NPRemovedUnused(rootTree)).asInstanceOf[Participant] ::
+          RemoveDuplicates ::
           SortImportSelectors ::
           SortImports ::
           Nil }(i.asInstanceOf[List[Import]])
