@@ -2355,7 +2355,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  @Ignore("implement me")
   def shouldSortImportsInClassBody() = new FileSet {
     """
     package acme
@@ -2394,7 +2393,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package test
 
     class Bar {
-    import acme.Acme.A
+      import acme.Acme.A
       import acme.Acme.B
       import fake.Acme.D
 

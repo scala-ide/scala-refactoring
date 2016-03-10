@@ -7,36 +7,28 @@ import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
 
 class DefImportsOrganizer(val global: Global) {
-  import global._
 
   private def noAnyTwoImportsInSameLine(importsGroup: List[Global#Import]): Boolean =
     importsGroup.size == importsGroup.map { _.pos.line }.distinct.size
 
-  private def importsGroupsFromTree(tree: Global#Tree): List[List[Global#Import]] = {
-    val impTraverser = new Traverser {
-      var groupedImports = List.empty[List[Import]]
-      var group = List.empty[Import]
-      override def traverse(tree: Tree) = tree match {
-        case imp: Import =>
-          group = group :+ imp
-        case t =>
-          if (group.nonEmpty) {
-            groupedImports = groupedImports :+ group
-            group = List.empty[Import]
-          }
-          super.traverse(t)
-      }
-    }
-    impTraverser.traverse(tree.asInstanceOf[Tree])
-    impTraverser.groupedImports
+  private def importsGroupsFromTree(trees: List[Global#Tree]): List[List[Global#Import]] = {
+    val groupedImports = trees.foldLeft(List.empty[List[Global#Import]]) { (acc, tree) => tree match {
+      case imp: Global#Import =>
+        val lastUpdated = acc.lastOption.map { _ :+ imp }.getOrElse(List(imp))
+        acc.take(acc.length - 1) :+ lastUpdated
+      case _ => acc :+ List.empty[Global#Import]
+    } }.filter { _.nonEmpty }
+    groupedImports
   }
 
   private val util = new TreeToolbox(global)
   import util.forTreesOfKind
 
-  private def forTreesOfBlocks(tree: Global#Tree) = forTreesOfKind[Global#Block](tree) { (collected, currentOwner) => {
-      case b: util.global.Block if currentOwner.isMethod && !currentOwner.isLazy =>
-        collected += b
+  private def forTreesOfBlocks(tree: Global#Tree) = forTreesOfKind[Global#Block](tree) { treeCollector => {
+    case b @ util.global.Block(stats, expr) if treeCollector.currentOwner.isMethod && !treeCollector.currentOwner.isLazy =>
+      treeCollector.collected += b
+      stats.foreach { treeCollector.traverse }
+      treeCollector.traverse(expr)
     }
   }
 
@@ -49,7 +41,7 @@ class DefImportsOrganizer(val global: Global) {
     }.map { _.get }
 
   def transformTreeToRegions(tree: Global#Tree): List[Region] = toRegions(forTreesOfBlocks(tree).flatMap { block =>
-    importsGroupsFromTree(block).filter {
+    importsGroupsFromTree(block.stats).filter {
       noAnyTwoImportsInSameLine
     }
   })
@@ -59,14 +51,14 @@ class TreeToolbox(val global: Global) {
   import scala.collection._
   import global._
 
-  private class TreeCollector[T <: Global#Tree](traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]) extends Traverser {
+  class TreeCollector[T <: Global#Tree](traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
     val collected = mutable.ListBuffer.empty[T]
-    override def traverse(tree: Tree): Unit = traverserBody(collected, currentOwner).orElse[Tree, Unit] {
+    override def traverse(tree: Tree): Unit = traverserBody(this).orElse[Tree, Unit] {
       case t => super.traverse(t)
     }(tree)
   }
 
-  def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: (mutable.ListBuffer[T], Global#Symbol) => PartialFunction[Tree, Unit]): List[T] = {
+  def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]): List[T] = {
     val treeTraverser = new TreeCollector[T](traverserBody)
     treeTraverser.traverse(tree.asInstanceOf[Tree])
     treeTraverser.collected.toList
