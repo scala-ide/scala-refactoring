@@ -3590,6 +3590,26 @@ class Blubb
   } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 
   @Test
+  def testRenameWithNamedArgs1002501Ex18() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someOtherMethod: Any = {
+        class OwnedByMethod(/*(*/tryRenameMe/*)*/: Int)
+        new OwnedByMethod(tryRenameMe = 222)
+      }
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someOtherMethod: Any = {
+        class OwnedByMethod(/*(*/xxx/*)*/: Int)
+        new OwnedByMethod(xxx = 222)
+      }
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
   def testRenameWithNamedArgs1002572Ex1() = new FileSet {
     """
     case class CCC(/*(*/a/*)*/: Int) {
@@ -3606,6 +3626,26 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("abc"))
+
+  @Test
+  def testRenameWithNamedArgs1002572Ex2() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someMethod = {
+        case class OwnedByMethod(/*(*/a/*)*/: Int, b: Int)
+        OwnedByMethod(b = 33, a = 4).copy(b = 10).copy(a = 3)
+      }
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someMethod = {
+        case class OwnedByMethod(/*(*/xxx/*)*/: Int, b: Int)
+        OwnedByMethod(b = 33, xxx = 4).copy(b = 10).copy(xxx = 3)
+      }
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 
   @Test
   def testRenameWithPrivateClassVal() = new FileSet {
