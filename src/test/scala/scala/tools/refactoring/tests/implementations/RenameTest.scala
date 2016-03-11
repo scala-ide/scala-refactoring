@@ -3606,7 +3606,7 @@ class Blubb
         new OwnedByMethod(xxx = 222)
       }
     }
-    """ -> TaggedAsGlobalRename
+    """ -> TaggedAsLocalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 
   @Test
@@ -3644,7 +3644,7 @@ class Blubb
         OwnedByMethod(b = 33, xxx = 4).copy(b = 10).copy(xxx = 3)
       }
     }
-    """ -> TaggedAsGlobalRename
+    """ -> TaggedAsLocalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 
   @Test

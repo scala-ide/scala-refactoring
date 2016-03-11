@@ -26,6 +26,12 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
 
   def prepare(s: Selection) = {
 
+    /*
+     * This heuristic decides if this refactoring is local to a single file or not. Note that
+     * we could simply query the index for all occurrences of the symbol in question, to see if
+     * multiple files are involved or not, but this would require clients to make sure that
+     * we always get a fully initialized index.
+     */
     def isLocalRename(t: Tree) = {
       def isLocalSymbol(symbol: Symbol) = {
         def isHiddenOrNoAccessor(symbol: Symbol) = symbol == NoSymbol || symbol.isPrivate
@@ -42,28 +48,40 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
           }
         }
 
-        def isParamThatIsVisibleInOtherFiles = {
-          val relatedCtor = s.root.find {
-            case dd: DefDef if dd.symbol.isConstructor && !dd.mods.isPrivate && !dd.mods.isPrivateLocal =>
-              val relatedParam = dd.vparamss.flatten.find { p =>
-                val (p1, p2) = (p.symbol.pos, t.symbol.pos)
-                p1.isDefined && p2.isDefined && p1.point == p2.point
-              }
+        val relatedCtor = s.root.find {
+          case dd: DefDef if dd.symbol.isConstructor && !dd.mods.isPrivate && !dd.mods.isPrivateLocal =>
+            val relatedParam = dd.vparamss.flatten.find { p =>
+              val (p1, p2) = (p.symbol.pos, t.symbol.pos)
+              p1.isDefined && p2.isDefined && p1.point == p2.point
+            }
 
-              relatedParam.nonEmpty
+            relatedParam.nonEmpty
 
-            case _ => false
-          }
-
-          val isVisibleCtorArg = relatedCtor.nonEmpty
-
-          isVisibleCtorArg || symbol.isParameter && {
-            val symOwner = symbol.owner
-            !(symOwner.isPrivate || symOwner.isPrivateLocal)
-          }
+          case _ => false
         }
 
-        (symbol.isLocal || (symbol.isPrivate && hasHiddenOrNoAccessor)) && !isParamThatIsVisibleInOtherFiles
+        val isCtorArg = relatedCtor.nonEmpty
+
+        if (isCtorArg || symbol.isParameter) {
+          val isParamThatIsVisibleInOtherFiles = {
+            val isNestedInMethod = {
+              val level = symbol.ownerChain.count(s => s.isMethod && !s.isConstructor)
+              if (isCtorArg) level > 0
+              else level > 1
+            }
+
+            if (isNestedInMethod) {
+              false
+            } else {
+              val symOwner = symbol.owner
+              !(symOwner.isPrivate || symOwner.isPrivateLocal)
+            }
+          }
+
+          !isParamThatIsVisibleInOtherFiles
+        } else {
+          symbol.isLocal || (symbol.isPrivate && hasHiddenOrNoAccessor)
+        }
       }
 
       t.symbol match {
