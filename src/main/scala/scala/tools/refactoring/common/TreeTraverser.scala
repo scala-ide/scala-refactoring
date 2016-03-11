@@ -366,9 +366,6 @@ trait TreeTraverser extends TracingImpl {
 
           f(t.symbol, t)
 
-        case BlockExtractor(stats) =>
-          stats foreach traverse
-
         case ApplyExtractor(fun, args) =>
           args.foreach {
             case arg: NamedArgument => f(arg.symbol, arg)
