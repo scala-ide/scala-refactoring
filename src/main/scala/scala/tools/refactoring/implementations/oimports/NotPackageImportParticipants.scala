@@ -1,14 +1,13 @@
 package scala.tools.refactoring
 package implementations.oimports
 
-import scala.tools.nsc.interactive.Global
-import scala.collection.mutable
 import scala.tools.refactoring.implementations.OrganizeImports
 
-class NotPackageImportParticipants(val global: Global, val organizeImportsInstance: OrganizeImports) {
-  import global._
+class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInstance: O) {
+  import organizeImportsInstance._
+  import organizeImportsInstance.global._
 
-  class RemoveUnused(block: Global#Tree) extends organizeImportsInstance.Participant {
+  class RemoveUnused(block: Tree) extends Participant {
     private def treeWithoutImports(tree: Tree) = new Transformer {
       override def transform(tree: Tree): Tree = tree match {
         case Import(_, _) => EmptyTree
@@ -18,20 +17,20 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
 
     private lazy val allSelects = {
       import scala.collection.mutable
-      val selects = mutable.ListBuffer[Global#Select]()
-      val selectsTraverser = new organizeImportsInstance.TraverserWithFakedTrees {
-        override def traverse(tree: organizeImportsInstance.global.Tree): Unit = tree match {
-          case s @ organizeImportsInstance.global.Select(qual, _) =>
+      val selects = mutable.ListBuffer[Select]()
+      val selectsTraverser = new TraverserWithFakedTrees {
+        override def traverse(tree: Tree): Unit = tree match {
+          case s @ Select(qual, _) =>
             selects += s
             traverse(qual)
           case t => super.traverse(t)
         }
       }
-      selectsTraverser.traverse(treeWithoutImports(block.asInstanceOf[Tree]).asInstanceOf[organizeImportsInstance.global.Tree])
+      selectsTraverser.traverse(treeWithoutImports(block))
       selects.toList
     }
 
-    protected def doApply(trees: List[organizeImportsInstance.global.Import]) = trees.asInstanceOf[List[Import]] collect {
+    protected def doApply(trees: List[Import]) = trees collect {
       case imp @ Import(importQualifier, importSelections) =>
         val usedSelectors = importSelections filter { importSel =>
           val importSym = importQualifier.symbol.fullName
@@ -39,7 +38,7 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
           val importSelNames = Set(importSel.name, importSel.rename).filterNot { _ == null }.map { _.toString }
 
           allSelects.exists { foundSel =>
-            def downToPackage(selectQualifierSymbol: Global#Symbol): Global#Symbol =
+            def downToPackage(selectQualifierSymbol: Symbol): Symbol =
               if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol
                   || selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
                   || selectQualifierSymbol.isStable)
@@ -56,12 +55,12 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
           case Nil => null
           case s => imp.copy(selectors = usedSelectors).setPos(imp.pos)
         }
-        result.asInstanceOf[organizeImportsInstance.global.Import]
+        result
     } filter { _ ne null }
   }
 
-  object RemoveDuplicatedByWildcard extends organizeImportsInstance.Participant {
-    protected def doApply(trees: List[organizeImportsInstance.global.Import]) = trees.asInstanceOf[List[Import]].map { imp =>
+  object RemoveDuplicatedByWildcard extends Participant {
+    protected def doApply(trees: List[Import]) = trees.map { imp =>
       val wild = imp.selectors.find(_.name == nme.WILDCARD)
       if (wild.nonEmpty) {
         val newImp = imp.copy(selectors = wild.toList).setPos(imp.pos)
@@ -78,6 +77,6 @@ class NotPackageImportParticipants(val global: Global, val organizeImportsInstan
           wild
         else
           rest
-    }.flatten.toList.asInstanceOf[List[organizeImportsInstance.global.Import]]
+    }.flatten.toList
   }
 }

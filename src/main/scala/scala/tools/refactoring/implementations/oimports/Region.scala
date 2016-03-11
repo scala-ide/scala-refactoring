@@ -1,75 +1,12 @@
 package scala.tools.refactoring
 package implementations.oimports
 
-import scala.tools.nsc.interactive.Global
+import scala.reflect.internal.util.SourceFile
+import scala.tools.nsc.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
 
-class DefImportsOrganizer(val global: Global) {
-
-  private def noAnyTwoImportsInSameLine(importsGroup: List[Global#Import]): Boolean =
-    importsGroup.size == importsGroup.map { _.pos.line }.distinct.size
-
-  private def importsGroupsFromTree(trees: List[Global#Tree]): List[List[Global#Import]] = {
-    val groupedImports = trees.foldLeft(List.empty[List[Global#Import]]) { (acc, tree) => tree match {
-      case imp: Global#Import =>
-        val lastUpdated = acc.lastOption.map { _ :+ imp }.getOrElse(List(imp))
-        acc.take(acc.length - 1) :+ lastUpdated
-      case _ => acc :+ List.empty[Global#Import]
-    } }.filter { _.nonEmpty }
-    groupedImports
-  }
-
-  private val util = new TreeToolbox(global)
-  import util.forTreesOfKind
-
-  private def forTreesOfBlocks(tree: Global#Tree) = forTreesOfKind[Global#Block](tree) { treeCollector => {
-    case b @ util.global.Block(stats, expr) if treeCollector.currentOwner.isMethod && !treeCollector.currentOwner.isLazy =>
-      treeCollector.collected += b
-      stats.foreach { treeCollector.traverse }
-      treeCollector.traverse(expr)
-    }
-  }
-
-  private def toRegions(groupedImports: List[List[Global#Import]]): List[Region] =
-    groupedImports.map {
-      case imports @ h :: _ => Some(Region(imports)(global))
-      case _ => None
-    }.filter {
-      _.nonEmpty
-    }.map { _.get }
-
-  def transformTreeToRegions(tree: Global#Tree): List[Region] = toRegions(forTreesOfBlocks(tree).flatMap { block =>
-    importsGroupsFromTree(block.stats).filter {
-      noAnyTwoImportsInSameLine
-    }
-  })
-}
-
-class TreeToolbox(val global: Global) {
-  import scala.collection._
-  import global._
-
-  class TreeCollector[T <: Global#Tree] private (traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
-    val collected = mutable.ListBuffer.empty[T]
-    override def traverse(tree: Tree): Unit = traverserBody(this).orElse[Tree, Unit] {
-      case t => super.traverse(t)
-    }(tree)
-  }
-
-  private object TreeCollector {
-    def apply[T <: Global#Tree](traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) = new TreeCollector[T](traverserBody)
-  }
-
-  def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]): List[T] = {
-    val treeTraverser = TreeCollector[T](traverserBody)
-    treeTraverser.traverse(tree.asInstanceOf[Tree])
-    treeTraverser.collected.toList
-  }
-}
-
-import scala.reflect.internal.util.SourceFile
 case class Region private (imports: List[Global#Import], startPos: Global#Position, endPos: Global#Position,
     source: SourceFile, indentation: String, printImport: Global#Import => String) {
   def transform(transformation: List[Global#Import] => List[Global#Import]): Region =

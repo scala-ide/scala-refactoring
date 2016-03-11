@@ -470,14 +470,14 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val rootTree = abstractFileToTree(selection.file)
     import oimports.DefImportsOrganizer
     import oimports.NotPackageImportParticipants
-    val notPackageParticipants = new NotPackageImportParticipants(global, this)
+    val notPackageParticipants = new NotPackageImportParticipants[this.type](this)
     import notPackageParticipants.RemoveDuplicatedByWildcard
     import notPackageParticipants.{ RemoveUnused => NPRemovedUnused }
 
-    val defRegions = new DefImportsOrganizer(global).transformTreeToRegions(rootTree).map {
+    val defRegions = new DefImportsOrganizer[global.type](global).transformTreeToRegions(rootTree).map {
       _.transform { i =>
-        scala.Function.chain { RemoveDuplicatedByWildcard.asInstanceOf[Participant] ::
-          (new NPRemovedUnused(rootTree)).asInstanceOf[Participant] ::
+        scala.Function.chain { RemoveDuplicatedByWildcard ::
+          (new NPRemovedUnused(rootTree)) ::
           RemoveDuplicates ::
           SortImportSelectors ::
           SortImports ::
@@ -487,10 +487,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val defChanges = defRegions.map { _.print }
 
     import oimports.ClassDefImportsOrganizer
-    val classDefRegions = new ClassDefImportsOrganizer(global).transformTreeToRegions(rootTree).map {
+    val classDefRegions = new ClassDefImportsOrganizer[global.type](global).transformTreeToRegions(rootTree).map {
       _.transform { i =>
-        scala.Function.chain { RemoveDuplicatedByWildcard.asInstanceOf[Participant] ::
-          (new NPRemovedUnused(rootTree)).asInstanceOf[Participant] ::
+        scala.Function.chain { RemoveDuplicatedByWildcard ::
+          (new NPRemovedUnused(rootTree)) ::
           RemoveDuplicates ::
           SortImportSelectors ::
           SortImports ::

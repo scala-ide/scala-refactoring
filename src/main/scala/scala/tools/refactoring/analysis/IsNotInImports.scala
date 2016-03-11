@@ -3,8 +3,8 @@ package analysis
 
 import tools.nsc.interactive.Global
 
-class IsNotInImports(val global: Global, val cuDependenciesInstance: CompilationUnitDependencies with common.EnrichedTrees, tree: Global#Tree) {
-  import global._
+class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees](val cuDependenciesInstance: C, tree: Global#Tree) {
+  import cuDependenciesInstance.global._
   val wholeTree = tree.asInstanceOf[Tree]
 
   private def collectPotentialOwners(of: Select): List[Symbol] = {
@@ -30,9 +30,9 @@ class IsNotInImports(val global: Global, val cuDependenciesInstance: Compilation
     owners
   }
 
-  def isSelectNotInRelativeImports(tested: Global#Select): Boolean = {
+  def isSelectNotInRelativeImports(tested: Select): Boolean = {
     val doesNameFitInTested = compareNameWith(tested) _
-    val nonPackageOwners = collectPotentialOwners(tested.asInstanceOf[Select]).filterNot { _.hasPackageFlag }
+    val nonPackageOwners = collectPotentialOwners(tested).filterNot { _.hasPackageFlag }
     def isValidPosition(t: Import): Boolean = t.pos.isRange && t.pos.start < tested.pos.start
     val isImportForTested = new Traverser {
       var found = false
@@ -42,18 +42,18 @@ class IsNotInImports(val global: Global, val cuDependenciesInstance: Compilation
         case t => super.traverse(t)
       }
     }
-    isImportForTested.traverse(wholeTree.asInstanceOf[Tree])
+    isImportForTested.traverse(wholeTree)
     !isImportForTested.found
   }
 
-  private def compareNameWith(tested: Global#Select)(that: Global#Import): Boolean = {
+  private def compareNameWith(tested: Select)(that: Import): Boolean = {
     import cuDependenciesInstance.additionalTreeMethodsForPositions
     val Select(testedQual, testedName) = tested
-    val testedQName = List(testedQual.asInstanceOf[cuDependenciesInstance.global.Tree].nameString, testedName).mkString(".")
+    val testedQName = List(testedQual.nameString, testedName).mkString(".")
     val Import(thatQual, thatSels) = that
     val impNames = thatSels.map { sel =>
-      if (sel.name == nme.WILDCARD) thatQual.asInstanceOf[cuDependenciesInstance.global.Tree].nameString
-      else List(thatQual.asInstanceOf[cuDependenciesInstance.global.Tree].nameString, sel.name).mkString(".")
+      if (sel.name == nme.WILDCARD) thatQual.nameString
+      else List(thatQual.nameString, sel.name).mkString(".")
     }
     impNames.exists { testedQName.startsWith }
   }
