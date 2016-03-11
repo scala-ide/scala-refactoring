@@ -499,6 +499,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
     val classDefChanges = classDefRegions.map { _.print }
 
-    Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: defChanges ::: classDefChanges)
+    Right(Change.discardOverlappingChanges(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: defChanges ::: classDefChanges).accepted)
   }
 }

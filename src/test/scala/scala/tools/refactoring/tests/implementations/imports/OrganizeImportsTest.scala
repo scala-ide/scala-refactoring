@@ -2405,4 +2405,70 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v1() = new FileSet {
+    """
+    package acme
+
+    object Acme { import java.util.Map }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {  }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v2() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      import java.util.Map
+    }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v3() = new FileSet {
+    """
+    package acme
+
+    object Acme { import java.util.Map
+    }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {     }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v4() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      import java.util.Map }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {
+ }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }

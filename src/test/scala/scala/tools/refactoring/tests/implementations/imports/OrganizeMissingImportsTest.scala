@@ -83,12 +83,12 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   @Test
   def importFromMissingImport() = new FileSet(expectCompilingCode = false) {
     """
-      object Main { import ListBuffer._ }
+      object Main { /*remove unused*/import ListBuffer._ }
     """ becomes
     """
       import collection.mutable.ListBuffer
 
-      object Main { import ListBuffer._ }
+      object Main { /*remove unused*/ }
     """
   } applyRefactoring organize("collection.mutable" -> "ListBuffer" :: Nil)
 

@@ -51,15 +51,19 @@ class TreeToolbox(val global: Global) {
   import scala.collection._
   import global._
 
-  class TreeCollector[T <: Global#Tree](traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
+  class TreeCollector[T <: Global#Tree] private (traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
     val collected = mutable.ListBuffer.empty[T]
     override def traverse(tree: Tree): Unit = traverserBody(this).orElse[Tree, Unit] {
       case t => super.traverse(t)
     }(tree)
   }
 
+  private object TreeCollector {
+    def apply[T <: Global#Tree](traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) = new TreeCollector[T](traverserBody)
+  }
+
   def forTreesOfKind[T <: Global#Tree](tree: Global#Tree)(traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]): List[T] = {
-    val treeTraverser = new TreeCollector[T](traverserBody)
+    val treeTraverser = TreeCollector[T](traverserBody)
     treeTraverser.traverse(tree.asInstanceOf[Tree])
     treeTraverser.collected.toList
   }
@@ -73,8 +77,19 @@ case class Region private (imports: List[Global#Import], startPos: Global#Positi
 
   private def printEmptyImports: Change = {
     val fromBeginningOfLine = source.lineToOffset(source.offsetToLine(startPos.start))
+    val from = if (source.content.slice(fromBeginningOfLine, startPos.start).exists(!_.isWhitespace))
+      startPos.start
+    else
+      fromBeginningOfLine
     val toEndOfLine = endPos.end + Properties.lineSeparator.length
-    TextChange(source, fromBeginningOfLine, toEndOfLine, "")
+    val lastLineNumber = source.offsetToLine(endPos.end)
+    val lastLine = source.lineToString(lastLineNumber)
+    val beginningOfLastLine = source.lineToOffset(lastLineNumber)
+    val to = if (lastLine.drop(endPos.end - beginningOfLastLine).exists(!_.isWhitespace))
+      endPos.end
+    else
+      toEndOfLine
+    TextChange(source, from, to, "")
   }
 
   def print: Change = if (imports.nonEmpty) printNonEmptyImports else printEmptyImports
