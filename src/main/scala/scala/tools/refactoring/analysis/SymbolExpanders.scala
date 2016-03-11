@@ -144,12 +144,24 @@ trait DependentSymbolExpanders extends TracingImpl {
       findRelatedApplyAndCopyParamSymbols(s) ::: super.doExpand(s)
     }
 
+    /*
+     * Unfortunately we cannot rely on `Symbol.companionSymbol` alone (see Scaladocs).
+     * The implementation below is heavily inspired by
+     * `scala.tools.nsc.typechecker.Namers.companionSymbolOf`.
+     */
+    private def companionModuleOf(classSymbol: Symbol): Symbol = {
+      classSymbol.companionSymbol.orElse {
+        val companionName = classSymbol.name.companionName
+
+        allDefinedSymbols().find { sym =>
+          sym.name == companionName && sym.hasModuleFlag && sym.isCoDefinedWith(classSymbol)
+        }.getOrElse(NoSymbol)
+      }
+    }
+
     private def findRelatedApplyAndCopyParamSymbols(s: Symbol): List[Symbol] = {
       if (s.isVal && s.owner.isCaseClass) {
-        // TODO: The documentation of `companionModule` mentions that special
-        // handling is needed for classes owned by methods. This needs to be
-        // investigated!
-        List(s.owner, s.owner.companionModule).flatMap { parentSymbol =>
+        List(s.owner, companionModuleOf(s.owner)).flatMap { parentSymbol =>
           declaration(parentSymbol).flatMap(findRelatedApplyOrCopyParamSymbolIn(_, s))
         }
       } else {
