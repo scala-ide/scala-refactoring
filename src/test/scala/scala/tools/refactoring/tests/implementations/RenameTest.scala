@@ -3590,6 +3590,24 @@ class Blubb
   } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 
   @Test
+  def testRenameWithNamedArgs1002572Ex1() = new FileSet {
+    """
+    case class CCC(/*(*/a/*)*/: Int) {
+      copy(a = 0)
+      CCC(a = 23)
+      val b = this.a
+    }
+    """ becomes
+    """
+    case class CCC(/*(*/abc/*)*/: Int) {
+      copy(abc = 0)
+      CCC(abc = 23)
+      val b = this.abc
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("abc"))
+
+  @Test
   def testRenameWithPrivateClassVal() = new FileSet {
     """
     class SomeClass {
