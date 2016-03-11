@@ -30,7 +30,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           Companion with
           LazyValAccessor with
           OverridesInSuperClasses with
-          ClassVals {
+          ClassVals with
+          CaseClassVals {
 
             val cus = compilationUnits
           }

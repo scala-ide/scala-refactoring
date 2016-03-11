@@ -16,7 +16,6 @@ import scala.tools.refactoring.common.PositionDebugging
  * methods in subclasses.
  */
 trait DependentSymbolExpanders extends TracingImpl {
-
   this: Indexes with common.CompilerAccess =>
 
   import global._
@@ -112,15 +111,7 @@ trait DependentSymbolExpanders extends TracingImpl {
     private def findRelatedCtorParamSymbolIn(parent: Tree, valSym: Symbol): Option[Symbol] = {
       parent.foreach {
         case dd: DefDef if dd.symbol.isConstructor =>
-          def correspondsToVal(param: Tree) = {
-            val (pSym, vSym) = (param.symbol, valSym)
-            val (pPos, vPos) = (param.symbol.pos, valSym.pos)
-            pSym != vSym && pPos.isDefined && vPos.isDefined && pPos.point == vPos.point
-          }
-
-          val res = dd.vparamss.flatten.collectFirst {
-            case p if correspondsToVal(p) => p.symbol
-          }
+          val res = findParamSymbolAssociatedWithValSymbol(dd, valSym)
 
           if (res.nonEmpty) {
             return res
@@ -130,6 +121,65 @@ trait DependentSymbolExpanders extends TracingImpl {
       }
 
       None
+    }
+  }
+
+  private def findParamSymbolAssociatedWithValSymbol(dd: DefDef, valSym: Symbol): Option[Symbol] = {
+    def correspondsToVal(param: Tree) = {
+      val (pSym, vSym) = (param.symbol, valSym)
+      val (pPos, vPos) = (param.symbol.pos, valSym.pos)
+      pSym != vSym && pPos.isDefined && vPos.isDefined && pPos.point == vPos.point
+    }
+
+    dd.vparamss.flatten.collectFirst {
+      case p if correspondsToVal(p) => p.symbol
+    }
+  }
+
+  /**
+   * Associates case class vals with the parameters of generated apply and copy methods
+   */
+  trait CaseClassVals extends SymbolExpander { this: IndexLookup =>
+    protected abstract override def doExpand(s: Symbol) = {
+      findRelatedApplyAndCopyParamSymbols(s) ::: super.doExpand(s)
+    }
+
+    private def findRelatedApplyAndCopyParamSymbols(s: Symbol): List[Symbol] = {
+      if (s.isVal && s.owner.isCaseClass) {
+        // TODO: The documentation of `companionModule` mentions that special
+        // handling is needed for classes owned by methods. This needs to be
+        // investigated!
+        List(s.owner, s.owner.companionModule).flatMap { parentSymbol =>
+          declaration(parentSymbol).flatMap(findRelatedApplyOrCopyParamSymbolIn(_, s))
+        }
+      } else {
+        Nil
+      }
+    }
+
+    private def findRelatedApplyOrCopyParamSymbolIn(parent: Tree, valSym: Symbol): Option[Symbol] = {
+      parent.foreach {
+        case dd: DefDef if isCaseApplyOrCopy(dd.symbol) =>
+          return findParamSymbolAssociatedWithValSymbol(dd, valSym)
+        case _ => ()
+      }
+
+      None
+    }
+
+    private def isCaseApplyOrCopy(s: Symbol) = {
+      /*
+       *  Unfortunately Symbol.isCaseCopy is not available for Scala-2.10
+       */
+      def isCaseCopy = {
+        s.isMethod && s.owner.isCase && s.isSynthetic && s.name == nme.copy
+      }
+
+      def isCaseApply = {
+        s.isCaseApplyOrUnapply && !s.nameString.contains("unapply")
+      }
+
+      isCaseCopy || isCaseApply
     }
   }
 
