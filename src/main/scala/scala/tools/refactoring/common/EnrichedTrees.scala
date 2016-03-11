@@ -20,6 +20,8 @@ import scala.tools.refactoring.util.SourceWithMarker
 import scala.tools.refactoring.util.SourceWithMarker.Movements._
 import scala.util.control.NonFatal
 import scala.tools.refactoring.util.SourceWithMarker.Movements
+import scala.reflect.internal.util.OffsetPosition
+import scala.reflect.internal.util.SourceFile
 
 /**
  * A collection of implicit conversions for ASTs and other
@@ -1023,29 +1025,35 @@ trait EnrichedTrees extends TracingImpl {
     val name = nameTree.name
   }
 
+  private def skipWhileScanningArgsList =
+    comment |
+    stringLiteral |
+    characterLiteral |
+    literalIdentifier |
+    symbolLiteral |
+    curlyBracesWithContents
+
   object ApplyExtractor {
 
     def mightHaveNamedArguments(t: Tree) = t match {
       case _: ApplyImplicitView => false
 
-      case Apply(qualifier, args) =>
+      case Apply(fun, args) =>
 
-        def isSetter = PartialFunction.cond(qualifier) {
+        def isSetter = PartialFunction.cond(fun) {
           case t: Select => t.name.endsWith(nme.EQL)
         }
 
         def isVarArgsCall = {
           // TODO is there a better check?
-          qualifier.tpe.params.size != args.size
+          fun.tpe.params.size != args.size
         }
 
         t.pos.isRange &&
-          qualifier.pos.isRange &&
-          qualifier.tpe != null &&
+          fun.tpe != null &&
           !args.isEmpty &&
           !isSetter &&
-          !isVarArgsCall &&
-          args.exists(_.pos.isRange)
+          !isVarArgsCall
 
       case _ => false
     }
@@ -1054,14 +1062,27 @@ trait EnrichedTrees extends TracingImpl {
 
     private def extract: Apply => Option[(Tree, List[Tree])] = {
 
-      case t @ Apply(qualifier, args) if mightHaveNamedArguments(t) =>
+      case t @ Apply(fun, args) if mightHaveNamedArguments(t) && args.collectFirst { case _: NamedArgument => true }.isEmpty =>
+        tryParseMethodCallWithRanges(fun, args).orElse {
+          trace("Could not parse method call with ranges; trying without ranges")
+          tryParseMethodCallWithouRanges(fun, args, t.pos.end)
+        }.orElse {
+          Some((fun, args))
+        }
 
-        val declaredParameterSyms = qualifier.tpe.params
+      case t =>
+        Some((t.fun, t.args))
+    }
 
-        val argsWithPreviousTree = (qualifier :: args).sliding(2, 1).toList
+    private def tryParseMethodCallWithRanges(fun: Tree, args: List[Tree]): Option[(Tree, List[Tree])]= {
+      if (!fun.pos.isRange || !args.forall(_.pos.isRange)) {
+        None
+      } else {
+        val declaredParameterSyms = fun.tpe.params
+        val argsWithPreviousTree = (fun :: args).sliding(2, 1).toList
 
-        val transformedArgs = argsWithPreviousTree zip declaredParameterSyms map {
-          case (List(leading, argument), sym) if argument.pos.isRange =>
+        val transformedArgs = argsWithPreviousTree.zip(declaredParameterSyms).map {
+          case (List(leading, argument), sym) =>
             val leadingPos = leading.pos
             val srcAtArgStart = SourceWithMarker(leadingPos.source.content, leadingPos.end + 1).moveMarker(commentsAndSpaces)
             val paramNamePos = for {
@@ -1081,12 +1102,106 @@ trait EnrichedTrees extends TracingImpl {
           case (List(leading, argument), sym) => argument
         }
 
-        Some((t.fun, transformedArgs))
+        Some((fun, transformedArgs))
+      }
+    }
 
-      case t =>
-        Some((t.fun, t.args))
+    private case class NamedArgDesc(name: String, pos: RangePosition, end: Int)
+
+    private def sortByPosition(trees: List[Tree]): List[Tree] = {
+      trees.sortBy { tree =>
+        tree.pos match {
+          case pos: OffsetPosition => pos.point
+          case _ => -1
+        }
+      }
+    }
+
+    private def posOfLeftmostArg(args: List[Tree]): Option[Position] = {
+      sortByPosition(args).headOption.map(_.pos)
+    }
+
+    private def tryParseMethodCallWithouRanges(fun: Tree, args: List[Tree], end: Int): Option[(Tree, List[Tree])] = posOfLeftmostArg(args) match {
+      case Some(firstArgPos: OffsetPosition) =>
+        tryPositionMarkerAtArgListStart(fun.pos, firstArgPos).flatMap { srcAtArgListStart =>
+
+          @tailrec
+          def parseArgs(parsed: List[NamedArgDesc] = Nil, srcAtArgStart: SourceWithMarker = srcAtArgListStart): List[NamedArgDesc] = {
+            if (srcAtArgStart.marker >= end) {
+              parsed
+            } else {
+              parseSingleArg(srcAtArgStart, fun.pos.source) match {
+                case None => parsed
+                case Some((srcAtLastArgEnd, namedArgDesc)) =>
+                  val newParsed = namedArgDesc.toList ::: parsed
+                  srcAtLastArgEnd.applyMovement(',') match {
+                    case None => newParsed
+                    case Some(newSrcAtArgStart) => parseArgs(newParsed, newSrcAtArgStart)
+                  }
+              }
+            }
+          }
+
+          val parsedArgs = parseArgs()
+          val transformedArgs = args.zip(fun.tpe.params).map { case (arg, param) =>
+            parsedArgs.collectFirst { case NamedArgDesc(name, namePos, argEnd) if name == param.decodedName =>
+              new NamedArgument(NameTree(param.name).setPos(namePos), arg) {
+                setSymbol(param)
+                setPos(namePos.withEnd(argEnd))
+              }
+            }.getOrElse(arg)
+          }
+
+          Some((fun, transformedArgs))
+        }
+
+      case _ => None
+    }
+
+    private def tryPositionMarkerAtArgListStart(funPos: Position, firstArgPos: OffsetPosition): Option[SourceWithMarker] = {
+      val srcAtFirstArgPos = SourceWithMarker.atPoint(firstArgPos)
+      val funPreamble = ("new" ~ space.atLeastOnce ~ commentsAndSpaces).optional ~ Movements.id ~ commentsAndSpaces ~ '('
+      val firstArgPosIsAtArgListStart = funPreamble.backward(srcAtFirstArgPos).isDefined
+
+      if (firstArgPosIsAtArgListStart) {
+        Some(srcAtFirstArgPos)
+      }  else {
+        // Due to a compiler bug, the position of the first argument might actually point to the start of the function
+        // that is being called:
+        srcAtFirstArgPos.applyMovement(funPreamble).orElse {
+          // Or it might point to the last character of that argument expression:
+          srcAtFirstArgPos.applyMovement(until(funPreamble, skipping = (comment | curlyBracesWithContents | Movements.id)).backward).map(_.stepForward).orElse {
+            // As a last resort, we look at the position of the function; unfortunately this position is wrong for chained calls,
+            // which is why we only use this if everything else didn't work.
+            funPos match {
+              case funPos: OffsetPosition =>
+                val srcAtFunPos = SourceWithMarker.atPoint(funPos)
+                srcAtFunPos.applyMovement(funPreamble)
+              case _ => None
+            }
+          }
+        }
+      }
+    }
+
+    private def parseSingleArg(srcAtArg: SourceWithMarker, sourceFile: SourceFile): Option[(SourceWithMarker, Option[NamedArgDesc])] = {
+      val srcAtIdStart = srcAtArg.moveMarker(commentsAndSpaces)
+      srcAtIdStart.applyMovement(Movements.id).flatMap { srcAtIdEnd =>
+        val nameStart = srcAtIdStart.marker
+        val nameEnd = srcAtIdEnd.marker
+
+        val srcAtPotentialEqSignStart = srcAtIdEnd.moveMarker(commentsAndSpaces)
+        srcAtPotentialEqSignStart.applyMovement('=').flatMap { srcAfterEqSign =>
+          srcAfterEqSign.applyMovement(Movements.until(charToMovement(',') | ')', skipWhileScanningArgsList)).map { srcAtArgEnd =>
+            val argEnd = srcAtIdEnd.marker
+            val argName = srcAtArg.source.slice(nameStart, nameEnd).mkString("")
+            (srcAtArgEnd, Some(NamedArgDesc(argName, new RangePosition(sourceFile, nameStart, nameStart, nameEnd), argEnd)))
+          }
+        }.orElse(Some((srcAtIdEnd.moveMarker(commentsAndSpaces), None)))
+      }
     }
   }
+
   /**
    * Unify the children of a Block tree and sort them
    * in the same order they appear in the source code.
@@ -1095,16 +1210,8 @@ trait EnrichedTrees extends TracingImpl {
    * removed and named argument trees are created.
    */
   object BlockExtractor {
-    private val skipWhileSearchingForAssignment =
-      comment |
-      stringLiteral |
-      characterLiteral |
-      literalIdentifier |
-      symbolLiteral |
-      curlyBracesWithContents
-
     private def findParamAssignment(argsSource: String, paramName: String): Option[Int] = {
-      val mvnt = until(paramName ~ spaces ~ '=', skipping = skipWhileSearchingForAssignment)
+      val mvnt = until(paramName ~ commentsAndSpaces ~ '=', skipping = skipWhileScanningArgsList)
       mvnt(SourceWithMarker(argsSource))
     }
 
