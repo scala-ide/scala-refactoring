@@ -2471,4 +2471,210 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldSortImportsInClassBodyAndInNestedObject() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import fake.Acme.D
+      import acme.Acme.A
+
+      object InnerBar {
+        import java.util.Map
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.A
+      import acme.Acme.B
+      import fake.Acme.D
+
+      object InnerBar {
+        import java.util.HashMap
+        import java.util.Map
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportsInClassAndObjectBodies() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.{ B, _ }
+      import fake.Acme.D
+      import acme.Acme.A
+
+      object InnerBar {
+        import java.util._
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme._
+      import fake.Acme.D
+
+      object InnerBar {
+        import java.util._
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Map => JavaMap should not be moved there. */
+  @Test
+  def shouldNotRemoveRenamedImportInClassBody() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import java.util.{Map => JavaMap}
+      import java.util.HashMap
+
+      val a: JavaMap[String, String] = new HashMap
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import java.util.{Map => JavaMap}
+
+    class Bar {
+      import java.util.HashMap
+      import java.util.{Map => JavaMap}
+
+      val a: JavaMap[String, String] = new HashMap
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import ListBuffer should not be moved there. */
+  @Test
+  def shouldOrganizeImportInClassAndDefBodies() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import java.util.Map
+      import java.util.HashMap
+
+      def foo: List[String] = {
+        import scala.collection.mutable.ListBuffer
+        import scala.collection.mutable.Buffer
+
+        Buffer
+        ListBuffer[String]().toList
+      }
+
+      val a: Map[String, String] = new HashMap
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.collection.mutable.ListBuffer
+
+    class Bar {
+      import java.util.HashMap
+      import java.util.Map
+
+      def foo: List[String] = {
+        import scala.collection.mutable.Buffer
+        import scala.collection.mutable.ListBuffer
+
+        Buffer
+        ListBuffer[String]().toList
+      }
+
+      val a: Map[String, String] = new HashMap
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
