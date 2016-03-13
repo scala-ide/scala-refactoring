@@ -3606,8 +3606,28 @@ class Blubb
         new OwnedByMethod(xxx = 222)
       }
     }
-    """ -> TaggedAsLocalRename
+    """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex19() = new FileSet {
+    """
+    object TestWithDefOwnedByValue {
+      val nest = {
+        def nested(/*(*/x/*)*/: Int) = x
+        nested(x = 33)
+      }
+    }
+    """ becomes
+    """
+    object TestWithDefOwnedByValue {
+      val nest = {
+        def nested(/*(*/zzz/*)*/: Int) = zzz
+        nested(zzz = 33)
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("zzz"))
 
   @Test
   def testRenameWithNamedArgs1002572Ex1() = new FileSet {
@@ -3644,7 +3664,59 @@ class Blubb
         OwnedByMethod(b = 33, xxx = 4).copy(b = 10).copy(xxx = 3)
       }
     }
-    """ -> TaggedAsLocalRename
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenameWithNamedArgs1002572Ex3() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByMethod {
+      trait Visible {
+        def elefant: Int
+      }
+
+      def nested = {
+        case class OwnedByMethod(/*(*/elefant/*)*/: Int, mouse: Int) extends Visible
+        OwnedByMethod(elefant = 1, mouse = 0)
+      }
+
+      println(nested.elefant)
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByMethod {
+      trait Visible {
+        def lion: Int
+      }
+
+      def nested = {
+        case class OwnedByMethod(/*(*/lion/*)*/: Int, mouse: Int) extends Visible
+        OwnedByMethod(lion = 1, mouse = 0)
+      }
+
+      println(nested.lion)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("lion"))
+
+  @Test
+  def testRenameWithNamedArgs1002572Ex4() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByValue {
+      val someValue = {
+        case class OwnedByValue(/*(*/a/*)*/: Int, b: Int)
+        OwnedByValue(b = 33, a = 4).copy(b = 10).copy(a = 3)
+      }
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByValue {
+      val someValue = {
+        case class OwnedByValue(/*(*/xxx/*)*/: Int, b: Int)
+        OwnedByValue(b = 33, xxx = 4).copy(b = 10).copy(xxx = 3)
+      }
+    }
+    """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 
   @Test

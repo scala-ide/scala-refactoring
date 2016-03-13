@@ -51,7 +51,7 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
         val relatedCtor = s.root.find {
           case dd: DefDef if dd.symbol.isConstructor && !dd.mods.isPrivate && !dd.mods.isPrivateLocal =>
             val relatedParam = dd.vparamss.flatten.find { p =>
-              val (p1, p2) = (p.symbol.pos, t.symbol.pos)
+              val (p1, p2) = (p.symbol.pos, symbol.pos)
               p1.isDefined && p2.isDefined && p1.point == p2.point
             }
 
@@ -62,23 +62,28 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
 
         val isCtorArg = relatedCtor.nonEmpty
 
-        if (isCtorArg || symbol.isParameter) {
-          val isParamThatIsVisibleInOtherFiles = {
-            val isNestedInMethod = {
-              val level = symbol.ownerChain.count(s => s.isMethod && !s.isConstructor)
-              if (isCtorArg) level > 0
-              else level > 1
+        if (isCtorArg) {
+          // Better be safe than sorry and assume that constructor arguments might always leak out:
+          //  Deciding if constructor arguments might 'leak' out of a file is a non-trivial endeavor,
+          //  even if we the know that the class definition is nested in a local block. To do this
+          //  properly we would have to examine all supertypes, as well as the return type of the
+          //  block, which might be a structural type.
+          false
+        } else if (symbol.isParameter) {
+          val isParamThatMightBeVisibleInOtherFiles = {
+            val isNestedInMethodValOrVar = {
+              def isMethodValOrVar(s: Symbol) = {
+                s.isVal || s.isVar || s.isMethod
+              }
+
+              val level = symbol.ownerChain.count(isMethodValOrVar)
+              level > 2
             }
 
-            if (isNestedInMethod) {
-              false
-            } else {
-              val symOwner = symbol.owner
-              !(symOwner.isPrivate || symOwner.isPrivateLocal)
-            }
+            !isNestedInMethodValOrVar
           }
 
-          !isParamThatIsVisibleInOtherFiles
+          !isParamThatMightBeVisibleInOtherFiles
         } else {
           symbol.isLocal || (symbol.isPrivate && hasHiddenOrNoAccessor)
         }
