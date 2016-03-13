@@ -10,7 +10,12 @@ organization := "org.scala-refactoring"
 
 crossScalaVersions := Seq("2.10.6", "2.11.7")
 
-crossVersion := CrossVersion.full
+crossVersion <<= isSnapshot { isSnapshot =>
+  if (isSnapshot)
+    CrossVersion.binary
+  else
+    CrossVersion.full
+}
 
 scalacOptions ++= (scalaBinaryVersion.value match {
   case "2.11" => Seq(
