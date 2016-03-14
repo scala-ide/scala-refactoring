@@ -8,7 +8,6 @@ package common
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens
 import tools.nsc.symtab.Flags
-import scala.tools.nsc.Global
 import util.Memoized
 import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.sourcegen.Fragment

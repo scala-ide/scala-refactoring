@@ -5,7 +5,6 @@ import implementations.IntroduceProductNTrait
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 import scala.tools.refactoring.implementations.IntroduceProductNTrait
-import language.reflectiveCalls
 import org.junit.After
 import scala.tools.refactoring.util.CompilerInstance
 

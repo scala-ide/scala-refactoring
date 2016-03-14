@@ -19,7 +19,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Before
 import scala.tools.refactoring.common.InteractiveScalaCompiler
 import scala.tools.refactoring.common.Selections
-import language.{ postfixOps, implicitConversions, reflectiveCalls }
+import language.{ postfixOps, reflectiveCalls }
 import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.implementations.Rename

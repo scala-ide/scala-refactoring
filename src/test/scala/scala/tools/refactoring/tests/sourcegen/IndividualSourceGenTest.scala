@@ -10,9 +10,8 @@ import org.junit.Assert
 import org.junit.Assert._
 import common.Change
 import tools.nsc.symtab.Flags
-import tools.nsc.ast.parser.Tokens
 
-import language.{postfixOps, implicitConversions}
+import language.implicitConversions
 
 class IndividualSourceGenTest extends TestHelper {
 

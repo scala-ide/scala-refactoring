@@ -2,13 +2,20 @@ name := "org.scala-refactoring.library"
 
 version := "0.9.1-rc1"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 moduleName := name.value
 
 organization := "org.scala-refactoring"
 
-crossScalaVersions := Seq("2.10.6", "2.11.7")
+crossScalaVersions := Seq("2.10.6", "2.11.7", "2.11.8")
+
+crossVersion <<= isSnapshot { isSnapshot =>
+  if (isSnapshot)
+    CrossVersion.binary
+  else
+    CrossVersion.full
+}
 
 crossVersion := CrossVersion.full
 

@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package common
 
-import java.io.IOException
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream

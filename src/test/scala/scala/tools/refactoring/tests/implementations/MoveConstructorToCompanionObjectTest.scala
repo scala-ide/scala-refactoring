@@ -5,7 +5,6 @@ import implementations.MoveConstructorToCompanionObject
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 
-import language.reflectiveCalls
 
 class MoveConstructorToCompanionObjectTest extends TestHelper with TestRefactoring {
 

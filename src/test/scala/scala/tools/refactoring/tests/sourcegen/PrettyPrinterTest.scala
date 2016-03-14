@@ -6,7 +6,6 @@ package scala.tools.refactoring
 package tests.sourcegen
 
 import tests.util.TestHelper
-import org.junit.Assert
 import org.junit.Assert._
 import tools.nsc.symtab.Flags
 import tools.nsc.ast.parser.Tokens

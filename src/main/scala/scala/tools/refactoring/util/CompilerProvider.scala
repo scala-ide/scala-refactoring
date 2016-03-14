@@ -15,7 +15,6 @@ import scala.reflect.internal.util.BatchSourceFile
 import scala.reflect.internal.util.SourceFile
 import scala.reflect.internal.util.Position
 import scala.reflect.internal.MissingRequirementError
-import scala.tools.nsc.interactive.Problem
 
 class CompilerInstance {
 

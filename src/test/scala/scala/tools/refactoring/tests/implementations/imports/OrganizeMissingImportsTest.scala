@@ -9,7 +9,6 @@ import implementations.OrganizeImports
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 
-import language.reflectiveCalls
 
 class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
   outer =>

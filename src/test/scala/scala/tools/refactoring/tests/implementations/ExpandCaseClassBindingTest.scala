@@ -9,7 +9,6 @@ import tests.util.TestRefactoring
 import tests.util.TestHelper
 import scala.tools.refactoring.implementations.ExpandCaseClassBinding
 
-import language.reflectiveCalls
 
 class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
 

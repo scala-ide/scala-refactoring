@@ -1,11 +1,8 @@
 package scala.tools.refactoring.util
 
 import scala.annotation.tailrec
-import java.util.Arrays
-import scala.collection.immutable.SortedMap
 import scala.language.implicitConversions
 import scala.reflect.internal.util.RangePosition
-import scala.collection.SeqView
 
 /**
  * Represents source code with a movable marker.

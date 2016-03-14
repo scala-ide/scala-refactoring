@@ -5,10 +5,7 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-import tests.util.TestHelper
-import language.reflectiveCalls
 import language.postfixOps
-import scala.collection.mutable.ListBuffer
 import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {

@@ -9,7 +9,6 @@ import implementations.ExtractLocal
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 
-import language.reflectiveCalls
 
 class ExtractLocalTest extends TestHelper with TestRefactoring {
   outer =>

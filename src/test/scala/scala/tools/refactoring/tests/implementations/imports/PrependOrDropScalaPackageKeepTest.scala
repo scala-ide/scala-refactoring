@@ -5,9 +5,7 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-import tests.util.TestHelper
 
-import language.reflectiveCalls
 
 class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
 

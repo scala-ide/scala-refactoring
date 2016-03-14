@@ -5,9 +5,7 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-import org.junit.Test
 
-import language.reflectiveCalls
 
 class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
 

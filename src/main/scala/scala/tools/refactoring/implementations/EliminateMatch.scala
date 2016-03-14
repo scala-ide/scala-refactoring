@@ -6,7 +6,6 @@ package scala.tools.refactoring
 package implementations
 
 import common.Change
-import tools.nsc.symtab.Flags
 import transformation.TreeFactory
 
 abstract class EliminateMatch extends MultiStageRefactoring with ParameterlessRefactoring with common.TreeExtractors with TreeFactory {

@@ -8,7 +8,6 @@ package tests.implementations
 import implementations.MarkOccurrences
 import tests.util.TestHelper
 import org.junit.Assert._
-import org.junit.Ignore
 
 class MarkOccurrencesTest extends TestHelper {
   outer =>

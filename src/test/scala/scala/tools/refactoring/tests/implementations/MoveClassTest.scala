@@ -1,13 +1,11 @@
 package scala.tools.refactoring
 package tests.implementations
 
-import org.junit.Test
 
 import implementations.MoveClass
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 
-import language.reflectiveCalls
 
 class MoveClassTest extends TestHelper with TestRefactoring {
 

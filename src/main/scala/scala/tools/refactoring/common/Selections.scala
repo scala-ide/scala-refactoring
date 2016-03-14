@@ -6,9 +6,7 @@ package scala.tools.refactoring
 package common
 
 import collection.mutable.ListBuffer
-import tools.nsc.Global
 import scala.reflect.internal.util.RangePosition
-import scala.reflect.internal.Flags
 
 trait Selections extends TreeTraverser with common.EnrichedTrees {
 
