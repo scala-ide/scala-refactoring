@@ -1,7 +1,6 @@
 package scala.tools.refactoring
 package implementations
 
-import common.Change
 
 /**
  * Refactoring that implements the ProductN trait for a class.

@@ -13,7 +13,6 @@ import scala.tools.refactoring.util.SourceWithMarker.Movement
 import scala.tools.refactoring.util.SourceWithMarker.Movements
 import scala.tools.refactoring.util.SourceWithMarker.Movements.charToMovement
 import scala.tools.refactoring.util.SourceWithMarker.Movements.commentsAndSpaces
-import scala.tools.refactoring.util.SourceWithMarker.Movements.space
 
 trait ReusingPrinter extends TreePrintingTraversals with AbstractPrinter with ScalaVersionAdapters.CompilerApiAdapters {
 

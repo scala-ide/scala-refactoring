@@ -8,10 +8,7 @@ package implementations
 import common.TreeTraverser
 import common.Change
 import transformation.TreeFactory
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.LinkedHashMap
 import scala.util.control.NonFatal
-import scala.collection.immutable.Queue
 
 object OrganizeImports {
   /**

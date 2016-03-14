@@ -5,8 +5,6 @@
 package scala.tools.refactoring
 package tests.implementations
 
-import scala.language.existentials
-import scala.language.reflectiveCalls
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TracingImpl
 

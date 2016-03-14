@@ -9,7 +9,6 @@ import implementations.AddImportStatement
 import tests.util.TestHelper
 import common.Change
 import org.junit.Assert._
-import scala.tools.refactoring.common.TextChange
 import language.reflectiveCalls
 import scala.tools.refactoring.util.UniqueNames
 

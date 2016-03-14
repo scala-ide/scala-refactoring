@@ -8,7 +8,6 @@ package tests.util
 import common.Change
 import common.InteractiveScalaCompiler
 import scala.tools.refactoring.common.InteractiveScalaCompiler
-import org.junit.Before
 
 trait TestRefactoring extends TestHelper {
 

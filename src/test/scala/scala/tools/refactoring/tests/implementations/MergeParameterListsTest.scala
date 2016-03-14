@@ -4,9 +4,7 @@ package tests.implementations
 import implementations.MergeParameterLists
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-import org.junit.Assert
 
-import language.reflectiveCalls
 
 class MergeParameterListsTest extends TestHelper with TestRefactoring {
 

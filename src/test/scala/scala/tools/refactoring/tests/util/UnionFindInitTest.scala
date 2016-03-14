@@ -5,7 +5,6 @@ import scala.util.Random
 import scala.tools.refactoring.util.UnionFind
 import org.junit.Test
 import org.junit.Assert._
-import org.junit.Before
 
 class UnionFindInitTest {
 

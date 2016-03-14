@@ -2,8 +2,6 @@ package scala.tools.refactoring.tests.util
 import org.junit.Test
 import org.junit.Assert._
 import scala.tools.refactoring.util.SourceWithMarker
-import scala.language.implicitConversions
-import scala.util.control.NonFatal
 import scala.tools.refactoring.util.SourceWithMarker.SimpleMovement
 import scala.tools.refactoring.util.SourceWithMarker.Movements
 import scala.tools.refactoring.util.SourceWithMarker.Movement

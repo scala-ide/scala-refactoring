@@ -5,9 +5,6 @@
 package scala.tools.refactoring
 package common
 
-import tools.nsc.io.AbstractFile
-import collection.mutable.ListBuffer
-import tools.nsc.Global
 
 trait TreeTraverser {
 
