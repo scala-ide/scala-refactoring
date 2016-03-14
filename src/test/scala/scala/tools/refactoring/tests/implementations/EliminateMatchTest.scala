@@ -10,7 +10,6 @@ import tests.util.TestHelper
 import tests.util.TestRefactoring
 import scala.tools.refactoring.implementations.EliminateMatch
 
-import language.reflectiveCalls
 
 class EliminateMatchTest extends TestHelper with TestRefactoring {
   outer =>

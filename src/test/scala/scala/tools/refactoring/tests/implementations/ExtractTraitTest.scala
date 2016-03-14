@@ -1,12 +1,8 @@
 package scala.tools.refactoring.tests
 package implementations
 
-import util.TestHelper
 import util.TestRefactoring
 import scala.tools.refactoring.implementations.ExtractTrait
-import org.junit.Assert
-import org.junit.Ignore
-import language.reflectiveCalls
 import scala.tools.refactoring.util.CompilerInstance
 import org.junit.After
 

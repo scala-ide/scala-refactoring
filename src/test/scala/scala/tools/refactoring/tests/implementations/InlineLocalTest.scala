@@ -9,7 +9,6 @@ import implementations.InlineLocal
 import tests.util.TestRefactoring
 import tests.util.TestHelper
 
-import language.reflectiveCalls
 
 class InlineLocalTest extends TestHelper with TestRefactoring {
   outer =>

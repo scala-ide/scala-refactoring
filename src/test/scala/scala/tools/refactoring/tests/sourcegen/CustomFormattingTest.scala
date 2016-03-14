@@ -6,13 +6,11 @@ package scala.tools.refactoring
 package tests.sourcegen
 
 import tests.util.TestHelper
-import org.junit.Assert
 import org.junit.Assert._
 import sourcegen.SourceGenerator
 import scala.tools.refactoring.implementations.OrganizeImports
 import scala.tools.refactoring.tests.util.TestRefactoring
 
-import language.reflectiveCalls
 
 class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGenerator {
 

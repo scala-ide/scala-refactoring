@@ -4,11 +4,9 @@ package tests.implementations
 import implementations.GenerateHashcodeAndEquals
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-import org.junit.Ignore
 import org.junit.After
 import scala.tools.refactoring.util.CompilerInstance
 
-import language.reflectiveCalls
 
 class GenerateHashcodeAndEqualsTest extends TestHelper with TestRefactoring {
 

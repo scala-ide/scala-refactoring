@@ -9,7 +9,6 @@ import implementations.ExplicitGettersSetters
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 
-import language.reflectiveCalls
 
 class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   outer =>

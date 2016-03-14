@@ -7,7 +7,7 @@ package tests.transformation
 
 import tests.util.TestHelper
 import org.junit.Assert._
-import language.{ postfixOps, reflectiveCalls }
+import language.postfixOps
 import scala.tools.nsc.util.FailedInterrupt
 import scala.tools.refactoring.common.TracingImpl
 

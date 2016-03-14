@@ -4,10 +4,7 @@ package tests.implementations
 import implementations.SplitParameterLists
 import tests.util.TestHelper
 import tests.util.TestRefactoring
-import org.junit.Ignore
-import org.junit.Assert
 
-import language.reflectiveCalls
 
 class SplitParameterListsTest extends TestHelper with TestRefactoring {
 
