@@ -1,7 +1,6 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.tools.refactoring.common.Change
 
 /**
  * Refactoring that changes the order of the parameters of a method.

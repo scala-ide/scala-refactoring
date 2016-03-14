@@ -6,7 +6,6 @@ package scala.tools.refactoring
 package sourcegen
 
 import common.Tracing
-import common.Change
 import common.EnrichedTrees
 import scala.tools.refactoring.common.TextChange
 import scala.reflect.internal.util.SourceFile

@@ -7,14 +7,11 @@ package implementations
 
 import transformation.TreeFactory
 import analysis.TreeAnalysis
-import tools.nsc.symtab.Flags
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.common.PositionDebugging
 import scala.reflect.internal.util.RangePosition
 import scala.tools.refactoring.util.SourceWithMarker
 import scala.tools.refactoring.util.SourceWithMarker.Movements
-import scala.tools.refactoring.util.SourceWithMarker.MovementHelpers
-import scala.tools.refactoring.util.SourceWithMarker.Movement
 import scala.tools.refactoring.common.TextChange
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.common.Change

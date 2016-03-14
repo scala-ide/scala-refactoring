@@ -1,6 +1,5 @@
 package scala.tools.refactoring.transformation
 
-import scala.reflect.internal.util.RangePosition
 import scala.tools.refactoring.common.Selections
 import scala.tools.refactoring.common.CompilerAccess
 
