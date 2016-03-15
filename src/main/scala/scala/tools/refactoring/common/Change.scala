@@ -72,16 +72,10 @@ object Change {
     val applicableChanges = changes.collect {
       case tc: TextChange => tc
     }.sortBy { descendingTo }
-    def filter(h: TextChange, rest: List[TextChange], acc: AcceptReject): AcceptReject = rest match {
-      case Nil => acc
-      case r :: rs if h.from >= r.to =>
-        filter(r, rs, acc.copy(accepted = acc.accepted :+ r))
-      case r :: rs =>
-        filter(h, rs, acc.copy(rejected = acc.rejected :+ r))
-    }
-    applicableChanges match {
-      case h :: tail => filter(h, tail, AcceptReject(h :: Nil, Nil))
-      case Nil => AcceptReject(Nil, Nil)
-    }
+    applicableChanges.foldLeft(AcceptReject(Nil, Nil)) { (acc, ch) => acc.accepted match {
+      case Nil => acc.copy(accepted = ch :: acc.accepted)
+      case (h: TextChange) :: _ if h.from >= ch.to => acc.copy(accepted = ch :: acc.accepted)
+      case _ => acc.copy(rejected = ch :: acc.rejected)
+    } }
   }
 }

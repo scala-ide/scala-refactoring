@@ -7,7 +7,6 @@ package tests.implementations.imports
 
 import language.postfixOps
 import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
-import org.junit.Ignore
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
@@ -2676,5 +2675,24 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
     }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreventLocalObjectImportInMethod() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+    }
+
+    object Test {
+      def test(): Int = {
+        import AnObject._
+        a
+      }
+    }
+    """ isNotModified
   } applyRefactoring organizeWithTypicalParams
 }
