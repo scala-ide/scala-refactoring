@@ -22,23 +22,22 @@ abstract class ImportsOrganizers[G <: Global](val global: G) {
       groupedImports
     }
 
-    protected def forTreesOf(tree: Tree): List[T]
+    protected def forTreesOf(tree: Tree): List[(T, Symbol)]
 
     protected def treeChildren(parent: T): List[Tree]
 
-    private def toRegions(groupedImports: List[List[Import]]): List[Region] =
-      groupedImports.map {
-        case imports @ h :: _ => Some(Region(imports)(global))
-        case _ => None
-      }.filter {
-        _.nonEmpty
-      }.map { _.get }
-
-    def transformTreeToRegions(tree: Tree): List[Region] = toRegions(forTreesOf(tree).flatMap { extractedTree =>
-      importsGroupsFromTree(treeChildren(extractedTree)).filter {
-        noAnyTwoImportsInSameLine
+    private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol): List[Region] =
+      groupedImports.collect {
+        case imports @ h :: _ => Region(imports, importsOwner)(global)
       }
-    })
+
+    def transformTreeToRegions(tree: Tree): List[Region] = forTreesOf(tree).flatMap {
+      case (extractedTree, treeOwner) =>
+        val groupedImports = importsGroupsFromTree(treeChildren(extractedTree)).filter {
+          noAnyTwoImportsInSameLine
+        }
+        toRegions(groupedImports, treeOwner)
+    }
   }
 }
 
@@ -46,13 +45,13 @@ class DefImportsOrganizers[G <: Global](override val global: G) extends ImportsO
   import global._
 
   class DefImportsOrganizer extends ImportsOrganizer[Block] {
-    private val util = new TreeToolbox[global.type](global)
+    val util = new TreeToolbox[global.type](global)
     import util.forTreesOfKind
 
     override protected def forTreesOf(tree: Tree) = forTreesOfKind[Block](tree) { treeCollector =>
       {
         case b @ Block(stats, expr) if treeCollector.currentOwner.isMethod && !treeCollector.currentOwner.isLazy =>
-          treeCollector.collected += b
+          treeCollector.collect(b)
           stats.foreach { treeCollector.traverse }
           treeCollector.traverse(expr)
       }
@@ -66,13 +65,13 @@ class ClassDefImportsOrganizers[G <: Global](override val global: G) extends Imp
   import global._
 
   class ClassDefImportsOrganizer extends ImportsOrganizer[Template] {
-    private val util = new TreeToolbox[global.type](global)
+    val util = new TreeToolbox[global.type](global)
     import util.forTreesOfKind
 
     override protected def forTreesOf(tree: Tree) = forTreesOfKind[Template](tree) { treeCollector =>
       {
         case t @ Template(_, _, body) =>
-          treeCollector.collected += t
+          treeCollector.collect(t)
           body.foreach { treeCollector.traverse }
       }
     }

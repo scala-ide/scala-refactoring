@@ -7,7 +7,7 @@ import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
 
-case class Region private (imports: List[Global#Import], startPos: Global#Position, endPos: Global#Position,
+case class Region private (imports: List[Global#Import], owner: Global#Symbol, startPos: Global#Position, endPos: Global#Position,
     source: SourceFile, indentation: String, printImport: Global#Import => String) {
   def transform(transformation: List[Global#Import] => List[Global#Import]): Region =
     copy(imports = transformation(imports))
@@ -57,7 +57,7 @@ object Region {
     sourceFile.lineToString(sourceFile.offsetToLine(imp.pos.start)).takeWhile { _.isWhitespace }
   }
 
-  def apply(imports: List[Global#Import])(global: Global): Region = {
+  def apply(imports: List[Global#Import], owner: Global#Symbol)(global: Global): Region = {
     assert(imports.nonEmpty)
     val source = imports.head.pos.source
     def printImport(imp: Global#Import): String = {
@@ -73,6 +73,6 @@ object Region {
       val areBracesNeeded = suffix.size > 1 || suffix.exists { _ contains RenameArrow }
       prefix + suffix.mkString(if (areBracesNeeded) "{" else "", ", ", if (areBracesNeeded) "}" else "")
     }
-    Region(imports, imports.head.pos, imports.last.pos, source, indentation(imports.head), printImport)
+    Region(imports, owner, imports.head.pos, imports.last.pos, source, indentation(imports.head), printImport)
   }
 }

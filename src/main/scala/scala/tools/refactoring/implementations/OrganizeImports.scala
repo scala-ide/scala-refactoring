@@ -485,7 +485,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
           Nil }(i.asInstanceOf[List[Import]])
       }
     }
-    val defChanges = defRegions.map { _.print }
 
     import oimports.ClassDefImportsOrganizers
     val classDefImportsOrganizers = new ClassDefImportsOrganizers[global.type](global)
@@ -499,8 +498,12 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
           Nil }(i.asInstanceOf[List[Import]])
       }
     }
-    val classDefChanges = classDefRegions.map { _.print }
 
-    Right(Change.discardOverlappingChanges(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: defChanges ::: classDefChanges).accepted)
+    import oimports.TreeToolbox
+    val tt = new TreeToolbox[global.type](global)
+    val removedDuplicates = tt.removeScopesDuplicates(classDefRegions ::: defRegions)
+    val changes = removedDuplicates.map { _.print }
+
+    Right(Change.discardOverlappingChanges(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: changes).accepted)
   }
 }

@@ -8,7 +8,9 @@ class TreeToolbox[G <: Global](val global: G) {
   import global._
 
   class TreeCollector[T <: Tree] private (traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
-    val collected = mutable.ListBuffer.empty[T]
+    private val collected_ = mutable.ListBuffer.empty[(T, Symbol)]
+    def collect(tree: T): Unit = collected_ += (tree -> currentOwner)
+    def collected = collected_.toList
     override def traverse(tree: Tree): Unit = traverserBody(this).orElse[Tree, Unit] {
       case t => super.traverse(t)
     }(tree)
@@ -18,9 +20,32 @@ class TreeToolbox[G <: Global](val global: G) {
     def apply[T <: Tree](traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) = new TreeCollector[T](traverserBody)
   }
 
-  def forTreesOfKind[T <: Tree](tree: Tree)(traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]): List[T] = {
+  def forTreesOfKind[T <: Tree](tree: Tree)(traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]): List[(T, Symbol)] = {
     val treeTraverser = TreeCollector[T](traverserBody)
     treeTraverser.traverse(tree)
-    treeTraverser.collected.toList
+    treeTraverser.collected
+  }
+
+  object removeScopesDuplicates {
+    private def isAncestorOf(kid: Region, elder: Region): Boolean = {
+      val kidOwner = kid.owner
+      val elderOwner = elder.owner
+      kidOwner.ownerChain.contains(elderOwner)
+    }
+
+    def apply(regions: List[Region]): List[Region] = {
+      regions.sortBy {
+        _.startPos.start
+      }.map { kid =>
+        val ancestors = regions.filter { potentialAncestor =>
+          potentialAncestor.startPos.start < kid.startPos.start && isAncestorOf(kid, potentialAncestor) }
+        val ancestorsImports = ancestors.flatMap { ancestor =>
+          ancestor.imports.map { ancestor.printImport }
+        }
+        kid.copy(imports = kid.imports.collect {
+          case imp if !ancestorsImports.contains(kid.printImport(imp)) => imp
+        })
+      }
+    }
   }
 }

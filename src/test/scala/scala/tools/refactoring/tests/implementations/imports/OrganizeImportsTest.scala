@@ -2695,4 +2695,40 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportFromDef() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+    }
+
+    object Test {
+      import AnObject._
+      def test(): Int = {
+        import AnObject._
+        a
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+    }
+
+    object Test {
+      import AnObject._
+      def test(): Int = {
+        a
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
