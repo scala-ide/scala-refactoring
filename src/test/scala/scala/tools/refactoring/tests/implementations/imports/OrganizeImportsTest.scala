@@ -2731,4 +2731,191 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportsInScopes_v1() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    class Acme {
+      val D = 11
+    }
+
+    class Ecma(val E: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      object InnerBar {
+        import acme.Acme.A
+        import acme.Acme.B
+        import fake.Ecma
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+
+        val ecma = new Ecma(4)
+        import ecma.E
+
+        val e = E
+        def foo = {
+          import acme.Acme.A
+          import acme.Acme.B
+          A + B
+        }
+      }
+
+      import fake.Ecma
+      def foo = {
+        import fake.Acme
+        import fake.Ecma
+
+        val newD = new Acme
+        import acme.Acme.A
+        import acme.Acme.B
+        import newD.D
+        A + B + D + (new Ecma(4)).E
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      object InnerBar {
+        import acme.Acme.A
+        import fake.Ecma
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+
+        val ecma = new Ecma(4)
+        import ecma.E
+
+        val e = E
+        def foo = {
+          A + B
+        }
+      }
+
+      import fake.Ecma
+      def foo = {
+        import fake.Acme
+
+        val newD = new Acme
+        import acme.Acme.A
+        import newD.D
+        A + B + D + (new Ecma(4)).E
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportsInScopes_v2() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    class Acme {
+      val D = 11
+    }
+
+    class Ecma(val E: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      def foo = {
+        import acme.Acme.A
+        def bar = {
+          import acme.Acme.A
+          A
+        }
+        A + B + bar
+      }
+      import fake.Acme
+      object InnerBar {
+        import fake.Acme
+        def foo = {
+          import fake.Acme
+          val a = new Acme
+          def bar = {
+            import fake.Ecma
+            import java.util.HashMap
+            import java.util.Map
+            val a: Map[Int, Int] = new HashMap
+            a.size + (new Ecma(4)).E
+          }
+          a.D + bar
+        }
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      def foo = {
+        import acme.Acme.A
+        def bar = {
+          A
+        }
+        A + B + bar
+      }
+      import fake.Acme
+      object InnerBar {
+        def foo = {
+          val a = new Acme
+          def bar = {
+            import fake.Ecma
+            import java.util.HashMap
+            val a: Map[Int, Int] = new HashMap
+            a.size + (new Ecma(4)).E
+          }
+          a.D + bar
+        }
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
