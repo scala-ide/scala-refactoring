@@ -3,8 +3,8 @@ package implementations.oimports
 
 import scala.tools.nsc.Global
 
-abstract class ImportsOrganizers[G <: Global](val global: G) {
-  import global._
+abstract class ImportsOrganizers[G <: Global, U <: TreeToolbox[G]](val treeToolbox: U) {
+  import treeToolbox.global._
 
   abstract class ImportsOrganizer[T <: Tree] {
     private def noAnyTwoImportsInSameLine(importsGroup: List[Import]): Boolean =
@@ -28,7 +28,7 @@ abstract class ImportsOrganizers[G <: Global](val global: G) {
 
     private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol): List[Region] =
       groupedImports.collect {
-        case imports @ h :: _ => Region(imports, importsOwner)(global)
+        case imports @ h :: _ => Region(imports, importsOwner)(treeToolbox.global)
       }
 
     def transformTreeToRegions(tree: Tree): List[Region] = forTreesOf(tree).flatMap {
@@ -41,12 +41,11 @@ abstract class ImportsOrganizers[G <: Global](val global: G) {
   }
 }
 
-class DefImportsOrganizers[G <: Global](override val global: G) extends ImportsOrganizers[G](global) {
-  import global._
+class DefImportsOrganizers[G <: Global, U <: TreeToolbox[G]](override val treeToolbox: U) extends ImportsOrganizers[G, U](treeToolbox) {
+  import treeToolbox.global._
 
   class DefImportsOrganizer extends ImportsOrganizer[Block] {
-    val util = new TreeToolbox[global.type](global)
-    import util.forTreesOfKind
+     import treeToolbox.forTreesOfKind
 
     override protected def forTreesOf(tree: Tree) = forTreesOfKind[Block](tree) { treeCollector =>
       {
@@ -61,12 +60,11 @@ class DefImportsOrganizers[G <: Global](override val global: G) extends ImportsO
   }
 }
 
-class ClassDefImportsOrganizers[G <: Global](override val global: G) extends ImportsOrganizers[G](global) {
-  import global._
+class ClassDefImportsOrganizers[G <: Global, U <: TreeToolbox[G]](override val treeToolbox: U) extends ImportsOrganizers[G, U](treeToolbox) {
+  import treeToolbox.global._
 
   class ClassDefImportsOrganizer extends ImportsOrganizer[Template] {
-    val util = new TreeToolbox[global.type](global)
-    import util.forTreesOfKind
+    import treeToolbox.forTreesOfKind
 
     override protected def forTreesOf(tree: Tree) = forTreesOfKind[Template](tree) { treeCollector =>
       {

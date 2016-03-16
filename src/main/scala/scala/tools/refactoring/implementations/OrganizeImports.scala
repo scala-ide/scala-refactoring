@@ -473,8 +473,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     import notPackageParticipants.RemoveDuplicatedByWildcard
     import notPackageParticipants.{ RemoveUnused => NPRemovedUnused }
 
+    import oimports.TreeToolbox
+    val treeToolbox = new TreeToolbox[global.type](global)
     import oimports.DefImportsOrganizers
-    val defImportsOrganizers = new DefImportsOrganizers[global.type](global)
+    val defImportsOrganizers = new DefImportsOrganizers[treeToolbox.global.type, treeToolbox.type](treeToolbox)
     val defRegions = (new defImportsOrganizers.DefImportsOrganizer).transformTreeToRegions(rootTree).map {
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard ::
@@ -487,7 +489,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
 
     import oimports.ClassDefImportsOrganizers
-    val classDefImportsOrganizers = new ClassDefImportsOrganizers[global.type](global)
+    val classDefImportsOrganizers = new ClassDefImportsOrganizers[treeToolbox.global.type, treeToolbox.type](treeToolbox)
     val classDefRegions = (new classDefImportsOrganizers.ClassDefImportsOrganizer).transformTreeToRegions(rootTree).map {
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard ::
@@ -499,9 +501,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       }
     }
 
-    import oimports.TreeToolbox
-    val tt = new TreeToolbox[global.type](global)
-    val removedDuplicates = tt.removeScopesDuplicates(classDefRegions ::: defRegions)
+    val removedDuplicates = treeToolbox.removeScopesDuplicates(classDefRegions ::: defRegions)
     val changes = removedDuplicates.map { _.print }
 
     Right(Change.discardOverlappingChanges(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: changes).accepted)
