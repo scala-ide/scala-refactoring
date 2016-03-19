@@ -290,6 +290,19 @@ class SourceWithMarkerTest {
   }
 
   @Test
+  def testUntilWithNonConsumingSkippingMovement(): Unit = {
+    val src = SourceWithMarker("^123[^trap$]456$")
+
+    val mvnt =
+      until('$', skipping = bracketsWithContents.zeroOrMore) ~
+      "6$".backward ~
+      until('^', skipping = bracketsWithContents.zeroOrMore).backward ~
+      "^1"
+
+    assertEquals("2", src.moveMarker(mvnt).currentStr)
+  }
+
+  @Test
   def testSeqOpsAtEndOfSource(): Unit = {
     val src = SourceWithMarker("aaa")
 

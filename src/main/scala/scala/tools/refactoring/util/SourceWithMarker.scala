@@ -543,8 +543,14 @@ object SourceWithMarker {
             if (sourceWithMarker.isDepleted) {
               None
             } else {
-              val newSourceWithMarker = sourceWithMarker.applyMovement(actualSkipping).getOrElse {
-                sourceWithMarker.step(forward)
+              val newSourceWithMarker = {
+                val markerAfterSkipping = actualSkipping(sourceWithMarker).flatMap { markerAfterSkipping =>
+                  if (markerAfterSkipping == sourceWithMarker.marker) None
+                  else Some(markerAfterSkipping)
+                }
+
+                val newMarker = markerAfterSkipping.getOrElse(nextMarker(sourceWithMarker.marker, forward))
+                sourceWithMarker.withMarkerAt(newMarker)
               }
 
               go(newSourceWithMarker)
