@@ -4,7 +4,11 @@ The Scala Refactoring Library implements IDE independent refactoring support
 for Scala. It is currently used by both [ENSIME](https://github.com/ensime)
 and [ScalaIDE](http://scala-ide.org/) and supports Scala-2.10 and Scala-2.11.
 
-## Information for Developers
+## Information for Contributors
+
+We are always looking for helping hands. As you may have already found out,
+there are quite a few bugs to work on. Pull requests are usually reviewed and
+merged quickly, and we try to help new contributors wherever we can.
 
 ### Overall Architecture
 
