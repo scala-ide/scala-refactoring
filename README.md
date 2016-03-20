@@ -23,6 +23,43 @@ the [presentation](https://youtu.be/Josjt_awx08) about the Refactoring Library g
 by [@mlangc](https://github.com/mlangc) at [ScalaSphere](http://scalasphere.org/). The slides are available
 [here](http://scalasphere.org/wp-content/uploads/2016/02/Matthias_langer.pdf).
 
+### Testing
+
+All changes to the library are expected to be thoroughly covered by unit tests,
+unless there is a very good reason for violating this rule. Often however, you
+also want to see the effect of your changes in an interactive environment. If
+you are using
+[ScalaIDE Nightly Builds](http://scala-ide.org/download/nightly.html), there
+are two ways to run the IDE with your custom modifications, both with their
+own drawbacks and advantages:
+
+* You can run ScalaIDE from within Eclipse, as outlined 
+   [here](http://scala-ide.org/docs/dev/setup/setup.html#run-the-scala-ide-within-eclipse).
+   The [Equinox Weaving Launcher](https://github.com/scala-ide/equinox-weaving-launcher)
+   will automatically pick up the local version of the Refactoring Library, if
+   the library is properly configured as an Eclipse project.
+
+   * Advantages:
+      * Fast turnaround
+      * Works even your changes break binary compatibility
+      * The only option if the IDE and the Refactoring Library are modified together
+
+   * Disadvantages: 
+      * Not suitable if you want to see the effect of your changes in a production environment
+* You can patch your
+   [ScalaIDE Nightly](http://scala-ide.org/download/nightly.html) installation
+   with a local build of the refactoring library, generated with 
+   `$ sbt package`. Take a look at [patch-ide.bash](patch-ide.bash) to see
+   how this is done.
+   * Advantages:
+      * Perfect for testing the effects of your changes in a production environment
+
+   * Disadvantages: 
+      * Slow turnaround
+      * Works only if binary compatibility is maintained
+      * Might break your Eclipse installation if you are not careful
+
+
 ### Building
 
 Use `$ sbt package` to build the library for Scala-2.11, or `$ sbt +package` to
