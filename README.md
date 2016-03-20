@@ -23,6 +23,7 @@ All other refactorings, like
 * Extract Method
 * Extract Value
 * Extract Trait
+* Inline Local
 * Merge Parameter Lists
 * Split Parameter Lists
 * Change Parameter Order
