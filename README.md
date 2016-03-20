@@ -6,9 +6,29 @@ and [ScalaIDE](http://scala-ide.org/) and supports Scala-2.10 and Scala-2.11.
 
 ## Information for Contributors
 
+### Help Needed
+
 We are always looking for helping hands. As you may have already found out,
 there are quite a few bugs to work on. Pull requests are usually reviewed and
-merged quickly, and we try to help new contributors wherever we can.
+merged quickly, and we try to help new contributors wherever we can. We are
+currently focusing our efforts on 
+
+* Rename
+* Organize Imports
+* Add Import
+* Move Class
+
+All other refactorings, like
+
+* Extract Method
+* Extract Value
+* Extract Trait
+* Merge Parameter Lists
+* Split Parameter Lists
+* Change Parameter Order
+
+are effectively unmaintained. If you are particularly fond of an operation from
+this list, this might be a very good place to start contributing!
 
 ### Overall Architecture
 
