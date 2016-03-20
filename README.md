@@ -1,25 +1,16 @@
-[The Scala Refactoring Project](http://scala-refactoring.org)
-================================================================================
+# The Scala Refactoring Library
 
-Welcome to the Scala Refactoring project!
+The Scala Refactoring Library implements IDE independent refactoring support
+for Scala. It is currently used by both [ENSIME](https://github.com/ensime)
+and [ScalaIDE](http://scala-ide.org/) and supports Scala-2.10 and Scala-2.11.
 
-The project requires Scala 2.10 but also supports 2.11.
 
-1. Building
---------------------------------------------------------------------------------
+## Building
 
-We use Maven to build the project:
+Use `$ sbt package` to build the library for Scala-2.11, or `$ sbt +package` to
+build it both for Scala-2.11 and Scala-2.10.
 
-```bash
-$ ./build-2.11.sh
-```
-
-Creates all the artifacts, except for the documentation, which needs to be
-built separately. For different versions of Scala, take a look at the build.sh
-script.
-
-2. Publishing
---------------------------------------------------------------------------------
+## Publishing
 
 In order to publish sbt is used. The project is cross compiled against Scala 2.10
 and 2.11. To test a release run sbt and type:
@@ -42,7 +33,6 @@ password=PASSWORD
 where `USERNAME` and `PASSWORD` are the ones from the Sonatype account, which has the
 necessary permissions to do a publish.
 
-3. License
---------------------------------------------------------------------------------
+## License
 
 The project is licensed under the Scala license, see the LICENSE file for details.
