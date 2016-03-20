@@ -59,6 +59,17 @@ own drawbacks and advantages:
       * Works only if binary compatibility is maintained
       * Might break your Eclipse installation if you are not careful
 
+### Internals
+
+#### Parsing Scala Source Code
+
+Unfortunately the typechecked ASTs the library gets from the Scala Presentation
+Compiler don't always provide enough information to properly perform
+refactorings. In these cases the library has to extract the missing information
+from the source code under consideration. Often this is more tricky than you
+might initially think. Using the APIs centered around 
+[SourceWithMarker](src/main/scala/scala/tools/refactoring/util/SourceWithMarker.scala)
+should make your life a lot easier in these cases.
 
 ### Building
 
