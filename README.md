@@ -37,7 +37,7 @@ Refactorings are implemented on top of
 [ASTs](http://docs.scala-lang.org/overviews/reflection/symbols-trees-types) 
 from the Scala Presentation Compiler. If you plan to work on the library, you
 should definitely take a look at
-[Mirko Sockers Master Theses](http://scala-refactoring.org/wp-content/uploads/scala-refactoring.pdf).
+[Mirko Stockers Master Theses](http://scala-refactoring.org/wp-content/uploads/scala-refactoring.pdf).
 Although somewhat outdated, this document is very helpful for
 understanding the inner workings of the library. Another thing to look at is
 the [presentation](https://youtu.be/Josjt_awx08) about the Refactoring Library given
@@ -62,7 +62,7 @@ own drawbacks and advantages:
 
    * Advantages:
       * Fast turnaround
-      * Works even your changes break binary compatibility
+      * Works even if your changes break binary compatibility
       * The only option if the IDE and the Refactoring Library are modified together
 
    * Disadvantages: 
@@ -78,7 +78,7 @@ own drawbacks and advantages:
    * Disadvantages: 
       * Slow turnaround
       * Works only if binary compatibility is maintained
-      * Might break your Eclipse installation if you are not careful
+      * Might break your Eclipse installation if you aren't careful
 
 ### Internals
 
@@ -96,7 +96,7 @@ should make your life a lot easier in these cases.
 
 Make sure to
 [switch to DebugTracing](src/main/scala/scala/tools/refactoring/common/package.scala)
-when debugging the library. Sometimes it useful to redirect tracing output
+when debugging the library. Sometimes it is useful to redirect tracing output
 to a file. This can be done by setting the system property
 `scala.refactoring.traceFile`.
 
