@@ -91,6 +91,14 @@ might initially think. Using the APIs centered around
 [SourceWithMarker](src/main/scala/scala/tools/refactoring/util/SourceWithMarker.scala)
 should make your life a lot easier in these cases.
 
+#### Tracing
+
+Make sure to
+[switch to DebugTracing](src/main/scala/scala/tools/refactoring/common/package.scala)
+when debugging the library. Sometimes it useful to redirect tracing output
+to a file. This can be done by setting the system property
+`scala.refactoring.traceFile`.
+
 ### Building
 
 Use `$ sbt package` to build the library for Scala-2.11, or `$ sbt +package` to
