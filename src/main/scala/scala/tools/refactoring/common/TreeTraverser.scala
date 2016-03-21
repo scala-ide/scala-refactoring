@@ -64,11 +64,11 @@ trait TreeTraverser extends TracingImpl {
 
       if (indent == 0) {
         context(s"Starting traversal in $sourceFileAsString at $treeAsString initiated from\n$explainStack\n") {
-          val start = System.currentTimeMillis()
+          val start = System.nanoTime()
           doTraverse()
-          val stop = System.currentTimeMillis()
-          val millis = stop - start
-          trace(s"Finished traversal after ${millis}ms")
+          val stop = System.nanoTime()
+          val millis = (stop - start) * 1e-6
+          trace(f"Finished traversal after $millis%.1fms")
         }
       } else {
         if (traceIndividualVisits) {
