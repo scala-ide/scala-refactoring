@@ -335,6 +335,14 @@ object SourceWithMarker {
   }
 
   object Movement {
+    /**
+     * Factory method for constructing movements
+     *
+     * Constructs a movement from a function of the form `(sourceWithMarker, forward) => markers`
+     * where `sourceWithMarker` represents a position in some piece of source code, `forward` tells
+     * us in which direction to move, and the return value `markers` is the possibly empty
+     * sequence of markers this movement might lead to.
+     */
     def apply(impl: (SourceWithMarker, Boolean) => Seq[Int]): Movement = {
       class MovementImpl(forward: Boolean) extends Movement {
         override def compute(sourceWithMarker: SourceWithMarker) = impl(sourceWithMarker, forward)
