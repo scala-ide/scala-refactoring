@@ -475,9 +475,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
 
     import oimports.TreeToolbox
     val treeToolbox = new TreeToolbox[global.type](global)
-    import oimports.DefImportsOrganizers
-    val defImportsOrganizers = new DefImportsOrganizers[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val defRegions = (new defImportsOrganizers.DefImportsOrganizer).transformTreeToRegions(rootTree).map {
+    import oimports.DefImportsOrganizer
+    val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
+    val defRegions = defImportsOrganizer.transformTreeToRegions(rootTree).map {
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard ::
           (new NPRemovedUnused(rootTree)) ::
@@ -488,9 +488,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       }
     }
 
-    import oimports.ClassDefImportsOrganizers
-    val classDefImportsOrganizers = new ClassDefImportsOrganizers[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val classDefRegions = (new classDefImportsOrganizers.ClassDefImportsOrganizer).transformTreeToRegions(rootTree).map {
+    import oimports.ClassDefImportsOrganizer
+    val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
+    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(rootTree).map {
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard ::
           (new NPRemovedUnused(rootTree)) ::

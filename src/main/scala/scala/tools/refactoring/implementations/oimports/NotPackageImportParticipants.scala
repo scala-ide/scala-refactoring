@@ -30,7 +30,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       selects.toList
     }
 
-    protected def doApply(trees: List[Import]) = trees collect {
+    protected def doApply(trees: List[Import]) = trees.iterator.collect {
       case imp @ Import(importQualifier, importSelections) =>
         val usedSelectors = importSelections filter { importSel =>
           val importSym = importQualifier.symbol.fullName
@@ -47,16 +47,14 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
                 downToPackage(selectQualifierSymbol.owner)
             val foundNames = Set(foundSel.name.toString, foundSel.symbol.owner.nameString)
             val foundSym = Option(downToPackage(foundSel.qualifier.symbol)).getOrElse(downToPackage(foundSel.symbol))
-            (isWildcard || foundNames.&(importSelNames).nonEmpty) &&
+            (isWildcard || (foundNames & importSelNames).nonEmpty) &&
               foundSym != null && foundSym.fullName == importSym
           }
         }
-        val result = usedSelectors match {
-          case Nil => null
-          case s => imp.copy(selectors = usedSelectors).setPos(imp.pos)
-        }
-        result
-    } filter { _ ne null }
+        (imp, usedSelectors)
+    }.collect {
+      case (imp, selectors @ h :: _) => imp.copy(selectors = selectors).setPos(imp.pos)
+    }.toList
   }
 
   object RemoveDuplicatedByWildcard extends Participant {

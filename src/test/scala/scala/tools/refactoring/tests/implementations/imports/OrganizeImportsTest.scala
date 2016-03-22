@@ -2918,4 +2918,170 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportFromDefWithComment() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        // comment for b
+        import AnObject.b
+        a + b
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        a + b
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("under construction")
+  @Test
+  def shouldRemoveDuplicatedImportFromDefWithComment_v2() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        // comment for a
+        import AnObject.a
+        // comment for b
+        import AnObject.b
+        b
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        b
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportFromDefWithComment_v3() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        /**
+          * comment for b
+          */
+        import AnObject.b
+        a + b
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        a + b
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("under construction")
+  @Test
+  def shouldNotRemoveComments() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import java.util.Date
+      import java.util.ArrayList
+      // HELP
+      import scala.util.Try
+      import scala.concurrent.Future
+
+      val d: Date
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import java.util.ArrayList
+      import java.util.Date
+      import scala.concurrent.Future
+      // HELP
+      import scala.util.Try
+
+      val d: Date
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
