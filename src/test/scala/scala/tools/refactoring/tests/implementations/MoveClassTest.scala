@@ -1,11 +1,9 @@
 package scala.tools.refactoring
 package tests.implementations
 
-
 import implementations.MoveClass
 import tests.util.TestRefactoring
 import tests.util.TestHelper
-
 
 class MoveClassTest extends TestHelper with TestRefactoring {
 
@@ -664,6 +662,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package a.b.c
 
       import x.y.ToMove
+
       class User extends ToMove
     """
   } applyRefactoring(moveTo("x.y"))
@@ -864,21 +863,22 @@ class MoveClassTest extends TestHelper with TestRefactoring {
     class Bar64
     """
     """
-    class Foo64 {
-      import Bar64.instance
-
-      def foo = instance.toString
-      def bar = Bar64.instance.toString
-    }
-    """ becomes """
-    import bar.Bar64
-    class Foo64 {
-      import Bar64.instance
-
-      def foo = instance.toString
-      def bar = Bar64.instance.toString
-    }
-    """
+    |class Foo64 {
+    |  import Bar64.instance
+    |
+    |  def foo = instance.toString
+    |  def bar = Bar64.instance.toString
+    |}
+    |""".stripMargin.trim becomes """
+    |import bar.Bar64
+    |
+    |class Foo64 {
+    |  import Bar64.instance
+    |
+    |  def foo = instance.toString
+    |  def bar = Bar64.instance.toString
+    |}
+    |""".stripMargin.trim
   } applyRefactoring(moveTo("bar"))
 
   @Test
@@ -930,6 +930,7 @@ class MoveClassTest extends TestHelper with TestRefactoring {
       package c
 
       import x.y.ToMove
+
       trait Xy {
         val other: ToMove
       }
