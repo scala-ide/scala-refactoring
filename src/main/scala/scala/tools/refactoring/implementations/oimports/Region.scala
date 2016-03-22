@@ -60,15 +60,21 @@ object Region {
   def apply(imports: List[Global#Import], owner: Global#Symbol)(global: Global): Region = {
     assert(imports.nonEmpty)
     val source = imports.head.pos.source
+    def cutPrefix(imp: Global#Import): String = {
+      val printedImport = source.content.slice(imp.pos.start, imp.pos.end).mkString
+      val prefixPatternWithCommentInside = """import (((\/\*.*\*\/)*\w+(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
+      prefixPatternWithCommentInside.findFirstIn(printedImport).get
+    }
+    def wrapInBackticks(name: Global#Name): String = if (name.containsChar('$')) "`" + name.decoded + "`" else name.decoded
     def printImport(imp: Global#Import): String = {
       import global._
       val RenameArrow = " => "
-      val prefix = source.content.slice(imp.pos.start, imp.pos.end).mkString.reverse.dropWhile { _ != '.' }.reverse
+      val prefix = cutPrefix(imp)
       val suffix = imp.selectors.map { sel =>
         if (sel.name == sel.rename || sel.name == nme.WILDCARD)
-          sel.name.toString
+          wrapInBackticks(sel.name)
         else
-          sel.name + RenameArrow + sel.rename
+          wrapInBackticks(sel.name) + RenameArrow + wrapInBackticks(sel.rename)
       }
       val areBracesNeeded = suffix.size > 1 || suffix.exists { _ contains RenameArrow }
       prefix + suffix.mkString(if (areBracesNeeded) "{" else "", ", ", if (areBracesNeeded) "}" else "")

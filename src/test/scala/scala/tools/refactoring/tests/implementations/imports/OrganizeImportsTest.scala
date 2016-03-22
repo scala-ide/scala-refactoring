@@ -3084,4 +3084,84 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveCommentsInImportPackagePrefix() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import scala./*comment*/util/*comment.comment*/.Try
+      import scala/*comment.comment*/.concurrent.Future
+      import java.util./*comment.*/Date
+      import java.util/*.comment*/.ArrayList
+
+      val d: Date
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import java.util/*.comment*/.ArrayList
+      import java.util./*comment.*/Date
+      import scala/*comment.comment*/.concurrent.Future
+      import scala./*comment*/util/*comment.comment*/.Try
+
+      val d: Date
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldCorrectlyRenderEscapedStableIdentifier() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object arrow {
+      val `=>` = 42
+    }
+
+    object dollar {
+      val `$$$` = 24
+    }
+
+    trait Bug {
+      import dollar.`$$$`
+      import arrow.`=>`
+
+      val dollarWithArrow = `$$$` + `=>`
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object arrow {
+      val `=>` = 42
+    }
+
+    object dollar {
+      val `$$$` = 24
+    }
+
+    trait Bug {
+      import arrow.`=>`
+      import dollar.`$$$`
+
+      val dollarWithArrow = `$$$` + `=>`
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
