@@ -1033,6 +1033,13 @@ trait EnrichedTrees extends TracingImpl {
     symbolLiteral |
     curlyBracesWithContents
 
+  /**
+   * Extracts information from `ApplyNodes`
+   *
+   * The main feature of this extractor is that reverses the desugarings the compiler performs for named arguments
+   * by creating [[scala.tools.refactoring.common.EnrichedTrees.NamedArgument]] instances as necessary. Apart
+   * from that, this object is meant to mimic the regular [[scala.reflect.api.Trees.ApplyExtractor]].
+   */
   object ApplyExtractor {
 
     def mightHaveNamedArguments(t: Tree) = t match {
