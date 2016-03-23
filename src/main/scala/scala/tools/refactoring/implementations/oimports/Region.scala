@@ -1,6 +1,7 @@
 package scala.tools.refactoring
 package implementations.oimports
 
+import scala.reflect.internal.util.RangePosition
 import scala.reflect.internal.util.SourceFile
 import scala.tools.nsc.Global
 import scala.tools.refactoring.common.Change
@@ -8,7 +9,7 @@ import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
 
 case class Region private (imports: List[Global#Import], owner: Global#Symbol, startPos: Global#Position, endPos: Global#Position,
-    source: SourceFile, indentation: String, printImport: Global#Import => String) {
+    source: SourceFile, indentation: String, printImport: Global#Import => String, printImportWithComment: Global#Import => String) {
   def transform(transformation: List[Global#Import] => List[Global#Import]): Region =
     copy(imports = transformation(imports))
 
@@ -38,13 +39,13 @@ case class Region private (imports: List[Global#Import], owner: Global#Symbol, s
       def isLast(idx: Int) = idx == imports.size - 1
       imp match {
         case (imp, 0) if isLast(0) =>
-          acc + printImport(imp)
+          acc + printImportWithComment(imp)
         case (imp, 0) =>
-          acc + printImport(imp) + Properties.lineSeparator
+          acc + printImportWithComment(imp) + Properties.lineSeparator
         case (imp, idx) if isLast(idx) =>
-          acc + indentation + printImport(imp)
+          acc + indentation + printImportWithComment(imp)
         case (imp, _) =>
-          acc + indentation + printImport(imp) + Properties.lineSeparator
+          acc + indentation + printImportWithComment(imp) + Properties.lineSeparator
       }
     }
     TextChange(source, from, to, text)
@@ -57,19 +58,40 @@ object Region {
     sourceFile.lineToString(sourceFile.offsetToLine(imp.pos.start)).takeWhile { _.isWhitespace }
   }
 
-  def apply(imports: List[Global#Import], owner: Global#Symbol)(global: Global): Region = {
-    assert(imports.nonEmpty)
-    val source = imports.head.pos.source
-    def cutPrefix(imp: Global#Import): String = {
-      val printedImport = source.content.slice(imp.pos.start, imp.pos.end).mkString
-      val prefixPatternWithCommentInside = """import (((\/\*.*\*\/)*\w+(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
-      prefixPatternWithCommentInside.findFirstIn(printedImport).get
+  private def scanForComments[G <: Global](global: G, source: SourceFile): List[RangePosition] = {
+    val ttb = new TreeToolbox[global.type](global)
+    import ttb.CommentScanner
+    val commentScanner = new CommentScanner(source)
+    commentScanner.scan()
+    commentScanner.comments
+  }
+
+  private def cutPrefix(imp: Global#Import, source: SourceFile): String = {
+    val printedImport = source.content.slice(imp.pos.start, imp.pos.end).mkString
+    val prefixPatternWithCommentInside = """import (((\/\*.*\*\/)*(\w|\d|_|-)+(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
+    prefixPatternWithCommentInside.findFirstIn(printedImport).get
+  }
+
+  private def wrapInBackticks(name: Global#Name): String =
+    if (name.containsChar('$')) "`" + name.decoded + "`" else name.decoded
+
+  private def findUpNeighborComment(impPos: RangePosition, comments: List[RangePosition], source: SourceFile): Option[String] = {
+    val beginningOfImportLine = source.lineToOffset(source.offsetToLine(impPos.start))
+    comments.find { comment =>
+      comment.end == beginningOfImportLine
+    }.map { comment =>
+      source.content.slice(comment.start, comment.end).mkString
     }
-    def wrapInBackticks(name: Global#Name): String = if (name.containsChar('$')) "`" + name.decoded + "`" else name.decoded
+  }
+
+  def apply(imports: List[Global#Import], owner: Global#Symbol)(global: Global): Region = {
+    require(imports.nonEmpty, "List of imports must not be empty.")
+    val source = imports.head.pos.source
+    val comments = scanForComments(global, source)
     def printImport(imp: Global#Import): String = {
       import global._
       val RenameArrow = " => "
-      val prefix = cutPrefix(imp)
+      val prefix = cutPrefix(imp, source)
       val suffix = imp.selectors.map { sel =>
         if (sel.name == sel.rename || sel.name == nme.WILDCARD)
           wrapInBackticks(sel.name)
@@ -79,6 +101,13 @@ object Region {
       val areBracesNeeded = suffix.size > 1 || suffix.exists { _ contains RenameArrow }
       prefix + suffix.mkString(if (areBracesNeeded) "{" else "", ", ", if (areBracesNeeded) "}" else "")
     }
-    Region(imports, owner, imports.head.pos, imports.last.pos, source, indentation(imports.head), printImport)
+    val indent = indentation(imports.head)
+    def printImportWithComment(imp: Global#Import): String = {
+      val printedImport = printImport(imp)
+      findUpNeighborComment(imp.pos.asInstanceOf[RangePosition], comments, source).map { comment =>
+        comment + indent + printedImport
+      }.getOrElse(printedImport)
+    }
+    Region(imports, owner, imports.head.pos, imports.last.pos, source, indent, printImport, printImportWithComment)
   }
 }

@@ -3045,7 +3045,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("under construction")
   @Test
   def shouldNotRemoveComments() = new FileSet {
     """
@@ -3053,13 +3052,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package test
 
     trait Bug {
-      import java.util.Date
-      import java.util.ArrayList
+      import scala.concurrent.Future
       // HELP
       import scala.util.Try
-      import scala.concurrent.Future
+      import java.util.ArrayList
 
-      val d: Date
       val l: ArrayList[Int]
       val t: Try[Int]
       val f: Future[Double]
@@ -3071,12 +3068,10 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     trait Bug {
       import java.util.ArrayList
-      import java.util.Date
       import scala.concurrent.Future
       // HELP
       import scala.util.Try
 
-      val d: Date
       val l: ArrayList[Int]
       val t: Try[Int]
       val f: Future[Double]
