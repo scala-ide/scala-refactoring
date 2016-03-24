@@ -61,8 +61,9 @@ object Region {
 
   private def scanForComments[G <: Global](global: G, source: SourceFile): List[RangePosition] = {
     val ttb = new TreeToolbox[global.type](global)
-    import ttb.CommentScanner
-    val commentScanner = new CommentScanner(source)
+    import ttb.TreeToolboxScanners
+    val scanners = new TreeToolboxScanners
+    val commentScanner = new scanners.CommentScanner(source)
     commentScanner.scan()
     commentScanner.comments
   }
