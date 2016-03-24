@@ -37,7 +37,7 @@ Refactorings are implemented on top of
 [ASTs](http://docs.scala-lang.org/overviews/reflection/symbols-trees-types) 
 from the Scala Presentation Compiler. If you plan to work on the library, you
 should definitely take a look at
-[Mirko Stockers Master Theses](http://scala-refactoring.org/wp-content/uploads/scala-refactoring.pdf).
+[Mirko Stockers Master Theses](https://github.com/scala-ide/scala-refactoring/raw/thesis-documentation/scala-refactoring.pdf).
 Although somewhat outdated, this document is very helpful for
 understanding the inner workings of the library. Another thing to look at is
 the [presentation](https://youtu.be/Josjt_awx08) about the Refactoring Library given
