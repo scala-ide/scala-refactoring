@@ -193,7 +193,9 @@ trait TreeTransformations extends Transformations with TreeFactory {
       val line = pos.source.lineToString(lineNumber)
       val indent = line.takeWhile(Character.isWhitespace)
       val insertPos = pos.source.lineToOffset(lineNumber) + line.length
-      TextChange(pos.source, insertPos, insertPos, "\n" + importsAsSrc(indent))
+      val isPkgLine = line.matches("""\s*package.*""")
+      val isEmptyLine = pos.source.lineToString(lineNumber+1).trim.isEmpty
+      TextChange(pos.source, insertPos, insertPos, (if (isPkgLine) "\n\n" else "\n") + importsAsSrc(indent) + (if (isEmptyLine) "" else "\n"))
     }
 
     def insertBefore(pos: Position) = {
@@ -201,7 +203,8 @@ trait TreeTransformations extends Transformations with TreeFactory {
       val line = pos.source.lineToString(lineNumber)
       val indent = line.takeWhile(Character.isWhitespace)
       val insertPos = pos.source.lineToOffset(lineNumber)
-      TextChange(pos.source, insertPos, insertPos, importsAsSrc(indent) + "\n")
+      val isEmptyLine = pos.source.lineToString(lineNumber+1).trim.isEmpty
+      TextChange(pos.source, insertPos, insertPos, importsAsSrc(indent) + (if (isEmptyLine) "\n" else "\n\n"))
     }
 
     /*
@@ -234,20 +237,19 @@ trait TreeTransformations extends Transformations with TreeFactory {
 
     val addImportStatement = once(insertLocation) &> transformation { case _ ⇒
       splitImports(foundPackage, foundPackage.stats) match {
-        // For an empty PackageDef, with no exiting imports but with an Impl that has an annotation, we need to
-        // modify positions so that the annotation, which is not in the AST, doesn't get assigned to the PackageDef
-        // but to the Impl
-        case (p @ PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _), Nil, others @ (impl :: _)) if !impl.symbol.annotations.isEmpty ⇒
-          // The empty PackageDef starts at the position of its first child, so the annotation of the Impl
-          // is outside its parent's range. The Source Generator can't handle this, so we let the PackageDef
-          // start at position 0 so that the annotation gets associated to the child.
+        case (p @ PackageDef(Ident(nme.EMPTY_PACKAGE_NAME), _), Nil, _) ⇒
           val pos = p.pos withStart 0
           insertBefore(pos)
-        case (p, imports, others) ⇒
-          if (imports.nonEmpty)
-            insertAfter(imports.last.pos)
-          else
-            insertBefore(others.head.pos)
+        case (p, Nil, _) ⇒
+          p.stats match {
+            case po +: _ if po.symbol.isPackageObject ⇒
+              val pos = p.pos withStart 0
+              insertBefore(pos)
+            case _ ⇒
+              insertAfter(p.pos)
+          }
+        case (_, imports, _) ⇒
+          insertAfter(imports.last.pos)
       }
     }
 
