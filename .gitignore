@@ -1,0 +1,8 @@
+target
+bin
+.cache-main
+.cache-tests
+.settings
+.attach_pid*
+**/*.tmpBin
+*.swp
