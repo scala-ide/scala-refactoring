@@ -2960,7 +2960,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("under construction")
   @Test
   def shouldRemoveDuplicatedImportFromDefWithComment_v2() = new FileSet {
     """
@@ -3046,7 +3045,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def shouldNotRemoveComments() = new FileSet {
+  def shouldNotRemoveComments_variation1() = new FileSet {
     """
     /*<-*/
     package test
@@ -3118,7 +3117,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def shouldCorrectlyRenderEscapedStableIdentifier() = new FileSet {
+  def shouldCorrectlyRenderBacktickedStableIdentifier() = new FileSet {
     """
     /*<-*/
     package test
@@ -3155,6 +3154,138 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import dollar.`$$$`
 
       val dollarWithArrow = `$$$` + `=>`
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveComments_variation2() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      // belongs to Try
+      import scala.util.Try
+
+      // belongs to ArrayList
+      import java.util.ArrayList
+      /* belongs to Date */
+      import java.util.Date
+
+      val l: ArrayList[Int]
+      val d: Date
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      // belongs to ArrayList
+      import java.util.ArrayList
+      /* belongs to Date */
+      import java.util.Date
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      // belongs to Try
+      import scala.util.Try
+
+      val l: ArrayList[Int]
+      val d: Date
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveComments_variation3() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+      // belongs to Try
+      import scala.util.Try
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      // belongs to Try
+      import scala.util.Try
+
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveComments_variation4() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+
+      import scala.util.Try
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      import scala.util.Try
+
+      val t: Try[Int]
+      val f: Future[Double]
     }
     """
     }

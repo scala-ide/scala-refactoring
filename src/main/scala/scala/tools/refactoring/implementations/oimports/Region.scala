@@ -1,6 +1,7 @@
 package scala.tools.refactoring
 package implementations.oimports
 
+import scala.reflect.internal.util.Position
 import scala.reflect.internal.util.RangePosition
 import scala.reflect.internal.util.SourceFile
 import scala.tools.nsc.Global
@@ -75,14 +76,19 @@ object Region {
   private def wrapInBackticks(name: Global#Name): String =
     if (name.containsChar('$')) "`" + name.decoded + "`" else name.decoded
 
-  private def findUpNeighborComment(impPos: RangePosition, comments: List[RangePosition], source: SourceFile): Option[String] = {
-    val beginningOfImportLine = source.lineToOffset(source.offsetToLine(impPos.start))
-    comments.find { comment =>
-      comment.end == beginningOfImportLine
-    }.map { comment =>
+  private def findUpNeighborComment(impPos: Position, comments: List[RangePosition], source: SourceFile): Option[RangePosition] = impPos match {
+    case rangePos: RangePosition =>
+      val beginningOfImportLine = source.lineToOffset(source.offsetToLine(rangePos.start))
+      comments.find { comment =>
+        comment.end == beginningOfImportLine
+      }
+    case _ => None
+  }
+
+  private def findUpNeighborCommentText(impPos: Position, comments: List[RangePosition], source: SourceFile): Option[String] =
+    findUpNeighborComment(impPos, comments, source).map { comment =>
       source.content.slice(comment.start, comment.end).mkString
     }
-  }
 
   def apply(imports: List[Global#Import], owner: Global#Symbol)(global: Global): Region = {
     require(imports.nonEmpty, "List of imports must not be empty.")
@@ -104,10 +110,11 @@ object Region {
     val indent = indentation(imports.head)
     def printImportWithComment(imp: Global#Import): String = {
       val printedImport = printImport(imp)
-      findUpNeighborComment(imp.pos.asInstanceOf[RangePosition], comments, source).map { comment =>
+      findUpNeighborCommentText(imp.pos, comments, source).map { comment =>
         comment + indent + printedImport
       }.getOrElse(printedImport)
     }
-    Region(imports, owner, imports.head.pos, imports.last.pos, source, indent, printImport, printImportWithComment)
+    val regionStartPos = findUpNeighborComment(imports.head.pos, comments, source).getOrElse(imports.head.pos)
+    Region(imports, owner, regionStartPos, imports.last.pos, source, indent, printImport, printImportWithComment)
   }
 }
