@@ -3752,4 +3752,23 @@ class Blubb
     class SomeClass protected (/*(*/ups/*)*/: Int)
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002651
+   */
+  @Test
+  def testRenameWithInterpolatedString1002651() = new FileSet {
+    """
+    class Bug {
+      val /*(*/renameMe/*)*/ = 13
+      val bug = f"$renameMe"
+    }
+    """ becomes
+    """
+    class Bug {
+      val /*(*/ups/*)*/ = 13
+      val bug = f"$ups"
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
