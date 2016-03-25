@@ -1522,7 +1522,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("booh"))
 
-  @Ignore
   @Test
   def namedParameter() = new FileSet {
     """
@@ -1543,7 +1542,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def namedParameterAndDefault() = new FileSet {
     """
@@ -1564,7 +1562,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def namedParameterInDeclaredOrder() = new FileSet {
     """
@@ -1585,7 +1582,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def namedParameterInSecondArgsList() = new FileSet {
     """
@@ -1606,7 +1602,6 @@ class Blubb
     """
   } applyRefactoring(renameTo("xys"))
 
-  @Ignore
   @Test
   def updateMethodAndNamedArgument() = new FileSet {
     """
@@ -3298,6 +3293,463 @@ class Blubb
     class Bug extends ImplicitVals {
       val /*(*/ups/*)*/ = Bug().withDefault()
     }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex1() = new FileSet {
+    """
+    class Bug {
+      def f(/*(*/tryRenameMe/*)*/: Int) = tryRenameMe
+      def g(a: Int, b: Int) = f(tryRenameMe = a) + b
+    }
+    """ becomes
+    """
+    class Bug {
+      def f(/*(*/ups/*)*/: Int) = ups
+      def g(a: Int, b: Int) = f(ups = a) + b
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex2() = new FileSet {
+    """
+    class Bug {
+      def f(tryRenameMe: Int) = /*(*/tryRenameMe/*)*/
+      def g(a: Int, b: Int) = f(tryRenameMe = a) + b
+    }
+    """ becomes
+    """
+    class Bug {
+      def f(ups: Int) = /*(*/ups/*)*/
+      def g(a: Int, b: Int) = f(ups = a) + b
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Ignore
+  @Test
+  def testRenameWithNamedArgs1002501Ex3() = new FileSet {
+    """
+    class Bug {
+      def f(tryRenameMe: Int) = tryRenameMe
+      def g(a: Int, b: Int) = f(/*(*/tryRenameMe/*)*/ = a) + b
+    }
+    """ becomes
+    """
+    class Bug {
+      def f(ups: Int) = ups
+      def g(a: Int, b: Int) = f(/*(*/ups/*)*/ = a) + b
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex4() = new FileSet {
+    """
+    object Bug {
+      class SomeClass(/*(*/tryRenameMe/*)*/: Int)
+      new SomeClass(tryRenameMe = 22)
+    }
+    """ becomes
+    """
+    object Bug {
+      class SomeClass(/*(*/ups/*)*/: Int)
+      new SomeClass(ups = 22)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex5() = new FileSet {
+    """
+    object Tests {
+      class SomeClass(a: Int = 1, b: Int, /*(*/tryRenameMe/*)*/: Int = 99)
+      new SomeClass(b = 5, tryRenameMe = 33)
+    }
+    """ becomes
+    """
+    object Tests {
+      class SomeClass(a: Int = 1, b: Int, /*(*/ups/*)*/: Int = 99)
+      new SomeClass(b = 5, ups = 33)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex6() = new FileSet {
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(/*(*/tryRenameMe: Int/*)*/) {
+        def this(tryRenameMe: Long) = this(tryRenameMe.toInt)
+      }
+
+      new ClassWithSecondaryCtor(tryRenameMe = 3L)
+      new ClassWithSecondaryCtor(tryRenameMe = 3)
+    }
+    """ becomes
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(/*(*/ups: Int/*)*/) {
+        def this(tryRenameMe: Long) = this(tryRenameMe.toInt)
+      }
+
+      new ClassWithSecondaryCtor(tryRenameMe = 3L)
+      new ClassWithSecondaryCtor(ups = 3)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex7() = new FileSet {
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(tryRenameMe: Int) {
+        def this(/*(*/tryRenameMe/*)*/: Long) = this(tryRenameMe.toInt)
+      }
+
+      new ClassWithSecondaryCtor(tryRenameMe = 3L)
+      new ClassWithSecondaryCtor(tryRenameMe = 3)
+    }
+    """ becomes
+    """
+    object Tests {
+      class ClassWithSecondaryCtor(tryRenameMe: Int) {
+        def this(/*(*/ups/*)*/: Long) = this(ups.toInt)
+      }
+
+      new ClassWithSecondaryCtor(ups = 3L)
+      new ClassWithSecondaryCtor(tryRenameMe = 3)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex8() = new FileSet {
+    """
+    case class CaseClass1(/*(*/tryRenameMe/*)*/: Int) {
+      CaseClass1(tryRenameMe = 22)
+    }
+    """ becomes
+    """
+    case class CaseClass1(/*(*/ups/*)*/: Int) {
+      CaseClass1(ups = 22)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex9() = new FileSet {
+    """
+    case class CaseClass2(/*(*/tryRenameMe/*)*/: Int, b: Int = 42, c: Int = 43) {
+      CaseClass2(c = 0, tryRenameMe = 22)
+    }
+    """ becomes
+    """
+    case class CaseClass2(/*(*/ups/*)*/: Int, b: Int = 42, c: Int = 43) {
+      CaseClass2(c = 0, ups = 22)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex10() = new FileSet {
+    """
+    case class CaseClass3(/*(*/tryRenameMe/*)*/: Int) {
+      copy(tryRenameMe = 12)
+    }
+    """ becomes
+    """
+    case class CaseClass3(/*(*/ups/*)*/: Int) {
+      copy(ups = 12)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex11() = new FileSet {
+    """
+    case class CaseClass4(a: Int = 1, /*(*/tryRenameMe/*)*/: Int = 2, c: Int = 3) {
+      CaseClass4(tryRenameMe = 12)
+      copy(tryRenameMe = 18)
+    }
+    """ becomes
+    """
+    case class CaseClass4(a: Int = 1, /*(*/ups/*)*/: Int = 2, c: Int = 3) {
+      CaseClass4(ups = 12)
+      copy(ups = 18)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex12() = new FileSet {
+    """
+    case class CaseClass5(a: Int = 1, /*(*/tryRenameMe/*)*/: Int = 2) {
+      def copy(tryRenameMe: Int) = ???
+    }
+
+    object CaseClass5 {
+      def apply(tryRenameMe: Int): CaseClass5 = CaseClass5(a = 10, tryRenameMe = tryRenameMe)
+    }
+    """ becomes
+    """
+    case class CaseClass5(a: Int = 1, /*(*/ups/*)*/: Int = 2) {
+      def copy(tryRenameMe: Int) = ???
+    }
+
+    object CaseClass5 {
+      def apply(tryRenameMe: Int): CaseClass5 = CaseClass5(a = 10, ups = tryRenameMe)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex13() = new FileSet {
+    """
+    object TestWithChainedCopy {
+      case class Elefant(name: String, /*(*/alter/*)*/: Int)
+      val benjamin = Elefant(name = "Benjamin", alter = 12).copy(alter = 3)
+      val nathalie = benjamin.copy(name = "Nathalie", alter = 1).copy(alter = 2)
+    }
+    """ becomes
+    """
+    object TestWithChainedCopy {
+      case class Elefant(name: String, /*(*/age/*)*/: Int)
+      val benjamin = Elefant(name = "Benjamin", age = 12).copy(age = 3)
+      val nathalie = benjamin.copy(name = "Nathalie", age = 1).copy(age = 2)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("age"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex14() = new FileSet {
+    """
+    object TestWithUnChainedCopy {
+      case class Elefant(name: String, /*(*/alter/*)*/: Int)
+      val benjamin = Elefant(name = "Benjamin", alter = 12)
+      val nathalie = benjamin.copy(alter = 2)
+    }
+    """ becomes
+    """
+    object TestWithUnChainedCopy {
+      case class Elefant(name: String, /*(*/age/*)*/: Int)
+      val benjamin = Elefant(name = "Benjamin", age = 12)
+      val nathalie = benjamin.copy(age = 2)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("age"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex15() = new FileSet {
+    """
+    object TestWithChainedCopyMinimal {
+      case class Elefant(name: String, /*(*/alter/*)*/: Int)
+      val benjamin = Elefant(name = "Benjamin", alter = 12).copy(alter = 3)
+    }
+    """ becomes
+    """
+    object TestWithChainedCopyMinimal {
+      case class Elefant(name: String, /*(*/age/*)*/: Int)
+      val benjamin = Elefant(name = "Benjamin", age = 12).copy(age = 3)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("age"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex16() = new FileSet {
+    """
+    object TestWithChainedFunCalls {
+      def chainMe(a: Int = 1, /*(*/b/*)*/: Int = 2) = this
+      chainMe(b = 2).chainMe(b = 9, a = 2)
+    }
+    """ becomes
+    """
+    object TestWithChainedFunCalls {
+      def chainMe(a: Int = 1, /*(*/xxx/*)*/: Int = 2) = this
+      chainMe(xxx = 2).chainMe(xxx = 9, a = 2)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex17() = new FileSet {
+    """
+    object TestWithChainedFunCalls {
+      def chainMe(/*(*/a/*)*/: Int = 1, b: Int = 2) = this
+      chainMe(b = 2).chainMe(b = 9, a = 2)
+    }
+    """ becomes
+    """
+    object TestWithChainedFunCalls {
+      def chainMe(/*(*/xxx/*)*/: Int = 1, b: Int = 2) = this
+      chainMe(b = 2).chainMe(b = 9, xxx = 2)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex18() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someOtherMethod: Any = {
+        class OwnedByMethod(/*(*/tryRenameMe/*)*/: Int)
+        new OwnedByMethod(tryRenameMe = 222)
+      }
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someOtherMethod: Any = {
+        class OwnedByMethod(/*(*/xxx/*)*/: Int)
+        new OwnedByMethod(xxx = 222)
+      }
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenameWithNamedArgs1002501Ex19() = new FileSet {
+    """
+    object TestWithDefOwnedByValue {
+      val nest = {
+        def nested(/*(*/x/*)*/: Int) = x
+        nested(x = 33)
+      }
+    }
+    """ becomes
+    """
+    object TestWithDefOwnedByValue {
+      val nest = {
+        def nested(/*(*/zzz/*)*/: Int) = zzz
+        nested(zzz = 33)
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("zzz"))
+
+  @Test
+  def testRenameWithNamedArgs1002572Ex1() = new FileSet {
+    """
+    case class CCC(/*(*/a/*)*/: Int) {
+      copy(a = 0)
+      CCC(a = 23)
+      val b = this.a
+    }
+    """ becomes
+    """
+    case class CCC(/*(*/abc/*)*/: Int) {
+      copy(abc = 0)
+      CCC(abc = 23)
+      val b = this.abc
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("abc"))
+
+  @Test
+  def testRenameWithNamedArgs1002572Ex2() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someMethod = {
+        case class OwnedByMethod(/*(*/a/*)*/: Int, b: Int)
+        OwnedByMethod(b = 33, a = 4).copy(b = 10).copy(a = 3)
+      }
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByMethod {
+      def someMethod = {
+        case class OwnedByMethod(/*(*/xxx/*)*/: Int, b: Int)
+        OwnedByMethod(b = 33, xxx = 4).copy(b = 10).copy(xxx = 3)
+      }
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenameWithNamedArgs1002572Ex3() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByMethod {
+      trait Visible {
+        def elefant: Int
+      }
+
+      def nested = {
+        case class OwnedByMethod(/*(*/elefant/*)*/: Int, mouse: Int) extends Visible
+        OwnedByMethod(elefant = 1, mouse = 0)
+      }
+
+      println(nested.elefant)
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByMethod {
+      trait Visible {
+        def lion: Int
+      }
+
+      def nested = {
+        case class OwnedByMethod(/*(*/lion/*)*/: Int, mouse: Int) extends Visible
+        OwnedByMethod(lion = 1, mouse = 0)
+      }
+
+      println(nested.lion)
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("lion"))
+
+  @Test
+  def testRenameWithNamedArgs1002572Ex4() = new FileSet {
+    """
+    object TestWithCaseClassOwnedByValue {
+      val someValue = {
+        case class OwnedByValue(/*(*/a/*)*/: Int, b: Int)
+        OwnedByValue(b = 33, a = 4).copy(b = 10).copy(a = 3)
+      }
+    }
+    """ becomes
+    """
+    object TestWithCaseClassOwnedByValue {
+      val someValue = {
+        case class OwnedByValue(/*(*/xxx/*)*/: Int, b: Int)
+        OwnedByValue(b = 33, xxx = 4).copy(b = 10).copy(xxx = 3)
+      }
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenameWithPrivateClassVal() = new FileSet {
+    """
+    class SomeClass {
+      private val /*(*/tryRenameMe/*)*/ = 42
+    }
+    """ becomes
+    """
+    class SomeClass {
+      private val /*(*/ups/*)*/ = 42
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithPrivateClassCtorParam() = new FileSet {
+    """
+    class SomeClass private (/*(*/tryRenameMe/*)*/: Int)
+    """ becomes
+    """
+    class SomeClass private (/*(*/ups/*)*/: Int)
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithProtectedClassCtorParam() = new FileSet {
+    """
+    class SomeClass protected (/*(*/tryRenameMe/*)*/: Int)
+    """ becomes
+    """
+    class SomeClass protected (/*(*/ups/*)*/: Int)
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }

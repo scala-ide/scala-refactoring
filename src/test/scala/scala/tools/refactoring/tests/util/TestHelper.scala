@@ -215,7 +215,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
         def assertOk() = {
           expectGlobalRename.foreach { expectGlobalRename =>
-            assertEquals(expectGlobalRename, !prepResult.get.right.get.hasLocalScope)
+            assertEquals(s"Wrong value for globalRename - ", expectGlobalRename, !prepResult.get.right.get.hasLocalScope)
           }
           assertEqualSource()
         }

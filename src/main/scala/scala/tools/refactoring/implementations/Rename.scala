@@ -26,22 +26,73 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
 
   def prepare(s: Selection) = {
 
+    /*
+     * This heuristic decides if this refactoring is local to a single file or not. Note that
+     * we could simply query the index for all occurrences of the symbol in question, to see if
+     * multiple files are involved or not, but this would require clients to make sure that
+     * we always get a fully initialized index.
+     */
     def isLocalRename(t: Tree) = {
-      def isHiddenOrNoAccessor(s: Symbol) = {
-        s == NoSymbol || s.isPrivate
-      }
+      def isLocalSymbol(symbol: Symbol) = {
+        def isHiddenOrNoAccessor(symbol: Symbol) = symbol == NoSymbol || symbol.isPrivate
 
-      def hasHiddenOrNoAccessor = {
-        if (t.symbol.isVal || t.symbol.isVar) {
-          def getter = t.symbol.getter(t.symbol.owner)
-          def setter = t.symbol.setter(t.symbol.owner)
-          isHiddenOrNoAccessor(getter) && isHiddenOrNoAccessor(setter)
+        def hasHiddenOrNoAccessor = {
+          if (symbol.isVal || symbol.isVar) {
+            def getter = symbol.getter(symbol.owner)
+            def setter = symbol.setter(symbol.owner)
+
+
+            isHiddenOrNoAccessor(getter) && isHiddenOrNoAccessor(setter)
+          } else {
+            true
+          }
+        }
+
+        val relatedCtor = s.root.find {
+          case dd: DefDef if dd.symbol.isConstructor && !dd.mods.isPrivate && !dd.mods.isPrivateLocal =>
+            val relatedParam = dd.vparamss.flatten.find { p =>
+              val (p1, p2) = (p.symbol.pos, symbol.pos)
+              p1.isDefined && p2.isDefined && p1.point == p2.point
+            }
+
+            relatedParam.nonEmpty
+
+          case _ => false
+        }
+
+        val isCtorArg = relatedCtor.nonEmpty
+
+        if (isCtorArg) {
+          // Better be safe than sorry and assume that constructor arguments might always leak out:
+          //  Deciding if constructor arguments might 'leak' out of a file is a non-trivial endeavor,
+          //  even if we the know that the class definition is nested in a local block. To do this
+          //  properly we would have to examine all supertypes, as well as the return type of the
+          //  block, which might be a structural type.
+          false
+        } else if (symbol.isParameter) {
+          val isParamThatMightBeVisibleInOtherFiles = {
+            val isNestedInMethodValOrVar = {
+              def isMethodValOrVar(s: Symbol) = {
+                s.isVal || s.isVar || s.isMethod
+              }
+
+              val level = symbol.ownerChain.count(isMethodValOrVar)
+              level > 2
+            }
+
+            !isNestedInMethodValOrVar
+          }
+
+          !isParamThatMightBeVisibleInOtherFiles
         } else {
-          true
+          symbol.isLocal || (symbol.isPrivate && hasHiddenOrNoAccessor)
         }
       }
 
-      t.symbol.isLocal || (t.symbol.isPrivate && hasHiddenOrNoAccessor)
+      t.symbol match {
+        case null | NoSymbol => true
+        case properSymbol => isLocalSymbol(properSymbol)
+      }
     }
 
     s.selectedSymbolTree match {

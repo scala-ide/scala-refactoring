@@ -75,5 +75,6 @@ import scala.tools.refactoring.implementations.OrganizeImportsAlgosTest
     classOf[UnionFindInitTest],
     classOf[UnionFindTest],
     classOf[UnusedImportsFinderTest],
+    classOf[SourceWithMarkerTest],
     classOf[OrganizeImportsAlgosTest]))
 class RefactoringTestSuite {}

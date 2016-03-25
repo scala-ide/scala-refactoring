@@ -16,7 +16,6 @@ import scala.tools.refactoring.common.PositionDebugging
  * methods in subclasses.
  */
 trait DependentSymbolExpanders extends TracingImpl {
-
   this: Indexes with common.CompilerAccess =>
 
   import global._
@@ -95,6 +94,107 @@ trait DependentSymbolExpanders extends TracingImpl {
     }
   }
 
+  /**
+   * Associates class vals with constructor parameters
+   */
+  trait ClassVals extends SymbolExpander { this: IndexLookup =>
+    protected abstract override def doExpand(s: Symbol) = {
+      findRelatedCtorParamSymbol(s).toList ::: super.doExpand(s)
+    }
+
+    private def findRelatedCtorParamSymbol(s: Symbol): Option[Symbol] = s match {
+      case ts: TermSymbol if ts.isVal && ts.owner.isClass =>
+        declaration(s.owner).flatMap(findRelatedCtorParamSymbolIn(_, s))
+      case _ => None
+    }
+
+    private def findRelatedCtorParamSymbolIn(parent: Tree, valSym: Symbol): Option[Symbol] = {
+      parent.foreach {
+        case dd: DefDef if dd.symbol.isConstructor =>
+          val res = findParamSymbolAssociatedWithValSymbol(dd, valSym)
+
+          if (res.nonEmpty) {
+            return res
+          }
+
+        case _ => ()
+      }
+
+      None
+    }
+  }
+
+  private def findParamSymbolAssociatedWithValSymbol(dd: DefDef, valSym: Symbol): Option[Symbol] = {
+    def correspondsToVal(param: Tree) = {
+      val (pSym, vSym) = (param.symbol, valSym)
+      val (pPos, vPos) = (param.symbol.pos, valSym.pos)
+      pSym != vSym && pPos.isDefined && vPos.isDefined && pPos.point == vPos.point
+    }
+
+    dd.vparamss.flatten.collectFirst {
+      case p if correspondsToVal(p) => p.symbol
+    }
+  }
+
+  /**
+   * Associates case class vals with the parameters of generated apply and copy methods
+   */
+  trait CaseClassVals extends SymbolExpander { this: IndexLookup =>
+    protected abstract override def doExpand(s: Symbol) = {
+      findRelatedApplyAndCopyParamSymbols(s) ::: super.doExpand(s)
+    }
+
+    /*
+     * Unfortunately we cannot rely on `Symbol.companionSymbol` alone (see Scaladocs).
+     * The implementation below is heavily inspired by
+     * `scala.tools.nsc.typechecker.Namers.companionSymbolOf`.
+     */
+    private def companionModuleOf(classSymbol: Symbol): Symbol = {
+      classSymbol.companionSymbol.orElse {
+        val companionName = classSymbol.name.companionName
+
+        allDefinedSymbols().find { sym =>
+          sym.name == companionName && sym.hasModuleFlag && sym.isCoDefinedWith(classSymbol)
+        }.getOrElse(NoSymbol)
+      }
+    }
+
+    private def findRelatedApplyAndCopyParamSymbols(s: Symbol): List[Symbol] = {
+      if (s.isVal && s.owner.isCaseClass) {
+        List(s.owner, companionModuleOf(s.owner)).flatMap { parentSymbol =>
+          declaration(parentSymbol).flatMap(findRelatedApplyOrCopyParamSymbolIn(_, s))
+        }
+      } else {
+        Nil
+      }
+    }
+
+    private def findRelatedApplyOrCopyParamSymbolIn(parent: Tree, valSym: Symbol): Option[Symbol] = {
+      parent.foreach {
+        case dd: DefDef if isCaseApplyOrCopy(dd.symbol) =>
+          return findParamSymbolAssociatedWithValSymbol(dd, valSym)
+        case _ => ()
+      }
+
+      None
+    }
+
+    private def isCaseApplyOrCopy(s: Symbol) = {
+      /*
+       *  Unfortunately Symbol.isCaseCopy is not available for Scala-2.10
+       */
+      def isCaseCopy = {
+        s.isMethod && s.owner.isCase && s.isSynthetic && s.name == nme.copy
+      }
+
+      def isCaseApply = {
+        s.isCaseApplyOrUnapply && !s.nameString.contains("unapply")
+      }
+
+      isCaseCopy || isCaseApply
+    }
+  }
+
   trait OverridesInSuperClasses extends SymbolExpander {
     this : IndexLookup =>
 
@@ -105,5 +205,4 @@ trait DependentSymbolExpanders extends TracingImpl {
       case _ => Nil
     })
   }
-
 }
