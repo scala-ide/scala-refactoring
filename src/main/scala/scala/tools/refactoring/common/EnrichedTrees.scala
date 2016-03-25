@@ -1215,6 +1215,17 @@ trait EnrichedTrees extends TracingImpl {
    *
    * Also reshapes some trees: multiple assignments are
    * removed and named argument trees are created.
+   *
+   * Note that this extractor is needed primarily for tree printing. The rename refactoring for example,
+   * that doesn't use tree printing, would work with
+   * {{{
+   *   object BlockExtractor {
+   *     def unapply(t: Block) = {
+   *       Some(t.expr :: t.stats)
+   *     }
+   *   }
+   * }}}
+   * as well.
    */
   object BlockExtractor {
     private def findParamAssignment(argsSource: String, paramName: String): Option[Int] = {
