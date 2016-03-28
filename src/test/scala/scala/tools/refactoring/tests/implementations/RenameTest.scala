@@ -3761,15 +3761,15 @@ class Blubb
     """
     class Bug {
       val /*(*/renameMe/*)*/ = 13
-      val bug = f"$renameMe"
+      val bug = f"?renameMe"
     }
-    """ becomes
+    """.replace("?", "$") becomes
     """
     class Bug {
       val /*(*/ups/*)*/ = 13
-      val bug = f"$ups"
+      val bug = f"?ups"
     }
-    """ -> TaggedAsGlobalRename
+    """.replace("?", "$") -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 
   @Test
@@ -3779,24 +3779,24 @@ class Blubb
       val /*(*/renameMe/*)*/ = 13
       val renameMeNot = 14
 
-      val bug = f"$renameMe"
-      val moreBugs = f"$renameMe but $renameMeNot and make sure that $renameMe is renamed again"
-      val bugsAllOverThePlace = f"Plase, also ${renameMe} here, but do ${renameMeNot} here"
+      val bug = f"?renameMe"
+      val moreBugs = f"?renameMe but ?renameMeNot and make sure that ?renameMe is renamed again"
+      val bugsAllOverThePlace = f"Plase, also ?{renameMe} here, but do ?{renameMeNot} here"
 
-      val thisWorkedBefore = s"Please $renameMe like you did before"
+      val thisWorkedBefore = s"Please ?renameMe like you did before"
     }
-    """ becomes
+    """.replace("?", "$") becomes
     """
     class Bug {
       val /*(*/franzi/*)*/ = 13
       val renameMeNot = 14
 
-      val bug = f"$franzi"
-      val moreBugs = f"$franzi but $renameMeNot and make sure that $franzi is renamed again"
-      val bugsAllOverThePlace = f"Plase, also ${franzi} here, but do ${renameMeNot} here"
+      val bug = f"?franzi"
+      val moreBugs = f"?franzi but ?renameMeNot and make sure that ?franzi is renamed again"
+      val bugsAllOverThePlace = f"Plase, also ?{franzi} here, but do ?{renameMeNot} here"
 
-      val thisWorkedBefore = s"Please $franzi like you did before"
+      val thisWorkedBefore = s"Please ?franzi like you did before"
     }
-    """ -> TaggedAsGlobalRename
+    """.replace("?", "$") -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("franzi"))
 }
