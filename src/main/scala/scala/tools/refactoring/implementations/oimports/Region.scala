@@ -8,6 +8,7 @@ import scala.tools.nsc.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
+import sourcegen.Formatting
 
 case class Region private (imports: List[Global#Import], owner: Global#Symbol, startPos: Global#Position, endPos: Global#Position,
     source: SourceFile, indentation: String, printImport: Global#Import => String, printImportWithComment: Global#Import => String) {
@@ -59,21 +60,51 @@ object Region {
     sourceFile.lineToString(sourceFile.offsetToLine(imp.pos.start)).takeWhile { _.isWhitespace }
   }
 
-  private def scanForComments[G <: Global](global: G, source: SourceFile): List[RangePosition] = {
-    val scanners = new TreeToolboxScanners[global.type](global)
+  private def scanForComments[G <: Global](global: G)(source: SourceFile): List[RangePosition] = {
+    val scanners = new TreeToolboxScanners(global)
     val commentScanner = new scanners.CommentScanner(source)
     commentScanner.scan()
     commentScanner.comments
   }
 
-  private def cutPrefix(imp: Global#Import, source: SourceFile): String = {
+  private def cutPrefixSuffix(imp: Global#Import, source: SourceFile): (String, List[String]) = {
     val printedImport = source.content.slice(imp.pos.start, imp.pos.end).mkString
     val prefixPatternWithCommentInside = """import (((\/\*.*\*\/)*(\w|\d|_|-)+(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
-    prefixPatternWithCommentInside.findFirstIn(printedImport).get
+    val prefix = prefixPatternWithCommentInside.findFirstIn(printedImport).get
+    def toNameRename(printedSelectors: String): List[String] = {
+      val unwrapFromBraces = (if (printedSelectors.startsWith("{"))
+        printedSelectors.drop(1).dropRight(1)
+      else printedSelectors).split(",").filter { _ != "" }.map { _.trim }
+      unwrapFromBraces.toList
+    }
+    val rawSelectors = printedImport.substring(prefix.length).trim
+    (prefix, toNameRename(rawSelectors))
   }
 
-  private def wrapInBackticks(name: Global#Name): String =
-    if (name.containsChar('$')) "`" + name.decoded + "`" else name.decoded
+  private def selectorToSuffix(suffices: List[String], sel: Global#ImportSelector): Option[String] = suffices.find { s =>
+    val name = sel.name.decoded
+    val backtickedName = "`" + name + "`"
+    val rename = if (sel.rename != null) sel.rename.decoded else ""
+    val backtickedRename = "`" + rename + "`"
+    def isCorrect(s: String): Boolean = {
+      val regExp = """(\s*=>\s*)?""".r
+      regExp.findAllIn(s).nonEmpty
+    }
+    val found = if (s.startsWith(name)) {
+      if (s.endsWith(backtickedRename)) {
+        isCorrect(s.drop(name.length).dropRight(backtickedRename.length))
+      } else if (s.endsWith(rename)) {
+        isCorrect(s.drop(name.length).dropRight(rename.length))
+      } else false
+    } else if (s.startsWith(backtickedName)) {
+      if (s.endsWith(backtickedRename)) {
+        isCorrect(s.drop(backtickedName.length).dropRight(backtickedRename.length))
+      } else if (s.endsWith(rename)) {
+        isCorrect(s.drop(backtickedName.length).dropRight(rename.length))
+      } else false
+    } else false
+    found
+  }
 
   private def findUpNeighborComment(impPos: Position, comments: List[RangePosition], source: SourceFile): Option[RangePosition] = impPos match {
     case rangePos: RangePosition =>
@@ -89,22 +120,25 @@ object Region {
       source.content.slice(comment.start, comment.end).mkString
     }
 
-  def apply(imports: List[Global#Import], owner: Global#Symbol)(global: Global): Region = {
+  private def wrapInBraces(selectors: String, rawSelectors: List[Global#ImportSelector], formatting: Formatting): String =
+    if (rawSelectors.length > 1 || rawSelectors.exists { sel =>
+      sel.rename != null && sel.name.decoded != sel.rename.decoded
+    })
+      "{" + formatting.spacingAroundMultipleImports + selectors + formatting.spacingAroundMultipleImports + "}"
+    else
+      selectors
+
+  def apply[G <: Global](global: G)(imports: List[global.Import], owner: global.Symbol, formatting: Formatting): Region = {
     require(imports.nonEmpty, "List of imports must not be empty.")
     val source = imports.head.pos.source
-    val comments = scanForComments(global, source)
+    val comments = scanForComments(global)(source)
     def printImport(imp: Global#Import): String = {
-      import global._
-      val RenameArrow = " => "
-      val prefix = cutPrefix(imp, source)
-      val suffix = imp.selectors.map { sel =>
-        if (sel.name == sel.rename || sel.name == nme.WILDCARD)
-          wrapInBackticks(sel.name)
-        else
-          wrapInBackticks(sel.name) + RenameArrow + wrapInBackticks(sel.rename)
-      }
-      val areBracesNeeded = suffix.size > 1 || suffix.exists { _ contains RenameArrow }
-      prefix + suffix.mkString(if (areBracesNeeded) "{" else "", ", ", if (areBracesNeeded) "}" else "")
+      val (prefix, suffices) = cutPrefixSuffix(imp, source)
+      val suffix = imp.selectors.collect {
+        case sel => selectorToSuffix(suffices, sel)
+      }.filter(_.nonEmpty).map(_.get)
+
+      prefix + wrapInBraces(suffix.mkString(", "), imp.selectors, formatting)
     }
     val indent = indentation(imports.head)
     def printImportWithComment(imp: Global#Import): String = {

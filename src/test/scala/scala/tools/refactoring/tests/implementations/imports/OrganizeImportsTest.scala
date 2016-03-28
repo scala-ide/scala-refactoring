@@ -3290,4 +3290,166 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPassMatthiasBug7() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    object Bug7 {
+      object ` => ` {
+        val x = 42
+      }
+    }
+
+    class Bug7 {
+      import Bug7.` => `
+      val x = ` => `.x
+    }
+  """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there. */
+  @Test
+  def shouldPassMatthiasBug5() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    trait Bug5 {
+      import scala.util.{Try => `Evil....`}
+      import scala.concurrent.Future
+
+      def f: Future[`Evil....`[Int]] = ???
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.util.{Try => Evil....}
+
+    trait Bug5 {
+      import scala.concurrent.Future
+      import scala.util.{Try => `Evil....`}
+
+      def f: Future[`Evil....`[Int]] = ???
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there. */
+  @Test
+  def shouldPassMatthiasBug4() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    object Bug4 {
+      class `€€€` {
+        def x = 42
+      }
+
+      class DollarDollarDollar {
+        def y = 53
+      }
+    }
+
+    class Bug4 {
+      import Bug4.`€€€`
+      import Bug4.{DollarDollarDollar => `$$$`}
+
+      new `€€€`().x
+      new `$$$`().y
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    import Bug4.{DollarDollarDollar => $$$}
+
+    object Bug4 {
+      class `€€€` {
+        def x = 42
+      }
+
+      class DollarDollarDollar {
+        def y = 53
+      }
+    }
+
+    class Bug4 {
+      import Bug4.{DollarDollarDollar => `$$$`}
+      import Bug4.`€€€`
+
+      new `€€€`().x
+      new `$$$`().y
+    }"""}
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Test
+  def shouldPassMatthiasBug3() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.concurrent.Future
+
+    object Bug3 {
+      class Other {
+        type Tpe1 = Int
+        type Tpe2 = Double
+        type Tpe3 = String
+      }
+    }
+
+    trait Bug3 {
+      import scala.util./*evil.evil*/Try
+      import Bug3._
+      import scala.concurrent.Future
+
+      val other: Other
+
+      def f: Future[Int] = {
+        import other.{ Tpe1 => Dpe0 }
+        import other.Tpe2
+
+        def z: Dpe0 = {
+          val x: Dpe0 = 12
+          val y: Tpe2 = 0.0
+          x + y.toInt
+        }
+
+        Future.successful(Try(z).getOrElse(42))
+      }
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.util.Try
+
+    object Bug3 {
+      class Other {
+        type Tpe1 = Int
+        type Tpe2 = Double
+        type Tpe3 = String
+      }
+    }
+
+    trait Bug3 {
+      import Bug3._
+      import scala.concurrent.Future
+      import scala.util./*evil.evil*/Try
+
+      val other: Other
+
+      def f: Future[Int] = {
+        import other.{Tpe1 => Dpe0}
+        import other.Tpe2
+
+        def z: Dpe0 = {
+          val x: Dpe0 = 12
+          val y: Tpe2 = 0.0
+          x + y.toInt
+        }
+
+        Future.successful(Try(z).getOrElse(42))
+      }
+    }"""}
+  } applyRefactoring organizeWithTypicalParams
 }

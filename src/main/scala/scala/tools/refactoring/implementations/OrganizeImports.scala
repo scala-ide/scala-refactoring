@@ -9,6 +9,7 @@ import common.TreeTraverser
 import common.Change
 import transformation.TreeFactory
 import scala.util.control.NonFatal
+import sourcegen.Formatting
 
 object OrganizeImports {
   /**
@@ -78,7 +79,8 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
                                                              with UnusedImportsFinder
                                                              with analysis.CompilationUnitDependencies
                                                              with common.InteractiveScalaCompiler
-                                                             with common.TreeExtractors {
+                                                             with common.TreeExtractors
+                                                             with Formatting {
 
   import OrganizeImports.Algos
   import global._
@@ -477,7 +479,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val treeToolbox = new TreeToolbox[global.type](global)
     import oimports.DefImportsOrganizer
     val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val defRegions = defImportsOrganizer.transformTreeToRegions(rootTree).map {
+    val defRegions = defImportsOrganizer.transformTreeToRegions(rootTree, this).map {
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard ::
           (new NPRemovedUnused(rootTree)) ::
@@ -490,7 +492,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
 
     import oimports.ClassDefImportsOrganizer
     val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(rootTree).map {
+    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(rootTree, this).map {
       _.transform { i =>
         scala.Function.chain { RemoveDuplicatedByWildcard ::
           (new NPRemovedUnused(rootTree)) ::

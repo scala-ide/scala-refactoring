@@ -2,6 +2,7 @@ package scala.tools.refactoring
 package implementations.oimports
 
 import scala.tools.nsc.Global
+import sourcegen.Formatting
 
 abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbox: U) {
   import treeToolbox.global._
@@ -26,17 +27,17 @@ abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbo
 
   protected def treeChildren(parent: T): List[Tree]
 
-  private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol): List[Region] =
+  private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol, formatting: Formatting): List[Region] =
     groupedImports.collect {
-      case imports @ h :: _ => Region(imports, importsOwner)(treeToolbox.global)
+      case imports @ h :: _ => Region(treeToolbox.global)(imports, importsOwner, formatting)
     }
 
-  def transformTreeToRegions(tree: Tree): List[Region] = forTreesOf(tree).flatMap {
+  def transformTreeToRegions(tree: Tree, formatting: Formatting): List[Region] = forTreesOf(tree).flatMap {
     case (extractedTree, treeOwner) =>
       val groupedImports = importsGroupsFromTree(treeChildren(extractedTree)).filter {
         noAnyTwoImportsInSameLine
       }
-      toRegions(groupedImports, treeOwner)
+      toRegions(groupedImports, treeOwner, formatting)
   }
 }
 
