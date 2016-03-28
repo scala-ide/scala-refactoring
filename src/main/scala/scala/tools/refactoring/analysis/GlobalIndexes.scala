@@ -8,6 +8,8 @@ package analysis
 import collection.mutable.ListBuffer
 import collection.mutable.HashSet
 import annotation.tailrec
+import scala.reflect.internal.util.OffsetPosition
+import scala.reflect.internal.util.RangePosition
 
 /**
  * Provides an implementation of the Indexes.IndexLookup trait
@@ -94,8 +96,7 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
     def occurences(s: global.Symbol) = {
       val expandedSymbol = expandSymbol(s)
 
-      expandedSymbol.flatMap { sym =>
-
+      val trees = expandedSymbol.flatMap { sym =>
         val decs = declaration(sym).toList
         val refs = cus.flatMap { cu =>
           cu.references.get(sym).toList.flatten
@@ -104,7 +105,6 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
         decs ::: refs
 
       }.filter {
-
         // see SI-6141
         case t: Ident => t.pos.isRange
 
@@ -115,6 +115,11 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           val src = t.pos.source.content.slice(t.pos.start, t.pos.end).mkString
           src != "super"
 
+        // Takes care of renames for interpolated strings (see #1002651), since
+        // the presentation compiler might fail to properly assign range positions.
+        case t: RefTree if !t.pos.isRange && t.pos.isDefined && isArgOfStringContextApply(t) =>
+          true
+
         case t if t.pos.isTransparent =>
           // We generally want to skip transparent positions,
           // so if one of the children is an opaque range, we
@@ -123,7 +128,50 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
 
         case t =>
           t.pos.isOpaqueRange
-      }.distinct
+      }
+
+      onlyTreesWithRangesOrOffsetsOutsideOfAllRanges(onlyTreesWithDistinctPositions(trees))
+    }
+
+    private def isArgOfStringContextApply(t: Tree): Boolean = {
+      rootsOf(List(t)).exists { root =>
+        root.exists { tree =>
+          tree match {
+            case Apply(fun, args) if fun.pos.isTransparent && args.contains(t) =>
+              fun.toString().startsWith("scala.StringContext.apply(")
+            case _ =>
+              false
+          }
+        }
+      }
+    }
+
+    private def onlyTreesWithDistinctPositions(trees: List[Tree]): List[Tree] = {
+      trees.groupBy(_.pos).map { case (_, trees) => trees.head }.toList
+    }
+
+    private def onlyTreesWithRangesOrOffsetsOutsideOfAllRanges(trees: List[Tree]): List[Tree] = {
+      val (offsets, ranges) = trees.foldLeft((List[OffsetPosition](), List[RangePosition]())) { case ((offsets, ranges), tree) =>
+        tree.pos match {
+          case range: RangePosition => (offsets, range :: ranges)
+          case offset: OffsetPosition => (offset :: offsets, ranges)
+          case unexpected => throw new AssertionError(s"Cannot handle unexpected position $unexpected in $tree")
+        }
+      }
+
+      val offsetsToKeep = offsets.filter { offset =>
+        ranges.forall { range =>
+          val pointWithinRange = range.start <= offset.point && range.end > offset.point
+          !pointWithinRange
+        }
+      }.toSet
+
+      trees.filter { tree =>
+        tree.pos match {
+          case _: RangePosition => true
+          case offset: OffsetPosition => offsetsToKeep.contains(offset)
+        }
+      }
     }
 
     def allDefinedSymbols = cus.flatMap(_.definitions.keys)

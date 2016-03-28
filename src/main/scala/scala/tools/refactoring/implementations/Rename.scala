@@ -15,6 +15,7 @@ import scala.tools.refactoring.util.SourceWithMarker.Movements
 import scala.tools.refactoring.common.TextChange
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.common.Change
+import scala.reflect.internal.util.OffsetPosition
 
 abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler {
 
@@ -160,15 +161,39 @@ abstract class Rename extends MultiStageRefactoring with TreeAnalysis with analy
       }
 
       import Movements._
-      val mvToSymStart = Movements.until(oldName, skipping = (comment | space | reservedName))
+      val mvToSymStartForRangePos = Movements.until(oldName, skipping = (comment | space | reservedName))
       val textChangesWithTrees = occurences.flatMap { occ =>
         occ.namePosition() match {
           case np: RangePosition =>
             // Unfortunately, there are cases when the name position cannot be used directly.
             // Therefore we have to use an appropriate movement to make sure we capture the correct range.
             val srcAtStart = SourceWithMarker.atStartOf(np)
-            mvToSymStart(srcAtStart).map { markerAtSymStart =>
+            mvToSymStartForRangePos(srcAtStart).map { markerAtSymStart =>
               (TextChange(np.source, markerAtSymStart, markerAtSymStart + oldName.length, newName), occ)
+            }
+
+          case op: OffsetPosition =>
+            // Normally, we would not like to deal with offset positions here at all.
+            // Unfortunately the compiler emits them instead of range positions in
+            // interpolated strings like f"$x" (see #1002651).
+            val pointIsAtStartOfNameToBeChanged = {
+              val srcBeforePoint = SourceWithMarker.atPoint(op).step(forward = false)
+              val pointIsInMiddleOfId = Movements.id(srcBeforePoint).exists(_ > op.point)
+
+              if (pointIsInMiddleOfId) {
+                false
+              } else {
+                val srcAtPoint = srcBeforePoint.step(forward = true)
+                val srcAfterId = srcAtPoint.moveMarker(Movements.id)
+                val consumedId = srcAtPoint.source.slice(srcAtPoint.marker, srcAfterId.marker).mkString("")
+                consumedId == oldName
+              }
+            }
+
+            if (pointIsAtStartOfNameToBeChanged) {
+              Some((TextChange(op.source, op.point, op.point + oldName.length, newName), occ))
+            } else {
+              None
             }
 
           case _ =>
