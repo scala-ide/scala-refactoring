@@ -33,14 +33,14 @@ object PositionDebugging {
     if (pos != NoPosition && pos.source != NoSourceFile) {
       val posType = getSimpleClassName(pos)
 
-      val (start, end) = {
-        if (!pos.isRange) (pos.point, pos.point)
-        else (pos.start, pos.end)
+      val (start, point, end) = {
+        if (!pos.isRange) (pos.point, pos.point, pos.point)
+        else (pos.start, pos.point, pos.end)
       }
 
       val markerString = {
-        if (start == end) s"(${start})"
-        else s"(${start}, ${end})"
+        if (start == end) s"($start)"
+        else s"($start, $point, $end)"
       }
 
       val relevantSource = {
