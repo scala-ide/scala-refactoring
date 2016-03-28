@@ -354,6 +354,8 @@ class SourceWithMarkerTest {
     runIdTest("->", "->")
     runIdTest("2", "")
     runIdTest("x2", "x2")
+    runIdTest("/*comment*/", "")
+    runIdTest("//comment", "")
   }
 
   @Test

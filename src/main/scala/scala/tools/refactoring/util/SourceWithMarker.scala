@@ -640,7 +640,7 @@ object SourceWithMarker {
       "_" | ":" | "=" | "=>" | "<-" | "<:" | "<%" | ">:" | "#" | "@" |
       "\u21D2" | "\u2190"
 
-    val id = (plainid | literalIdentifier).butNot(reservedName)
+    val id = (plainid | literalIdentifier).butNot(reservedName | comment)
 
     val spaces: Movement = space.zeroOrMore
     val comments: Movement = comment.zeroOrMore
