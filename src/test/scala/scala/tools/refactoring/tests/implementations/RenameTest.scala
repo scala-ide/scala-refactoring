@@ -3757,7 +3757,7 @@ class Blubb
    * See Assembla Ticket 1002651
    */
   @Test
-  def testRenameWithInterpolatedString1002651() = new FileSet {
+  def testRenameWithInterpolatedString1002651Ex1() = new FileSet {
     """
     class Bug {
       val /*(*/renameMe/*)*/ = 13
@@ -3771,4 +3771,32 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithInterpolatedString1002651Ex2() = new FileSet {
+    """
+    class Bug {
+      val /*(*/renameMe/*)*/ = 13
+      val renameMeNot = 14
+
+      val bug = f"$renameMe"
+      val moreBugs = f"$renameMe but $renameMeNot and make sure that $renameMe is renamed again"
+      val bugsAllOverThePlace = f"Plase, also ${renameMe} here, but do ${renameMeNot} here"
+
+      val thisWorkedBefore = s"Please $renameMe like you did before"
+    }
+    """ becomes
+    """
+    class Bug {
+      val /*(*/franzi/*)*/ = 13
+      val renameMeNot = 14
+
+      val bug = f"$franzi"
+      val moreBugs = f"$franzi but $renameMeNot and make sure that $franzi is renamed again"
+      val bugsAllOverThePlace = f"Plase, also ${franzi} here, but do ${renameMeNot} here"
+
+      val thisWorkedBefore = s"Please $franzi like you did before"
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("franzi"))
 }
