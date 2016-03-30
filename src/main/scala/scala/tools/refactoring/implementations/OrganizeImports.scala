@@ -8,8 +8,8 @@ package implementations
 import common.TreeTraverser
 import common.Change
 import transformation.TreeFactory
-import scala.util.control.NonFatal
 import sourcegen.Formatting
+import scala.util.control.NonFatal
 
 object OrganizeImports {
   /**

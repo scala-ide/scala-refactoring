@@ -3292,7 +3292,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeWithTypicalParams
 
   @Test
-  def shouldPassMatthiasBug7() = new FileSet {
+  def shouldPreserveBacktickedNamesOfImports_variation1() = new FileSet {
     """
     package com.github.mlangc.experiments
 
@@ -3311,7 +3311,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   /** There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there. */
   @Test
-  def shouldPassMatthiasBug5() = new FileSet {
+  def shouldPreserveBacktickedNamesOfImports_variation2() = new FileSet {
     """
     package com.github.mlangc.experiments
 
@@ -3335,9 +3335,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there. */
+  /** There is a bug in package scope imports organizing. Import DollarDollarDollar => $$$ should not be moved there. */
   @Test
-  def shouldPassMatthiasBug4() = new FileSet {
+  def shouldPreserveBacktickedNamesOfImports_variation3() = new FileSet {
     """
     package com.github.mlangc.experiments
 
@@ -3384,7 +3384,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
   @Test
-  def shouldPassMatthiasBug3() = new FileSet {
+  def shouldPreserveCommentInImportAndSortImports() = new FileSet {
     """
     package com.github.mlangc.experiments
 
@@ -3451,5 +3451,66 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         Future.successful(Try(z).getOrElse(42))
       }
     }"""}
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveUnusedImportOfClassDefinedInSameEnclosingPackage() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    package bugs {
+      sealed trait MyList[+T]
+      case class ::[T](head: T, tail: MyList[T]) extends MyList[T]
+      case object MyNil extends MyList[Nothing]
+    }
+
+    class Bug6 {
+      def f1 = {
+        import bugs.::
+        import bugs.MyList
+        import bugs.MyNil
+
+        new ::(1, MyNil)
+      }
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    package bugs {
+      sealed trait MyList[+T]
+      case class ::[T](head: T, tail: MyList[T]) extends MyList[T]
+      case object MyNil extends MyList[Nothing]
+    }
+
+    class Bug6 {
+      def f1 = {
+        import bugs.::
+        import bugs.MyNil
+
+        new ::(1, MyNil)
+      }
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import implicitConversions should not be moved there. */
+  @Test
+  def shouldRemoveImportWithUnusedImplicits() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    class Bug8 {
+      import scala.language.implicitConversions
+      implicit def intToString(i: Int) = i.toString
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+
+    class Bug8 {
+      implicit def intToString(i: Int) = i.toString
+    }"""
+    }
   } applyRefactoring organizeWithTypicalParams
 }

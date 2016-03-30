@@ -2,6 +2,7 @@ package scala.tools.refactoring
 package implementations.oimports
 
 import scala.tools.nsc.Global
+
 import sourcegen.Formatting
 
 abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbox: U) {

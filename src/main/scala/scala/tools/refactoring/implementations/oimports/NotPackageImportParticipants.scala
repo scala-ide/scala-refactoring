@@ -17,11 +17,11 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
 
     private lazy val allSelects = {
       import scala.collection.mutable
-      val selects = mutable.ListBuffer[Select]()
+      val selects = mutable.ListBuffer[(Symbol, Select)]()
       val selectsTraverser = new TraverserWithFakedTrees {
         override def traverse(tree: Tree): Unit = tree match {
           case s @ Select(qual, _) =>
-            selects += s
+            selects += (currentOwner -> s)
             traverse(qual)
           case t => super.traverse(t)
         }
@@ -32,12 +32,16 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
 
     protected def doApply(trees: List[Import]) = trees.iterator.collect {
       case imp @ Import(importQualifier, importSelections) =>
+        val importSym = importQualifier.symbol.fullName
+        val impOwner = imp match {
+          case ro: RegionOwner => Option(ro.owner)
+          case _ => None
+        }
         val usedSelectors = importSelections filter { importSel =>
-          val importSym = importQualifier.symbol.fullName
           val isWildcard = importSel.name == nme.WILDCARD
           val importSelNames = Set(importSel.name, importSel.rename).filterNot { _ == null }.map { _.toString }
-
-          allSelects.exists { foundSel =>
+          allSelects.exists { select =>
+            val (owner, foundSel) = select
             def downToPackage(selectQualifierSymbol: Symbol): Symbol =
               if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol
                   || selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
@@ -48,7 +52,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
             val foundNames = Set(foundSel.name.toString, foundSel.symbol.owner.nameString)
             val foundSym = Option(downToPackage(foundSel.qualifier.symbol)).getOrElse(downToPackage(foundSel.symbol))
             (isWildcard || (foundNames & importSelNames).nonEmpty) &&
-              foundSym != null && foundSym.fullName == importSym
+              foundSym != null && foundSym.fullName == importSym && impOwner.map { owner.ownerChain.contains }.getOrElse(true)
           }
         }
         (imp, usedSelectors)

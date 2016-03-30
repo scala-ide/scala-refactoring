@@ -4,8 +4,8 @@ package implementations.oimports
 import scala.tools.nsc.Global
 
 class TreeToolbox[G <: Global](val global: G) {
-  import scala.collection._
   import global._
+  import scala.collection._
 
   class TreeCollector[T <: Tree] private (traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
     private val collected_ = mutable.ListBuffer.empty[(T, Symbol)]
@@ -49,4 +49,15 @@ class TreeToolbox[G <: Global](val global: G) {
       }
     }
   }
+
+  class RegionImport(val owner: Symbol, proto: Import) extends Import(proto.expr, proto.selectors) with RegionOwner {
+    setPos(proto.pos).setType(proto.tpe).setSymbol(proto.symbol)
+
+    override def copy(expr: Tree = proto.expr, selectors: List[ImportSelector] = proto.selectors) =
+      new RegionImport(owner, proto.copy(expr, selectors).setPos(proto.pos).setSymbol(proto.symbol).setType(proto.tpe))
+  }
+}
+
+trait RegionOwner {
+  def owner: Global#Symbol
 }

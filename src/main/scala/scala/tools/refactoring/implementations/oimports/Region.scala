@@ -87,8 +87,8 @@ object Region {
     val rename = if (sel.rename != null) sel.rename.decoded else ""
     val backtickedRename = "`" + rename + "`"
     def isCorrect(s: String): Boolean = {
-      val regExp = """(\s*=>\s*)?""".r
-      regExp.findAllIn(s).nonEmpty
+      val renameArrowOrNothingLeft = """(\s*=>\s*)?""".r
+      renameArrowOrNothingLeft.findAllIn(s).nonEmpty
     }
     val found = if (s.startsWith(name)) {
       if (s.endsWith(backtickedRename)) {
@@ -137,7 +137,6 @@ object Region {
       val suffix = imp.selectors.collect {
         case sel => selectorToSuffix(suffices, sel)
       }.filter(_.nonEmpty).map(_.get)
-
       prefix + wrapInBraces(suffix.mkString(", "), imp.selectors, formatting)
     }
     val indent = indentation(imports.head)
@@ -148,6 +147,11 @@ object Region {
       }.getOrElse(printedImport)
     }
     val regionStartPos = findUpNeighborComment(imports.head.pos, comments, source).getOrElse(imports.head.pos)
-    Region(imports, owner, regionStartPos, imports.last.pos, source, indent, printImport, printImportWithComment)
+    Region(toRegionImports(global)(imports, owner), owner, regionStartPos, imports.last.pos, source, indent, printImport, printImportWithComment)
+  }
+
+  private def toRegionImports[G <: Global](g: G)(imports: List[g.Import], owner: g.Symbol) = {
+    val ttb = new TreeToolbox[g.type](g)
+    imports.map { i => new ttb.RegionImport(owner, i) }
   }
 }
