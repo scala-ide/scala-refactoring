@@ -169,6 +169,13 @@ trait TreeTraverser extends TracingImpl {
         }
     }
 
+    protected def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = parents zip parentTypes foreach {
+      case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
+        fakeSelectTree(tpe, sym, i) foreach traverse
+
+      case (tree, _) => traverse(tree)
+    }
+
     override def traverse(t: Tree) = {
 
       Option(t.symbol) filter (_.pos.isRange) foreach (s => handleAnnotations(s.annotations))
@@ -176,16 +183,6 @@ trait TreeTraverser extends TracingImpl {
       t match {
         // The standard traverser does not traverse a TypeTree's original:
         case t: TypeTree if t.original != null =>
-
-          def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = {
-            parents zip parentTypes foreach {
-
-              case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
-                fakeSelectTree(tpe, sym, i) foreach traverse
-
-              case (tree, _) => traverse(tree)
-            }
-          }
 
           (t.tpe, t.original) match {
             // in a self type annotation, the first tree is the trait itself, so we skip that one

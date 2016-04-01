@@ -3513,4 +3513,180 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }"""
     }
   } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait A {
+      import scala.util.Either
+      import scala.util.Try
+      def foo: (Try[Unit], _)
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Try
+
+    trait A {
+      import scala.util.Try
+      def foo: (Try[Unit], _)
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Outer {
+      import scala.util.Either
+      import scala.util.Try
+      abstract class TestTE(val a: (Try[_], _))
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Try
+
+    trait Outer {
+      import scala.util.Try
+      abstract class TestTE(val a: (Try[_], _))
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Test
+  def shouldDiscoverArgTypeInInnerExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      class TestTE(val a: (Try[_], Int))
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Try
+
+    object Outer {
+      import scala.util.Try
+
+      class TestTE(val a: (Try[_], Int))
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Import Either should not be moved there. */
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      trait Test[Try, B]
+      class ParamCheck[A]
+      class Verify extends ParamCheck[Test[_, Either[_, _]]]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+
+    trait Outer {
+      import scala.util.Either
+
+      trait Test[Try, B]
+      class ParamCheck[A]
+      class Verify extends ParamCheck[Test[_, Either[_, _]]]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  /** There is a bug in package scope imports organizing. Imports Either and Try should not be moved there. */
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfDeepInHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    object Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      trait Test[Try, B]
+      class ParamCheck[A]
+      class Verify extends ParamCheck[Test[_, Either[_, Try[_]]]]
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDiscoverArgTypeInExistentialTypeOfClassDeclarationAndRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      class TestTE(val a: (_, _))
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object Outer {
+
+      class TestTE(val a: (_, _))
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveImportsForCompoundTypesInClassScope() = new FileSet {
+    """
+    package test
+
+    object Outer {
+      import java.util.SortedMap
+      import java.util.concurrent.ConcurrentMap
+
+      type A[K, V] = SortedMap[K, V] with ConcurrentMap[K, V]
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
 }

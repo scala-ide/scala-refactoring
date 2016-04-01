@@ -23,7 +23,20 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
           case s @ Select(qual, _) =>
             selects += (currentOwner -> s)
             traverse(qual)
+          case TypeDef(_, _, compoundTypeDefs, rhs) =>
+            rhs :: compoundTypeDefs foreach traverse
           case t => super.traverse(t)
+        }
+
+        override def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
+          case (AppliedTypeTree(tpt, _), tpe @ TypeRef(_, sym, _)) => tpt match {
+            case i: Ident if i.tpe == null =>
+              fakeSelectTree(tpe, sym, i) foreach traverse
+            case tree =>
+              super.handleCompoundTypeTree(parents, parentTypes)
+          }
+          case tree =>
+            super.handleCompoundTypeTree(parents, parentTypes)
         }
       }
       selectsTraverser.traverse(treeWithoutImports(block))
