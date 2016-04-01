@@ -1,6 +1,6 @@
 name := "org.scala-refactoring.library"
 
-version := "0.9.1-rc2"
+version := "0.9.1"
 
 scalaVersion := "2.11.8"
 
