@@ -407,7 +407,8 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
   class RefactoringParameters(
     val importsToAdd: List[(String, String)] = Nil,
     val options: List[Participant] = DefaultOptions,
-    val deps: Dependencies.Value = Dependencies.RemoveUnneeded)
+    val deps: Dependencies.Value = Dependencies.RemoveUnneeded,
+    val organizeLocalImports: Boolean = true)
 
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
 
@@ -469,6 +470,13 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
         p copy (stats = imports ::: others) replaces p
     }
 
+    if (params.organizeLocalImports)
+      organizeLocalImportsToo(selection, organizeImports)
+    else
+      Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
+  }
+
+  private def organizeLocalImportsToo(selection: Selection, packageTopImports: Transformation[Tree, Tree]) = {
     val rootTree = abstractFileToTree(selection.file)
     import oimports.NotPackageImportParticipants
     val notPackageParticipants = new NotPackageImportParticipants[this.type](this)
@@ -506,6 +514,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val removedDuplicates = treeToolbox.removeScopesDuplicates(classDefRegions ::: defRegions)
     val changes = removedDuplicates.map { _.print }
 
-    Right(Change.discardOverlappingChanges(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: changes).accepted)
+    Right(Change.discardOverlappingChanges(transformFile(selection.file, packageTopImports |> topdown(matchingChildren(packageTopImports))) ::: changes).accepted)
   }
 }

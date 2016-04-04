@@ -26,7 +26,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organizeCustomized(
       groupPkgs: List[String] = List("java", "scala", "org", "com"),
       useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"),
-      dependencies: Dependencies.Value = Dependencies.FullyRecompute)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+      dependencies: Dependencies.Value = Dependencies.FullyRecompute,
+      organizeLocalImports: Boolean = true)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = {
       val groupImports = refactoring.GroupImports(groupPkgs)
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
@@ -39,7 +40,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
             refactoring.SortImports ::
             groupImports ::
             Nil,
-          deps = dependencies)
+          deps = dependencies,
+          organizeLocalImports = organizeLocalImports)
     }
   }.mkChanges
 
@@ -3689,4 +3691,32 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotOrganizeLocalImportsInMethod() = new FileSet {
+    """
+    package test
+
+    object Acme {
+      val A: Int = 5
+      val B: Int = 6
+    }
+
+    class Tested {
+      import Acme.B
+      def foo = {
+        import Acme.{ B, A, _ }
+        A + B
+      }
+    }
+
+    object TestedObj {
+      import Acme.A
+    }
+
+    trait TestedTrait {
+      import Acme._
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(organizeLocalImports = false)
 }
