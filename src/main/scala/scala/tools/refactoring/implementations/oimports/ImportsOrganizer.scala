@@ -74,3 +74,19 @@ class ClassDefImportsOrganizer[G <: Global, U <: TreeToolbox[G]](override val tr
 
   override protected def treeChildren(template: Template) = template.body
 }
+
+class PackageDefImportsOrganizer[G <: Global, U <: TreeToolbox[G]](override val treeToolbox: U) extends ImportsOrganizer[G, U](treeToolbox) {
+  import treeToolbox.global._
+  type T = PackageDef
+  import treeToolbox.forTreesOfKind
+
+  override protected def forTreesOf(tree: Tree) = forTreesOfKind[PackageDef](tree) { treeCollector =>
+    {
+      case p @ PackageDef(_, stats) =>
+        treeCollector.collect(p)
+        stats.foreach { treeCollector.traverse }
+    }
+  }
+
+  override protected def treeChildren(packageDef: PackageDef) = packageDef.stats
+}

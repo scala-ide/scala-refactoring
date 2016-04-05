@@ -904,8 +904,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package test
 
+    import java.util.Collections.emptyList
+
     class Bug {
-      import java.util.Collections.emptyList
 
       def test = emptyList
     }
@@ -989,9 +990,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package com.github.mlangc.experiments
 
     import java.util.Arrays
+    import java.util.Collections
 
     class Bug4 {
-      import java.util.Collections
 
       def test1 = Arrays.asList(1, 2)
       def test2 = Collections.emptyList
@@ -1907,6 +1908,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
+  /** Potentially remove one more empty line between package and class */
   @Test
   def shouldNotDiscoverArgTypeInExistentialTypeOfClassDeclarationAndRemoveItFromImports() = new FileSet {
     """
@@ -1921,6 +1923,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     /*<-*/
     package test
+
 
     class TestTE(val a: (_, _))
     """
@@ -2610,25 +2613,13 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package test
 
     class Bar {
-      import java.util.{Map => JavaMap}
-      import java.util.HashMap
-
-      val a: JavaMap[String, String] = new HashMap
-    }
-    """ becomes {
-    """
-    /*<-*/
-    package test
-
-    class Bar {
       import java.util.HashMap
       import java.util.{Map => JavaMap}
 
       val a: JavaMap[String, String] = new HashMap
     }
-    """
-    }
-  } applyRefactoring organizeWithTypicalParams
+    """ isNotModified
+    } applyRefactoring organizeWithTypicalParams
 
   @Test
   def shouldOrganizeImportInClassAndDefBodies() = new FileSet {
@@ -3414,6 +3405,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
+<<<<<<< HEAD
+=======
+    import scala.concurrent.Future
+
+>>>>>>> Inits work on organize imports in package scope
     object Bug3 {
       class Other {
         type Tpe1 = Int
@@ -3424,7 +3420,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     trait Bug3 {
       import Bug3._
-      import scala.concurrent.Future
       import scala.util./*evil.evil*/Try
 
       val other: Other
@@ -3526,9 +3521,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bug8 {
       implicit def intToString(i: Int) = i.toString
-    }"""
-    }
-  } applyRefactoring organizeWithTypicalParams
+    }"""}
+    } applyRefactoring organizeWithTypicalParams
 
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
@@ -3641,8 +3635,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package test
 
     object Outer {
-      import scala.util.Either
-      import scala.util.Try
 
       trait Test[Try, B]
       class ParamCheck[A]

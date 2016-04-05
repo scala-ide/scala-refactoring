@@ -471,7 +471,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
 
     if (params.organizeLocalImports)
-      organizeLocalImportsToo(selection, organizeImports)
+      organizeLocalImportsToo(selection, null)
     else
       Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
@@ -511,9 +511,22 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       }
     }
 
-    val removedDuplicates = treeToolbox.removeScopesDuplicates(classDefRegions ::: defRegions)
+    import oimports.PackageDefImportsOrganizer
+    val packageDefImportsOrganizer = new PackageDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
+    val packageDefRegions = packageDefImportsOrganizer.transformTreeToRegions(rootTree, this).map {
+      _.transform { i =>
+        scala.Function.chain { RemoveDuplicatedByWildcard ::
+          (new NPRemovedUnused(rootTree)) ::
+          RemoveDuplicates ::
+          SortImportSelectors ::
+          SortImports ::
+          Nil }(i.asInstanceOf[List[Import]])
+      }
+    }
+
+    val removedDuplicates = treeToolbox.removeScopesDuplicates(packageDefRegions ::: classDefRegions ::: defRegions)
     val changes = removedDuplicates.map { _.print }
 
-    Right(Change.discardOverlappingChanges(transformFile(selection.file, packageTopImports |> topdown(matchingChildren(packageTopImports))) ::: changes).accepted)
+    Right(Change.discardOverlappingChanges(changes).accepted)
   }
 }
