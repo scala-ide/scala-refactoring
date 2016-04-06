@@ -35,10 +35,10 @@ class TreeToolbox[G <: Global](val global: G) {
 
     def apply(regions: List[Region]): List[Region] = {
       regions.sortBy {
-        _.startPos.start
+        _.from
       }.map { kid =>
         val ancestors = regions.filter { potentialAncestor =>
-          potentialAncestor.startPos.start < kid.startPos.start && isAncestorOf(kid, potentialAncestor)
+          potentialAncestor.from < kid.from && isAncestorOf(kid, potentialAncestor)
         }
         val ancestorsImports = ancestors.flatMap { ancestor =>
           ancestor.imports.map { ancestor.printImport }

@@ -11,33 +11,32 @@ import scala.util.Properties
 
 import sourcegen.Formatting
 
-case class Region private (imports: List[Global#Import], owner: Global#Symbol, startPos: Global#Position, endPos: Global#Position,
-    source: SourceFile, indentation: String, printImport: Global#Import => String, printImportWithComment: Global#Import => String) {
+case class Region private (imports: List[Global#Import], owner: Global#Symbol, from: Int,
+    to: Int, source: SourceFile, indentation: String, printImport: Global#Import => String,
+    printImportWithComment: Global#Import => String, printWhenEmpty: String) {
   def transform(transformation: List[Global#Import] => List[Global#Import]): Region =
     copy(imports = transformation(imports))
 
   private def printEmptyImports: Change = {
-    val fromBeginningOfLine = source.lineToOffset(source.offsetToLine(startPos.start))
-    val from = if (source.content.slice(fromBeginningOfLine, startPos.start).exists(!_.isWhitespace))
-      startPos.start
+    val fromBeginningOfLine = source.lineToOffset(source.offsetToLine(from))
+    val from_ = if (source.content.slice(fromBeginningOfLine, from).exists(!_.isWhitespace))
+      from
     else
       fromBeginningOfLine
-    val toEndOfLine = endPos.end + Properties.lineSeparator.length
-    val lastLineNumber = source.offsetToLine(endPos.end)
+    val toEndOfLine = to + Properties.lineSeparator.length
+    val lastLineNumber = source.offsetToLine(to)
     val lastLine = source.lineToString(lastLineNumber)
     val beginningOfLastLine = source.lineToOffset(lastLineNumber)
-    val to = if (lastLine.drop(endPos.end - beginningOfLastLine).exists(!_.isWhitespace))
-      endPos.end
+    val to_ = if (lastLine.drop(to - beginningOfLastLine).exists(!_.isWhitespace))
+      to
     else
       toEndOfLine
-    TextChange(source, from, to, "")
+    TextChange(source, from_, to_, printWhenEmpty)
   }
 
   def print: Change = if (imports.nonEmpty) printNonEmptyImports else printEmptyImports
 
   private def printNonEmptyImports: Change = {
-    val from = startPos.pos.start
-    val to = endPos.pos.end
     val text = imports.zipWithIndex.foldLeft("") { (acc, imp) =>
       def isLast(idx: Int) = idx == imports.size - 1
       imp match {
@@ -148,7 +147,8 @@ object Region {
       }.getOrElse(printedImport)
     }
     val regionStartPos = findUpNeighborComment(imports.head.pos, comments, source).getOrElse(imports.head.pos)
-    Region(toRegionImports(global)(imports, owner), owner, regionStartPos, imports.last.pos, source, indent, printImport, printImportWithComment)
+    Region(toRegionImports(global)(imports, owner), owner, regionStartPos.start, imports.last.pos.end, source, indent,
+        printImport, printImportWithComment, "")
   }
 
   private def toRegionImports[G <: Global](g: G)(imports: List[g.Import], owner: g.Symbol) = {
