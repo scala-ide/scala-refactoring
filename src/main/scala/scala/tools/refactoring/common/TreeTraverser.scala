@@ -252,52 +252,6 @@ trait TreeTraverser extends TracingImpl {
 
       t match {
 
-        /* For comprehensions are tricky, especially when combined with a filter:
-         * The following code:
-         *
-         *   for (foo <- List("santa", "claus") if foo.startsWith("s")) yield foo
-         *
-         * is converted to
-         *
-         *   List("santa", "claus").withFilter(foo => foo.startsWith("s")).map(foo => foo)
-         *
-         * so we have several foo ValDefs/RefTrees that need to be related with
-         * each other.
-         */
-        case Apply(generator, (Function(arg :: _, body)) :: Nil)
-          if arg.pos.startOrPoint < generator.pos.startOrPoint &&
-             between(arg, generator).contains("<-") =>
-
-          val referencesToVal = {
-            val fromBody = body collect {
-              case t: RefTree if t.name == arg.name => t
-            }
-            val fromGenerator = generator.collect {
-              case Apply(Select(_, nme.withFilter), (Function((v: ValDef) :: _, body)) :: Nil)
-                if !v.pos.isRange && v.name == arg.name =>
-                  body collect {
-                    case t: RefTree if t.symbol == v.symbol => t
-                  }
-            }.flatten
-
-            fromBody ++ fromGenerator
-          }
-
-          val valDefs = arg :: {
-            generator collect {
-              case Apply(Select(_, nme.withFilter), (Function((v: ValDef) :: _, _)) :: Nil)
-                if !v.pos.isRange && v.name == arg.name =>
-                  v
-            }
-          }
-
-          referencesToVal foreach { ref =>
-            valDefs foreach { valDef =>
-              f(valDef.symbol, ref)
-              f(ref.symbol, valDef)
-            }
-          }
-
         case t: TypeTree if t.original != null =>
 
           (t.original, t.tpe) match {
@@ -419,12 +373,6 @@ trait TreeTraverser extends TracingImpl {
         case t =>
           super.traverse(t)
       }
-    }
-
-    private def between(t1: Tree, t2: Tree) = {
-      if(t1.pos.isRange && t2.pos.isRange)
-        t1.pos.source.content.slice(t1.pos.end, t2.pos.start).mkString
-      else ""
     }
   }
 }
