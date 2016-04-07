@@ -208,6 +208,15 @@ trait DependentSymbolExpanders extends TracingImpl {
     })
   }
 
+  /**
+   * Associates term symbols with missing ranges to related symbols that have ranges.
+   *
+   * The reason that we need this is that in some cases, the PC generates multiple
+   * symbols for one and the same symbol in user source code, one of them with a
+   * proper range position, and others just with offset positions. One place where
+   * this happens is in desugared for comprehensions with filter clauses.
+   * See Assembler Ticket #1002650.
+   */
   trait TermsWithMissingRanges extends SymbolExpander { this: IndexLookup =>
     protected abstract override def doExpand(s: Symbol): List[Symbol] = {
       termsWithSamePointButRange(s) ::: super.doExpand(s)
