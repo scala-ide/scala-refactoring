@@ -48,12 +48,13 @@ class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees]
 
     private def compareNameWith(tested: Select)(that: Import): Boolean = {
       import cuDependenciesInstance.additionalTreeMethodsForPositions
+      def mkName(t: Tree) = if (t.symbol != null && t.symbol != NoSymbol) t.symbol.fullNameString else t.nameString
       val Select(testedQual, testedName) = tested
-      val testedQName = List(testedQual.nameString, testedName).mkString(".")
+      val testedQName = List(mkName(testedQual), testedName).mkString(".")
       val Import(thatQual, thatSels) = that
       val impNames = thatSels.map { sel =>
-        if (sel.name == nme.WILDCARD) thatQual.nameString
-        else List(thatQual.nameString, sel.name).mkString(".")
+        if (sel.name == nme.WILDCARD) mkName(thatQual)
+        else List(mkName(thatQual), sel.name).mkString(".")
       }
       impNames.exists { testedQName.startsWith }
     }

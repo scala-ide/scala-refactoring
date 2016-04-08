@@ -2603,7 +2603,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Map => JavaMap should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import Map => JavaMap should not be moved there.")
   @Test
   def shouldNotRemoveRenamedImportInClassBody() = new FileSet {
     """
@@ -2621,8 +2621,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     /*<-*/
     package test
 
-    import java.util.{Map => JavaMap}
-
     class Bar {
       import java.util.HashMap
       import java.util.{Map => JavaMap}
@@ -2633,7 +2631,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import ListBuffer should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import ListBuffer should not be moved there.")
   @Test
   def shouldOrganizeImportInClassAndDefBodies() = new FileSet {
     """
@@ -2658,8 +2656,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     /*<-*/
     package test
-
-    import scala.collection.mutable.ListBuffer
 
     class Bar {
       import java.util.HashMap
@@ -3311,7 +3307,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   """ isNotModified
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there.")
   @Test
   def shouldPreserveBacktickedNamesOfImports_variation2() = new FileSet {
     """
@@ -3326,8 +3322,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
-    import scala.util.{Try => Evil....}
-
     trait Bug5 {
       import scala.concurrent.Future
       import scala.util.{Try => `Evil....`}
@@ -3337,7 +3331,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import DollarDollarDollar => $$$ should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import DollarDollarDollar => $$$ should not be moved there.")
   @Test
   def shouldPreserveBacktickedNamesOfImports_variation3() = new FileSet {
     """
@@ -3363,8 +3357,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
-    import Bug4.{DollarDollarDollar => $$$}
-
     object Bug4 {
       class `€€€` {
         def x = 42
@@ -3384,7 +3376,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }"""}
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldPreserveCommentInImportAndSortImports() = new FileSet {
     """
@@ -3495,7 +3487,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import implicitConversions should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. 'import scala.language.implicitConversions' should not be moved up at package scope.")
   @Test
   def shouldRemoveImportWithUnusedImplicits() = new FileSet {
     """
@@ -3508,15 +3500,13 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
-    import scala.language.implicitConversions
-
     class Bug8 {
       implicit def intToString(i: Int) = i.toString
     }"""
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3533,8 +3523,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     /*<-*/
     package test
 
-    import scala.util.Try
-
     trait A {
       import scala.util.Try
       def foo: (Try[Unit], _)
@@ -3543,7 +3531,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3560,8 +3548,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     /*<-*/
     package test
 
-    import scala.util.Try
-
     trait Outer {
       import scala.util.Try
       abstract class TestTE(val a: (Try[_], _))
@@ -3570,7 +3556,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Try should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInInnerExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3588,8 +3574,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     /*<-*/
     package test
 
-    import scala.util.Try
-
     object Outer {
       import scala.util.Try
 
@@ -3599,7 +3583,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Import Either should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Import Either should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3632,7 +3616,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** There is a bug in package scope imports organizing. Imports Either and Try should not be moved there. */
+  @Ignore("There is a bug in package scope imports organizing. Imports Either and Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfDeepInHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
