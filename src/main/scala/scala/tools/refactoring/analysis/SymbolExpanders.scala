@@ -9,7 +9,6 @@ import tools.nsc.symtab.Flags
 import scala.tools.refactoring.common.TracingImpl
 import scala.tools.refactoring.common.PositionDebugging
 import scala.reflect.internal.util.RangePosition
-import scala.reflect.internal.util.OffsetPosition
 
 /**
  * Provides various traits that are used by the indexer
@@ -224,8 +223,7 @@ trait DependentSymbolExpanders extends TracingImpl {
 
     private def termsWithSamePointButRange(s: Symbol): List[Symbol] = {
       val lookAtSymbol = {
-        s != NoSymbol && !s.isSynthetic && s.isInstanceOf[TermSymbol] &&
-          s.pos.isInstanceOf[OffsetPosition] && !s.pos.isInstanceOf[RangePosition]
+        s != NoSymbol && !s.isSynthetic && s.isTerm && !s.pos.isRange && s.pos.isDefined
       }
 
       if (!lookAtSymbol) {
