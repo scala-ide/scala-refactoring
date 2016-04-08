@@ -26,7 +26,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organizeCustomized(
       groupPkgs: List[String] = List("java", "scala", "org", "com"),
       useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"),
-      dependencies: Dependencies.Value = Dependencies.FullyRecompute)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+      dependencies: Dependencies.Value = Dependencies.FullyRecompute,
+      organizeLocalImports: Boolean = true)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = {
       val groupImports = refactoring.GroupImports(groupPkgs)
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
@@ -39,7 +40,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
             refactoring.SortImports ::
             groupImports ::
             Nil,
-          deps = dependencies)
+          deps = dependencies,
+          organizeLocalImports = organizeLocalImports)
     }
   }.mkChanges
 
@@ -1253,9 +1255,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bar {
       def foo = {
-        import acme.Acme.{A, B}
         import fake.Acme.C
         val c = C
+        import acme.Acme.{A, B}
         A + B + c
       }
     }
@@ -1306,9 +1308,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bar {
       def foo = {
-        import acme.Acme.A
         import fake.Acme.D
         val d = D
+        import acme.Acme.A
         def k = {
           import acme.Acme.B
           import fake.Acme.C
@@ -1708,9 +1710,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         import fake.Acme._
         import acme.Acme.{A, D}
         import fake.Acme.D
-        val d = D
         import fake.Acme.{C, B, B}
         import acme.Acme.B
+        val d = D
         A + B + C + d
       }
     }
@@ -1950,13 +1952,12 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val m = Map[String, String]()
 
       def f = {
-        $
         for ((a, b) ← m)
           println((a,b))
         0
       }
     }
-    """.replace("$", "")
+    """
     }
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
@@ -1992,4 +1993,1714 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify, useWildcards = Set("a.b"))
+
+  @Test
+  def shouldNotOrganizeImportsForDetachedImportsInDefBlock() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    object AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import org.Acne
+        import acme._
+
+        val tested = new Acme((new Acne(4)).A)
+        import tested._
+
+        import acme.AcmeHelper.H
+
+        B + H
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import org.Acne
+
+        val tested = new Acme((new Acne(4)).A)
+        import acme.AcmeHelper.H
+        import tested._
+
+        B + H
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldOrganizeImportsForRelativeImport() = new FileSet {
+    """
+    package acme
+
+    class Acme {
+      val B = 6
+    }
+
+    object AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package acme.abefore
+
+    class Abscess(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import abefore._
+        import acme.AcmeHelper.H
+
+        val tested = new Acme
+        import tested._
+
+        B + H + (new Abscess(3)).A
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme._
+        import acme.AcmeHelper.H
+        import abefore._
+
+        val tested = new Acme
+        import tested._
+
+        B + H + (new Abscess(3)).A
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotOrganizeImportsForDetachedImportsInNestedDefBlockWhenImportIsInOuterToo() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    class AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+
+        def bar = {
+          import org.Acne
+          import acme.Acme
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+
+        def bar = {
+          import acme.Acme
+          import org.Acne
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I
+        }
+        bar
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldOrganizeImportsForOuterAndInnerDefBlocks() = new FileSet {
+    """
+    package acme
+
+    class Acme(val A: Int) {
+      val B = 6
+    }
+
+    class AcmeHelper {
+      val H = 7
+    }
+    """ isNotModified
+
+    """
+    package org
+
+    class Acne(val A: Int)
+    class AcneHelper(val AH: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import org.AcneHelper
+        import acme.AcmeHelper
+
+        def bar = {
+          import org.Acne
+          import acme.Acme
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I + (new AcneHelper(5)).AH
+        }
+        bar
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        import acme.AcmeHelper
+        import org.AcneHelper
+
+        def bar = {
+          import acme.Acme
+          import org.Acne
+
+          val tested = new Acme((new Acne(4)).A)
+          import tested._
+
+          val help = new AcmeHelper
+          import help._
+
+          object inner {
+            val I = 5
+          }
+
+          import inner.I
+
+          A + H + I + (new AcneHelper(5)).AH
+        }
+        bar
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedImport() = new FileSet {
+    """
+    package acme
+
+    class Map
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import acme.Map
+        val acmeMap: Map = new Map
+        acmeMap
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedImportForParameterizedType() = new FileSet {
+    """
+    package acme
+
+    class Map[K, V]
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import acme.Map
+        val acmeMap: Map[Int, String] = new Map[Int, String]
+        acmeMap
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDisplaceDetachedShadowingImport() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import java.util.Map
+        import java.util.HashMap
+        val javaMap: Map[Int, Int] = new HashMap[Int, Int]()
+        scalaMap
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class A {
+      def foo = {
+        val scalaMap = Map[Int, Int]()
+        import java.util.HashMap
+        import java.util.Map
+        val javaMap: Map[Int, Int] = new HashMap[Int, Int]()
+        scalaMap
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldSortImportsInClassBody() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import fake.Acme.D
+      import acme.Acme.A
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.A
+      import acme.Acme.B
+      import fake.Acme.D
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v1() = new FileSet {
+    """
+    package acme
+
+    object Acme { import java.util.Map }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {  }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v2() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      import java.util.Map
+    }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v3() = new FileSet {
+    """
+    package acme
+
+    object Acme { import java.util.Map
+    }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {     }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveImportInObjectBodyForNonWhitespaceImportNeighborhood_v4() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      import java.util.Map }
+    """ becomes {
+    """
+    package acme
+
+    object Acme {
+ }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldSortImportsInClassBodyAndInNestedObject() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import fake.Acme.D
+      import acme.Acme.A
+
+      object InnerBar {
+        import java.util.Map
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.A
+      import acme.Acme.B
+      import fake.Acme.D
+
+      object InnerBar {
+        import java.util.HashMap
+        import java.util.Map
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportsInClassAndObjectBodies() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    object Acme {
+      val D = 11
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.{ B, _ }
+      import fake.Acme.D
+      import acme.Acme.A
+
+      object InnerBar {
+        import java.util._
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme._
+      import fake.Acme.D
+
+      object InnerBar {
+        import java.util._
+
+        val a: Map[String, String] = new HashMap
+      }
+
+      def foo = {
+        val d = D
+        A + B + d
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import Map => JavaMap should not be moved there.")
+  @Test
+  def shouldNotRemoveRenamedImportInClassBody() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import java.util.{Map => JavaMap}
+      import java.util.HashMap
+
+      val a: JavaMap[String, String] = new HashMap
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import java.util.HashMap
+      import java.util.{Map => JavaMap}
+
+      val a: JavaMap[String, String] = new HashMap
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import ListBuffer should not be moved there.")
+  @Test
+  def shouldOrganizeImportInClassAndDefBodies() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import java.util.Map
+      import java.util.HashMap
+
+      def foo: List[String] = {
+        import scala.collection.mutable.ListBuffer
+        import scala.collection.mutable.Buffer
+
+        Buffer
+        ListBuffer[String]().toList
+      }
+
+      val a: Map[String, String] = new HashMap
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import java.util.HashMap
+      import java.util.Map
+
+      def foo: List[String] = {
+        import scala.collection.mutable.Buffer
+        import scala.collection.mutable.ListBuffer
+
+        Buffer
+        ListBuffer[String]().toList
+      }
+
+      val a: Map[String, String] = new HashMap
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreventLocalObjectImportInMethod() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+    }
+
+    object Test {
+      def test(): Int = {
+        import AnObject._
+        a
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportFromDef() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+    }
+
+    object Test {
+      import AnObject._
+      def test(): Int = {
+        import AnObject._
+        a
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+    }
+
+    object Test {
+      import AnObject._
+      def test(): Int = {
+        a
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportsInScopes_v1() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    class Acme {
+      val D = 11
+    }
+
+    class Ecma(val E: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      object InnerBar {
+        import acme.Acme.A
+        import acme.Acme.B
+        import fake.Ecma
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+
+        val ecma = new Ecma(4)
+        import ecma.E
+
+        val e = E
+        def foo = {
+          import acme.Acme.A
+          import acme.Acme.B
+          A + B
+        }
+      }
+
+      import fake.Ecma
+      def foo = {
+        import fake.Acme
+        import fake.Ecma
+
+        val newD = new Acme
+        import acme.Acme.A
+        import acme.Acme.B
+        import newD.D
+        A + B + D + (new Ecma(4)).E
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      object InnerBar {
+        import acme.Acme.A
+        import fake.Ecma
+        import java.util.HashMap
+
+        val a: Map[String, String] = new HashMap
+
+        val ecma = new Ecma(4)
+        import ecma.E
+
+        val e = E
+        def foo = {
+          A + B
+        }
+      }
+
+      import fake.Ecma
+      def foo = {
+        import fake.Acme
+
+        val newD = new Acme
+        import acme.Acme.A
+        import newD.D
+        A + B + D + (new Ecma(4)).E
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportsInScopes_v2() = new FileSet {
+    """
+    package acme
+
+    object Acme {
+      val A = 5
+      val B = 6
+    }
+    """ isNotModified
+
+    """
+    package fake
+
+    class Acme {
+      val D = 11
+    }
+
+    class Ecma(val E: Int)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      def foo = {
+        import acme.Acme.A
+        def bar = {
+          import acme.Acme.A
+          A
+        }
+        A + B + bar
+      }
+      import fake.Acme
+      object InnerBar {
+        import fake.Acme
+        def foo = {
+          import fake.Acme
+          val a = new Acme
+          def bar = {
+            import fake.Ecma
+            import java.util.HashMap
+            import java.util.Map
+            val a: Map[Int, Int] = new HashMap
+            a.size + (new Ecma(4)).E
+          }
+          a.D + bar
+        }
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
+      import acme.Acme.B
+      import java.util.Map
+
+      def foo = {
+        import acme.Acme.A
+        def bar = {
+          A
+        }
+        A + B + bar
+      }
+      import fake.Acme
+      object InnerBar {
+        def foo = {
+          val a = new Acme
+          def bar = {
+            import fake.Ecma
+            import java.util.HashMap
+            val a: Map[Int, Int] = new HashMap
+            a.size + (new Ecma(4)).E
+          }
+          a.D + bar
+        }
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportFromDefWithComment() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        // comment for b
+        import AnObject.b
+        a + b
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        a + b
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportFromDefWithComment_v2() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        // comment for a
+        import AnObject.a
+        // comment for b
+        import AnObject.b
+        b
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        b
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveDuplicatedImportFromDefWithComment_v3() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        /**
+          * comment for b
+          */
+        import AnObject.b
+        a + b
+      }
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object AnObject {
+      val a = 3
+      val b = 4
+    }
+
+    object Test {
+      import AnObject.b
+      def test(): Int = {
+        import AnObject.a
+        a + b
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveComments_variation1() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import scala.concurrent.Future
+      // HELP
+      import scala.util.Try
+      import java.util.ArrayList
+
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import java.util.ArrayList
+      import scala.concurrent.Future
+      // HELP
+      import scala.util.Try
+
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveCommentsInImportPackagePrefix() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import scala./*comment*/util/*comment.comment*/.Try
+      import scala/*comment.comment*/.concurrent.Future
+      import java.util./*comment.*/Date
+      import java.util/*.comment*/.ArrayList
+
+      val d: Date
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      import java.util/*.comment*/.ArrayList
+      import java.util./*comment.*/Date
+      import scala/*comment.comment*/.concurrent.Future
+      import scala./*comment*/util/*comment.comment*/.Try
+
+      val d: Date
+      val l: ArrayList[Int]
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldCorrectlyRenderBacktickedStableIdentifier() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object arrow {
+      val `=>` = 42
+    }
+
+    object dollar {
+      val `$$$` = 24
+    }
+
+    trait Bug {
+      import dollar.`$$$`
+      import arrow.`=>`
+
+      val dollarWithArrow = `$$$` + `=>`
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object arrow {
+      val `=>` = 42
+    }
+
+    object dollar {
+      val `$$$` = 24
+    }
+
+    trait Bug {
+      import arrow.`=>`
+      import dollar.`$$$`
+
+      val dollarWithArrow = `$$$` + `=>`
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveComments_variation2() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      // belongs to Try
+      import scala.util.Try
+
+      // belongs to ArrayList
+      import java.util.ArrayList
+      /* belongs to Date */
+      import java.util.Date
+
+      val l: ArrayList[Int]
+      val d: Date
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      // belongs to ArrayList
+      import java.util.ArrayList
+      /* belongs to Date */
+      import java.util.Date
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      // belongs to Try
+      import scala.util.Try
+
+      val l: ArrayList[Int]
+      val d: Date
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveComments_variation3() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+      // belongs to Try
+      import scala.util.Try
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      // belongs to Try
+      import scala.util.Try
+
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveComments_variation4() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+
+      import scala.util.Try
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Bug {
+      /* comment about trait innards
+       */
+
+      /**
+       * belongs to Future
+       */
+      import scala.concurrent.Future
+      import scala.util.Try
+
+      val t: Try[Int]
+      val f: Future[Double]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveBacktickedNamesOfImports_variation1() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    object Bug7 {
+      object ` => ` {
+        val x = 42
+      }
+    }
+
+    class Bug7 {
+      import Bug7.` => `
+      val x = ` => `.x
+    }
+  """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there.")
+  @Test
+  def shouldPreserveBacktickedNamesOfImports_variation2() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    trait Bug5 {
+      import scala.util.{Try => `Evil....`}
+      import scala.concurrent.Future
+
+      def f: Future[`Evil....`[Int]] = ???
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    trait Bug5 {
+      import scala.concurrent.Future
+      import scala.util.{Try => `Evil....`}
+
+      def f: Future[`Evil....`[Int]] = ???
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import DollarDollarDollar => $$$ should not be moved there.")
+  @Test
+  def shouldPreserveBacktickedNamesOfImports_variation3() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    object Bug4 {
+      class `€€€` {
+        def x = 42
+      }
+
+      class DollarDollarDollar {
+        def y = 53
+      }
+    }
+
+    class Bug4 {
+      import Bug4.`€€€`
+      import Bug4.{DollarDollarDollar => `$$$`}
+
+      new `€€€`().x
+      new `$$$`().y
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    object Bug4 {
+      class `€€€` {
+        def x = 42
+      }
+
+      class DollarDollarDollar {
+        def y = 53
+      }
+    }
+
+    class Bug4 {
+      import Bug4.{DollarDollarDollar => `$$$`}
+      import Bug4.`€€€`
+
+      new `€€€`().x
+      new `$$$`().y
+    }"""}
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
+  @Test
+  def shouldPreserveCommentInImportAndSortImports() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.concurrent.Future
+
+    object Bug3 {
+      class Other {
+        type Tpe1 = Int
+        type Tpe2 = Double
+        type Tpe3 = String
+      }
+    }
+
+    trait Bug3 {
+      import scala.util./*evil.evil*/Try
+      import Bug3._
+      import scala.concurrent.Future
+
+      val other: Other
+
+      def f: Future[Int] = {
+        import other.{ Tpe1 => Dpe0 }
+        import other.Tpe2
+
+        def z: Dpe0 = {
+          val x: Dpe0 = 12
+          val y: Tpe2 = 0.0
+          x + y.toInt
+        }
+
+        Future.successful(Try(z).getOrElse(42))
+      }
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.util.Try
+
+    object Bug3 {
+      class Other {
+        type Tpe1 = Int
+        type Tpe2 = Double
+        type Tpe3 = String
+      }
+    }
+
+    trait Bug3 {
+      import Bug3._
+      import scala.concurrent.Future
+      import scala.util./*evil.evil*/Try
+
+      val other: Other
+
+      def f: Future[Int] = {
+        import other.{Tpe1 => Dpe0}
+        import other.Tpe2
+
+        def z: Dpe0 = {
+          val x: Dpe0 = 12
+          val y: Tpe2 = 0.0
+          x + y.toInt
+        }
+
+        Future.successful(Try(z).getOrElse(42))
+      }
+    }"""}
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldRemoveUnusedImportOfClassDefinedInSameEnclosingPackage() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    package bugs {
+      sealed trait MyList[+T]
+      case class ::[T](head: T, tail: MyList[T]) extends MyList[T]
+      case object MyNil extends MyList[Nothing]
+    }
+
+    class Bug6 {
+      def f1 = {
+        import bugs.::
+        import bugs.MyList
+        import bugs.MyNil
+
+        new ::(1, MyNil)
+      }
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    package bugs {
+      sealed trait MyList[+T]
+      case class ::[T](head: T, tail: MyList[T]) extends MyList[T]
+      case object MyNil extends MyList[Nothing]
+    }
+
+    class Bug6 {
+      def f1 = {
+        import bugs.::
+        import bugs.MyNil
+
+        new ::(1, MyNil)
+      }
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. 'import scala.language.implicitConversions' should not be moved up at package scope.")
+  @Test
+  def shouldRemoveImportWithUnusedImplicits() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    class Bug8 {
+      import scala.language.implicitConversions
+      implicit def intToString(i: Int) = i.toString
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    class Bug8 {
+      implicit def intToString(i: Int) = i.toString
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait A {
+      import scala.util.Either
+      import scala.util.Try
+      def foo: (Try[Unit], _)
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait A {
+      import scala.util.Try
+      def foo: (Try[Unit], _)
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Outer {
+      import scala.util.Either
+      import scala.util.Try
+      abstract class TestTE(val a: (Try[_], _))
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    trait Outer {
+      import scala.util.Try
+      abstract class TestTE(val a: (Try[_], _))
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
+  @Test
+  def shouldDiscoverArgTypeInInnerExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      class TestTE(val a: (Try[_], Int))
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object Outer {
+      import scala.util.Try
+
+      class TestTE(val a: (Try[_], Int))
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Import Either should not be moved there.")
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    trait Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      trait Test[Try, B]
+      class ParamCheck[A]
+      class Verify extends ParamCheck[Test[_, Either[_, _]]]
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+
+    trait Outer {
+      import scala.util.Either
+
+      trait Test[Try, B]
+      class ParamCheck[A]
+      class Verify extends ParamCheck[Test[_, Either[_, _]]]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("There is a bug in package scope imports organizing. Imports Either and Try should not be moved there.")
+  @Test
+  def shouldDiscoverArgTypeInExistentialTypeOfDeepInHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    import scala.util.Either
+    import scala.util.Try
+
+    object Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      trait Test[Try, B]
+      class ParamCheck[A]
+      class Verify extends ParamCheck[Test[_, Either[_, Try[_]]]]
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotDiscoverArgTypeInExistentialTypeOfClassDeclarationAndRemoveItFromImportsInClassScope() = new FileSet {
+    """
+    /*<-*/
+    package test
+
+    object Outer {
+      import scala.util.Either
+      import scala.util.Try
+
+      class TestTE(val a: (_, _))
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    object Outer {
+
+      class TestTE(val a: (_, _))
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveImportsForCompoundTypesInClassScope() = new FileSet {
+    """
+    package test
+
+    object Outer {
+      import java.util.SortedMap
+      import java.util.concurrent.ConcurrentMap
+
+      type A[K, V] = SortedMap[K, V] with ConcurrentMap[K, V]
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotOrganizeLocalImportsInMethod() = new FileSet {
+    """
+    package test
+
+    object Acme {
+      val A: Int = 5
+      val B: Int = 6
+    }
+
+    class Tested {
+      import Acme.B
+      def foo = {
+        import Acme.{ B, A, _ }
+        A + B
+      }
+    }
+
+    object TestedObj {
+      import Acme.A
+    }
+
+    trait TestedTrait {
+      import Acme._
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(organizeLocalImports = false)
 }

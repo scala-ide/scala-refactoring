@@ -47,7 +47,7 @@ object Change {
       case tc: TextChange => tc
     }
 
-    val sortedChanges = changes.sortBy(-_.to)
+    val sortedChanges = changes.sortBy { descendingTo }
 
     /* Test if there are any overlapping text edits. This is
        not necessarily an error, but Eclipse doesn't allow
@@ -62,5 +62,20 @@ object Change {
     (source /: sortedChanges) { (src, change) =>
       src.substring(0, change.from) + change.text + src.substring(change.to)
     }
+  }
+
+  private def descendingTo(change: TextChange) = -change.to
+
+  case class AcceptReject(accepted: List[Change], rejected: List[Change])
+
+  def discardOverlappingChanges(changes: List[Change]): AcceptReject = {
+    val applicableChanges = changes.collect {
+      case tc: TextChange => tc
+    }.sortBy { descendingTo }
+    applicableChanges.foldLeft(AcceptReject(Nil, Nil)) { (acc, ch) => acc.accepted match {
+      case Nil => acc.copy(accepted = ch :: acc.accepted)
+      case (h: TextChange) :: _ if h.from >= ch.to => acc.copy(accepted = ch :: acc.accepted)
+      case _ => acc.copy(rejected = ch :: acc.rejected)
+    } }
   }
 }
