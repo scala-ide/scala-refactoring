@@ -3799,4 +3799,133 @@ class Blubb
     }
     """.replace("?", "$") -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("franzi"))
+
+  /*
+   * See Assembla Ticket 1002650
+   */
+  @Test
+  def testRenameWithForComprehensions1002650Ex1() = new FileSet {
+    """
+    class Bug1 {
+      for {
+        (/*(*/renameMe/*)*/, b) <- Seq((1, 2)) if renameMe % 2 == 0
+      } {
+        println(renameMe)
+      }
+    }
+    """ becomes
+    """
+    class Bug1 {
+      for {
+        (/*(*/ups/*)*/, b) <- Seq((1, 2)) if ups % 2 == 0
+      } {
+        println(ups)
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithForComprehensions1002650Ex2() = new FileSet {
+    """
+    class Bug1 {
+      for {
+        (renameMe, b) <- Seq((1, 2)) if /*(*/renameMe/*)*/ % 2 == 0
+      } {
+        println(renameMe)
+      }
+    }
+    """ becomes
+    """
+    class Bug1 {
+      for {
+        (ups, b) <- Seq((1, 2)) if /*(*/ups/*)*/ % 2 == 0
+      } {
+        println(ups)
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithForComprehensions1002650Ex3() = new FileSet {
+    """
+    class Bug1 {
+      for {
+        (renameMe, b) <- Seq((1, 2)) if renameMe % 2 == 0
+      } {
+        println(/*(*/renameMe/*)*/)
+      }
+    }
+    """ becomes
+    """
+    class Bug1 {
+      for {
+        (ups, b) <- Seq((1, 2)) if ups % 2 == 0
+      } {
+        println(/*(*/ups/*)*/)
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithForComprehensions1002650Ex4() = new FileSet {
+    """
+    class Bug2 {
+      for {
+        /*(*/tryRenameMe/*)*/ <- Option(Option(1))
+      } {
+        for {
+          tryRenameMe <- tryRenameMe
+        } yield {
+          tryRenameMe + 1
+        }
+      }
+    }
+    """ becomes
+    """
+    class Bug2 {
+      for {
+        /*(*/ups/*)*/ <- Option(Option(1))
+      } {
+        for {
+          tryRenameMe <- ups
+        } yield {
+          tryRenameMe + 1
+        }
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithForComprehensions1002650Ex5() = new FileSet {
+    """
+    class Bug2 {
+      for {
+        tryRenameMe <- Option(Option(1))
+      } {
+        for {
+          tryRenameMe <- tryRenameMe
+        } yield {
+          /*(*/tryRenameMe/*)*/ + 1
+        }
+      }
+    }
+    """ becomes
+    """
+    class Bug2 {
+      for {
+        tryRenameMe <- Option(Option(1))
+      } {
+        for {
+          ups <- tryRenameMe
+        } yield {
+          /*(*/ups/*)*/ + 1
+        }
+      }
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }

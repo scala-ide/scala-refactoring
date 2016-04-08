@@ -8,6 +8,8 @@ package analysis
 import tools.nsc.symtab.Flags
 import scala.tools.refactoring.common.TracingImpl
 import scala.tools.refactoring.common.PositionDebugging
+import scala.reflect.internal.util.RangePosition
+import scala.reflect.internal.util.OffsetPosition
 
 /**
  * Provides various traits that are used by the indexer
@@ -204,5 +206,38 @@ trait DependentSymbolExpanders extends TracingImpl {
       }
       case _ => Nil
     })
+  }
+
+  /**
+   * Associates term symbols with missing ranges to related symbols that have ranges.
+   *
+   * The reason that we need this is that in some cases, the PC generates multiple
+   * symbols for one and the same symbol in user source code, one of them with a
+   * proper range position, and others just with offset positions. One place where
+   * this happens is in desugared for comprehensions with filter clauses.
+   * See Assembler Ticket #1002650.
+   */
+  trait TermsWithMissingRanges extends SymbolExpander { this: IndexLookup =>
+    protected abstract override def doExpand(s: Symbol): List[Symbol] = {
+      termsWithSamePointButRange(s) ::: super.doExpand(s)
+    }
+
+    private def termsWithSamePointButRange(s: Symbol): List[Symbol] = {
+      val lookAtSymbol = {
+        s != NoSymbol && !s.isSynthetic && s.isInstanceOf[TermSymbol] &&
+          s.pos.isInstanceOf[OffsetPosition] && !s.pos.isInstanceOf[RangePosition]
+      }
+
+      if (!lookAtSymbol) {
+        Nil
+      } else {
+        allDefinedSymbols().filter { ds =>
+          ds.pos match {
+            case rp: RangePosition => rp.point == s.pos.point && ds.nameString == s.nameString
+            case _ => false
+          }
+        }
+      }
+    }
   }
 }

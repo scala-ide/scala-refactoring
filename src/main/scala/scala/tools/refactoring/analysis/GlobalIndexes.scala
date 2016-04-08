@@ -33,7 +33,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           LazyValAccessor with
           OverridesInSuperClasses with
           ClassVals with
-          CaseClassVals {
+          CaseClassVals with
+          TermsWithMissingRanges {
 
             val cus = compilationUnits
           }
