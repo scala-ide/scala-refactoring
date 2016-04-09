@@ -3928,4 +3928,59 @@ class Blubb
     }
     """ -> TaggedAsLocalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002680
+   */
+  @Test
+  def testRenameAnnotationArgs1002680Ex1() = new FileSet {
+    """
+    public @interface AnAnnotation {
+      Class<?> value1() default Integer.class;
+      Class<?> value2() default Integer.class;
+      int value3() default 42;
+    }
+    """ -> PreloadAsJava("AnAnnotation")
+
+    """
+    object RenameBug1 {
+      class /*(*/TryRenameMe/*)*/
+
+      @AnAnnotation(value1 = classOf[TryRenameMe])
+      class SomeClass
+    }""" becomes
+    """
+    object RenameBug1 {
+      class /*(*/HumptyDumpty/*)*/
+
+      @AnAnnotation(value1 = classOf[HumptyDumpty])
+      class SomeClass
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("HumptyDumpty"))
+
+  @Test
+  def testRenameAnnotationArgs1002680Ex2() = new FileSet {
+    """
+    public @interface AnAnnotation {
+      Class<?> value1() default Integer.class;
+      Class<?> value2() default Integer.class;
+      int value3() default 42;
+    }
+    """ -> PreloadAsJava("AnAnnotation")
+
+    """
+    object RenameBug2 {
+      final val /*(*/TryRenameMe/*)*/ = 42
+
+      @AnAnnotation(value3 = TryRenameMe)
+      class SomeClass
+    }""" becomes
+    """
+    object RenameBug2 {
+      final val /*(*/CheshireCat/*)*/ = 42
+
+      @AnAnnotation(value3 = CheshireCat)
+      class SomeClass
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("CheshireCat"))
 }
