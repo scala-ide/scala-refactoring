@@ -83,25 +83,40 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
    */
   abstract class FileSet(baseName: String = UniqueNames.basename(), val expectCompilingCode: Boolean = true, val basePackage: Option[String] = defaultFileSetBasePackage) {
     private val srcs = ListBuffer[(Source, Source)]()
+    private val javaSrcs = ListBuffer[Source]()
 
     object TaggedAsGlobalRename
     object TaggedAsLocalRename
+
+    /**
+     * To preload java source code in tests.
+     *
+     * To be used like
+     * {{{
+     *   //...
+     *   """
+     *   class SomeJavaClass {
+     *   }
+     *   """ -> PreloadAsJava("SomeJavaClass")
+     *   //...
+     * }}}
+     */
+    case class PreloadAsJava(className: String)
+
     var expectGlobalRename: Option[Boolean] = None
 
-    private def eventuallyNestInBasePgk(src1: Source, src2: Source): (Source, Source) = {
+    private def eventuallyNestInBasePgk(src: Source): Source = {
       basePackage.map { pkg =>
-        def wrapInPkg(src: Source) = {
-          val initialIndent = src.code.lines.collectFirst {
-            case IndentedLine(indent) => indent
-          }.getOrElse("")
+        val initialIndent = src.code.lines.collectFirst {
+          case IndentedLine(indent) => indent
+        }.getOrElse("")
 
-          src.copy(code = s"${initialIndent}package $pkg\n\n${src.code}")
-        }
+        src.copy(code = s"${initialIndent}package $pkg;\n\n${src.code}")
+      }.getOrElse(src)
+    }
 
-        (wrapInPkg(src1), wrapInPkg(src2))
-      }.getOrElse {
-        (src1, src2)
-      }
+    private def eventuallyNestInBasePgk(src1: Source, src2: Source): (Source, Source) = {
+      (eventuallyNestInBasePgk(src1), eventuallyNestInBasePgk(src2))
     }
 
     implicit class WrapSource(src: String) {
@@ -124,6 +139,10 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
         src
       }
 
+      def ->(preload: PreloadAsJava): Unit = {
+        javaSrcs += eventuallyNestInBasePgk(Source(src, preload.className + ".java"))
+      }
+
       def ->(filename: String): (String, String) = {
         (src, filename)
       }
@@ -140,6 +159,8 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     }
 
     lazy val sources = srcs.unzip._1.map(_.toPair).toList
+
+    lazy val javaSources = javaSrcs.map(_.toPair).toList
 
     val NewFile = ""
 

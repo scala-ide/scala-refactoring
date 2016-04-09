@@ -22,7 +22,8 @@ trait TestRefactoring extends TestHelper {
       val global = TestRefactoring.this.global
 
       lazy val trees = {
-        project.sources map { case(code, filename) => addToCompiler(filename, code) } map (global.unitOfFile(_).body)
+        project.javaSources.foreach { case (code, filename) => addToCompiler(filename, code) }
+        project.sources.map { case(code, filename) => addToCompiler(filename, code) }.map(global.unitOfFile(_).body)
       }
 
       override val index = global.ask { () =>
