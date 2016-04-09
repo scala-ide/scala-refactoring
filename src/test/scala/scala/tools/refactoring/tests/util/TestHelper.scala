@@ -241,13 +241,29 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
   }
 
   def selection(refactoring: Selections with InteractiveScalaCompiler, project: FileSet) = {
+    def containsError(t: refactoring.global.Tree): Boolean = {
+      def symbolContainsError = {
+        val sym = t.symbol
+        sym != null && {
+          if (sym.isErroneous || sym.isError) {
+            true
+          } else {
+            sym.annotations.exists { annotation =>
+              containsError(annotation.tree)
+            }
+          }
+        }
+      }
+
+      t.isErroneous || symbolContainsError
+    }
 
     val files = project.sources map { case (code, filename) => addToCompiler(filename, code)}
     val trees: List[refactoring.global.Tree] = files map (refactoring.global.unitOfFile(_).body)
 
     if (project.expectCompilingCode) {
       trees.foreach { tree =>
-        tree.find(_.isErroneous).foreach { erroneousTree =>
+        tree.find(containsError).foreach { erroneousTree =>
           val src = new String(tree.pos.source.content)
           val sep = "------------------------------------"
           throw new AssertionError(s"Expected compiling code but got:\n$sep\n$src\n$sep\nErroneous tree: $erroneousTree")
