@@ -3377,7 +3377,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }"""}
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldPreserveCommentInImportAndSortImports() = new FileSet {
     """
@@ -3507,7 +3506,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3532,7 +3530,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3557,7 +3554,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInInnerExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3584,7 +3580,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Either should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3604,8 +3599,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     /*<-*/
     package test
 
-    import scala.util.Either
-
     trait Outer {
       import scala.util.Either
 
@@ -3617,15 +3610,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Imports Either and Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfDeepInHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
     /*<-*/
     package test
-
-    import scala.util.Either
-    import scala.util.Try
 
     object Outer {
       import scala.util.Either

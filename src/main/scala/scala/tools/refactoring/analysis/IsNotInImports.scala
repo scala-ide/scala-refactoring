@@ -8,18 +8,17 @@ class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees]
 
   class IsSelectNotInRelativeImports(wholeTree: Tree) {
     private def collectPotentialOwners(of: Select): List[Symbol] = {
-      val upToPosition = of.pos.start
       var owners = List.empty[Symbol]
-      def isThisSelectTree(fromWholeTree: Tree): Boolean =
-        fromWholeTree.pos.isRange && fromWholeTree.pos.start >= upToPosition && owners.isEmpty
+      def isSelectEmbracedByTree(tree: Tree): Boolean =
+        tree.pos.isRange && tree.pos.start <= of.pos.start && of.pos.end <= tree.pos.end
       val collectPotentialOwners = new Traverser {
         var owns = List.empty[Symbol]
         override def traverse(t: Tree) = {
           owns = currentOwner :: owns
           t match {
-            case potential if isThisSelectTree(potential) =>
+            case potential if isSelectEmbracedByTree(potential) =>
               owners = owns.distinct
-            case t if !t.pos.isRange || t.pos.start > upToPosition =>
+              super.traverse(t)
             case t =>
               super.traverse(t)
               owns = owns.tail
