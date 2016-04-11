@@ -9,17 +9,17 @@ class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees]
   class IsSelectNotInRelativeImports(wholeTree: Tree) {
     private def collectPotentialOwners(of: Select): List[Symbol] = {
       val upToPosition = of.pos.start
-      def isThisSelectTree(fromWholeTree: Tree): Boolean =
-        fromWholeTree.pos.isRange && fromWholeTree.pos.start == upToPosition
       var owners = List.empty[Symbol]
+      def isThisSelectTree(fromWholeTree: Tree): Boolean =
+        fromWholeTree.pos.isRange && fromWholeTree.pos.start >= upToPosition && owners.isEmpty
       val collectPotentialOwners = new Traverser {
         var owns = List.empty[Symbol]
         override def traverse(t: Tree) = {
           owns = currentOwner :: owns
           t match {
-            case t if !t.pos.isRange || t.pos.start > upToPosition =>
             case potential if isThisSelectTree(potential) =>
               owners = owns.distinct
+            case t if !t.pos.isRange || t.pos.start > upToPosition =>
             case t =>
               super.traverse(t)
               owns = owns.tail
@@ -52,9 +52,9 @@ class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees]
       val Select(testedQual, testedName) = tested
       val testedQName = List(mkName(testedQual), testedName).mkString(".")
       val Import(thatQual, thatSels) = that
-      val impNames = thatSels.map { sel =>
-        if (sel.name == nme.WILDCARD) mkName(thatQual)
-        else List(mkName(thatQual), sel.name).mkString(".")
+      val impNames = thatSels.flatMap { sel =>
+        if (sel.name == nme.WILDCARD) List(mkName(thatQual))
+        else Set(sel.name, sel.rename).map { name => List(mkName(thatQual), name).mkString(".") }.toList
       }
       impNames.exists { testedQName.startsWith }
     }

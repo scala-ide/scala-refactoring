@@ -2603,7 +2603,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Map => JavaMap should not be moved there.")
   @Test
   def shouldNotRemoveRenamedImportInClassBody() = new FileSet {
     """
@@ -3307,7 +3306,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   """ isNotModified
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there.")
   @Test
   def shouldPreserveBacktickedNamesOfImports_variation2() = new FileSet {
     """
@@ -3331,7 +3329,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import DollarDollarDollar => $$$ should not be moved there.")
   @Test
   def shouldPreserveBacktickedNamesOfImports_variation3() = new FileSet {
     """
