@@ -3086,12 +3086,14 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala./*comment*/util/*comment.comment*/.Try
       import scala/*comment.comment*/.concurrent.Future
       import java.util./*comment.*/Date
+      import /*comment.comment*/java.util.List
       import java.util/*.comment*/.ArrayList
 
       val d: Date
-      val l: ArrayList[Int]
+      val al: ArrayList[Int]
       val t: Try[Int]
       val f: Future[Double]
+      val l: List[String]
     }
     """ becomes {
     """
@@ -3101,13 +3103,15 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     trait Bug {
       import java.util/*.comment*/.ArrayList
       import java.util./*comment.*/Date
+      import /*comment.comment*/java.util.List
       import scala/*comment.comment*/.concurrent.Future
       import scala./*comment*/util/*comment.comment*/.Try
 
       val d: Date
-      val l: ArrayList[Int]
+      val al: ArrayList[Int]
       val t: Try[Int]
       val f: Future[Double]
+      val l: List[String]
     }
     """
     }
