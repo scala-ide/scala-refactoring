@@ -377,7 +377,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
             // workaround for SI-5064
             case t @ Select(qual: Select, nme.apply) if (qual.pos.isTransparent && t.pos.isOpaqueRange) || qual.pos.isOpaqueRange =>
-              if(hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier)) {
+              if(hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier) && isSelectNotInRelativeImports(t)) {
                 addToResult(qual)
               }
 

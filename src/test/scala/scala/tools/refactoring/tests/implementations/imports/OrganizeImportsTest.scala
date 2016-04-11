@@ -2630,7 +2630,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import ListBuffer should not be moved there.")
   @Test
   def shouldOrganizeImportInClassAndDefBodies() = new FileSet {
     """
@@ -3415,8 +3414,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
-    import scala.util.Try
-
     object Bug3 {
       class Other {
         type Tpe1 = Int
@@ -3487,14 +3484,41 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. 'import scala.language.implicitConversions' should not be moved up at package scope.")
+  /** This case is quite peculiar. `scala.language` is imported always and moved to top most package scope.
+   *  See at following snippet in [[scala.tools.refactoring.analysis.CompilationUnitDependencies]] class:
+   *  {{{
+   *  // Always add the SIP 18 language imports as required until we can handle them properly
+   *  case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
+   *    feature foreach (selector => addToResult(Select(select, selector.name)))
+   *  }}}
+   */
+  @Test
+  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    class Bug8 {
+      import scala.language.implicitConversions
+      implicit def intToString(i: Int) = i.toString
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+
+    class Bug8 {
+      implicit def intToString(i: Int) = i.toString
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
+
   @Test
   def shouldRemoveImportWithUnusedImplicits() = new FileSet {
     """
     package com.github.mlangc.experiments
 
     class Bug8 {
-      import scala.language.implicitConversions
+      import scala.concurrent.duration.DurationConversions
       implicit def intToString(i: Int) = i.toString
     }""" becomes {
     """
