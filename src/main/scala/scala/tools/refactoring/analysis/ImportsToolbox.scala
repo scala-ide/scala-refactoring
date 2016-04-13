@@ -1,11 +1,15 @@
 package scala.tools.refactoring
 package analysis
 
-class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees](val cuDependenciesInstance: C) {
+/** Class to wrap path dependent type on `CompilationUnitDependencies` used in `CompilationUnitDependencies`. */
+class ImportsToolbox[C <: CompilationUnitDependencies with common.EnrichedTrees](val cuDependenciesInstance: C) {
   import cuDependenciesInstance.global._
 
   def apply(tree: Tree) = new IsSelectNotInRelativeImports(tree)
 
+  /** Checks if for given `Select` potentially done from `TypeTree` exists import (represented by `Import`)
+   *  in this `Select` scope or its parent.
+   */
   class IsSelectNotInRelativeImports(wholeTree: Tree) {
     private def collectPotentialOwners(of: Select): List[Symbol] = {
       var owners = List.empty[Symbol]
@@ -29,6 +33,34 @@ class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees]
       owners
     }
 
+    /** Returns `true` if import has been found for tested `Select` and `false` otherwise.
+     *  Examples:
+     *  {{{
+     *  trait A {
+     *    import a.b
+     *    def foo = {
+     *      val baz: b = ???
+     *    }
+     *  }
+     *  }}}
+     *  returns `true`
+     *  {{{
+     *  def foo = {
+     *    import a.b
+     *    val baz: b = ???
+     *  }
+     *  }}}
+     *  returns `true`
+     *  but
+     *  {{{
+     *  def foo = {
+     *    val baz: b = ???
+     *    import a.b
+     *  }
+     *  }}}
+     *  returns `false`
+     *  For more see tests suites.
+     */
     def apply(tested: Select): Boolean = {
       val doesNameFitInTested = compareNameWith(tested) _
       val nonPackageOwners = collectPotentialOwners(tested).filterNot { _.hasPackageFlag }

@@ -117,7 +117,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
   def dependencies(t: Tree): List[Select] = {
     val wholeTree = t
     val isSelectNotInRelativeImports =
-      new IsNotInImports[CompilationUnitDependencies.this.type](CompilationUnitDependencies.this)(wholeTree)
+      new ImportsToolbox[CompilationUnitDependencies.this.type](CompilationUnitDependencies.this)(wholeTree)
 
     def qualifierIsEnclosingPackage(t: Select) = {
       enclosingPackage(wholeTree, t.pos) match {
