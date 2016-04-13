@@ -3933,7 +3933,7 @@ class Blubb
    * See Assembla Ticket 1002680
    */
   @Test
-  def testRenameAnnotationArgs1002680Ex1() = new FileSet {
+  def testRenameJavaAnnotationArgs1002680Ex1() = new FileSet {
     """
     public @interface AnAnnotation {
       Class<?> value1() default Integer.class;
@@ -3959,7 +3959,7 @@ class Blubb
   } prepareAndApplyRefactoring(prepareAndRenameTo("HumptyDumpty"))
 
   @Test
-  def testRenameAnnotationArgs1002680Ex2() = new FileSet {
+  def testRenameJavaAnnotationArgs1002680Ex2() = new FileSet {
     """
     public @interface AnAnnotation {
       Class<?> value1() default Integer.class;
@@ -3983,4 +3983,50 @@ class Blubb
       class SomeClass
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("CheshireCat"))
+
+  @Test
+  def testRenameScalaAnnotationArgs1002680Ex1() = new FileSet {
+    """
+    final class SomeScalaAnnotation(value1: Int = 23, value2: Class[_] = classOf[String])
+      extends annotation.StaticAnnotation
+    """ isNotModified()
+
+    """
+    object RenameBug3 {
+      final val /*(*/TryRenameMe/*)*/ = 42
+
+      @SomeScalaAnnotation(value1 = TryRenameMe)
+      class SomeClass
+    }""" becomes
+    """
+    object RenameBug3 {
+      final val /*(*/Caterpillar/*)*/ = 42
+
+      @SomeScalaAnnotation(value1 = Caterpillar)
+      class SomeClass
+    }""" -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Caterpillar"))
+
+  @Test
+  def testRenameScalaAnnotationArgs1002680Ex2() = new FileSet {
+    """
+    final class SomeScalaAnnotation(value1: Int = 23, value2: Class[_] = classOf[String])
+      extends annotation.StaticAnnotation
+    """ isNotModified()
+
+    """
+    object RenameBug4 {
+      class /*(*/TryRenameMe/*)*/
+
+      @SomeScalaAnnotation(value2 = classOf[TryRenameMe])
+      class ImInnocent
+    }""" becomes
+    """
+    object RenameBug4 {
+      class /*(*/Hatter/*)*/
+
+      @SomeScalaAnnotation(value2 = classOf[Hatter])
+      class ImInnocent
+    }""" -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Hatter"))
 }
