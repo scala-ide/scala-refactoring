@@ -75,10 +75,13 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
   }
 
   object RemoveDuplicatedByWildcard extends Participant {
+    private def renamed(selector: ImportSelector): Boolean =
+      selector.rename != null && selector.name != selector.rename
+
     protected def doApply(trees: List[Import]) = trees.map { imp =>
       val wild = imp.selectors.find(_.name == nme.WILDCARD)
       if (wild.nonEmpty) {
-        val newImp = imp.copy(selectors = wild.toList).setPos(imp.pos)
+        val newImp = imp.copy(selectors = imp.selectors.filter { renamed }.sortBy { _.name } ::: wild.toList).setPos(imp.pos)
         newImp.symbol = imp.symbol
         newImp
       } else

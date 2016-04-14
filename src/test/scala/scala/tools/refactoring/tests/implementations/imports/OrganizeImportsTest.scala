@@ -3717,4 +3717,58 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(organizeLocalImports = false)
+
+  @Test
+  def shouldPreserveRenamedTypesInImportInClass() = new FileSet {
+    """
+    package test
+
+    trait Tested {
+      import java.util.{ Map => JavaMap, `List` => JavaList, ArrayList, _ }
+      def foo: JavaMap[String, String]
+      def bar: JavaList[Int] = new ArrayList[Int]
+    }
+    """ becomes {
+    """
+    package test
+
+    trait Tested {
+      import java.util.{`List` => JavaList, Map => JavaMap, _}
+      def foo: JavaMap[String, String]
+      def bar: JavaList[Int] = new ArrayList[Int]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveRenamedTypesInImportInMethod() = new FileSet {
+    """
+    package test
+
+    trait Tested {
+      def foo = {
+        import java.util.{ Map => JavaMap, ArrayList, _ }
+        def bar: JavaMap[String, String] = new HashMap[String, String]
+        def baz: ArrayList[Int] = new ArrayList[Int]
+        bar
+        baz
+      }
+    }
+    """ becomes {
+    """
+    package test
+
+    trait Tested {
+      def foo = {
+        import java.util.{Map => JavaMap, _}
+        def bar: JavaMap[String, String] = new HashMap[String, String]
+        def baz: ArrayList[Int] = new ArrayList[Int]
+        bar
+        baz
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
 }
