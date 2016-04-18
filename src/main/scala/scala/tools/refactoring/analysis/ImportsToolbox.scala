@@ -33,7 +33,11 @@ class ImportsToolbox[C <: CompilationUnitDependencies with common.EnrichedTrees]
       owners
     }
 
-    /** Returns `true` if import has been found for tested `Select` and `false` otherwise.
+    /** Returns `true` if an import has been found for tested `Select` and `false` otherwise.
+     *
+     *  Note: the examples below assume that `b` in `val baz: b` produces `TypeTree` which is
+     *  converted to `Select`. So examples are just a visualization of potential use case.
+     *
      *  Examples:
      *  {{{
      *  trait A {

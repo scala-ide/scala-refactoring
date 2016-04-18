@@ -3771,4 +3771,41 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     }
   } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("fails because `import Eye$u005B.{.Of => .Of}` is promoted to package scope")
+  @Test
+  def shouldPreserveBackticksInPackagePath_v1() = new FileSet {
+    """
+    object `Eye[` {
+      object `.Of` {
+        object Sauron
+        object TheBeholder
+      }
+    }
+
+    class Bug {
+      import `Eye[`.`.Of`.TheBeholder
+      import `Eye[`.`.Of`.Sauron
+
+      val x = Sauron
+      val y = TheBeholder
+    }
+    """ becomes {
+    """
+    object `Eye[` {
+      object `.Of` {
+        object Sauron
+        object TheBeholder
+      }
+    }
+
+    class Bug {
+      import `Eye[`.`.Of`.Sauron
+      import `Eye[`.`.Of`.TheBeholder
+
+      val x = Sauron
+      val y = TheBeholder
+    }
+    """}
+  } applyRefactoring organizeWithTypicalParams
 }
