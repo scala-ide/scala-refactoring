@@ -3932,6 +3932,7 @@ class Blubb
   /*
    * See Assembla Ticket 1002680
    */
+  @Ignore("Needs compiler support")
   @Test
   def testRenameJavaAnnotationArgs1002680Ex1() = new FileSet {
     """
@@ -3958,6 +3959,7 @@ class Blubb
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("HumptyDumpty"))
 
+  @Ignore("Needs compiler support")
   @Test
   def testRenameJavaAnnotationArgs1002680Ex2() = new FileSet {
     """
