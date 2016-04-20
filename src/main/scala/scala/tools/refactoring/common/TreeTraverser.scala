@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package common
 
-
 trait TreeTraverser extends TracingImpl {
 
   this: CompilerAccess with common.EnrichedTrees =>
@@ -46,7 +45,18 @@ trait TreeTraverser extends TracingImpl {
         }
       }
 
-      def treeAsString = t.summaryString
+      def treeAsString = {
+        val symString = {
+          val sym = t.symbol
+          if (sym == NoSymbol) {
+            "NoSymbol"
+          } else {
+            "" + sym
+          }
+        }
+
+        t.summaryString + "@" + symString
+      }
 
       def sourceFileAsString = t.pos match {
         case null | NoPosition => "<no-source-file>"
