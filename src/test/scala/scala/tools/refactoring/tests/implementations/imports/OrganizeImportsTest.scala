@@ -3808,4 +3808,19 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """}
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveSpacesInImportInMethod() = new FileSet {
+    """
+    package test
+
+    trait Tested {
+      def fooImportWith2Spaces = {
+        import  java.util.Map
+        def bar: Map[String, String] = ???
+        bar
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
 }
