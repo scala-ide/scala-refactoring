@@ -270,7 +270,7 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
             true
           } else {
             sym.annotations.exists { annotation =>
-              containsError(annotation.tree)
+              containsError(annotation.original)
             }
           }
         }
