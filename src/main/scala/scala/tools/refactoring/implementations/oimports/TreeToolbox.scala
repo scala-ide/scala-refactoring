@@ -33,6 +33,19 @@ class TreeToolbox[G <: Global](val global: G) {
       kidOwner.ownerChain.contains(elderOwner)
     }
 
+    private def isSame(left: Global#Import, right: Global#Import): Boolean = {
+      def isSameExpr(acc: Boolean)(leftOwner: Global#Symbol, rightOwner: Global#Symbol): Boolean = {
+        val left = Option(leftOwner).getOrElse(NoSymbol)
+        val right = Option(rightOwner).getOrElse(NoSymbol)
+        if (left == NoSymbol && right == NoSymbol)
+          acc
+        else
+          isSameExpr(acc && left.nameString == right.nameString)(left.owner, right.owner)
+      }
+      def toNames(imp: Global#Import) = imp.selectors.map { _.name.decoded }.toSet
+      isSameExpr(true)(left.expr.symbol, right.expr.symbol) && (toNames(left) & toNames(right)).nonEmpty
+    }
+
     def apply(regions: List[Region]): List[Region] = {
       regions.sortBy {
         _.from
@@ -40,11 +53,9 @@ class TreeToolbox[G <: Global](val global: G) {
         val ancestors = regions.filter { potentialAncestor =>
           potentialAncestor.from < kid.from && isAncestorOf(kid, potentialAncestor)
         }
-        val ancestorsImports = ancestors.flatMap { ancestor =>
-          ancestor.imports.map { ancestor.printImport }
-        }
+        val ancestorsImports = ancestors.flatMap { _.imports }
         kid.copy(imports = kid.imports.collect {
-          case imp if !ancestorsImports.contains(kid.printImport(imp)) => imp
+          case imp if ancestorsImports.find { ancestor => isSame(imp, ancestor) }.isEmpty => imp
         })
       }
     }

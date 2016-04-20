@@ -10,6 +10,7 @@ import common.Change
 import transformation.TreeFactory
 import sourcegen.Formatting
 import scala.util.control.NonFatal
+import scala.annotation.tailrec
 
 object OrganizeImports {
   /**
@@ -133,9 +134,18 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
   }
 
   object CollapseImports extends Participant {
+    @tailrec private def isSame(acc: Boolean)(left: Symbol, right: Symbol): Boolean = {
+      val left_ = Option(left).getOrElse(NoSymbol)
+      val right_ = Option(right).getOrElse(NoSymbol)
+      if (left_ == NoSymbol && right_ == NoSymbol)
+        acc
+      else
+        isSame(left_.nameString == right_.nameString && acc)(left_.owner, right_.owner)
+    }
+
     protected def doApply(trees: List[Import]) = {
       trees.foldRight(Nil: List[Import]) {
-        case (imp: Import, x :: xs) if createText(imp.expr) == createText(x.expr) =>
+        case (imp: Import, x :: xs) if isSame(true)(imp.expr.symbol, x.expr.symbol) =>
           x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
         case (imp: Import, xs) =>
           imp :: xs
@@ -159,17 +169,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
   }
 
   private def renames(i: ImportSelector) = i.rename != null && i.name != i.rename
-
-  object SimplifyWildcards extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees map {
-        case imp @ Import(_, selectors) if selectors.exists(wildcardImport) && !selectors.exists(renames) =>
-          imp.copy(selectors = selectors.filter(wildcardImport)).setPos(imp.pos)
-        case imp =>
-          imp
-      }
-    }
-  }
 
   object SortImports extends Participant {
 
@@ -338,7 +337,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
             }
           }
 
-          t copy (expr = transformation(expr).get /*safe becaues of pattern guard*/ )
+          t copy (expr = transformation(expr).get /*safe because of pattern guard*/ )
         case t => t
       }
     }
@@ -398,7 +397,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  def DefaultOptions = List(CollapseImports, SimplifyWildcards, SortImportSelectors, SortImports)
+  import oimports.NotPackageImportParticipants
+  private val imports = new NotPackageImportParticipants[this.type](this)
+  import imports.RemoveDuplicatedByWildcard
+  def DefaultOptions = List(CollapseImports, RemoveDuplicatedByWildcard, SortImportSelectors, SortImports)
 
   /**
    * Imports that should be added are passed as tuples in the form
@@ -474,12 +476,12 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       val group = participants.collect {
         case GroupImports(group) => group
       }.headOption
-      organizeLocalImportsToo(selection, group)
+      organizeLocalImportsToo(selection, group, params)
     } else
       Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
 
-  private def organizeLocalImportsToo(selection: Selection, group: Option[List[String]]) = {
+  private def organizeLocalImportsToo(selection: Selection, group: Option[List[String]], params: RefactoringParameters) = {
     val rootTree = abstractFileToTree(selection.file)
     import oimports.NotPackageImportParticipants
     val notPackageParticipants = new NotPackageImportParticipants[this.type](this)
@@ -524,9 +526,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       packageDefImportsOrganizer.transformTreeToRegions(rootTree, this).flatMap { groupImports.apply }
     }.getOrElse(packageRegions)
 
+    val collapse = params.options.contains(CollapseImports)
     val packageDefRegions = groupedPackageRegions.map {
       _.transform { i =>
-        scala.Function.chain { RemoveDuplicatedByWildcard ::
+        scala.Function.chain { SortImportSelectors :: SortImports :: (if (collapse) List(CollapseImports) else Nil) ::: RemoveDuplicatedByWildcard ::
           (new NPRemovedUnused(rootTree)) ::
           RemoveDuplicates ::
           SortImportSelectors ::

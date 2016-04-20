@@ -238,12 +238,12 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import java.lang.{String => S}
       import java.lang.{Object => Objekt}
 
-      object Main {val s: String = ""; var o: Objekt = null}
+      object Main {val s: S = ""; var o: Objekt = null}
     """ becomes
     """
       import java.lang.{Object => Objekt, String => S}
 
-      object Main {val s: String = ""; var o: Objekt = null}
+      object Main {val s: S = ""; var o: Objekt = null}
     """
   } applyRefactoring organize
 
@@ -430,7 +430,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }    """ becomes
     """
       ▒
-
       object Main {
       }    """
   } applyRefactoring organize
@@ -933,8 +932,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def organizeImportsSimilarButNotAffectedBy1002613Ex1() = new FileSet {
     """
     package test
-
-    import java.util.Collections.emptyList
 
     class Bug {
       import java.util.Collections
@@ -3405,11 +3402,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
-<<<<<<< HEAD
-=======
     import scala.concurrent.Future
 
->>>>>>> Inits work on organize imports in package scope
     object Bug3 {
       class Other {
         type Tpe1 = Int
@@ -3635,6 +3629,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package test
 
     object Outer {
+      import scala.util.Either
+      import scala.util.Try
 
       trait Test[Try, B]
       class ParamCheck[A]

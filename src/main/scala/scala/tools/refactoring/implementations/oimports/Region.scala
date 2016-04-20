@@ -10,6 +10,7 @@ import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
 
 import sourcegen.Formatting
+import scala.reflect.internal.Chars
 
 case class Region private (imports: List[Global#Import], owner: Global#Symbol, from: Int,
     to: Int, source: SourceFile, indentation: String, printImport: Global#Import => String,
@@ -58,6 +59,35 @@ object Region {
   private def indentation(imp: Global#Import): String = {
     val sourceFile = imp.pos.source
     sourceFile.lineToString(sourceFile.offsetToLine(imp.pos.start)).takeWhile { _.isWhitespace }
+  }
+
+  private def decodedName(keywords: Set[String])(name: Global#Name) = {
+    def addBackquotes(str: String) = {
+      val (ident, op) =
+        if (Chars.isIdentifierStart(str.head))
+          str.span(Chars.isIdentifierPart)
+        else
+          ("", str)
+      val needsBackticks =
+        if (op.isEmpty)
+          keywords(name.toTermName.decoded) && name.toTermName.decoded != "_"
+        else if (!ident.isEmpty && ident.last != '_')
+          true
+        else
+          !op.tail.forall(Chars.isOperatorPart)
+      if (needsBackticks) s"`$str`" else str
+    }
+    addBackquotes(name.decoded.trim)
+  }
+
+  private def mkFromSelector(keywords: Set[String])(sel: Global#ImportSelector): String = {
+    val renameArrow = " => "
+    decodedName(keywords)(sel.name) + {
+      if (sel.rename != null && sel.name.decoded != sel.rename.decoded)
+        renameArrow + decodedName(keywords)(sel.rename)
+      else
+        ""
+    }
   }
 
   private def scanForComments[G <: Global](global: G)(source: SourceFile): List[RangePosition] = {
@@ -130,12 +160,14 @@ object Region {
 
   def apply[G <: Global](global: G)(imports: List[global.Import], owner: global.Symbol, formatting: Formatting): Region = {
     require(imports.nonEmpty, "List of imports must not be empty.")
+    import global.nme
     val source = imports.head.pos.source
     val comments = scanForComments(global)(source)
     def printImport(imp: Global#Import): String = {
       val (prefix, suffices) = cutPrefixSuffix(imp, source)
+      val keywords = nme.keywords.map { _.decoded }
       val suffix = imp.selectors.collect {
-        case sel => selectorToSuffix(suffices, sel)
+        case sel => selectorToSuffix(suffices, sel).orElse(Option(mkFromSelector(keywords)(sel)))
       }.filter(_.nonEmpty).map(_.get)
       prefix + wrapInBraces(suffix.mkString(", "), imp.selectors, formatting)
     }
