@@ -6,6 +6,7 @@ import scala.tools.refactoring.implementations.OrganizeImports
 class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInstance: O) {
   import organizeImportsInstance._
   import organizeImportsInstance.global._
+  import organizeImportsInstance.global.analyzer._
 
   class RemoveUnused(block: Tree) extends Participant {
     private def treeWithoutImports(tree: Tree) = new Transformer {
@@ -25,7 +26,16 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
             traverse(qual)
           case TypeDef(_, _, compoundTypeDefs, rhs) =>
             rhs :: compoundTypeDefs foreach traverse
-          case t => super.traverse(t)
+          case ValDef(_, _, _, rhs: Attachable) if rhs.hasAttachment[MacroExpansionAttachment] =>
+            val mea = rhs.attachments.get[MacroExpansionAttachment]
+            mea.collect {
+              case MacroExpansionAttachment(_, expanded: Typed) =>
+                expanded
+            }.foreach { expanded =>
+              traverse(expanded.expr)
+            }
+          case t =>
+            super.traverse(t)
         }
 
         override def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {

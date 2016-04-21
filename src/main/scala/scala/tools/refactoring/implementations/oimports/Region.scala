@@ -8,6 +8,7 @@ import scala.tools.nsc.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
+
 import sourcegen.Formatting
 
 case class Region private (imports: List[Global#Import], owner: Global#Symbol, startPos: Global#Position, endPos: Global#Position,
