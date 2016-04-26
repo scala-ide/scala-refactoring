@@ -3928,4 +3928,107 @@ class Blubb
     }
     """ -> TaggedAsLocalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002680
+   */
+  @Ignore("Needs compiler support")
+  @Test
+  def testRenameJavaAnnotationArgs1002680Ex1() = new FileSet {
+    """
+    public @interface AnAnnotation {
+      Class<?> value1() default Integer.class;
+      Class<?> value2() default Integer.class;
+      int value3() default 42;
+    }
+    """ -> PreloadAsJava("AnAnnotation")
+
+    """
+    object RenameBug1 {
+      class /*(*/TryRenameMe/*)*/
+
+      @AnAnnotation(value1 = classOf[TryRenameMe])
+      class SomeClass
+    }""" becomes
+    """
+    object RenameBug1 {
+      class /*(*/HumptyDumpty/*)*/
+
+      @AnAnnotation(value1 = classOf[HumptyDumpty])
+      class SomeClass
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("HumptyDumpty"))
+
+  @Ignore("Needs compiler support")
+  @Test
+  def testRenameJavaAnnotationArgs1002680Ex2() = new FileSet {
+    """
+    public @interface AnAnnotation {
+      Class<?> value1() default Integer.class;
+      Class<?> value2() default Integer.class;
+      int value3() default 42;
+    }
+    """ -> PreloadAsJava("AnAnnotation")
+
+    """
+    object RenameBug2 {
+      final val /*(*/TryRenameMe/*)*/ = 42
+
+      @AnAnnotation(value3 = TryRenameMe)
+      class SomeClass
+    }""" becomes
+    """
+    object RenameBug2 {
+      final val /*(*/CheshireCat/*)*/ = 42
+
+      @AnAnnotation(value3 = CheshireCat)
+      class SomeClass
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("CheshireCat"))
+
+  @Test
+  def testRenameScalaAnnotationArgs1002680Ex1() = new FileSet {
+    """
+    final class SomeScalaAnnotation(value1: Int = 23, value2: Class[_] = classOf[String])
+      extends annotation.StaticAnnotation
+    """ isNotModified()
+
+    """
+    object RenameBug3 {
+      final val /*(*/TryRenameMe/*)*/ = 42
+
+      @SomeScalaAnnotation(value1 = TryRenameMe)
+      class SomeClass
+    }""" becomes
+    """
+    object RenameBug3 {
+      final val /*(*/Caterpillar/*)*/ = 42
+
+      @SomeScalaAnnotation(value1 = Caterpillar)
+      class SomeClass
+    }""" -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Caterpillar"))
+
+  @Test
+  def testRenameScalaAnnotationArgs1002680Ex2() = new FileSet {
+    """
+    final class SomeScalaAnnotation(value1: Int = 23, value2: Class[_] = classOf[String])
+      extends annotation.StaticAnnotation
+    """ isNotModified()
+
+    """
+    object RenameBug4 {
+      class /*(*/TryRenameMe/*)*/
+
+      @SomeScalaAnnotation(value2 = classOf[TryRenameMe])
+      class ImInnocent
+    }""" becomes
+    """
+    object RenameBug4 {
+      class /*(*/Hatter/*)*/
+
+      @SomeScalaAnnotation(value2 = classOf[Hatter])
+      class ImInnocent
+    }""" -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Hatter"))
 }

@@ -5,7 +5,6 @@
 package scala.tools.refactoring
 package common
 
-
 trait TreeTraverser extends TracingImpl {
 
   this: CompilerAccess with common.EnrichedTrees =>
@@ -46,7 +45,18 @@ trait TreeTraverser extends TracingImpl {
         }
       }
 
-      def treeAsString = t.summaryString
+      def treeAsString = {
+        val symString = {
+          val sym = t.symbol
+          if (sym == NoSymbol) {
+            "NoSymbol"
+          } else {
+            "" + sym
+          }
+        }
+
+        t.summaryString + "@" + symString
+      }
 
       def sourceFileAsString = t.pos match {
         case null | NoPosition => "<no-source-file>"
@@ -244,7 +254,6 @@ trait TreeTraverser extends TracingImpl {
   }
 
   class TreeWithSymbolTraverser(f: (Symbol, Tree) => Unit) extends Traverser with TraversalInstrumentation {
-
     override def traverse(t: Tree) = {
 
       t match {
@@ -325,8 +334,10 @@ trait TreeTraverser extends TracingImpl {
 
         case t: DefTree if t.symbol != NoSymbol =>
           f(t.symbol, t)
+
         case t: RefTree =>
           f(t.symbol, t)
+
         case t: TypeTree if t.original == null =>
 
           def handleType(typ: Type): Unit = typ match {
@@ -367,7 +378,22 @@ trait TreeTraverser extends TracingImpl {
       t match {
         case _: NamedArgument | _: NameTree | _: MultipleAssignment =>
           ()
+
         case t =>
+          val annotations = {
+            if (t.isInstanceOf[DefTree] && t.symbol != null && t.symbol != NoSymbol) {
+              t.symbol.annotations
+            } else {
+              Nil
+            }
+          }
+
+          annotations.foreach { annotation =>
+            context("annotaton tree") {
+              traverse(annotation.original)
+            }
+          }
+
           super.traverse(t)
       }
     }
