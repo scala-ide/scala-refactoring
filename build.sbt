@@ -35,6 +35,11 @@ unmanagedSourceDirectories in Compile += baseDirectory.value / (scalaBinaryVersi
   case _      => "src/main/scala-2_11"
 })
 
+unmanagedSourceDirectories in Test += baseDirectory.value / (scalaBinaryVersion.value match {
+  case "2.10" => "src/test/scala-2_10"
+  case _      => "src/test/scala-2_11"
+})
+
 publishMavenStyle := true
 
 useGpg := true
