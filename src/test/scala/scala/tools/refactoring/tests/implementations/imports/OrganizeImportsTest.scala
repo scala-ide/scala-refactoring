@@ -3823,4 +3823,35 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveImportOfTypeOfImplicitVal() = new FileSet {
+    """
+    package test
+
+    import scala.collection.mutable.ListBuffer
+
+    class Test(implicit lb: ListBuffer[Int]) {
+      def f = {
+        import scala.collection.mutable.Buffer
+        Buffer(1)
+      }
+    }""" isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveFormattingForImportInPatMat() = new FileSet {
+    """
+    package test
+
+    class Test {
+      def f = {
+        1 match {
+          case 1 =>
+            import scala.collection.mutable.Buffer
+            Buffer(1)
+        }
+      }
+    }""" isNotModified
+  } applyRefactoring organizeWithTypicalParams
 }
