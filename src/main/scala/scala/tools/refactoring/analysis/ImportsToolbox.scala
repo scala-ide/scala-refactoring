@@ -1,25 +1,28 @@
 package scala.tools.refactoring
 package analysis
 
-class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees](val cuDependenciesInstance: C) {
+/** Class to wrap path dependent type on `CompilationUnitDependencies` used in `CompilationUnitDependencies`. */
+class ImportsToolbox[C <: CompilationUnitDependencies with common.EnrichedTrees](val cuDependenciesInstance: C) {
   import cuDependenciesInstance.global._
 
   def apply(tree: Tree) = new IsSelectNotInRelativeImports(tree)
 
+  /** Checks if for given `Select` potentially done from `TypeTree` exists import (represented by `Import`)
+   *  in this `Select` scope or its parent.
+   */
   class IsSelectNotInRelativeImports(wholeTree: Tree) {
     private def collectPotentialOwners(of: Select): List[Symbol] = {
-      val upToPosition = of.pos.start
-      def isThisSelectTree(fromWholeTree: Tree): Boolean =
-        fromWholeTree.pos.isRange && fromWholeTree.pos.start == upToPosition
       var owners = List.empty[Symbol]
+      def isSelectEmbracedByTree(tree: Tree): Boolean =
+        tree.pos.isRange && tree.pos.start <= of.pos.start && of.pos.end <= tree.pos.end
       val collectPotentialOwners = new Traverser {
         var owns = List.empty[Symbol]
         override def traverse(t: Tree) = {
           owns = currentOwner :: owns
           t match {
-            case t if !t.pos.isRange || t.pos.start > upToPosition =>
-            case potential if isThisSelectTree(potential) =>
+            case potential if isSelectEmbracedByTree(potential) =>
               owners = owns.distinct
+              super.traverse(t)
             case t =>
               super.traverse(t)
               owns = owns.tail
@@ -30,6 +33,38 @@ class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees]
       owners
     }
 
+    /** Returns `true` if an import has been found for tested `Select` and `false` otherwise.
+     *
+     *  Note: the examples below assume that `b` in `val baz: b` produces `TypeTree` which is
+     *  converted to `Select`. So examples are just a visualization of potential use case.
+     *
+     *  Examples:
+     *  {{{
+     *  trait A {
+     *    import a.b
+     *    def foo = {
+     *      val baz: b = ???
+     *    }
+     *  }
+     *  }}}
+     *  returns `true`
+     *  {{{
+     *  def foo = {
+     *    import a.b
+     *    val baz: b = ???
+     *  }
+     *  }}}
+     *  returns `true`
+     *  but
+     *  {{{
+     *  def foo = {
+     *    val baz: b = ???
+     *    import a.b
+     *  }
+     *  }}}
+     *  returns `false`
+     *  For more see tests suites.
+     */
     def apply(tested: Select): Boolean = {
       val doesNameFitInTested = compareNameWith(tested) _
       val nonPackageOwners = collectPotentialOwners(tested).filterNot { _.hasPackageFlag }
@@ -52,9 +87,9 @@ class IsNotInImports[C <: CompilationUnitDependencies with common.EnrichedTrees]
       val Select(testedQual, testedName) = tested
       val testedQName = List(mkName(testedQual), testedName).mkString(".")
       val Import(thatQual, thatSels) = that
-      val impNames = thatSels.map { sel =>
-        if (sel.name == nme.WILDCARD) mkName(thatQual)
-        else List(mkName(thatQual), sel.name).mkString(".")
+      val impNames = thatSels.flatMap { sel =>
+        if (sel.name == nme.WILDCARD) List(mkName(thatQual))
+        else Set(sel.name, sel.rename).map { name => List(mkName(thatQual), name).mkString(".") }.toList
       }
       impNames.exists { testedQName.startsWith }
     }

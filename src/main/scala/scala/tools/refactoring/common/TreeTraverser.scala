@@ -129,7 +129,15 @@ trait TreeTraverser extends TracingImpl {
       }
 
       val treesFromType = {
-        val tpeWithoutPrefix = tpe.trimPrefix(tpe.toString).split("\\.") match {
+        def splitUntilTypeParameterBracket(acc: Array[String])(tpe: String): Array[String] = {
+          if (tpe.isEmpty)
+            acc
+          else if (!tpe.contains(".") || tpe.contains(".") && tpe.contains("[") && tpe.indexOf("[") < tpe.indexOf("."))
+            acc :+ tpe
+          else
+            splitUntilTypeParameterBracket(acc :+ tpe.substring(0, tpe.indexOf(".")))(tpe.substring(tpe.indexOf(".") + 1))
+        }
+        val tpeWithoutPrefix = splitUntilTypeParameterBracket(Array.empty[String])(tpe.trimPrefix(tpe.toString)) match {
           case tpes if tpe.isInstanceOf[SingletonType] => tpes.init // drop the `.type`
           case tpes => tpes
         }

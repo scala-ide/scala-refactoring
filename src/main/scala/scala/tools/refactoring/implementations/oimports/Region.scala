@@ -8,6 +8,7 @@ import scala.tools.nsc.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
+
 import sourcegen.Formatting
 
 case class Region private (imports: List[Global#Import], owner: Global#Symbol, startPos: Global#Position, endPos: Global#Position,
@@ -69,7 +70,7 @@ object Region {
 
   private def cutPrefixSuffix(imp: Global#Import, source: SourceFile): (String, List[String]) = {
     val printedImport = source.content.slice(imp.pos.start, imp.pos.end).mkString
-    val prefixPatternWithCommentInside = """import (((\/\*.*\*\/)*(\w|\d|_|-)+(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
+    val prefixPatternWithCommentInside = """import\s+(((\/\*.*\*\/)*((\w|\d|_|-)+|(\`.*\`)+)(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
     val prefix = prefixPatternWithCommentInside.findFirstIn(printedImport).get
     def toNameRename(printedSelectors: String): List[String] = {
       val unwrapFromBraces = (if (printedSelectors.startsWith("{"))

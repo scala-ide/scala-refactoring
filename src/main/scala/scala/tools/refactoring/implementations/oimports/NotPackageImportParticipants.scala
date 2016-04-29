@@ -1,7 +1,7 @@
 package scala.tools.refactoring
 package implementations.oimports
 
-import scala.tools.refactoring.implementations.OrganizeImports
+import implementations.OrganizeImports
 
 class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInstance: O) {
   import organizeImportsInstance._
@@ -18,15 +18,24 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
     private lazy val allSelects = {
       import scala.collection.mutable
       val selects = mutable.ListBuffer[(Symbol, Select)]()
-      val selectsTraverser = new TraverserWithFakedTrees {
-        override def traverse(tree: Tree): Unit = tree match {
+      val selectsTraverser = new TraverserWithFakedTrees { self =>
+        private val default: PartialFunction[Tree, Unit] = {
+          case t => super.traverse(t)
+        }
+
+        private val special: PartialFunction[Tree, Unit] = {
           case s @ Select(qual, _) =>
             selects += (currentOwner -> s)
             traverse(qual)
           case TypeDef(_, _, compoundTypeDefs, rhs) =>
             rhs :: compoundTypeDefs foreach traverse
-          case t => super.traverse(t)
         }
+
+        override def traverse(tree: Tree): Unit = special.orElse {
+          new ImplicitValDefTraverserPF[organizeImportsInstance.type](organizeImportsInstance)(self)
+        }.orElse {
+          default
+        }(tree)
 
         override def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
           case (AppliedTypeTree(tpt, _), tpe @ TypeRef(_, sym, _)) => tpt match {
@@ -57,8 +66,8 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
             val (owner, foundSel) = select
             def downToPackage(selectQualifierSymbol: Symbol): Symbol =
               if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol
-                  || selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
-                  || selectQualifierSymbol.isStable)
+                || selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
+                || selectQualifierSymbol.isStable)
                 selectQualifierSymbol
               else
                 downToPackage(selectQualifierSymbol.owner)
@@ -75,10 +84,13 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
   }
 
   object RemoveDuplicatedByWildcard extends Participant {
+    private def renamed(selector: ImportSelector): Boolean =
+      selector.rename != null && selector.name != selector.rename
+
     protected def doApply(trees: List[Import]) = trees.map { imp =>
       val wild = imp.selectors.find(_.name == nme.WILDCARD)
       if (wild.nonEmpty) {
-        val newImp = imp.copy(selectors = wild.toList).setPos(imp.pos)
+        val newImp = imp.copy(selectors = imp.selectors.filter { renamed }.sortBy { _.name } ::: wild.toList).setPos(imp.pos)
         newImp.symbol = imp.symbol
         newImp
       } else

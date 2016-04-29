@@ -2603,7 +2603,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Map => JavaMap should not be moved there.")
   @Test
   def shouldNotRemoveRenamedImportInClassBody() = new FileSet {
     """
@@ -2631,7 +2630,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import ListBuffer should not be moved there.")
   @Test
   def shouldOrganizeImportInClassAndDefBodies() = new FileSet {
     """
@@ -3087,12 +3085,14 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala./*comment*/util/*comment.comment*/.Try
       import scala/*comment.comment*/.concurrent.Future
       import java.util./*comment.*/Date
+      import /*comment.comment*/java.util.List
       import java.util/*.comment*/.ArrayList
 
       val d: Date
-      val l: ArrayList[Int]
+      val al: ArrayList[Int]
       val t: Try[Int]
       val f: Future[Double]
+      val l: List[String]
     }
     """ becomes {
     """
@@ -3102,13 +3102,15 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     trait Bug {
       import java.util/*.comment*/.ArrayList
       import java.util./*comment.*/Date
+      import /*comment.comment*/java.util.List
       import scala/*comment.comment*/.concurrent.Future
       import scala./*comment*/util/*comment.comment*/.Try
 
       val d: Date
-      val l: ArrayList[Int]
+      val al: ArrayList[Int]
       val t: Try[Int]
       val f: Future[Double]
+      val l: List[String]
     }
     """
     }
@@ -3307,7 +3309,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   """ isNotModified
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try => Evil.... should not be moved there.")
   @Test
   def shouldPreserveBacktickedNamesOfImports_variation2() = new FileSet {
     """
@@ -3331,7 +3332,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import DollarDollarDollar => $$$ should not be moved there.")
   @Test
   def shouldPreserveBacktickedNamesOfImports_variation3() = new FileSet {
     """
@@ -3376,7 +3376,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }"""}
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldPreserveCommentInImportAndSortImports() = new FileSet {
     """
@@ -3414,8 +3413,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }""" becomes {
     """
     package com.github.mlangc.experiments
-
-    import scala.util.Try
 
     object Bug3 {
       class Other {
@@ -3487,14 +3484,41 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. 'import scala.language.implicitConversions' should not be moved up at package scope.")
+  /** This case is quite peculiar. `scala.language` is imported always and moved to top most package scope.
+   *  See at following snippet in [[scala.tools.refactoring.analysis.CompilationUnitDependencies]] class:
+   *  {{{
+   *  // Always add the SIP 18 language imports as required until we can handle them properly
+   *  case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
+   *    feature foreach (selector => addToResult(Select(select, selector.name)))
+   *  }}}
+   */
+  @Test
+  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    class Bug8 {
+      import scala.language.implicitConversions
+      implicit def intToString(i: Int) = i.toString
+    }""" becomes {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+
+    class Bug8 {
+      implicit def intToString(i: Int) = i.toString
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
+
   @Test
   def shouldRemoveImportWithUnusedImplicits() = new FileSet {
     """
     package com.github.mlangc.experiments
 
     class Bug8 {
-      import scala.language.implicitConversions
+      import scala.concurrent.duration.DurationConversions
       implicit def intToString(i: Int) = i.toString
     }""" becomes {
     """
@@ -3506,7 +3530,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3531,7 +3554,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3556,7 +3578,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInInnerExistentialTypeOfClassDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3583,7 +3604,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Import Either should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
@@ -3603,8 +3623,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     /*<-*/
     package test
 
-    import scala.util.Either
-
     trait Outer {
       import scala.util.Either
 
@@ -3616,15 +3634,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("There is a bug in package scope imports organizing. Imports Either and Try should not be moved there.")
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfDeepInHigherKindedTypeAndNotRemoveItFromImportsInClassScope() = new FileSet {
     """
     /*<-*/
     package test
-
-    import scala.util.Either
-    import scala.util.Try
 
     object Outer {
       import scala.util.Either
@@ -3703,4 +3717,141 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(organizeLocalImports = false)
+
+  @Test
+  def shouldPreserveRenamedTypesInImportInClass() = new FileSet {
+    """
+    package test
+
+    trait Tested {
+      import java.util.{ Map => JavaMap, `List` => JavaList, ArrayList, _ }
+      def foo: JavaMap[String, String]
+      def bar: JavaList[Int] = new ArrayList[Int]
+    }
+    """ becomes {
+    """
+    package test
+
+    trait Tested {
+      import java.util.{`List` => JavaList, Map => JavaMap, _}
+      def foo: JavaMap[String, String]
+      def bar: JavaList[Int] = new ArrayList[Int]
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveRenamedTypesInImportInMethod() = new FileSet {
+    """
+    package test
+
+    trait Tested {
+      def foo = {
+        import java.util.{ Map => JavaMap, ArrayList, _ }
+        def bar: JavaMap[String, String] = new HashMap[String, String]
+        def baz: ArrayList[Int] = new ArrayList[Int]
+        bar
+        baz
+      }
+    }
+    """ becomes {
+    """
+    package test
+
+    trait Tested {
+      def foo = {
+        import java.util.{Map => JavaMap, _}
+        def bar: JavaMap[String, String] = new HashMap[String, String]
+        def baz: ArrayList[Int] = new ArrayList[Int]
+        bar
+        baz
+      }
+    }
+    """
+    }
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("fails because `import Eye$u005B.{.Of => .Of}` is promoted to package scope")
+  @Test
+  def shouldPreserveBackticksInPackagePath_v1() = new FileSet {
+    """
+    object `Eye[` {
+      object `.Of` {
+        object Sauron
+        object TheBeholder
+      }
+    }
+
+    class Bug {
+      import `Eye[`.`.Of`.TheBeholder
+      import `Eye[`.`.Of`.Sauron
+
+      val x = Sauron
+      val y = TheBeholder
+    }
+    """ becomes {
+    """
+    object `Eye[` {
+      object `.Of` {
+        object Sauron
+        object TheBeholder
+      }
+    }
+
+    class Bug {
+      import `Eye[`.`.Of`.Sauron
+      import `Eye[`.`.Of`.TheBeholder
+
+      val x = Sauron
+      val y = TheBeholder
+    }
+    """}
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveSpacesInImportInMethod() = new FileSet {
+    """
+    package test
+
+    trait Tested {
+      def fooImportWith2Spaces = {
+        import  java.util.Map
+        def bar: Map[String, String] = ???
+        bar
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveImportOfTypeOfImplicitVal() = new FileSet {
+    """
+    package test
+
+    import scala.collection.mutable.ListBuffer
+
+    class Test(implicit lb: ListBuffer[Int]) {
+      def f = {
+        import scala.collection.mutable.Buffer
+        Buffer(1)
+      }
+    }""" isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveFormattingForImportInPatMat() = new FileSet {
+    """
+    package test
+
+    class Test {
+      def f = {
+        1 match {
+          case 1 =>
+            import scala.collection.mutable.Buffer
+            Buffer(1)
+        }
+      }
+    }""" isNotModified
+  } applyRefactoring organizeWithTypicalParams
 }
