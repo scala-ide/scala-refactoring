@@ -71,7 +71,8 @@ object OrganizeImportsWithMacros {
   }
 
   /**
-   * Implementation for the macro.
+   * Implementation for the macro inspired by Play's `JsMacroImpl.formatImpl` to test if given import is preserved
+   * when macro uses its content (e.g. types delivered by import) in code modification.
    */
   object MacroTest {
 
