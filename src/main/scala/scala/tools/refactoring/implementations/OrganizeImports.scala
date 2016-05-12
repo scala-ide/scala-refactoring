@@ -143,10 +143,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
         isSame(left_.nameString == right_.nameString && acc)(left_.owner, right_.owner)
     }
 
+    import oimports.TreeToolbox
     protected def doApply(trees: List[Import]) = {
       trees.foldRight(Nil: List[Import]) {
-        case (imp: Import, x :: xs) if isSame(true)(imp.expr.symbol, x.expr.symbol) =>
-          x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
+        case (imp: TreeToolbox[_]#RegionImport, x :: xs) if isSame(true)(imp.expr.symbol, x.expr.symbol) =>
+          x.copy(selectors = x.selectors ::: imp.selectors.asInstanceOf[List[ImportSelector]]).setPos(x.pos) :: xs
         case (imp: Import, xs) =>
           imp :: xs
       }
@@ -529,7 +530,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val collapse = params.options.contains(CollapseImports)
     val packageDefRegions = groupedPackageRegions.map {
       _.transform { i =>
-        scala.Function.chain { SortImportSelectors :: SortImports :: (if (collapse) List(CollapseImports) else Nil) ::: RemoveDuplicatedByWildcard ::
+        scala.Function.chain { SortImportSelectors :: SortImports :: (if (collapse) List(new notPackageParticipants.CollapseImports[treeToolbox.type](treeToolbox)) else Nil) ::: RemoveDuplicatedByWildcard ::
           (new NPRemovedUnused(rootTree)) ::
           RemoveDuplicates ::
           SortImportSelectors ::

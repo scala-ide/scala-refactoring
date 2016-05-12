@@ -158,11 +158,11 @@ object Region {
     else
       selectors
 
-  def apply[G <: Global](global: G)(imports: List[global.Import], owner: global.Symbol, formatting: Formatting): Region = {
+  def apply[G <: Global, T <: TreeToolbox[G]](treeToolbox: T)(imports: List[treeToolbox.global.Import], owner: treeToolbox.global.Symbol, formatting: Formatting): Region = {
     require(imports.nonEmpty, "List of imports must not be empty.")
-    import global.nme
+    import treeToolbox.global.nme
     val source = imports.head.pos.source
-    val comments = scanForComments(global)(source)
+    val comments = scanForComments(treeToolbox.global)(source)
     def printImport(imp: Global#Import): String = {
       val (prefix, suffices) = cutPrefixSuffix(imp, source)
       val keywords = nme.keywords.map { _.decoded }
@@ -179,12 +179,11 @@ object Region {
       }.getOrElse(printedImport)
     }
     val regionStartPos = findUpNeighborComment(imports.head.pos, comments, source).getOrElse(imports.head.pos)
-    Region(toRegionImports(global)(imports, owner), owner, regionStartPos.start, imports.last.pos.end, source, indent,
+    Region(toRegionImports[G, T](treeToolbox)(imports, owner), owner, regionStartPos.start, imports.last.pos.end, source, indent,
         printImport, printImportWithComment, "")
   }
 
-  private def toRegionImports[G <: Global](g: G)(imports: List[g.Import], owner: g.Symbol) = {
-    val ttb = new TreeToolbox[g.type](g)
-    imports.map { i => new ttb.RegionImport(owner, i) }
+  private def toRegionImports[G <: Global, T <: TreeToolbox[G]](ttb: T)(imports: List[ttb.global.Import], owner: ttb.global.Symbol) = {
+    imports.map { i => new ttb.RegionImport(owner, i)() }
   }
 }

@@ -61,11 +61,14 @@ class TreeToolbox[G <: Global](val global: G) {
     }
   }
 
-  class RegionImport(val owner: Symbol, proto: Import) extends Import(proto.expr, proto.selectors) with RegionOwner {
+  class RegionImport(val owner: Symbol, proto: Import)(val positions: Seq[Position] = Seq(proto.pos)) extends Import(proto.expr, proto.selectors) with RegionOwner {
     setPos(proto.pos).setType(proto.tpe).setSymbol(proto.symbol)
 
-    override def copy(expr: Tree = proto.expr, selectors: List[ImportSelector] = proto.selectors) =
-      new RegionImport(owner, proto.copy(expr, selectors).setPos(proto.pos).setSymbol(proto.symbol).setType(proto.tpe))
+    override def copy(expr: Tree = this.expr, selectors: List[ImportSelector] = this.selectors) =
+      new RegionImport(owner, Import(expr, selectors).setPos(pos).setSymbol(symbol).setType(tpe))(positions)
+
+    def merge(that: RegionImport): RegionImport =
+      new RegionImport(owner, Import(expr, selectors ::: that.selectors).setPos(pos).setSymbol(symbol).setType(tpe))(positions ++ that.positions)
   }
 }
 

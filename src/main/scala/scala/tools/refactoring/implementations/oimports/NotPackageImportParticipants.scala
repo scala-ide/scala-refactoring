@@ -2,6 +2,7 @@ package scala.tools.refactoring
 package implementations.oimports
 
 import implementations.OrganizeImports
+import scala.annotation.tailrec
 
 class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInstance: O) {
   import organizeImportsInstance._
@@ -105,5 +106,25 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
         else
           rest
     }.flatten.toList
+  }
+
+  class CollapseImports[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T) extends Participant {
+    @tailrec private def isSame(acc: Boolean)(left: Symbol, right: Symbol): Boolean = {
+      val left_ = Option(left).getOrElse(NoSymbol)
+      val right_ = Option(right).getOrElse(NoSymbol)
+      if (left_ == NoSymbol && right_ == NoSymbol)
+        acc
+      else
+        isSame(left_.nameString == right_.nameString && acc)(left_.owner, right_.owner)
+    }
+
+    protected def doApply(trees: List[Import]) = {
+      trees.foldRight(Nil: List[ttb.global.Import]) {
+        case (imp: ttb.RegionImport, (x: ttb.RegionImport) :: xs) if isSame(true)(imp.expr.symbol, x.expr.symbol) =>
+          x.merge(imp) :: xs
+        case (imp: ttb.global.Import, xs) =>
+          imp :: xs
+      }
+    }
   }
 }
