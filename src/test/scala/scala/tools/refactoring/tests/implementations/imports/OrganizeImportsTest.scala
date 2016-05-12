@@ -3842,4 +3842,25 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }""" isNotModified
   } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldPreserveOriginalFormattingInImportSelectors() = new FileSet {
+    """
+      import java.lang.{Integer =>I}
+      import java.lang.{String => S}
+
+      object Main {
+        val s: S = ""
+        val l: I = 1
+      }
+    """ becomes
+    """
+      import java.lang.{Integer =>I, String => S}
+
+      object Main {
+        val s: S = ""
+        val l: I = 1
+      }
+    """
+  } applyRefactoring organize
 }
