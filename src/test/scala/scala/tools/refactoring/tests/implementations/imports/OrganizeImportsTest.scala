@@ -421,11 +421,25 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def unusedImportWildcards() = new FileSet {
+  def unusedImportWildcards_v1() = new FileSet {
     """
       import java.util._
       import scala.collection._
 
+      object Main {
+      }    """ becomes
+    """
+▒
+      object Main {
+      }    """
+  } applyRefactoring organize
+
+  @Test
+  def unusedImportWildcards_v2() = new FileSet {
+    """
+      import java.util._
+      import scala.collection._
+      
       object Main {
       }    """ becomes
     """
