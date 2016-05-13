@@ -71,6 +71,10 @@ class TreeToolbox[G <: Global](val global: G) {
     def merge(that: RegionImport): RegionImport =
       new RegionImport(owner, Import(expr, selectors ::: that.selectors).setPos(pos).setSymbol(symbol).setType(tpe), comments)(positions ++ that.positions)
 
+    def spawn: List[RegionImport] = selectors.map { sel =>
+      new RegionImport(owner, Import(expr, List(sel)).setPos(pos).setSymbol(symbol).setType(tpe), comments)(positions)
+    }
+
     def indentation: String = {
       val sourceFile = pos.source
       sourceFile.lineToString(sourceFile.offsetToLine(pos.start)).takeWhile { _.isWhitespace }
@@ -195,6 +199,11 @@ class TreeToolbox[G <: Global](val global: G) {
         comment + indent + printedImport
       }.getOrElse(printedImport)
     }
+  }
+
+  object RegionImport {
+    def unapply(regionImport: RegionImport): Option[(Tree, List[ImportSelector])] =
+      Option((regionImport.expr, regionImport.selectors))
   }
 }
 

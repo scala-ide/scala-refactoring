@@ -127,4 +127,15 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       }
     }
   }
+
+  class ExpandImports[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T) extends Participant {
+    protected def doApply(trees: List[Import]) = {
+      trees.flatMap {
+        case imp @ ttb.RegionImport(_, selectors) if !selectors.exists(wildcardImport) =>
+          imp.spawn
+        case imp =>
+          List(imp)
+      }
+    }
+  }
 }
