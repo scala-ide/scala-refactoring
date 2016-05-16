@@ -138,4 +138,22 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       }
     }
   }
+
+  case class AlwaysUseWildcards[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T)(imports: Set[String]) extends Participant {
+    protected def doApply(trees: List[Import]) = {
+      val seen = collection.mutable.HashSet[String]()
+      trees flatMap {
+        case imp @ ttb.RegionImport(qual, selectors) if imports.contains(asSelectorString(qual)) && !selectors.exists { sel =>
+            sel.rename != null && sel.name != sel.rename
+          } =>
+          if (seen.contains(asSelectorString(qual))) {
+            None
+          } else {
+            seen += asSelectorString(qual)
+            Some(imp.copy(qual, List(ImportSelector(nme.WILDCARD, -1, nme.WILDCARD, -1))).copyAttrs(imp))
+          }
+        case t => Some(t)
+      }
+    }
+  }
 }
