@@ -53,6 +53,27 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       selects.toList
     }
 
+    private def fullNameButSkipPackageObject(sym: Symbol): String = {
+      var b: java.lang.StringBuffer = null
+      def loop(size: Int, sym: Symbol): Unit = {
+        val symName = sym.name
+        val nSize = symName.length - (if (symName.endsWith(nme.LOCAL_SUFFIX_STRING)) 1 else 0)
+        if (sym.isRoot || sym.isRootPackage || sym == NoSymbol || sym.owner.isEffectiveRoot) {
+          val capacity = size + nSize
+          b = new java.lang.StringBuffer(capacity)
+          b.append(chrs, symName.start, nSize)
+        } else {
+          loop(size + nSize + 1, sym.effectiveOwner.enclClass)
+          if (!sym.isPackageObject) {
+            b.append(".")
+            b.append(chrs, symName.start, nSize)
+          }
+        }
+      }
+      loop(0, sym)
+      b.toString
+    }
+
     protected def doApply(trees: List[Import]) = trees.iterator.collect {
       case imp @ Import(importQualifier, importSelections) =>
         val importSym = importQualifier.symbol.fullName
@@ -75,7 +96,11 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
             val foundNames = Set(foundSel.name.toString, foundSel.symbol.owner.nameString)
             val foundSym = Option(downToPackage(foundSel.qualifier.symbol)).getOrElse(downToPackage(foundSel.symbol))
             (isWildcard || (foundNames & importSelNames).nonEmpty) &&
-              foundSym != null && foundSym.fullName == importSym && impOwner.map { owner.ownerChain.contains }.getOrElse(true)
+              foundSym != null && fullNameButSkipPackageObject(foundSym) == importSym && impOwner.map { impOwner =>
+                owner.ownerChain.exists { selectOwner =>
+                  selectOwner.name.decoded == impOwner.name.decoded
+                }
+              }.getOrElse(true)
           }
         }
         (imp, usedSelectors)
@@ -144,8 +169,8 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       val seen = collection.mutable.HashSet[String]()
       trees flatMap {
         case imp @ ttb.RegionImport(qual, selectors) if imports.contains(asSelectorString(qual)) && !selectors.exists { sel =>
-            sel.rename != null && sel.name != sel.rename
-          } =>
+          sel.rename != null && sel.name != sel.rename
+        } =>
           if (seen.contains(asSelectorString(qual))) {
             None
           } else {

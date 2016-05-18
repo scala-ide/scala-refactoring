@@ -33,6 +33,43 @@ case class Region private (imports: List[Global#Import], owner: Global#Symbol, f
     TextChange(source, from_, to_, printWhenEmpty)
   }
 
+  def unionImports[G <: Global](ttb: TreeToolbox[G])(importsToAdd: List[ttb.global.Import]): Region = {
+    val importsNotFound = importsToAdd.filterNot { impToAdd =>
+      imports.exists { imp =>
+        ttb.isSame(imp, impToAdd)
+      }
+    }
+    if (importsNotFound.nonEmpty) {
+      val groupedImports = imports.filter {
+        _.selectors.exists { sel =>
+          sel.name == ttb.global.nme.WILDCARD
+        }
+      }.flatMap {
+        case rImp @ ttb.RegionImport(rexpr, _) =>
+          importsNotFound.collect {
+            case imp @ ttb.global.Import(expr, sels) if ttb.isSameExpr(true)(rexpr.symbol, expr.symbol) =>
+              new ttb.RegionImport(rImp.owner, imp.setPos(rImp.pos).setType(rImp.tpe).setSymbol(rImp.symbol))()
+          }
+      }
+      if (groupedImports.nonEmpty)
+        copy(imports = this.imports ::: groupedImports)
+      else
+        this
+    } else
+      this
+  }
+
+  def rightIntersectImports[G <: Global](ttb: TreeToolbox[G])(rhs: List[ttb.global.Import]): Region = {
+    val rightIntersection = imports.collect {
+      case rImp @ ttb.RegionImport(rexpr, rsels) =>
+        rhs.collect {
+          case imp @ ttb.global.Import(expr, sels) if ttb.isSame(rImp, imp) || rsels.exists { _.name == ttb.global.nme.WILDCARD } && ttb.isSameExpr(true)(expr.symbol, rexpr.symbol) =>
+            rImp.copy(selectors = sels)
+        }
+    }
+    copy(imports = rightIntersection.flatten)
+  }
+
   def print: Change = if (imports.nonEmpty) printNonEmptyImports else printEmptyImports
 
   private def printNonEmptyImports: Change = {

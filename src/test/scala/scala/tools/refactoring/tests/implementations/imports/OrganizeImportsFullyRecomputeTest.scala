@@ -56,7 +56,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
       import scala.io.Source
-      import scala.io.Source
       import scala.math.BigDecimal
       import scala.math.BigInt
       """ + restOfFile
@@ -69,7 +68,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
-      import scala.io.Source
       import scala.io.Source
       import scala.math.BigDecimal
       import scala.math.BigInt
@@ -581,7 +579,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package a.b.c
-
     import TestImplicits.stringToBytes
 
     object Tester {
@@ -610,7 +607,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package a.b.c
-
     import other.`type`.`implicit`
 
     object Tester {

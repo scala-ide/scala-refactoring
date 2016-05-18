@@ -581,6 +581,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002166() = new FileSet {
     """
       package test
+
       import scala.collection.mutable.ListBuffer
 
       object O1
@@ -609,6 +610,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex1() = new FileSet {
     """
       package test
+
       import java.lang.String
 
       object O1
@@ -632,6 +634,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex2() = new FileSet {
     """
       package test
+
       import java.lang.String
 
       object Bug2 {
@@ -655,6 +658,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex3() = new FileSet {
     """
       package test
+
       import java.lang.String
 
       object Bug2 {
@@ -678,6 +682,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex4() = new FileSet {
     """
       package test
+
       import java.lang.String
 
       object Bug2 {
@@ -704,6 +709,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontFailForCaseClassWithCopy1002540() = new FileSet {
     """
     package test
+
     import java.net.URL
 
     case class Bug(i: Int = 1, j: Int = 2) {
@@ -917,9 +923,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package test
 
-    import java.util.Collections.emptyList
-
     class Bug {
+      import java.util.Collections.emptyList
 
       def test = emptyList
     }
@@ -1001,9 +1006,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package com.github.mlangc.experiments
 
     import java.util.Arrays
-    import java.util.Collections
 
     class Bug4 {
+      import java.util.Collections
 
       def test1 = Arrays.asList(1, 2)
       def test2 = Collections.emptyList
@@ -1934,7 +1939,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     /*<-*/
     package test
-
 
     class TestTE(val a: (_, _))
     """
@@ -3416,8 +3420,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
-    import scala.concurrent.Future
-
     object Bug3 {
       class Other {
         type Tpe1 = Int
@@ -3428,6 +3430,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     trait Bug3 {
       import Bug3._
+      import scala.concurrent.Future
       import scala.util./*evil.evil*/Try
 
       val other: Other
@@ -3774,7 +3777,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  @Ignore("fails because `import Eye$u005B.{.Of => .Of}` is promoted to package scope")
   @Test
   def shouldPreserveBackticksInPackagePath_v1() = new FileSet {
     """

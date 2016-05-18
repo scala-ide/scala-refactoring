@@ -9,7 +9,7 @@ class TreeToolbox[G <: Global](val global: G) {
 
   class TreeCollector[T <: Tree] private (traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
     private val collected_ = mutable.ListBuffer.empty[(T, Symbol)]
-    def collect(tree: T): Unit = collected_ += (tree -> currentOwner)
+    def collect(tree: T, owner: Symbol = currentOwner): Unit = collected_ += (tree -> owner)
     def collected = collected_.toList
     override def traverse(tree: Tree): Unit = traverserBody(this).orElse[Tree, Unit] {
       case t => super.traverse(t)
@@ -26,24 +26,59 @@ class TreeToolbox[G <: Global](val global: G) {
     treeTraverser.collected
   }
 
+  def isSameExpr(acc: Boolean)(leftOwner: Global#Symbol, rightOwner: Global#Symbol): Boolean = {
+    val left = Option(leftOwner).getOrElse(NoSymbol)
+    val right = Option(rightOwner).getOrElse(NoSymbol)
+    if (left == NoSymbol && right == NoSymbol)
+      acc
+    else
+      isSameExpr(acc && left.decodedName == right.decodedName)(left.owner, right.owner)
+  }
+
+  def isSame(left: Global#Import, right: Global#Import): Boolean = {
+    def toNames(imp: Global#Import) = imp.selectors.map { _.name.decoded }.toSet
+    isSameExpr(true)(left.expr.symbol, right.expr.symbol) && (toNames(left) & toNames(right)).nonEmpty
+  }
+
+  def printExpr(imp: Import): Option[String] = {
+    import global.nme
+    val keywords = nme.keywords.map { _.decoded }
+    def print(expr: Symbol, printed: Option[String]): Option[String] = expr match {
+      case sym if sym == null || sym == NoSymbol || sym.isMethod || sym.isAnonymousFunction => None
+      case sym if sym.name.toTermName == nme.ROOT || sym.name.toTermName == nme.EMPTY_PACKAGE_NAME => printed
+      case sym if sym.name.toTermName != nme.PACKAGE =>
+        print(sym.owner, printed.map { decodedName(keywords)(sym.name) + "." + _ } )
+      case sym =>
+        print(sym.owner, printed)
+    }
+    print(imp.expr.symbol, Some(""))
+  }
+
+  import scala.reflect.internal.Chars
+  private def decodedName(keywords: Set[String])(name: Global#Name) = {
+    def addBackquotes(str: String) = {
+      val (ident, op) =
+        if (Chars.isIdentifierStart(str.head))
+          str.span(Chars.isIdentifierPart)
+        else
+          ("", str)
+      val needsBackticks =
+        if (op.isEmpty)
+          keywords(name.toTermName.decoded) && name.toTermName.decoded != "_"
+        else if (!ident.isEmpty && ident.last != '_')
+          true
+        else
+          !op.tail.forall(Chars.isOperatorPart)
+      if (needsBackticks) s"`$str`" else str
+    }
+    addBackquotes(name.decoded.trim)
+  }
+
   object removeScopesDuplicates {
     private def isAncestorOf(kid: Region, elder: Region): Boolean = {
       val kidOwner = kid.owner
       val elderOwner = elder.owner
       kidOwner.ownerChain.contains(elderOwner)
-    }
-
-    private def isSame(left: Global#Import, right: Global#Import): Boolean = {
-      def isSameExpr(acc: Boolean)(leftOwner: Global#Symbol, rightOwner: Global#Symbol): Boolean = {
-        val left = Option(leftOwner).getOrElse(NoSymbol)
-        val right = Option(rightOwner).getOrElse(NoSymbol)
-        if (left == NoSymbol && right == NoSymbol)
-          acc
-        else
-          isSameExpr(acc && left.nameString == right.nameString)(left.owner, right.owner)
-      }
-      def toNames(imp: Global#Import) = imp.selectors.map { _.name.decoded }.toSet
-      isSameExpr(true)(left.expr.symbol, right.expr.symbol) && (toNames(left) & toNames(right)).nonEmpty
     }
 
     def apply(regions: List[Region]): List[Region] = {
@@ -62,7 +97,7 @@ class TreeToolbox[G <: Global](val global: G) {
   }
 
   import scala.reflect.internal.util.RangePosition
-  class RegionImport(val owner: Symbol, proto: Import, val comments: List[RangePosition] = Nil)(val positions: Seq[Position] = Seq(proto.pos)) extends Import(proto.expr, proto.selectors) with RegionOwner {
+  class RegionImport(val owner: Symbol, proto: Import, val comments: List[RangePosition] = Nil)(val positions: Seq[Position] = Option(proto.pos).toSeq) extends Import(proto.expr, proto.selectors) with RegionOwner {
     setPos(proto.pos).setType(proto.tpe).setSymbol(proto.symbol)
 
     override def copy(expr: Tree = this.expr, selectors: List[ImportSelector] = this.selectors) =
@@ -80,29 +115,8 @@ class TreeToolbox[G <: Global](val global: G) {
       sourceFile.lineToString(sourceFile.offsetToLine(pos.start)).takeWhile { _.isWhitespace }
     }
 
-    import scala.reflect.internal.Chars
-    import scala.reflect.internal.util.RangePosition
     import scala.reflect.internal.util.SourceFile
     import scala.tools.refactoring.sourcegen.Formatting
-
-    private def decodedName(keywords: Set[String])(name: Global#Name) = {
-      def addBackquotes(str: String) = {
-        val (ident, op) =
-          if (Chars.isIdentifierStart(str.head))
-            str.span(Chars.isIdentifierPart)
-          else
-            ("", str)
-        val needsBackticks =
-          if (op.isEmpty)
-            keywords(name.toTermName.decoded) && name.toTermName.decoded != "_"
-          else if (!ident.isEmpty && ident.last != '_')
-            true
-          else
-            !op.tail.forall(Chars.isOperatorPart)
-        if (needsBackticks) s"`$str`" else str
-      }
-      addBackquotes(name.decoded.trim)
-    }
 
     private def mkFromSelector(keywords: Set[String])(sel: ImportSelector): String = {
       val renameArrow = " => "
@@ -180,12 +194,18 @@ class TreeToolbox[G <: Global](val global: G) {
       else
         selectors
 
+    private def isImportedInDefiningPkg: Boolean = {
+      def toName(sym: Symbol) = sym.name.decoded
+      expr.symbol.ownerChain.filter { _.isPackage }.map { toName } == owner.ownerChain.filter { _.isPackage }.map { toName }
+    }
+
     def printWithComment(formatting: Formatting): String = {
       import global.nme
+      import ImportPrintingStratagems._
       val source = pos.source
       def printImport: String = {
         val (prefices, sufficesSeq) = positions.map { cutPrefixSuffix }.unzip
-        val prefix = prefices.head
+        val prefix = if (!isImportedInDefiningPkg) useAbsolutePkgPathIfPossible(prefices.head, printExpr(this)) else prefices.head
         val suffices = sufficesSeq.flatten.toList
         val keywords = nme.keywords.map { _.decoded }
         val suffix = selectors.collect {
@@ -204,6 +224,41 @@ class TreeToolbox[G <: Global](val global: G) {
   object RegionImport {
     def unapply(regionImport: RegionImport): Option[(Tree, List[ImportSelector])] =
       Option((regionImport.expr, regionImport.selectors))
+  }
+
+  object ImportPrintingStratagems {
+    private val commentOpen = "/*"
+    private val commentClose = "*/"
+    private val oneChar = 1
+    private def leaveComment(in: String) = {
+      import scala.annotation.tailrec
+      @tailrec def collectPkgPath(rest: String, acc: Int, extract: String): String = rest match {
+        case rest if rest.isEmpty => extract
+        case rest if rest.startsWith(commentOpen) => collectPkgPath(rest.drop(commentOpen.length), acc + 1, extract)
+        case rest if rest.startsWith(commentClose) => collectPkgPath(rest.drop(commentClose.length), acc - 1, extract)
+        case rest if acc > 0 => collectPkgPath(rest.drop(oneChar), acc, extract)
+        case rest => collectPkgPath(rest.drop(oneChar), acc, extract + rest.take(oneChar))
+      }
+      collectPkgPath(in, 0, "")
+    }
+
+    def useAbsolutePkgPathIfPossible(sourceFilePath: String, importPath: Option[String]): String = {
+      val impReg = "import\\s+".r
+      val orig = impReg.replaceFirstIn(leaveComment(sourceFilePath), "")
+      val importString = impReg.findFirstIn(sourceFilePath).getOrElse("import ")
+      val fromExpr = importPath.getOrElse(orig)
+      if (fromExpr.startsWith(orig))
+        sourceFilePath
+      else if (fromExpr.endsWith(orig)) {
+        val fromExprPrefix = {
+          val prefix = fromExpr.substring(0, fromExpr.indexOf(orig))
+          if (prefix.endsWith(".")) prefix else prefix + "."
+        }
+        importString + fromExprPrefix + orig
+      }
+      else
+        importString + fromExpr
+    }
   }
 }
 

@@ -82,8 +82,9 @@ class PackageDefImportsOrganizer[G <: Global, U <: TreeToolbox[G]](override val 
 
   override protected def forTreesOf(tree: Tree) = forTreesOfKind[PackageDef](tree) { treeCollector =>
     {
-      case p @ PackageDef(_, stats) =>
-        treeCollector.collect(p)
+      case p @ PackageDef(pid, stats) =>
+        println(pid)
+        treeCollector.collect(p, pid.symbol)
         stats.foreach { treeCollector.traverse }
     }
   }
