@@ -207,7 +207,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     }
     """ becomes
     """
-    import System.currentTimeMillis
+    import java.lang.System.currentTimeMillis
 
     object Dummy {
       val x = currentTimeMillis
@@ -430,7 +430,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package removeDuplicate
-    import collection.mutable
+    import scala.collection.mutable
 
     class Foo {
       val m = new mutable.HashSet[String]
