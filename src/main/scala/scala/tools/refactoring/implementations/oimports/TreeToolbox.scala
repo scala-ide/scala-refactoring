@@ -128,8 +128,15 @@ class TreeToolbox[G <: Global](val global: G) {
       }
     }
 
+    private def oneLineMultiImport(rawImport: String): String = {
+      val Import = "import "
+      if (rawImport.startsWith(Import))
+        rawImport
+      else Import + rawImport
+    }
+
     private def cutPrefixSuffix(pos: Position): (String, List[String]) = {
-      val printedImport = pos.source.content.slice(pos.start, pos.end).mkString
+      val printedImport = oneLineMultiImport(pos.source.content.slice(pos.start, pos.end).mkString)
       val prefixPatternWithCommentInside = """import\s+(((\/\*.*\*\/)*((\w|\d|_|-)+|(\`.*\`)+)(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
       val prefix = prefixPatternWithCommentInside.findFirstIn(printedImport).get
       def toNameRename(printedSelectors: String): List[String] = {

@@ -9,7 +9,7 @@ abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbo
   import treeToolbox.global._
   type T <: Tree
 
-  private def noAnyTwoImportsInSameLine(importsGroup: List[Import]): Boolean =
+  protected def noAnyTwoImportsInSameLine(importsGroup: List[Import]): Boolean =
     importsGroup.size == importsGroup.map { _.pos.line }.distinct.size
 
   private def importsGroupsFromTree(trees: List[Tree]): List[List[Import]] = {
@@ -88,5 +88,6 @@ class PackageDefImportsOrganizer[G <: Global, U <: TreeToolbox[G]](override val 
     }
   }
 
+  override protected def noAnyTwoImportsInSameLine(importsGroup: List[Import]): Boolean = true
   override protected def treeChildren(packageDef: PackageDef) = packageDef.stats
 }
