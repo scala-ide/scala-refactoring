@@ -880,7 +880,18 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       def test = emptyList
     }
-    """ isNotModified
+    """ becomes {
+    """
+    package test
+
+    import java.util.Collections
+
+    class Bug {
+      import java.util.Collections.emptyList
+
+      def test = emptyList
+    }
+    """}
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -944,7 +955,19 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         emptyList
       }
     }
-    """ isNotModified
+    """ becomes {
+    """
+    package test
+
+    import java.util.Collections
+
+    class Bug {
+      def test = {
+        import java.util.Collections.emptyList
+        emptyList
+      }
+    }
+    """}
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -964,7 +987,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bug {
       import java.util.Collections
-      import Collections.emptyList
+      import java.util.Collections.emptyList
 
       def test = emptyList
     }
@@ -2113,7 +2136,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def foo = {
         import acme._
         import acme.AcmeHelper.H
-        import abefore._
+        import acme.abefore._
 
         val tested = new Acme
         import tested._
@@ -3481,8 +3504,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bug6 {
       def f1 = {
-        import bugs.::
-        import bugs.MyNil
+        import com.github.mlangc.experiments.bugs.::
+        import com.github.mlangc.experiments.bugs.MyNil
 
         new ::(1, MyNil)
       }
