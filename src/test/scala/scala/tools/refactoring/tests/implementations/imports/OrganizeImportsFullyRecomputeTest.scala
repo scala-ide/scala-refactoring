@@ -231,7 +231,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Main
     """ becomes
     """
-    ▒
 
     object Main
     """
@@ -385,7 +384,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Main {
     }    """ becomes
     """
-    ▒
 
     object Main {
     }    """
@@ -621,7 +619,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import java.util.Date
     class MyClass[T]""" becomes
     """
-    ▒
     class MyClass[T]"""
   } applyRefactoring organize
 
@@ -631,7 +628,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import java.util.Date
     class MyClass(i: Int)""" becomes
     """
-    ▒
     class MyClass(i: Int)"""
   } applyRefactoring organize
 
