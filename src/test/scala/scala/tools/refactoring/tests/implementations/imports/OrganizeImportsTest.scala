@@ -3529,16 +3529,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     class Bug8 {
       import scala.language.implicitConversions
       implicit def intToString(i: Int) = i.toString
-    }""" becomes {
-    """
-    package com.github.mlangc.experiments
-
-    import scala.language.implicitConversions
-
-    class Bug8 {
-      implicit def intToString(i: Int) = i.toString
-    }"""
-    }
+    }""" isNotModified
   } applyRefactoring organizeWithTypicalParams
 
   @Test

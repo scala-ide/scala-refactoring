@@ -74,6 +74,8 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       b.toString
     }
 
+    private val isScalaLanguageImport = MiscTools.isScalaLanguageImport(organizeImportsInstance.global)
+
     protected def doApply(trees: List[Import]) = trees.iterator.collect {
       case imp @ Import(importQualifier, importSelections) =>
         val importSym = importQualifier.symbol.fullName
@@ -101,7 +103,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
                   selectOwner.name.decoded == impOwner.name.decoded
                 }
               }.getOrElse(true)
-          }
+          } || isScalaLanguageImport(imp)
         }
         (imp, usedSelectors)
     }.collect {

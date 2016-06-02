@@ -60,10 +60,13 @@ case class Region private (imports: List[Global#Import], owner: Global#Symbol, f
   }
 
   def rightIntersectImports[G <: Global](ttb: TreeToolbox[G])(rhs: List[ttb.global.Import]): Region = {
+    val isScalaLanguageImport = MiscTools.isScalaLanguageImport(ttb.global)
     val rightIntersection = imports.collect {
       case rImp @ ttb.RegionImport(rexpr, rsels) =>
         rhs.collect {
-          case imp @ ttb.global.Import(expr, sels) if ttb.isSame(rImp, imp) || rsels.exists { _.name == ttb.global.nme.WILDCARD } && ttb.isSameExpr(true)(expr.symbol, rexpr.symbol) =>
+          case imp @ ttb.global.Import(expr, sels) if ttb.isSame(rImp, imp) ||
+            rsels.exists { _.name == ttb.global.nme.WILDCARD } && ttb.isSameExpr(true)(expr.symbol, rexpr.symbol) ||
+            isScalaLanguageImport(imp) =>
             rImp.copy(selectors = sels)
         }
     }

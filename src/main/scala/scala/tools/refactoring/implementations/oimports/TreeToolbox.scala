@@ -47,7 +47,7 @@ class TreeToolbox[G <: Global](val global: G) {
       case sym if sym == null || sym == NoSymbol || sym.isMethod || sym.isAnonymousFunction => None
       case sym if sym.name.toTermName == nme.ROOT || sym.name.toTermName == nme.EMPTY_PACKAGE_NAME => printed
       case sym if sym.name.toTermName != nme.PACKAGE =>
-        print(sym.owner, printed.map { decodedName(keywords)(sym.name) + "." + _ } )
+        print(sym.owner, printed.map { decodedName(keywords)(sym.name) + "." + _ })
       case sym =>
         print(sym.owner, printed)
     }
@@ -262,10 +262,22 @@ class TreeToolbox[G <: Global](val global: G) {
           if (prefix.endsWith(".")) prefix else prefix + "."
         }
         importString + fromExprPrefix + orig
-      }
-      else
+      } else
         importString + fromExpr
     }
+  }
+}
+
+object MiscTools {
+  // Always add the SIP 18 language imports as required until we can handle them properly
+  def isScalaLanguageImport[G <: Global](g: G): g.Import => Boolean = {
+    import g._
+    val language = newTermName("language")
+    def apply(candidate: Import) = candidate match {
+      case Import(select @ Select(Ident(nme.scala_), `language`), feature) => true
+      case _ => false
+    }
+    apply
   }
 }
 
