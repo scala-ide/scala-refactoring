@@ -8,7 +8,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
   import organizeImportsInstance._
   import organizeImportsInstance.global._
 
-  class RemoveUnused(block: Tree) extends Participant {
+  class RemoveUnused(block: Tree, addNewImports: List[(String, String)] = Nil) extends Participant {
     private def treeWithoutImports(tree: Tree) = new Transformer {
       override def transform(tree: Tree): Tree = tree match {
         case Import(_, _) => EmptyTree
@@ -76,9 +76,23 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
 
     private val isScalaLanguageImport = MiscTools.isScalaLanguageImport(organizeImportsInstance.global)
 
+    private def isInNewImports(imp: Import): Boolean = imp match {
+      case Import(expr, sels) =>
+        val ex = importSymbol(expr)
+        val tups = sels.collect {
+          case ImportSelector(name, _, _, _) => ex -> name.decoded
+        }
+        tups.intersect(addNewImports).nonEmpty
+    }
+
+    private def importSymbol(expr: Tree): String = expr.symbol match {
+      case sym if sym != null && sym != NoSymbol => sym.fullName
+      case _ => expr.nameString
+    }
+
     protected def doApply(trees: List[Import]) = trees.iterator.collect {
       case imp @ Import(importQualifier, importSelections) =>
-        val importSym = importQualifier.symbol.fullName
+        val importSym = importSymbol(importQualifier)
         val impOwner = imp match {
           case ro: RegionOwner => Option(ro.owner)
           case _ => None
@@ -103,7 +117,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
                   selectOwner.name.decoded == impOwner.name.decoded
                 }
               }.getOrElse(true)
-          } || isScalaLanguageImport(imp)
+          } || isScalaLanguageImport(imp) || isInNewImports(imp)
         }
         (imp, usedSelectors)
     }.collect {
@@ -145,13 +159,17 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
         isSame(left_.nameString == right_.nameString && acc)(left_.owner, right_.owner)
     }
 
+    private def isSameExpr(leftExpr: Tree, rightExpr: Tree): Boolean =
+      isSame(true)(leftExpr.symbol, rightExpr.symbol) || leftExpr.toString == rightExpr.toString
+
     protected def doApply(trees: List[Import]) = {
-      trees.foldRight(Nil: List[ttb.global.Import]) {
-        case (imp: ttb.RegionImport, (x: ttb.RegionImport) :: xs) if isSame(true)(imp.expr.symbol, x.expr.symbol) =>
+      val collapsed = trees.foldRight(Nil: List[ttb.global.Import]) {
+        case (imp: ttb.RegionImport, (x: ttb.RegionImport) :: xs) if isSameExpr(imp.expr, x.expr) =>
           x.merge(imp) :: xs
         case (imp: ttb.global.Import, xs) =>
           imp :: xs
       }
+      collapsed
     }
   }
 

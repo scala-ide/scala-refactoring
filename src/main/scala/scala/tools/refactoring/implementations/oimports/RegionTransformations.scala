@@ -3,6 +3,8 @@ package oimports
 
 import scala.annotation.tailrec
 import scala.util.Properties
+import scala.tools.refactoring.sourcegen.Formatting
+import scala.reflect.internal.util.RangePosition
 
 class RegionTransformations[O <: OrganizeImports](val oi: O) {
   import oi._
@@ -24,7 +26,7 @@ class RegionTransformations[O <: OrganizeImports](val oi: O) {
       val nextPosition = nextPositionInitiator(region)
       def separatorRegion = {
         val pos = nextPosition()
-        region.copy(imports = Nil, from = pos, to = pos + 1, printWhenEmpty = Properties.lineSeparator + Properties.lineSeparator + region.indentation)
+        region.copy(imports = Nil, from = pos, to = pos + 1, printAtTheEndOfRegion = Properties.lineSeparator + Properties.lineSeparator + region.indentation)
       }
       def copyRegionWithNewPosition(regionToCopy: Int => Region) = {
         val pos = nextPosition()
@@ -43,7 +45,7 @@ class RegionTransformations[O <: OrganizeImports](val oi: O) {
       val allImports =
         Algos.groupImports(getImportExpression)(groups, region.imports.asInstanceOf[List[Import]]).toList
       allImports match {
-        case Nil => List(region.copy(imports = Nil, to = region.to + Properties.lineSeparator.length, printWhenEmpty = ""))
+        case Nil => List(region.copy(imports = Nil, to = region.to + Properties.lineSeparator.length, printAtTheEndOfRegion = ""))
         case imps :: Nil => List(region)
         case imps => toRegions(imps, Nil)
       }
@@ -106,6 +108,65 @@ class RegionTransformations[O <: OrganizeImports](val oi: O) {
             neededSelectors.size == selectors.size && (exprIsAllRangePos(expr) || invisiblePartIsDefaultImported(expr))
         }
         region.copy(imports = filteredImports)
+      }
+    }
+  }
+
+  type ExprString = String
+  type ImportSelectorString = String
+  class addNewImports(newImports: List[(ExprString, ImportSelectorString)]) {
+    private def findTopLeastPackage(tree: Tree)(implicit ttb: TreeToolbox[global.type]): (PackageDef, Symbol) =
+      ttb.forTreesOfKind[PackageDef](tree) { treeCollector =>
+        {
+          case p @ PackageDef(pid, stats) if stats.exists { tree =>
+            tree.symbol != null && tree.symbol != NoSymbol && !tree.symbol.isPackage
+          } =>
+            treeCollector.collect(p)
+          case p @ PackageDef(pid, stats) =>
+            treeCollector.collect(p)
+            stats.foreach { treeCollector.traverse }
+        }
+      }.last
+
+    private def isTopLeastPackageRegion(topLeastPackage: PackageDef)(region: Region): Boolean =
+      region.owner.ownerChain.contains(topLeastPackage.symbol)
+
+    private def mkRegion(ttb: TreeToolbox[global.type], topLeastPackage: PackageDef, formatting: Formatting): Region = {
+      val pos = if (topLeastPackage.stats.isEmpty)
+        topLeastPackage.pos
+      else
+        topLeastPackage.stats.head.pos
+      val line = pos.source.offsetToLine(pos.start)
+      val topNonPkgIndent = {
+        val text = pos.source.lineToString(line)
+        text.takeWhile { _.isWhitespace }
+      }
+      val start = pos.start
+      val topLeastPkgPos = new RangePosition(pos.source, start, start, start)
+      val imports = newImports.map {
+        case (qualifier, name) =>
+          val imp = mkImportFromStrings(qualifier, name)
+          imp.setPos(topLeastPkgPos)
+      }
+      Region[global.type, TreeToolbox[global.type]](ttb)(imports, topLeastPackage.symbol, formatting, Properties.lineSeparator + Properties.lineSeparator + topNonPkgIndent)
+    }
+
+    def apply(ttb: TreeToolbox[global.type])(regions: List[Region], selection: Selection, formatting: Formatting) = {
+      val (topLeastPackage, _) = findTopLeastPackage(selection.root)(ttb)
+      val containsCandidate = regions.exists { isTopLeastPackageRegion(topLeastPackage) }
+      if (containsCandidate) {
+        regions.collect {
+          case region if isTopLeastPackageRegion(topLeastPackage)(region) =>
+            val firstImportInRegionPos = region.imports.head.pos
+            val firstImportPosWithoutPkg = new RangePosition(firstImportInRegionPos.source, firstImportInRegionPos.start, firstImportInRegionPos.start, firstImportInRegionPos.start + "import ".length)
+            region.copy(imports = region.imports ::: newImports.map {
+              case (qualifier, name) =>
+                new ttb.RegionImport(region.owner.asInstanceOf[ttb.global.Symbol], mkImportFromStrings(qualifier, name).setPos(firstImportPosWithoutPkg))()
+            })
+          case region => region
+        }
+      } else {
+        mkRegion(ttb, topLeastPackage, formatting) :: regions
       }
     }
   }

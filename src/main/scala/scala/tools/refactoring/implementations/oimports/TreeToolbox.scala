@@ -135,18 +135,20 @@ class TreeToolbox[G <: Global](val global: G) {
       else Import + rawImport
     }
 
-    private def cutPrefixSuffix(pos: Position): (String, List[String]) = {
+    private def cutPrefixSuffix(pos: Position): Option[(String, List[String])] = {
       val printedImport = oneLineMultiImport(pos.source.content.slice(pos.start, pos.end).mkString)
       val prefixPatternWithCommentInside = """import\s+(((\/\*.*\*\/)*((\w|\d|_|-)+|(\`.*\`)+)(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
-      val prefix = prefixPatternWithCommentInside.findFirstIn(printedImport).get
+      val prefix = prefixPatternWithCommentInside.findFirstIn(printedImport)
       def toNameRename(printedSelectors: String): List[String] = {
         val unwrapFromBraces = (if (printedSelectors.startsWith("{"))
           printedSelectors.drop(1).dropRight(1)
         else printedSelectors).split(",").filter { _ != "" }.map { _.trim }
         unwrapFromBraces.toList
       }
-      val rawSelectors = printedImport.substring(prefix.length).trim
-      (prefix, toNameRename(rawSelectors))
+      prefix.map { prefix =>
+        val rawSelectors = printedImport.substring(prefix.length).trim
+        (prefix, toNameRename(rawSelectors))
+      }
     }
 
     private def selectorToSuffix(suffices: List[String], sel: ImportSelector): Option[String] = suffices.find { s =>
@@ -211,7 +213,7 @@ class TreeToolbox[G <: Global](val global: G) {
       import ImportPrintingStratagems._
       val source = pos.source
       def printImport: String = {
-        val (prefices, sufficesSeq) = positions.map { cutPrefixSuffix }.unzip
+        val (prefices, sufficesSeq) = positions.map { position => cutPrefixSuffix(position).getOrElse("import " + expr.toString + "." -> selectors.map { _.name.decoded }) }.unzip
         val prefix = if (!isImportedInDefiningPkg) useAbsolutePkgPathIfPossible(prefices.head, printExpr(this)) else prefices.head
         val suffices = sufficesSeq.flatten.toList
         val keywords = nme.keywords.map { _.decoded }

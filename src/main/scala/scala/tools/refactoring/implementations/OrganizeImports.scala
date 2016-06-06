@@ -531,9 +531,13 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       (new trans.addExpandedImports(selection))(treeToolbox)(packageRegions1)
     } else packageRegions1
     val recompute = params.deps == Dependencies.RecomputeAndModify
-    val packageRegions = if (recompute) {
+    val packageRegions3 = if (recompute) {
       (new trans.recomputeAndModifyUnused(selection))(treeToolbox)(packageRegions2)
     } else packageRegions2
+    val addsNewImports = params.deps == Dependencies.RemoveUnneeded
+    val packageRegions = if (addsNewImports)
+      (new trans.addNewImports(params.importsToAdd))(treeToolbox)(packageRegions3, selection, this)
+    else packageRegions3
     val groupedPackageRegions = group.map { group =>
       val groupImports = trans.GroupImports(group)
       packageRegions.flatMap { groupImports.apply }
@@ -552,7 +556,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
             (if (expand) List(new notPackageParticipants.ExpandImports[treeToolbox.type](treeToolbox)) else Nil) :::
             (if (always.nonEmpty) List(new notPackageParticipants.AlwaysUseWildcards[treeToolbox.type](treeToolbox)(always.head.imports)) else Nil) :::
             RemoveDuplicatedByWildcard ::
-            (new NPRemovedUnused(rootTree)) ::
+            (new NPRemovedUnused(rootTree, params.importsToAdd)) ::
             RemoveDuplicates ::
             SortImportSelectors ::
             SortImports ::

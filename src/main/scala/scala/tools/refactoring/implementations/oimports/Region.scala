@@ -12,7 +12,7 @@ import sourcegen.Formatting
 
 case class Region private (imports: List[Global#Import], owner: Global#Symbol, from: Int,
     to: Int, source: SourceFile, indentation: String,
-    formatting: Formatting, printWhenEmpty: String) {
+    formatting: Formatting, printAtTheEndOfRegion: String) {
   def transform(transformation: List[Global#Import] => List[Global#Import]): Region =
     copy(imports = transformation(imports))
 
@@ -30,7 +30,7 @@ case class Region private (imports: List[Global#Import], owner: Global#Symbol, f
       to
     else
       toEndOfLine
-    TextChange(source, from_, to_, printWhenEmpty)
+    TextChange(source, from_, to_, printAtTheEndOfRegion)
   }
 
   def unionImports[G <: Global](ttb: TreeToolbox[G])(importsToAdd: List[ttb.global.Import]): Region = {
@@ -88,7 +88,7 @@ case class Region private (imports: List[Global#Import], owner: Global#Symbol, f
         case (imp: TreeToolbox[_]#RegionImport, _) =>
           acc + indentation + imp.printWithComment(formatting) + Properties.lineSeparator
       }
-    }
+    } + printAtTheEndOfRegion
     TextChange(source, from, to, text)
   }
 }
@@ -101,14 +101,14 @@ object Region {
     commentScanner.comments
   }
 
-  def apply[G <: Global, T <: TreeToolbox[G]](treeToolbox: T)(imports: List[treeToolbox.global.Import], owner: treeToolbox.global.Symbol, formatting: Formatting): Region = {
+  def apply[G <: Global, T <: TreeToolbox[G]](treeToolbox: T)(imports: List[treeToolbox.global.Import], owner: treeToolbox.global.Symbol, formatting: Formatting, printAtEndOfRegion: String = ""): Region = {
     require(imports.nonEmpty, "List of imports must not be empty.")
     val source = imports.head.pos.source
     val comments = scanForComments(treeToolbox.global)(source)
     val regionImports = toRegionImports[G, T](treeToolbox)(imports, owner, comments)
     val regionStartPos = regionImports.head.positionWithComment.start
     val indentation = regionImports.head.indentation
-    Region(regionImports, owner, regionStartPos, imports.last.pos.end, source, indentation, formatting, "")
+    Region(regionImports, owner, regionStartPos, imports.last.pos.end, source, indentation, formatting, printAtEndOfRegion)
   }
 
   private def toRegionImports[G <: Global, T <: TreeToolbox[G]](ttb: T)(imports: List[ttb.global.Import], owner: ttb.global.Symbol, comments: List[RangePosition]) = {

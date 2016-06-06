@@ -188,13 +188,13 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
       import java.lang.{String => S}
       import java.lang.{Object => Objekt}
 
-      object Main {val s: String = ""; var o: Objekt = null; val ll = new LinkedList}
+      object Main {val s: S = ""; var o: Objekt = null; val ll = new LinkedList}
     """ becomes
     """
       import java.lang.{Object => Objekt, String => S}
       import scala.collection.mutable.LinkedList
 
-      object Main {val s: String = ""; var o: Objekt = null; val ll = new LinkedList}
+      object Main {val s: S = ""; var o: Objekt = null; val ll = new LinkedList}
     """
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
@@ -303,7 +303,7 @@ object testbug {
 */""" becomes """
     package trailingCommentWithClosingBrace
 
-    import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ListBuffer
 
 object testbug {
   val l = ListBuffer()
