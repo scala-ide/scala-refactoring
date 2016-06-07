@@ -105,7 +105,7 @@ trait TreeTraverser extends TracingImpl {
       def trimTypeArgs(str: String) = {
         val firstBracket = str.indexOf("[")
         if (firstBracket < 0) str
-        else str.substring(0, firstBracket + 1)
+        else str.substring(0, firstBracket)
       }
 
       val stringRep = trimTypeArgs(tpe.trimPrefix(tpe.toString))

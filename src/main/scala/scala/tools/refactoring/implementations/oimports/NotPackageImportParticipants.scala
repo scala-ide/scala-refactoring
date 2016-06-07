@@ -30,6 +30,20 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
             traverse(qual)
           case TypeDef(_, _, compoundTypeDefs, rhs) =>
             rhs :: compoundTypeDefs foreach traverse
+          case t: TypeTree if t.original == null && t.tpe.isInstanceOf[TypeRef] =>
+            def mkSelects(ttpe: TypeRef): List[Tree] = {
+              val currentSelect = self.fakeSelectTreeFromType(ttpe, ttpe.sym, NoPosition)
+              val typeRefArgs = ttpe.args.collect {
+                case arg: TypeRef => arg
+              }
+              if (typeRefArgs.isEmpty)
+                currentSelect :: Nil
+              else {
+                currentSelect :: typeRefArgs.flatMap { mkSelects }
+              }
+            }
+            val selects = mkSelects(t.tpe.asInstanceOf[TypeRef])
+            selects.foreach { traverse }
         }
 
         override def traverse(tree: Tree): Unit = special.orElse {
@@ -102,17 +116,18 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
           val importSelNames = Set(importSel.name, importSel.rename).filterNot { _ == null }.map { _.toString }
           allSelects.exists { select =>
             val (owner, foundSel) = select
-            def downToPackage(selectQualifierSymbol: Symbol): Symbol =
-              if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol
-                || selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
+            def downToPackage(selectQualifierSymbol: Symbol): Option[Symbol] =
+              if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol)
+                None
+              else if (selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
                 || selectQualifierSymbol.isStable)
-                selectQualifierSymbol
+                Some(selectQualifierSymbol)
               else
                 downToPackage(selectQualifierSymbol.owner)
             val foundNames = Set(foundSel.name.toString, foundSel.symbol.owner.nameString)
-            val foundSym = Option(downToPackage(foundSel.qualifier.symbol)).getOrElse(downToPackage(foundSel.symbol))
+            val foundSym = downToPackage(foundSel.qualifier.symbol).orElse(downToPackage(foundSel.symbol))
             (isWildcard || (foundNames & importSelNames).nonEmpty) &&
-              foundSym != null && fullNameButSkipPackageObject(foundSym) == importSym && impOwner.map { impOwner =>
+              foundSym != null && foundSym.map(sym => fullNameButSkipPackageObject(sym) == importSym).getOrElse(false) && impOwner.map { impOwner =>
                 owner.ownerChain.exists { selectOwner =>
                   selectOwner.name.decoded == impOwner.name.decoded
                 }
