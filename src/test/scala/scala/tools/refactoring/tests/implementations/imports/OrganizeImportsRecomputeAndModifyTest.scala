@@ -88,7 +88,6 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     object Main
     """ becomes
     """
-    import java.lang._
 
     object Main
     """

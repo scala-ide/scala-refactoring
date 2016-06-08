@@ -222,7 +222,6 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
       object Main {val ll = new LinkedList}
     """ becomes
     """
-      import java.lang._
       import scala.collection.mutable.LinkedList
 
       object Main {val ll = new LinkedList}
@@ -243,8 +242,6 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package importOnTrait
-
-      import java.lang._
       import scala.collection.mutable.LinkedList
 
       trait A
