@@ -2,6 +2,7 @@ package scala.tools.refactoring
 package implementations.oimports
 
 import scala.tools.nsc.Global
+import scala.annotation.tailrec
 
 class TreeToolbox[G <: Global](val global: G) {
   import global._
@@ -26,9 +27,15 @@ class TreeToolbox[G <: Global](val global: G) {
     treeTraverser.collected
   }
 
+  @tailrec private def skipPackageClassSymbol(sym: Global#Symbol): Global#Symbol = sym match {
+    case sym if sym.isPackageObjectClass =>
+      skipPackageClassSymbol(sym.owner)
+    case sym => sym
+  }
+
   def isSameExpr(acc: Boolean)(leftOwner: Global#Symbol, rightOwner: Global#Symbol): Boolean = {
-    val left = Option(leftOwner).getOrElse(NoSymbol)
-    val right = Option(rightOwner).getOrElse(NoSymbol)
+    val left = Option(skipPackageClassSymbol(leftOwner)).getOrElse(NoSymbol)
+    val right = Option(skipPackageClassSymbol(rightOwner)).getOrElse(NoSymbol)
     if (left == NoSymbol && right == NoSymbol)
       acc
     else
