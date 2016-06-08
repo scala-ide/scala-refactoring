@@ -73,7 +73,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     object Main {val s: HashSet[_] = null}
     """ becomes
     """
-    import collection.mutable.HashSet
+    import scala.collection.mutable.HashSet
 
     object Main {val s: HashSet[_] = null}
     """

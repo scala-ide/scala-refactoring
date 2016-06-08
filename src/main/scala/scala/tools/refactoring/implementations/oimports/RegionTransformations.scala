@@ -72,7 +72,7 @@ class RegionTransformations[O <: OrganizeImports](val oi: O) {
 
     // If parts of the expr aren't ranges, then we have an import that depends on an
     // other import (see OrganizeImportsRecomputeAndModifyTest#importDependingOnImport)
-    private def exprIsAllRangePos(expr: Tree) = {
+    def exprIsAllRangePos(expr: Tree) = {
       // no Tree#forall, so we use double-negative
       !expr.exists(t => !t.pos.isRange)
     }
@@ -105,7 +105,7 @@ class RegionTransformations[O <: OrganizeImports](val oi: O) {
             val neededSelectors = selectors.filter { selector =>
               selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
             }
-            neededSelectors.size == selectors.size && (exprIsAllRangePos(expr) || invisiblePartIsDefaultImported(expr))
+            neededSelectors.nonEmpty && (expr.pos.isRange || invisiblePartIsDefaultImported(expr))
         }
         region.copy(imports = filteredImports)
       }
