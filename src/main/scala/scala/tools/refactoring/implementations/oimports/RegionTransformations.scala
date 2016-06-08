@@ -97,17 +97,25 @@ class RegionTransformations[O <: OrganizeImports](val oi: O) {
       }
     }
 
+    private def mkIsInImports(expr: Tree): ImportSelector => Boolean = {
+      def isSelectorInImports(pkgName: String)(selector: ImportSelector): Boolean =
+        selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
+      val pkgName = importAsString(expr) + "."
+      isSelectorInImports(pkgName)
+    }
+
     def apply(ttb: TreeToolbox[global.type])(regions: List[Region]): List[Region] = {
       regions.map { region =>
-        val filteredImports = region.imports.filter {
+        val neededImports = region.imports.filter {
           case rImp @ ttb.RegionImport(expr, selectors) =>
-            val pkgName = importAsString(expr) + "."
-            val neededSelectors = selectors.filter { selector =>
-              selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
-            }
-            neededSelectors.nonEmpty && (expr.pos.isRange || invisiblePartIsDefaultImported(expr))
+            val isInImports = mkIsInImports(expr)
+            selectors.exists { isInImports }
+        }.collect {
+          case rImp @ ttb.RegionImport(expr, selectors) if expr.pos.isRange || invisiblePartIsDefaultImported(expr) =>
+            val isInImports = mkIsInImports(expr)
+            rImp.copy(selectors = selectors.filter { isInImports })
         }
-        region.copy(imports = filteredImports)
+        region.copy(imports = neededImports)
       }
     }
   }

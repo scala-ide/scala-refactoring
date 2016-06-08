@@ -405,9 +405,8 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package importDependingOnImport
-
-    import barr.Baz
     import barr.Bar.withInstance
+    import barr.Baz
 
     class Foo {
       Baz.baz
