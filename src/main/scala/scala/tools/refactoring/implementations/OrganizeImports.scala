@@ -552,10 +552,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       _.transform { i =>
         scala.Function.chain {
           SortImportSelectors :: SortImports ::
-            (if (collapse) List(new notPackageParticipants.CollapseImports[treeToolbox.type](treeToolbox)) else Nil) :::
+            (if (collapse) List(new notPackageParticipants.CollapseImports[treeToolbox.type](treeToolbox), RemoveDuplicatedByWildcard) else Nil) :::
             (if (expand) List(new notPackageParticipants.ExpandImports[treeToolbox.type](treeToolbox)) else Nil) :::
             (if (always.nonEmpty) List(new notPackageParticipants.AlwaysUseWildcards[treeToolbox.type](treeToolbox)(always.head.imports)) else Nil) :::
-            RemoveDuplicatedByWildcard ::
             (new NPRemovedUnused(rootTree, params.importsToAdd)) ::
             RemoveDuplicates ::
             SortImportSelectors ::
