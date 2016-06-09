@@ -176,9 +176,12 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     def asText(t: Tree) = createText(stripPositions(t))
 
     protected def doApply(trees: List[Import]) = {
+      val AnyBeforeUppercase = "*"
       trees.sortBy {
         case i @ Import(expr, selector :: Nil) if !wildcardImport(selector) =>
           asText(expr) + "." + selector.name.toString
+        case wildcard @ Import(expr, _ :: Nil) =>
+          asText(expr) + "." + AnyBeforeUppercase
         case i @ Import(expr, selectors) =>
           asText(expr)
       }
