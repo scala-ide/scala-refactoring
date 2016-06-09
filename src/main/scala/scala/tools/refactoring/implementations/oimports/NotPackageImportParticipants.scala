@@ -44,7 +44,20 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
             }
             val selects = mkSelects(t.tpe.asInstanceOf[TypeRef])
             selects.foreach { traverse }
+          case treeWithAnnotation if annotations(treeWithAnnotation).nonEmpty =>
+            annotations(treeWithAnnotation).foreach { ann =>
+              ann.args.foreach { traverse }
+            }
+            super.traverse(treeWithAnnotation)
+          case Literal(Constant(value: TypeRef)) =>
+            traverse(self.fakeSelectTreeFromType(value, value.sym, NoPosition))
         }
+
+        private def annotations(fromTree: Tree) =
+          if (fromTree.hasSymbolField)
+            fromTree.symbol.annotations
+          else
+            Nil
 
         override def traverse(tree: Tree): Unit = special.orElse {
           new ImplicitValDefTraverserPF[organizeImportsInstance.type](organizeImportsInstance)(self)

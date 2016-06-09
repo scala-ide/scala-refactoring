@@ -937,17 +937,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
     @RunWith(classOf[BitSet])
     class MainActivityTest {}
-    """ becomes
-    """
-    package runWith
-
-    import java.util.BitSet
-
-    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
-
-    @RunWith(classOf[BitSet])
-    class MainActivityTest {}
-    """
+    """ isNotModified
   } applyRefactoring organize
 
   @Test

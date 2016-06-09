@@ -311,4 +311,25 @@ object testbug {
 }
 */"""
   } applyRefactoring organize("scala.collection.mutable" -> "ListBuffer" :: Nil)
+
+  @Test
+  def runWith() = new FileSet(expectCompilingCode = false) {
+    """
+    package runWith
+
+    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
+
+    @RunWith(classOf[BitSet])
+    class MainActivityTest {}
+    """ becomes
+    """
+    package runWith
+
+    import java.util.BitSet
+
+    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
+
+    @RunWith(classOf[BitSet])
+    class MainActivityTest {}
+    """  } applyRefactoring organize("java.util" -> "BitSet" :: Nil)
 }
