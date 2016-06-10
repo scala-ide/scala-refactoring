@@ -65,7 +65,7 @@ case class Region private (imports: List[Global#Import], owner: Global#Symbol, f
       case rImp @ ttb.RegionImport(rexpr, rsels) =>
         rhs.collect {
           case imp @ ttb.global.Import(expr, sels) if ttb.isSame(rImp, imp) ||
-            rsels.exists { _.name == ttb.global.nme.WILDCARD } && ttb.isSameExpr(true)(expr.symbol, rexpr.symbol) ||
+            rsels.exists { _.name == ttb.global.nme.WILDCARD } && (ttb.isSameExpr(true)(expr.symbol, rexpr.symbol) || ttb.isSameExprByName(true)(expr, rexpr)) ||
             isScalaLanguageImport(imp) =>
             rImp.copy(selectors = sels)
         }

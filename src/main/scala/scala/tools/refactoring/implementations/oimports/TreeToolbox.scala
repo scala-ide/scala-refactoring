@@ -47,6 +47,14 @@ class TreeToolbox[G <: Global](val global: G) {
     isSameExpr(true)(left.expr.symbol, right.expr.symbol) && (toNames(left) & toNames(right)).nonEmpty
   }
 
+  def isSameExprByName(acc: Boolean)(left: Global#Tree, right: Global#Tree): Boolean = (left, right) match {
+    case (Select(lqual: Select, lname), Select(rqual: Select, rname)) =>
+      isSameExprByName(lname.decoded == rname.decoded && acc)(lqual, rqual)
+    case (Select(Ident(lqname), lname), Select(Ident(rqname) , rname)) =>
+      acc && lqname.decoded == rqname.decoded && lname.decoded == rname.decoded
+    case _ => false
+  }
+
   def printExpr(imp: Import): Option[String] = {
     import global.nme
     val keywords = nme.keywords.map { _.decoded }
