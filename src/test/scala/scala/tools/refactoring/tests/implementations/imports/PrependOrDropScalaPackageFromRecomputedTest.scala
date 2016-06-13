@@ -5,11 +5,11 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-
+import sourcegen.Formatting
 
 class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTest {
 
-  def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+  def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro, new Formatting {override val dropScalaPackage = true}) {
     val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.DropScalaPackage))
   }.mkChanges
 
@@ -115,7 +115,6 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
-
     import collection.immutable
     import collection.mutable
 
@@ -140,7 +139,6 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
-
     import scala.collection.immutable
     import scala.collection.mutable
 

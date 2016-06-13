@@ -485,6 +485,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
 
+  //override val dropScalaPackage = params.options.contains(DropScalaPackage)
   private def organizeLocalImportsToo(selection: Selection, group: Option[List[String]], params: RefactoringParameters) = {
     val rootTree = abstractFileToTree(selection.file)
     import oimports.NotPackageImportParticipants

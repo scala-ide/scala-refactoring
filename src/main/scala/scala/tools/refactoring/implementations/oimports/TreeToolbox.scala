@@ -50,7 +50,7 @@ class TreeToolbox[G <: Global](val global: G) {
   def isSameExprByName(acc: Boolean)(left: Global#Tree, right: Global#Tree): Boolean = (left, right) match {
     case (Select(lqual: Select, lname), Select(rqual: Select, rname)) =>
       isSameExprByName(lname.decoded == rname.decoded && acc)(lqual, rqual)
-    case (Select(Ident(lqname), lname), Select(Ident(rqname) , rname)) =>
+    case (Select(Ident(lqname), lname), Select(Ident(rqname), rname)) =>
       acc && lqname.decoded == rqname.decoded && lname.decoded == rname.decoded
     case _ => false
   }
@@ -112,6 +112,7 @@ class TreeToolbox[G <: Global](val global: G) {
   }
 
   import scala.reflect.internal.util.RangePosition
+  import scala.tools.refactoring.sourcegen.Formatting
   class RegionImport(val owner: Symbol, proto: Import, val comments: List[RangePosition] = Nil)(val positions: Seq[Position] = Option(proto.pos).toSeq) extends Import(proto.expr, proto.selectors) with RegionOwner {
     setPos(proto.pos).setType(proto.tpe).setSymbol(proto.symbol)
 
@@ -131,7 +132,6 @@ class TreeToolbox[G <: Global](val global: G) {
     }
 
     import scala.reflect.internal.util.SourceFile
-    import scala.tools.refactoring.sourcegen.Formatting
 
     private def mkFromSelector(keywords: Set[String])(sel: ImportSelector): String = {
       val renameArrow = " => "
@@ -210,13 +210,13 @@ class TreeToolbox[G <: Global](val global: G) {
         source.content.slice(comment.start, comment.end).mkString
       }
 
-    private def wrapInBraces(selectors: String, rawSelectors: List[Global#ImportSelector], formatting: Formatting): String =
+    private def wrapInBraces(rawSelectors: List[Global#ImportSelector], formatSelectors: => String, formatDefault: => String): String =
       if (rawSelectors.length > 1 || rawSelectors.exists { sel =>
         sel.rename != null && sel.name.decoded != sel.rename.decoded
       })
-        "{" + formatting.spacingAroundMultipleImports + selectors + formatting.spacingAroundMultipleImports + "}"
+        formatSelectors
       else
-        selectors
+        formatDefault
 
     private def isImportedInDefiningPkg: Boolean = {
       def toName(sym: Symbol) = sym.name.decoded
@@ -235,7 +235,10 @@ class TreeToolbox[G <: Global](val global: G) {
         val suffix = selectors.collect {
           case sel => selectorToSuffix(suffices, sel).orElse(Option(mkFromSelector(keywords)(sel)))
         }.filter(_.nonEmpty).map(_.get)
-        prefix + wrapInBraces(suffix.mkString(", "), selectors, formatting)
+        import RegionImport.{ formatPath, formatSelectors }
+        val formatDefault = suffix.mkString(", ")
+        formatPath(formatting, prefix) +
+          wrapInBraces(selectors, formatSelectors(formatting, formatDefault), formatDefault)
       }
       val indent = indentation
       val printedImport = printImport
@@ -248,6 +251,25 @@ class TreeToolbox[G <: Global](val global: G) {
   object RegionImport {
     def unapply(regionImport: RegionImport): Option[(Tree, List[ImportSelector])] =
       Option((regionImport.expr, regionImport.selectors))
+
+    def formatSelectors(formatting: Formatting, selectors: String): String =
+      "{" + formatting.spacingAroundMultipleImports + selectors + formatting.spacingAroundMultipleImports + "}"
+
+    def formatPath(formatting: Formatting, importPrefix: String): String = {
+      if (formatting.dropScalaPackage) {
+        val ScalaDot = "scala."
+        val importReg = "import\\s+".r
+        importReg.findPrefixOf(importPrefix).map { importKeywordWithSpaces =>
+          val importPath = importPrefix.substring(importKeywordWithSpaces.length)
+          if (importPath.startsWith(ScalaDot))
+            importKeywordWithSpaces + importPath.substring(ScalaDot.length)
+          else
+            importPrefix
+        }.getOrElse(importPrefix)
+      } else {
+        importPrefix
+      }
+    }
   }
 
   object ImportPrintingStratagems {
