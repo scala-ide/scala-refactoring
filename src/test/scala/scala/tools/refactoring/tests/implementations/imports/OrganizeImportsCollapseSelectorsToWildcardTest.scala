@@ -27,16 +27,14 @@ class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBase
   } applyRefactoring organize()
 
   @Test
-  @Ignore("I don't know why but this test fails when running the complete test suite")
   def dontCollapseImportsWhenRename() = new FileSet {
-    val before = """
+    """
+      package acme
       import scala.math.{BigDecimal, BigInt, Numeric => N}
 
       object A {
         (BigDecimal, BigInt, N)
-      }"""
-
-    before becomes before
+      }""" isNotModified
   } applyRefactoring organize()
 
   @Test

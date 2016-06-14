@@ -178,4 +178,50 @@ class RegionTransformations[O <: OrganizeImports](val oi: O) {
       }
     }
   }
+
+  class collapseToWildcard(maxIndividualImports: Int = 2, exclude: Set[String] = Set()) {
+    private def isArtificialImport(expr: Tree): Boolean =
+      expr.tpe == null
+
+    private def isApplicable(expr: Tree, sels: List[ImportSelector], types: Seq[Name]): Boolean = {
+      val exprTypes = expr.tpe.members.map { _.name }.toSet[Name]
+      val exprString = expr.toString
+      sels.size > maxIndividualImports &&
+        (types.toSet & exprTypes).isEmpty &&
+        sels.forall { sel => sel.name == sel.rename } &&
+        !exclude.contains(exprString)
+    }
+
+    def apply(ttb: TreeToolbox[global.type])(regions: List[Region]): List[Region] = {
+      val foundArtificial = regions.exists { region =>
+        region.imports.exists {
+          case rImp @ ttb.RegionImport(expr, _) => isArtificialImport(expr)
+        }
+      }
+      if (foundArtificial)
+        regions
+      else {
+        import scala.collection.mutable.ListBuffer
+        val types = ListBuffer.empty[Name]
+        regions.map { region =>
+          val rimps = region.imports.iterator.map {
+            case imp @ ttb.RegionImport(expr, sels) if sels.exists { _.name == nme.WILDCARD } =>
+              types ++= expr.tpe.members.map { _.name }.toSet
+              imp
+            case imp => imp
+          }.map {
+            case imp @ ttb.RegionImport(expr, sels) if isApplicable(expr, sels, types) =>
+              types ++= expr.tpe.members.map { _.name }.toSet
+              val selectorsToWildcard = (formatting: Formatting, prefixSuffix: (String, String)) => {
+                val (prefix, _) = imp.printTransform(formatting, prefixSuffix)
+                (prefix, "_")
+              }
+              imp.copyWithPrintTransform(selectorsToWildcard)
+            case imp => imp
+          }
+          region.copy(imports = rimps.toList)
+        }
+      }
+    }
+  }
 }

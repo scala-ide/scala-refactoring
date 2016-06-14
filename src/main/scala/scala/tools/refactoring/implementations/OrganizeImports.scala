@@ -552,12 +552,12 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val always = params.options.collect {
       case p: AlwaysUseWildcards => p
     }
-    val packageDefRegions = groupedPackageRegions.map {
+    val packageDefRegions1 = groupedPackageRegions.map {
       _.transform { i =>
         scala.Function.chain {
           SortImportSelectors :: SortImports ::
-            (if (collapse) List(new notPackageParticipants.CollapseImports[treeToolbox.type](treeToolbox), RemoveDuplicatedByWildcard) else Nil) :::
             (if (expand) List(new notPackageParticipants.ExpandImports[treeToolbox.type](treeToolbox)) else Nil) :::
+            (if (collapse) List(new notPackageParticipants.CollapseImports[treeToolbox.type](treeToolbox), RemoveDuplicatedByWildcard) else Nil) :::
             (if (always.nonEmpty) List(new notPackageParticipants.AlwaysUseWildcards[treeToolbox.type](treeToolbox)(always.head.imports)) else Nil) :::
             (new NPRemovedUnused(rootTree, params.importsToAdd)) ::
             RemoveDuplicates ::
@@ -568,6 +568,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       }
     }
 
+    val collToWild = params.options.collect {
+      case c: CollapseSelectorsToWildcard => c
+    }.headOption
+    val packageDefRegions = collToWild.map { c => new trans.collapseToWildcard(c.maxIndividualImports, c.exclude)(treeToolbox)(packageDefRegions1)}.getOrElse(packageDefRegions1)
     val removedDuplicates = treeToolbox.removeScopesDuplicates(packageDefRegions ::: classDefRegions ::: defRegions)
     val changes = removedDuplicates.map { _.print }
 

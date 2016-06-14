@@ -113,11 +113,16 @@ class TreeToolbox[G <: Global](val global: G) {
 
   import scala.reflect.internal.util.RangePosition
   import scala.tools.refactoring.sourcegen.Formatting
-  class RegionImport(val owner: Symbol, proto: Import, val comments: List[RangePosition] = Nil)(val positions: Seq[Position] = Option(proto.pos).toSeq) extends Import(proto.expr, proto.selectors) with RegionOwner {
+  class RegionImport(val owner: Symbol, proto: Import, val comments: List[RangePosition] = Nil,
+    val printTransform: (Formatting, (String, String)) => (String, String) = (formatting, prefixSuffix) => prefixSuffix)(val positions: Seq[Position] = Option(proto.pos).toSeq)
+      extends Import(proto.expr, proto.selectors) with RegionOwner {
     setPos(proto.pos).setType(proto.tpe).setSymbol(proto.symbol)
 
+    def copyWithPrintTransform(printTransform: (Formatting, (String, String)) => (String, String), expr: Tree = this.expr, selectors: List[ImportSelector] = this.selectors) =
+      new RegionImport(owner, Import(expr, selectors).setPos(pos).setSymbol(symbol).setType(tpe), comments, printTransform)(positions)
+
     override def copy(expr: Tree = this.expr, selectors: List[ImportSelector] = this.selectors) =
-      new RegionImport(owner, Import(expr, selectors).setPos(pos).setSymbol(symbol).setType(tpe), comments)(positions)
+      new RegionImport(owner, Import(expr, selectors).setPos(pos).setSymbol(symbol).setType(tpe), comments, printTransform)(positions)
 
     def merge(that: RegionImport): RegionImport =
       new RegionImport(owner, Import(expr, selectors ::: that.selectors).setPos(pos).setSymbol(symbol).setType(tpe), comments)(positions ++ that.positions)
@@ -236,9 +241,9 @@ class TreeToolbox[G <: Global](val global: G) {
           case sel => selectorToSuffix(suffices, sel).orElse(Option(mkFromSelector(keywords)(sel)))
         }.filter(_.nonEmpty).map(_.get)
         import RegionImport.{ formatPath, formatSelectors }
-        val formatDefault = suffix.mkString(", ")
-        formatPath(formatting, prefix) +
-          wrapInBraces(selectors, formatSelectors(formatting, formatDefault), formatDefault)
+        val (formattedPath, formatDefault) =
+          printTransform(formatting, (formatPath(formatting, prefix), wrapInBraces(selectors, formatSelectors(formatting, suffix.mkString(", ")), suffix.mkString(", "))))
+        formattedPath + formatDefault
       }
       val indent = indentation
       val printedImport = printImport
