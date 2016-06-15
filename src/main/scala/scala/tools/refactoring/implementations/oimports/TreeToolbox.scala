@@ -33,13 +33,16 @@ class TreeToolbox[G <: Global](val global: G) {
     case sym => sym
   }
 
+  private def owner(sym: Global#Symbol) =
+    if (sym != NoSymbol) sym.owner else NoSymbol
+
   def isSameExpr(acc: Boolean)(leftOwner: Global#Symbol, rightOwner: Global#Symbol): Boolean = {
     val left = Option(skipPackageClassSymbol(leftOwner)).getOrElse(NoSymbol)
     val right = Option(skipPackageClassSymbol(rightOwner)).getOrElse(NoSymbol)
     if (left == NoSymbol && right == NoSymbol)
       acc
     else
-      isSameExpr(acc && left.decodedName == right.decodedName)(left.owner, right.owner)
+      isSameExpr(acc && left.decodedName == right.decodedName)(owner(left), owner(right))
   }
 
   def isSame(left: Global#Import, right: Global#Import): Boolean = {

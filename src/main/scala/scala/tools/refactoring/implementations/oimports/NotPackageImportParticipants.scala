@@ -54,7 +54,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
         }
 
         private def annotations(fromTree: Tree) =
-          if (fromTree.hasSymbolField)
+          if (fromTree.hasSymbol)
             fromTree.symbol.annotations
           else
             Nil
@@ -137,7 +137,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
                 Some(selectQualifierSymbol)
               else
                 downToPackage(selectQualifierSymbol.owner)
-            val foundNames = Set(foundSel.name.toString, foundSel.symbol.owner.nameString)
+            val foundNames = Set(foundSel.name.toString, if (foundSel.symbol != NoSymbol) foundSel.symbol.owner.nameString else foundSel.symbol.nameString)
             val foundSym = downToPackage(foundSel.qualifier.symbol).orElse(downToPackage(foundSel.symbol))
             (isWildcard || (foundNames & importSelNames).nonEmpty) &&
               foundSym != null && foundSym.map(sym => fullNameButSkipPackageObject(sym) == importSym).getOrElse(false) && impOwner.map { impOwner =>
@@ -178,13 +178,16 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
   }
 
   class CollapseImports[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T) extends Participant {
+    private def owner(sym: Symbol) =
+      if (sym != NoSymbol) sym.owner else NoSymbol
+
     @tailrec private def isSame(acc: Boolean)(left: Symbol, right: Symbol): Boolean = {
       val left_ = Option(left).getOrElse(NoSymbol)
       val right_ = Option(right).getOrElse(NoSymbol)
       if (left_ == NoSymbol && right_ == NoSymbol)
         acc
       else
-        isSame(left_.nameString == right_.nameString && acc)(left_.owner, right_.owner)
+        isSame(left_.nameString == right_.nameString && acc)(owner(left_), owner(right_))
     }
 
     private def isSameExpr(leftExpr: Tree, rightExpr: Tree): Boolean =

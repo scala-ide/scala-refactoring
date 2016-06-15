@@ -10,7 +10,6 @@ import common.Change
 import transformation.TreeFactory
 import sourcegen.Formatting
 import scala.util.control.NonFatal
-import scala.annotation.tailrec
 
 object OrganizeImports {
   /**
@@ -134,20 +133,10 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
   }
 
   object CollapseImports extends Participant {
-    @tailrec private def isSame(acc: Boolean)(left: Symbol, right: Symbol): Boolean = {
-      val left_ = Option(left).getOrElse(NoSymbol)
-      val right_ = Option(right).getOrElse(NoSymbol)
-      if (left_ == NoSymbol && right_ == NoSymbol)
-        acc
-      else
-        isSame(left_.nameString == right_.nameString && acc)(left_.owner, right_.owner)
-    }
-
-    import oimports.TreeToolbox
     protected def doApply(trees: List[Import]) = {
       trees.foldRight(Nil: List[Import]) {
-        case (imp: TreeToolbox[_]#RegionImport, x :: xs) if isSame(true)(imp.expr.symbol, x.expr.symbol) =>
-          x.copy(selectors = x.selectors ::: imp.selectors.asInstanceOf[List[ImportSelector]]).setPos(x.pos) :: xs
+        case (imp: Import, x :: xs) if createText(imp.expr) == createText(x.expr) =>
+          x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
         case (imp: Import, xs) =>
           imp :: xs
       }
@@ -571,7 +560,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val collToWild = params.options.collect {
       case c: CollapseSelectorsToWildcard => c
     }.headOption
-    val packageDefRegions = collToWild.map { c => new trans.collapseToWildcard(c.maxIndividualImports, c.exclude)(treeToolbox)(packageDefRegions1)}.getOrElse(packageDefRegions1)
+    val packageDefRegions = collToWild.map { c => new trans.collapseToWildcard(c.maxIndividualImports, c.exclude)(treeToolbox)(packageDefRegions1) }.getOrElse(packageDefRegions1)
     val removedDuplicates = treeToolbox.removeScopesDuplicates(packageDefRegions ::: classDefRegions ::: defRegions)
     val changes = removedDuplicates.map { _.print }
 

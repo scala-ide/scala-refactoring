@@ -783,7 +783,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package whatever
-
     import pkg.annotations.Doc
 
     @Doc
