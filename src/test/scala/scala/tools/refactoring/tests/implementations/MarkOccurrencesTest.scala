@@ -403,7 +403,6 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """)
 
-  @Ignore
   @Test
   def namedArg() = markOccurrences("""
     class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }
@@ -418,7 +417,7 @@ class MarkOccurrencesTest extends TestHelper {
 
     class NamedParameter {
       val up = new Updateable
-      up(########) = 2
+      up(#### = 1) = 2
     }
     """)
 
