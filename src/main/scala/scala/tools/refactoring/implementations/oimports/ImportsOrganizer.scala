@@ -28,12 +28,12 @@ abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbo
 
   protected def treeChildren(parent: T): List[Tree]
 
-  private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol, formatting: Formatting): List[Region] =
+  private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol, formatting: Formatting): List[treeToolbox.Region] =
     groupedImports.collect {
-      case imports @ h :: _ => Region[G, U](treeToolbox)(imports, importsOwner, formatting, "")
+      case imports @ h :: _ => RegionBuilder[G, U](treeToolbox)(imports, importsOwner, formatting, "")
     }
 
-  def transformTreeToRegions(tree: Tree, formatting: Formatting): List[Region] = forTreesOf(tree).flatMap {
+  def transformTreeToRegions(tree: Tree, formatting: Formatting): List[treeToolbox.Region] = forTreesOf(tree).flatMap {
     case (extractedTree, treeOwner) =>
       val groupedImports = importsGroupsFromTree(treeChildren(extractedTree)).filter {
         noAnyTwoImportsInSameLine

@@ -2,7 +2,6 @@ package scala.tools.refactoring
 package implementations.oimports
 
 import implementations.OrganizeImports
-import scala.annotation.tailrec
 
 class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInstance: O) {
   import organizeImportsInstance._
@@ -178,20 +177,9 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
   }
 
   class CollapseImports[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T) extends Participant {
-    private def owner(sym: Symbol) =
-      if (sym != NoSymbol) sym.owner else NoSymbol
-
-    @tailrec private def isSame(acc: Boolean)(left: Symbol, right: Symbol): Boolean = {
-      val left_ = Option(left).getOrElse(NoSymbol)
-      val right_ = Option(right).getOrElse(NoSymbol)
-      if (left_ == NoSymbol && right_ == NoSymbol)
-        acc
-      else
-        isSame(left_.nameString == right_.nameString && acc)(owner(left_), owner(right_))
-    }
-
+    private val treeComparables = new TreeComparables[organizeImportsInstance.global.type](organizeImportsInstance.global)
     private def isSameExpr(leftExpr: Tree, rightExpr: Tree): Boolean =
-      isSame(true)(leftExpr.symbol, rightExpr.symbol) || leftExpr.toString == rightExpr.toString
+      treeComparables.isSameWithSymbols(true)(leftExpr.symbol, rightExpr.symbol) || leftExpr.toString == rightExpr.toString
 
     protected def doApply(trees: List[Import]) = {
       val collapsed = trees.foldRight(Nil: List[ttb.global.Import]) {
