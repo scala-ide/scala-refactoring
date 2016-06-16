@@ -174,10 +174,10 @@ class MarkOccurrencesTest extends TestHelper {
     """,
     """
     import java.io./*(*/####/*)*/
-    import java.io.{#########}
+    import java.io.{#### => F}
     object Whatever {
       val sep1 = ####.pathSeparator
-      val sep2 = #.pathSeparator
+      val sep2 = F.pathSeparator
     }
     """)
 
@@ -191,10 +191,10 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """,
     """
-    import java.io.####
-    import java.io.{#########}
+    import java.io.File
+    import java.io.{File => #}
     object Whatever {
-      val sep1 = ####.pathSeparator
+      val sep1 = File.pathSeparator
       val sep2 = /*(*/#/*)*/.pathSeparator
     }
     """)
