@@ -12,12 +12,19 @@ import scala.annotation.tailrec
  *   <li> `/*(*/` - start of the selection
  *   <li> `/*)*/` - end of the selection
  *   <li> `/*<-*/` - an empty selection
+ *   <li> `/*cursor->*/` - mimics a cursor selection right after the comment
+ *   <li> `/*n-cursor->*/*` - mimics a cursor selection `n` characters after the comment
+ *   <li> `/*<-cursor*/` - mimics a cursor selection right before the comment
+ *   <li> `/*<-cursor-n*/` - mimics a cursor selection `n` characters before the comment
  * </ul>
  */
 object TextSelections {
   final val StartMarker = "/*(*/"
   final val EndMarker = "/*)*/"
   final val EmptyMarker = "/*<-*/"
+
+  final val CursorFromLeft = """/\*(?:(\d+)-)?cursor->\*/""".r
+  final val CursorFromRight = """/\*<-cursor(?:-(\d+))?\*/""".r
 
   final case class Range(from: Int, to: Int) {
     require(from <= to)
@@ -75,7 +82,46 @@ object TextSelections {
     go()
   }
 
+  private def extractCursorFromLeftSelections(text: String): Seq[Range] = {
+    CursorFromLeft.findAllMatchIn(text).map { m =>
+      val offset = m.end
+      val shift = Option(m.group(1)).map(_.toInt).getOrElse(0)
+      val from = offset + shift
+      val to = from + 1
+
+      if (to >= text.size) {
+        throw selectionOutOfRange(text)
+      } else {
+        Range(from, to)
+      }
+    }.toSeq
+  }
+
+  private def extractCursorFromRightSelections(text: String): Seq[Range] = {
+    CursorFromRight.findAllMatchIn(text).map { m =>
+      val offset = m.start
+      val shift = Option(m.group(1)).map(_.toInt).getOrElse(0)
+      val from = offset - shift - 1
+      val to = from + 1
+
+      if (from < 0) {
+        throw selectionOutOfRange(text)
+      } else {
+        Range(from, to)
+      }
+    }.toSeq
+  }
+
+  private def selectionOutOfRange(text: String) = {
+    new IllegalArgumentException(
+        "Selection out of range\n" +
+        text.lines.map("  " + _).mkString("\n"))
+  }
+
   private def extract(text: String): Seq[Range] = {
-    extractStartToEndSelections(text) ++ extractEmptyMarkerSelections(text)
+    extractStartToEndSelections(text) ++
+      extractEmptyMarkerSelections(text) ++
+      extractCursorFromLeftSelections(text) ++
+      extractCursorFromRightSelections(text)
   }
 }
