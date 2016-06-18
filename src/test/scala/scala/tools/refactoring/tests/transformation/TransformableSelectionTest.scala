@@ -3,6 +3,7 @@ package scala.tools.refactoring.tests.transformation
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Assert._
 import scala.tools.refactoring.transformation.TransformableSelections
+import scala.tools.refactoring.tests.util.TextSelections
 
 class TransformableSelectionTest extends TestHelper with TransformableSelections {
   import global._
@@ -12,11 +13,10 @@ class TransformableSelectionTest extends TestHelper with TransformableSelections
     "object O { /*(*/println(123)/*)*/ }".selection.selectedTopLevelTrees.head
 
   implicit class StringToSel(src: String) {
-    val root = treeFrom(src)
-    val selection = {
-      val start = commentSelectionStart(src)
-      val end = commentSelectionEnd(src)
-      FileSelection(root.pos.source.file, root, start, end)
+    lazy val root = treeFrom(src)
+    lazy val selection = {
+      val textSelection = TextSelections.extractOne(src)
+      FileSelection(root.pos.source.file, root, textSelection.from, textSelection.to)
     }
 
     def assertReplacement(mkTrans: Selection => Transformation[Tree, Tree]) = {

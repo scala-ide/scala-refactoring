@@ -18,13 +18,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
 import org.junit.Before
 import scala.tools.refactoring.common.InteractiveScalaCompiler
-import scala.tools.refactoring.common.Selections
 import language.{ postfixOps, reflectiveCalls }
 import scala.tools.refactoring.common.NewFileChange
 import scala.tools.refactoring.common.RenameSourceFileChange
 import scala.tools.refactoring.implementations.Rename
 import scala.tools.refactoring.common.TracingImpl
 import scala.tools.refactoring.util.UniqueNames
+import scala.util.Try
+import scala.tools.refactoring.common.Selections
 
 object TestHelper {
   case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
@@ -300,22 +301,9 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     }
   }
 
-  val startPattern = "/*(*/"
-  val endPattern = "/*)*/"
-  val emptyPattern = "/*<-*/"
-
   def findMarkedNodes(r: Selections with InteractiveScalaCompiler)(src: String, tree: r.global.Tree): Option[r.Selection] = {
-
-    val start = commentSelectionStart(src)
-    val end = commentSelectionEnd(src)
-    val emptySelection = src.indexOf(emptyPattern)
-
-    if (start >= 0 && end >= 0) {
-      Some(r.FileSelection(tree.pos.source.file, tree, start, end))
-    } else if (emptySelection >= 0) {
-      Some(r.FileSelection(tree.pos.source.file, tree, emptySelection, emptySelection))
-    } else {
-      None
+    Try(TextSelections.extractOne(src)).toOption.map { textSelection =>
+      r.FileSelection(tree.pos.source.file, tree, textSelection.from, textSelection.to)
     }
   }
 
@@ -337,20 +325,11 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     }
   }
 
-  def commentSelectionStart(src: String): Int = {
-    src.indexOf(startPattern) + startPattern.length
-  }
-
-  def commentSelectionEnd(src: String): Int = {
-    src.indexOf(endPattern)
-  }
-
   def stripWhitespacePreservers(s: String) = s.replaceAll("▒", "")
 
   def findMarkedNodes(src: String, tree: global.Tree) = {
-    val start = commentSelectionStart(src)
-    val end = commentSelectionEnd(src)
-    FileSelection(tree.pos.source.file, tree, start, end)
+    val textSelection = TextSelections.extractOne(src)
+    FileSelection(tree.pos.source.file, tree, textSelection.from, textSelection.to)
   }
 
   def toSelection(src: String) = global.ask{ () =>

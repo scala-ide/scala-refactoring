@@ -9,7 +9,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
 
   @Test
   def importTrees() = global.ask { () =>
-    val s = toSelection("""
+    val tree = treeFrom("""
     import scala.collection.immutable.{LinearSeq, _}
 
     object O{
@@ -23,13 +23,13 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
     }
     """)
 
-    val it = buildImportTree(s.root)
+    val it = buildImportTree(tree)
     assertEquals("{scala.collection.immutable.List{scala.`package`._{scala.Predef._{scala.collection.immutable.LinearSeq{scala.collection.immutable._{scala.math._{}, scala.collection.mutable._{O.a{}}}}}}}}", it.toString())
   }
 
   @Test
   def isImported() = global.ask { () =>
-    val s = toSelection("""
+    val tree = treeFrom("""
     import scala.math.E
 
     object O{
@@ -40,10 +40,10 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
     }
     """)
 
-    val it = buildImportTree(s.root)
-    val piRef = findSymTree(s.root, "value Pi")
-    val eRef = findSymTree(s.root, "value E")
-    val fnDef = findSymTree(s.root, "method fn")
+    val it = buildImportTree(tree)
+    val piRef = findSymTree(tree, "value Pi")
+    val eRef = findSymTree(tree, "value E")
+    val fnDef = findSymTree(tree, "method fn")
 
     assertTrue(it.isImportedAt(piRef.symbol, piRef.pos))
     assertTrue(it.isImportedAt(eRef.symbol, eRef.pos))
@@ -54,7 +54,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
 
   @Test
   def isImportedWithWildcard() = global.ask { () =>
-    val s = toSelection("""
+    val tree = treeFrom("""
     object O{
       def fn = {
         import scala.math._
@@ -63,10 +63,10 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
     }
     """)
 
-    val it = buildImportTree(s.root)
-    val piRef = findSymTree(s.root, "value Pi")
-    val eRef = findSymTree(s.root, "value E")
-    val fnDef = findSymTree(s.root, "method fn")
+    val it = buildImportTree(tree)
+    val piRef = findSymTree(tree, "value Pi")
+    val eRef = findSymTree(tree, "value E")
+    val fnDef = findSymTree(tree, "method fn")
 
     assertTrue(it.isImportedAt(piRef.symbol, piRef.pos))
     assertTrue(it.isImportedAt(eRef.symbol, eRef.pos))
@@ -76,18 +76,18 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
 
   @Test
   def predefsAreAlwaysImported() = global.ask { () =>
-    val s = toSelection("""
+    val tree = treeFrom("""
     object O{
       println(123)
       List(1, 2, 3)
     }
     """)
 
-    val it = buildImportTree(s.root)
-    val printlnRef = findSymTree(s.root, "method println")
-    val listRef = findSymTree(s.root, "object List")
+    val it = buildImportTree(tree)
+    val printlnRef = findSymTree(tree, "method println")
+    val listRef = findSymTree(tree, "object List")
 
-    val oDef = findSymTree(s.root, "object O")
+    val oDef = findSymTree(tree, "object O")
 
     assertTrue(it.isImportedAt(printlnRef.symbol, oDef.pos))
     assertTrue(it.isImportedAt(listRef.symbol, oDef.pos))
@@ -96,7 +96,7 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
   @Test
   @Ignore
   def importsOfValueMembers() = global.ask { () =>
-    val s = toSelection("""
+    val tree = treeFrom("""
     package pkg
     object O{
       val a = new{ val b = 1 }
@@ -107,11 +107,11 @@ class ImportAnalysisTest extends TestHelper with ImportAnalysis {
     }
     """)
 
-    val it = buildImportTree(s.root)
-    val bRef = findSymTree(findSymTree(s.root, "method fn"), "value b")
+    val it = buildImportTree(tree)
+    val bRef = findSymTree(findSymTree(tree, "method fn"), "value b")
 
-    val oDef = findSymTree(s.root, "object O")
-    val aDef = findSymTree(s.root, "value a")
+    val oDef = findSymTree(tree, "object O")
+    val aDef = findSymTree(tree, "value a")
 
     assertFalse(it.isImportedAt(bRef.symbol, oDef.pos))
     assertFalse(it.isImportedAt(bRef.symbol, aDef.pos))

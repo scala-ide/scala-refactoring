@@ -25,9 +25,8 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
     index = GlobalIndex(List(CompilationUnitIndex(tree)))
 
     val firstSelected = {
-      val start = commentSelectionStart(src)
-      val end   = commentSelectionEnd(src)
-      FileSelection(tree.pos.source.file, tree, start, end)
+      val textSelection = TextSelections.extractOne(src)
+      FileSelection(tree.pos.source.file, tree, textSelection.from, textSelection.to)
     }.selectedTopLevelTrees.head
 
     if(m.isDefinedAt(firstSelected)) {

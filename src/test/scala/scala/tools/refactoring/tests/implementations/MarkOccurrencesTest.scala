@@ -8,6 +8,7 @@ package tests.implementations
 import implementations.MarkOccurrences
 import tests.util.TestHelper
 import org.junit.Assert._
+import scala.tools.refactoring.tests.util.TextSelections
 
 class MarkOccurrencesTest extends TestHelper {
   outer =>
@@ -28,11 +29,10 @@ class MarkOccurrencesTest extends TestHelper {
       }
     }
 
-    val start = original.indexOf(startPattern) + startPattern.length
-    val end   = original.indexOf(endPattern)
 
     val (_, positions) = global.ask { () =>
-      markOccurrences.occurrencesOf(tree.pos.source.file, start, end)
+      val textSelection = TextSelections.extractOne(original)
+      markOccurrences.occurrencesOf(tree.pos.source.file, textSelection.from, textSelection.to)
     }
 
     val res = positions.foldLeft(original) {
