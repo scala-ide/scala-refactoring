@@ -10,13 +10,11 @@ import java.io.FileOutputStream
 import java.io.PrintStream
 
 trait Tracing {
-
-  implicit class TraceAndReturn[T](t: T) {
-    def \\ (trace: T => Unit) = {
-      trace(t)
-      t
-    }
+  protected abstract class TraceAndReturn[T] {
+    def \\(trace: T => Unit): T
   }
+
+  protected implicit def wrapInTraceAndReturn[T](t: T): TraceAndReturn[T]
 
   def context[T](name: String)(body: => T): T
 
@@ -84,10 +82,16 @@ trait DebugTracing extends Tracing {
     val border = (indent * level) + marker
     printLine(border + msg.replaceAll("\n", "\n"+ border))
   }
+
+  protected implicit final def wrapInTraceAndReturn[T](t: T) = new TraceAndReturn[T] {
+    def \\(trace: T => Unit) = {
+      trace(t)
+      t
+    }
+  }
 }
 
 trait SilentTracing extends Tracing {
-
   @inline
   def trace(msg: => String, arg1: => Any, args: Any*) = ()
 
@@ -96,4 +100,8 @@ trait SilentTracing extends Tracing {
 
   @inline
   def context[T](name: String)(body: => T): T = body
+
+  protected implicit final def wrapInTraceAndReturn[T](t: T) = new TraceAndReturn[T] {
+    def \\(ignored: T => Unit) = t
+  }
 }
