@@ -376,9 +376,7 @@ class SourceWithMarkerTest {
     assertEquals(";", src.moveMarker('>' ~ commentsAndSpaces ~ "val x1 = " ~ curlyBracesWithContents).currentStr)
 
     val res = src.applyMovement(until(";", skipping = curlyBracesWithContents)).flatMap { src =>
-      println(src)
       src.applyMovement(until("x", skipping = curlyBracesWithContents).backward).flatMap { src =>
-        println(src)
         src.applyMovement("x1 = ")
       }
     }
