@@ -147,6 +147,7 @@ object SourceWithMarker {
     def butNot(other: SimpleMovement): SimpleMovement = SimpleMovementHelpers.butNot(this, other) _
     def optional: SimpleMovement = SimpleMovementHelpers.optional(this) _
     def atMostNtimes(n: Int): SimpleMovement = optional.nTimes(n)
+    def refineWith(refinement: (SourceWithMarker, Seq[Int]) => Seq[Int]): SimpleMovement = SimpleMovementHelpers.refineWith(this, refinement) _
   }
 
   object SimpleMovement {
@@ -244,6 +245,10 @@ object SourceWithMarker {
         case res => res
       }
     }
+
+    def refineWith[MovementT <: SimpleMovement](mvnt: MovementT, refinement: (SourceWithMarker, Seq[Int]) => Seq[Int])(sourceWithMarker: SourceWithMarker): Seq[Int] = {
+      refinement(sourceWithMarker, mvnt.compute(sourceWithMarker))
+    }
   }
 
   /**
@@ -332,6 +337,15 @@ object SourceWithMarker {
     }
 
     final override def atMostNtimes(n: Int) = optional.nTimes(n)
+
+    final override def refineWith(refinement: (SourceWithMarker, Seq[Int]) => Seq[Int]): Movement = Movement { (sourceWithMarker, forward) =>
+      val mvnt = {
+        if (forward) self
+        else self.backward
+      }
+
+      SimpleMovementHelpers.refineWith(mvnt, refinement)(sourceWithMarker)
+    }
   }
 
   object Movement {
@@ -617,7 +631,44 @@ object SourceWithMarker {
       multiLiteral | simpleLiteral
     }
 
-    val op = opChar.atLeastOnce
+    val op = opChar.atLeastOnce.refineWith { (sourceWithMarker, positions) =>
+      // This refinement takes care of comments immediately after or before
+      // operators, like `1 +/*<-do no evil*/2`:
+
+      val goingBackward = positions.exists(_ < sourceWithMarker.marker)
+
+      if (!goingBackward) {
+        val positionsIncludingCommentStart = positions.filter { pos =>
+          val covered = sourceWithMarker.source.slice(sourceWithMarker.marker, pos).mkString("")
+
+          if (covered.size < 2) {
+            false
+          } else {
+            covered.contains("//") || covered.contains("/*")
+          }
+        }.toSet
+
+        positions.filterNot { pos =>
+          positionsIncludingCommentStart.contains(pos) || positionsIncludingCommentStart.contains(pos + 1)
+        }
+      } else {
+        val positionIncludesCommentStart = positions.exists { pos =>
+          val coveredChars = sourceWithMarker.source.slice(pos + 1, sourceWithMarker.marker + 1)
+
+          if (coveredChars.size < 2) {
+            false
+          } else {
+            val c0 = coveredChars(0)
+            val c1 = coveredChars(1)
+
+            c0 == '/' && (c1 == '*' || c1 == '/')
+          }
+        }
+
+        if (positionIncludesCommentStart) Seq()
+        else positions
+      }
+    }
 
     val idrest = (letter | digit).zeroOrMore ~ ('_' ~ op).zeroOrMore
 
@@ -665,6 +716,15 @@ object SourceWithMarker {
     def doIfNotDepleted(sourceWithMarker: SourceWithMarker)(op: => Seq[Int]): Seq[Int] = {
       if (sourceWithMarker.isDepleted) Nil
       else op
+    }
+
+    def coveredChars(sourceWithMarker: SourceWithMarker, pos: Int): IndexedSeq[Char] = {
+      val (from, until) = {
+        if (sourceWithMarker.marker <= pos) (sourceWithMarker.marker, pos)
+        else (pos + 1, sourceWithMarker.marker + 1)
+      }
+
+      sourceWithMarker.source.slice(from, until)
     }
   }
 }
