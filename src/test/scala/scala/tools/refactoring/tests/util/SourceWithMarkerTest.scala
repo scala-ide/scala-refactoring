@@ -3,9 +3,9 @@ package scala.tools.refactoring.tests.util
 import org.junit.Test
 import org.junit.Assert._
 import scala.tools.refactoring.util.SourceWithMarker
-import scala.tools.refactoring.util.SourceWithMarker.SimpleMovement
 import scala.tools.refactoring.util.SourceWithMarker.Movements
 import scala.tools.refactoring.util.SourceWithMarker.Movement
+import scala.tools.refactoring.util.SourceWithMarker.MovementHelpers
 
 class SourceWithMarkerTest {
   import SourceWithMarker.Movements._
@@ -330,8 +330,14 @@ class SourceWithMarkerTest {
     }
   }
 
-  private def runCoveredStringTest(input: String, start: Int, mvnt: SimpleMovement, shouldBeCovered: String): Unit = {
-    assertEquals(shouldBeCovered, Movement.coveredString(start, input, mvnt))
+  private def runCoveredStringTest(input: String, start: Int, mvnt: Movement, shouldBeCovered: String, forwardOnly: Boolean = false): Unit = {
+    val srcWithMarkerWhenForward = SourceWithMarker(input, start)
+    assertEquals(shouldBeCovered, Movement.coveredString(srcWithMarkerWhenForward, mvnt))
+
+    if (!forwardOnly) {
+      val srcWithMarkerWhenBackward = SourceWithMarker(input, start + math.max(0, shouldBeCovered.size - 1))
+      assertEquals(shouldBeCovered, Movement.coveredString(srcWithMarkerWhenBackward, mvnt.backward))
+    }
   }
 
   @Test
@@ -340,22 +346,76 @@ class SourceWithMarkerTest {
     runCoveredStringTest("0", 0, any, "0")
     runCoveredStringTest("1", 0, any.backward, "1")
     runCoveredStringTest("1223", 1, '2'.zeroOrMore, "22")
-    runCoveredStringTest("1223", 1, '2'.zeroOrMore.backward, "2")
   }
 
   @Test
   def testScalaId(): Unit = {
-    def runIdTest(input: String, shouldBeCovered: String) = runCoveredStringTest(input, 0, Movements.id, shouldBeCovered)
+    def runSimpleIdTest(input: String, shouldBeCovered: String, forwardOnly: Boolean = false) = runCoveredStringTest(input, 0, Movements.id, shouldBeCovered, forwardOnly)
 
-    runIdTest("", "")
-    runIdTest("x", "x")
-    runIdTest("privateval", "privateval")
-    runIdTest("val x = 3", "")
-    runIdTest("->", "->")
-    runIdTest("2", "")
-    runIdTest("x2", "x2")
-    runIdTest("/*comment*/", "")
-    runIdTest("//comment", "")
+    runSimpleIdTest("", "")
+    runSimpleIdTest("x", "x")
+    runSimpleIdTest("privateval", "privateval")
+    runSimpleIdTest("val x = 3", "", forwardOnly = true)
+    runSimpleIdTest("->", "->")
+    runSimpleIdTest("2", "")
+    runSimpleIdTest("x2", "x2")
+    runSimpleIdTest("/*comment*/", "", forwardOnly = true)
+    runSimpleIdTest("//comment", "", forwardOnly = true)
+    runSimpleIdTest("::", "::")
+    runSimpleIdTest("::/", "::/")
+    runSimpleIdTest("::/*trap*/", "::")
+    runSimpleIdTest("::/*<-trap*/", "::")
+    runSimpleIdTest("+", "+")
+    runSimpleIdTest("+/", "+/")
+    runSimpleIdTest("+//trap", "+")
+    runSimpleIdTest("+//<-trap", "+")
+    runSimpleIdTest("+/*trap*/", "+")
+    runSimpleIdTest("+/*<-trap*/", "+")
+
+    val srcIdInMlComment = SourceWithMarker("/*::*/", 3)
+    val srcIdInSlComment = SourceWithMarker("//::", 3)
+
+    assertEquals(srcIdInMlComment, srcIdInMlComment.moveMarkerBack(Movements.id))
+    assertEquals(srcIdInSlComment, srcIdInSlComment.moveMarkerBack(Movements.id))
+  }
+
+  @Test
+  def testScalaOpChar(): Unit = {
+    def runOpCharTest(input: String, shouldBeCovered: String) = runCoveredStringTest(input, 0, Movements.opChar.atLeastOnce, shouldBeCovered)
+
+    runOpCharTest("+", "+")
+    runOpCharTest("-", "-")
+    runOpCharTest(":", ":")
+  }
+
+  @Test
+  def testRefineMovement(): Unit = {
+    val expressionWithoutRefinement = {
+      (digit.atLeastOnce || ("(" || ")" || "*" || "+") || space).zeroOrMore
+    }
+
+    val expressionWithRefinement = expressionWithoutRefinement.refineWith { (sourceWithMarker, positions) =>
+      positions.filter { pos =>
+        val coveredChars = MovementHelpers.coveredChars(sourceWithMarker, pos)
+        val nOpenParen = coveredChars.count(_ == '(')
+        val nCloseParen = coveredChars.count(_ == ')')
+        nOpenParen == nCloseParen
+      }
+    }
+
+    assertEquals(Some(0), expressionWithoutRefinement(SourceWithMarker("")))
+    assertEquals(Some(0), expressionWithRefinement(SourceWithMarker("")))
+
+    assertEquals("#", SourceWithMarker("()#").moveMarker(expressionWithRefinement).currentStr)
+    assertEquals("#", SourceWithMarker("(#").moveMarker(expressionWithoutRefinement).currentStr)
+    assertEquals("(", SourceWithMarker("(#").moveMarker(expressionWithRefinement).currentStr)
+    assertEquals("#", SourceWithMarker("1 + (2#").moveMarker(expressionWithoutRefinement).currentStr)
+    assertEquals("(", SourceWithMarker("1+(2#").moveMarker(expressionWithRefinement).currentStr)
+    assertEquals("#", SourceWithMarker("1+(2+(2+2))#").moveMarker(expressionWithRefinement).currentStr)
+
+    assertEquals("#", SourceWithMarker("#1+1").withMarkerAtLastChar.moveMarkerBack(expressionWithRefinement).currentStr)
+    assertEquals("(", SourceWithMarker("#(2+1").withMarkerAtLastChar.moveMarkerBack(expressionWithRefinement).currentStr)
+    assertEquals("#", SourceWithMarker("#(2+1)+1").withMarkerAtLastChar.moveMarkerBack(expressionWithRefinement).currentStr)
   }
 
   @Test
