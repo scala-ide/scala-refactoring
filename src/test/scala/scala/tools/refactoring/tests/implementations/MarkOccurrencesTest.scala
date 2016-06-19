@@ -480,4 +480,32 @@ class MarkOccurrencesTest extends TestHelper {
     """, """
     object /*8-cursor->*/#################
     """)
+
+   @Test
+   def onPlusOperator() = markOccurrences("""
+     object Abacus {
+       val a = 4 +/*<-cursor*/ 3
+       val b = a * 5 + 10
+     }
+   """, """
+     object Abacus {
+       val a = 4 #/*<-cursor*/ 3
+       val b = a * 5 # 10
+     }
+   """)
+
+   @Test
+   def onConsOperator() = markOccurrences("""
+     object Constanzia {
+       val a = 1 :: 2 :: 3 :: Nil
+       val b = '1' :: '2' :: Nil
+       val c = 1.1 :: 2.2 ::/*<-cursor*/ Nil
+     }
+   """, """
+     object Constanzia {
+       val a = 1 ## 2 ## 3 ## Nil
+       val b = '1' ## '2' ## Nil
+       val c = 1.1 ## 2.2 ##/*<-cursor*/ Nil
+     }
+   """)
 }
