@@ -37,7 +37,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
           selected match {
             case Import(_, List(selector)) => selector.rename.toString
             case _ => selected match {
-              case s: Select => s.name.toString()
+              case s: Select => s.name.decoded
               case other => other.nameString
             }
           }
@@ -112,6 +112,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
             if (consumedId == selection.name) {
               Some((new RangePosition(np.source, markerAtSymStart, markerAtSymStart, markerAtSymStart + selection.name.length), occ))
             } else {
+              trace(s"consumedId `$consumedId` does not match selecton name `${selection.name}`")
               None
             }
           }
@@ -216,7 +217,17 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
       }
     }
 
-    trace(s"Returning occurrences for ${treeWithOccurences._1}: ${treeWithOccurences._2}")
+    trace {
+      val formattedPositions = {
+        val occurences = treeWithOccurences._2
+
+        if (occurences.nonEmpty) occurences.map(PositionDebugging.format).mkString(", ")
+        else "<none>"
+      }
+
+      s"Returning occurrences for ${treeWithOccurences._1}: $formattedPositions"
+    }
+
     treeWithOccurences
   }
 }
