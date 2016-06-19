@@ -153,40 +153,70 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
     uniqOccurences
   }
 
-  def occurrencesOf(file: tools.nsc.io.AbstractFile, from: Int, to: Int): (Tree, List[Position]) = {
-    val selection = new FileSelection(file, global.unitOfFile(file).body, from, to)
+  private def traceSelection(selection: FileSelection, selectedTree: Option[Tree], from: Int, to: Int): Unit = {
+    val rawSrc = selection.root.pos.source.content
+    val srcFrom = SourceWithMarker(rawSrc, from)
+    val srcTo = SourceWithMarker(rawSrc, to)
 
-    val selectedTree = selection.findSelectedWithPredicate {
-      case (_: global.TypeTree) | (_: global.SymTree) | (_: global.Ident) => true
-      case _ => false
+    val selectedTreeName = {
+      selectedTree.map { selectedTree =>
+        try {
+          selectedTree.nameString
+        } catch {
+          case NonFatal(e) =>
+            selectedTree.toString
+        }
+      }
     }
 
-    val cursorOnScalaId = {
-      val positionsToCheck = selectedTree.toSeq.flatMap {
-        case imp: Import =>
-          // Imports need special handling, since it is not clear on which part of the import statement the cursor might be positioned on
-          Seq(imp.expr.namePosition()) ++ imp.selectors.map(s => new OffsetPosition(imp.pos.source, s.namePos))
+    trace(s"from        : $srcFrom")
+    trace(s"to          : $srcTo")
+    trace(s"selectedTree: $selectedTreeName")
+  }
 
-        case other => Seq(other.namePosition())
-      }
+  def occurrencesOf(file: tools.nsc.io.AbstractFile, from: Int, to: Int): (Tree, List[Position]) = context("occurrencesOf") {
+    val treeWithOccurences = {
+      val selection = new FileSelection(file, global.unitOfFile(file).body, from, to)
 
-      positionsToCheck.exists {
-        case rp: RangePosition => rp.start >= from && rp.end <= to
-        case op: OffsetPosition => op.point >= from && op.point <= to
+      val selectedTree = selection.findSelectedWithPredicate {
+        case (_: global.TypeTree) | (_: global.SymTree) | (_: global.Ident) => true
         case _ => false
+      } \\ { selectedTree =>
+        traceSelection(selection, selectedTree, from, to)
+      }
+
+      val selectionOnScalaId = {
+        val positionsToCheck = selectedTree.toSeq.flatMap {
+          case imp: Import =>
+            // Imports need special handling, since it is not clear on which part of the import statement the cursor might be positioned on
+            Seq(imp.expr.namePosition()) ++ imp.selectors.map(s => new OffsetPosition(imp.pos.source, s.namePos))
+
+          case other => Seq(other.namePosition())
+        }
+
+        positionsToCheck.exists {
+          case rp: RangePosition => rp.start <= from && Movements.id(SourceWithMarker.atStartOf(rp)).exists(_ >= to)
+          case op: OffsetPosition => op.point <= from && Movements.id(SourceWithMarker.atPoint(op)).exists(_ >= to)
+          case _ => false
+        }
+      } \\ { selectionOnScalaId =>
+        trace(s"selectionOnScalaId: $selectionOnScalaId")
+      }
+
+      if (!selectionOnScalaId) {
+        (EmptyTree, Nil)
+      } else {
+        val occurrences = selectedTree.toList.flatMap { selectedTree =>
+          val singleTreeSelection = new SingleTreeSelection(selectedTree, selection.root)
+          val occurences = findOccurrences(singleTreeSelection)
+          occurences.map(_._1)
+        }
+
+        (selectedTree.getOrElse(EmptyTree), occurrences)
       }
     }
 
-    if (!cursorOnScalaId) {
-      (EmptyTree, Nil)
-    } else {
-      val occurrences = selectedTree.toList.flatMap { selectedTree =>
-        val singleTreeSelection = new SingleTreeSelection(selectedTree, selection.root)
-        val occurences = findOccurrences(singleTreeSelection)
-        occurences.map(_._1)
-      }
-
-      (selectedTree.getOrElse(EmptyTree), occurrences)
-    }
+    trace(s"Returning occurrences for ${treeWithOccurences._1}: ${treeWithOccurences._2}")
+    treeWithOccurences
   }
 }

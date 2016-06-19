@@ -438,4 +438,46 @@ class MarkOccurrencesTest extends TestHelper {
       def doit = for (#(x) <- Seq(#(1), #(2))) yield x
     }
     """)
+
+  @Test
+  def trivialObject() = markOccurrences("""
+    object DasDing/*<-cursor-3*/
+    """, """
+    object #######/*<-cursor-3*/
+    """)
+
+  @Test
+  def nextToTrivialObject() = markOccurrences("""
+    object /*<-*/KnappDaneben
+    """, """
+    object /*<-*/KnappDaneben
+    """)
+
+  @Test
+  def onObjectKeyword() = markOccurrences("""
+    object/*<-cursor*/ WiederVorbei
+    """, """
+    object/*<-cursor*/ WiederVorbei
+    """)
+
+  @Test
+  def onEndOfBacktickAbomination() = markOccurrences("""
+    object `/*<!!-<.>-!!>*/`/*<-cursor*/
+    """, """
+    object #################/*<-cursor*/
+    """)
+
+  @Test
+  def onStartOfBacktickAbomination() = markOccurrences("""
+    object /*cursor->*/`/*<!!-<.>-!!>*/`
+    """, """
+    object /*cursor->*/#################
+    """)
+
+  @Test
+  def inTheCenterOfBacktickAbomination() = markOccurrences("""
+    object /*8-cursor->*/`/*<!!-<.>-!!>*/`
+    """, """
+    object /*8-cursor->*/#################
+    """)
 }
