@@ -1,5 +1,6 @@
 package scala.tools.refactoring.tests.implementations.imports
 
+import scala.tools.refactoring.implementations.OrganizeImports
 
 class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBaseTest {
 
@@ -7,7 +8,10 @@ class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBase
     import refactoring._
     val maxIndividualImports = 2
     val options = List(ExpandImports, SortImports, CollapseImports, CollapseSelectorsToWildcard(maxIndividualImports, exclude), SortImportSelectors)
-    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute)
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(
+      importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports),
+      collapseToWildcardConfig = Some(OrganizeImports.CollapseToWildcardConfig(maxIndividualImports, exclude)))
+    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute, config = Some(oiConfig))
   }.mkChanges
 
   @Test

@@ -5,20 +5,25 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
+import scala.tools.refactoring.implementations.OrganizeImports
+
 
 
 class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute)
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(Some(OrganizeImports.ImportsStrategy.CollapseImports))
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
   }.mkChanges
 
   def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters(options = List(), deps = refactoring.Dependencies.FullyRecompute)
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
+    val params = new RefactoringParameters(options = List(), deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
   }.mkChanges
 
   def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters(options = List(refactoring.ExpandImports), deps = refactoring.Dependencies.FullyRecompute)
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(Some(OrganizeImports.ImportsStrategy.ExpandImports))
+    val params = new RefactoringParameters(options = List(refactoring.ExpandImports), deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
   }.mkChanges
 
   @Test

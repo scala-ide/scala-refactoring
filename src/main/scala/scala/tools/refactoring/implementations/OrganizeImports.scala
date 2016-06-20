@@ -83,8 +83,8 @@ object OrganizeImports {
     }
   }
   case class CollapseToWildcardConfig(maxIndividualImports: Int = 2, exclude: Set[String] = Set.empty[String])
-  case class OrganizeImportsConfig(importsStrategy: Option[ImportsStrategy.Value], wildcards: Set[String],
-    groups: List[String], scalaPackageStrategy: Boolean, collapseToWildcardConfig: Option[CollapseToWildcardConfig] = None)
+  case class OrganizeImportsConfig(importsStrategy: Option[ImportsStrategy.Value], wildcards: Set[String] = Set.empty[String],
+    groups: List[String] = Nil, scalaPackageStrategy: Boolean = false, collapseToWildcardConfig: Option[CollapseToWildcardConfig] = None)
 }
 
 /**
@@ -492,27 +492,24 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
 
     if (params.organizeImports) {
       params.config.map { _ =>
-        organizeLocalImportsToo(selection, params)
+        organizeAllImports(selection, params)
       }.getOrElse(Right(Nil))
     } else
       Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
 
-  private def organizeLocalImportsToo(selection: Selection, params: RefactoringParameters) = {
+  import scala.tools.refactoring.implementations.oimports.TreeToolbox
+  private def organizeLocalImports[T <: TreeToolbox[global.type]](root: Tree)(treeToolbox: T): List[treeToolbox.Region] = {
     import oimports._
-
-    val config = params.config.get
-
+    import scala.tools.refactoring.implementations.oimports.NotPackageImportParticipants
     val participants = new NotPackageImportParticipants[this.type](this)
-    val treeToolbox = new TreeToolbox[global.type](global)
-    val rootTree = abstractFileToTree(selection.file)
 
     val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val defRegions = defImportsOrganizer.transformTreeToRegions(rootTree, this).map {
+    val defRegions = defImportsOrganizer.transformTreeToRegions(root, this).map {
       _.transform {
         scala.Function.chain {
           participants.RemoveDuplicatedByWildcard ::
-            new participants.RemoveUnused(rootTree) ::
+            new participants.RemoveUnused(root) ::
             RemoveDuplicates ::
             SortImportSelectors ::
             participants.SortImports ::
@@ -522,11 +519,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
 
     val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(rootTree, this).map {
+    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(root, this).map {
       _.transform {
         scala.Function.chain {
           participants.RemoveDuplicatedByWildcard ::
-            new participants.RemoveUnused(rootTree) ::
+            new participants.RemoveUnused(root) ::
             RemoveDuplicates ::
             SortImportSelectors ::
             participants.SortImports ::
@@ -534,6 +531,22 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
         }
       }
     }
+    classDefRegions ::: defRegions
+  }
+
+  private def organizeAllImports(selection: Selection, params: RefactoringParameters) = {
+    import oimports._
+
+    val participants = new NotPackageImportParticipants[this.type](this)
+    val treeToolbox = new TreeToolbox[global.type](global)
+    val rootTree = abstractFileToTree(selection.file)
+
+    val classDefAndDefRegions = if (params.organizeLocalImports) {
+      organizeLocalImports[treeToolbox.type](rootTree)(treeToolbox)
+    } else {
+      Nil
+    }
+    val config = params.config.get
 
     val packageDefImportsOrganizer = new PackageDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
     val rawPackageRegions = packageDefImportsOrganizer.transformTreeToRegions(rootTree, this)
@@ -568,13 +581,14 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val rawPackageDefRegions = groupedPackageRegions.map {
       _.transform {
         scala.Function.chain {
-          SortImportSelectors :: participants.SortImports ::
-            expandOrCollapse :::
-            (if (config.wildcards.nonEmpty) List(new participants.AlwaysUseWildcards[treeToolbox.type](treeToolbox)(config.wildcards)) else Nil) :::
-            new participants.RemoveUnused(rootTree, params.importsToAdd) ::
-            RemoveDuplicates ::
+          participants.SortImports ::
             SortImportSelectors ::
+            new participants.RemoveUnused(rootTree, params.importsToAdd) ::
+            (if (config.wildcards.nonEmpty) List(new participants.AlwaysUseWildcards[treeToolbox.type](treeToolbox)(config.wildcards)) else Nil) :::
+            expandOrCollapse :::
             participants.SortImports ::
+            SortImportSelectors ::
+            RemoveDuplicates ::
             Nil
         }
       }
@@ -583,7 +597,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val packageDefRegions = config.collapseToWildcardConfig.map { config =>
       new transformations.collapseToWildcard(config.maxIndividualImports, config.exclude)(rawPackageDefRegions)
     }.getOrElse(rawPackageDefRegions)
-    val removedDuplicates = transformations.removeScopesDuplicates(packageDefRegions ::: classDefRegions ::: defRegions)
+    val removedDuplicates = transformations.removeScopesDuplicates(packageDefRegions ::: classDefAndDefRegions)
     val changes = removedDuplicates.map { _.print }
 
     val toPrint = Change.discardOverlappingChanges(changes).accepted

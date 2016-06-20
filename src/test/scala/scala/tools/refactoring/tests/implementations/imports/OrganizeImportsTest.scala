@@ -7,18 +7,23 @@ package tests.implementations.imports
 
 import language.postfixOps
 import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
+import scala.tools.refactoring.implementations.OrganizeImports
 
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters()
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports))
+    val params = new RefactoringParameters(config = Some(oiConfig))
   }.mkChanges
 
   private def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters(options = List(refactoring.SortImportSelectors))
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
+    val params = new RefactoringParameters(options = List(refactoring.SortImportSelectors), config = Some(oiConfig))
   }.mkChanges
 
   private def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports, refactoring.SortImports))
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports))
+    val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports, refactoring.SortImports),
+      config = Some(oiConfig))
   }.mkChanges
 
   private def organizeWithTypicalParams(pro: FileSet) = organizeCustomized()(pro)
@@ -28,6 +33,10 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"),
       dependencies: Dependencies.Value = Dependencies.FullyRecompute,
       organizeLocalImports: Boolean = true)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(
+      importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
+      wildcards = useWildcards,
+      groups = groupPkgs)
     val params = {
       val groupImports = refactoring.GroupImports(groupPkgs)
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
@@ -41,7 +50,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
             groupImports ::
             Nil,
           deps = dependencies,
-          organizeLocalImports = organizeLocalImports)
+          organizeLocalImports = organizeLocalImports,
+          config = Some(oiConfig))
     }
   }.mkChanges
 
@@ -359,7 +369,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   @Test
   def multipleImportsOnOneLine() = new FileSet {
-      """
+    """
       import java.lang.String, String._
 
       object Main {
@@ -425,7 +435,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {
       }    """ becomes
-    """
+      """
 ▒
       object Main {
       }    """
@@ -439,7 +449,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       
       object Main {
       }    """ becomes
-    """
+      """
       ▒
       object Main {
       }    """
@@ -454,7 +464,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       object Main {
         var x: ListBuffer = null
       }    """ becomes
-    """
+      """
       import scala.collection.mutable._
 
       object Main {
@@ -471,7 +481,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       trait SomeTrait {
         def m: Either[String, ListBuffer[ListBuffer[String]]]
       }    """ becomes
-    """
+      """
       import scala.collection.mutable.ListBuffer
 
       trait SomeTrait {
@@ -489,7 +499,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       trait SomeTraitWithAnAnnotation {
         def m: Either[String, ListBuffer[ListBuffer[String]]]
       }    """ becomes
-    """
+      """
       import scala.collection.mutable.ListBuffer
 
       @annotation.implicitNotFound(msg = "message")
@@ -888,7 +898,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       def test = emptyList
     }
-    """}
+    """
+    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -964,7 +975,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         emptyList
       }
     }
-    """}
+    """
+    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -1407,7 +1419,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ isNotModified
-    } applyRefactoring organizeWithTypicalParams
+  } applyRefactoring organizeWithTypicalParams
 
   @Test
   def importsScatteredInSameLineOfDefShouldNotBeRearranged() = new FileSet {
@@ -2654,7 +2666,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val a: JavaMap[String, String] = new HashMap
     }
     """ isNotModified
-    } applyRefactoring organizeWithTypicalParams
+  } applyRefactoring organizeWithTypicalParams
 
   @Test
   def shouldOrganizeImportInClassAndDefBodies() = new FileSet {
@@ -3399,7 +3411,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       new `€€€`().x
       new `$$$`().y
-    }"""}
+    }"""
+    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -3467,7 +3480,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
         Future.successful(Try(z).getOrElse(42))
       }
-    }"""}
+    }"""
+    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -3510,7 +3524,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** This case is quite peculiar. `scala.language` is imported always and moved to top most package scope.
+  /**
+   * This case is quite peculiar. `scala.language` is imported always and moved to top most package scope.
    *  See at following snippet in [[scala.tools.refactoring.analysis.CompilationUnitDependencies]] class:
    *  {{{
    *  // Always add the SIP 18 language imports as required until we can handle them properly
@@ -3543,8 +3558,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bug8 {
       implicit def intToString(i: Int) = i.toString
-    }"""}
-    } applyRefactoring organizeWithTypicalParams
+    }"""
+    }
+  } applyRefactoring organizeWithTypicalParams
 
   @Test
   def shouldDiscoverArgTypeInExistentialTypeOfMethodDeclarationAndNotRemoveItFromImportsInClassScope() = new FileSet {
@@ -3821,7 +3837,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val x = Sauron
       val y = TheBeholder
     }
-    """}
+    """
+    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test

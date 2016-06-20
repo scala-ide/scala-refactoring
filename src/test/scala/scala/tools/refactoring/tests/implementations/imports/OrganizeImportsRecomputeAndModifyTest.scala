@@ -5,22 +5,32 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-
+import scala.tools.refactoring.implementations.OrganizeImports
 
 class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List())
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List(),
+        config = Some(oiConfig))
   }.mkChanges
 
   def organizeCleanup(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(
+        None,
+        groups = groups)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
-        options = List(refactoring.SortImports, refactoring.GroupImports(groups)))
+        options = List(refactoring.SortImports, refactoring.GroupImports(groups)),
+        config = Some(oiConfig))
   }.mkChanges
 
   def organizeWildcards(ws: Set[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(
+        None,
+        wildcards = ws)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
-        options = List(refactoring.SortImports, refactoring.AlwaysUseWildcards(ws)))
+        options = List(refactoring.SortImports, refactoring.AlwaysUseWildcards(ws)),
+        config = Some(oiConfig))
   }.mkChanges
 
   @Test

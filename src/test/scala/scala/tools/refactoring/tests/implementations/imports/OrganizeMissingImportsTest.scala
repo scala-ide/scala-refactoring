@@ -17,7 +17,10 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     val refactoring = new OrganizeImports  {
       val global = outer.global
     }
-    val changes = performRefactoring(new refactoring.RefactoringParameters(imports))
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(
+        importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports)
+    )
+    val changes = performRefactoring(new refactoring.RefactoringParameters(imports, config = Some(oiConfig)))
   }.changes
 
   @Test

@@ -5,14 +5,17 @@
 package scala.tools.refactoring
 package tests.implementations.imports
 
-
+import scala.tools.refactoring.implementations.OrganizeImports
 
 class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
 
   def organize(groups: Set[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
     val options = List(AlwaysUseWildcards(groups), ExpandImports, SortImports)
-    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute)
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(
+      importsStrategy = Some(OrganizeImports.ImportsStrategy.PreserveWildcards),
+      wildcards = groups)
+    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute, config = Some(oiConfig))
   }.mkChanges
 
   val source = """
