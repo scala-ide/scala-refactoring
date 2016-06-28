@@ -3,6 +3,7 @@ package scala.tools.refactoring.tests.common
 import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Assert._
 import scala.tools.refactoring.common.Selections
+import scala.tools.refactoring.tests.util.TextSelections
 
 class SelectionDependenciesTest extends TestHelper with Selections {
   import global._
@@ -10,9 +11,8 @@ class SelectionDependenciesTest extends TestHelper with Selections {
   implicit class StringToSel(src: String) {
     val root = treeFrom(src)
     val selection = {
-      val start = commentSelectionStart(src)
-      val end = commentSelectionEnd(src)
-      FileSelection(root.pos.source.file, root, start, end)
+      val textSelection = TextSelections.extractOne(src)
+      FileSelection(root.pos.source.file, root, textSelection.from, textSelection.to)
     }
   }
 

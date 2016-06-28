@@ -7,6 +7,7 @@ import scala.tools.refactoring.tests.util.TestHelper
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import scala.tools.refactoring.tests.util.TextSelections
 
 class InsertionPositionsTest extends TestHelper with InsertionPositions with Selections {
   import global._
@@ -18,9 +19,8 @@ class InsertionPositionsTest extends TestHelper with InsertionPositions with Sel
   implicit class StringToSelection(src: String) {
     val root = treeFrom(src)
     val selection = {
-      val start = commentSelectionStart(src)
-      val end = commentSelectionEnd(src)
-      FileSelection(root.pos.source.file, root, start, end)
+      val textSelection = TextSelections.extractOne(src)
+      FileSelection(root.pos.source.file, root, textSelection.from, textSelection.to)
     }
 
     def inScope(mkScope: Selection => Tree) = {

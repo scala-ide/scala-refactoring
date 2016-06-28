@@ -7,14 +7,14 @@ package tests.common
 
 import tests.util.TestHelper
 import org.junit.Assert._
+import scala.tools.refactoring.tests.util.TextSelections
 
 class SelectionsTest extends TestHelper {
 
   private def getIndexedSelection(src: String) = {
     val tree = treeFrom(src)
-    val start = commentSelectionStart(src)
-    val end   = commentSelectionEnd(src)
-    FileSelection(tree.pos.source.file, tree, start, end)
+    val textSelection = TextSelections.extractOne(src)
+    FileSelection(tree.pos.source.file, tree, textSelection.from, textSelection.to)
   }
 
   def selectedLocalVariable(expected: String, src: String) = {

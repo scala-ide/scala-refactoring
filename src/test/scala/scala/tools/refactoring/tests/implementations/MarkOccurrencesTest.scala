@@ -8,6 +8,7 @@ package tests.implementations
 import implementations.MarkOccurrences
 import tests.util.TestHelper
 import org.junit.Assert._
+import scala.tools.refactoring.tests.util.TextSelections
 
 class MarkOccurrencesTest extends TestHelper {
   outer =>
@@ -28,11 +29,10 @@ class MarkOccurrencesTest extends TestHelper {
       }
     }
 
-    val start = original.indexOf(startPattern) + startPattern.length
-    val end   = original.indexOf(endPattern)
 
     val (_, positions) = global.ask { () =>
-      markOccurrences.occurrencesOf(tree.pos.source.file, start, end)
+      val textSelection = TextSelections.extractOne(original)
+      markOccurrences.occurrencesOf(tree.pos.source.file, textSelection.from, textSelection.to)
     }
 
     val res = positions.foldLeft(original) {
@@ -174,10 +174,10 @@ class MarkOccurrencesTest extends TestHelper {
     """,
     """
     import java.io./*(*/####/*)*/
-    import java.io.{#########}
+    import java.io.{#### => F}
     object Whatever {
       val sep1 = ####.pathSeparator
-      val sep2 = #.pathSeparator
+      val sep2 = F.pathSeparator
     }
     """)
 
@@ -191,10 +191,10 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """,
     """
-    import java.io.####
-    import java.io.{#########}
+    import java.io.File
+    import java.io.{File => #}
     object Whatever {
-      val sep1 = ####.pathSeparator
+      val sep1 = File.pathSeparator
       val sep2 = /*(*/#/*)*/.pathSeparator
     }
     """)
@@ -403,7 +403,6 @@ class MarkOccurrencesTest extends TestHelper {
     }
     """)
 
-  @Ignore
   @Test
   def namedArg() = markOccurrences("""
     class Updateable { def update(/*(*/what/*)*/: Int, rest: Int) = 0 }
@@ -418,7 +417,7 @@ class MarkOccurrencesTest extends TestHelper {
 
     class NamedParameter {
       val up = new Updateable
-      up(########) = 2
+      up(#### = 1) = 2
     }
     """)
 
@@ -439,4 +438,74 @@ class MarkOccurrencesTest extends TestHelper {
       def doit = for (#(x) <- Seq(#(1), #(2))) yield x
     }
     """)
+
+  @Test
+  def trivialObject() = markOccurrences("""
+    object DasDing/*<-cursor-3*/
+    """, """
+    object #######/*<-cursor-3*/
+    """)
+
+  @Test
+  def nextToTrivialObject() = markOccurrences("""
+    object /*<-*/KnappDaneben
+    """, """
+    object /*<-*/KnappDaneben
+    """)
+
+  @Test
+  def onObjectKeyword() = markOccurrences("""
+    object/*<-cursor*/ WiederVorbei
+    """, """
+    object/*<-cursor*/ WiederVorbei
+    """)
+
+  @Test
+  def onEndOfBacktickAbomination() = markOccurrences("""
+    object `/*<!!-<.>-!!>*/`/*<-cursor*/
+    """, """
+    object #################/*<-cursor*/
+    """)
+
+  @Test
+  def onStartOfBacktickAbomination() = markOccurrences("""
+    object /*cursor->*/`/*<!!-<.>-!!>*/`
+    """, """
+    object /*cursor->*/#################
+    """)
+
+  @Test
+  def inTheCenterOfBacktickAbomination() = markOccurrences("""
+    object /*8-cursor->*/`/*<!!-<.>-!!>*/`
+    """, """
+    object /*8-cursor->*/#################
+    """)
+
+   @Test
+   def onPlusOperator() = markOccurrences("""
+     object Abacus {
+       val a = 4 +/*<-cursor*/ 3
+       val b = a * 5 + 10
+     }
+   """, """
+     object Abacus {
+       val a = 4 #/*<-cursor*/ 3
+       val b = a * 5 # 10
+     }
+   """)
+
+   @Test
+   def onConsOperator() = markOccurrences("""
+     object Constanzia {
+       val a = 1 :: 2 :: 3 :: Nil
+       val b = '1' :: '2' :: Nil
+       val c = 1.1 :: 2.2 ::/*<-cursor*/ Nil
+     }
+   """, """
+     object Constanzia {
+       val a = 1 ## 2 ## 3 ## Nil
+       val b = '1' ## '2' ## Nil
+       val c = 1.1 ## 2.2 ##/*<-cursor*/ Nil
+     }
+   """)
 }
