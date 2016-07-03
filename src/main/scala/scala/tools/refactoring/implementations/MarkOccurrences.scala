@@ -12,9 +12,11 @@ import scala.tools.refactoring.util.SourceWithMarker
 import scala.tools.refactoring.util.SourceWithMarker.Movements
 import scala.util.control.NonFatal
 import scala.tools.refactoring.util.SourceWithMarker.Movement
+import scala.tools.refactoring.common.TracingHelpers
 
 trait MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.EnrichedTrees with common.InteractiveScalaCompiler {
   import global._
+  import TracingHelpers.toCompactString
 
   protected class SingleTreeSelection(val selected: Tree, val root: Tree) {
     val symbol = selected match {
@@ -24,15 +26,20 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
     }
 
     val name = {
-      // We try to read the old name from the name position of the original symbol, since this seems to be the most
-      // reliable strategy that also works well in the presence of `backtick-identifiers`.
-      index.declaration(symbol).flatMap { tree =>
-        tree.namePosition() match {
-          case rp: RangePosition => Some(rp.source.content.slice(rp.start, rp.end).mkString(""))
-          case _ => None
+      val declaration = index.declaration(symbol)
+      trace(s"Selected symbol is decared at ${toCompactString(declaration)}")
+
+      declaration.flatMap { declaration =>
+        // We try to read the old name from the name position of the declaration, since this seems to be the most
+        // reliable strategy that also works well in the presence of `backtick-identifiers`.
+        declaration.namePosition() match {
+          case rp: RangePosition => 
+            Some(rp.source.content.slice(rp.start, rp.end).mkString(""))
+          case op => 
+            trace(s"Expected range position, but found $op")
+            None
         }
       }.getOrElse {
-        trace("Cannot find old name of symbol reliably; attempting fallback")
         try {
           selected match {
             case Import(_, List(selector)) => selector.rename.toString
@@ -175,6 +182,21 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
     trace(s"selectedTree: $selectedTreeName")
   }
 
+  private def eventuallyTraceAndReturnOccurences(treeWithOccurences: (Tree, List[Position])): (Tree, List[Position]) = {
+    trace {
+      val formattedPositions = {
+        val occurences = treeWithOccurences._2
+
+        if (occurences.nonEmpty) occurences.map(PositionDebugging.format).mkString(", ")
+        else "<none>"
+      }
+
+      s"Returning occurrences for ${toCompactString(treeWithOccurences._1)}: $formattedPositions"
+    }
+
+    treeWithOccurences
+  }
+
   def occurrencesOf(file: tools.nsc.io.AbstractFile, from: Int, to: Int): (Tree, List[Position]) = context("occurrencesOf") {
     val treeWithOccurences = {
       val selection = new FileSelection(file, global.unitOfFile(file).body, from, to)
@@ -217,17 +239,6 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
       }
     }
 
-    trace {
-      val formattedPositions = {
-        val occurences = treeWithOccurences._2
-
-        if (occurences.nonEmpty) occurences.map(PositionDebugging.format).mkString(", ")
-        else "<none>"
-      }
-
-      s"Returning occurrences for ${treeWithOccurences._1}: $formattedPositions"
-    }
-
-    treeWithOccurences
+    eventuallyTraceAndReturnOccurences(treeWithOccurences)
   }
 }
