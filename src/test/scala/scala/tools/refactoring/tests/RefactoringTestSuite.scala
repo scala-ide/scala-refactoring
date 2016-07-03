@@ -11,6 +11,7 @@ import sourcegen._
 import transformation._
 import util._
 import scala.tools.refactoring.implementations.OrganizeImportsAlgosTest
+import scala.tools.refactoring.common.TracingHelpersTest
 
 @RunWith(value = classOf[Suite])
 @Suite.SuiteClasses(value = Array(
@@ -77,5 +78,6 @@ import scala.tools.refactoring.implementations.OrganizeImportsAlgosTest
     classOf[UnusedImportsFinderTest],
     classOf[SourceWithMarkerTest],
     classOf[OrganizeImportsAlgosTest],
+    classOf[TracingHelpersTest],
     classOf[OrganizeImportsWithMacrosTest]))
 class RefactoringTestSuite {}
