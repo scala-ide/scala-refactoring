@@ -495,7 +495,11 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
         organizeAllImports(selection, params)
       }.getOrElse(Right(Nil))
     } else
-      Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
+      if (params.organizeLocalImports) {
+        val localImportsChanges = organizeLocalImportsOnly(selection)
+        Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: localImportsChanges)
+      } else
+        Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
   }
 
   import scala.tools.refactoring.implementations.oimports.TreeToolbox
@@ -532,6 +536,19 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       }
     }
     classDefRegions ::: defRegions
+  }
+
+  private def organizeLocalImportsOnly(selection: Selection) = {
+    import oimports._
+    val treeToolbox = new TreeToolbox[global.type](global)
+    val rootTree = abstractFileToTree(selection.file)
+    val classDefAndDefRegions = organizeLocalImports[treeToolbox.type](rootTree)(treeToolbox)
+    val regionContext = new RegionTransformationsContext[this.type](this)
+    val transformations = new regionContext.RegionTransformations[treeToolbox.type](treeToolbox)
+    val removedDuplicates = transformations.removeScopesDuplicates(classDefAndDefRegions)
+    val changes = removedDuplicates.map { _.print }
+
+    Change.discardOverlappingChanges(changes).accepted
   }
 
   private def organizeAllImports(selection: Selection, params: RefactoringParameters) = {
