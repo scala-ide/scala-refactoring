@@ -341,7 +341,15 @@ trait TreeFactory {
 
         // copy the tree and delete all positions so the full path will be written
         val newExpr = topdown(setNoPosition &> removeThisTrees) apply expr.duplicate getOrElse expr
-        newExpr.setSymbol(if (select.symbol != NoSymbol) select.symbol.owner else NoSymbol)
+        val newExprSym = select.symbol match {
+          case sym if sym.isMethod => sym.owner match {
+            case own if own.isPackageObjectClass => own
+            case _ => select.qualifier.symbol
+          }
+          case sym if sym != NoSymbol => sym.owner
+          case _ => NoSymbol
+        }
+        newExpr.setSymbol(newExprSym)
 
         val typeName = select.symbol match {
           case NoSymbol => name.toChars.mkString
