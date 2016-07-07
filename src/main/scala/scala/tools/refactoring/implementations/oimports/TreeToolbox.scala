@@ -15,7 +15,9 @@ class TreeToolbox[G <: Global](val global: G) {
 
   class TreeCollector[T <: Tree] private (traverserBody: TreeCollector[T] => PartialFunction[Tree, Unit]) extends Traverser {
     private val collected_ = mutable.ListBuffer.empty[(T, Symbol)]
-    def collect(tree: T, owner: Symbol = currentOwner): Unit = collected_ += (tree -> owner)
+    def collect(tree: T, owner: Symbol = currentOwner): Unit = {
+      collected_ += (tree -> owner)
+    }
     def collected = collected_.toList
     override def traverse(tree: Tree): Unit = traverserBody(this).orElse[Tree, Unit] {
       case t => super.traverse(t)

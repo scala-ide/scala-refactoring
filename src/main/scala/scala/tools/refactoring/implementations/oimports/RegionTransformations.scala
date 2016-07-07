@@ -141,7 +141,7 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
         }.last
 
       private def isTopLeastPackageRegion(topLeastPackage: PackageDef)(region: Region): Boolean =
-        region.owner.ownerChain.contains(topLeastPackage.symbol)
+        region.owner.ownerChain.contains(topLeastPackage.symbol.asTerm.referenced)
 
       private def mkRegion(topLeastPackage: PackageDef, formatting: Formatting): Region = {
         val pos = if (topLeastPackage.stats.isEmpty)
@@ -178,7 +178,10 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
             case region => region
           }
         } else {
-          mkRegion(topLeastPackage, formatting) :: regions
+          (if (newImports.nonEmpty)
+            List(mkRegion(topLeastPackage, formatting))
+          else
+              Nil) ::: regions
         }
       }
     }
@@ -245,7 +248,8 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
           }
           val ancestorsImports = ancestors.flatMap { _.imports }
           kid.copy(imports = kid.imports.collect {
-            case imp if ancestorsImports.find { ancestor => treeComparables.isSame(imp, ancestor) }.isEmpty => imp
+            case imp if ancestorsImports.find { ancestor =>
+              treeComparables.isSame(imp, ancestor) }.isEmpty => imp
           })
         }
       }

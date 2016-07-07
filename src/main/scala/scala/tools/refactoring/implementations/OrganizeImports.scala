@@ -494,12 +494,13 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
       params.config.map { _ =>
         organizeAllImports(selection, params)
       }.getOrElse(Right(Nil))
-    } else
-      if (params.organizeLocalImports) {
-        val localImportsChanges = organizeLocalImportsOnly(selection)
-        Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: localImportsChanges)
+    } else {
+      val localImportsChanges = if (params.organizeLocalImports) {
+        organizeLocalImportsOnly(selection)
       } else
-        Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
+        Nil
+      Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: localImportsChanges)
+    }
   }
 
   import scala.tools.refactoring.implementations.oimports.TreeToolbox
