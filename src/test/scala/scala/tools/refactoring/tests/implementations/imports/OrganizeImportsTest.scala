@@ -3534,7 +3534,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
    *  }}}
    */
   @Test
-  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage() = new FileSet {
+  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage_v1() = new FileSet {
     """
     package com.github.mlangc.experiments
 
@@ -3542,6 +3542,27 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.language.implicitConversions
       implicit def intToString(i: Int) = i.toString
     }""" isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Test
+  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage_v2() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+
+    class Bug8 {
+      import scala.language.implicitConversions
+      implicit def intToString(i: Int) = i.toString
+    }""" becomes
+    """
+    package com.github.mlangc.experiments
+
+    import scala.language.implicitConversions
+
+    class Bug8 {
+      implicit def intToString(i: Int) = i.toString
+    }"""
   } applyRefactoring organizeWithTypicalParams
 
   @Test
