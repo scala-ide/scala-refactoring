@@ -3928,4 +3928,120 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     """
   } applyRefactoring organize
+
+  @Test
+  def shouldNotRemoveUsedImports_v1() = new FileSet {
+    """
+    import scala.concurrent.duration
+    import scala.concurrent.duration.FiniteDuration
+
+    object Main extends App {
+      val d1: FiniteDuration = ???
+      val d2: duration.FiniteDuration = ???
+    }
+    """ isNotModified
+  } applyRefactoring organize
+
+  @Test
+  def shouldNotRemoveUsedImports_v2() = new FileSet {
+    """
+    object Test1 {
+      import scala.language.implicitConversions
+      trait Foo
+      implicit def toFoo(s: String): Foo = ???
+      val f: Foo = "hi"
+    }
+
+    object Test2 {
+      import scala.language.dynamics
+      trait Foo extends scala.Dynamic
+    }
+    """ isNotModified
+  } applyRefactoring organize
+
+  @Test
+  def shouldRemoveDupilcatedImports() = new FileSet {
+    """
+    package test
+
+    import java.util.List
+
+    trait A {
+      import java.util.List
+      val a: List[String] = ???
+
+      def foo = {
+        import java.util.List
+        val a: List[Int] = ???
+        a
+      }
+
+      import java.util.Map
+      trait AA {
+        import java.util.Map
+        val m: Map[String, Int] = ???
+
+        def bar = {
+          import java.util.Map
+          val m: Map[Int, Int] = ???
+          m
+        }
+
+        import scala.util.Try
+        def baz = {
+          import scala.util.Try
+          val b: Try[Int] = ???
+          b
+        }
+
+        def far = {
+          import scala.util.Random
+          def faz = {
+            import scala.util.Random
+            val r: Random = ???
+            r
+          }
+        }
+      }
+    }
+    """ becomes
+    """
+    package test
+
+    import java.util.List
+
+    trait A {
+      val a: List[String] = ???
+
+      def foo = {
+        val a: List[Int] = ???
+        a
+      }
+
+      import java.util.Map
+      trait AA {
+        val m: Map[String, Int] = ???
+
+        def bar = {
+          val m: Map[Int, Int] = ???
+          m
+        }
+
+        import scala.util.Try
+        def baz = {
+          val b: Try[Int] = ???
+          b
+        }
+
+        def far = {
+          import scala.util.Random
+          def faz = {
+            val r: Random = ???
+            r
+          }
+        }
+      }
+    }
+    """
+  } applyRefactoring organize
 }
