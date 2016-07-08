@@ -88,7 +88,7 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
       private def importAsString(t: Tree): String = {
         ancestorSymbols(t) match {
           case syms @ _ :+ last if !last.isMethod =>
-            syms.map(_.nameString).mkString(".")
+            syms.map(_.nameString).filterNot(_ == "package").mkString(".")
           case _ =>
             t match {
               case Select(q, n) => importAsString(q) + "." + n
