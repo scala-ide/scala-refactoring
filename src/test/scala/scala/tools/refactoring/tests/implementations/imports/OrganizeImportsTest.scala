@@ -4044,4 +4044,37 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organize
+
+  @Test
+  def shouldNotRemoveImportWithImplicit() = new FileSet {
+    """
+    package test
+    import scala.collection.JavaConverters.asScalaBufferConverter
+
+    trait A {
+      import java.util.ArrayList
+      val a = (new ArrayList[Int]).asScala.toList
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldRemoveUnusedImportWithImplicit() = new FileSet {
+    """
+    package test
+    import scala.collection.JavaConverters.asScalaBufferConverter
+
+    trait A {
+      import java.util.ArrayList
+      val a = new ArrayList[Int]
+    }
+    """ becomes
+    """
+    package test
+    trait A {
+      import java.util.ArrayList
+      val a = new ArrayList[Int]
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }

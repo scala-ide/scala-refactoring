@@ -87,11 +87,9 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
 
       private def importAsString(t: Tree): String = {
         ancestorSymbols(t) match {
-          case syms if syms.nonEmpty =>
-            syms.map(_.nameString).filterNot(_ == "package").mkString(".")
-          case Nil =>
-            // Imports without symbols, like Scala feature flags, aka "import scala.language.featureX",
-            // have no symbol and are handled by the code blow:
+          case syms @ _ :+ last if !last.isMethod =>
+            syms.map(_.nameString).mkString(".")
+          case _ =>
             t match {
               case Select(q, n) => importAsString(q) + "." + n
               case _ =>
