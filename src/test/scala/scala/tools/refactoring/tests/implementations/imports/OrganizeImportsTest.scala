@@ -4077,4 +4077,89 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  /**
+   * In this test we should rather expect that `import b.B` in package scope will be removed.
+   * It is not because of this piece of CompilationUnitDepenedencies:
+   * {{{
+   *         case imp @ Import(qualifier, selector)  => {
+   *           if (inScopeForLocalImports) {
+   *             if (!qualifier.symbol.isLocal && !qualifier.symbol.isVal) {
+   *               if (isRelativeToTopLevelImports(qualifier) || isRelativeToEnclosingPackage(qualifier)) {
+   *                 fakeSelectTree(qualifier.tpe, qualifier.symbol, qualifier) match {
+   *                   case select: Select => addToResult(select)
+   *                   case _ => ()
+   *                 }
+   *               }
+   *             }
+   *             localImports ::= imp
+   *           } else {
+   *             topLevelImports ::= imp
+   *           }
+   *         }
+   * }}}
+   *
+   * In future the `isRelativeToTopLevelImports(qualifier)` will be removed from this condition.
+   */
+  @Test
+  def shouldNotRemoveUnusedImportExtendedByWildcard_part1() = new FileSet {
+    """
+    package b
+
+    object B {
+      def foo = "B"
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+    import b.B // should be removed in result of imports organizing
+
+    trait A {
+      import B._
+      val a = foo
+    }
+    """ becomes
+    """
+    /*<-*/
+    package test
+    import b.B // should be removed in result of imports organizing
+
+    trait A {
+      import b.B._
+      val a = foo
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveUnusedImportExtendedByWildcard_part2() = new FileSet {
+    """
+    package b
+
+    object B {
+      def foo = "B"
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+    import b.B
+
+    trait A {
+      import b.B._
+      val a = foo
+    }
+    """ becomes
+    """
+    /*<-*/
+    package test
+    trait A {
+      import b.B._
+      val a = foo
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }
