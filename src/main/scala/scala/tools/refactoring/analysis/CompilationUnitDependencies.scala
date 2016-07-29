@@ -122,7 +122,11 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
     def qualifierIsEnclosingPackage(t: Select) = {
       enclosingPackage(wholeTree, t.pos) match {
         case pkgDef: PackageDef =>
-          t.qualifier.nameString == pkgDef.nameString
+          try t.qualifier.nameString == pkgDef.nameString
+          catch {
+            // nameString throws an exception if no name is available
+            case _: UnsupportedOperationException => false
+          }
         case _ => false
       }
     }
@@ -486,4 +490,3 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
     deps.filterNot(_.symbol.hasPackageFlag).toList
   }
 }
-

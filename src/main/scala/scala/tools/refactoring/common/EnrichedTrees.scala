@@ -364,7 +364,7 @@ trait EnrichedTrees extends TracingImpl {
         case t: NameTree => t.nameString
         case t: TypeTree => t.symbol.nameString // FIXME: use something better
         case ImportSelectorTree(NameTree(name), _) => name.toString
-        case _ => sys.error("Tree " + getSimpleClassName(t) + " does not have a name.")
+        case _ => throw new UnsupportedOperationException("Tree " + getSimpleClassName(t) + " does not have a name.")
       }
     }
   }
