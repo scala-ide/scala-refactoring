@@ -64,7 +64,7 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
             ancestorSymbols(rootPackage).map(_.nameString).mkString(".")
           case _ => ""
         }
-        val importsToAddWithNoPosition = mkImportTrees(neededImports(selection.root), enclosingPackage)
+        val importsToAddWithNoPosition = mkImportTrees(neededImports(selection.root, newWay = true), enclosingPackage)
         regions.map { region =>
           region.rightIntersectImports(importsToAddWithNoPosition)
         }
@@ -72,7 +72,7 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
     }
 
     class recomputeAndModifyUnused(selection: Selection) {
-      private val importsNames = neededImports(selection.root).map { importAsString }
+      private val importsNames = neededImports(selection.root, newWay = true).map { importAsString }
 
       // If parts of the expr aren't ranges, then we have an import that depends on an
       // other import (see OrganizeImportsRecomputeAndModifyTest#importDependingOnImport)

@@ -891,8 +891,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package test
 
-    import java.util.Collections
-
     class Bug {
       import java.util.Collections.emptyList
 
@@ -966,8 +964,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes {
     """
     package test
-
-    import java.util.Collections
 
     class Bug {
       def test = {
@@ -3453,6 +3449,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package com.github.mlangc.experiments
 
+    import scala.concurrent.Future
+
     object Bug3 {
       class Other {
         type Tpe1 = Int
@@ -3463,7 +3461,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     trait Bug3 {
       import Bug3._
-      import scala.concurrent.Future
       import scala.util./*evil.evil*/Try
 
       val other: Other
@@ -4114,7 +4111,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     /*<-*/
     package test
-    import b.B // should be removed in result of imports organizing
+    import b.B
 
     trait A {
       import B._
@@ -4124,8 +4121,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     /*<-*/
     package test
-    import b.B // should be removed in result of imports organizing
-
     trait A {
       import b.B._
       val a = foo
@@ -4161,5 +4156,58 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val a = foo
     }
     """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportExtendedByWildcard_v1() = new FileSet {
+    """
+    package b
+
+    object B {
+      def foo = "B"
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+    import b.B
+
+    trait A {
+      import b.B._
+      val a = foo
+    }
+
+    object C {
+      def bar = {
+        B.foo
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportExtendedByWildcard_v2() = new FileSet {
+    """
+    package b
+
+    object B {
+      def foo = "B"
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+    import b.B
+
+    object A {
+      import b.B._
+      val a = foo
+      def bar = {
+        B.foo
+      }
+    }
+    """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }

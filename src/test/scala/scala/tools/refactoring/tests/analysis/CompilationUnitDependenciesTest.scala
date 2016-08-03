@@ -30,10 +30,10 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   }
 
   def assertNeededImports(expected: String, src: String, javaSrc: String = "", addScalaSrc: String = ""): Unit =
-    assertTrees(expected, src, javaSrc, addScalaSrc, neededImports)
+    assertTrees(expected, src, javaSrc, addScalaSrc, tree => this.neededImports(tree))
 
   def assertDependencies(expected: String, src: String, javaSrc: String = "", addScalaSrc: String = ""): Unit =
-    assertTrees(expected, src, javaSrc, addScalaSrc, dependencies)
+    assertTrees(expected, src, javaSrc, addScalaSrc, tree => this.dependencies(tree))
 
   @Test
   def evidenceNoImport() = assertNeededImports(

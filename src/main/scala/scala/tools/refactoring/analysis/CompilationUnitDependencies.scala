@@ -94,10 +94,14 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
   /**
    * Calculates a list of all needed imports for the given Tree.
+   * @param t tree for which needed imports are computed
+   * @param newWay is auxiliary flag which says that method runs for new or old implementation of
+   * Organize Imports feature. Will be removed when old implementation is dropped together with
+   * all code guarded by it.
    */
-  def neededImports(t: Tree): List[Select] = {
+  def neededImports(t: Tree, newWay: Boolean = false): List[Select] = {
 
-    val deps = dependencies(t)
+    val deps = dependencies(t, newWay)
 
     val neededDependencies = deps.flatMap {
       case t: Select if !t.pos.isRange => Some(t)
@@ -113,8 +117,12 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
    * Compared to `neededImports`, this function might also return
    * trees that don't need to be explicitly imported, for example
    * because they are defined in the same compilation unit.
+   * @param t tree for which dependencies are computed
+   * @param newWay is auxiliary flag which says that method runs for new or old implementation of
+   * Organize Imports feature. Will be removed when old implementation is dropped together with
+   * all code guarded by it.
    */
-  def dependencies(t: Tree): List[Select] = {
+  def dependencies(t: Tree, newWay: Boolean = false): List[Select] = {
     val wholeTree = t
     val isSelectNotInRelativeImports =
       new ImportsToolbox[CompilationUnitDependencies.this.type](CompilationUnitDependencies.this)(wholeTree)
@@ -313,7 +321,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
             case imp @ Import(qualifier, selector)  => {
               if (inScopeForLocalImports) {
                 if (!qualifier.symbol.isLocal && !qualifier.symbol.isVal) {
-                  if (isRelativeToTopLevelImports(qualifier) || isRelativeToEnclosingPackage(qualifier)) {
+                  if (if (newWay) false else isRelativeToTopLevelImports(qualifier) || isRelativeToEnclosingPackage(qualifier)) {
                     fakeSelectTree(qualifier.tpe, qualifier.symbol, qualifier) match {
                       case select: Select => addToResult(select)
                       case _ => ()
@@ -389,7 +397,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                   && !t.symbol.isLocal
                   && !isRelativeToLocalImports(t)
                   && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)
-                  && isSelectNotInRelativeImports(t)) {
+                  && (if (newWay) true else isSelectNotInRelativeImports(t))) {
                 addToResult(t)
               }
 
