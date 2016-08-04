@@ -4251,4 +4251,25 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenExistentialType() = new FileSet {
+    """
+    package bb
+
+    trait E[T]
+    trait F
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+    import bb.E
+    import bb.F
+
+    class Tested {
+      val eExistential: E[_ <: F] = ???
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }
