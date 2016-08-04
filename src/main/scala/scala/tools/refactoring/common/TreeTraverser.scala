@@ -187,7 +187,7 @@ trait TreeTraverser extends TracingImpl {
         }
     }
 
-    protected def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = parents zip parentTypes foreach {
+    protected def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
       case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
         fakeSelectTree(tpe, sym, i) foreach traverse
 

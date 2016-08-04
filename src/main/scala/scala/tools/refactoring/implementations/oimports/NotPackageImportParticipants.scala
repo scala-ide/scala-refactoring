@@ -3,82 +3,88 @@ package implementations.oimports
 
 import implementations.OrganizeImports
 
+class AllSelects[O <: OrganizeImports](val oi: O) {
+  import oi._
+  import oi.global._
+  import scala.collection.mutable
+
+  private def treeWithoutImports(tree: Tree) = new Transformer {
+    override def transform(tree: Tree): Tree = tree match {
+      case Import(_, _) => EmptyTree
+      case t => super.transform(t)
+    }
+  }.transform(tree)
+
+  def apply(block: Tree): List[(Symbol, Select)] = {
+    val selects = mutable.ListBuffer[(Symbol, Select)]()
+    val selectsTraverser = new TraverserWithFakedTrees { self =>
+      private val default: PartialFunction[Tree, Unit] = {
+        case t => super.traverse(t)
+      }
+
+      private val special: PartialFunction[Tree, Unit] = {
+        case s @ Select(qual, _) =>
+          selects += (currentOwner -> s)
+          traverse(qual)
+        case TypeDef(_, _, compoundTypeDefs, rhs) =>
+          rhs :: compoundTypeDefs foreach traverse
+        case t: TypeTree if t.original == null && t.tpe.isInstanceOf[TypeRef] =>
+          def mkSelects(ttpe: TypeRef): List[Tree] = {
+            val currentSelect = self.fakeSelectTreeFromType(ttpe, ttpe.sym, NoPosition)
+            val typeRefArgs = ttpe.args.collect {
+              case arg: TypeRef => arg
+            }
+            if (typeRefArgs.isEmpty)
+              currentSelect :: Nil
+            else {
+              currentSelect :: typeRefArgs.flatMap { mkSelects }
+            }
+          }
+          val selects = mkSelects(t.tpe.asInstanceOf[TypeRef])
+          selects.foreach { traverse }
+        case treeWithAnnotation if annotations(treeWithAnnotation).nonEmpty =>
+          annotations(treeWithAnnotation).foreach { ann =>
+            ann.args.foreach { traverse }
+          }
+          super.traverse(treeWithAnnotation)
+        case Literal(Constant(value: TypeRef)) =>
+          traverse(self.fakeSelectTreeFromType(value, value.sym, NoPosition))
+      }
+
+      private def annotations(fromTree: Tree) =
+        if (fromTree.hasSymbol)
+          fromTree.symbol.annotations
+        else
+          Nil
+
+      override def traverse(tree: Tree): Unit = special.orElse {
+        new ImplicitValDefTraverserPF[oi.type](oi)(self)
+      }.orElse {
+        default
+      }(tree)
+
+      override def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
+        case (AppliedTypeTree(tpt, _), tpe @ TypeRef(_, sym, _)) => tpt match {
+          case i: Ident if i.tpe == null =>
+            fakeSelectTree(tpe, sym, i) foreach traverse
+          case tree =>
+            super.handleCompoundTypeTree(parents, parentTypes)
+        }
+        case tree =>
+          super.handleCompoundTypeTree(parents, parentTypes)
+      }
+    }
+    selectsTraverser.traverse(treeWithoutImports(block))
+    selects.toList
+  }
+}
+
 class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInstance: O) {
   import organizeImportsInstance._
   import organizeImportsInstance.global._
 
   class RemoveUnused(block: Tree, addNewImports: List[(String, String)] = Nil) extends Participant {
-    private def treeWithoutImports(tree: Tree) = new Transformer {
-      override def transform(tree: Tree): Tree = tree match {
-        case Import(_, _) => EmptyTree
-        case t => super.transform(t)
-      }
-    }.transform(tree)
-
-    private lazy val allSelects = {
-      import scala.collection.mutable
-      val selects = mutable.ListBuffer[(Symbol, Select)]()
-      val selectsTraverser = new TraverserWithFakedTrees { self =>
-        private val default: PartialFunction[Tree, Unit] = {
-          case t => super.traverse(t)
-        }
-
-        private val special: PartialFunction[Tree, Unit] = {
-          case s @ Select(qual, _) =>
-            selects += (currentOwner -> s)
-            traverse(qual)
-          case TypeDef(_, _, compoundTypeDefs, rhs) =>
-            rhs :: compoundTypeDefs foreach traverse
-          case t: TypeTree if t.original == null && t.tpe.isInstanceOf[TypeRef] =>
-            def mkSelects(ttpe: TypeRef): List[Tree] = {
-              val currentSelect = self.fakeSelectTreeFromType(ttpe, ttpe.sym, NoPosition)
-              val typeRefArgs = ttpe.args.collect {
-                case arg: TypeRef => arg
-              }
-              if (typeRefArgs.isEmpty)
-                currentSelect :: Nil
-              else {
-                currentSelect :: typeRefArgs.flatMap { mkSelects }
-              }
-            }
-            val selects = mkSelects(t.tpe.asInstanceOf[TypeRef])
-            selects.foreach { traverse }
-          case treeWithAnnotation if annotations(treeWithAnnotation).nonEmpty =>
-            annotations(treeWithAnnotation).foreach { ann =>
-              ann.args.foreach { traverse }
-            }
-            super.traverse(treeWithAnnotation)
-          case Literal(Constant(value: TypeRef)) =>
-            traverse(self.fakeSelectTreeFromType(value, value.sym, NoPosition))
-        }
-
-        private def annotations(fromTree: Tree) =
-          if (fromTree.hasSymbol)
-            fromTree.symbol.annotations
-          else
-            Nil
-
-        override def traverse(tree: Tree): Unit = special.orElse {
-          new ImplicitValDefTraverserPF[organizeImportsInstance.type](organizeImportsInstance)(self)
-        }.orElse {
-          default
-        }(tree)
-
-        override def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
-          case (AppliedTypeTree(tpt, _), tpe @ TypeRef(_, sym, _)) => tpt match {
-            case i: Ident if i.tpe == null =>
-              fakeSelectTree(tpe, sym, i) foreach traverse
-            case tree =>
-              super.handleCompoundTypeTree(parents, parentTypes)
-          }
-          case tree =>
-            super.handleCompoundTypeTree(parents, parentTypes)
-        }
-      }
-      selectsTraverser.traverse(treeWithoutImports(block))
-      selects.toList
-    }
-
+    private lazy val allSelects = (new AllSelects[organizeImportsInstance.type](organizeImportsInstance))(block)
     private def fullNameButSkipPackageObject(sym: Symbol): String = {
       var b: java.lang.StringBuffer = null
       def loop(size: Int, sym: Symbol): Unit = {

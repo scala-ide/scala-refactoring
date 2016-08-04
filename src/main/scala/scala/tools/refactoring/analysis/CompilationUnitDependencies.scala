@@ -167,6 +167,17 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
     }
 
     val traverser = new TraverserWithFakedTrees {
+      override def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
+        case (AppliedTypeTree(tpt, _), tpe @ TypeRef(_, sym, _)) => tpt match {
+          case i: Ident if i.tpe == null =>
+            fakeSelectTree(tpe, sym, i) foreach traverse
+          case tree =>
+            super.handleCompoundTypeTree(parents, parentTypes)
+        }
+        case tree =>
+          super.handleCompoundTypeTree(parents, parentTypes)
+      }
+
       var annotationTree: Option[Tree] = None
 
       def traversingAnnotation() = annotationTree.isDefined
