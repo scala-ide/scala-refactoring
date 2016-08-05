@@ -216,7 +216,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     }
     """ becomes
     """
-    import java.lang.System.currentTimeMillis
+    import System.currentTimeMillis
 
     object Dummy {
       val x = currentTimeMillis

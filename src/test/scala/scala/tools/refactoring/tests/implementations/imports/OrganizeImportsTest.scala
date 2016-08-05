@@ -4272,4 +4272,28 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotUnfoldValIdentifier() = new FileSet {
+  """
+  package bc
+  trait AA {
+    object InAA {
+      def foo = 5
+    }
+  }
+  """ isNotModified
+
+  """
+  /*<-*/
+  package test
+  import bc.AA
+  class Tested(context: AA) {
+    import context._
+    import context.InAA.foo
+
+    def bar = foo
+  }
+  """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }

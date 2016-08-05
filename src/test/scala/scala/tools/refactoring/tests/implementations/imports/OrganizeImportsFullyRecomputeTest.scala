@@ -539,14 +539,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Dummy {
       val x = currentTimeMillis
     }
-    """ becomes
-    """
-    import java.lang.System.currentTimeMillis
-
-    object Dummy {
-      val x = currentTimeMillis
-    }
-    """
+    """ isNotModified
   } applyRefactoring organize
 
   @Test

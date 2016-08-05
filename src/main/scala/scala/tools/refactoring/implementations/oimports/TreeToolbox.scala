@@ -88,14 +88,23 @@ class TreeToolbox[G <: Global](val global: G) {
 
     private def isImportedInDefiningPkg: Boolean = {
       def toName(sym: Symbol) = sym.name.decoded
-      expr.symbol.ownerChain.filter { _.isPackage }.map { toName } == owner.ownerChain.filter { _.isPackage }.map { toName }
+      val out = expr.symbol.ownerChain.filter { _.isPackage }.map { toName } == owner.ownerChain.filter { _.isPackage }.map { toName }
+      out
+    }
+
+    private def isLocallyDefinedIdentifier: Boolean = expr.exists {
+      case This(_) => true
+      case _ => false
     }
 
     def printWithComment(formatting: Formatting): String = {
       val source = pos.source
       def printImport: String = {
         val (prefices, sufficesSeq) = positions.map { extractPrefixSuffixFromPositionIfPossible }.unzip
-        val prefix = if (!isImportedInDefiningPkg) useAbsolutePkgPathIfPossible(prefices.head) else prefices.head
+        val prefix = if (!isImportedInDefiningPkg && !isLocallyDefinedIdentifier)
+          useAbsolutePkgPathIfPossible(prefices.head)
+        else
+          prefices.head
         val selectorToSuffix = findSelectorInSufficesOrMakeIt(sufficesSeq.flatten.toList)(_)
         val suffix = selectors.collect {
           case sel => selectorToSuffix(sel)
