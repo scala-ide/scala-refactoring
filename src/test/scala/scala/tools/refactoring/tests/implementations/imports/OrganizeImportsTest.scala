@@ -4296,4 +4296,98 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   }
   """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportImplicit() = new FileSet {
+  """
+  /*<-*/
+  package test
+
+  import scala.concurrent.ExecutionContext
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent.Future
+
+  object Tested {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    def foo() = {
+      Future.successful(5)
+    }
+  }
+
+  class Tested {
+    private def bar(f: =>Future[Int])(implicit ec: ExecutionContext): Unit = {
+      f.onComplete { f => println("done"); }
+    }
+
+    def baz() = bar {
+      Future.successful(5)
+    }
+  }
+  """ becomes
+  """
+  /*<-*/
+  package test
+
+  import scala.concurrent.ExecutionContext
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.concurrent.Future
+
+  object Tested {
+    def foo() = {
+      Future.successful(5)
+    }
+  }
+
+  class Tested {
+    private def bar(f: =>Future[Int])(implicit ec: ExecutionContext): Unit = {
+      f.onComplete { f => println("done"); }
+    }
+
+    def baz() = bar {
+      Future.successful(5)
+    }
+  }
+  """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveDeeplyAppliedImplicit() = new FileSet {
+    """
+    package testing
+
+    object Messages {
+      object Implicits {
+        implicit def applicationMessages(implicit lang: String, application: Long): Messages =
+          new Messages(lang, application)
+      }
+
+      def apply(text: String)(implicit messages: Messages) = messages
+    }
+
+    class Messages(val lang: String, val application: Long)
+    """ isNotModified
+
+    """
+    package testing.acme
+
+    object Implicits {
+      implicit val application: Long = 0L
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import testing.Messages
+    import testing.Messages.Implicits._
+    import testing.acme.Implicits.application
+
+    class Tested {
+      implicit val defaultLang: String = "IT"
+      def foo = Messages(
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+  //play.api.i18n.Messages.apply("dskdlskd")(play.api.i18n.Messages.Implicits.applicationMessages(i18n.this.Lang.defaultLang, play.api.Play.current))
 }

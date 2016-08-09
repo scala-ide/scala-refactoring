@@ -49,6 +49,9 @@ class AllSelects[O <: OrganizeImports](val oi: O) {
           super.traverse(treeWithAnnotation)
         case Literal(Constant(value: TypeRef)) =>
           traverse(self.fakeSelectTreeFromType(value, value.sym, NoPosition))
+        case t: ApplyToImplicitArgs =>
+          traverse(t.fun)
+          t.args foreach traverse
       }
 
       private def annotations(fromTree: Tree) =
