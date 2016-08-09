@@ -28,9 +28,9 @@ class AllSelects[O <: OrganizeImports](val oi: O) {
           traverse(qual)
         case TypeDef(_, _, compoundTypeDefs, rhs) =>
           rhs :: compoundTypeDefs foreach traverse
-        case t: TypeTree if t.original == null && t.tpe.isInstanceOf[TypeRef] =>
+        case t: TypeTree if t.original == null && t.tpe.isInstanceOf[TypeRef] && t.attachments.all.nonEmpty =>
           def mkSelects(ttpe: TypeRef): List[Tree] = {
-            val currentSelect = self.fakeSelectTreeFromType(ttpe, ttpe.sym, NoPosition)
+            val currentSelect = self.fakeSelectTreeFromType(ttpe, ttpe.sym, t.attachments.pos)
             val typeRefArgs = ttpe.args.collect {
               case arg: TypeRef => arg
             }

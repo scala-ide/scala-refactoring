@@ -472,6 +472,25 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
               popPkgDefStack = true
               stats.foreach(traverse)
 
+            case t: TypeTree if t.original == null && t.tpe.isInstanceOf[TypeRef] && t.attachments.all.nonEmpty => if (newWay) {
+              def mkSelects(ttpe: TypeRef): List[Tree] = {
+                val currentSelect = fakeSelectTreeFromType(ttpe, ttpe.sym, t.attachments.pos)
+                val typeRefArgs = ttpe.args.collect {
+                  case arg: TypeRef => arg
+                }
+                if (typeRefArgs.isEmpty)
+                  currentSelect :: Nil
+                else {
+                  currentSelect :: typeRefArgs.flatMap { mkSelects }
+                }
+              }
+              val selects = mkSelects(t.tpe.asInstanceOf[TypeRef])
+              selects.collect {
+                case s: Select => s
+              }.foreach { addToResult }
+            } else
+              super.traverse(tree)
+
             case _ =>
               super.traverse(tree)
           }

@@ -4351,6 +4351,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
   @Test
+  /** Problem found in Play for
+   *  play.api.i18n.Messages.apply("text")(play.api.i18n.Messages.Implicits.applicationMessages(i18n.this.Lang.defaultLang, play.api.Play.current))
+   */
   def shouldNotRemoveDeeplyAppliedImplicit() = new FileSet {
     """
     package testing
@@ -4385,9 +4388,26 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Tested {
       implicit val defaultLang: String = "IT"
-      def foo = Messages(
+      def foo = Messages("text")
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-  //play.api.i18n.Messages.apply("dskdlskd")(play.api.i18n.Messages.Implicits.applicationMessages(i18n.this.Lang.defaultLang, play.api.Play.current))
+
+  @Test
+  def shouldNotRemoveImportWhenExtendedClassHasExplicitTypeParam() = new FileSet {
+    """
+    package acme
+
+    class Extended[T](val a: T, t: String)
+    """ isNotModified
+
+    """
+    /*<-*/
+    package acme.test
+
+    import acme.Extended
+
+    class Tested(val id: Int) extends Extended[Int](id, "text")
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }
