@@ -20,7 +20,7 @@ trait TreeTraverser extends TracingImpl {
         traverse(t.original)
       case t =>
         super.traverse(t)
-     }
+    }
   }
 
   /**
@@ -105,7 +105,7 @@ trait TreeTraverser extends TracingImpl {
       def trimTypeArgs(str: String) = {
         val firstBracket = str.indexOf("[")
         if (firstBracket < 0) str
-        else str.substring(0, firstBracket + 1)
+        else str.substring(0, firstBracket)
       }
 
       val stringRep = trimTypeArgs(tpe.trimPrefix(tpe.toString))
@@ -123,7 +123,7 @@ trait TreeTraverser extends TracingImpl {
     def fakeSelectTree(tpe: Type, sym: Symbol, tree: Tree): Tree = {
 
       val flattenedExistingTrees = tree.filter(_ => true) map {
-        case t: Ident =>  (t.name.toString, t.pos)
+        case t: Ident => (t.name.toString, t.pos)
         case t: Select => (t.name.toString, t.pos)
         case _ => return tree
       }
@@ -146,7 +146,7 @@ trait TreeTraverser extends TracingImpl {
 
       val fullPathOfAllTrees = (flattenedExistingTrees ++ treesFromType.drop(flattenedExistingTrees.size)).reverse
 
-      def symbolAncestors(s: Symbol): Stream[Symbol] = if(s == NoSymbol) Stream.continually(NoSymbol) else Stream.cons(s, symbolAncestors(s.owner))
+      def symbolAncestors(s: Symbol): Stream[Symbol] = if (s == NoSymbol) Stream.continually(NoSymbol) else Stream.cons(s, symbolAncestors(s.owner))
 
       val select = fullPathOfAllTrees zip symbolAncestors(sym).take(fullPathOfAllTrees.length).reverse.toList match {
         case ((x: String, pos: Position), sym: Symbol) :: xs =>
@@ -183,11 +183,11 @@ trait TreeTraverser extends TracingImpl {
           case (TypeRef(_, sym, _), tree) =>
             fakeSelectTree(sym.tpe, sym, tree) foreach traverse
           case (tpe, tree) =>
-            // TODO ?
+          // TODO ?
         }
     }
 
-    protected def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]) = parents zip parentTypes foreach {
+    protected def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
       case (i @ Ident(name), tpe @ TypeRef(_, sym, _)) if i.tpe == null =>
         fakeSelectTree(tpe, sym, i) foreach traverse
 
@@ -241,9 +241,16 @@ trait TreeTraverser extends TracingImpl {
                 traverse
               }
 
-            case (tpe: TypeRef, ident: Ident)
-                if tpe.sym.pos == NoPosition || (tpe.sym.pos != NoPosition && tpe.sym.pos.source != t.pos.source) =>
+            case (tpe: TypeRef, ident: Ident) if tpe.sym.pos == NoPosition || (tpe.sym.pos != NoPosition && tpe.sym.pos.source != t.pos.source) =>
               fakeSelectTreeFromType(tpe, tpe.sym, ident.pos) foreach traverse
+
+            case (tpe: TypeRef, ident: Ident) if ident.symbol != null && ident.symbol.isAbstractType =>
+              ident.symbol.info.bounds.collect {
+                case typeRef: ClassTypeRef =>
+                  fakeSelectTreeFromType(typeRef, typeRef.sym, ident.symbol.pos)
+              }.foreach {
+                traverse
+              }
 
             case _ =>
               traverse(t.original)

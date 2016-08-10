@@ -3,27 +3,25 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
-
-import scala.tools.refactoring.implementations.OrganizeImports
+package tests.implementations.import_old
 
 
 
 class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(Some(OrganizeImports.ImportsStrategy.CollapseImports))
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute,
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
-    val params = new RefactoringParameters(options = List(), deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
+    val params = new RefactoringParameters(options = List(), deps = refactoring.Dependencies.FullyRecompute,
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(Some(OrganizeImports.ImportsStrategy.ExpandImports))
-    val params = new RefactoringParameters(options = List(refactoring.ExpandImports), deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
+    val params = new RefactoringParameters(options = List(refactoring.ExpandImports), deps = refactoring.Dependencies.FullyRecompute,
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   @Test
@@ -61,6 +59,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
       import scala.io.Source
+      import scala.io.Source
       import scala.math.BigDecimal
       import scala.math.BigInt
       """ + restOfFile
@@ -73,6 +72,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
+      import scala.io.Source
       import scala.io.Source
       import scala.math.BigDecimal
       import scala.math.BigInt
@@ -236,6 +236,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Main
     """ becomes
     """
+    ▒
 
     object Main
     """
@@ -389,6 +390,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Main {
     }    """ becomes
     """
+    ▒
 
     object Main {
     }    """
@@ -539,7 +541,14 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Dummy {
       val x = currentTimeMillis
     }
-    """ isNotModified
+    """ becomes
+    """
+    import java.lang.System.currentTimeMillis
+
+    object Dummy {
+      val x = currentTimeMillis
+    }
+    """
   } applyRefactoring organize
 
   @Test
@@ -575,6 +584,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package a.b.c
+
     import TestImplicits.stringToBytes
 
     object Tester {
@@ -603,6 +613,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package a.b.c
+
     import other.`type`.`implicit`
 
     object Tester {
@@ -617,6 +628,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import java.util.Date
     class MyClass[T]""" becomes
     """
+    ▒
     class MyClass[T]"""
   } applyRefactoring organize
 
@@ -626,6 +638,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import java.util.Date
     class MyClass(i: Int)""" becomes
     """
+    ▒
     class MyClass(i: Int)"""
   } applyRefactoring organize
 
@@ -781,6 +794,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package whatever
+
     import pkg.annotations.Doc
 
     @Doc
@@ -934,7 +948,17 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
     @RunWith(classOf[BitSet])
     class MainActivityTest {}
-    """ isNotModified
+    """ becomes
+    """
+    package runWith
+
+    import java.util.BitSet
+
+    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
+
+    @RunWith(classOf[BitSet])
+    class MainActivityTest {}
+    """
   } applyRefactoring organize
 
   @Test

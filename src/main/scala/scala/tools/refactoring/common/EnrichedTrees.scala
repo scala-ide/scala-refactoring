@@ -1330,7 +1330,13 @@ trait EnrichedTrees extends TracingImpl {
    * in descending order. Also filters the symbols for package objects!
    */
   def ancestorSymbols(t: Tree): List[Symbol] = {
-    t.symbol.ownerChain.takeWhile(_.nameString != nme.ROOT.toString).filterNot(_.isPackageObjectClass).reverse
+    Option(t.symbol).map { symbol =>
+      symbol.ownerChain.takeWhile {
+        _.nameString != nme.ROOT.toString
+      }.filterNot {
+        _.isPackageObjectClass
+      }.reverse
+    }.getOrElse(List.empty[Symbol])
   }
 
   /**

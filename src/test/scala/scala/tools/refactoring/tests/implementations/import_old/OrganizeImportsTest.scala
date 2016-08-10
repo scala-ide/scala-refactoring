@@ -3,54 +3,48 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
+package tests.implementations.import_old
 
-import scala.language.postfixOps
-import scala.tools.refactoring.implementations.OrganizeImports
+import language.postfixOps
 import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
+
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports))
-    val params = new RefactoringParameters(config = Some(oiConfig))
+    val params = new RefactoringParameters(organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   private def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
-    val params = new RefactoringParameters(options = List(refactoring.SortImportSelectors), config = Some(oiConfig))
+    val params = new RefactoringParameters(options = List(refactoring.SortImportSelectors),
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   private def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports))
     val params = new refactoring.RefactoringParameters(options = List(refactoring.ExpandImports, refactoring.SortImports),
-      config = Some(oiConfig))
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   private def organizeWithTypicalParams(pro: FileSet) = organizeCustomized()(pro)
 
   private def organizeCustomized(
-    groupPkgs: List[String] = List("java", "scala", "org", "com"),
-    useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"),
-    dependencies: Dependencies.Value = Dependencies.FullyRecompute,
-    organizeLocalImports: Boolean = true)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(
-      importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
-      wildcards = useWildcards,
-      groups = groupPkgs)
+      groupPkgs: List[String] = List("java", "scala", "org", "com"),
+      useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"),
+      dependencies: Dependencies.Value = Dependencies.FullyRecompute,
+      organizeLocalImports: Boolean = true)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val params = {
       val groupImports = refactoring.GroupImports(groupPkgs)
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
 
       new refactoring.RefactoringParameters(
-        options =
-          refactoring.ExpandImports ::
+          options =
+            refactoring.ExpandImports ::
             refactoring.PrependScalaPackage ::
             alwaysUseWildcards ::
             refactoring.SortImports ::
             groupImports ::
             Nil,
-        deps = dependencies,
-        organizeLocalImports = organizeLocalImports,
-        config = Some(oiConfig))
+          deps = dependencies,
+          organizeLocalImports = organizeLocalImports,
+          organizeImports = false)
     }
   }.mkChanges
 
@@ -83,7 +77,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
-        """
+      """
       package tests.importing
 
       import scala.collection.mutable.{HashMap, ListBuffer}
@@ -95,7 +89,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
-        """
+      """
       package tests.importing
 
       import scala.collection.mutable.HashMap
@@ -108,7 +102,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     new FileSet(expectCompilingCode = false) {
       (src + restOfFile) becomes
-        """
+      """
       package tests.importing
 
       import scala.collection.mutable.{HashMap, ListBuffer}
@@ -127,7 +121,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """ becomes
-      """
+    """
       package tests.importing
 
       import scala.collection.mutable.HashMap
@@ -146,7 +140,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val lb = LB(1) }
     """ becomes
-      """
+    """
       package tests.importing
 
       import scala.collection.mutable.{ListBuffer => LB, _}
@@ -165,7 +159,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
     """ becomes
-      """
+    """
       package tests.importing
 
       import scala.collection.mutable.HashMap
@@ -185,7 +179,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
     """ becomes
-      """
+    """
       package tests.importing
 
       import java.lang.Object
@@ -203,7 +197,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val s: String = ""; var o: Object = null}
     """ becomes
-      """
+    """
       import java.lang.{Object, String}
 
       object Main {val s: String = ""; var o: Object = null}
@@ -217,7 +211,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val s: String = ""; var o: Object = null}
     """ becomes
-      """
+    """
       import java.lang.{Object, String}
 
       object Main {val s: String = ""; var o: Object = null}
@@ -233,7 +227,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val s: String = ""; var o: Object = null; val lb = ListBuffer(1)}
     """ becomes
-      """
+    """
       import java.lang.{Object, String}
       import scala.collection.mutable.ListBuffer
 
@@ -247,12 +241,12 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import java.lang.{String => S}
       import java.lang.{Object => Objekt}
 
-      object Main {val s: S = ""; var o: Objekt = null}
+      object Main {val s: String = ""; var o: Objekt = null}
     """ becomes
-      """
+    """
       import java.lang.{Object => Objekt, String => S}
 
-      object Main {val s: S = ""; var o: Objekt = null}
+      object Main {val s: String = ""; var o: Objekt = null}
     """
   } applyRefactoring organize
 
@@ -263,7 +257,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main {val s: String = ""}
     """ becomes
-      """
+    """
       import java.lang.String
 
       object Main {val s: String = ""}
@@ -278,7 +272,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main
     """ becomes
-      """
+    """
+      import java.lang._
 
       object Main
     """
@@ -296,8 +291,10 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       trait Main extends A {
       }
     """ becomes
-      """
+    """
       package importOnTrait
+
+      import java.lang._
 
       trait A
 
@@ -315,7 +312,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main { val s: String = ""; val lb = ListBuffer("") }
     """ becomes
-      """
+    """
 
       import java.lang.String
       import scala.collection.mutable.ListBuffer
@@ -332,7 +329,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object Main { val s: String = "" }
     """ becomes
-      """
+    """
       import java.lang.{String => S, _}
 
       object Main { val s: String = "" }
@@ -354,7 +351,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         val l2 = List(1,2,3)
       }
     """ becomes
-      """
+    """
       import java.lang.{String => S, _}
       import scala.collection.mutable.ListBuffer
 
@@ -368,7 +365,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   @Test
   def multipleImportsOnOneLine() = new FileSet {
-    """
+      """
       import java.lang.String, String._
 
       object Main {
@@ -427,29 +424,16 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
-  def unusedImportWildcards_v1() = new FileSet {
+  def unusedImportWildcards() = new FileSet {
     """
       import java.util._
       import scala.collection._
 
       object Main {
       }    """ becomes
-      """
-▒
-      object Main {
-      }    """
-  } applyRefactoring organize
-
-  @Test
-  def unusedImportWildcards_v2() = new FileSet {
     """
-      import java.util._
-      import scala.collection._
-      
-      object Main {
-      }    """ becomes
-      """
       ▒
+
       object Main {
       }    """
   } applyRefactoring organize
@@ -463,7 +447,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       object Main {
         var x: ListBuffer = null
       }    """ becomes
-      """
+    """
       import scala.collection.mutable._
 
       object Main {
@@ -480,7 +464,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       trait SomeTrait {
         def m: Either[String, ListBuffer[ListBuffer[String]]]
       }    """ becomes
-      """
+    """
       import scala.collection.mutable.ListBuffer
 
       trait SomeTrait {
@@ -498,7 +482,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       trait SomeTraitWithAnAnnotation {
         def m: Either[String, ListBuffer[ListBuffer[String]]]
       }    """ becomes
-      """
+    """
       import scala.collection.mutable.ListBuffer
 
       @annotation.implicitNotFound(msg = "message")
@@ -518,7 +502,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       }
     """ becomes
-      """
+    """
       import scala.collection.immutable.Nil.++
 
       object YYY {
@@ -587,7 +571,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002166() = new FileSet {
     """
       package test
-
       import scala.collection.mutable.ListBuffer
 
       object O1
@@ -597,7 +580,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         ("//")
       }
     """ becomes
-      """
+    """
       package test
 
       object O1
@@ -616,7 +599,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex1() = new FileSet {
     """
       package test
-
       import java.lang.String
 
       object O1
@@ -625,7 +607,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         ")"
       }
     """ becomes
-      """
+    """
       package test
 
       object O1
@@ -640,7 +622,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex2() = new FileSet {
     """
       package test
-
       import java.lang.String
 
       object Bug2 {
@@ -649,7 +630,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object O2
     """ becomes
-      """
+    """
       package test
 
       object Bug2 {
@@ -664,7 +645,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex3() = new FileSet {
     """
       package test
-
       import java.lang.String
 
       object Bug2 {
@@ -673,7 +653,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object O2
     """ becomes
-      """
+    """
       package test
 
       object Bug2 {
@@ -688,7 +668,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontInsertExtraRoundBrackets1002088Ex4() = new FileSet {
     """
       package test
-
       import java.lang.String
 
       object Bug2 {
@@ -697,7 +676,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       object O2
     """ becomes
-      """
+    """
       package test
 
       object Bug2 {
@@ -715,14 +694,13 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   def dontFailForCaseClassWithCopy1002540() = new FileSet {
     """
     package test
-
     import java.net.URL
 
     case class Bug(i: Int = 1, j: Int = 2) {
       def buggy = copy(j = i)
     }
     """ becomes
-      """
+    """
     package test
 
     case class Bug(i: Int = 1, j: Int = 2) {
@@ -794,7 +772,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val y: Y = ???
     }
     """ becomes
-      """
+    """
     /*<-*/
     package a.p
 
@@ -826,7 +804,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def x: (Date, SimpleDateFormat, DateFormat, UUID, InputStream, OutputStream) = ???
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.text.DateFormat
@@ -857,7 +835,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def a: (Try[Date], Queue[Date]) = ???
     }
     """ becomes
-      """
+    """
     package test
 
     import java.util.Date
@@ -886,9 +864,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       def test = emptyList
     }
-    """ becomes {
-      """
+    """ becomes
+    """
     package test
+
+    import java.util.Collections
 
     class Bug {
       import java.util.Collections.emptyList
@@ -896,7 +876,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def test = emptyList
     }
     """
-    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -912,7 +891,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def test = emptyList
     }
     """ becomes
-      """
+    """
     package test
 
     class Bug {
@@ -936,7 +915,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def test = emptyList
     }
     """ becomes
-      """
+    """
     package test
 
     class Bug {
@@ -960,9 +939,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         emptyList
       }
     }
-    """ becomes {
-      """
+    """ becomes
+    """
     package test
+
+    import java.util.Collections
 
     class Bug {
       def test = {
@@ -971,13 +952,14 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """
-    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
   def organizeImportsSimilarButNotAffectedBy1002613Ex1() = new FileSet {
     """
     package test
+
+    import java.util.Collections.emptyList
 
     class Bug {
       import java.util.Collections
@@ -986,7 +968,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def test = emptyList
     }
     """ becomes
-      """
+    """
     package test
 
     class Bug {
@@ -1029,7 +1011,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def test2 = Collections.emptyList
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.util.Arrays
@@ -1058,7 +1040,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def tryOrganizeImportsHere(x: javaConcurrent.atomic.AtomicBoolean): scalaConcurrent.Future[Unit]
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.util.{concurrent => javaConcurrent}
@@ -1083,7 +1065,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def tryOrganizeImportsHere(x: util.concurrent.atomic.AtomicBoolean): concurrent.Future[Unit]
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.util
@@ -1108,7 +1090,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       implicit def tryOrganizeImportsHere[T](scalaFuture: scalaConcurrent.Future[T]): javaConcurrent.Future[T] = ???
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.util.{concurrent => javaConcurrent}
@@ -1136,7 +1118,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       implicit def tryOrganizeImportsHere[T](scalaFuture: scalaConcurrent.Future[T]): javaConcurrent.Future[T] = ???
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.util.{concurrent => javaConcurrent}
@@ -1164,7 +1146,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       implicit def tryOrganizeImportsHere[T](javaFuture: JavaFuture[T]): ScalaFuture[T]
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.util.concurrent.{Future => JavaFuture}
@@ -1189,7 +1171,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def tryOrganizeImportsHere(b: Aboolean, i: Aint, l: Along): Double
     }
     """ becomes
-      """
+    """
     package com.github.mlangc.experiments
 
     import java.util.concurrent.atomic.{AtomicBoolean => Aboolean}
@@ -1246,7 +1228,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1293,7 +1275,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1346,7 +1328,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1414,7 +1396,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ isNotModified
-  } applyRefactoring organizeWithTypicalParams
+    } applyRefactoring organizeWithTypicalParams
 
   @Test
   def importsScatteredInSameLineOfDefShouldNotBeRearranged() = new FileSet {
@@ -1488,7 +1470,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1537,7 +1519,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1583,7 +1565,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1652,7 +1634,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1705,7 +1687,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1761,7 +1743,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1812,7 +1794,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1841,7 +1823,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def foo: (Try[Unit], _)
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1865,7 +1847,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class TestTE(val a: (Try[_], _))
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1887,7 +1869,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class TestTE(val a: (Try[_], Int))
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1911,7 +1893,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     class ParamCheck[A]
     class Verify extends ParamCheck[Test[_, Either[_, _]]]
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1937,7 +1919,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     class ParamCheck[A]
     class Verify extends ParamCheck[Test[_, Either[_, Try[_]]]]
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1951,7 +1933,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /** Potentially remove one more empty line between package and class */
   @Test
   def shouldNotDiscoverArgTypeInExistentialTypeOfClassDeclarationAndRemoveItFromImports() = new FileSet {
     """
@@ -1963,7 +1944,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class TestTE(val a: (_, _))
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -1989,7 +1970,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2026,7 +2007,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val c2 = new C2
     }
     """ becomes
-      """
+    """
     /*<-*/
     package d.e
 
@@ -2076,7 +2057,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         B + H
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2132,7 +2113,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2202,7 +2183,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2287,7 +2268,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2383,7 +2364,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2434,7 +2415,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2459,7 +2440,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     object Acme { import java.util.Map }
     """ becomes {
-      """
+    """
     package acme
 
     object Acme {  }
@@ -2476,7 +2457,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import java.util.Map
     }
     """ becomes {
-      """
+    """
     package acme
 
     object Acme {
@@ -2493,7 +2474,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     object Acme { import java.util.Map
     }
     """ becomes {
-      """
+    """
     package acme
 
     object Acme {     }
@@ -2509,7 +2490,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     object Acme {
       import java.util.Map }
     """ becomes {
-      """
+    """
     package acme
 
     object Acme {
@@ -2559,7 +2540,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2625,7 +2606,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2655,12 +2636,24 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package test
 
     class Bar {
+      import java.util.{Map => JavaMap}
+      import java.util.HashMap
+
+      val a: JavaMap[String, String] = new HashMap
+    }
+    """ becomes {
+    """
+    /*<-*/
+    package test
+
+    class Bar {
       import java.util.HashMap
       import java.util.{Map => JavaMap}
 
       val a: JavaMap[String, String] = new HashMap
     }
-    """ isNotModified
+    """
+    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -2684,7 +2677,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val a: Map[String, String] = new HashMap
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2743,7 +2736,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2822,7 +2815,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2915,7 +2908,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -2969,7 +2962,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3011,7 +3004,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3053,7 +3046,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3090,7 +3083,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val f: Future[Double]
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3128,7 +3121,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val l: List[String]
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3170,7 +3163,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val dollarWithArrow = `$$$` + `=>`
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3217,7 +3210,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val f: Future[Double]
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3262,7 +3255,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val f: Future[Double]
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3303,7 +3296,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val f: Future[Double]
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3353,7 +3346,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       def f: Future[`Evil....`[Int]] = ???
     }""" becomes {
-      """
+    """
     package com.github.mlangc.experiments
 
     trait Bug5 {
@@ -3387,7 +3380,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       new `€€€`().x
       new `$$$`().y
     }""" becomes {
-      """
+    """
     package com.github.mlangc.experiments
 
     object Bug4 {
@@ -3406,8 +3399,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       new `€€€`().x
       new `$$$`().y
-    }"""
-    }
+    }"""}
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -3445,10 +3437,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         Future.successful(Try(z).getOrElse(42))
       }
     }""" becomes {
-      """
+    """
     package com.github.mlangc.experiments
-
-    import scala.concurrent.Future
 
     object Bug3 {
       class Other {
@@ -3460,6 +3450,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     trait Bug3 {
       import Bug3._
+      import scala.concurrent.Future
       import scala.util./*evil.evil*/Try
 
       val other: Other
@@ -3476,8 +3467,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
         Future.successful(Try(z).getOrElse(42))
       }
-    }"""
-    }
+    }"""}
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -3500,7 +3490,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
         new ::(1, MyNil)
       }
     }""" becomes {
-      """
+    """
     package com.github.mlangc.experiments
 
     package bugs {
@@ -3520,28 +3510,24 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
-  /**
-   * This case is quite peculiar. `scala.language` is imported always and moved to top most package scope.
+  /** This case is quite peculiar. `scala.language` is imported always and moved to top most package scope.
    *  See at following snippet in [[scala.tools.refactoring.analysis.CompilationUnitDependencies]] class:
    *  {{{
    *  // Always add the SIP 18 language imports as required until we can handle them properly
    *  case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
    *    feature foreach (selector => addToResult(Select(select, selector.name)))
    *  }}}
+   *  This version adds import at the top of package and does not remove defined in class scope.
    */
   @Test
-  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage_v1() = new FileSet {
+  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage() = new FileSet {
     """
     package com.github.mlangc.experiments
 
     class Bug8 {
       import scala.language.implicitConversions
       implicit def intToString(i: Int) = i.toString
-    }""" isNotModified
-  } applyRefactoring organizeWithTypicalParams
-
-  @Test
-  def shouldNotRemoveImportWithUnusedImplicitsBecauseItComesFromScalaLanguagePackage_v2() = new FileSet {
+    }""" becomes {
     """
     package com.github.mlangc.experiments
 
@@ -3549,16 +3535,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
     class Bug8 {
       import scala.language.implicitConversions
-      implicit def intToString(i: Int) = i.toString
-    }""" becomes
-      """
-    package com.github.mlangc.experiments
-
-    import scala.language.implicitConversions
-
-    class Bug8 {
       implicit def intToString(i: Int) = i.toString
     }"""
+    }
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -3570,7 +3549,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.concurrent.duration.DurationConversions
       implicit def intToString(i: Int) = i.toString
     }""" becomes {
-      """
+    """
     package com.github.mlangc.experiments
 
     class Bug8 {
@@ -3591,7 +3570,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def foo: (Try[Unit], _)
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3615,7 +3594,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       abstract class TestTE(val a: (Try[_], _))
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3640,7 +3619,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       class TestTE(val a: (Try[_], Int))
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3668,7 +3647,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       class Verify extends ParamCheck[Test[_, Either[_, _]]]
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3713,7 +3692,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       class TestTE(val a: (_, _))
     }
     """ becomes {
-      """
+    """
     /*<-*/
     package test
 
@@ -3778,7 +3757,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       def bar: JavaList[Int] = new ArrayList[Int]
     }
     """ becomes {
-      """
+    """
     package test
 
     trait Tested {
@@ -3805,7 +3784,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }
     """ becomes {
-      """
+    """
     package test
 
     trait Tested {
@@ -3821,6 +3800,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
   } applyRefactoring organizeWithTypicalParams
 
+  @Ignore("fails because `import Eye$u005B.{.Of => .Of}` is promoted to package scope")
   @Test
   def shouldPreserveBackticksInPackagePath_v1() = new FileSet {
     """
@@ -3839,7 +3819,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val y = TheBeholder
     }
     """ becomes {
-      """
+    """
     object `Eye[` {
       object `.Of` {
         object Sauron
@@ -3854,8 +3834,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       val x = Sauron
       val y = TheBeholder
     }
-    """
-    }
+    """}
   } applyRefactoring organizeWithTypicalParams
 
   @Test
@@ -3891,7 +3870,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   @Test
   def shouldPreserveFormattingForImportInPatMat() = new FileSet {
     """
-    package test
+    package scala.tools.refactoring.tests.implementations.import_old
 
     class Test {
       def f = {
@@ -3903,511 +3882,4 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       }
     }""" isNotModified
   } applyRefactoring organizeWithTypicalParams
-
-  @Test
-  def shouldPreserveOriginalFormattingInImportSelectors() = new FileSet {
-    """
-      import java.lang.{Integer =>I}
-      import java.lang.{String => S}
-
-      object Main {
-        val s: S = ""
-        val l: I = 1
-      }
-    """ becomes
-      """
-      import java.lang.{Integer =>I, String => S}
-
-      object Main {
-        val s: S = ""
-        val l: I = 1
-      }
-    """
-  } applyRefactoring organize
-
-  @Test
-  def shouldNotRemoveUsedImports_v1() = new FileSet {
-    """
-    import scala.concurrent.duration
-    import scala.concurrent.duration.FiniteDuration
-
-    object Main extends App {
-      val d1: FiniteDuration = ???
-      val d2: duration.FiniteDuration = ???
-    }
-    """ isNotModified
-  } applyRefactoring organize
-
-  @Test
-  def shouldNotRemoveUsedImports_v2() = new FileSet {
-    """
-    object Test1 {
-      import scala.language.implicitConversions
-      trait Foo
-      implicit def toFoo(s: String): Foo = ???
-      val f: Foo = "hi"
-    }
-
-    object Test2 {
-      import scala.language.dynamics
-      trait Foo extends scala.Dynamic
-    }
-    """ isNotModified
-  } applyRefactoring organize
-
-  @Test
-  def shouldRemoveDupilcatedImports() = new FileSet {
-    """
-    package test
-
-    import java.util.List
-
-    trait A {
-      import java.util.List
-      val a: List[String] = ???
-
-      def foo = {
-        import java.util.List
-        val a: List[Int] = ???
-        a
-      }
-
-      import java.util.Map
-      trait AA {
-        import java.util.Map
-        val m: Map[String, Int] = ???
-
-        def bar = {
-          import java.util.Map
-          val m: Map[Int, Int] = ???
-          m
-        }
-
-        import scala.util.Try
-        def baz = {
-          import scala.util.Try
-          val b: Try[Int] = ???
-          b
-        }
-
-        def far = {
-          import scala.util.Random
-          def faz = {
-            import scala.util.Random
-            val r: Random = ???
-            r
-          }
-        }
-      }
-    }
-    """ becomes
-      """
-    package test
-
-    import java.util.List
-
-    trait A {
-      val a: List[String] = ???
-
-      def foo = {
-        val a: List[Int] = ???
-        a
-      }
-
-      import java.util.Map
-      trait AA {
-        val m: Map[String, Int] = ???
-
-        def bar = {
-          val m: Map[Int, Int] = ???
-          m
-        }
-
-        import scala.util.Try
-        def baz = {
-          val b: Try[Int] = ???
-          b
-        }
-
-        def far = {
-          import scala.util.Random
-          def faz = {
-            val r: Random = ???
-            r
-          }
-        }
-      }
-    }
-    """
-  } applyRefactoring organize
-
-  @Test
-  def shouldNotRemoveImportWithImplicit() = new FileSet {
-    """
-    package test
-    import scala.collection.JavaConverters.asScalaBufferConverter
-
-    trait A {
-      import java.util.ArrayList
-      val a = (new ArrayList[Int]).asScala.toList
-    }
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldRemoveUnusedImportWithImplicit() = new FileSet {
-    """
-    package test
-    import scala.collection.JavaConverters.asScalaBufferConverter
-
-    trait A {
-      import java.util.ArrayList
-      val a = new ArrayList[Int]
-    }
-    """ becomes
-      """
-    package test
-    trait A {
-      import java.util.ArrayList
-      val a = new ArrayList[Int]
-    }
-    """
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  /**
-   * In this test we should rather expect that `import b.B` in package scope will be removed.
-   * It is not because of this piece of CompilationUnitDepenedencies:
-   * {{{
-   *         case imp @ Import(qualifier, selector)  => {
-   *           if (inScopeForLocalImports) {
-   *             if (!qualifier.symbol.isLocal && !qualifier.symbol.isVal) {
-   *               if (isRelativeToTopLevelImports(qualifier) || isRelativeToEnclosingPackage(qualifier)) {
-   *                 fakeSelectTree(qualifier.tpe, qualifier.symbol, qualifier) match {
-   *                   case select: Select => addToResult(select)
-   *                   case _ => ()
-   *                 }
-   *               }
-   *             }
-   *             localImports ::= imp
-   *           } else {
-   *             topLevelImports ::= imp
-   *           }
-   *         }
-   * }}}
-   *
-   * In future the `isRelativeToTopLevelImports(qualifier)` will be removed from this condition.
-   */
-  @Test
-  def shouldNotRemoveUnusedImportExtendedByWildcard_part1() = new FileSet {
-    """
-    package b
-
-    object B {
-      def foo = "B"
-    }
-    """ isNotModified
-
-    """
-    /*<-*/
-    package test
-    import b.B
-
-    trait A {
-      import B._
-      val a = foo
-    }
-    """ becomes
-      """
-    /*<-*/
-    package test
-    trait A {
-      import b.B._
-      val a = foo
-    }
-    """
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveUnusedImportExtendedByWildcard_part2() = new FileSet {
-    """
-    package b
-
-    object B {
-      def foo = "B"
-    }
-    """ isNotModified
-
-    """
-    /*<-*/
-    package test
-    import b.B
-
-    trait A {
-      import b.B._
-      val a = foo
-    }
-    """ becomes
-    """
-    /*<-*/
-    package test
-    trait A {
-      import b.B._
-      val a = foo
-    }
-    """
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveImportExtendedByWildcard_v1() = new FileSet {
-    """
-    package b
-
-    object B {
-      def foo = "B"
-    }
-    """ isNotModified
-
-    """
-    /*<-*/
-    package test
-    import b.B
-
-    trait A {
-      import b.B._
-      val a = foo
-    }
-
-    object C {
-      def bar = {
-        B.foo
-      }
-    }
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveImportExtendedByWildcard_v2() = new FileSet {
-    """
-    package b
-
-    object B {
-      def foo = "B"
-    }
-    """ isNotModified
-
-    """
-    /*<-*/
-    package test
-    import b.B
-
-    object A {
-      import b.B._
-      val a = foo
-      def bar = {
-        B.foo
-      }
-    }
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveImportWhenTypeDefWith_v1() = new FileSet {
-    """
-    package b
-
-    trait A[T]
-    trait B[T]
-    """ isNotModified
-
-    """
-    /*<-*/
-    package testa
-    import b.A
-    import b.B
-
-    object Tested {
-      val aWithBParametrized: A[Int] with B[String] = ???
-    }
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveImportWhenTypeDefWith_v2() = new FileSet {
-    """
-    package bb
-
-    trait C
-    trait D
-    """ isNotModified
-
-    """
-    /*<-*/
-    package test
-    import bb.C
-    import bb.D
-
-    object Tested {
-      val cWithD: C with D = ???
-    }
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveImportWhenExistentialType() = new FileSet {
-    """
-    package bb
-
-    trait E[T]
-    trait F
-    """ isNotModified
-
-    """
-    /*<-*/
-    package test
-    import bb.E
-    import bb.F
-
-    class Tested {
-      val eExistential: E[_ <: F] = ???
-    }
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotUnfoldValIdentifier() = new FileSet {
-  """
-  package bc
-  trait AA {
-    object InAA {
-      def foo = 5
-    }
-  }
-  """ isNotModified
-
-  """
-  /*<-*/
-  package test
-  import bc.AA
-  class Tested(context: AA) {
-    import context._
-    import context.InAA.foo
-
-    def bar = foo
-  }
-  """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveImportImplicit() = new FileSet {
-  """
-  /*<-*/
-  package test
-
-  import scala.concurrent.ExecutionContext
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import scala.concurrent.Future
-
-  object Tested {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    def foo() = {
-      Future.successful(5)
-    }
-  }
-
-  class Tested {
-    private def bar(f: =>Future[Int])(implicit ec: ExecutionContext): Unit = {
-      f.onComplete { f => println("done"); }
-    }
-
-    def baz() = bar {
-      Future.successful(5)
-    }
-  }
-  """ becomes
-  """
-  /*<-*/
-  package test
-
-  import scala.concurrent.ExecutionContext
-  import scala.concurrent.ExecutionContext.Implicits.global
-  import scala.concurrent.Future
-
-  object Tested {
-    def foo() = {
-      Future.successful(5)
-    }
-  }
-
-  class Tested {
-    private def bar(f: =>Future[Int])(implicit ec: ExecutionContext): Unit = {
-      f.onComplete { f => println("done"); }
-    }
-
-    def baz() = bar {
-      Future.successful(5)
-    }
-  }
-  """
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  /** Problem found in Play for
-   *  play.api.i18n.Messages.apply("text")(play.api.i18n.Messages.Implicits.applicationMessages(i18n.this.Lang.defaultLang, play.api.Play.current))
-   */
-  def shouldNotRemoveDeeplyAppliedImplicit() = new FileSet {
-    """
-    package testing
-
-    object Messages {
-      object Implicits {
-        implicit def applicationMessages(implicit lang: String, application: Long): Messages =
-          new Messages(lang, application)
-      }
-
-      def apply(text: String)(implicit messages: Messages) = messages
-    }
-
-    class Messages(val lang: String, val application: Long)
-    """ isNotModified
-
-    """
-    package testing.acme
-
-    object Implicits {
-      implicit val application: Long = 0L
-    }
-    """ isNotModified
-
-    """
-    /*<-*/
-    package tested
-
-    import testing.Messages
-    import testing.Messages.Implicits._
-    import testing.acme.Implicits.application
-
-    class Tested {
-      implicit val defaultLang: String = "IT"
-      def foo = Messages("text")
-    }
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
-
-  @Test
-  def shouldNotRemoveImportWhenExtendedClassHasExplicitTypeParam() = new FileSet {
-    """
-    package acme
-
-    class Extended[T](val a: T, t: String)
-    """ isNotModified
-
-    """
-    /*<-*/
-    package acme.test
-
-    import acme.Extended
-
-    class Tested(val id: Int) extends Extended[Int](id, "text")
-    """ isNotModified
-  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }

@@ -55,9 +55,18 @@ import scala.tools.refactoring.common.TracingHelpersTest
     classOf[OrganizeImportsTest],
     classOf[OrganizeImportsWildcardsTest],
     classOf[OrganizeMissingImportsTest],
+    classOf[import_old.OrganizeImportsCollapseSelectorsToWildcardTest],
+    classOf[import_old.OrganizeImportsFullyRecomputeTest],
+    classOf[import_old.OrganizeImportsGroupsTest],
+    classOf[import_old.OrganizeImportsRecomputeAndModifyTest],
+    classOf[import_old.OrganizeImportsTest],
+    classOf[import_old.OrganizeImportsWildcardsTest],
+    classOf[import_old.OrganizeMissingImportsTest],
     classOf[EnrichedTreesTest],
     classOf[PrependOrDropScalaPackageFromRecomputedTest],
     classOf[PrependOrDropScalaPackageKeepTest],
+    classOf[import_old.PrependOrDropScalaPackageFromRecomputedTest],
+    classOf[import_old.PrependOrDropScalaPackageKeepTest],
     classOf[PrettyPrinterTest],
     classOf[RenameTest],
     classOf[ReusingPrinterTest],
@@ -79,5 +88,6 @@ import scala.tools.refactoring.common.TracingHelpersTest
     classOf[SourceWithMarkerTest],
     classOf[OrganizeImportsAlgosTest],
     classOf[TracingHelpersTest],
-    classOf[OrganizeImportsWithMacrosTest]))
+    classOf[OrganizeImportsWithMacrosTest],
+    classOf[OrganizeImportsScalaSpecificTests]))
 class RefactoringTestSuite {}

@@ -3,21 +3,20 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
+package tests.implementations.import_old
 
-import sourcegen.Formatting
-import scala.tools.refactoring.implementations.OrganizeImports
 
-class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTest {
 
-  def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro, new Formatting { override val dropScalaPackage = true }) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(None, scalaPackageStrategy = true)
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.DropScalaPackage), config = Some(oiConfig))
+class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
+
+  def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List(refactoring.DropScalaPackage),
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   def organizePrependScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(None, scalaPackageStrategy = false)
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.PrependScalaPackage), config = Some(oiConfig))
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List(refactoring.PrependScalaPackage),
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   @Test
@@ -33,7 +32,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     }
     """ becomes
     """
-    import math.BigDecimal.apply
+    import math.BigDecimal._
 
     class C {
       def m(): Unit = {
@@ -57,7 +56,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     }
     """ becomes
     """
-    import scala.math.BigDecimal.apply
+    import scala.math.BigDecimal._
 
     class C {
       def m(): Unit = {
@@ -80,7 +79,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """
     package tests.importing
 
-    import collection.mutable.{ListBuffer => LB}
+    import collection.mutable.{ListBuffer => LB, _}
 
     object Main {val lb = LB(1) }
     """
@@ -118,6 +117,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
+
     import collection.immutable
     import collection.mutable
 
@@ -142,6 +142,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
+
     import scala.collection.immutable
     import scala.collection.mutable
 

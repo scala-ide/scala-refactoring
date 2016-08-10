@@ -3,20 +3,16 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
+package tests.implementations.import_old
 
 import implementations.OrganizeImports
-import sourcegen.Formatting
 import tests.util.TestHelper
 import tests.util.TestRefactoring
 
 abstract class OrganizeImportsBaseTest extends TestHelper with TestRefactoring {
 
-  abstract class OrganizeImportsRefatoring(pro: FileSet, formatting: Formatting = new Formatting{}) extends TestRefactoringImpl(pro) {
-    val refactoring = new OrganizeImports {
-      val global = OrganizeImportsBaseTest.this.global
-      override val dropScalaPackage = formatting.dropScalaPackage
-    }
+  abstract class OrganizeImportsRefatoring(pro: FileSet) extends TestRefactoringImpl(pro) {
+    val refactoring = new OrganizeImports { val global = OrganizeImportsBaseTest.this.global }
     type RefactoringParameters = refactoring.RefactoringParameters
     val params: RefactoringParameters
     def mkChanges = performRefactoring(params)

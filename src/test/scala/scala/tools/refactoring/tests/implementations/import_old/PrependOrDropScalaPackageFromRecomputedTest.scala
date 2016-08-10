@@ -3,21 +3,20 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
+package tests.implementations.import_old
 
-import sourcegen.Formatting
-import scala.tools.refactoring.implementations.OrganizeImports
+
 
 class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTest {
 
-  def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro, new Formatting { override val dropScalaPackage = true }) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(None, scalaPackageStrategy = true)
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.DropScalaPackage), config = Some(oiConfig))
+  def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.DropScalaPackage),
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   def organizePrependScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(None, scalaPackageStrategy = false)
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.PrependScalaPackage), config = Some(oiConfig))
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, options = List(refactoring.PrependScalaPackage),
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   @Test
@@ -118,6 +117,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
+
     import collection.immutable
     import collection.mutable
 
@@ -142,6 +142,7 @@ class PrependOrDropScalaPackageFromRecomputedTest extends OrganizeImportsBaseTes
     """ becomes
     """
     package fromMixedToUniformDrop
+
     import scala.collection.immutable
     import scala.collection.mutable
 

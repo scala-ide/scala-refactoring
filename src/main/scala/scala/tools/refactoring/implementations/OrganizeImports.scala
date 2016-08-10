@@ -5,11 +5,14 @@
 package scala.tools.refactoring
 package implementations
 
-import common.TreeTraverser
-import common.Change
-import transformation.TreeFactory
-import sourcegen.Formatting
 import scala.util.control.NonFatal
+
+import common.Change
+
+import common.TreeTraverser
+import sourcegen.Formatting
+import transformation.TreeFactory
+import scala.tools.refactoring.implementations.oimports.OrganizeImportsWorker
 
 object OrganizeImports {
   /**
@@ -67,6 +70,22 @@ object OrganizeImports {
      */
     val RemoveUnneeded = Value
   }
+
+  object ImportsStrategy extends Enumeration {
+    val ExpandImports = Value
+    val CollapseImports = Value
+    val PreserveWildcards = Value
+
+    def apply(strategy: String) = strategy match {
+      case "expand" => Some(ExpandImports)
+      case "collapse" => Some(CollapseImports)
+      case "preserveWildcards" => Some(PreserveWildcards)
+      case _ => None
+    }
+  }
+  case class CollapseToWildcardConfig(maxIndividualImports: Int = 2, exclude: Set[String] = Set.empty[String])
+  case class OrganizeImportsConfig(importsStrategy: Option[ImportsStrategy.Value], wildcards: Set[String] = Set.empty[String],
+    groups: List[String] = Nil, scalaPackageStrategy: Boolean = false, collapseToWildcardConfig: Option[CollapseToWildcardConfig] = None)
 }
 
 /**
@@ -75,12 +94,12 @@ object OrganizeImports {
  *
  */
 abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
-                                                             with TreeTraverser
-                                                             with UnusedImportsFinder
-                                                             with analysis.CompilationUnitDependencies
-                                                             with common.InteractiveScalaCompiler
-                                                             with common.TreeExtractors
-                                                             with Formatting {
+    with TreeTraverser
+    with UnusedImportsFinder
+    with analysis.CompilationUnitDependencies
+    with common.InteractiveScalaCompiler
+    with common.TreeExtractors
+    with Formatting {
 
   import OrganizeImports.Algos
   import global._
@@ -338,7 +357,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
             }
           }
 
-          t copy (expr = transformation(expr).get /*safe becaues of pattern guard*/ )
+          t copy (expr = transformation(expr).get /*safe because of pattern guard*/ )
         case t => t
       }
     }
@@ -408,7 +427,9 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     val importsToAdd: List[(String, String)] = Nil,
     val options: List[Participant] = DefaultOptions,
     val deps: Dependencies.Value = Dependencies.RemoveUnneeded,
-    val organizeLocalImports: Boolean = true)
+    val organizeLocalImports: Boolean = true,
+    val organizeImports: Boolean = true,
+    val config: Option[OrganizeImports.OrganizeImportsConfig] = None)
 
   def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
 
@@ -470,50 +491,17 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
         p copy (stats = imports ::: others) replaces p
     }
 
-    if (params.organizeLocalImports)
-      organizeLocalImportsToo(selection, organizeImports)
-    else
-      Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))))
-  }
-
-  private def organizeLocalImportsToo(selection: Selection, packageTopImports: Transformation[Tree, Tree]) = {
-    val rootTree = abstractFileToTree(selection.file)
-    import oimports.NotPackageImportParticipants
-    val notPackageParticipants = new NotPackageImportParticipants[this.type](this)
-    import notPackageParticipants.RemoveDuplicatedByWildcard
-    import notPackageParticipants.{ RemoveUnused => NPRemovedUnused }
-
-    import oimports.TreeToolbox
-    val treeToolbox = new TreeToolbox[global.type](global)
-    import oimports.DefImportsOrganizer
-    val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val defRegions = defImportsOrganizer.transformTreeToRegions(rootTree, this).map {
-      _.transform { i =>
-        scala.Function.chain { RemoveDuplicatedByWildcard ::
-          (new NPRemovedUnused(rootTree)) ::
-          RemoveDuplicates ::
-          SortImportSelectors ::
-          SortImports ::
-          Nil }(i.asInstanceOf[List[Import]])
-      }
+    val oiWorker = new OrganizeImportsWorker[this.type](this)
+    if (params.organizeImports) {
+      params.config.map { _ =>
+        oiWorker.organizeAll(selection, params)
+      }.getOrElse(Right(Nil))
+    } else {
+      val localImportsChanges = if (params.organizeLocalImports) {
+        oiWorker.organizeLocal(selection)
+      } else
+        Nil
+      Right(transformFile(selection.file, organizeImports |> topdown(matchingChildren(organizeImports))) ::: localImportsChanges)
     }
-
-    import oimports.ClassDefImportsOrganizer
-    val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(rootTree, this).map {
-      _.transform { i =>
-        scala.Function.chain { RemoveDuplicatedByWildcard ::
-          (new NPRemovedUnused(rootTree)) ::
-          RemoveDuplicates ::
-          SortImportSelectors ::
-          SortImports ::
-          Nil }(i.asInstanceOf[List[Import]])
-      }
-    }
-
-    val removedDuplicates = treeToolbox.removeScopesDuplicates(classDefRegions ::: defRegions)
-    val changes = removedDuplicates.map { _.print }
-
-    Right(Change.discardOverlappingChanges(transformFile(selection.file, packageTopImports |> topdown(matchingChildren(packageTopImports))) ::: changes).accepted)
   }
 }

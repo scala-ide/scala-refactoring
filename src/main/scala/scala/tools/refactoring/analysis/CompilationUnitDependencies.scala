@@ -51,7 +51,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
     val lastSymbol = t.filter(_ => true).last.symbol
 
-    if(lastSymbol != NoSymbol && lastSymbol.isLocal) {
+    if (lastSymbol != NoSymbol && lastSymbol.isLocal) {
       // Our import "chain" starts from a local value,
       // so we cannot import `t` globally.
       false
@@ -94,10 +94,14 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
   /**
    * Calculates a list of all needed imports for the given Tree.
+   * @param t tree for which needed imports are computed
+   * @param newWay is auxiliary flag which says that method runs for new or old implementation of
+   * Organize Imports feature. Will be removed when old implementation is dropped together with
+   * all code guarded by it.
    */
-  def neededImports(t: Tree): List[Select] = {
+  def neededImports(t: Tree, newWay: Boolean = false): List[Select] = {
 
-    val deps = dependencies(t)
+    val deps = dependencies(t, newWay)
 
     val neededDependencies = deps.flatMap {
       case t: Select if !t.pos.isRange => Some(t)
@@ -113,8 +117,12 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
    * Compared to `neededImports`, this function might also return
    * trees that don't need to be explicitly imported, for example
    * because they are defined in the same compilation unit.
+   * @param t tree for which dependencies are computed
+   * @param newWay is auxiliary flag which says that method runs for new or old implementation of
+   * Organize Imports feature. Will be removed when old implementation is dropped together with
+   * all code guarded by it.
    */
-  def dependencies(t: Tree): List[Select] = {
+  def dependencies(t: Tree, newWay: Boolean = false): List[Select] = {
     val wholeTree = t
     val isSelectNotInRelativeImports =
       new ImportsToolbox[CompilationUnitDependencies.this.type](CompilationUnitDependencies.this)(wholeTree)
@@ -153,7 +161,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
           val lengthOfVisibleQualifiers1 = t1.filter(_.pos.isRange)
           val lengthOfVisibleQualifiers2 = t2.filter(_.pos.isRange)
 
-          if(lengthOfVisibleQualifiers1.size < lengthOfVisibleQualifiers2.size) {
+          if (lengthOfVisibleQualifiers1.size < lengthOfVisibleQualifiers2.size) {
             // If we have an imported type that is used with the full package
             // name but also with the imported name, we keep the one without the
             // package so we don't incorrectly remove the import.
@@ -163,6 +171,17 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
     }
 
     val traverser = new TraverserWithFakedTrees {
+      override def handleCompoundTypeTree(parents: List[Tree], parentTypes: List[Type]): Unit = parents zip parentTypes foreach {
+        case (AppliedTypeTree(tpt, _), tpe @ TypeRef(_, sym, _)) => tpt match {
+          case i: Ident if i.tpe == null =>
+            fakeSelectTree(tpe, sym, i) foreach traverse
+          case tree =>
+            super.handleCompoundTypeTree(parents, parentTypes)
+        }
+        case tree =>
+          super.handleCompoundTypeTree(parents, parentTypes)
+      }
+
       var annotationTree: Option[Tree] = None
 
       def traversingAnnotation() = annotationTree.isDefined
@@ -219,7 +238,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
           t.qualifier.pos.isRange
         case t =>
           t.qualifier.pos.isRange && t.symbol.isMethod &&
-          !(t.qualifier.pos.sameRange(t.pos) && t.qualifier.pos.isTransparent)
+            !(t.qualifier.pos.sameRange(t.pos) && t.qualifier.pos.isTransparent)
       }
 
       def hasStableQualifier(t: Select) = {
@@ -314,10 +333,10 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
             case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
               feature foreach (selector => addToResult(Select(select, selector.name)))
 
-            case imp @ Import(qualifier, selector)  => {
+            case imp @ Import(qualifier, selector) => {
               if (inScopeForLocalImports) {
                 if (!qualifier.symbol.isLocal && !qualifier.symbol.isVal) {
-                  if (isRelativeToTopLevelImports(qualifier) || isRelativeToEnclosingPackage(qualifier)) {
+                  if (if (newWay) false else isRelativeToTopLevelImports(qualifier) || isRelativeToEnclosingPackage(qualifier)) {
                     fakeSelectTree(qualifier.tpe, qualifier.symbol, qualifier) match {
                       case select: Select => addToResult(select)
                       case _ => ()
@@ -344,7 +363,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
               super.traverse(tree)
 
-            case t : ApplyImplicitView =>
+            case t: ApplyImplicitView =>
 
               val hasSelectFromNonPackageThis = t.fun exists {
                 case Select(ths: This, _) if !ths.symbol.isPackageClass =>
@@ -353,7 +372,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                   false
               }
 
-              if(hasSelectFromNonPackageThis) {
+              if (hasSelectFromNonPackageThis) {
                 // We can ignore this tree because it is selected from a
                 // non-package instance, so there's nothing useful to import.
               } else {
@@ -368,9 +387,20 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
               t.args foreach traverse
 
-            case t : ApplyToImplicitArgs =>
+            case t: ApplyToImplicitArgs =>
               traverse(t.fun)
-              t.args foreach handleSelectFromImplicit
+              if (newWay)
+                t.args.foreach {
+                  case t: ApplyToImplicitArgs =>
+                    traverse(t)
+                  case t =>
+                    val selects = t.collect {
+                      case t: Select if !isSelectFromInvisibleThis(t) => t
+                    }.headOption
+                    selects foreach addToResult
+                }
+              else
+                t.args foreach handleSelectFromImplicit
 
             case Select(New(qual), _) =>
               traverse(qual)
@@ -381,19 +411,19 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
 
             // workaround for SI-5064
             case t @ Select(qual: Select, nme.apply) if (qual.pos.isTransparent && t.pos.isOpaqueRange) || qual.pos.isOpaqueRange =>
-              if(hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier) && isSelectNotInRelativeImports(t)) {
+              if (hasStableQualifier(qual) && !isSelectFromInvisibleThis(qual.qualifier) && isSelectNotInRelativeImports(t)) {
                 addToResult(qual)
               }
 
             case t @ Select(qual, _) if t.pos.isOpaqueRange =>
               if (!isMethodCallFromExplicitReceiver(t)
-                  && !isSelectFromInvisibleThis(qual)
-                  && t.name != nme.WILDCARD
-                  && hasStableQualifier(t)
-                  && !t.symbol.isLocal
-                  && !isRelativeToLocalImports(t)
-                  && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)
-                  && isSelectNotInRelativeImports(t)) {
+                && !isSelectFromInvisibleThis(qual)
+                && t.name != nme.WILDCARD
+                && hasStableQualifier(t)
+                && !t.symbol.isLocal
+                && !isRelativeToLocalImports(t)
+                && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)
+                && (if (newWay) true else isSelectNotInRelativeImports(t))) {
                 addToResult(t)
               }
 
@@ -422,7 +452,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                 case _ => ()
               }
 
-            case t: Ident if t.name != nme.EMPTY_PACKAGE_NAME && t.name != tpnme.WILDCARD_STAR  =>
+            case t: Ident if t.name != nme.EMPTY_PACKAGE_NAME && t.name != tpnme.WILDCARD_STAR =>
               tryFindTpeAndSymFor(t) match {
                 case Some((tpe, sym)) =>
                   fakeSelectTree(tpe, sym, t) match {
@@ -445,6 +475,25 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
               pkgDefStack ::= pid
               popPkgDefStack = true
               stats.foreach(traverse)
+
+            case t: TypeTree if t.original == null && t.tpe.isInstanceOf[TypeRef] && t.attachments.all.nonEmpty => if (newWay) {
+              def mkSelects(ttpe: TypeRef): List[Tree] = {
+                val currentSelect = fakeSelectTreeFromType(ttpe, ttpe.sym, t.attachments.pos)
+                val typeRefArgs = ttpe.args.collect {
+                  case arg: TypeRef => arg
+                }
+                if (typeRefArgs.isEmpty)
+                  currentSelect :: Nil
+                else {
+                  currentSelect :: typeRefArgs.flatMap { mkSelects }
+                }
+              }
+              val selects = mkSelects(t.tpe.asInstanceOf[TypeRef])
+              selects.collect {
+                case s: Select => s
+              }.foreach { addToResult }
+            } else
+              super.traverse(tree)
 
             case _ =>
               super.traverse(tree)

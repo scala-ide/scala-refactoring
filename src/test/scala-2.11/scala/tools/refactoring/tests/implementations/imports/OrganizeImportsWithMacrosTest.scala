@@ -2,6 +2,7 @@ package scala.tools.refactoring
 package tests.implementations.imports
 
 import implementations.OrganizeImports.Dependencies
+import scala.tools.refactoring.implementations.OrganizeImports
 
 class OrganizeImportsWithMacrosTest extends OrganizeImportsBaseTest {
   private def organizeWithTypicalParams(pro: FileSet) = organizeCustomized()(pro)
@@ -11,6 +12,10 @@ class OrganizeImportsWithMacrosTest extends OrganizeImportsBaseTest {
       useWildcards: Set[String] = Set("scalaz", "scalaz.Scalaz"),
       dependencies: Dependencies.Value = Dependencies.RemoveUnneeded,
       organizeLocalImports: Boolean = true)(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    val oiConfig = OrganizeImports.OrganizeImportsConfig(
+      importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
+      wildcards = useWildcards,
+      groups = groupPkgs)
     val params = {
       val groupImports = refactoring.GroupImports(groupPkgs)
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
@@ -24,14 +29,15 @@ class OrganizeImportsWithMacrosTest extends OrganizeImportsBaseTest {
             groupImports ::
             Nil,
           deps = dependencies,
-          organizeLocalImports = organizeLocalImports)
+          organizeLocalImports = organizeLocalImports,
+          config = Some(oiConfig))
     }
   }.mkChanges
 
   @Ignore("""Needs CLASSPATH set to project classpath to allow interactive global to see macro defined below.
       Go to 'Environment' tab of launch configuration and add CLASSPATH variable set to {project_classpath:org.scala-refactoring.library}.""")
   @Test
-  def shouldOrganizeImports() = new FileSet {
+  def shouldOrganizeImports_complex() = new FileSet {
     """
     /*<-*/
     package acme
@@ -53,6 +59,26 @@ class OrganizeImportsWithMacrosTest extends OrganizeImportsBaseTest {
       import MacroConsumer._
 
       implicit val bug2CallMe = Macro.callMe[Bug2]
+    }
+    """ isNotModified
+  } applyRefactoring organizeWithTypicalParams
+
+  @Ignore("""Needs CLASSPATH set to project classpath to allow interactive global to see macro defined below.
+      Go to 'Environment' tab of launch configuration and add CLASSPATH variable set to {project_classpath:org.scala-refactoring.library}.""")
+  @Test
+  def shouldOrganizeImports_simple() = new FileSet {
+    """
+    /*<-*/
+    package acme
+
+    import scala.tools.refactoring.tests.implementations.imports.OrganizeImportsWithMacros.FakeType
+    import scala.tools.refactoring.tests.implementations.imports.OrganizeImportsWithMacros.Macro
+
+    case class SomeCaseClass(x: Int)
+
+    object MacroConsumer {
+      implicit val fakeTypeInt = new FakeType[Int] {}
+      implicit val someClassCallMe = Macro.callMe[SomeCaseClass]
     }
     """ isNotModified
   } applyRefactoring organizeWithTypicalParams

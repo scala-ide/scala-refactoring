@@ -3,7 +3,7 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
+package tests.implementations.import_old
 
 import implementations.OrganizeImports
 import tests.util.TestRefactoring
@@ -17,10 +17,8 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     val refactoring = new OrganizeImports  {
       val global = outer.global
     }
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(
-        importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports)
-    )
-    val changes = performRefactoring(new refactoring.RefactoringParameters(imports, config = Some(oiConfig)))
+    val changes = performRefactoring(new refactoring.RefactoringParameters(imports,
+        organizeLocalImports = true, organizeImports = false))
   }.changes
 
   @Test
@@ -191,13 +189,13 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
       import java.lang.{String => S}
       import java.lang.{Object => Objekt}
 
-      object Main {val s: S = ""; var o: Objekt = null; val ll = new LinkedList}
+      object Main {val s: String = ""; var o: Objekt = null; val ll = new LinkedList}
     """ becomes
     """
       import java.lang.{Object => Objekt, String => S}
       import scala.collection.mutable.LinkedList
 
-      object Main {val s: S = ""; var o: Objekt = null; val ll = new LinkedList}
+      object Main {val s: String = ""; var o: Objekt = null; val ll = new LinkedList}
     """
   } applyRefactoring organize("scala.collection.mutable" -> "LinkedList" :: Nil)
 
@@ -225,6 +223,7 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
       object Main {val ll = new LinkedList}
     """ becomes
     """
+      import java.lang._
       import scala.collection.mutable.LinkedList
 
       object Main {val ll = new LinkedList}
@@ -245,6 +244,8 @@ class OrganizeMissingImportsTest extends TestHelper with TestRefactoring {
     """ becomes
     """
       package importOnTrait
+
+      import java.lang._
       import scala.collection.mutable.LinkedList
 
       trait A
@@ -303,7 +304,7 @@ object testbug {
 */""" becomes """
     package trailingCommentWithClosingBrace
 
-import scala.collection.mutable.ListBuffer
+    import scala.collection.mutable.ListBuffer
 
 object testbug {
   val l = ListBuffer()
@@ -314,25 +315,4 @@ object testbug {
 }
 */"""
   } applyRefactoring organize("scala.collection.mutable" -> "ListBuffer" :: Nil)
-
-  @Test
-  def runWith() = new FileSet(expectCompilingCode = false) {
-    """
-    package runWith
-
-    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
-
-    @RunWith(classOf[BitSet])
-    class MainActivityTest {}
-    """ becomes
-    """
-    package runWith
-
-    import java.util.BitSet
-
-    class RunWith(c: Class[_]) extends scala.annotation.StaticAnnotation
-
-    @RunWith(classOf[BitSet])
-    class MainActivityTest {}
-    """  } applyRefactoring organize("java.util" -> "BitSet" :: Nil)
 }

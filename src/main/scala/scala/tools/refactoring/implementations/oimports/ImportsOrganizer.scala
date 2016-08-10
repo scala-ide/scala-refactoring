@@ -9,7 +9,7 @@ abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbo
   import treeToolbox.global._
   type T <: Tree
 
-  private def noAnyTwoImportsInSameLine(importsGroup: List[Import]): Boolean =
+  protected def noAnyTwoImportsInSameLine(importsGroup: List[Import]): Boolean =
     importsGroup.size == importsGroup.map { _.pos.line }.distinct.size
 
   private def importsGroupsFromTree(trees: List[Tree]): List[List[Import]] = {
@@ -28,12 +28,12 @@ abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbo
 
   protected def treeChildren(parent: T): List[Tree]
 
-  private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol, formatting: Formatting): List[Region] =
+  private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol, formatting: Formatting): List[treeToolbox.Region] =
     groupedImports.collect {
-      case imports @ h :: _ => Region(treeToolbox.global)(imports, importsOwner, formatting)
+      case imports @ h :: _ => RegionBuilder[G, U](treeToolbox)(imports, importsOwner, formatting, "")
     }
 
-  def transformTreeToRegions(tree: Tree, formatting: Formatting): List[Region] = forTreesOf(tree).flatMap {
+  def transformTreeToRegions(tree: Tree, formatting: Formatting): List[treeToolbox.Region] = forTreesOf(tree).flatMap {
     case (extractedTree, treeOwner) =>
       val groupedImports = importsGroupsFromTree(treeChildren(extractedTree)).filter {
         noAnyTwoImportsInSameLine
@@ -73,4 +73,21 @@ class ClassDefImportsOrganizer[G <: Global, U <: TreeToolbox[G]](override val tr
   }
 
   override protected def treeChildren(template: Template) = template.body
+}
+
+class PackageDefImportsOrganizer[G <: Global, U <: TreeToolbox[G]](override val treeToolbox: U) extends ImportsOrganizer[G, U](treeToolbox) {
+  import treeToolbox.global._
+  type T = PackageDef
+  import treeToolbox.forTreesOfKind
+
+  override protected def forTreesOf(tree: Tree) = forTreesOfKind[PackageDef](tree) { treeCollector =>
+    {
+      case p @ PackageDef(pid, stats) =>
+        treeCollector.collect(p, p.symbol.asTerm.referenced)
+        stats.foreach { treeCollector.traverse }
+    }
+  }
+
+  override protected def noAnyTwoImportsInSameLine(importsGroup: List[Import]): Boolean = true
+  override protected def treeChildren(packageDef: PackageDef) = packageDef.stats
 }

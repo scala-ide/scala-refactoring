@@ -3,9 +3,8 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
+package tests.implementations.import_old
 
-import scala.tools.refactoring.implementations.OrganizeImports
 
 
 class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
@@ -13,10 +12,8 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
   def organize(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
     val options = List(ExpandImports, SortImports, GroupImports(groups))
-    val config = OrganizeImports.OrganizeImportsConfig(
-      importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
-      groups = groups)
-    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute, config = Some(config))
+    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute,
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   val source = """

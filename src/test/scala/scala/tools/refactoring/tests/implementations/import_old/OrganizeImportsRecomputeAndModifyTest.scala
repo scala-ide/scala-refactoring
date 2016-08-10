@@ -3,34 +3,27 @@
  */
 
 package scala.tools.refactoring
-package tests.implementations.imports
+package tests.implementations.import_old
 
-import scala.tools.refactoring.implementations.OrganizeImports
+
 
 class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List(),
-        config = Some(oiConfig))
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   def organizeCleanup(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(
-        None,
-        groups = groups)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
         options = List(refactoring.SortImports, refactoring.GroupImports(groups)),
-        config = Some(oiConfig))
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   def organizeWildcards(ws: Set[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val oiConfig = OrganizeImports.OrganizeImportsConfig(
-        None,
-        wildcards = ws)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
         options = List(refactoring.SortImports, refactoring.AlwaysUseWildcards(ws)),
-        config = Some(oiConfig))
+        organizeLocalImports = true, organizeImports = false)
   }.mkChanges
 
   @Test
@@ -83,7 +76,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     object Main {val s: HashSet[_] = null}
     """ becomes
     """
-    import scala.collection.mutable.HashSet
+    import collection.mutable.HashSet
 
     object Main {val s: HashSet[_] = null}
     """
@@ -98,6 +91,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     object Main
     """ becomes
     """
+    import java.lang._
 
     object Main
     """
@@ -415,8 +409,9 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package importDependingOnImport
-    import barr.Bar.withInstance
+
     import barr.Baz
+    import barr.Bar.withInstance
 
     class Foo {
       Baz.baz
@@ -438,7 +433,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package removeDuplicate
-    import scala.collection.mutable
+    import collection.mutable
 
     class Foo {
       val m = new mutable.HashSet[String]

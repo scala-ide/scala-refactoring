@@ -29,21 +29,25 @@ class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGe
   }
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    val params = new RefactoringParameters()
+    val config = OrganizeImports.OrganizeImportsConfig(
+        importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports)
+    )
+    val params = new RefactoringParameters(config = Some(config))
   }.mkChanges
 
 
   @Test
-  @Ignore // TODO sometimes fails on Jenkins, need to investigate
   def testSingleSpace(): Unit = {
 
     val ast = treeFrom("""
+    package test
     import scala.collection.{MapLike, MapProxy}
     """)
 
     surroundingImport = " "
 
     assertEquals("""
+    package test
     import scala.collection.{ MapLike, MapProxy }
     """, createText(ast, Some(ast.pos.source)))
   }

@@ -21,4 +21,13 @@ trait Formatting {
    *   import a.{*name*}
    */
   def spacingAroundMultipleImports = ""
+
+  /**
+   * If set to `true` printer of import should drop `scala.` prefix:
+   *
+   * `import scala.util.Try` should be printed as
+   *
+   * `import util.Try`
+   */
+  def dropScalaPackage = false
 }
