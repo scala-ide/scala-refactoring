@@ -85,23 +85,32 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
         findDeepestNeededSelect(expr) exists isQualifierDefaultImported
       }
 
-      private def importAsString(t: Tree): String = {
-        ancestorSymbols(t) match {
-          case syms @ _ :+ last if !last.isMethod =>
-            syms.map(_.nameString).filterNot(_ == "package").mkString(".")
-          case _ =>
-            t match {
-              case Select(q, n) => importAsString(q) + "." + n
-              case _ =>
-                logError("Unexpected tree", new AssertionError(s"Tree without symbol that is not a select: $t"))
-                ""
-            }
-        }
+      private def importAsString(t: Tree): String = t match {
+        case Select(Ident(name), n) if n != nme.PACKAGE =>
+          name.decoded + "." + n
+        case Select(q, n) if n != nme.PACKAGE =>
+          importAsString(q) + "." + n
+        case Select(q, n) if n == nme.PACKAGE =>
+          importAsString(q)
+        case _ =>
+          ancestorSymbols(t) match {
+            case syms @ _ :+ last if !last.isMethod =>
+              syms.map(_.nameString).filterNot(_ == "package").mkString(".")
+            case _ =>
+              logError("Unexpected tree", new AssertionError(s"Tree without symbol that is not a select: $t"))
+              ""
+          }
       }
+
+      private def checkIfSelectorIsNotARenamedPkgName(pkgName: String, selector: ImportSelector, importName: String): Boolean =
+        selector.name != selector.rename && importName.startsWith(pkgName + selector.name.decoded)
 
       private def mkIsInImports(expr: Tree): ImportSelector => Boolean = {
         def isSelectorInImports(pkgName: String)(selector: ImportSelector): Boolean =
-          selector.name == nme.WILDCARD || importsNames.contains(pkgName + selector.name)
+          selector.name == nme.WILDCARD || importsNames.exists { importName =>
+            importName == pkgName + selector.name || importName == pkgName + selector.rename ||
+              checkIfSelectorIsNotARenamedPkgName(pkgName, selector, importName)
+          }
         val pkgName = importAsString(expr) + "."
         isSelectorInImports(pkgName)
       }
@@ -158,7 +167,7 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
             val imp = mkImportFromStrings(qualifier, name)
             imp.setPos(topLeastPkgPos)
         }
-        RegionBuilder[ttb.global.type, ttb.type](ttb)(imports, topLeastPackage.symbol, formatting, Properties.lineSeparator + Properties.lineSeparator + topNonPkgIndent)
+        RegionBuilder[ttb.global.type, ttb.type](ttb)(imports, topLeastPackage.symbol, formatting, Properties.lineSeparator + Properties.lineSeparator + topNonPkgIndent).head
       }
 
       def apply(regions: List[Region], selection: Selection, formatting: Formatting) = {
@@ -179,7 +188,7 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
           (if (newImports.nonEmpty)
             List(mkRegion(topLeastPackage, formatting))
           else
-              Nil) ::: regions
+            Nil) ::: regions
         }
       }
     }
@@ -247,7 +256,8 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
           val ancestorsImports = ancestors.flatMap { _.imports }
           kid.copy(imports = kid.imports.collect {
             case imp if ancestorsImports.find { ancestor =>
-              treeComparables.isSame(imp, ancestor) }.isEmpty => imp
+              treeComparables.isSame(imp, ancestor)
+            }.isEmpty => imp
           })
         }
       }

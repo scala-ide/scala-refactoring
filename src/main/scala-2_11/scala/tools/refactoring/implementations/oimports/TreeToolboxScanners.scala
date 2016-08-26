@@ -29,5 +29,10 @@ class TreeToolboxScanners[G <: Global](val global: G) {
     }
 
     def comments = comments_.toList
+
+    override def emitIdentifierDeprecationWarnings = false
+
+    override def error(off: Offset, msg: String): Unit =
+      if (name != global.nme.MACROkw) super.error(off, msg)
   }
 }

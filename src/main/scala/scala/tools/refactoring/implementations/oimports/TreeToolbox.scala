@@ -93,32 +93,42 @@ class TreeToolbox[G <: Global](val global: G) {
     }
 
     private def isLocallyDefinedIdentifier: Boolean = expr.exists {
-      case This(_) => true
+      case This(_) =>
+        true
       case _ => false
     }
 
-    def printWithComment(formatting: Formatting): String = {
+    private def rangeOnly(positions: Seq[Position]): Seq[Position] = positions.filter { _.isRange }
+
+    def printWithComment(formatting: Formatting): Option[String] = {
       val source = pos.source
-      def printImport: String = {
-        val (prefices, sufficesSeq) = positions.map { extractPrefixSuffixFromPositionIfPossible }.unzip
-        val prefix = if (!isImportedInDefiningPkg && !isLocallyDefinedIdentifier)
-          useAbsolutePkgPathIfPossible(prefices.head)
-        else
-          prefices.head
+      def printImport: Option[String] = {
+        val (prefices, sufficesSeq) = rangeOnly(positions).map { extractPrefixSuffixFromPositionIfPossible }.unzip
+        val prefix = prefices.headOption.map { prefix =>
+          if (!isImportedInDefiningPkg && !isLocallyDefinedIdentifier)
+            useAbsolutePkgPathIfPossible(prefix)
+          else
+            prefix
+        }
         val selectorToSuffix = findSelectorInSufficesOrMakeIt(sufficesSeq.flatten.toList)(_)
-        val suffix = selectors.collect {
-          case sel => selectorToSuffix(sel)
-        }.filter(_.nonEmpty).map(_.get)
+        val suffix = selectors.map {
+          selectorToSuffix
+        }.collect {
+          case Some(suffix) => suffix
+        }
         import RegionImport.{ formatPath, formatSelectors }
-        val (formattedPath, formatDefault) =
-          printTransform(formatting, (formatPath(formatting, prefix), wrapInBraces(selectors, formatSelectors(formatting, suffix.mkString(", ")), suffix.mkString(", "))))
-        formattedPath + formatDefault
+        prefix.map { prefix =>
+          val (formattedPath, formatDefault) =
+            printTransform(formatting, (formatPath(formatting, prefix), wrapInBraces(selectors, formatSelectors(formatting, suffix.mkString(", ")), suffix.mkString(", "))))
+          formattedPath + formatDefault
+        }
       }
       val indent = indentation
-      val printedImport = printImport
-      findUpNeighborCommentText(pos, comments, source).map { comment =>
-        comment + indent + printedImport
-      }.getOrElse(printedImport)
+      printImport.map { printedImport =>
+        findUpNeighborCommentText(pos, comments, source).map { comment =>
+          comment + indent + printedImport
+        }.getOrElse(printedImport)
+      }
     }
   }
 
@@ -216,16 +226,17 @@ class TreeToolbox[G <: Global](val global: G) {
     private def extractPrefixSuffix(pos: Position): Option[(String, List[String])] = {
       val printedImport = oneLineMultiImport(pos.source.content.slice(pos.start, pos.end).mkString)
       val prefixPatternWithCommentInside = """import\s+(((\/\*.*\*\/)*((\w|\d|_|-)+|(\`.*\`)+)(\/\*.*\*\/)*)\.)+(\/\*.*\*\/)*""".r
-      val prefix = prefixPatternWithCommentInside.findFirstIn(printedImport)
+      val prefix = prefixPatternWithCommentInside.findFirstIn(printedImport).orElse(Option(printedImport))
       def toNameRename(printedSelectors: String): List[String] = {
         val unwrapFromBracesAndSplit = (if (printedSelectors.startsWith("{"))
           printedSelectors.drop(1).dropRight(1)
         else printedSelectors).split(",").filter { _ != "" }.map { _.trim }
         unwrapFromBracesAndSplit.toList
       }
-      prefix.map { prefix =>
-        val rawSelectors = printedImport.substring(prefix.length).trim
-        (prefix, toNameRename(rawSelectors))
+      prefix.collect {
+        case prefix if prefix != ImportPrefix =>
+          val rawSelectors = printedImport.substring(prefix.length).trim
+          (prefix, toNameRename(rawSelectors))
       }
     }
 
@@ -336,13 +347,13 @@ class TreeToolbox[G <: Global](val global: G) {
         def isLast(idx: Int) = idx == imports.size - 1
         imp match {
           case (imp: RegionImport, 0) if isLast(0) =>
-            acc + imp.printWithComment(formatting)
+            imp.printWithComment(formatting).map { acc + _ }.getOrElse(acc)
           case (imp: RegionImport, 0) =>
-            acc + imp.printWithComment(formatting) + Properties.lineSeparator
+            imp.printWithComment(formatting).map { acc + _ + Properties.lineSeparator }.getOrElse(acc)
           case (imp: RegionImport, idx) if isLast(idx) =>
-            acc + indentation + imp.printWithComment(formatting)
+            imp.printWithComment(formatting).map { acc + indentation + _ }.getOrElse(acc)
           case (imp: RegionImport, _) =>
-            acc + indentation + imp.printWithComment(formatting) + Properties.lineSeparator
+            imp.printWithComment(formatting).map { acc + indentation + _ + Properties.lineSeparator }.getOrElse(acc)
         }
       } + printAtTheEndOfRegion
       TextChange(source, from, to, text)

@@ -47,8 +47,26 @@ class AllSelects[O <: OrganizeImports](val oi: O) {
             ann.args.foreach { traverse }
           }
           super.traverse(treeWithAnnotation)
-        case Literal(Constant(value: TypeRef)) =>
-          traverse(self.fakeSelectTreeFromType(value, value.sym, NoPosition))
+        case t @ Literal(Constant(value: TypeRef)) =>
+          val tree = self.fakeSelectTreeFromType(value, value.sym, t.pos) match {
+            case classOfIdent: Ident =>
+              val realText = classOfIdent.pos.source.content.slice(classOfIdent.pos.start, classOfIdent.pos.end).mkString
+              val classOfRegex = """(?<=classOf\[)(.+)(?=\])""".r
+              val classOfTypeParam = classOfRegex.findAllIn(realText).toList.headOption
+              classOfTypeParam.filter { _ != classOfIdent.name.decoded }.map { _ =>
+                ancestorSymbols(classOfIdent).filterNot { _.isPackageObject } match {
+                  case x :: xs =>
+                    val select = xs.foldLeft(Ident(x): Tree) {
+                      case (inner, outer) => Select(inner, outer)
+                    }
+                    select.setType(value).setSymbol(value.sym).setPos(t.pos)
+                  case Nil =>
+                    classOfIdent
+                }
+              }.getOrElse(classOfIdent)
+            case allOther => allOther
+          }
+          traverse(tree)
         case t: ApplyToImplicitArgs =>
           traverse(t.fun)
           t.args foreach traverse
@@ -134,21 +152,25 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
         }
         val usedSelectors = importSelections filter { importSel =>
           val isWildcard = importSel.name == nme.WILDCARD
-          val importSelNames = Set(importSel.name, importSel.rename).filterNot { _ == null }.map { _.toString }
+          val importSelNames = Set(importSel.name, importSel.rename).collect {
+            case name if name != null => name.decoded
+          }
           allSelects.exists { select =>
             val (owner, foundSel) = select
             def downToPackage(selectQualifierSymbol: Symbol): Option[Symbol] =
               if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol)
                 None
-              else if (selectQualifierSymbol.isPackage || selectQualifierSymbol.isModule
+              else if (selectQualifierSymbol.isPackage || selectQualifierSymbol.isModuleOrModuleClass
                 || selectQualifierSymbol.isStable)
                 Some(selectQualifierSymbol)
               else
                 downToPackage(selectQualifierSymbol.owner)
-            val foundNames = Set(foundSel.name.toString, if (foundSel.symbol != NoSymbol) foundSel.symbol.owner.nameString else foundSel.symbol.nameString)
+            val foundNames = Set(foundSel.name.decoded, if (foundSel.symbol != NoSymbol) foundSel.symbol.owner.nameString else foundSel.symbol.nameString)
             val foundSym = downToPackage(foundSel.qualifier.symbol).orElse(downToPackage(foundSel.symbol))
             (isWildcard || (foundNames & importSelNames).nonEmpty) &&
-              foundSym != null && foundSym.map(sym => fullNameButSkipPackageObject(sym) == importSym).getOrElse(false) && impOwner.map { impOwner =>
+              foundSym != null &&
+              foundSym.map(sym => fullNameButSkipPackageObject(sym).startsWith(importSym)).getOrElse(false) &&
+              impOwner.map { impOwner =>
                 owner.ownerChain.exists { selectOwner =>
                   selectOwner.name.decoded == impOwner.name.decoded
                 }

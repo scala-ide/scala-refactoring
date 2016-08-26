@@ -304,6 +304,16 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
       }
 
       @tailrec
+      def isScalaLanguage(qual: Select): Boolean = qual match {
+        case Select(Ident(nme.scala_), `language`) =>
+          true
+        case Select(qual: Select, _) =>
+          isScalaLanguage(qual)
+        case _ =>
+          false
+      }
+
+      @tailrec
       def hasImplicitQualifier(tree: Tree): Boolean = tree match {
         case Select(q, _) =>
           if (q.pos.isRange) hasImplicitQualifier(q)
@@ -330,7 +340,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
         try {
           tree match {
             // Always add the SIP 18 language imports as required until we can handle them properly
-            case Import(select @ Select(Ident(nme.scala_), `language`), feature) =>
+            case Import(select: Select, feature) if isScalaLanguage(select) =>
               feature foreach (selector => addToResult(Select(select, selector.name)))
 
             case imp @ Import(qualifier, selector) => {
@@ -421,7 +431,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                 && t.name != nme.WILDCARD
                 && hasStableQualifier(t)
                 && !t.symbol.isLocal
-                && !isRelativeToLocalImports(t)
+                && (if (newWay) true else !isRelativeToLocalImports(t))
                 && !isDefinedLocallyAndQualifiedWithEnclosingPackage(t)
                 && (if (newWay) true else isSelectNotInRelativeImports(t))) {
                 addToResult(t)
@@ -447,6 +457,23 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
                   fakeSelectTreeFromType(tpe, sym, t.pos) match {
                     case s: Select if !isDefinedLocallyAndQualifiedWithEnclosingPackage(s) =>
                       addToResult(s)
+                    case i: Ident if newWay =>
+                      val realText = i.pos.source.content.slice(i.pos.start, i.pos.end).mkString
+                      val classOfRegex = """(?<=classOf\[)(.+)(?=\])""".r
+                      val classOfTypeParam = classOfRegex.findAllIn(realText).toList.headOption
+                      classOfTypeParam.foreach { classOfTypeParam =>
+                        if (classOfTypeParam != i.name.decoded) {
+                          ancestorSymbols(i).filterNot { _.isPackageObject } match {
+                            case x :: xs =>
+                              val select = xs.foldLeft(Ident(x.decodedName): Tree) {
+                                case (inner, outer) => Select(inner, outer.decodedName)
+                              }.asInstanceOf[Select]
+                              addToResult(select.setType(tpe).setSymbol(sym).setPos(t.pos))
+                            case _ =>
+                              log(s"Tree without symbol that is not a select: $t")
+                          }
+                        }
+                      }
                     case _ => ()
                   }
                 case _ => ()

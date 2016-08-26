@@ -98,15 +98,15 @@ trait TreeTraverser extends TracingImpl {
    */
   trait TraverserWithFakedTrees extends global.Traverser with TraversalInstrumentation {
 
+    def trimTypeArgs(str: String) = {
+      val firstBracket = str.indexOf("[")
+      if (firstBracket < 0) str
+      else str.substring(0, firstBracket)
+    }
+
     def fakeSelectTreeFromType(tpe: Type, sym: Symbol, pos: Position) = {
       // we fake our own Select(Ident(..), ..) tree from the type
       // so we can handle them just like any other select call
-
-      def trimTypeArgs(str: String) = {
-        val firstBracket = str.indexOf("[")
-        if (firstBracket < 0) str
-        else str.substring(0, firstBracket)
-      }
 
       val stringRep = trimTypeArgs(tpe.trimPrefix(tpe.toString))
 

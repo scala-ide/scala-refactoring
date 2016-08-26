@@ -16,14 +16,28 @@ object RegionBuilder {
     commentScanner.comments
   }
 
-  def apply[G <: Global, T <: TreeToolbox[G]](treeToolbox: T)(imports: List[treeToolbox.global.Import], owner: treeToolbox.global.Symbol, formatting: Formatting, printAtEndOfRegion: String = ""): treeToolbox.Region = {
+  private def toImportsWithRange[G <: Global](g: G)(imports: List[g.Import]): List[List[g.Import]] = imports.foldLeft(List.empty[List[g.Import]]) { (z, imp) =>
+    (imp match {
+      case imp if imp.pos.isRange =>
+        if (z.isEmpty)
+          List(imp) :: z
+        else
+          (z.head :+ imp) :: z.tail
+      case _ =>
+        List() :: z
+    }).filter { _.nonEmpty }.reverse
+  }
+
+  def apply[G <: Global, T <: TreeToolbox[G]](treeToolbox: T)(imports: List[treeToolbox.global.Import], owner: treeToolbox.global.Symbol, formatting: Formatting, printAtEndOfRegion: String = ""): Seq[treeToolbox.Region] = {
     require(imports.nonEmpty, "List of imports must not be empty.")
     val source = imports.head.pos.source
     val comments = scanForComments(treeToolbox.global)(source)
-    val regionImports = toRegionImports[G, T](treeToolbox)(imports, owner, comments)
-    val regionStartPos = regionImports.head.positionWithComment.start
-    val indentation = regionImports.head.indentation
-    treeToolbox.Region(regionImports, owner, regionStartPos, imports.last.pos.end, source, indentation, formatting, printAtEndOfRegion)
+    toImportsWithRange[treeToolbox.global.type](treeToolbox.global)(imports).map { imports =>
+      val regionImports = toRegionImports[G, T](treeToolbox)(imports, owner, comments)
+      val regionStartPos = regionImports.head.positionWithComment.start
+      val indentation = regionImports.head.indentation
+      treeToolbox.Region(regionImports, owner, regionStartPos, imports.last.pos.end, source, indentation, formatting, printAtEndOfRegion)
+    }
   }
 
   private def toRegionImports[G <: Global, T <: TreeToolbox[G]](ttb: T)(imports: List[ttb.global.Import], owner: ttb.global.Symbol, comments: List[RangePosition]) = {
@@ -70,8 +84,19 @@ object MiscTools {
   def isScalaLanguageImport[G <: Global](g: G): g.Import => Boolean = {
     import g._
     val language = newTermName("language")
+
+    @tailrec
+    def isScalaLanguage(qual: Select): Boolean = qual match {
+      case Select(Ident(nme.scala_), `language`) =>
+        true
+      case Select(qual: Select, _) =>
+        isScalaLanguage(qual)
+      case _ =>
+        false
+    }
+
     def apply(candidate: Import) = candidate match {
-      case Import(select @ Select(Ident(nme.scala_), `language`), feature) => true
+      case Import(select: Select, feature) if isScalaLanguage(select) => true
       case _ => false
     }
     apply
