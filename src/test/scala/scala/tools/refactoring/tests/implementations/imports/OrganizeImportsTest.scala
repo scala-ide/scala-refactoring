@@ -4417,7 +4417,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package acme
 
-	  trait Tupler[T]
+    trait Tupler[T]
 
     object Tupler {
       type Aux[T] = Tupler[T]
@@ -4441,7 +4441,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package acme
 
-	  trait Tupler[T]
+    trait Tupler[T]
 
     trait TuplerInstance {
       type Aux[T] = Tupler[T]
@@ -4734,7 +4734,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
   @Test
-  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v5() = new FileSet {
+  def shouldNotRemoveImportWhenPackageRenamed_v1() = new FileSet {
     """
     package org.acme
 
@@ -4754,7 +4754,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
   @Test
-  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v6() = new FileSet {
+  def shouldNotRemoveImportWhenPackageRenamed_v2() = new FileSet {
     """
     package org.acme
 
@@ -4773,7 +4773,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
   @Test
-  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v7() = new FileSet {
+  def shouldNotRemoveImportWhenJavaPackageRenamed_v1() = new FileSet {
     """
     /*<-*/
     package tested
@@ -4787,7 +4787,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
   @Test
-  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v8() = new FileSet {
+  def shouldNotRemoveImportWhenJavaPackageRenamed_v2() = new FileSet {
     """
     /*<-*/
     package tested
@@ -4951,6 +4951,66 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       implicit val innerTT = new TypeTag[Inner[_, _]] {}
 
       val test = typeOf[Inner[_, _]]
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportFromSamePackageWhenInnerTraitUsed() = new FileSet {
+    """
+    package tested
+
+    object inner {
+      type Inner = Int
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import inner.Inner
+
+    class Test {
+      val test: Inner = ???
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Ignore("FIXME")
+  @Test
+  def shouldNotRemoveImportWhenTypeParametrizedByObjectInConstructor() = new FileSet {
+    """
+    package org.acme
+
+    trait Inner {
+      type Inner
+    }
+
+	  case class Toolbox[T <: Inner](inner: T)
+    """ isNotModified
+
+    """
+    package org.acne
+
+    import org.acme.Inner
+
+    object inner extends Inner {
+      type Inner = Int
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import org.acme.Toolbox
+    import org.acne.inner
+
+    case class Test(test: Toolbox[inner.type]) {
+      import test.inner._
+
+      val a: Inner = 5
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
