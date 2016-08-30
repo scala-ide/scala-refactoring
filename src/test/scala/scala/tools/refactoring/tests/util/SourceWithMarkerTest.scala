@@ -562,6 +562,16 @@ class SourceWithMarkerTest {
     }
   }
 
+  @Test
+  def testMakeSureThatSourceWithMarkerOrIsGreedy(): Unit = {
+    def performTest(toConsume: String, mvnt: Movement): Unit = {
+      runCoveredStringTest(toConsume, 0, mvnt, toConsume, false)
+    }
+
+    performTest("aa", 'a' || "aa")
+    performTest("abababc", 'a' || "ab".zeroOrMore || ("ab".atLeastOnce ~ 'c'))
+  }
+
   private implicit class SourceWithMarkerOps(underlying: SourceWithMarker) {
     def currentStr = underlying.current.toString
   }
