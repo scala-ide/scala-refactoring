@@ -184,9 +184,11 @@ object SourceWithMarker {
 
     def or[MovementT <: SimpleMovement](mvnt1: MovementT, mvnt2: MovementT)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
       val res1 = mvnt1.compute(sourceWithMarker)
+      val res2 = mvnt2.compute(sourceWithMarker)
 
-      if (res1.isEmpty) mvnt2.compute(sourceWithMarker)
-      else res1
+      (res1 ++ res2).sortBy { newMarker =>
+        -math.abs((sourceWithMarker.marker - newMarker))
+      }
     }
 
     def repeat[MovementT <: SimpleMovement](mvnt: MovementT)(sourceWithMarker: SourceWithMarker): Seq[Int] = {
