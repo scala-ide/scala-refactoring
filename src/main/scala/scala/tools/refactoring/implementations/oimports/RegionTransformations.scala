@@ -108,12 +108,16 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
       private def checkIfImportNameIsRelativeWithPkgName(pkgName: String, selector: ImportSelector, importName: String): Boolean =
         (pkgName + selector.name.decoded).endsWith(importName)
 
+      private def checkIfImportSelectorSuppressImportName(selector: ImportSelector, importName: String): Boolean =
+        importName.endsWith(selector.name.decoded) && selector.rename == nme.WILDCARD
+
       private def mkIsInImports(expr: Tree): ImportSelector => Boolean = {
         def isSelectorInImports(pkgName: String)(selector: ImportSelector): Boolean =
           selector.name == nme.WILDCARD || importsNames.exists { importName =>
             importName == pkgName + selector.name || importName == pkgName + selector.rename ||
               checkIfSelectorIsNotARenamedPkgName(pkgName, selector, importName) ||
-              checkIfImportNameIsRelativeWithPkgName(pkgName, selector, importName)
+              checkIfImportNameIsRelativeWithPkgName(pkgName, selector, importName) ||
+              checkIfImportSelectorSuppressImportName(selector, importName)
           }
         val pkgName = importAsString(expr) + "."
         isSelectorInImports(pkgName)

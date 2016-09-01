@@ -143,39 +143,50 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       case _ => expr.nameString
     }
 
+    def importSuppressesSelectType(select: Select, importSelector: ImportSelector) =
+      (allTypeNamesFromSelect(select) & allTypeNamesFromImportSelector(importSelector)).nonEmpty &&
+        importSelector.rename == nme.WILDCARD
+
+    private def allTypeNamesFromSelect(select: Select) =
+      Set(select.name.decoded, select.symbol.owner.nameString)
+
+    private def allTypeNamesFromImportSelector(importSelector: ImportSelector) =
+      Set(importSelector.name, importSelector.rename).collect {
+        case name if name != null => name.decoded
+      }
+
+    private def isRelationBetweenTypesInSelectAndImportSelector(select: Select, importSelector: ImportSelector) =
+      importSelector.name == nme.WILDCARD || (allTypeNamesFromSelect(select) & allTypeNamesFromImportSelector(importSelector)).nonEmpty
+
+    import scala.tools.nsc.Global
+    private def isSelectOwnerInImportOwner(selectOwner: Symbol, importOwner: Global#Symbol) =
+      selectOwner.ownerChain.exists { owner =>
+        owner.name.decoded == importOwner.name.decoded
+      }
+
+    private def isSelectExpressionPathASubpathOfImport(select: Select, importQualifier: Tree) =
+      MiscTools.stableIdentifierSymbol(global)(select.qualifier.symbol).orElse {
+        MiscTools.stableIdentifierSymbol(global)(select.symbol)
+      }.map {
+        (fullNameButSkipPackageObject _).andThen { _.startsWith(importSymbol(importQualifier)) }
+      }.getOrElse(false)
+
     protected def doApply(trees: List[Import]) = trees.iterator.collect {
       case imp @ Import(importQualifier, importSelections) =>
-        val importSym = importSymbol(importQualifier)
         val impOwner = imp match {
           case ro: RegionOwner => Option(ro.owner)
           case _ => None
         }
         val usedSelectors = importSelections filter { importSel =>
-          val isWildcard = importSel.name == nme.WILDCARD
-          val importSelNames = Set(importSel.name, importSel.rename).collect {
-            case name if name != null => name.decoded
-          }
           allSelects.exists { select =>
             val (owner, foundSel) = select
-            def downToPackage(selectQualifierSymbol: Symbol): Option[Symbol] =
-              if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol)
-                None
-              else if (selectQualifierSymbol.isPackage || selectQualifierSymbol.isModuleOrModuleClass
-                || selectQualifierSymbol.isStable)
-                Some(selectQualifierSymbol)
-              else
-                downToPackage(selectQualifierSymbol.owner)
-            val foundNames = Set(foundSel.name.decoded, if (foundSel.symbol != NoSymbol) foundSel.symbol.owner.nameString else foundSel.symbol.nameString)
-            val foundSym = downToPackage(foundSel.qualifier.symbol).orElse(downToPackage(foundSel.symbol))
-            (isWildcard || (foundNames & importSelNames).nonEmpty) &&
-              foundSym != null &&
-              foundSym.map(sym => fullNameButSkipPackageObject(sym).startsWith(importSym)).getOrElse(false) &&
-              impOwner.map { impOwner =>
-                owner.ownerChain.exists { selectOwner =>
-                  selectOwner.name.decoded == impOwner.name.decoded
-                }
-              }.getOrElse(true)
-          } || isScalaLanguageImport(imp) || isInNewImports(imp)
+            isRelationBetweenTypesInSelectAndImportSelector(foundSel, importSel) &&
+              impOwner.map { isSelectOwnerInImportOwner(owner, _) }.getOrElse(true) &&
+              (isSelectExpressionPathASubpathOfImport(foundSel, importQualifier) ||
+                importSuppressesSelectType(foundSel, importSel))
+          } ||
+            isScalaLanguageImport(imp) ||
+            isInNewImports(imp)
         }
         (imp, usedSelectors)
     }.collect {

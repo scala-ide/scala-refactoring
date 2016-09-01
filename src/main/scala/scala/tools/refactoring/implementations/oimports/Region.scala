@@ -101,4 +101,18 @@ object MiscTools {
     }
     apply
   }
+
+  def stableIdentifierSymbol[G <: Global](g: G)(selectQualifierSymbol: g.Symbol): Option[g.Symbol] = {
+    import g._
+    @tailrec
+    def apply(selectQualifierSymbol: Symbol): Option[Symbol] =
+      if (selectQualifierSymbol == null || selectQualifierSymbol == NoSymbol)
+        None
+      else if (selectQualifierSymbol.isPackage || selectQualifierSymbol.isModuleOrModuleClass
+        || selectQualifierSymbol.isStable)
+        Some(selectQualifierSymbol)
+      else
+        apply(selectQualifierSymbol.owner)
+    apply(selectQualifierSymbol)
+  }
 }

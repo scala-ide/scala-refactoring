@@ -4846,13 +4846,13 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
     package acme.duration
 
-	  trait DurationConvensions {
+    trait DurationConvensions {
       def baz = "baz"
-	  }
+    }
 
-	  object Duration {
+    object Duration {
       def foo = "Duration"
-	  }
+    }
     """ isNotModified
 
     """
@@ -4987,7 +4987,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       type Inner
     }
 
-	  case class Toolbox[T <: Inner](inner: T)
+    case class Toolbox[T <: Inner](inner: T)
     """ isNotModified
 
     """
@@ -5011,6 +5011,301 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import test.inner._
 
       val a: Inner = 5
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Ignore("FIXME")
+  @Test
+  def shouldRemoveUnusedWildcardImport() = new FileSet {
+    """
+    package tested
+
+    import java.util._
+    import java.util.concurrent._
+    import java.util.concurrent.atomic._
+
+    trait Bug {
+      def tryOrganizeImportsHere: AtomicLong
+    }
+    """ becomes
+    """
+    package tested
+
+    import java.util.concurrent.atomic._
+
+    trait Bug {
+      def tryOrganizeImportsHere: AtomicLong
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v1() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import My._
+    import akka.actor.{ActorRef => _, _}
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v2() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import My._
+    import akka.actor.{ActorRef => AkkaActorRef, _}
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v3() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import my._
+    import akka.actor.{ActorRef => _, _}
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ becomes
+    """
+    /*<-*/
+    package com.example.actors
+
+    import akka.actor.{ActorRef => _, _}
+    import my._
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v4() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import My._
+      import akka.actor.{ActorRef => _, _}
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v5() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import My._
+      import akka.actor.{ActorRef => AkkaActorRef, _}
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v6() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import my._
+      import akka.actor.{ActorRef => _, _}
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ becomes
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import akka.actor.{ActorRef => _, _}
+      import my._
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v7() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import My._
+      import akka.actor.{ActorRef => AkkaActorRef}
+
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v8() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import My._
+    import akka.actor.{ActorRef => AkkaActorRef}
+
+    object Test {
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
