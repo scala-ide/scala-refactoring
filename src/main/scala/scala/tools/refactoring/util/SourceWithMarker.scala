@@ -672,11 +672,13 @@ object SourceWithMarker {
       }
     }
 
+    private val upper = charOfClass(c => c.isUpper || c == '_')
+
     val idrest = (letter | digit).zeroOrMore ~ ('_' ~ op).zeroOrMore
 
     val varid = charOfClass(_.isLower) ~ idrest
 
-    val plainid = (charOfClass(_.isUpper) ~ idrest) | varid | op
+    val plainid = (upper ~ idrest) | varid | op
 
     val symbolLiteral = ''' ~ plainid
 
