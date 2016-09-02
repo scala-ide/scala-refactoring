@@ -4031,4 +4031,56 @@ class Blubb
       class ImInnocent
     }""" -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("Hatter"))
+
+
+  /*
+   * See Assembla Ticket 1002674
+   */
+  @Test
+  def testRenamePrivateVarWithUnderscore1002674() = new FileSet {
+    """
+    object Bug {
+      private var /*(*/_tryRenameMe/*)*/ = 0
+      _tryRenameMe = _tryRenameMe + 1
+    }
+    """ becomes
+    """
+    object Bug {
+      private var /*(*/ups/*)*/ = 0
+      ups = ups + 1
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameVarWithUnderscore1002674() = new FileSet {
+    """
+    object Bug1 {
+      var /*(*/_tryRenameMe/*)*/ = 0
+      _tryRenameMe = _tryRenameMe + 1
+    }
+    """ becomes
+    """
+    object Bug1 {
+      var /*(*/ups/*)*/ = 0
+      ups = ups + 1
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameValWithUnderscore1002674() = new FileSet {
+    """
+    object Bug2 {
+      val /*(*/_tryRenameMe/*)*/ = 0
+      val x = _tryRenameMe
+    }
+    """ becomes
+    """
+    object Bug2 {
+      val /*(*/ups/*)*/ = 0
+      val x = ups
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }

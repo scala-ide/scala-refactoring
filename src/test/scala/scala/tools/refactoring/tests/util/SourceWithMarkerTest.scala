@@ -371,6 +371,11 @@ class SourceWithMarkerTest {
     runSimpleIdTest("+//<-trap", "+")
     runSimpleIdTest("+/*trap*/", "+")
     runSimpleIdTest("+/*<-trap*/", "+")
+    runSimpleIdTest("_id", "_id")
+    runSimpleIdTest("id_id", "id_id")
+    runSimpleIdTest("_id_id_id", "_id_id_id")
+    runSimpleIdTest("dot_product_*", "dot_product_*")
+    runSimpleIdTest("__system", "__system")
 
     val srcIdInMlComment = SourceWithMarker("/*::*/", 3)
     val srcIdInSlComment = SourceWithMarker("//::", 3)
@@ -555,6 +560,16 @@ class SourceWithMarkerTest {
       val src = SourceWithMarker("abaabbbaaabaaabaa")
       assertTrue(src.moveMarker(('a' ~ 'b'.zeroOrMore ~ 'a'.zeroOrMore).zeroOrMore).isDepleted)
     }
+  }
+
+  @Test
+  def testMakeSureThatSourceWithMarkerOrIsGreedy(): Unit = {
+    def performTest(toConsume: String, mvnt: Movement): Unit = {
+      runCoveredStringTest(toConsume, 0, mvnt, toConsume, false)
+    }
+
+    performTest("aa", 'a' || "aa")
+    performTest("abababc", 'a' || "ab".zeroOrMore || ("ab".atLeastOnce ~ 'c'))
   }
 
   private implicit class SourceWithMarkerOps(underlying: SourceWithMarker) {
