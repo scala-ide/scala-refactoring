@@ -31,7 +31,7 @@ abstract class ImportsOrganizer[G <: Global, U <: TreeToolbox[G]](val treeToolbo
   private def toRegions(groupedImports: List[List[Import]], importsOwner: Symbol, formatting: Formatting): List[treeToolbox.Region] =
     groupedImports.collect {
       case imports @ h :: _ => RegionBuilder[G, U](treeToolbox)(imports, importsOwner, formatting, "")
-    }
+    }.flatten
 
   def transformTreeToRegions(tree: Tree, formatting: Formatting): List[treeToolbox.Region] = forTreesOf(tree).flatMap {
     case (extractedTree, treeOwner) =>

@@ -48,4 +48,16 @@ class OrganizeImportsScalaSpecificTests extends OrganizeImportsBaseTest {
     class Tested(val id: Int) extends Extended(id, "text")
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenJustPackage_v3() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    import scala.reflect.macros.whitebox
+
+    class Tested(val c: whitebox.Context)
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }

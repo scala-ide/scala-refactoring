@@ -939,8 +939,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       """
     package test
 
+    import java.util.Collections.emptyList
+
     class Bug {
-      import java.util.Collections.emptyList
 
       def test = emptyList
     }
@@ -1033,9 +1034,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package com.github.mlangc.experiments
 
     import java.util.Arrays
+    import java.util.Collections
 
     class Bug4 {
-      import java.util.Collections
 
       def test1 = Arrays.asList(1, 2)
       def test2 = Collections.emptyList
@@ -4408,6 +4409,904 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     import acme.Extended
 
     class Tested(val id: Int) extends Extended[Int](id, "text")
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportIfInPathToInnerType() = new FileSet {
+    """
+    package acme
+
+    trait Tupler[T]
+
+    object Tupler {
+      type Aux[T] = Tupler[T]
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import acme.Tupler
+
+    trait Tested {
+      def foo[T](implicit aux: Tupler.Aux[T]): Unit
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportIfInPathToInheritedInnerType() = new FileSet {
+    """
+    package acme
+
+    trait Tupler[T]
+
+    trait TuplerInstance {
+      type Aux[T] = Tupler[T]
+    }
+
+    object Tupler extends TuplerInstance
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import acme.Tupler
+
+    trait Tested {
+      def foo[T](implicit aux: Tupler.Aux[T]): Unit
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportIfTypeInHigherKindedType() = new FileSet {
+    """
+    package acme
+
+    object tag {
+      type @@[L, R] = L with R
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import acme.tag.@@
+
+    trait Selector[T]
+
+    trait Tested {
+      def foo[T, U](implicit sel: Selector[T @@ U]): Unit
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportLanguageExperimental_v1() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    import scala.language.experimental
+
+    trait Tested
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportLanguageExperimental_v2() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    import scala.language.experimental._
+
+    trait Tested
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportLanguageExperimentalMacros() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    import scala.language.experimental.macros
+
+    trait Tested
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenJustPackage_v1() = new FileSet {
+    """
+    package acme.whitebox
+
+    trait Context
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import acme.whitebox
+
+    class Tested(val c: whitebox.Context)
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenJustPackage_v2() = new FileSet {
+    """
+    package macros.whitebox
+
+    trait Context
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import macros.whitebox
+
+    class Tested(val c: whitebox.Context)
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenJustPackageInner_v1() = new FileSet {
+    """
+    package acme.whitebox
+
+    trait Context
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    object runtime {
+      import acme.whitebox
+      class Tested(val c: whitebox.Context)
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenJustPackageInner_v2() = new FileSet {
+    """
+    package acme
+    package whitebox
+
+    trait Context
+    """ isNotModified
+
+    """
+    /*<-*/
+    package acme
+    package tested
+
+    object runtime {
+      import whitebox.Context
+      class Tested(val c: whitebox.Context)
+    }
+    """ becomes
+    """
+    /*<-*/
+    package acme
+    package tested
+
+    object runtime {
+      import acme.whitebox.Context
+      class Tested(val c: whitebox.Context)
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenImportFromDeepValue() = new FileSet {
+    """
+    package macros.whitebox
+
+    abstract class UniverseApi {
+      def reify[T](tree: T): Unit
+    }
+
+    abstract class Universe extends UniverseApi {
+      type Tree
+    }
+
+    trait Context {
+      val universe: Universe
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import macros.whitebox
+
+    class Tested(val c: whitebox.Context) {
+      import c.universe._
+
+      def foo(tree: Tree) = ???
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenMethodRenamed_v1() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    import java.lang.Integer.{rotateLeft => rotl}
+
+    class Tested {
+      val t = rotl(5, 5)
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenMethodRenamed_v2() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    class Tested {
+      import java.lang.Integer.{rotateLeft => rotl}
+      val t = rotl(5, 5)
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v1() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    import java.{lang => jlang}
+
+    class Tested {
+      val t = classOf[jlang.Integer]
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v2() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    class Tested {
+      import java.{lang => jlang}
+      val t = classOf[jlang.Integer]
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v3() = new FileSet {
+    """
+    package org.acme
+
+    class Integer
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import org.{acme => jlang}
+
+    class Tested {
+      val t = classOf[jlang.Integer]
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenPackageRenamedAndUsedInClassOf_v4() = new FileSet {
+    """
+    package org.acme
+
+    class Integer
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    class Tested {
+      import org.{acme => jlang}
+      val t = classOf[jlang.Integer]
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenPackageRenamed_v1() = new FileSet {
+    """
+    package org.acme
+
+    class Integer
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import org.{acme => jlang}
+
+    class Tested {
+      val t = new jlang.Integer
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenPackageRenamed_v2() = new FileSet {
+    """
+    package org.acme
+
+    class Integer
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    class Tested {
+      import org.{acme => jlang}
+      val t = new jlang.Integer
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenJavaPackageRenamed_v1() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    import java.{lang => jlang}
+
+    class Tested {
+      val t = new jlang.Integer(42)
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenJavaPackageRenamed_v2() = new FileSet {
+    """
+    /*<-*/
+    package tested
+
+    class Tested {
+      import java.{lang => jlang}
+      val t = new jlang.Integer(42)
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenTypeInCake() = new FileSet {
+    """
+    package testruntime
+
+    trait Names {
+      type TermName
+
+      val TermName: TermNameExtractor
+
+      abstract class TermNameExtractor {
+        def apply(s: String): TermName
+        def unapply(name: TermName): Option[String]
+      }
+    }
+
+    class NamesImpl extends Names {
+      type TermName = String
+      val TermName = new TermNameExtractorString
+      class TermNameExtractorString extends TermNameExtractor {
+        def apply(s: String) = s
+        def unapply(name: TermName): Option[String] = Some(name)
+      }
+    }
+
+    object universe {
+      lazy val space: Names = new NamesImpl
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import testruntime.universe.space.TermName
+
+    class Tested {
+      val t: TermName = ???
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportExtendedByWildcard_v3() = new FileSet {
+    """
+    package acme.duration
+
+    trait DurationConvensions {
+      def baz = "baz"
+    }
+
+    object Duration {
+      def foo = "Duration"
+    }
+    """ isNotModified
+
+    """
+    package acme
+
+    package object duration {
+      implicit class bar(b: String) extends DurationConvensions
+    }
+    """ isNotModified
+
+    """
+    package acme
+
+    class Promise[T]
+    """ isNotModified
+
+    """
+    /*<-*/
+    package test
+    import acme.Promise
+    import acme.duration.Duration
+
+    object A {
+      def f = {
+        import acme.duration._
+        val p = new Promise[Int]
+        println(p)
+        "5".baz
+      }
+      def g = Duration.foo
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportFromSamePackageWhenTypeUsedInImplicit_relativePath() = new FileSet {
+    """
+    package api
+
+    trait TypeTags {
+      trait TypeTag[T]
+      def typeOf[T](implicit tt: TypeTag[T]) = ???
+    """ isNotModified
+
+    """
+    package tested
+
+    object inner {
+      type Inner[T, U] = T with U
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import api.TypeTags
+
+    class Test extends TypeTags {
+      import inner.Inner
+
+      implicit val innerTT = new TypeTag[Inner[_, _]] {}
+
+      val test = typeOf[Inner[_, _]]
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportFromSamePackageWhenTypeUsedInImplicit_absolutePath() = new FileSet {
+    """
+    package api
+
+    trait TypeTags {
+      trait TypeTag[T]
+      def typeOf[T](implicit tt: TypeTag[T]) = ???
+    """ isNotModified
+
+    """
+    package tested
+
+    object inner {
+      type Inner[T, U] = T with U
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import api.TypeTags
+
+    class Test extends TypeTags {
+      import tested.inner.Inner
+
+      implicit val innerTT = new TypeTag[Inner[_, _]] {}
+
+      val test = typeOf[Inner[_, _]]
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportFromSamePackageWhenInnerTraitUsed() = new FileSet {
+    """
+    package tested
+
+    object inner {
+      type Inner = Int
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import inner.Inner
+
+    class Test {
+      val test: Inner = ???
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Ignore("FIXME")
+  @Test
+  def shouldNotRemoveImportWhenTypeParametrizedByObjectInConstructor() = new FileSet {
+    """
+    package org.acme
+
+    trait Inner {
+      type Inner
+    }
+
+    case class Toolbox[T <: Inner](inner: T)
+    """ isNotModified
+
+    """
+    package org.acne
+
+    import org.acme.Inner
+
+    object inner extends Inner {
+      type Inner = Int
+    }
+    """ isNotModified
+
+    """
+    /*<-*/
+    package tested
+
+    import org.acme.Toolbox
+    import org.acne.inner
+
+    case class Test(test: Toolbox[inner.type]) {
+      import test.inner._
+
+      val a: Inner = 5
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Ignore("FIXME")
+  @Test
+  def shouldRemoveUnusedWildcardImport() = new FileSet {
+    """
+    package tested
+
+    import java.util._
+    import java.util.concurrent._
+    import java.util.concurrent.atomic._
+
+    trait Bug {
+      def tryOrganizeImportsHere: AtomicLong
+    }
+    """ becomes
+    """
+    package tested
+
+    import java.util.concurrent.atomic._
+
+    trait Bug {
+      def tryOrganizeImportsHere: AtomicLong
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v1() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import My._
+    import akka.actor.{ActorRef => _, _}
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v2() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import My._
+    import akka.actor.{ActorRef => AkkaActorRef, _}
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v3() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import my._
+    import akka.actor.{ActorRef => _, _}
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ becomes
+    """
+    /*<-*/
+    package com.example.actors
+
+    import akka.actor.{ActorRef => _, _}
+    import my._
+
+    object Test {
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v4() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import My._
+      import akka.actor.{ActorRef => _, _}
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v5() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import My._
+      import akka.actor.{ActorRef => AkkaActorRef, _}
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v6() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import my._
+      import akka.actor.{ActorRef => _, _}
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ becomes
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import akka.actor.{ActorRef => _, _}
+      import my._
+
+      val sys: ActorSystem = ???
+      val ref: ActorRef = ???
+    }
+
+    object my {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v7() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    object Test {
+      import My._
+      import akka.actor.{ActorRef => AkkaActorRef}
+
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotShrinkImportsToWildcardIfRenamingUsed_v8() = new FileSet {
+    """
+    package akka.actor
+
+    trait ActorRef
+    trait ActorSystem
+    """ isNotModified
+
+    """
+    /*<-*/
+    package com.example.actors
+
+    import My._
+    import akka.actor.{ActorRef => AkkaActorRef}
+
+    object Test {
+      val ref: ActorRef = ???
+      val aref: AkkaActorRef = ???
+    }
+
+    object My {
+      trait ActorRef {
+        def foo: Int
+      }
+    }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }
