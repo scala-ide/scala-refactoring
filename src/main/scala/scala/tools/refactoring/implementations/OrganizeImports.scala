@@ -5,14 +5,12 @@
 package scala.tools.refactoring
 package implementations
 
-import scala.util.control.NonFatal
-
-import common.Change
-
-import common.TreeTraverser
-import sourcegen.Formatting
-import transformation.TreeFactory
+import scala.tools.refactoring.common.Change
+import scala.tools.refactoring.common.TreeTraverser
 import scala.tools.refactoring.implementations.oimports.OrganizeImportsWorker
+import scala.tools.refactoring.sourcegen.Formatting
+import scala.tools.refactoring.transformation.TreeFactory
+import scala.util.control.NonFatal
 
 object OrganizeImports {
   /**
