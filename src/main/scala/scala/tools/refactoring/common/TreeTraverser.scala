@@ -246,7 +246,7 @@ trait TreeTraverser extends TracingImpl {
 
             case (tpe: TypeRef, ident: Ident) if ident.symbol != null && ident.symbol.isAbstractType =>
               ident.symbol.info.bounds.collect {
-                case typeRef: ClassTypeRef =>
+                case typeRef: NoArgsTypeRef =>
                   fakeSelectTreeFromType(typeRef, typeRef.sym, ident.symbol.pos)
               }.foreach {
                 traverse

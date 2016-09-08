@@ -2,7 +2,8 @@ name := "org.scala-refactoring.library"
 
 version := "0.11.0-SNAPSHOT"
 
-scalaVersion := "2.11.8"
+resolvers += "pr" at "https://scala-ci.typesafe.com/artifactory/scala-pr-validation-snapshots/"
+scalaVersion := "2.12.0-4d67c39-SNAPSHOT"
 
 moduleName := name.value
 
@@ -13,7 +14,7 @@ crossScalaVersions := Seq("2.10.6", "2.11.7", "2.11.8")
 crossVersion := CrossVersion.full
 
 scalacOptions ++= (scalaBinaryVersion.value match {
-  case "2.11" => Seq(
+  case "2.11" | "2.12" => Seq(
     "-deprecation:false",
     "-encoding", "UTF-8",
     "-feature",
@@ -32,12 +33,14 @@ scalacOptions ++= (scalaBinaryVersion.value match {
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / (scalaBinaryVersion.value match {
   case "2.10" => "src/main/scala-2.10"
-  case _      => "src/main/scala-2.11"
+  case "2.11" => "src/main/scala-2.11"
+  case _      => "src/main/scala-2.12"
 })
 
 unmanagedSourceDirectories in Test += baseDirectory.value / (scalaBinaryVersion.value match {
   case "2.10" => "src/test/scala-2.10"
-  case _      => "src/test/scala-2.11"
+  case "2.11" => "src/test/scala-2.11"
+  case _      => "src/test/scala-2.12"
 })
 
 publishMavenStyle := true
@@ -85,6 +88,7 @@ credentials += Credentials(Path.userHome / ".m2" / "credentials")
 
 libraryDependencies ++= Seq(
   "org.scala-lang"  % "scala-compiler"    % scalaVersion.value,
+  "org.scala-lang.modules" % "scala-parser-combinators_2.12.0-RC1" % "1.0.4",
   "com.novocode"    % "junit-interface"   % "0.10"              % "test"
 )
 
