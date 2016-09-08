@@ -31,13 +31,13 @@ scalacOptions ++= (scalaBinaryVersion.value match {
 })
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / (scalaBinaryVersion.value match {
-  case "2.10" => "src/main/scala-2_10"
-  case _      => "src/main/scala-2_11"
+  case "2.10" => "src/main/scala-2.10"
+  case _      => "src/main/scala-2.11"
 })
 
 unmanagedSourceDirectories in Test += baseDirectory.value / (scalaBinaryVersion.value match {
-  case "2.10" => "src/test/scala-2_10"
-  case _      => "src/test/scala-2_11"
+  case "2.10" => "src/test/scala-2.10"
+  case _      => "src/test/scala-2.11"
 })
 
 publishMavenStyle := true
