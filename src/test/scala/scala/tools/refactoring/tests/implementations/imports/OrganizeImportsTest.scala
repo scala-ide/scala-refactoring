@@ -5309,4 +5309,37 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     }
     """ isNotModified
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Test
+  def shouldNotRemoveImportWhenPathIsPartiallyGiven_v1() = new FileSet {
+    """
+    /*<-*/
+    package acme
+
+    object Main extends App {
+      import scala.concurrent.duration
+      import scala.concurrent.duration.FiniteDuration
+
+      val d1: FiniteDuration = ???
+      val d2: duration.FiniteDuration = ???
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
+
+  @Ignore("FIXME")
+  @Test
+  def shouldNotRemoveImportWhenPathIsPartiallyGiven_v2() = new FileSet {
+    """
+    /*<-*/
+    package acme
+
+    import scala.concurrent.duration
+    import scala.concurrent.duration.FiniteDuration
+
+    object Main extends App {
+      val d1: FiniteDuration = ???
+      val d2: duration.FiniteDuration = ???
+    }
+    """ isNotModified
+  } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 }

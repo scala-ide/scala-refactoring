@@ -190,7 +190,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
         }
         (imp, usedSelectors)
     }.collect {
-      case (imp, selectors @ h :: _) => imp.copy(selectors = selectors).setPos(imp.pos)
+      case (imp, selectors @ h :: _) => imp.copy(selectors = selectors).setPos(imp.pos).setSymbol(imp.symbol).setType(imp.tpe)
     }.toList
   }
 
@@ -201,9 +201,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
     protected def doApply(trees: List[Import]) = trees.map { imp =>
       val wild = imp.selectors.find(_.name == nme.WILDCARD)
       if (wild.nonEmpty) {
-        val newImp = imp.copy(selectors = imp.selectors.filter { renamed }.sortBy { _.name } ::: wild.toList).setPos(imp.pos)
-        newImp.symbol = imp.symbol
-        newImp
+        imp.copy(selectors = imp.selectors.filter { renamed }.sortBy { _.name } ::: wild.toList).setPos(imp.pos).setSymbol(imp.symbol).setType(imp.tpe)
       } else
         imp
     }.groupBy {
