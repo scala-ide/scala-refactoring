@@ -2,8 +2,8 @@ name := "org.scala-refactoring.library"
 
 version := "0.11.0-SNAPSHOT"
 
-resolvers += "pr" at "https://scala-ci.typesafe.com/artifactory/scala-pr-validation-snapshots/"
-scalaVersion := "2.12.0-4d67c39-SNAPSHOT"
+resolvers += "scala-pr-validation-snapshots" at "https://scala-ci.typesafe.com/artifactory/scala-pr-validation-snapshots/"
+scalaVersion := "2.12.0-d7fe049-SNAPSHOT"
 
 moduleName := name.value
 
@@ -14,7 +14,7 @@ crossScalaVersions := Seq("2.10.6", "2.11.7", "2.11.8")
 crossVersion := CrossVersion.full
 
 scalacOptions ++= (scalaBinaryVersion.value match {
-  case "2.11" | "2.12" => Seq(
+  case v if (v == "2.11") || (v startsWith "2.12") => Seq(
     "-deprecation:false",
     "-encoding", "UTF-8",
     "-feature",
@@ -91,7 +91,7 @@ libraryDependencies ++= Seq(
   "com.novocode"    % "junit-interface"   % "0.10"              % "test"
 )
 libraryDependencies ++= (scalaBinaryVersion.value match {
-  case "2.12" => Seq(
+  case v if v startsWith "2.12" => Seq(
     "org.scala-lang.modules" % "scala-parser-combinators_2.12.0-RC1" % "1.0.4"
   )
   case _      => Nil
