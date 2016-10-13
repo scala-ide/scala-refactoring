@@ -22,7 +22,6 @@ import scala.tools.refactoring.common.TracingHelpersTest
     classOf[CompilationUnitDependenciesTest],
     classOf[CustomFormattingTest],
     classOf[DeclarationIndexTest],
-    classOf[EliminateMatchTest],
     classOf[ExpandCaseClassBindingTest],
     classOf[ExplicitGettersSettersTest],
     classOf[extraction.ExtractCodeTest],
