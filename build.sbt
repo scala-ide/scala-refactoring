@@ -88,9 +88,14 @@ credentials += Credentials(Path.userHome / ".m2" / "credentials")
 
 libraryDependencies ++= Seq(
   "org.scala-lang"  % "scala-compiler"    % scalaVersion.value,
-  "org.scala-lang.modules" % "scala-parser-combinators_2.12.0-RC1" % "1.0.4",
   "com.novocode"    % "junit-interface"   % "0.10"              % "test"
 )
+libraryDependencies ++= (scalaBinaryVersion.value match {
+  case "2.12" => Seq(
+    "org.scala-lang.modules" % "scala-parser-combinators_2.12.0-RC1" % "1.0.4"
+  )
+  case _      => Nil
+})
 
 parallelExecution in Test := false
 
