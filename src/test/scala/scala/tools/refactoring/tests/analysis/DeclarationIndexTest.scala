@@ -197,6 +197,7 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def findClassDeclarationToMethodParameter() = {
     assertReferencesOfSelection("""scala.this.Predef.String (53, 59), scala.this.Predef.String (85, 91)""", """
       class Xy
@@ -210,6 +211,21 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   }
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def findClassDeclarationToMethodParameter_2_12() = {
+    assertReferencesOfSelection("""scala.Predef.String (53, 59), scala.Predef.String (85, 91)""", """
+      class Xy
+
+      object I {
+        def go(xy: String) = {
+          xy: /*(*/ String /*)*/
+        }
+      }
+      """)
+  }
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def findClassDeclarationFromMethodParameter() = {
     assertReferencesOfSelection("""scala.this.Predef.String (59, 65), scala.this.Predef.String (91, 97)""", """
       class Xy
@@ -223,6 +239,21 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   }
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def findClassDeclarationFromMethodParameter_2_12() = {
+    assertReferencesOfSelection("""scala.Predef.String (59, 65), scala.Predef.String (91, 97)""", """
+      class Xy
+
+      object J {
+        def go(xy: /*(*/ String /*)*/) = {
+          xy: String
+        }
+      }
+      """)
+  }
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def referencesToLazyVal() = {
     val tree =  """
       object L {
@@ -241,6 +272,22 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   }
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def referencesToLazyVal_2_12() = {
+    val tree =  """
+      object L {
+        def go = {
+          lazy val x = 5
+
+          /*(*/ x /*)*/
+        }
+      }
+      """
+    assertReferencesOfSelection("""x (79, 80)""", tree)
+    assertDeclarationOfSelection("""<stable> <accessor> lazy val x: Int = 5""", tree)
+  }
+
+  @Test
   def referencesToTypes() = {
     val tree =  """
       object L {
@@ -254,8 +301,22 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def referencesToTypesInAppliedTypes() = {
     assertReferencesOfSelection("""scala.this.Predef.String (41, 47), scala.this.Predef.String (76, 82), scala.this.Predef.String (111, 117)""", """
+      object U {
+        def go(t: List[String]) = {
+          val s: /*(*/String/*)*/ = ""
+          t: List[String]
+        }
+      }
+      """)
+  }
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def referencesToTypesInAppliedTypes_2_12() = {
+    assertReferencesOfSelection("""scala.Predef.String (41, 47), scala.Predef.String (76, 82), scala.Predef.String (111, 117)""", """
       object U {
         def go(t: List[String]) = {
           val s: /*(*/String/*)*/ = ""
@@ -285,4 +346,3 @@ class DeclarationIndexTest extends TestHelper with GlobalIndexes with TreeAnalys
       """)
   }
 }
-

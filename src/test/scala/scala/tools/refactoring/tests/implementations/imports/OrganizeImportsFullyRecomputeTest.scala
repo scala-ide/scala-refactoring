@@ -7,8 +7,6 @@ package tests.implementations.imports
 
 import scala.tools.refactoring.implementations.OrganizeImports
 
-
-
 class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
@@ -141,7 +139,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import scala.collection.mutable.ListBuffer
     import scala.collection.mutable.HashMap
 
-    object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+    object Main {val lb = ListBuffer(1); val m = HashMap(1 → 1) }
     """ becomes
     """
     package tests.importing
@@ -149,7 +147,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     import scala.collection.mutable.HashMap
     import scala.collection.mutable.ListBuffer
 
-    object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+    object Main {val lb = ListBuffer(1); val m = HashMap(1 → 1) }
     """
   } applyRefactoring organizeWithoutCollapsing
 
@@ -534,7 +532,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
   @Test
   def SystemcurrentTimeMillis() = new FileSet {
     """
-    import System.currentTimeMillis
+    import java.lang.System.currentTimeMillis
 
     object Dummy {
       val x = currentTimeMillis

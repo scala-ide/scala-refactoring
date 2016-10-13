@@ -125,7 +125,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
       import scala.collection.mutable.{ListBuffer, HashMap}
 
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+      object Main {val lb = ListBuffer(1); val hm = HashMap(1 → 1) }
     """ becomes
       """
       package tests.importing
@@ -133,7 +133,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
 
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+      object Main {val lb = ListBuffer(1); val hm = HashMap(1 → 1) }
     """
   } applyRefactoring organizeExpand
 
@@ -163,7 +163,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.ListBuffer
       import scala.collection.mutable.HashMap
 
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+      object Main {val lb = ListBuffer(1); val hm = HashMap(1 → 1) }
     """ becomes
       """
       package tests.importing
@@ -171,7 +171,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
 
-      object Main {val lb = ListBuffer(1); val lb = HashMap(1 → 1) }
+      object Main {val lb = ListBuffer(1); val hm = HashMap(1 → 1) }
     """
   } applyRefactoring organizeWithoutCollapsing
 
@@ -435,7 +435,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       object Main {
       }    """ becomes
       """
-▒
+
       object Main {
       }    """
   } applyRefactoring organize
@@ -445,9 +445,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """
       import java.util._
       import scala.collection._
-      
+      ▒
       object Main {
-      }    """ becomes
+      }    """.replace("▒", "") becomes
       """
       ▒
       object Main {
@@ -4299,6 +4299,8 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   } applyRefactoring organizeCustomized(dependencies = Dependencies.RecomputeAndModify)
 
   @Test
+  // this test produces compilation error in 2.12, because shadowing an implicit parameter is not possible
+  @ScalaVersion(doesNotMatch = "2.12")
   def shouldNotRemoveImportImplicit() = new FileSet {
   """
   /*<-*/

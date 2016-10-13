@@ -129,10 +129,22 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def valAnnotation() = assertDependencies(
     """java.lang.Object
        scala.beans.BeanProperty
        scala.this.Predef.String""",
+    """
+      import scala.beans.BeanProperty
+      case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
+      """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def valAnnotation_2_12() = assertDependencies(
+    """java.lang.Object
+       scala.Predef.String
+       scala.beans.BeanProperty""",
     """
       import scala.beans.BeanProperty
       case class JavaPerson(@BeanProperty var name: String, @BeanProperty var addresses: java.lang.Object)
@@ -193,9 +205,20 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def classAttributeDeps() = assertDependencies(
     """scala.collection.mutable.Map
        scala.this.Predef.String""",
+    """
+      import scala.collection.mutable.Map
+      class UsesMap { val x = Map[Int, String]() }
+      """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def classAttributeDeps_2_12() = assertDependencies(
+    """scala.Predef.String
+       scala.collection.mutable.Map""",
     """
       import scala.collection.mutable.Map
       class UsesMap { val x = Map[Int, String]() }
@@ -226,9 +249,20 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def renamedImport() = assertDependencies(
     """scala.collection.mutable.Map
        scala.this.Predef.String""",
+    """
+      import scala.collection.mutable.{Map => M}
+      class UsesMap { val x = M[Int, String]() }
+      """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def renamedImport_2_12() = assertDependencies(
+    """scala.Predef.String
+       scala.collection.mutable.Map""",
     """
       import scala.collection.mutable.{Map => M}
       class UsesMap { val x = M[Int, String]() }
@@ -243,8 +277,28 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def localImport() = assertDependencies(
     """scala.this.Predef.println""",
+    """
+      class A {
+        val B = new {
+          val y = 2
+        }
+      }
+
+      object CLocalImport {
+        def m(x: A): Unit = {
+          import x._
+          println(B.y)
+        }
+      }
+      """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def localImport_2_12() = assertDependencies(
+    """scala.Predef.println""",
     """
       class A {
         val B = new {
@@ -279,9 +333,19 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def classAttributeWithFullPackage() = assertDependencies(
     """scala.collection.mutable.Map
        scala.this.Predef.String""",
+    """
+      class UsesMap { val x = collection.mutable.Map[Int, String]() }
+      """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def classAttributeWithFullPackage_2_12() = assertDependencies(
+    """scala.Predef.String
+       scala.collection.mutable.Map""",
     """
       class UsesMap { val x = collection.mutable.Map[Int, String]() }
       """)
@@ -486,8 +550,22 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def typeUsedInNew() = assertDependencies(
     """scala.this.Predef.intWrapper
+       scala.util.Random""",
+    """
+      import scala.util._
+      class X {
+        val r = new Random
+        (0 to 10) map (_ => r.nextInt) sum
+      }
+      """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def typeUsedInNew_2_12() = assertDependencies(
+    """scala.Predef.intWrapper
        scala.util.Random""",
     """
       import scala.util._
@@ -557,10 +635,25 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def importFromPackageObject() = assertDependencies(
     """scala.collection.`package`.breakOut
        scala.this.Predef.Map
        scala.this.Predef.identity""",
+    """
+      import scala.collection.breakOut
+      object TestbreakOut {
+        val xs: Map[Int, Int] = List((1, 1), (2, 2)).map(identity)(breakOut)
+      }
+      """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def importFromPackageObject_2_12() = assertDependencies(
+    """scala.Predef.Map
+       scala.Predef.identity
+       scala.collection.`package`.breakOut
+       scala.collection.immutable.List""",
     """
       import scala.collection.breakOut
       object TestbreakOut {
@@ -644,6 +737,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def importedImplicitArgument(): Unit = {
 
     addToCompiler("xy.scala", """
@@ -666,6 +760,38 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     assertDependencies(
     """impl.args.Implicits.x
        scala.this.Predef.String""",
+    """
+      import impl.args.Implicits._
+      object Conversions {
+        def doWithImpl(a: Int)(implicit s: String) = s
+        doWithImpl(5)
+      }
+      """)
+  }
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def importedImplicitArgument_2_12(): Unit = {
+    addToCompiler("xy.scala", """
+      package impl.args
+      object Implicits {
+        implicit val x = "<empty>"
+      }
+    """)
+
+    assertNeededImports(
+    """impl.args.Implicits.x""",
+    """
+      import impl.args.Implicits._
+      object Conversions {
+        def doWithImpl(a: Int)(implicit s: String) = s
+        doWithImpl(5)
+      }
+      """)
+
+    assertDependencies(
+    """impl.args.Implicits.x
+       scala.Predef.String""",
     """
       import impl.args.Implicits._
       object Conversions {
@@ -725,6 +851,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def SystemcurrentTimeMillis() = assertNeededImports(
     """java.this.lang.System.currentTimeMillis""",
     """
@@ -736,8 +863,33 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def SystemcurrentTimeMillis_2_12() = assertNeededImports(
+    """java.lang.System.currentTimeMillis""",
+    """
+      import System.currentTimeMillis
+
+      object Dummy {
+        val x = currentTimeMillis
+      }
+    """)
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def SystemcurrentTimeMillisDeps() = assertDependencies(
     """java.this.lang.System.currentTimeMillis""",
+    """
+      import System.currentTimeMillis
+
+      object Dummy {
+        val x = currentTimeMillis
+      }
+    """)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def SystemcurrentTimeMillisDeps_2_12() = assertDependencies(
+    """java.lang.System.currentTimeMillis""",
     """
       import System.currentTimeMillis
 
@@ -776,6 +928,7 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     """)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def ClassInAnnotationDeps() = {
     val code =  """
       package examples
@@ -807,6 +960,38 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
   }
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def ClassInAnnotationDeps_2_12() = {
+    val code =  """
+      package examples
+
+      import java.io._
+
+      class Reader(fname: String) {
+        private val in = new BufferedReader(new FileReader(fname))
+        @throws(classOf[IOException])
+        def read() = in.read()
+      }
+    """
+    val deps1 = """java.io.BufferedReader
+         java.io.FileReader
+         java.io.IOException
+         scala.Predef.String"""
+    val deps2 = deps1 + "\nscala.this.Predef.classOf"
+    def test(deps: String): Option[Throwable] = try {
+      assertDependencies(deps, code)
+      None
+    } catch {
+      case t: Throwable => Some(t)
+    }
+
+    (test(deps1), test(deps2)) match {
+      case (Some(t1), Some(t2)) => throw t1
+      case _ => // okay, one test passed
+    }
+  }
+
+  @Test
   def implicitDefImports()  = assertNeededImports(
     "", """class ImplicitDef {
 
@@ -819,9 +1004,32 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
     }""")
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def implicitDef() = assertDependencies(
     """scala.reflect.ClassTag
        scala.this.Predef.byteArrayOps""",
+    """class ImplicitDef {
+
+      // In Scala 2.10.x, the macro expansion was seen in the presentation compiler
+      // and a dependency on ClassTag.Byte was detected. After the change in
+      // 2.11 to keep the macro expandee in the tree, this is no longer reported.
+      // Here, we add the implicit ourselves to make the test behave the same on
+      // both Scala versions.
+      implicit def byteClassTag: scala.reflect.ClassTag[Byte] = null
+
+      val readBuffer = Array.ofDim[Byte](1024)
+      val dataId: (Byte, Byte) = readBuffer.slice(0, 2)
+
+      implicit def arrayTo2Tuple[T](a: Array[T]): (T, T) = {
+        (a(0), a(1))
+      }
+    }""")
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def implicitDef_2_12() = assertDependencies(
+    """scala.Predef.byteArrayOps
+       scala.reflect.ClassTag""",
     """class ImplicitDef {
 
       // In Scala 2.10.x, the macro expansion was seen in the presentation compiler
