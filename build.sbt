@@ -2,8 +2,7 @@ name := "org.scala-refactoring.library"
 
 version := "0.11.0-SNAPSHOT"
 
-resolvers += "scala-pr-validation-snapshots" at "https://scala-ci.typesafe.com/artifactory/scala-pr-validation-snapshots/"
-scalaVersion := "2.12.0-d7fe049-SNAPSHOT"
+scalaVersion := "2.12.0-RC2"
 
 moduleName := name.value
 
@@ -92,7 +91,7 @@ libraryDependencies ++= Seq(
 )
 libraryDependencies ++= (scalaBinaryVersion.value match {
   case v if v startsWith "2.12" => Seq(
-    "org.scala-lang.modules" % "scala-parser-combinators_2.12.0-RC1" % "1.0.4"
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
   )
   case _      => Nil
 })
