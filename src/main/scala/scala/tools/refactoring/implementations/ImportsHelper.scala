@@ -61,14 +61,14 @@ trait ImportsHelper extends TracingImpl {
         }
 
         val imports = oi.NeededImports(existingImports).filterNot { imp =>
-          targetPkgName == imp.expr.toString && imp.selectors.size == 1 && {
+          val noLongerNeeded = targetPkgName == imp.expr.toString && imp.selectors.size == 1 && {
+            // Note that we don't touch imports with multiple selectors here. This limitation,
+            // that should not result in any regressions, might be addressed in the future.
             val s = imp.selectors.head
             s.name == s.rename
           }
-        } \\ { imports =>
-          imports.foreach { imp =>
-            trace(s"NeededImport: $imp")
-          }
+
+          noLongerNeeded
         }
 
         // When we move the whole file, we only want to add imports to the originating package
