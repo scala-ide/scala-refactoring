@@ -6,3 +6,4 @@ bin
 .attach_pid*
 **/*.tmpBin
 *.swp
+.ensime*

@@ -33,14 +33,22 @@ trait ImportsHelper extends TracingImpl {
 
               val newImportsToAdd = externalDependencies filterNot {
                 case Select(qualifier, name) =>
-
-                  val pkgString = importAsString(qualifier)
+                  val depPkgStr = importAsString(qualifier)
+                  val depNameStr = "" + name
 
                   trees exists {
                     case Import(expr, selectors) =>
-                      val pkgName = importAsString(expr)
+                      val impPkgStr = importAsString(expr)
+
                       selectors exists { selector =>
-                        pkgName == pkgString && (selector.name == nme.WILDCARD || name.toString == selector.name.toString)
+                        val selNameStr = "" + selector.name
+                        val selRenameStr = "" + selector.rename
+
+                        impPkgStr == depPkgStr && {
+                          selector.name == nme.WILDCARD || {
+                            selNameStr == depNameStr || selRenameStr == depNameStr
+                          }
+                        }
                       }
                   }
               }
@@ -52,7 +60,17 @@ trait ImportsHelper extends TracingImpl {
           }
         }
 
-        val imports = oi.NeededImports(existingImports)
+        val imports = oi.NeededImports(existingImports).filterNot { imp =>
+          val noLongerNeeded = targetPkgName == imp.expr.toString && imp.selectors.size == 1 && {
+            // Note that we don't touch imports with multiple selectors here. This limitation,
+            // that should not result in any regressions, might be addressed in the future.
+            val s = imp.selectors.head
+            s.name == s.rename
+          }
+
+          noLongerNeeded
+        }
+
         // When we move the whole file, we only want to add imports to the originating package
         pkg copy (stats = imports ::: rest) replaces pkg
       }

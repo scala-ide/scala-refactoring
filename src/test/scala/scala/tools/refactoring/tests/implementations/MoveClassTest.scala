@@ -1185,4 +1185,158 @@ object /*(*/Arith/*)*/ {
     }
     """
   } applyRefactoring(moveTo("p1.p2"))
+
+  /*
+   * See Assembla Ticket 1002723
+   */
+  @Test
+  def moveToPackageWithDepsAndUsers1002723() = new FileSet {
+    """
+    package com.github.mlangc.experiments.v1.move.me.here
+
+    class DepInTargetPackage
+    """ isNotModified()
+
+    """
+    package com.github.mlangc.experiments.v1
+
+    import com.github.mlangc.experiments.v1.move.me.here.DepInTargetPackage
+
+    class /*(*/MoveMe/*)*/ {
+      val dep = new DepInTargetPackage
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1.move.me.here
+
+    class /*(*/MoveMe/*)*/ {
+      val dep = new DepInTargetPackage
+    }
+    """
+
+    """
+    package com.github.mlangc.experiments.v1.move.me.here
+
+    import com.github.mlangc.experiments.v1.MoveMe
+
+    class UseMoveClass {
+      val use = new MoveMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1.move.me.here
+
+    class UseMoveClass {
+      val use = new MoveMe
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.v1.move.me.here"))
+
+  @Test
+  def moveToPackageWithDepsAndMultipleUsers1002723() = new FileSet {
+    """
+    package com.github.mlangc.experiments.v2
+
+    class DepInSourcePackage
+    """ isNotModified()
+
+    """
+    package com.github.mlangc.experiments.v2.move.me.here
+
+    class DepInTargetPackage
+    """ isNotModified()
+
+    """
+    package com.github.mlangc.experiments.v2
+
+    import com.github.mlangc.experiments.v2.move.me.here.DepInTargetPackage
+
+    class /*(*/MoveMe/*)*/ {
+      val depSource = new DepInSourcePackage
+      val depTarget = new DepInTargetPackage
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v2.move.me.here
+
+    import com.github.mlangc.experiments.v2.DepInSourcePackage
+
+    class /*(*/MoveMe/*)*/ {
+      val depSource = new DepInSourcePackage
+      val depTarget = new DepInTargetPackage
+    }
+    """
+
+    """
+    package com.github.mlangc.experiments.v2
+
+    class UserInSourcePackage {
+      val usr = new MoveMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v2
+
+    import com.github.mlangc.experiments.v2.move.me.here.MoveMe
+
+    class UserInSourcePackage {
+      val usr = new MoveMe
+    }
+    """
+
+    """
+    package com.github.mlangc.experiments.v2.move.me.here
+
+    import com.github.mlangc.experiments.v2.MoveMe
+
+    class UserInTargetPackage {
+      val usr = new MoveMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v2.move.me.here
+
+    class UserInTargetPackage {
+      val usr = new MoveMe
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.v2.move.me.here"))
+
+  @Test
+  def moveToPackageWithRenamedDeps() = new FileSet {
+    """
+    package com.github.mlangc.experiments.v4
+
+    class DepInSourcePackage
+    """ isNotModified()
+
+    """
+    package com.github.mlangc.experiments.v4.move.me.here
+
+    class DepInTargetPackage
+    """ isNotModified()
+
+    """
+    package com.github.mlangc.experiments.v4
+
+    import com.github.mlangc.experiments.v4.{DepInSourcePackage => Sdep}
+    import com.github.mlangc.experiments.v4.move.me.here.{DepInTargetPackage => Tdep}
+
+    class /*(*/MoveMe/*)*/ {
+      val sDep = new Sdep
+      val tDep = new Tdep
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v4.move.me.here
+
+    import com.github.mlangc.experiments.v4.{DepInSourcePackage => Sdep}
+    import com.github.mlangc.experiments.v4.move.me.here.{DepInTargetPackage => Tdep}
+
+    class /*(*/MoveMe/*)*/ {
+      val sDep = new Sdep
+      val tDep = new Tdep
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.v4.move.me.here"))
 }

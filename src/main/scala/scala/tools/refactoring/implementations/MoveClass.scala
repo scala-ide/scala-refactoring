@@ -296,10 +296,11 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
               /*
                * We are lucky and can replace the import expression.
                * */
-              pkg copy (stats = stats map {
+              pkg copy (stats = stats flatMap {
                 case imp @ Import(_, selector :: Nil) if hasMovedName(selector) =>
-                  imp copy (expr = Ident(newFullPackageName)) replaces imp
-                case stmt => stmt
+                  if (newFullPackageName == pkg.pid.toString) None
+                  else Some(imp copy (expr = Ident(newFullPackageName)) replaces imp)
+                case stmt => Some(stmt)
               }) copyAttrs pkg
 
             /*
