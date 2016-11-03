@@ -2,7 +2,7 @@ name := "org.scala-refactoring.library"
 
 version := "0.11.0-SNAPSHOT"
 
-scalaVersion := "2.12.0-RC2"
+scalaVersion := "2.11.8"
 
 moduleName := name.value
 
