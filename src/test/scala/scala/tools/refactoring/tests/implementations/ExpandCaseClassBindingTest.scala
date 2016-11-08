@@ -9,15 +9,15 @@ import tests.util.TestRefactoring
 import tests.util.TestHelper
 import scala.tools.refactoring.implementations.ExpandCaseClassBinding
 
-
 class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
 
   def expand(pro: FileSet) = new TestRefactoringImpl(pro) {
-    val refactoring = new ExpandCaseClassBinding with TestProjectIndex
+    override val refactoring = new ExpandCaseClassBinding with TestProjectIndex
     val changes = performRefactoring()
   }.changes
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def expandSome() = new FileSet {
     """
       package extractLocal
@@ -38,6 +38,28 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def expandSome_2_12() = new FileSet {
+    """
+      package extractLocal
+      object Demo {
+        Some("string") match {
+          case /*(*/s/*)*/ =>
+        }
+      }
+    """ becomes
+    """
+      package extractLocal
+      object Demo {
+        Some("string") match {
+          case /*(*/Some(value)/*)*/ =>
+        }
+      }
+    """
+  } applyRefactoring(expand)
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def expandSomeWithReference() = new FileSet {
     """
       package extractLocal
@@ -52,6 +74,27 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       object Demo {
         Some("string") match {
           case /*(*/s @ Some(x)/*)*/ => s
+        }
+      }
+    """
+  } applyRefactoring(expand)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def expandSomeWithReference_2_12() = new FileSet {
+    """
+      package extractLocal
+      object Demo {
+        Some("string") match {
+          case /*(*/s/*)*/ => s
+        }
+      }
+    """ becomes
+    """
+      package extractLocal
+      object Demo {
+        Some("string") match {
+          case /*(*/s @ Some(value)/*)*/ => s
         }
       }
     """
@@ -118,6 +161,7 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
   } applyRefactoring(expand)
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def expandInnerNested() = new FileSet {
     """
       case class Pair[T, U](first: T, second: U)
@@ -132,6 +176,27 @@ class ExpandCaseClassBindingTest extends TestHelper with TestRefactoring {
       object Demo {
         List(Pair(Some(true), false)) match {
           case pair @ Pair(/*(*/Some(x)/*)*/, second) :: Nil =>
+        }
+      }
+    """
+  } applyRefactoring(expand)
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def expandInnerNested_2_12() = new FileSet {
+    """
+      case class Pair[T, U](first: T, second: U)
+      object Demo {
+        List(Pair(Some(true), false)) match {
+          case pair @ Pair(/*(*/first/*)*/, second) :: Nil =>
+        }
+      }
+    """ becomes
+    """
+      case class Pair[T, U](first: T, second: U)
+      object Demo {
+        List(Pair(Some(true), false)) match {
+          case pair @ Pair(/*(*/Some(value)/*)*/, second) :: Nil =>
         }
       }
     """

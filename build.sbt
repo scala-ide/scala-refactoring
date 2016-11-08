@@ -13,7 +13,7 @@ crossScalaVersions := Seq("2.10.6", "2.11.7", "2.11.8")
 crossVersion := CrossVersion.full
 
 scalacOptions ++= (scalaBinaryVersion.value match {
-  case "2.11" => Seq(
+  case v if (v == "2.11") || (v startsWith "2.12") => Seq(
     "-deprecation:false",
     "-encoding", "UTF-8",
     "-feature",
@@ -31,13 +31,15 @@ scalacOptions ++= (scalaBinaryVersion.value match {
 })
 
 unmanagedSourceDirectories in Compile += baseDirectory.value / (scalaBinaryVersion.value match {
-  case "2.10" => "src/main/scala-2_10"
-  case _      => "src/main/scala-2_11"
+  case "2.10" => "src/main/scala-2.10"
+  case "2.11" => "src/main/scala-2.11"
+  case _      => "src/main/scala-2.12"
 })
 
 unmanagedSourceDirectories in Test += baseDirectory.value / (scalaBinaryVersion.value match {
-  case "2.10" => "src/test/scala-2_10"
-  case _      => "src/test/scala-2_11"
+  case "2.10" => "src/test/scala-2.10"
+  case "2.11" => "src/test/scala-2.11"
+  case _      => "src/test/scala-2.12"
 })
 
 publishMavenStyle := true
@@ -87,6 +89,12 @@ libraryDependencies ++= Seq(
   "org.scala-lang"  % "scala-compiler"    % scalaVersion.value,
   "com.novocode"    % "junit-interface"   % "0.10"              % "test"
 )
+libraryDependencies ++= (scalaBinaryVersion.value match {
+  case v if v startsWith "2.12" => Seq(
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+  )
+  case _      => Nil
+})
 
 parallelExecution in Test := false
 

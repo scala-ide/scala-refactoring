@@ -206,6 +206,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
   } applyRefactoring organize
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def SystemcurrentTimeMillis() = new FileSet {
     """
     import System.currentTimeMillis
@@ -217,6 +218,26 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     import System.currentTimeMillis
+
+    object Dummy {
+      val x = currentTimeMillis
+    }
+    """
+  } applyRefactoring organize
+
+  @Test
+  @ScalaVersion(matches = "2.12")
+  def SystemcurrentTimeMillis_2_12() = new FileSet {
+    """
+    import System.currentTimeMillis
+    import scala.collection.mutable.ListBuffer
+
+    object Dummy {
+      val x = currentTimeMillis
+    }
+    """ becomes
+    """
+    import java.lang.System.currentTimeMillis
 
     object Dummy {
       val x = currentTimeMillis
