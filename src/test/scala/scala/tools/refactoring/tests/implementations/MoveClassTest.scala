@@ -1408,4 +1408,42 @@ object /*(*/Arith/*)*/ {
     }
     """
   } applyRefactoring(moveTo("com.github.mlangc.experiments.v2.dst.pkg"))
+
+  /*
+   * See Assembla Ticket 1002785
+   */
+  @Test
+  def moveClassWithFullyQualifiedReferenceNextToUnqualifiedReference1002785() = new FileSet {
+    """
+    package com.github.mlangc.experiments.v1.src.pkg
+
+    class /*(*/MoveMe/*)*/
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1.dst.pkg
+
+    class /*(*/MoveMe/*)*/
+    """
+
+    """
+    package com.github.mlangc.experiments.v1
+
+    import com.github.mlangc.experiments.v1.src.pkg.MoveMe
+
+    class Bug {
+      val unqualified = new MoveMe
+      val fullyQualified = new com.github.mlangc.experiments.v1.src.pkg.MoveMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1
+
+    import com.github.mlangc.experiments.v1.dst.pkg.MoveMe
+
+    class Bug {
+      val unqualified = new MoveMe
+      val fullyQualified = new com.github.mlangc.experiments.v1.dst.pkg.MoveMe
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.v1.dst.pkg"))
 }
