@@ -305,7 +305,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       references: List[Tree],
       alreadyHasImportSelector: Boolean,
       hasMovedName: ImportSelector => Boolean): List[Tree] = stat match {
-              
+
     // A toplevel import has a single selector that imports the class we move:
     case imp @ Import(_, selector :: Nil) if hasMovedName(selector) =>
       if (newFullPackageName == pid.toString) Nil
@@ -326,6 +326,10 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
 
         case ref: Ident if references.contains(ref) && !alreadyHasImportSelector =>
           Ident(newFullPackageName + "." + ref.name)
+
+        // A local import has a single selector that imports the class we move:
+        case imp @ Import(_, selector :: Nil) if hasMovedName(selector) && (newFullPackageName != pid.toString) =>
+          imp copy (expr = Ident(newFullPackageName)) replaces imp
       }
 
       traverseAndTransformAll(transformOther)(other).toList
