@@ -1339,4 +1339,111 @@ object /*(*/Arith/*)*/ {
     }
     """
   } applyRefactoring(moveTo("com.github.mlangc.experiments.v4.move.me.here"))
+
+  /*
+   * See Assembla Ticket 1002761
+   */
+  @Test
+  def moveClassReferencedInClassLevelImport1002761() = new FileSet {
+    """
+    package com.github.mlangc.experiments.v1.src.pkg
+
+    class /*(*/MoveMe/*)*/
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1.dst.pkg
+
+    class /*(*/MoveMe/*)*/
+    """
+
+    """
+    package com.github.mlangc.experiments.v1
+
+    class Bug {
+      import com.github.mlangc.experiments.v1.src.pkg.MoveMe
+      val dep = new MoveMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1
+
+    class Bug {
+      import com.github.mlangc.experiments.v1.dst.pkg.MoveMe
+      val dep = new MoveMe
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.v1.dst.pkg"))
+
+  @Test
+  def moveClassReferencedInMethodLevelImport1002761() = new FileSet {
+    """
+    package com.github.mlangc.experiments.v2.src.pkg
+
+    class /*(*/MoveMe/*)*/
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v2.dst.pkg
+
+    class /*(*/MoveMe/*)*/
+    """
+
+    """
+    package com.github.mlangc.experiments.v2
+
+    object Bug {
+      def foo = {
+        import com.github.mlangc.experiments.v2.src.pkg.MoveMe
+        new MoveMe
+      }
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v2
+
+    object Bug {
+      def foo = {
+        import com.github.mlangc.experiments.v2.dst.pkg.MoveMe
+        new MoveMe
+      }
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.v2.dst.pkg"))
+
+  /*
+   * See Assembla Ticket 1002785
+   */
+  @Test
+  def moveClassWithFullyQualifiedReferenceNextToUnqualifiedReference1002785() = new FileSet {
+    """
+    package com.github.mlangc.experiments.v1.src.pkg
+
+    class /*(*/MoveMe/*)*/
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1.dst.pkg
+
+    class /*(*/MoveMe/*)*/
+    """
+
+    """
+    package com.github.mlangc.experiments.v1
+
+    import com.github.mlangc.experiments.v1.src.pkg.MoveMe
+
+    class Bug {
+      val unqualified = new MoveMe
+      val fullyQualified = new com.github.mlangc.experiments.v1.src.pkg.MoveMe
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.v1
+
+    import com.github.mlangc.experiments.v1.dst.pkg.MoveMe
+
+    class Bug {
+      val unqualified = new MoveMe
+      val fullyQualified = new com.github.mlangc.experiments.v1.dst.pkg.MoveMe
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.v1.dst.pkg"))
 }
