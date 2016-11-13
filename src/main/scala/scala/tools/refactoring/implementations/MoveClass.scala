@@ -285,54 +285,49 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
           def hasMovedName(s: ImportSelector) = s.name.toString == referencedName
 
           val adaptImports = transform {
+            case pkg @ PackageDef(pid, stats) =>
+              val newStats = stats.flatMap { stat =>
+                transformPackageDefStat(pid, stat, newFullPackageName, references, alreadyHasImportSelector, hasMovedName)
+              }
 
-            /*
-             * The import has a single selector that imports the class we move.
-             * */
-            case pkg @ PackageDef(_, stats) if stats.exists {
-              case Import(_, selector :: Nil) => hasMovedName(selector)
-              case _ => false
-            } =>
-              /*
-               * We are lucky and can replace the import expression.
-               * */
-              pkg copy (stats = stats flatMap {
-                case imp @ Import(_, selector :: Nil) if hasMovedName(selector) =>
-                  if (newFullPackageName == pkg.pid.toString) None
-                  else Some(imp copy (expr = Ident(newFullPackageName)) replaces imp)
-                case stmt => Some(stmt)
-              }) copyAttrs pkg
-
-            /*
-             * The import has multiple selectors with one of them being the class we move.
-             * */
-            case pkg @ PackageDef(_, stats) if stats.exists {
-              case Import(_, selectors) => selectors.exists(hasMovedName)
-              case _ => false
-            } =>
-              /*
-               * Remove the obsolete selector and add a new import with the new package name.
-               * */
-              pkg copy (stats = stats flatMap {
-                case imp @ Import(_, selectors) if selectors.exists(hasMovedName) =>
-                  val selector = selectors.find(hasMovedName).get
-                  List(
-                      imp copy (selectors = selectors.filterNot(_ == selector)) replaces imp,
-                      Import(Ident(newFullPackageName), selector :: Nil))
-                case stmt =>
-                  List(stmt)
-              }) copyAttrs pkg
-
-            case s @ Select(qualifier, _) if references.contains(s) &&
-                qualifier.pos.isRange /* qualifier is visible in the source code */ =>
-              s copy (qualifier = Ident(newFullPackageName)) replaces s
-
-            case ref: Ident if references.contains(ref) && !alreadyHasImportSelector =>
-              Ident(newFullPackageName + "." + ref.name)
+              pkg.copy(stats = newStats).copyAttrs(pkg)
           }
 
           transformFile(sourceFile.file, traverseAndTransformAll(adaptImports))
         }
     }
+  }
+
+  private def transformPackageDefStat(
+      pid: RefTree,
+      stat: Tree,
+      newFullPackageName: String,
+      references: List[Tree],
+      alreadyHasImportSelector: Boolean,
+      hasMovedName: ImportSelector => Boolean): List[Tree] = stat match {
+              
+    // A toplevel import has a single selector that imports the class we move:
+    case imp @ Import(_, selector :: Nil) if hasMovedName(selector) =>
+      if (newFullPackageName == pid.toString) Nil
+      else List(imp copy (expr = Ident(newFullPackageName)) replaces imp)
+
+    // An import with multiple selectors with one of them being the class we move:
+    case imp @ Import(_, selectors) if selectors.exists(hasMovedName) =>
+      val selector = selectors.find(hasMovedName).get
+      List(
+          imp copy (selectors = selectors.filterNot(_ == selector)) replaces imp,
+          Import(Ident(newFullPackageName), selector :: Nil))
+
+    case other =>
+      val transformOther = transform {
+        case s @ Select(qualifier, _) if references.contains(s) &&
+            qualifier.pos.isRange /* qualifier is visible in the source code */ =>
+          s copy (qualifier = Ident(newFullPackageName)) replaces s
+
+        case ref: Ident if references.contains(ref) && !alreadyHasImportSelector =>
+          Ident(newFullPackageName + "." + ref.name)
+      }
+
+      traverseAndTransformAll(transformOther)(other).toList
   }
 }
