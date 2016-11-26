@@ -1446,4 +1446,54 @@ object /*(*/Arith/*)*/ {
     }
     """
   } applyRefactoring(moveTo("com.github.mlangc.experiments.v1.dst.pkg"))
+
+  /*
+   * See Assembla Ticket 1002786
+   */
+  @Test
+  def moveClassThatHasDoppelgangerInDifferentPackage1002786() = new FileSet {
+    """
+    package com.github.mlangc.experiments.src.pkg
+
+    class /*(*/MoveMe/*)*/
+    """ becomes
+    """
+    package com.github.mlangc.experiments.dst.pkg
+
+    class /*(*/MoveMe/*)*/
+    """
+
+    """
+    package com.github.mlangc.experiments.trap
+
+    class MoveMe {
+      def trapped: Int = 42
+    }
+    """ isNotModified()
+
+    """
+    package com.github.mlangc.experiments
+
+    import com.github.mlangc.experiments.src.pkg.MoveMe
+
+    class Bug {
+      val noTrap = new MoveMe
+
+      import com.github.mlangc.experiments.trap.MoveMe
+      val trap = new MoveMe().trapped
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import com.github.mlangc.experiments.dst.pkg.MoveMe
+
+    class Bug {
+      val noTrap = new MoveMe
+
+      import com.github.mlangc.experiments.trap.MoveMe
+      val trap = new MoveMe().trapped
+    }
+    """
+  } applyRefactoring(moveTo("com.github.mlangc.experiments.dst.pkg"))
 }
