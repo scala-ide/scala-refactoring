@@ -268,6 +268,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       case (sourceFile, implDef, references) =>
 
         val referencedName = implDef.nameString
+        val referencedOwners = implDef.symbol.owner.ownerChain.map(_.nameString)
 
         val alreadyHasImportSelector = references.exists(_.isInstanceOf[ImportSelectorTree])
 
@@ -282,7 +283,12 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
           addImport.addImport(sourceFile.file, newFullPackageName + "." + referencedName)
         } else {
 
-          def hasMovedName(s: ImportSelector) = s.name.toString == referencedName
+          def hasMovedName(expr: Tree, s: ImportSelector) = {
+            s.name.toString == referencedName && {
+              val owners = expr.symbol.ownerChain.map(_.nameString)
+              referencedOwners == owners
+            }
+          }
 
           val adaptImports = transform {
             case pkg @ PackageDef(pid, stats) =>
@@ -304,16 +310,16 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
       newFullPackageName: String,
       references: List[Tree],
       alreadyHasImportSelector: Boolean,
-      hasMovedName: ImportSelector => Boolean): List[Tree] = stat match {
+      hasMovedName: (Tree, ImportSelector) => Boolean): List[Tree] = stat match {
 
     // A toplevel import has a single selector that imports the class we move:
-    case imp @ Import(_, selector :: Nil) if hasMovedName(selector) =>
+    case imp @ Import(expr, selector :: Nil) if hasMovedName(expr, selector) =>
       if (newFullPackageName == pid.toString) Nil
       else List(imp copy (expr = Ident(newFullPackageName)) replaces imp)
 
     // An import with multiple selectors with one of them being the class we move:
-    case imp @ Import(_, selectors) if selectors.exists(hasMovedName) =>
-      val selector = selectors.find(hasMovedName).get
+    case imp @ Import(expr, selectors) if selectors.exists(hasMovedName(expr, _)) =>
+      val selector = selectors.find(hasMovedName(expr, _)).get
       List(
           imp copy (selectors = selectors.filterNot(_ == selector)) replaces imp,
           Import(Ident(newFullPackageName), selector :: Nil))
@@ -328,7 +334,7 @@ abstract class MoveClass extends MultiStageRefactoring with TreeFactory with ana
           Ident(newFullPackageName + "." + ref.name)
 
         // A local import has a single selector that imports the class we move:
-        case imp @ Import(_, selector :: Nil) if hasMovedName(selector) && (newFullPackageName != pid.toString) =>
+        case imp @ Import(expr, selector :: Nil) if hasMovedName(expr, selector) && (newFullPackageName != pid.toString) =>
           imp copy (expr = Ident(newFullPackageName)) replaces imp
       }
 
