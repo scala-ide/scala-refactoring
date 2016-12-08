@@ -508,4 +508,26 @@ class MarkOccurrencesTest extends TestHelper {
        val c = 1.1 ## 2.2 ##/*<-cursor*/ Nil
      }
    """)
+
+  @Test
+  def onSelfReference1() = markOccurrences("""
+    class Bug1 { /*2-cursor->*/renameMe =>
+      def alias = renameMe
+    }
+  """, """
+    class Bug1 { /*2-cursor->*/######## =>
+      def alias = ########
+    }
+  """)
+
+  @Test
+  def onSelfReference2() = markOccurrences("""
+    class Bug1 { renameMe =>
+      def alias = /*2-cursor->*/renameMe
+    }
+  """, """
+    class Bug1 { ######## =>
+      def alias = /*2-cursor->*/########
+    }
+  """)
 }
