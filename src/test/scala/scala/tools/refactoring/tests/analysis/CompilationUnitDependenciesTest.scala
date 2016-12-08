@@ -702,6 +702,21 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def importedImplicitConversion_2_12() = assertDependencies(
+    """java.util.List
+       scala.collection.JavaConversions.deprecated bufferAsJavaList
+       scala.collection.mutable.ListBuffer""",
+    """
+      import scala.collection.JavaConversions._
+      object Conversions {
+        val sl = new scala.collection.mutable.ListBuffer[Int]
+        val jl : java.util.List[Int] = sl
+      }
+      """)
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def importedImplicitConversion() = assertDependencies(
     """java.util.List
        scala.collection.JavaConversions.bufferAsJavaList
@@ -715,6 +730,19 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def importedImplicitConversionNeedsImport_2_12() = assertNeededImports(
+    """scala.collection.JavaConversions.deprecated bufferAsJavaList""",
+    """
+      import scala.collection.JavaConversions._
+      object Conversions {
+        val sl = new scala.collection.mutable.ListBuffer[Int]
+        val jl : java.util.List[Int] = sl
+      }
+      """)
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def importedImplicitConversionNeedsImport() = assertNeededImports(
     """scala.collection.JavaConversions.bufferAsJavaList""",
     """
@@ -726,6 +754,19 @@ class CompilationUnitDependenciesTest extends TestHelper with CompilationUnitDep
       """)
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def importedImplicitConversionNeedsImportShortForm_2_12() = assertNeededImports(
+    """scala.collection.JavaConversions.deprecated asScalaBuffer""",
+    """
+      import collection.JavaConversions._
+      class ListConversion {
+        val l = new java.util.ArrayList[String]
+        l map (_.toInt)
+      }
+    """)
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def importedImplicitConversionNeedsImportShortForm() = assertNeededImports(
     """scala.collection.JavaConversions.asScalaBuffer""",
     """

@@ -221,6 +221,9 @@ trait PrettyPrinter extends TreePrintingTraversals with AbstractPrinter {
         case Select(Select(ths: This, selector), _) =>
           Fragment(selector.toString)
 
+        case Select(qual @ Select(_, selector), name) if qual.symbol.isModule =>
+          Fragment(selector.toString)
+
         case _ =>
           p(fun) ++ pp(args, before = "[", separator = ", ", after = "]")
       }
