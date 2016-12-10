@@ -32,6 +32,10 @@ abstract class Rename extends MultiStageRefactoring with MarkOccurrences with Tr
      * we always get a fully initialized index.
      */
     def isLocalRename(t: Tree) = {
+      def isSelfReference = {
+        findParentOfPotentialSelfReference(t, s.root).nonEmpty
+      }
+
       def isLocalSymbol(symbol: Symbol) = {
         def isHiddenOrNoAccessor(symbol: Symbol) = symbol == NoSymbol || symbol.isPrivate
 
@@ -46,6 +50,7 @@ abstract class Rename extends MultiStageRefactoring with MarkOccurrences with Tr
             true
           }
         }
+
 
         val relatedCtor = s.root.find {
           case dd: DefDef if dd.symbol.isConstructor && !dd.mods.isPrivate && !dd.mods.isPrivateLocal =>
@@ -88,10 +93,10 @@ abstract class Rename extends MultiStageRefactoring with MarkOccurrences with Tr
         }
       }
 
-      t.symbol match {
+      isSelfReference || (t.symbol match {
         case null | NoSymbol => true
         case properSymbol => isLocalSymbol(properSymbol)
-      }
+      })
     }
 
     s.selectedSymbolTree match {

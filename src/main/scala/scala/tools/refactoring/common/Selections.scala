@@ -83,12 +83,40 @@ trait Selections extends TreeTraverser with common.EnrichedTrees {
      * fully contains a SymTree, if true, the first selected is returned. Otherwise
      * the result of findSelectedOfType[SymTree] is returned.
      */
-    lazy val selectedSymbolTree = (root filter (cond(_) {
-      case t: SymTree => contains(t)
-    }) filter (t => t.pos.start < t.pos.end) match {
-      case (x: SymTree) :: _ => Some(x)
-      case _ => None
-    }) orElse findSelectedOfType[SymTree]
+    lazy val selectedSymbolTree = {
+      val candidate = (root filter (cond(_) {
+        case t: SymTree => contains(t)
+      }) filter (t => t.pos.start < t.pos.end) match {
+        case (x: SymTree) :: _ => Some(x)
+        case _ => None
+      }) orElse findSelectedOfType[SymTree]
+
+      candidate.map(eventuallyAdaptSelectionForSelfReferences(_, root))
+    }
+
+    private def eventuallyAdaptSelectionForSelfReferences(selected: SymTree, root: Tree): SymTree = {
+      def isSelfReference(tis: This) = {
+        tis.pos.isRange && stringCoveredBy(tis.pos) != "this"
+      }
+
+      selected match {
+        case tis: This if isSelfReference(tis) =>
+          root.find {
+            case tmpl: Template if tmpl.self.pos.isRange && tmpl.symbol.owner == tis.symbol =>
+              true
+
+            case _ => false
+          }.map { _.asInstanceOf[Template].self }
+          .collect { case s: SymTree => s }
+          .getOrElse(selected)
+
+        case _ => selected
+      }
+    }
+
+    private def stringCoveredBy(pos: Position): String = {
+      new String(pos.source.content.slice(pos.start, pos.end))
+    }
 
     /**
      * Finds a selected tree by its type.
