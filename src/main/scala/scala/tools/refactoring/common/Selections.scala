@@ -103,6 +103,12 @@ trait Selections extends TreeTraverser with common.EnrichedTrees {
       candidate.map(eventuallyAdaptSelectionForSelfReferences(_, root))
     }
 
+    /*
+     * Usages of self references aka `class Foo { self =>` are represented exaclty like `this`
+     * in ASTs and can only be distinguished by looking into the source code. To work around
+     * this limitation, we actually select the definition of the `self` reference in
+     * this case.
+     */
     private def eventuallyAdaptSelectionForSelfReferences(selected: SymTree, root: Tree): SymTree = {
       def isSelfReference(tis: This) = {
         tis.pos.isRange && stringCoveredBy(tis.pos) != "this"
