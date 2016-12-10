@@ -84,12 +84,21 @@ trait Selections extends TreeTraverser with common.EnrichedTrees {
      * the result of findSelectedOfType[SymTree] is returned.
      */
     lazy val selectedSymbolTree = {
-      val candidate = (root filter (cond(_) {
-        case t: SymTree => contains(t)
-      }) filter (t => t.pos.start < t.pos.end) match {
-        case (x: SymTree) :: _ => Some(x)
-        case _ => None
-      }) orElse findSelectedOfType[SymTree]
+      val candidate1 = findSelectedOfType[SymTree]
+
+      val candidate2 = root.collect {
+        case t: SymTree if contains(t) && t.pos.start < t.pos.end => t
+      }.headOption
+
+      val candidate = (candidate1, candidate2) match {
+        case (None, None) => None
+        case (Some(c), None) => Some(c)
+        case (None, Some(c)) => Some(c)
+
+        case (Some(c1), Some(c2)) =>
+          if (c1.find(_ == c2).nonEmpty) Some(c2)
+          else Some(c1)
+      }
 
       candidate.map(eventuallyAdaptSelectionForSelfReferences(_, root))
     }
