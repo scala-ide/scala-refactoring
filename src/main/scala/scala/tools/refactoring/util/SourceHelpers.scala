@@ -2,6 +2,7 @@ package scala.tools.refactoring.util
 
 import scala.annotation.tailrec
 import scala.math.min
+import scala.reflect.api.Position
 
 object SourceHelpers {
 
@@ -53,5 +54,10 @@ object SourceHelpers {
 
       tryMatchText()
     }
+  }
+
+  def stringCoveredBy(pos: Position): Option[String] = {
+    if (pos.isRange) Some(new String(pos.source.content.slice(pos.start, pos.end)))
+    else None
   }
 }

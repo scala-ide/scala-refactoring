@@ -80,7 +80,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
       }
 
       def isSelfReference(tis: This): Boolean = {
-        tis.symbol == owningClassSymbol && tis.pos.isRange && stringCoveredBy(tis.pos) != "this"
+        tis.symbol == owningClassSymbol && SourceHelpers.stringCoveredBy(tis.pos).exists(_ != "this")
       }
 
       val referencesViaThis = parent.collect {
@@ -104,10 +104,6 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
 
     case _ =>
       None
-  }
-
-  private def stringCoveredBy(pos: Position): String = {
-    new String(pos.source.content.slice(pos.start, pos.end))
   }
 
   protected def findOccurrences(selection: SingleTreeSelection): List[(RangePosition, Tree)] = {

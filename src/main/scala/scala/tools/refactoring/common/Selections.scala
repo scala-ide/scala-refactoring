@@ -5,15 +5,16 @@
 package scala.tools.refactoring
 package common
 
-import collection.mutable.ListBuffer
+import scala.collection.mutable.ListBuffer
 import scala.reflect.internal.util.RangePosition
+import scala.tools.refactoring.util.SourceHelpers
 
 trait Selections extends TreeTraverser with common.EnrichedTrees {
 
   this: CompilerAccess =>
 
   import global._
-  import PartialFunction._
+  import scala.PartialFunction._
 
   trait Selection {
 
@@ -111,7 +112,7 @@ trait Selections extends TreeTraverser with common.EnrichedTrees {
      */
     private def eventuallyAdaptSelectionForSelfReferences(selected: SymTree, root: Tree): SymTree = {
       def isSelfReference(tis: This) = {
-        tis.pos.isRange && stringCoveredBy(tis.pos) != "this"
+        SourceHelpers.stringCoveredBy(tis.pos).exists(_ != "this")
       }
 
       selected match {
@@ -127,10 +128,6 @@ trait Selections extends TreeTraverser with common.EnrichedTrees {
 
         case _ => selected
       }
-    }
-
-    private def stringCoveredBy(pos: Position): String = {
-      new String(pos.source.content.slice(pos.start, pos.end))
     }
 
     /**
