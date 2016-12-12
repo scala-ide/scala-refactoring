@@ -104,7 +104,7 @@ trait Selections extends TreeTraverser with common.EnrichedTrees {
     }
 
     /*
-     * Usages of self references aka `class Foo { self =>` are represented exaclty like `this`
+     * Usages of self references aka `class Foo { self =>` are represented exactly like `this`
      * in ASTs and can only be distinguished by looking into the source code. To work around
      * this limitation, we actually select the definition of the `self` reference in
      * this case.
