@@ -4083,4 +4083,89 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  /*
+   * See Assembla Ticket 1002803
+   */
+  @Test
+  def testRenameWithSelfReference1002803v1() = new FileSet {
+    """
+    class Bug { /*(*/renameMe/*)*/ =>
+      def alias = renameMe
+    }
+    """ becomes
+    """
+    class Bug { /*(*/ups/*)*/ =>
+      def alias = ups
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithSelfReference1002803v2() = new FileSet {
+    """
+    class Bug { renameMe =>
+      def alias = /*(*/renameMe/*)*/
+    }
+    """ becomes
+    """
+    class Bug { ups =>
+      def alias = /*(*/ups/*)*/
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithSelfReferenceAndOrdinaryThis1002803() = new FileSet {
+    """
+    class Bug2 { /*(*/renameMe/*)*/ =>
+      def karl = renameMe
+      def heinz = this
+    }
+    """ becomes
+    """
+    class Bug2 { /*(*/ups/*)*/ =>
+      def karl = ups
+      def heinz = this
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenameWithSelfReferenceAndNestedTraits1002803() = new FileSet {
+    """
+    trait Bug3 { renameMe =>
+      trait Inner1 { renameMe =>
+        def evil = {
+          trait Bug3 { /*(*/renameMe/*)*/ =>
+            def alias1 = renameMe
+            def alias2 = alias1
+            def alias3 = this
+          }
+          42
+        }
+
+        def alias = renameMe
+      }
+      val alias = renameMe
+    }
+    """ becomes
+    """
+    trait Bug3 { renameMe =>
+      trait Inner1 { renameMe =>
+        def evil = {
+          trait Bug3 { /*(*/hanneloreHostasch/*)*/ =>
+            def alias1 = hanneloreHostasch
+            def alias2 = alias1
+            def alias3 = this
+          }
+          42
+        }
+
+        def alias = renameMe
+      }
+      val alias = renameMe
+    }
+    """ -> TaggedAsLocalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("hanneloreHostasch"))
 }

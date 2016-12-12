@@ -13,6 +13,8 @@ import scala.tools.refactoring.util.SourceWithMarker.Movements
 import scala.util.control.NonFatal
 import scala.tools.refactoring.util.SourceWithMarker.Movement
 import scala.tools.refactoring.common.TracingHelpers
+import scala.tools.refactoring.util.SourceHelpers
+import scala.tools.refactoring.util.SourceWithSelection
 
 trait MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.EnrichedTrees with common.InteractiveScalaCompiler {
   import global._
@@ -33,9 +35,9 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
         // We try to read the old name from the name position of the declaration, since this seems to be the most
         // reliable strategy that also works well in the presence of `backtick-identifiers`.
         declaration.namePosition() match {
-          case rp: RangePosition => 
+          case rp: RangePosition =>
             Some(rp.source.content.slice(rp.start, rp.end).mkString(""))
-          case op => 
+          case op =>
             trace(s"Expected range position, but found $op")
             None
         }
@@ -59,7 +61,57 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
     }
   }
 
+  /*
+   * Self references aka `class Foo { self =>` need special treatment, because their representation in typed
+   * ASTs is incomplete. While `self =>` is represented as a synthetic `ValDef`, usages of the named reference
+   * can not be distinguished from the `this` keyword, without looking into the source code. This method
+   * takes care of this special case.
+   */
+  private def findOccurrencesForSelfReference(selection: SingleTreeSelection): Option[List[(RangePosition, Tree)]] = {
+    def root = selection.root
+    def selected = selection.selected
+    val parent = findParentOfPotentialSelfReference(selected, root)
+
+    parent.map { parent =>
+      val owningClassSymbol = {
+        parent.symbol.ownersIterator.find(_.isClass).getOrElse {
+          throw new IllegalStateException(s"Could not find enclosing class symbol for $parent")
+        }
+      }
+
+      def isSelfReference(tis: This): Boolean = {
+        tis.symbol == owningClassSymbol && SourceHelpers.stringCoveredBy(tis.pos).exists(_ != "this")
+      }
+
+      val referencesViaThis = parent.collect {
+        case tis: This if isSelfReference(tis) => (tis.pos.asInstanceOf[RangePosition], tis)
+      }
+
+      (selected.pos.asInstanceOf[RangePosition], selected) :: referencesViaThis
+    }
+  }
+
+  protected final def findParentOfPotentialSelfReference(potentialRef: Tree, root: Tree): Option[Template] = potentialRef match {
+    case vd: ValDef if vd.rhs.isEmpty =>
+      val parentTemplate = {
+        root.find {
+          case tmpl: Template if tmpl.self == vd => true
+          case _ => false
+        }
+      }
+
+      parentTemplate.map(_.asInstanceOf[Template])
+
+    case _ =>
+      None
+  }
+
   protected def findOccurrences(selection: SingleTreeSelection): List[(RangePosition, Tree)] = {
+    findOccurrencesForSelfReference(selection)
+      .getOrElse(findOccurrencesUsingIndex(selection))
+  }
+
+  private def findOccurrencesUsingIndex(selection: SingleTreeSelection): List[(RangePosition, Tree)] = {
     /*
      * A lazy val is represented by a ValDef and an associated DefDef that contains the initialization code.
      * Unfortunately, the Scala compiler does not set modifier positions for the DefDef, which is a problem for us,
@@ -162,11 +214,11 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
   }
 
   private def traceSelection(selection: FileSelection, selectedTree: Option[Tree], from: Int, to: Int): Unit = {
-    val rawSrc = selection.root.pos.source.content
-    val srcFrom = SourceWithMarker(rawSrc, from)
-    val srcTo = SourceWithMarker(rawSrc, to)
+    def rawSrc = selection.root.pos.source.content
+    def srcFrom = SourceWithMarker(rawSrc, from)
+    def srcTo = SourceWithMarker(rawSrc, to)
 
-    val selectedTreeName = {
+    def selectedTreeName = {
       selectedTree.map { selectedTree =>
         try {
           selectedTree.nameString
@@ -198,15 +250,12 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
   }
 
   def occurrencesOf(file: tools.nsc.io.AbstractFile, from: Int, to: Int): (Tree, List[Position]) = context("occurrencesOf") {
+
+
     val treeWithOccurences = {
       val selection = new FileSelection(file, global.unitOfFile(file).body, from, to)
-
-      val selectedTree = selection.findSelectedWithPredicate {
-        case (_: global.TypeTree) | (_: global.SymTree) | (_: global.Ident) => true
-        case _ => false
-      } \\ { selectedTree =>
-        traceSelection(selection, selectedTree, from, to)
-      }
+      val selectedTree = selection.selectedSymbolTree
+      traceSelection(selection, selectedTree, from, to)
 
       val selectionOnScalaId = {
         val positionsToCheck = selectedTree.toSeq.flatMap {
@@ -217,11 +266,28 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
           case other => Seq(other.namePosition())
         }
 
-        positionsToCheck.exists {
-          case rp: RangePosition => rp.start <= from && Movements.id(SourceWithMarker.atStartOf(rp)).exists(_ >= to)
-          case op: OffsetPosition => op.point <= from && Movements.id(SourceWithMarker.atPoint(op)).exists(_ >= to)
-          case _ => false
+        def isPlausible(pos: Position): Boolean = {
+          val src = pos match {
+            case rp: RangePosition => Some(SourceWithMarker.atStartOf(rp))
+            case op: OffsetPosition => Some(SourceWithMarker.atPoint(op))
+            case _ => None
+          }
+
+          src.exists { src =>
+            val selectedId = Movement.coveredString(src, Movements.id)
+            if (selectedId == "") {
+              false
+            } else {
+              if (src.marker <= from && src.marker + selectedId.length >= to) {
+                true
+              } else {
+                SourceHelpers.isRangeWithin(selectedId, SourceWithSelection(src.source, from, to))
+              }
+            }
+          }
         }
+
+        positionsToCheck.exists(isPlausible)
       } \\ { selectionOnScalaId =>
         trace(s"selectionOnScalaId: $selectionOnScalaId")
       }

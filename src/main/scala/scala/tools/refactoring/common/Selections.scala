@@ -5,15 +5,16 @@
 package scala.tools.refactoring
 package common
 
-import collection.mutable.ListBuffer
+import scala.collection.mutable.ListBuffer
 import scala.reflect.internal.util.RangePosition
+import scala.tools.refactoring.util.SourceHelpers
 
 trait Selections extends TreeTraverser with common.EnrichedTrees {
 
   this: CompilerAccess =>
 
   import global._
-  import PartialFunction._
+  import scala.PartialFunction._
 
   trait Selection {
 
@@ -83,12 +84,51 @@ trait Selections extends TreeTraverser with common.EnrichedTrees {
      * fully contains a SymTree, if true, the first selected is returned. Otherwise
      * the result of findSelectedOfType[SymTree] is returned.
      */
-    lazy val selectedSymbolTree = (root filter (cond(_) {
-      case t: SymTree => contains(t)
-    }) filter (t => t.pos.start < t.pos.end) match {
-      case (x: SymTree) :: _ => Some(x)
-      case _ => None
-    }) orElse findSelectedOfType[SymTree]
+    lazy val selectedSymbolTree = {
+      val candidate1 = findSelectedOfType[SymTree]
+
+      val candidate2 = root.collect {
+        case t: SymTree if contains(t) && t.pos.start < t.pos.end => t
+      }.headOption
+
+      val candidate = (candidate1, candidate2) match {
+        case (None, None) => None
+        case (Some(c), None) => Some(c)
+        case (None, Some(c)) => Some(c)
+
+        case (Some(c1), Some(c2)) =>
+          if (c1.find(_ == c2).nonEmpty) Some(c2)
+          else Some(c1)
+      }
+
+      candidate.map(eventuallyAdaptSelectionForSelfReferences(_, root))
+    }
+
+    /*
+     * Usages of self references aka `class Foo { self =>` are represented exactly like `this`
+     * in ASTs and can only be distinguished by looking into the source code. To work around
+     * this limitation, we actually select the definition of the `self` reference in
+     * this case.
+     */
+    private def eventuallyAdaptSelectionForSelfReferences(selected: SymTree, root: Tree): SymTree = {
+      def isSelfReference(tis: This) = {
+        SourceHelpers.stringCoveredBy(tis.pos).exists(_ != "this")
+      }
+
+      selected match {
+        case tis: This if isSelfReference(tis) =>
+          root.find {
+            case tmpl: Template if tmpl.self.pos.isRange && tmpl.symbol.owner == tis.symbol =>
+              true
+
+            case _ => false
+          }.map { _.asInstanceOf[Template].self }
+          .collect { case s: SymTree => s }
+          .getOrElse(selected)
+
+        case _ => selected
+      }
+    }
 
     /**
      * Finds a selected tree by its type.
