@@ -8,7 +8,7 @@ moduleName := name.value
 
 organization := "org.scala-refactoring"
 
-crossScalaVersions := Seq("2.10.6", "2.11.7", "2.11.8", "2.12.0")
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0")
 
 crossVersion := CrossVersion.full
 
