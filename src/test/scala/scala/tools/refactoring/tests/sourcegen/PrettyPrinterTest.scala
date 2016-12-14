@@ -887,7 +887,7 @@ class B extends A with Root {
     """)
 
     tree prettyPrintsTo """object Extractor {
-  def unapply(i: Int) = Some.apply(i)
+  def unapply(i: Int) = Some(i)
 }
 
 object User {

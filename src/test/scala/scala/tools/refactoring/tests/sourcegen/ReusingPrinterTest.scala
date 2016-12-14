@@ -119,6 +119,36 @@ class ReusingPrinterTest extends TestHelper {
     }}
 
   @Test
+  @ScalaVersion(matches = "2.12")
+  def add_override_final_flags_to_lazy_val_2_12() = """
+    package add_override_final_flags_to_lazy_val
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      lazy val meth = 0
+    }
+    """ becomes """
+    package add_override_final_flags_to_lazy_val
+    trait T {
+      def meth: Int
+    }
+    trait TT extends T {
+      override final lazy val meth = 0
+    }
+    """ after topdown { matchingChildren {
+      filter {
+        case d: ValDef =>
+          d.symbol.isLazy
+      } &>
+      transform {
+        case d: ValDef =>
+          d.copy(mods = d.mods.withFlag(Flag.OVERRIDE).withFlag(Flag.FINAL).withFlag(Flag.LAZY).withFlag(Tokens.VAL)) replaces d
+      }
+    }}
+
+  @Test
+  @ScalaVersion(doesNotMatch = "2.12")
   def add_override_final_flags_to_lazy_val() = """
     package add_override_final_flags_to_lazy_val
     trait T {

@@ -19,11 +19,16 @@ trait TreeExtractors {
     lazy val None  = newTermName("None")
     lazy val Some  = newTermName("Some")
     lazy val Predef  = newTermName("Predef")
+    lazy val reflect = newTermName("reflect")
     lazy val apply  = newTermName("apply")
     lazy val Nil  = newTermName("Nil")
     lazy val immutable  = newTypeName("immutable")
     lazy val ::  = newTermName("$colon$colon")
     lazy val List  = newTermName("List")
+    lazy val Seq = newTermName("Seq")
+    lazy val collection = newTermName("collection")
+    lazy val immutableTerm  = newTermName("immutable")
+    lazy val scalaType = newTypeName("scala")
   }
 
   /**

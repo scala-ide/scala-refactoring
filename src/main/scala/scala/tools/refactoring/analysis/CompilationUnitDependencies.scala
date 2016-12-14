@@ -28,12 +28,20 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
     }
 
     t match {
-      case t: Select =>
-        val Scala = newTypeName("scala")
-        t.qualifier match {
-          case Select(This(Scala), _) => true
-          case qual if qual.nameString == "ClassTag" => true
-          case q => q.symbol.isOmittablePrefix && nameIsDirectlyRepresentedInSource
+      case t @ Select(qualifier, name) =>
+        qualifier match {
+          case Select(Select(Ident(Names.scala), Names.collection), Names.immutableTerm) if Seq(Names.Nil, Names.List, Names.Seq).contains(name) =>
+            true
+          case Select(This(Names.scalaType), _) =>
+            true
+          case Select(Ident(Names.scala), Names.Predef) =>
+            true
+          case Select(Select(Ident(Names.scala), Names.reflect), Names.pkg) =>
+            true
+          case qual if qual.nameString == "ClassTag" =>
+            true
+          case q =>
+            q.symbol.isOmittablePrefix && nameIsDirectlyRepresentedInSource
         }
       case _ => false
     }
@@ -444,7 +452,7 @@ trait CompilationUnitDependencies extends CompilerApiExtensions with ScalaVersio
               tpe.original match {
                 case s @ Select(qualifier, _) =>
                   addToResult(s)
-                  super.traverse(rhs)
+                  traverse(rhs)
                 case _ => super.traverse(t)
               }
 
