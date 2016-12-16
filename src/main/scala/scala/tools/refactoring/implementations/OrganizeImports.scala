@@ -199,26 +199,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  class RemoveUnused(unit: RichCompilationUnit, importsToAdd: List[(String, String)]) extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      val additionallyImportedTypes = importsToAdd.unzip._2
-      trees map {
-        case imp @ Import(expr, selectors) =>
-
-          val neededSelectors = selectors.filter { s =>
-            neededImportSelector(unit, expr, s) ||
-              additionallyImportedTypes.contains(s.name.toString)
-          }
-
-          if (neededSelectors.nonEmpty) {
-            Import(stripPositions(expr), neededSelectors)
-          } else {
-            Import(EmptyTree, Nil)
-          }
-      }
-    }
-  }
-
   class FindNeededImports(root: Tree, enclosingPackage: String) extends Participant {
     protected def doApply(trees: List[Import]) = {
       mkImportTrees(neededImports(root), enclosingPackage)
