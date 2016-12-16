@@ -175,22 +175,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  case class AlwaysUseWildcards(imports: Set[String]) extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      val seen = collection.mutable.HashSet[String]()
-      trees flatMap {
-        case imp @ Import(qual, selectors) if imports.contains(asSelectorString(qual)) && !selectors.exists(renames) =>
-          if (seen.contains(asSelectorString(qual))) {
-            None
-          } else {
-            seen += asSelectorString(qual)
-            Some(Import(qual, List(ImportSelector(nme.WILDCARD, -1, nme.WILDCARD, -1))).copyAttrs(imp))
-          }
-        case t => Some(t)
-      }
-    }
-  }
-
   object RemoveDuplicates extends Participant {
     protected def doApply(trees: List[Import]) = {
       trees.foldLeft(Nil: List[Import]) {

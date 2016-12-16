@@ -29,7 +29,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
         None,
         wildcards = ws)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
-        options = List(refactoring.SortImports, refactoring.AlwaysUseWildcards(ws)),
+        options = List(refactoring.SortImports),
         config = Some(oiConfig))
   }.mkChanges
 
