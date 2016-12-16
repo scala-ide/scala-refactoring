@@ -3,6 +3,9 @@ package implementations
 
 import language.reflectiveCalls
 import scala.tools.refactoring.common.TracingImpl
+import scala.tools.refactoring.implementations.oimports.OrganizeImportsWorker
+import scala.reflect.internal.util.NoSourceFile
+import scala.tools.refactoring.sourcegen.Formatting
 
 trait ImportsHelper extends TracingImpl {
 
@@ -17,10 +20,10 @@ trait ImportsHelper extends TracingImpl {
         val targetPkgName = targetPackageName getOrElse pkg.nameString
         val oi = new OrganizeImports {
           val global: self.global.type = self.global
+          val worker = new OrganizeImportsWorker[this.type](this) {
 
           object NeededImports extends Participant {
             def doApply(trees: List[Import]) = {
-
               val externalDependencies = neededImports(user) filterNot { imp =>
                   // We don't want to add imports for types that are
                   // children of `importsUser`.
@@ -52,15 +55,17 @@ trait ImportsHelper extends TracingImpl {
                       }
                   }
               }
+              val existingStillNeededImports = new transformations.recomputeAndModifyUnused(user)(
+                List(treeToolbox.Region(trees.map(proto => new treeToolbox.RegionImport(user.symbol, proto)()), user.symbol, -1, -1, NoSourceFile, "", new Formatting {}, ""))
+              )
 
-              val existingStillNeededImports = new RecomputeAndModifyUnused(externalDependencies)(trees)
-
-              existingStillNeededImports ::: SortImports(mkImportTrees(newImportsToAdd, targetPkgName))
+              existingStillNeededImports.flatMap {_.imports} ::: SortImports(mkImportTrees(newImportsToAdd, targetPkgName))
             }
+          }
           }
         }
 
-        val imports = oi.NeededImports(existingImports).filterNot { imp =>
+        val imports = oi.worker.NeededImports(existingImports).filterNot { imp =>
           val noLongerNeeded = targetPkgName == imp.expr.toString && imp.selectors.size == 1 && {
             // Note that we don't touch imports with multiple selectors here. This limitation,
             // that should not result in any regressions, might be addressed in the future.

@@ -3,17 +3,17 @@ package scala.tools.refactoring.implementations.oimports
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.implementations.OrganizeImports
 
-class OrganizeImportsWorker[O <: OrganizeImports](oi: O) {
+class OrganizeImportsWorker[O <: OrganizeImports](val oi: O) {
   import oi._
   import oi.global._
 
-  private val treeToolbox = new TreeToolbox[oi.global.type](oi.global)
-  private val regionContext = new RegionTransformationsContext[oi.type](oi)
-  private val transformations = new regionContext.RegionTransformations[treeToolbox.type](treeToolbox)
-  private val participants = new NotPackageImportParticipants[oi.type](oi)
-  private val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-  private val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
-  private val packageDefImportsOrganizer = new PackageDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
+  lazy val treeToolbox = new TreeToolbox[oi.global.type](oi.global)
+  lazy val regionContext = new RegionTransformationsContext[oi.type](oi)
+  lazy val transformations = new regionContext.RegionTransformations[treeToolbox.type](treeToolbox)
+  lazy val participants = new NotPackageImportParticipants[oi.type](oi)
+  lazy val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
+  lazy val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
+  lazy val packageDefImportsOrganizer = new PackageDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
 
   private def organizeLocalImports(root: Tree): List[treeToolbox.Region] = {
     val defRegions = defImportsOrganizer.transformTreeToRegions(root, oi).map {
@@ -61,17 +61,18 @@ class OrganizeImportsWorker[O <: OrganizeImports](oi: O) {
     } else {
       Nil
     }
+
     val config = params.config.get
 
     val rawPackageRegions = packageDefImportsOrganizer.transformTreeToRegions(rootTree, oi)
 
     val packageRegions = params.deps match {
       case Dependencies.FullyRecompute =>
-        new transformations.addExpandedImports(selection)(rawPackageRegions)
+        new transformations.addExpandedImports(selection.root)(rawPackageRegions)
       case Dependencies.RecomputeAndModify =>
-        new transformations.recomputeAndModifyUnused(selection)(rawPackageRegions)
+        new transformations.recomputeAndModifyUnused(selection.root)(rawPackageRegions)
       case Dependencies.RemoveUnneeded =>
-        new transformations.addNewImports(params.importsToAdd)(rawPackageRegions, selection, oi)
+        new transformations.addNewImports(params.importsToAdd)(rawPackageRegions, selection.root, oi)
       case _ => rawPackageRegions
     }
 

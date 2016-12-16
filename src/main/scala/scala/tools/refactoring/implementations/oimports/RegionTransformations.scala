@@ -56,23 +56,23 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
       }
     }
 
-    class addExpandedImports(selection: Selection) {
+    class addExpandedImports(root: Tree) {
       def apply(regions: List[Region]): List[Region] = {
-        val enclosingPackage = selection.root match {
+        val enclosingPackage = root match {
           case root: PackageDef =>
             val rootPackage = topPackageDef(root)
             ancestorSymbols(rootPackage).map(_.nameString).mkString(".")
           case _ => ""
         }
-        val importsToAddWithNoPosition = mkImportTrees(neededImports(selection.root, newWay = true), enclosingPackage)
+        val importsToAddWithNoPosition = mkImportTrees(neededImports(root, newWay = true), enclosingPackage)
         regions.map { region =>
           region.rightIntersectImports(importsToAddWithNoPosition)
         }
       }
     }
 
-    class recomputeAndModifyUnused(selection: Selection) {
-      private val importsNames = neededImports(selection.root, newWay = true).map { importAsString }
+    class recomputeAndModifyUnused(root: Tree) {
+      private val importsNames = neededImports(root, newWay = true).map { importAsString }
 
       // If parts of the expr aren't ranges, then we have an import that depends on an
       // other import (see OrganizeImportsRecomputeAndModifyTest#importDependingOnImport)
@@ -178,8 +178,8 @@ class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
         RegionBuilder[ttb.global.type, ttb.type](ttb)(imports, topLeastPackage.symbol, formatting, Properties.lineSeparator + Properties.lineSeparator + topNonPkgIndent).head
       }
 
-      def apply(regions: List[Region], selection: Selection, formatting: Formatting) = {
-        val (topLeastPackage, _) = findTopLeastPackage(selection.root)
+      def apply(regions: List[Region], root: Tree, formatting: Formatting) = {
+        val (topLeastPackage, _) = findTopLeastPackage(root)
         val containsCandidate = regions.exists { isTopLeastPackageRegion(topLeastPackage) }
         if (containsCandidate) {
           regions.collect {
