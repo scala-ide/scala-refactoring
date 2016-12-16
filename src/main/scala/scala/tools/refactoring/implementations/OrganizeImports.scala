@@ -99,7 +99,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     with common.TreeExtractors
     with Formatting {
 
-  import OrganizeImports.Algos
   import global._
 
   val Dependencies = OrganizeImports.Dependencies
@@ -214,20 +213,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
             Some(Import(qual, List(ImportSelector(nme.WILDCARD, -1, nme.WILDCARD, -1))).copyAttrs(imp))
           }
         case t => Some(t)
-      }
-    }
-  }
-
-  case class GroupImports(groups: List[String]) extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      def getImportExpression(imp: Import) = imp.expr.toString
-      val allImports = Algos.groupImports(getImportExpression)(groups, trees)
-      val spacer = List(Import(PlainText.BlankLine, Nil))
-
-      if (allImports.size > 1) {
-        allImports.reduceLeft(_ ++ spacer ++ _)
-      } else {
-        allImports.flatten.toList
       }
     }
   }

@@ -17,7 +17,6 @@ class OrganizeImportsWithMacrosTest extends OrganizeImportsBaseTest {
       wildcards = useWildcards,
       groups = groupPkgs)
     val params = {
-      val groupImports = refactoring.GroupImports(groupPkgs)
       val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
 
       new refactoring.RefactoringParameters(
@@ -26,7 +25,6 @@ class OrganizeImportsWithMacrosTest extends OrganizeImportsBaseTest {
             refactoring.PrependScalaPackage ::
             alwaysUseWildcards ::
             refactoring.SortImports ::
-            groupImports ::
             Nil,
           deps = dependencies,
           organizeLocalImports = organizeLocalImports,

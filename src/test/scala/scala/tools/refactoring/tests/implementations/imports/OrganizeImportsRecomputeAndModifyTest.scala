@@ -20,7 +20,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
         None,
         groups = groups)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
-        options = List(refactoring.SortImports, refactoring.GroupImports(groups)),
+        options = List(refactoring.SortImports),
         config = Some(oiConfig))
   }.mkChanges
 

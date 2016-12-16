@@ -12,7 +12,7 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
 
   def organize(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
-    val options = List(ExpandImports, SortImports, GroupImports(groups))
+    val options = List(ExpandImports, SortImports)
     val config = OrganizeImports.OrganizeImportsConfig(
       importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
       groups = groups)
