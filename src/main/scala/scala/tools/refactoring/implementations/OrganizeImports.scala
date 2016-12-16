@@ -148,17 +148,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     private def name = getSimpleClassName(this)
   }
 
-  object CollapseImports extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees.foldRight(Nil: List[Import]) {
-        case (imp: Import, x :: xs) if createText(imp.expr) == createText(x.expr) =>
-          x.copy(selectors = x.selectors ::: imp.selectors).setPos(x.pos) :: xs
-        case (imp: Import, xs) =>
-          imp :: xs
-      }
-    }
-  }
-
   private def renames(i: ImportSelector) = i.rename != null && i.name != i.rename
 
   object SimplifyWildcards extends Participant {
@@ -282,7 +271,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  def DefaultOptions = List(CollapseImports, SimplifyWildcards, SortImportSelectors, SortImports)
+  def DefaultOptions = List(SimplifyWildcards, SortImportSelectors, SortImports)
 
   /**
    * Imports that should be added are passed as tuples in the form
