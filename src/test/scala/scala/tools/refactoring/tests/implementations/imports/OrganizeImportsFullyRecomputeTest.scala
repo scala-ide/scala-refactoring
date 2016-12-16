@@ -21,7 +21,7 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
 
   def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val oiConfig = OrganizeImports.OrganizeImportsConfig(Some(OrganizeImports.ImportsStrategy.ExpandImports))
-    val params = new RefactoringParameters(options = List(refactoring.ExpandImports), deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.FullyRecompute, config = Some(oiConfig))
   }.mkChanges
 
   @Test

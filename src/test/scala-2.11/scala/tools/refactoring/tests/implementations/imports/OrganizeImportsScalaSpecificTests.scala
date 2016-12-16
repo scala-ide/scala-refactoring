@@ -18,7 +18,6 @@ class OrganizeImportsScalaSpecificTests extends OrganizeImportsBaseTest {
 
       new refactoring.RefactoringParameters(
         options =
-          refactoring.ExpandImports ::
             refactoring.PrependScalaPackage ::
             alwaysUseWildcards ::
             refactoring.SortImports ::

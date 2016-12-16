@@ -159,21 +159,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  object ExpandImports extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees flatMap {
-        case imp @ Import(_, selectors) if selectors.exists(wildcardImport) =>
-          List(imp)
-        case imp @ Import(_, selector :: Nil) =>
-          List(imp)
-        case Import(expr, selectors) =>
-          selectors map {
-            selector => Import(expr, selector :: Nil)
-          }
-      }
-    }
-  }
-
   private def renames(i: ImportSelector) = i.rename != null && i.name != i.rename
 
   object SimplifyWildcards extends Participant {
