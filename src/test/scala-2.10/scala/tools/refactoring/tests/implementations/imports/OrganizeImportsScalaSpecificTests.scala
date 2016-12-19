@@ -14,16 +14,9 @@ class OrganizeImportsScalaSpecificTests extends OrganizeImportsBaseTest {
       wildcards = useWildcards,
       groups = groupPkgs)
     val params = {
-      val groupImports = refactoring.GroupImports(groupPkgs)
-      val alwaysUseWildcards = refactoring.AlwaysUseWildcards(useWildcards)
-
       new refactoring.RefactoringParameters(
         options =
-          refactoring.ExpandImports ::
             refactoring.PrependScalaPackage ::
-            alwaysUseWildcards ::
-            refactoring.SortImports ::
-            groupImports ::
             Nil,
         deps = dependencies,
         organizeLocalImports = organizeLocalImports,
