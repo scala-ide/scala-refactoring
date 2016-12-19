@@ -11,7 +11,7 @@ class OrganizeImportsWildcardsTest extends OrganizeImportsBaseTest {
 
   def organize(groups: Set[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
-    val options = List(AlwaysUseWildcards(groups), ExpandImports, SortImports)
+    val options = Nil
     val oiConfig = OrganizeImports.OrganizeImportsConfig(
       importsStrategy = Some(OrganizeImports.ImportsStrategy.PreserveWildcards),
       wildcards = groups)

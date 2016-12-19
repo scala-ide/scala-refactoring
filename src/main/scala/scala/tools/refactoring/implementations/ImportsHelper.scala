@@ -1,8 +1,11 @@
 package scala.tools.refactoring
 package implementations
 
-import language.reflectiveCalls
+import scala.language.reflectiveCalls
+import scala.reflect.internal.util.NoSourceFile
 import scala.tools.refactoring.common.TracingImpl
+import scala.tools.refactoring.implementations.oimports.OrganizeImportsWorker
+import scala.tools.refactoring.sourcegen.Formatting
 
 trait ImportsHelper extends TracingImpl {
 
@@ -17,11 +20,13 @@ trait ImportsHelper extends TracingImpl {
         val targetPkgName = targetPackageName getOrElse pkg.nameString
         val oi = new OrganizeImports {
           val global: self.global.type = self.global
-
-          object NeededImports extends Participant {
-            def doApply(trees: List[Import]) = {
-
-              val externalDependencies = neededImports(user) filterNot { imp =>
+          val worker = new OrganizeImportsWorker[this.type](this) {
+            import participants._
+            import transformations._
+            import treeToolbox._
+            object NeededImports extends Participant {
+              def doApply(trees: List[Import]) = {
+                val externalDependencies = neededImports(user) filterNot { imp =>
                   // We don't want to add imports for types that are
                   // children of `importsUser`.
                   index.declaration(imp.symbol).exists { declaration =>
@@ -29,38 +34,39 @@ trait ImportsHelper extends TracingImpl {
                     def userPosIncludesDeclPos = user.pos.includes(declaration.pos)
                     sameFile && userPosIncludesDeclPos
                   }
-              }
+                }
 
-              val newImportsToAdd = externalDependencies filterNot {
-                case Select(qualifier, name) =>
-                  val depPkgStr = importAsString(qualifier)
-                  val depNameStr = "" + name
+                val newImportsToAdd = externalDependencies filterNot {
+                  case Select(qualifier, name) =>
+                    val depPkgStr = importAsString(qualifier)
+                    val depNameStr = "" + name
 
-                  trees exists {
-                    case Import(expr, selectors) =>
-                      val impPkgStr = importAsString(expr)
+                    trees exists {
+                      case Import(expr, selectors) =>
+                        val impPkgStr = importAsString(expr)
 
-                      selectors exists { selector =>
-                        val selNameStr = "" + selector.name
-                        val selRenameStr = "" + selector.rename
+                        selectors exists { selector =>
+                          val selNameStr = "" + selector.name
+                          val selRenameStr = "" + selector.rename
 
-                        impPkgStr == depPkgStr && {
-                          selector.name == nme.WILDCARD || {
-                            selNameStr == depNameStr || selRenameStr == depNameStr
+                          impPkgStr == depPkgStr && {
+                            selector.name == nme.WILDCARD || {
+                              selNameStr == depNameStr || selRenameStr == depNameStr
+                            }
                           }
                         }
-                      }
-                  }
+                    }
+                }
+                val existingStillNeededImports = new recomputeAndModifyUnused(user)(
+                  List(Region(trees.map(proto => new RegionImport(user.symbol, proto)()), user.symbol, -1, -1, NoSourceFile, "", new Formatting {}, "")))
+
+                existingStillNeededImports.flatMap { _.imports } ::: SortImports(mkImportTrees(newImportsToAdd, targetPkgName))
               }
-
-              val existingStillNeededImports = new RecomputeAndModifyUnused(externalDependencies)(trees)
-
-              existingStillNeededImports ::: SortImports(mkImportTrees(newImportsToAdd, targetPkgName))
             }
           }
         }
 
-        val imports = oi.NeededImports(existingImports).filterNot { imp =>
+        val imports = oi.worker.NeededImports(existingImports).filterNot { imp =>
           val noLongerNeeded = targetPkgName == imp.expr.toString && imp.selectors.size == 1 && {
             // Note that we don't touch imports with multiple selectors here. This limitation,
             // that should not result in any regressions, might be addressed in the future.

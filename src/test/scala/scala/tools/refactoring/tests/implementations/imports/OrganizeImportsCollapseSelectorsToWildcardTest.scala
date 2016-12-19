@@ -7,7 +7,7 @@ class OrganizeImportsCollapseSelectorsToWildcardTest extends OrganizeImportsBase
   def organize(exclude: Set[String] = Set())(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
     val maxIndividualImports = 2
-    val options = List(ExpandImports, SortImports, CollapseImports, CollapseSelectorsToWildcard(maxIndividualImports, exclude), SortImportSelectors)
+    val options = List(SortImportSelectors)
     val oiConfig = OrganizeImports.OrganizeImportsConfig(
       importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports),
       collapseToWildcardConfig = Some(OrganizeImports.CollapseToWildcardConfig(maxIndividualImports, exclude)))
