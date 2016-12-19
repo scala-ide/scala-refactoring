@@ -148,19 +148,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     private def name = getSimpleClassName(this)
   }
 
-  private def renames(i: ImportSelector) = i.rename != null && i.name != i.rename
-
-  object SimplifyWildcards extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees map {
-        case imp @ Import(_, selectors) if selectors.exists(wildcardImport) && !selectors.exists(renames) =>
-          imp.copy(selectors = selectors.filter(wildcardImport)).setPos(imp.pos)
-        case imp =>
-          imp
-      }
-    }
-  }
-
   object RemoveDuplicates extends Participant {
     protected def doApply(trees: List[Import]) = {
       trees.foldLeft(Nil: List[Import]) {
@@ -221,7 +208,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  def DefaultOptions = List(SimplifyWildcards, SortImportSelectors)
+  def DefaultOptions = List(SortImportSelectors)
 
   /**
    * Imports that should be added are passed as tuples in the form
