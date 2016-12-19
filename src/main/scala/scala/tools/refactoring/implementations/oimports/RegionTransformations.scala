@@ -3,19 +3,32 @@ package oimports
 
 import scala.annotation.tailrec
 import scala.reflect.internal.util.RangePosition
+import scala.tools.nsc.interactive.Global
+import scala.tools.refactoring.analysis.CompilationUnitDependencies
+import scala.tools.refactoring.common.EnrichedTrees
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.TreeExtractors
+import scala.tools.refactoring.common.TreeTraverser
 import scala.tools.refactoring.sourcegen.Formatting
+import scala.tools.refactoring.transformation.TreeFactory
+import scala.tools.refactoring.transformation.TreeTransformations
 import scala.util.Properties
 
-class RegionTransformationsContext[O <: OrganizeImports](val oi: O) {
-  import oi._
-  class RegionTransformations[T <: TreeToolbox[oi.global.type]](val ttb: T) {
+class RegionTransformationsContext[G <: Global](val global: G) extends CompilationUnitDependencies
+    with InteractiveScalaCompiler
+    with TreeTraverser
+    with EnrichedTrees
+    with TreeExtractors
+    with TreeFactory
+    with TreeTransformations  {
+  import global._
+  class RegionTransformations[T <: TreeToolbox[global.type]](val ttb: T) {
     import ttb._
-    import ttb.global._
 
-    private val treeComparables = new TreeComparables[oi.global.type](oi.global)
+    private val treeComparables = new TreeComparables[ttb.global.type](ttb.global)
 
     case class GroupImports(groups: List[String]) {
-      import OrganizeImports.Algos
+      import scala.tools.refactoring.implementations.OrganizeImports.Algos
       private def nextPositionInitiator(region: Region) = {
         var index = region.from
         () => {

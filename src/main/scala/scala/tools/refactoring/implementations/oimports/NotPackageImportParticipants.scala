@@ -1,11 +1,16 @@
 package scala.tools.refactoring
 package implementations.oimports
 
-import implementations.OrganizeImports
+import scala.tools.nsc.interactive.Global
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.common.TreeTraverser
+import scala.tools.refactoring.transformation.TreeTransformations
+import scala.tools.refactoring.implementations.UnusedImportsFinder
 
-class AllSelects[O <: OrganizeImports](val oi: O) {
-  import oi._
-  import oi.global._
+class AllSelects[G <: Global](val global: G) extends TreeTraverser
+    with InteractiveScalaCompiler
+    with common.EnrichedTrees {
+  import global._
   import scala.collection.mutable
 
   private def treeWithoutImports(tree: Tree) = new Transformer {
@@ -79,7 +84,7 @@ class AllSelects[O <: OrganizeImports](val oi: O) {
           Nil
 
       override def traverse(tree: Tree): Unit = special.orElse {
-        new ImplicitValDefTraverserPF[oi.type](oi)(self)
+        new ImplicitValDefTraverserPF[global.type](global)(self)
       }.orElse {
         default
       }(tree)
@@ -100,12 +105,112 @@ class AllSelects[O <: OrganizeImports](val oi: O) {
   }
 }
 
-class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInstance: O) {
-  import organizeImportsInstance._
-  import organizeImportsInstance.global._
+class NotPackageImportParticipants[G <: Global](val global: G) extends TreeTraverser
+    with TreeTransformations
+    with UnusedImportsFinder
+    with common.EnrichedTrees
+    with InteractiveScalaCompiler {
+  import global._
+
+  trait Participant extends (List[Import] => List[Import]) {
+    protected final def importAsString(t: Tree): String = {
+      ancestorSymbols(t) match {
+        case syms if syms.nonEmpty =>
+          syms.map(_.nameString).filterNot(_ == "package").mkString(".")
+        case Nil =>
+          // Imports without symbols, like Scala feature flags, aka "import scala.language.featureX",
+          // have no symbol and are handled by the code blow:
+          t match {
+            case Select(q, n) => importAsString(q) + "." + n
+            case _ =>
+              logError("Unexpected tree", new AssertionError(s"Tree without symbol that is not a select: $t"))
+              ""
+          }
+      }
+    }
+
+    protected final def stripPositions(t: Tree) = {
+      topdown(setNoPosition) apply t.duplicate getOrElse t
+    }
+
+    protected final def isImportFromScalaPackage(expr: Tree) = {
+      expr.filter(_ => true).lastOption exists {
+        case Ident(nme.scala_) => true
+        case _ => false
+      }
+    }
+
+    protected def doApply(trees: List[Import]): List[Import]
+
+    final def apply(trees: List[Import]): List[Import] = {
+      doApply(trees) \\ { res =>
+        trace(s"$this:")
+        trees.foreach(trace("-- %s", _))
+        res.foreach(trace("++ %s", _))
+      }
+    }
+
+    override def toString = s"Participant[$name]"
+
+    private def name = getSimpleClassName(this)
+  }
+
+  object RemoveDuplicates extends Participant {
+    protected def doApply(trees: List[Import]) = {
+      trees.foldLeft(Nil: List[Import]) {
+        case (rest, imp) if rest.exists(t => t.toString == imp.toString) =>
+          rest
+        case (rest, imp) => imp :: rest
+      }.reverse
+    }
+  }
+
+  object SortImportSelectors extends Participant {
+    protected def doApply(trees: List[Import]) = {
+      trees.map {
+        case imp @ Import(_, selectors :: Nil) => imp
+        case imp @ Import(_, selectors) if selectors.exists(wildcardImport) => imp
+        case imp @ Import(_, selectors) =>
+          def removeDuplicates(l: List[ImportSelector]) = {
+            l.groupBy(_.name.toString).map(_._2.head).toList
+          }
+          imp.copy(selectors = removeDuplicates(selectors).sortBy(_.name.toString)).setPos(imp.pos)
+      }
+    }
+  }
+
+  object PrependScalaPackage extends Participant {
+    protected def doApply(trees: List[Import]) = {
+      trees map {
+        case t @ Import(expr, _) if isImportFromScalaPackage(expr) =>
+          // Setting all positions to NoPosition forces the pretty printer
+          // to print the complete selector including the leading `scala`
+          t copy (expr = stripPositions(expr))
+        case t => t
+      }
+    }
+  }
+
+  object DropScalaPackage extends Participant {
+    protected def doApply(trees: List[Import]) = {
+      trees map {
+        case t @ Import(expr, name) if isImportFromScalaPackage(expr) =>
+
+          val transformation = traverseAndTransformAll {
+            transform {
+              case t @ Ident(nme.scala_) =>
+                Ident(nme.scala_) copyAttrs t setPos Invisible
+            }
+          }
+
+          t copy (expr = transformation(expr).get /*safe because of pattern guard*/ )
+        case t => t
+      }
+    }
+  }
 
   class RemoveUnused(block: Tree, addNewImports: List[(String, String)] = Nil) extends Participant {
-    private lazy val allSelects = (new AllSelects[organizeImportsInstance.type](organizeImportsInstance))(block)
+    private lazy val allSelects = (new AllSelects[global.type](global))(block)
     private def fullNameButSkipPackageObject(sym: Symbol): String = {
       var b: java.lang.StringBuffer = null
       def loop(size: Int, sym: Symbol): Unit = {
@@ -127,7 +232,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
       b.toString
     }
 
-    private val isScalaLanguageImport = MiscTools.isScalaLanguageImport(organizeImportsInstance.global)
+    private val isScalaLanguageImport = MiscTools.isScalaLanguageImport(global)
 
     private def isInNewImports(imp: Import): Boolean = imp match {
       case Import(expr, sels) =>
@@ -218,8 +323,8 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
     }.flatten.toList
   }
 
-  class CollapseImports[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T) extends Participant {
-    private val treeComparables = new TreeComparables[organizeImportsInstance.global.type](organizeImportsInstance.global)
+  class CollapseImports[T <: TreeToolbox[global.type]](val ttb: T) extends Participant {
+    private val treeComparables = new TreeComparables[global.type](global)
     private def isSameExpr(leftExpr: Tree, rightExpr: Tree): Boolean =
       treeComparables.isSameWithSymbols(true)(leftExpr.symbol, rightExpr.symbol) || leftExpr.toString == rightExpr.toString
 
@@ -234,7 +339,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
     }
   }
 
-  class ExpandImports[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T) extends Participant {
+  class ExpandImports[T <: TreeToolbox[global.type]](val ttb: T) extends Participant {
     protected def doApply(trees: List[Import]) = {
       trees.flatMap {
         case imp @ ttb.RegionImport(_, selectors) if !selectors.exists(wildcardImport) =>
@@ -245,7 +350,7 @@ class NotPackageImportParticipants[O <: OrganizeImports](val organizeImportsInst
     }
   }
 
-  case class AlwaysUseWildcards[T <: TreeToolbox[organizeImportsInstance.global.type]](val ttb: T)(imports: Set[String]) extends Participant {
+  case class AlwaysUseWildcards[T <: TreeToolbox[global.type]](val ttb: T)(imports: Set[String]) extends Participant {
     protected def doApply(trees: List[Import]) = {
       val seen = collection.mutable.HashSet[String]()
       trees flatMap {

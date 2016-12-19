@@ -6,11 +6,10 @@ package scala.tools.refactoring
 package implementations
 
 import scala.tools.refactoring.common.Change
-import scala.tools.refactoring.common.TreeTraverser
 import scala.tools.refactoring.implementations.oimports.OrganizeImportsWorker
 import scala.tools.refactoring.sourcegen.Formatting
-import scala.tools.refactoring.transformation.TreeFactory
 import scala.util.control.NonFatal
+import scala.tools.refactoring.common.InteractiveScalaCompiler
 
 object OrganizeImports {
   /**
@@ -91,116 +90,17 @@ object OrganizeImports {
  *
  *
  */
-abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
-    with TreeTraverser
-    with UnusedImportsFinder
-    with analysis.CompilationUnitDependencies
-    with common.InteractiveScalaCompiler
-    with common.TreeExtractors
+abstract class OrganizeImports extends MultiStageRefactoring
+    with InteractiveScalaCompiler
     with Formatting {
-
-  import global._
 
   val Dependencies = OrganizeImports.Dependencies
 
   class PreparationResult(val missingTypes: List[String] = Nil)
 
-  trait Participant extends (List[Import] => List[Import]) {
-    protected final def importAsString(t: Tree): String = {
-      ancestorSymbols(t) match {
-        case syms if syms.nonEmpty =>
-          syms.map(_.nameString).filterNot(_ == "package").mkString(".")
-        case Nil =>
-          // Imports without symbols, like Scala feature flags, aka "import scala.language.featureX",
-          // have no symbol and are handled by the code blow:
-          t match {
-            case Select(q, n) => importAsString(q) + "." + n
-            case _ =>
-              logError("Unexpected tree", new AssertionError(s"Tree without symbol that is not a select: $t"))
-              ""
-          }
-      }
-    }
-
-    protected final def stripPositions(t: Tree) = {
-      topdown(setNoPosition) apply t.duplicate getOrElse t
-    }
-
-    protected final def isImportFromScalaPackage(expr: Tree) = {
-      expr.filter(_ => true).lastOption exists {
-        case Ident(nme.scala_) => true
-        case _ => false
-      }
-    }
-
-    protected def doApply(trees: List[Import]): List[Import]
-
-    final def apply(trees: List[Import]): List[Import] = {
-      doApply(trees) \\ { res =>
-        trace(s"$this:")
-        trees.foreach(trace("-- %s", _))
-        res.foreach(trace("++ %s", _))
-      }
-    }
-
-    override def toString = s"Participant[$name]"
-
-    private def name = getSimpleClassName(this)
-  }
-
-  object RemoveDuplicates extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees.foldLeft(Nil: List[Import]) {
-        case (rest, imp) if rest.exists(t => t.toString == imp.toString) =>
-          rest
-        case (rest, imp) => imp :: rest
-      }.reverse
-    }
-  }
-
-  object SortImportSelectors extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees.map {
-        case imp @ Import(_, selectors :: Nil) => imp
-        case imp @ Import(_, selectors) if selectors.exists(wildcardImport) => imp
-        case imp @ Import(_, selectors) =>
-          def removeDuplicates(l: List[ImportSelector]) = {
-            l.groupBy(_.name.toString).map(_._2.head).toList
-          }
-          imp.copy(selectors = removeDuplicates(selectors).sortBy(_.name.toString)).setPos(imp.pos)
-      }
-    }
-  }
-
-  object PrependScalaPackage extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees map {
-        case t @ Import(expr, _) if isImportFromScalaPackage(expr) =>
-          // Setting all positions to NoPosition forces the pretty printer
-          // to print the complete selector including the leading `scala`
-          t copy (expr = stripPositions(expr))
-        case t => t
-      }
-    }
-  }
-
-  object DropScalaPackage extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      trees map {
-        case t @ Import(expr, name) if isImportFromScalaPackage(expr) =>
-
-          val transformation = traverseAndTransformAll {
-            transform {
-              case t @ Ident(nme.scala_) =>
-                Ident(nme.scala_) copyAttrs t setPos Invisible
-            }
-          }
-
-          t copy (expr = transformation(expr).get /*safe because of pattern guard*/ )
-        case t => t
-      }
-    }
-  }
+  lazy val oiWorker = new OrganizeImportsWorker[global.type](global)
+  import oiWorker.participants._
+  import oiWorker.global._
 
   def DefaultOptions = List(SortImportSelectors)
 
@@ -247,9 +147,8 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
   }
 
   def perform(selection: Selection, prepared: PreparationResult, params: RefactoringParameters): Either[RefactoringError, List[Change]] = {
-    val oiWorker = new OrganizeImportsWorker[this.type](this)
     params.config.map { _ =>
-      oiWorker.organizeAll(selection, params)
+      oiWorker.organizeAll[global.type](global)(selection, params, this)
     }.getOrElse(Right(Nil))
   }
 }
