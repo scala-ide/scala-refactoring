@@ -21,7 +21,7 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
 
   private def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val oiConfig = OrganizeImports.OrganizeImportsConfig(importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports))
-    val params = new refactoring.RefactoringParameters(options = List(refactoring.SortImports),
+    val params = new refactoring.RefactoringParameters(options = Nil,
       config = Some(oiConfig))
   }.mkChanges
 
@@ -40,7 +40,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       new refactoring.RefactoringParameters(
         options =
             refactoring.PrependScalaPackage ::
-            refactoring.SortImports ::
             Nil,
         deps = dependencies,
         organizeLocalImports = organizeLocalImports,

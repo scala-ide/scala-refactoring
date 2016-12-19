@@ -161,20 +161,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  object SortImports extends Participant {
-
-    def asText(t: Tree) = createText(stripPositions(t))
-
-    protected def doApply(trees: List[Import]) = {
-      trees.sortBy {
-        case i @ Import(expr, selector :: Nil) if !wildcardImport(selector) =>
-          asText(expr) + "." + selector.name.toString
-        case i @ Import(expr, selectors) =>
-          asText(expr)
-      }
-    }
-  }
-
   object RemoveDuplicates extends Participant {
     protected def doApply(trees: List[Import]) = {
       trees.foldLeft(Nil: List[Import]) {
@@ -235,7 +221,7 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  def DefaultOptions = List(SimplifyWildcards, SortImportSelectors, SortImports)
+  def DefaultOptions = List(SimplifyWildcards, SortImportSelectors)
 
   /**
    * Imports that should be added are passed as tuples in the form

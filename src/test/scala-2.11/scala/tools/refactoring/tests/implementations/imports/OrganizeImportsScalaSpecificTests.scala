@@ -17,7 +17,6 @@ class OrganizeImportsScalaSpecificTests extends OrganizeImportsBaseTest {
       new refactoring.RefactoringParameters(
         options =
             refactoring.PrependScalaPackage ::
-            refactoring.SortImports ::
             Nil,
         deps = dependencies,
         organizeLocalImports = organizeLocalImports,

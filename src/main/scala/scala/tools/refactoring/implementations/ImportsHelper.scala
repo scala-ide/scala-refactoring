@@ -59,7 +59,7 @@ trait ImportsHelper extends TracingImpl {
                 List(treeToolbox.Region(trees.map(proto => new treeToolbox.RegionImport(user.symbol, proto)()), user.symbol, -1, -1, NoSourceFile, "", new Formatting {}, ""))
               )
 
-              existingStillNeededImports.flatMap {_.imports} ::: SortImports(mkImportTrees(newImportsToAdd, targetPkgName))
+              existingStillNeededImports.flatMap {_.imports} ::: participants.SortImports(mkImportTrees(newImportsToAdd, targetPkgName))
             }
           }
           }
