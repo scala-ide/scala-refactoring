@@ -172,12 +172,6 @@ abstract class OrganizeImports extends MultiStageRefactoring with TreeFactory
     }
   }
 
-  class FindNeededImports(root: Tree, enclosingPackage: String) extends Participant {
-    protected def doApply(trees: List[Import]) = {
-      mkImportTrees(neededImports(root), enclosingPackage)
-    }
-  }
-
   object PrependScalaPackage extends Participant {
     protected def doApply(trees: List[Import]) = {
       trees map {
