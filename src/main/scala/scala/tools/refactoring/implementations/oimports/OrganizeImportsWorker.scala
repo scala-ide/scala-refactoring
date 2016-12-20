@@ -51,20 +51,10 @@ class OrganizeImportsWorker[G <: Global](val global: G) extends InteractiveScala
     classDefRegions ::: defRegions
   }
 
-  def organizeLocal(selection: Selection, formatting: Formatting) = {
-    val rootTree = abstractFileToTree(selection.file)
-    val classDefAndDefRegions = organizeLocalImports(rootTree, formatting)
-    val removedDuplicates = transformations.removeScopesDuplicates(classDefAndDefRegions)
-    val changes = removedDuplicates.map { _.print }
-
-    Change.discardOverlappingChanges(changes).accepted
-  }
-
-  
-  type CanCastSelection[SG <: Global] = SG =:= global.type
-  def organizeAll[SG <: Global : CanCastSelection](g: SG)(pathDepSelection: Selections#Selection, params: OrganizeImports#RefactoringParameters, formatting: Formatting) = {
-    val selection = pathDepSelection.asInstanceOf[Selection]
-    val rootTree = abstractFileToTree(selection.file)
+  type CanCastTree[SG <: Global] = SG =:= global.type
+  def organizeAll[SG <: Global : CanCastTree](g: SG)(selection: Selections#Selection, params: OrganizeImports#RefactoringParameters, formatting: Formatting) = {
+    val rootTree = abstractFileToTree(selection.file).asInstanceOf[Tree]
+    val rootSelection = selection.root.asInstanceOf[Tree]
 
     val classDefAndDefRegions = if (params.organizeLocalImports) {
       organizeLocalImports(rootTree, formatting)
@@ -79,11 +69,11 @@ class OrganizeImportsWorker[G <: Global](val global: G) extends InteractiveScala
     import OrganizeImports.Dependencies
     val packageRegions = params.deps match {
       case Dependencies.FullyRecompute =>
-        new transformations.addExpandedImports(selection.root)(rawPackageRegions)
+        new transformations.addExpandedImports(rootSelection)(rawPackageRegions)
       case Dependencies.RecomputeAndModify =>
-        new transformations.recomputeAndModifyUnused(selection.root)(rawPackageRegions)
+        new transformations.recomputeAndModifyUnused(rootSelection)(rawPackageRegions)
       case Dependencies.RemoveUnneeded =>
-        new transformations.addNewImports(params.importsToAdd)(rawPackageRegions, selection.root, formatting)
+        new transformations.addNewImports(params.importsToAdd)(rawPackageRegions, rootSelection, formatting)
       case _ => rawPackageRegions
     }
 
