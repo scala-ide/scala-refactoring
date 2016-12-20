@@ -2,41 +2,48 @@ package scala.tools.refactoring.implementations.oimports
 
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.implementations.OrganizeImports
+import scala.tools.nsc.interactive.Global
+import scala.tools.refactoring.common.Selections
+import scala.tools.refactoring.common.InteractiveScalaCompiler
+import scala.tools.refactoring.sourcegen.Formatting
+import scala.tools.refactoring.transformation.TreeTransformations
 
-class OrganizeImportsWorker[O <: OrganizeImports](val oi: O) {
-  import oi._
-  import oi.global._
+class OrganizeImportsWorker[G <: Global](val global: G) extends InteractiveScalaCompiler
+    with TreeTransformations
+    with Selections {
+  import global._
 
-  lazy val treeToolbox = new TreeToolbox[oi.global.type](oi.global)
-  lazy val regionContext = new RegionTransformationsContext[oi.type](oi)
+  lazy val treeToolbox = new TreeToolbox[global.type](global)
+  lazy val regionContext = new RegionTransformationsContext[global.type](global)
   lazy val transformations = new regionContext.RegionTransformations[treeToolbox.type](treeToolbox)
-  lazy val participants = new NotPackageImportParticipants[oi.type](oi)
+  lazy val participants = new ImportParticipants[global.type](global)
   lazy val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
   lazy val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
   lazy val packageDefImportsOrganizer = new PackageDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
 
-  private def organizeLocalImports(root: Tree): List[treeToolbox.Region] = {
-    val defRegions = defImportsOrganizer.transformTreeToRegions(root, oi).map {
+  private def organizeLocalImports(root: Tree, formatting: Formatting): List[treeToolbox.Region] = {
+    import participants._
+    val defRegions = defImportsOrganizer.transformTreeToRegions(root, formatting).map {
       _.transform {
         scala.Function.chain {
-          participants.RemoveDuplicatedByWildcard ::
-            new participants.RemoveUnused(root) ::
+          RemoveDuplicatedByWildcard ::
+            new RemoveUnused(root) ::
             RemoveDuplicates ::
             SortImportSelectors ::
-            participants.SortImports ::
+            SortImports ::
             Nil
         }
       }
     }
 
-    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(root, oi).map {
+    val classDefRegions = classDefImportsOrganizer.transformTreeToRegions(root, formatting).map {
       _.transform {
         scala.Function.chain {
-          participants.RemoveDuplicatedByWildcard ::
-            new participants.RemoveUnused(root) ::
+          RemoveDuplicatedByWildcard ::
+            new RemoveUnused(root) ::
             RemoveDuplicates ::
             SortImportSelectors ::
-            participants.SortImports ::
+            SortImports ::
             Nil
         }
       }
@@ -44,35 +51,29 @@ class OrganizeImportsWorker[O <: OrganizeImports](val oi: O) {
     classDefRegions ::: defRegions
   }
 
-  def organizeLocal(selection: Selection) = {
-   val rootTree = abstractFileToTree(selection.file)
-    val classDefAndDefRegions = organizeLocalImports(rootTree)
-    val removedDuplicates = transformations.removeScopesDuplicates(classDefAndDefRegions)
-    val changes = removedDuplicates.map { _.print }
-
-    Change.discardOverlappingChanges(changes).accepted
-  }
-
-  def organizeAll(selection: Selection, params: RefactoringParameters) = {
-    val rootTree = abstractFileToTree(selection.file)
+  type CanCastTree[SG <: Global] = SG =:= global.type
+  def organizeAll[SG <: Global : CanCastTree](g: SG)(selection: Selections#Selection, params: OrganizeImports#RefactoringParameters, formatting: Formatting) = {
+    val rootTree = abstractFileToTree(selection.file).asInstanceOf[Tree]
+    val rootSelection = selection.root.asInstanceOf[Tree]
 
     val classDefAndDefRegions = if (params.organizeLocalImports) {
-      organizeLocalImports(rootTree)
+      organizeLocalImports(rootTree, formatting)
     } else {
       Nil
     }
 
     val config = params.config.get
 
-    val rawPackageRegions = packageDefImportsOrganizer.transformTreeToRegions(rootTree, oi)
+    val rawPackageRegions = packageDefImportsOrganizer.transformTreeToRegions(rootTree, formatting)
 
+    import OrganizeImports.Dependencies
     val packageRegions = params.deps match {
       case Dependencies.FullyRecompute =>
-        new transformations.addExpandedImports(selection.root)(rawPackageRegions)
+        new transformations.addExpandedImports(rootSelection)(rawPackageRegions)
       case Dependencies.RecomputeAndModify =>
-        new transformations.recomputeAndModifyUnused(selection.root)(rawPackageRegions)
+        new transformations.recomputeAndModifyUnused(rootSelection)(rawPackageRegions)
       case Dependencies.RemoveUnneeded =>
-        new transformations.addNewImports(params.importsToAdd)(rawPackageRegions, selection.root, oi)
+        new transformations.addNewImports(params.importsToAdd)(rawPackageRegions, rootSelection, formatting)
       case _ => rawPackageRegions
     }
 
@@ -94,13 +95,13 @@ class OrganizeImportsWorker[O <: OrganizeImports](val oi: O) {
       _.transform {
         scala.Function.chain {
           participants.SortImports ::
-            SortImportSelectors ::
+            participants.SortImportSelectors ::
             new participants.RemoveUnused(rootTree, params.importsToAdd) ::
             (if (config.wildcards.nonEmpty) List(new participants.AlwaysUseWildcards[treeToolbox.type](treeToolbox)(config.wildcards)) else Nil) :::
             expandOrCollapse :::
             participants.SortImports ::
-            SortImportSelectors ::
-            RemoveDuplicates ::
+            participants.SortImportSelectors ::
+            participants.RemoveDuplicates ::
             Nil
         }
       }

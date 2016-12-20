@@ -6,6 +6,7 @@ import scala.tools.nsc.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
 import scala.util.Properties
+import scala.reflect.internal.util.NoSourceFile
 
 class TreeToolbox[G <: Global](val global: G) {
   import global._
@@ -36,7 +37,7 @@ class TreeToolbox[G <: Global](val global: G) {
 
   import scala.reflect.internal.util.RangePosition
   import scala.tools.refactoring.sourcegen.Formatting
-  class RegionImport(val owner: Symbol, proto: Import, val comments: List[RangePosition] = Nil,
+  class RegionImport(val owner: Symbol = NoSymbol, proto: Import, val comments: List[RangePosition] = Nil,
     val printTransform: (Formatting, (String, String)) => (String, String) = (formatting, prefixSuffix) => prefixSuffix)(val positions: Seq[Position] = Option(proto.pos).toSeq)
       extends Import(proto.expr, proto.selectors) with ImportPrinter with RegionOwner {
     setPos(proto.pos).setType(proto.tpe).setSymbol(proto.symbol)
@@ -303,9 +304,9 @@ class TreeToolbox[G <: Global](val global: G) {
     }
   }
 
-  case class Region(imports: List[Import], owner: Symbol, from: Int,
-      to: Int, source: SourceFile, indentation: String,
-      formatting: Formatting, printAtTheEndOfRegion: String) {
+  case class Region(imports: List[Import], owner: Symbol = NoSymbol, from: Int = -1,
+      to: Int = -1, source: SourceFile = NoSourceFile, indentation: String = "",
+      formatting: Formatting = new Formatting {}, printAtTheEndOfRegion: String = "") {
     def transform(transformation: List[Import] => List[Import]): Region =
       copy(imports = transformation(imports))
 

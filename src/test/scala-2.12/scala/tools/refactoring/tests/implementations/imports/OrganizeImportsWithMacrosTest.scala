@@ -16,10 +16,11 @@ class OrganizeImportsWithMacrosTest extends OrganizeImportsBaseTest {
       importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
       wildcards = useWildcards,
       groups = groupPkgs)
+    import refactoring.oiWorker.participants._
     val params = {
       new refactoring.RefactoringParameters(
           options =
-            refactoring.PrependScalaPackage ::
+            PrependScalaPackage ::
             Nil,
           deps = dependencies,
           organizeLocalImports = organizeLocalImports,

@@ -15,8 +15,9 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
   }.mkChanges
 
   private def organizeWithoutCollapsing(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
+    import refactoring.oiWorker.participants._
     val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
-    val params = new RefactoringParameters(options = List(refactoring.SortImportSelectors), config = Some(oiConfig))
+    val params = new RefactoringParameters(options = List(SortImportSelectors), config = Some(oiConfig))
   }.mkChanges
 
   private def organizeExpand(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
@@ -36,10 +37,11 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
       wildcards = useWildcards,
       groups = groupPkgs)
+    import refactoring.oiWorker.participants._
     val params = {
       new refactoring.RefactoringParameters(
         options =
-            refactoring.PrependScalaPackage ::
+            PrependScalaPackage ::
             Nil,
         deps = dependencies,
         organizeLocalImports = organizeLocalImports,
