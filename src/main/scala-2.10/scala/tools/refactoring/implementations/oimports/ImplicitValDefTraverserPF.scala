@@ -1,10 +1,10 @@
 package scala.tools.refactoring
 package implementations.oimports
 
-import implementations.OrganizeImports
+import scala.tools.nsc.Global
 
-class ImplicitValDefTraverserPF[O <: OrganizeImports](val oiInstance: O) {
-  import oiInstance.global._
+class ImplicitValDefTraverserPF[G <: Global](val global: G) {
+  import global._
 
   /** Unsupported for Scala 2.10. */
   def apply(traverser: Traverser): PartialFunction[Tree, Unit] = PartialFunction.empty
