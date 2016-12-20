@@ -16,7 +16,7 @@ class OrganizeImportsWorker[G <: Global](val global: G) extends InteractiveScala
   lazy val treeToolbox = new TreeToolbox[global.type](global)
   lazy val regionContext = new RegionTransformationsContext[global.type](global)
   lazy val transformations = new regionContext.RegionTransformations[treeToolbox.type](treeToolbox)
-  lazy val participants = new NotPackageImportParticipants[global.type](global)
+  lazy val participants = new ImportParticipants[global.type](global)
   lazy val defImportsOrganizer = new DefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
   lazy val classDefImportsOrganizer = new ClassDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)
   lazy val packageDefImportsOrganizer = new PackageDefImportsOrganizer[treeToolbox.global.type, treeToolbox.type](treeToolbox)

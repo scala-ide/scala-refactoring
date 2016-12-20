@@ -105,7 +105,7 @@ class AllSelects[G <: Global](val global: G) extends TreeTraverser
   }
 }
 
-class NotPackageImportParticipants[G <: Global](val global: G) extends TreeTraverser
+class ImportParticipants[G <: Global](val global: G) extends TreeTraverser
     with TreeTransformations
     with UnusedImportsFinder
     with common.EnrichedTrees
