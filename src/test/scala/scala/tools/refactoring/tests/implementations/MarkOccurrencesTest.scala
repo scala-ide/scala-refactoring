@@ -530,4 +530,147 @@ class MarkOccurrencesTest extends TestHelper {
       def alias = /*2-cursor->*/########
     }
   """)
+
+  @Test
+  def onRefinedSelfType1() = markOccurrences("""
+    package com.github.mlangc.experiments
+
+    package outer {
+      package space {
+        trait Inner
+      }
+    }
+
+    import outer._
+
+    trait Bug4 { this: space.Inner/*<-cursor-2*/ =>
+
+    }
+  """, """
+    package com.github.mlangc.experiments
+
+    package outer {
+      package space {
+        trait #####
+      }
+    }
+
+    import outer._
+
+    trait Bug4 { this: space.#####/*<-cursor-2*/ =>
+
+    }
+  """)
+
+  @Test
+  def onRefinedSelfType2() = markOccurrences("""
+    package com.github.mlangc.experiments
+
+    package outer {
+      package space {
+        trait Inner/*<-cursor*/
+      }
+    }
+
+    import outer._
+
+    trait Bug4 { this: space.Inner =>
+
+    }
+  """, """
+    package com.github.mlangc.experiments
+
+    package outer {
+      package space {
+        trait #####/*<-cursor*/
+      }
+    }
+
+    import outer._
+
+    trait Bug4 { this: space.##### =>
+
+    }
+  """)
+
+  @Test
+  def onRefinedSelfType3() = markOccurrences("""
+    package outer {
+      package inner {
+        trait Space
+      }
+    }
+
+    import outer.inner.Space
+
+    trait Bug5 { this: Space/*<-cursor-2*/ =>
+
+    }
+  """, """
+    package outer {
+      package inner {
+        trait #####
+      }
+    }
+
+    import outer.inner.#####
+
+    trait Bug5 { this: #####/*<-cursor-2*/ =>
+
+    }
+  """)
+
+  @Test
+  def onRefinedSelfType4() = markOccurrences("""
+    package outer {
+      package inner {
+        trait Clazz
+      }
+    }
+
+    import outer.inner
+
+    trait Bug6 { this: /*cursor->*/inner.Clazz =>
+
+    }
+  """, """
+    package outer {
+      package ##### {
+        trait Clazz
+      }
+    }
+
+    import outer.#####
+
+    trait Bug6 { this: /*cursor->*/#####.Clazz =>
+
+    }
+  """)
+
+  @Test
+  def onRefinedSelfType5() = markOccurrences("""
+    package outer {
+      package inner {
+        trait Clazz
+      }
+    }
+
+    import outer._
+
+    trait Bug6 { this: /*cursor->*/inner.Clazz =>
+
+    }
+  """, """
+    package outer {
+      package ##### {
+        trait Clazz
+      }
+    }
+
+    import outer._
+
+    trait Bug6 { this: /*cursor->*/#####.Clazz =>
+
+    }
+  """)
 }
