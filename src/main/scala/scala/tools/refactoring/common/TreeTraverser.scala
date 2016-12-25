@@ -422,7 +422,7 @@ trait TreeTraverser extends TracingImpl {
 
     private def handleRefinedType(orig: Tree, tpe: RefinedType): Unit = {
       orig match {
-        case orig: Select if orig.symbol == NoSymbol =>
+        case orig: RefTree if orig.symbol == NoSymbol =>
           tpe.parents.foreach(handleParentTypeInRefinedType(_, orig))
 
         case orig: CompoundTypeTree =>
@@ -450,19 +450,19 @@ trait TreeTraverser extends TracingImpl {
       }
     }
 
-    private def handleParentTypeInRefinedType(tRef: Type, select: Select): Unit = {
+    private def handleParentTypeInRefinedType(tRef: Type, refTree: RefTree): Unit = {
       tRef match {
-        case tRef: TypeRef if select.name == tRef.sym.name =>
+        case tRef: TypeRef if refTree.name == tRef.sym.name =>
           tRef.pre match {
-            case pre: ThisType if select.qualifier.pos.isRange =>
-              f(pre.sym, select.qualifier)
+            case pre: ThisType if refTree.qualifier.pos.isRange =>
+              f(pre.sym, refTree.qualifier)
 
             case _ =>
               ()
           }
 
-          if (select.namePosition().isRange) {
-            f(tRef.sym, select)
+          if (refTree.namePosition().isRange) {
+            f(tRef.sym, refTree)
           }
 
         case _ =>

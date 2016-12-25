@@ -20,11 +20,64 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
   import global._
   import TracingHelpers.toCompactString
 
+  private def tryFindMissingSymbol(treeWithoutSymbol: Tree, root: Tree): Symbol = {
+    treeWithoutSymbol match {
+      case treeWithoutSymbol: RefTree =>
+        tryFindMissingSymbol(treeWithoutSymbol: RefTree, root: Tree)
+
+      case _ =>
+        NoSymbol
+    }
+  }
+
+  private def tryFindMissingSymbol(treeWithoutSymbol: RefTree, root: Tree): Symbol = {
+    root.foreach {
+      case t: TypeTree =>
+        if (t.original == treeWithoutSymbol) {
+          t.tpe.parents.foreach {
+            case p: TypeRef if p.sym.name == treeWithoutSymbol.name =>
+                return p.sym
+
+            case _ =>
+              ()
+          }
+        } else {
+          t.original match {
+            case orig: RefTree if orig.qualifier == treeWithoutSymbol =>
+              t.tpe.parents.foreach {
+                case p: TypeRef =>
+                  p.pre match {
+                    case pre: ThisType if pre.sym.name.toString == treeWithoutSymbol.name.toString =>
+                      return pre.sym
+
+                    case _ =>
+                      ()
+                  }
+
+                case _ =>
+                  ()
+              }
+
+            case _ =>
+              ()
+          }
+        }
+
+      case _ =>
+        ()
+    }
+
+
+    NoSymbol
+  }
+
+
   protected class SingleTreeSelection(val selected: Tree, val root: Tree) {
     val symbol = selected match {
       case Import(expr, List(selector)) =>
         findSymbolForImportSelector(expr, selector.name).getOrElse(NoSymbol)
-      case tree => tree.symbol
+      case tree if tree.symbol != NoSymbol => tree.symbol
+      case treeWithoutSymbol => tryFindMissingSymbol(treeWithoutSymbol, root)
     }
 
     val name = {
