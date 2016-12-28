@@ -5,6 +5,8 @@
 package scala.tools.refactoring
 package common
 
+import scala.tools.refactoring.util.Casts._
+
 trait TreeTraverser extends TracingImpl {
 
   this: CompilerAccess with common.EnrichedTrees =>
@@ -421,7 +423,7 @@ trait TreeTraverser extends TracingImpl {
     }
 
     private def handleRefinedType(orig: Tree, tpe: RefinedType): Unit = {
-      orig match {
+      orig.tryMatch {
         case orig: RefTree if orig.symbol == NoSymbol =>
           tpe.parents.foreach(handleParentTypeInRefinedType(_, orig))
 
@@ -435,38 +437,26 @@ trait TreeTraverser extends TracingImpl {
 
           if (oParents.size == tParents.size) {
             oParents.zip(tParents).foreach { case (oParent, tParent) =>
-              oParent match {
+              oParent.tryMatch {
                 case s @ Select(qualifier, name) =>
                   handleParentTypeInRefinedType(tParent, s)
-
-                case _ =>
-                  ()
               }
             }
           }
-
-        case _ =>
-          ()
       }
     }
 
     private def handleParentTypeInRefinedType(tRef: Type, refTree: RefTree): Unit = {
-      tRef match {
+      tRef.tryMatch {
         case tRef: TypeRef if refTree.name == tRef.sym.name =>
-          tRef.pre match {
+          tRef.pre.tryMatch {
             case pre: ThisType if refTree.qualifier.pos.isRange =>
               f(pre.sym, refTree.qualifier)
-
-            case _ =>
-              ()
           }
 
           if (refTree.namePosition().isRange) {
             f(tRef.sym, refTree)
           }
-
-        case _ =>
-          ()
       }
     }
   }

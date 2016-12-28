@@ -15,6 +15,7 @@ import scala.tools.refactoring.util.SourceWithMarker.Movement
 import scala.tools.refactoring.common.TracingHelpers
 import scala.tools.refactoring.util.SourceHelpers
 import scala.tools.refactoring.util.SourceWithSelection
+import scala.tools.refactoring.util.Casts._
 
 trait MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.EnrichedTrees with common.InteractiveScalaCompiler {
   import global._
@@ -31,46 +32,33 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
   }
 
   private def tryFindMissingSymbol(treeWithoutSymbol: RefTree, root: Tree): Symbol = {
-    root.foreach {
-      case t: TypeTree =>
+    root.foreach { t =>
+      t.tryMatch { case t: TypeTree =>
         if (t.original == treeWithoutSymbol) {
-          t.tpe.parents.foreach {
-            case p: TypeRef if p.sym.name == treeWithoutSymbol.name =>
-                return p.sym
-
-            case _ =>
-              ()
+          t.tpe.parents.foreach { p =>
+            p.tryMatch {
+              case p: TypeRef if p.sym.name == treeWithoutSymbol.name =>
+                  return p.sym
+            }
           }
         } else {
-          t.original match {
+          t.original.tryMatch {
             case orig: RefTree if orig.qualifier == treeWithoutSymbol =>
-              t.tpe.parents.foreach {
-                case p: TypeRef =>
-                  p.pre match {
+              t.tpe.parents.foreach { p =>
+                p.tryMatch { case p: TypeRef =>
+                  p.pre.tryMatch {
                     case pre: ThisType if pre.sym.name.toString == treeWithoutSymbol.name.toString =>
                       return pre.sym
-
-                    case _ =>
-                      ()
                   }
-
-                case _ =>
-                  ()
+                }
               }
-
-            case _ =>
-              ()
           }
         }
-
-      case _ =>
-        ()
+      }
     }
-
-
+    
     NoSymbol
   }
-
 
   protected class SingleTreeSelection(val selected: Tree, val root: Tree) {
     val symbol = selected match {
