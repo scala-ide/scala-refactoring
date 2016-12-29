@@ -673,4 +673,54 @@ class MarkOccurrencesTest extends TestHelper {
 
     }
   """)
+
+  @Test
+  def onRefinedSelfType6() = markOccurrences("""
+    package hoellen.feuer {
+      trait Belze
+      trait Bub
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with /*2-cursor->*/feuer.Bub =>
+
+    }
+  """, """
+    package hoellen.##### {
+      trait Belze
+      trait Bub
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: #####.Belze with /*2-cursor->*/#####.Bub =>
+
+    }
+  """)
+
+  @Test
+  def onRefinedSelfType7() = markOccurrences("""
+    package hoellen.feuer {
+      trait Belze
+      trait Bub
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.Bub/*<-cursor*/ =>
+
+    }
+  """, """
+    package hoellen.feuer {
+      trait Belze
+      trait ###
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.###/*<-cursor*/ =>
+
+    }
+  """)
 }
