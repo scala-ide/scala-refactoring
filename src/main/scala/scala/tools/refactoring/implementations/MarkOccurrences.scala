@@ -52,6 +52,26 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
                   }
                 }
               }
+              
+            case orig: CompoundTypeTree =>
+              val tParents = t.tpe.parents.flatMap {
+                case t: RefinedType => t.parents
+                case _ => Nil
+              }
+
+              val oParents = orig.templ.parents
+
+              if (oParents.size == tParents.size) {
+                oParents.zip(tParents).foreach { case (oTree, tRef) =>
+                  oTree.tryMatch {
+                    case refTree: RefTree =>
+                      val sym = findSymbolInType(treeWithoutSymbol, tRef, refTree)
+                      if (sym != NoSymbol) {
+                        return sym
+                      }
+                  }
+                }
+              }
           }
         }
       }
@@ -59,18 +79,39 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
     
     NoSymbol
   }
+  
+  private def findSymbolInType(treeWithoutSymbol: Tree, tpe: Type, ref: RefTree): Symbol = {
+    tpe.tryMatch {
+      case tRef: TypeRef if ref.name == tRef.sym.name =>
+        val res = tRef.pre.tryMatch {
+          case pre: ThisType if ref.qualifier.pos.isRange && treeWithoutSymbol == ref.qualifier =>
+            pre.sym
+        }
+        
+        res.getOrElse {
+          if (ref == treeWithoutSymbol && ref.namePosition().isRange) tRef.sym
+          else NoSymbol
+        }
+    }.getOrElse {
+      NoSymbol
+    }
+  }
 
   protected class SingleTreeSelection(val selected: Tree, val root: Tree) {
     val symbol = selected match {
       case Import(expr, List(selector)) =>
         findSymbolForImportSelector(expr, selector.name).getOrElse(NoSymbol)
-      case tree if tree.symbol != NoSymbol => tree.symbol
-      case treeWithoutSymbol => tryFindMissingSymbol(treeWithoutSymbol, root)
+
+      case tree if tree.symbol != NoSymbol => 
+        tree.symbol
+
+      case treeWithoutSymbol => 
+        tryFindMissingSymbol(treeWithoutSymbol, root)
     }
 
     val name = {
       val declaration = index.declaration(symbol)
-      trace(s"Selected symbol is decared at ${toCompactString(declaration)}")
+      trace(s"Selected symbol $symbol is decared at ${toCompactString(declaration)}")
 
       declaration.flatMap { declaration =>
         // We try to read the old name from the name position of the declaration, since this seems to be the most
