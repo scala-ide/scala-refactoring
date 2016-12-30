@@ -438,7 +438,7 @@ trait TreeTraverser extends TracingImpl {
           if (oParents.size == tParents.size) {
             oParents.zip(tParents).foreach { case (oParent, tParent) =>
               oParent.tryMatch {
-                case s @ Select(qualifier, name) =>
+                case s: Select =>
                   handleParentTypeInRefinedType(tParent, s)
               }
             }
