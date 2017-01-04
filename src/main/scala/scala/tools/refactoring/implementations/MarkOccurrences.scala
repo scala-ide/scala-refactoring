@@ -31,6 +31,10 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
     }
   }
 
+  /*
+   * In some cases (for example when dealing with refined self types), the selected tree might not
+   * have a symbol. This method attempts to find it anyway.
+   */
   private def tryFindMissingSymbol(treeWithoutSymbol: RefTree, root: Tree): Symbol = {
     root.foreach { t =>
       t.tryMatch { case t: TypeTree =>
@@ -52,7 +56,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
                   }
                 }
               }
-              
+
             case orig: CompoundTypeTree =>
               val tParents = t.tpe.parents.flatMap {
                 case t: RefinedType => t.parents
@@ -76,10 +80,10 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
         }
       }
     }
-    
+
     NoSymbol
   }
-  
+
   private def findSymbolInType(treeWithoutSymbol: Tree, tpe: Type, ref: RefTree): Symbol = {
     tpe.tryMatch {
       case tRef: TypeRef if ref.name == tRef.sym.name =>
@@ -87,7 +91,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
           case pre: ThisType if ref.qualifier.pos.isRange && treeWithoutSymbol == ref.qualifier =>
             pre.sym
         }
-        
+
         res.getOrElse {
           if (ref == treeWithoutSymbol && ref.namePosition().isRange) tRef.sym
           else NoSymbol
@@ -102,10 +106,10 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
       case Import(expr, List(selector)) =>
         findSymbolForImportSelector(expr, selector.name).getOrElse(NoSymbol)
 
-      case tree if tree.symbol != NoSymbol => 
+      case tree if tree.symbol != NoSymbol =>
         tree.symbol
 
-      case treeWithoutSymbol => 
+      case treeWithoutSymbol =>
         tryFindMissingSymbol(treeWithoutSymbol, root)
     }
 

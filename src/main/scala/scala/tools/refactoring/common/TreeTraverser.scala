@@ -422,6 +422,10 @@ trait TreeTraverser extends TracingImpl {
       }
     }
 
+    /*
+     * Refined types need special handling, since their original representation might
+     * lack symbols. This method takes care of this.
+     */
     private def handleRefinedType(orig: Tree, tpe: RefinedType): Unit = {
       orig.tryMatch {
         case orig: RefTree if orig.symbol == NoSymbol =>
