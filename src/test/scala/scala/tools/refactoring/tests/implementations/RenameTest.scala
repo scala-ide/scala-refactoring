@@ -4351,4 +4351,69 @@ class Blubb
     }
     """ -> TaggedAsGlobalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenamePackage1002769v1() = new FileSet {
+    """
+    package rename.me/*<-cursor*/
+
+    class Franzi
+    """ becomes
+    """
+    package rename.lausbub/*<-cursor*/
+
+    class Franzi
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("lausbub"))
+
+  @Test
+  def testRenamePackage1002769v2() = new FileSet {
+    """
+    package com.github.mlangc.experiments.rename.me/*<-cursor*/
+
+    class Lausbub
+    """ becomes
+    """
+    package com.github.mlangc.experiments.rename.ups/*<-cursor*/
+
+    class Lausbub
+    """ -> TaggedAsGlobalRename
+
+    """
+    package com.github.mlangc.experiments.rename
+
+    package object me {
+      type Kerl = Lausbub
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments.rename
+
+    package object ups {
+      type Kerl = Lausbub
+    }
+    """
+
+    """
+    package com.github.mlangc.experiments
+
+    import com.github.mlangc.experiments.rename.me.Kerl
+    import com.github.mlangc.experiments.rename.me.Lausbub
+
+    class Bug {
+      val kerl: Kerl = new Lausbub
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    import com.github.mlangc.experiments.rename.ups.Kerl
+    import com.github.mlangc.experiments.rename.ups.Lausbub
+
+    class Bug {
+      val kerl: Kerl = new Lausbub
+    }
+    """
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
+
