@@ -33,7 +33,7 @@ trait DependentSymbolExpanders extends TracingImpl {
 
           if (posSet == Set(NoPosition)) Seq()
           else if (res == Seq(s)) Seq()
-          else posSet.map(pos => PositionDebugging.formatCompact(pos))
+          else posSet.map(pos => PositionDebugging.format(pos))
         }
 
         if (debugInfo.nonEmpty) {
@@ -236,6 +236,20 @@ trait DependentSymbolExpanders extends TracingImpl {
           }
         }
       }
+    }
+  }
+
+  /**
+   * Associates package objects with their packages
+   */
+  trait PackageObjects extends SymbolExpander { this: IndexLookup =>
+    protected abstract override def doExpand(s: Symbol): List[Symbol] = {
+      relatedPackageDefs(s) ::: super.doExpand(s)
+    }
+
+    private def relatedPackageDefs(s: Symbol): List[Symbol] = s match {
+      case s: ModuleSymbol if s.isPackageObject => List(s.owner)
+      case _ => Nil
     }
   }
 }

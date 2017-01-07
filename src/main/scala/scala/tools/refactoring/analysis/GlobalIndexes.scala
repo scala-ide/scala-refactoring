@@ -34,7 +34,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           OverridesInSuperClasses with
           ClassVals with
           CaseClassVals with
-          TermsWithMissingRanges {
+          TermsWithMissingRanges with
+          PackageObjects {
 
             val cus = compilationUnits
           }
