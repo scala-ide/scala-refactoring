@@ -123,7 +123,12 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
         // reliable strategy that also works well in the presence of `backtick-identifiers`.
         declaration.namePosition() match {
           case rp: RangePosition =>
-            Some(rp.source.content.slice(rp.start, rp.end).mkString(""))
+            if (SourceWithMarker.atStartOf(rp).moveMarker(Movements.id).marker != rp.end) {
+              trace(s"Name position at ${PositionDebugging.format(rp)} seems to be invalid")
+              None
+            } else {
+              Some(rp.source.content.slice(rp.start, rp.end).mkString(""))
+            }
           case op =>
             trace(s"Expected range position, but found $op")
             None
