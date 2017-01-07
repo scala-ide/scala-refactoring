@@ -110,6 +110,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
         tree.symbol
 
       case treeWithoutSymbol =>
+        trace("Selected tree does not have symbol")
         tryFindMissingSymbol(treeWithoutSymbol, root)
     }
 
