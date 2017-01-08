@@ -14,6 +14,8 @@ import scala.tools.refactoring.common.TextChange
 
 import analysis.TreeAnalysis
 import transformation.TreeFactory
+import scala.tools.refactoring.common.MoveToDirChange
+import scala.reflect.io.AbstractFile
 
 abstract class Rename extends MultiStageRefactoring with MarkOccurrences with TreeAnalysis with analysis.Indexes with TreeFactory with common.InteractiveScalaCompiler {
 
@@ -122,7 +124,7 @@ abstract class Rename extends MultiStageRefactoring with MarkOccurrences with Tr
         (TextChange(occurence.source, occurence.start, occurence.end, newName), tree)
       }
 
-      val newSourceChanges = textChangesWithTrees.flatMap { case (textChange, tree) =>
+      val renameFileChanges = textChangesWithTrees.flatMap { case (textChange, tree) =>
         if (tree.pos.source.file.name == singleTreeSelection.name + ".scala") {
           Some(RenameSourceFileChange(tree.pos.source.file, newName + ".scala"))
         } else {
@@ -130,13 +132,129 @@ abstract class Rename extends MultiStageRefactoring with MarkOccurrences with Tr
         }
       }.distinct
 
+      val moveToDirChanges = {
+        mkMoveToDirChanges(textChangesWithTrees.map(_._2), singleTreeSelection.symbol, newName)
+      }
+
       val textChanges = textChangesWithTrees.map(_._1)
 
-      textChanges ::: newSourceChanges
+      textChanges ::: renameFileChanges ::: moveToDirChanges
     }
 
     trace(s"Old name is ${singleTreeSelection.name}")
     if (singleTreeSelection.name == newName) Right(Nil)
     else Right(generateChanges)
+  }
+
+  /*
+   * If we rename a package, it will typically be necessary to move its contents to a new directory.
+   * This method generates these changes for all files where the primary package (see below for exact definition)
+   * corresponds to the directory the files lies in. We are considering a package to be the primary package of a file,
+   * if all non package declarations lie beneath it, and no more deeply nested package satisfies this property. This
+   * is best understood by examples:
+   *
+   * Ex. 1:
+   *     package a.b //<-- primary
+   *
+   *     class C
+   *
+   * Ex. 2:
+   *     package a
+   *     package object b { //<-- primary
+   *       val x = 42
+   *     }
+   *
+   * Ex. 3:
+   *     package a { //<-- primary
+   *       package b {
+   *         class C
+   *       }
+   *       class C
+   *     }
+   */
+  private def mkMoveToDirChanges(changedTrees: List[Tree], selectedSymbol: Symbol, newName: String): List[MoveToDirChange] = {
+    if (!selectedSymbol.hasPackageFlag) {
+      Nil
+    } else {
+      changedTrees.flatMap { tree =>
+        val pkgSymbol = associatedPackageClassSymbol(tree)
+
+        pkgSymbol.flatMap  { pkgSymbol =>
+          index.rootOf(tree).flatMap { root =>
+            val pkgChain = packageChainReflectedInDirLayout(root)
+            val adaptedPkgChain = pkgChain.map {
+              case (dir, sym) if sym == pkgSymbol => (newName, pkgSymbol)
+              case other => other
+            }
+
+            if (adaptedPkgChain == pkgChain) {
+              None
+            } else {
+              val sourceFile = tree.pos.source.file
+              val newPath = {
+                val parent = parentPath(sourceFile, adaptedPkgChain.size + 1)
+                val prefix = if (parent.isEmpty) "" else parent + "/"
+                prefix + adaptedPkgChain.map(_._1).mkString("/")
+              }
+
+              Some(MoveToDirChange(sourceFile, newPath))
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private def moduleClassOf(symbol: Symbol): Option[Symbol] = symbol match {
+    case symbol: ModuleClassSymbol => Some(symbol)
+    case symbol: ModuleSymbol => Some(symbol.moduleClass)
+    case _ => None
+  }
+
+  private def associatedPackageClassSymbol(tree: Tree): Option[Symbol] = {
+    tree match {
+      case tree: ModuleDef if tree.symbol.isPackageObject => moduleClassOf(tree.symbol.enclosingPackage)
+      case tree if tree.symbol != null && tree.symbol.hasPackageFlag => moduleClassOf(tree.symbol)
+      case  _ => None
+    }
+  }
+
+  private def parentPath(source: AbstractFile, levels: Int): String = {
+    parentPath(source.path, levels)
+  }
+
+  private def parentPath(path: String, levels: Int): String = {
+    path.split("/").dropRight(levels).mkString("/")
+  }
+
+  private def packageChainReflectedInDirLayout(root: Tree): Seq[(String, Symbol)] = {
+    val dirComponents = root.pos.source.file.path.split("/").dropRight(1)
+    val pkgChain = primaryPackageChain(root)
+
+    dirComponents.reverse.zip(pkgChain.reverse).takeWhile {
+      case (dir, (name, _)) => dir == name
+    }.map(_._2).reverse.toSeq
+  }
+
+  private def primaryPackageChain(root: Tree): List[(String, Symbol)] = {
+    def chainFrom(symbol: Symbol) = {
+      symbol.ownerChain.reverse.map(s => (s.nameString, moduleClassOf(s).getOrElse(NoSymbol)))
+    }
+
+    root match {
+      case pkgDef: PackageDef =>
+        val prefix = chainFrom(pkgDef.symbol)
+
+        pkgDef.stats match {
+          case stat :: Nil => prefix ::: primaryPackageChain(stat)
+          case _ => prefix
+        }
+
+      case moduleDef: ModuleDef if moduleDef.symbol.isPackageObject =>
+        chainFrom(moduleDef.symbol.enclosingPackage)
+
+      case _ =>
+        Nil
+    }
   }
 }
