@@ -35,6 +35,8 @@ case class TextChange(sourceFile: SourceFile, from: Int, to: Int, text: String) 
  */
 case class NewFileChange(fullName: String, text: String) extends Change
 
+case class MoveToDirChange(sourceFile: AbstractFile, to: String) extends Change
+
 case class RenameSourceFileChange(sourceFile: AbstractFile, to: String) extends Change
 
 object Change {
