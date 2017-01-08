@@ -71,6 +71,13 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
       }).distinct
     }
 
+    def rootOf(tree: Tree): Option[Tree] = {
+      cus.collectFirst {
+        case cu if cu.root.pos.source.file == tree.pos.source.file =>
+          cu.root
+      }
+    }
+
     @tailrec
     private def linkSymbols(uf: UnionFind[Symbol], syms:List[Symbol], seen:HashSet[Symbol]): UnionFind[Symbol] = {
       if (syms.nonEmpty){
