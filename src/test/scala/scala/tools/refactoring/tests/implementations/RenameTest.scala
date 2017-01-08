@@ -4400,7 +4400,7 @@ class Blubb
     import com.github.mlangc.experiments.rename.me.Kerl
     import com.github.mlangc.experiments.rename.me.Lausbub
 
-    class Bug {
+    class Bug1 {
       val kerl: Kerl = new Lausbub
     }
     """ becomes
@@ -4410,10 +4410,195 @@ class Blubb
     import com.github.mlangc.experiments.rename.ups.Kerl
     import com.github.mlangc.experiments.rename.ups.Lausbub
 
-    class Bug {
+    class Bug1 {
       val kerl: Kerl = new Lausbub
     }
     """
+
+    """
+    package com.github.mlangc.experiments
+
+    class Bug2 {
+      val kerl1 = {
+        new rename.me.Lausbub
+      }
+
+      import rename.me
+
+      val kerl2: me.Kerl = {
+        ???
+      }
+
+      val kerl3 = {
+        import rename.me.Lausbub
+        new Lausbub
+      }
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    class Bug2 {
+      val kerl1 = {
+        new rename.ups.Lausbub
+      }
+
+      import rename.ups
+
+      val kerl2: ups.Kerl = {
+        ???
+      }
+
+      val kerl3 = {
+        import rename.ups.Lausbub
+        new Lausbub
+      }
+    }
+    """
   } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
+
+  @Test
+  def testRenamePackage1002769v3() = new FileSet {
+    """
+    package rename/*<-cursor*/
+
+    class Lausbub
+    """ -> "rename/Lausbub.scala" becomes
+    """
+    package renamed/*<-cursor*/
+
+    class Lausbub
+    """ -> "renamed/Lausbub.scala"
+  } prepareAndApplyRefactoring(prepareAndRenameTo("renamed"))
+
+  @Test
+  def testRenamePackage1002769v4() = new FileSet {
+    """
+    package rename.me/*<-cursor*/
+
+    class Lausbub
+    """ -> "rename/me/Lausbub.scala" becomes
+    """
+    package rename.xxx/*<-cursor*/
+
+    class Lausbub
+    """ -> "rename/xxx/Lausbub.scala"
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenamePackage1002769v5() = new FileSet {
+    """
+    package rename
+
+    package object me/*<-cursor*/ {
+      class Lausbub
+    }
+    """ -> "rename/me/package.scala" becomes
+    """
+    package rename
+
+    package object xxx/*<-cursor*/ {
+      class Lausbub
+    }
+    """ -> "rename/xxx/package.scala"
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenamePackage1002769v6() = new FileSet {
+    """
+    package one.library.to./*(*/rename/*)*/.them.all
+    class Lauser
+    """ -> "one/library/to/rename/them/all/Lauser.scala" becomes
+    """
+    package one.library.to./*(*/xxx/*)*/.them.all
+    class Lauser
+    """ -> "one/library/to/xxx/them/all/Lauser.scala"
+
+    """
+    package one.library.to.rename.them
+
+    import one.library.to.rename.them.all.Lauser
+
+    class Ratte(lauser: Lauser)
+    """ -> "one/library/to/rename/them/Ratte.scala" becomes
+    """
+    package one.library.to.xxx.them
+
+    import one.library.to.xxx.them.all.Lauser
+
+    class Ratte(lauser: Lauser)
+    """ -> "one/library/to/xxx/them/Ratte.scala"
+
+    """
+    package one.library.to.rename
+
+    import one.library.to.rename.them.Ratte
+    import one.library.to.rename.them.all.Lauser
+
+    class Fritzi(ratte: Ratte, lauser: Lauser)
+    """ -> "one/library/to/rename/Fritzi.scala" becomes
+    """
+    package one.library.to.xxx
+
+    import one.library.to.xxx.them.Ratte
+    import one.library.to.xxx.them.all.Lauser
+
+    class Fritzi(ratte: Ratte, lauser: Lauser)
+    """ -> "one/library/to/xxx/Fritzi.scala"
+
+    """
+    package one.library.to.rename.them.all
+
+    class Rotzloeffel
+    """ -> "not/in/pkg/dir/Rotzloeffel.scala" becomes
+    """
+    package one.library.to.xxx.them.all
+
+    class Rotzloeffel
+    """ -> "not/in/pkg/dir/Rotzloeffel.scala"
+
+    """
+    package one.library
+
+    class Indifferent
+    """ isNotModified()
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenamePackage1002769v7() = new FileSet {
+    """
+    package a {
+      package b/*<-cursor*/ {
+        class C
+      }
+    }
+    """ -> "a/b/C.scala" becomes
+    """
+    package a {
+      package xxx/*<-cursor*/ {
+        class C
+      }
+    }
+    """ -> "a/xxx/C.scala"
+
+    """
+    package a {
+      package b {
+        class NotInPrimaryPackage
+      }
+
+      class Mischief
+    }
+    """ -> "a/b/Mischief.scala" becomes
+    """
+    package a {
+      package xxx {
+        class NotInPrimaryPackage
+      }
+
+      class Mischief
+    }
+    """ -> "a/b/Mischief.scala"
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 }
 
