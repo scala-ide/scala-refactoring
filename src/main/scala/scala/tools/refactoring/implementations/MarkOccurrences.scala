@@ -70,7 +70,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
                 oParents.zip(tParents).foreach { case (oTree, tRef) =>
                   condOpt(oTree) {
                     case refTree: RefTree =>
-                      val sym = findSymbolInType(treeWithoutSymbol, tRef, refTree)
+                      val sym = findSymbolInType(treeWithoutSymbol, refTree)(tRef)
                       if (sym != NoSymbol) {
                         return sym
                       }
@@ -85,7 +85,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
     NoSymbol
   }
 
-  private def findSymbolInType(treeWithoutSymbol: Tree, tpe: Type, ref: RefTree): Symbol = {
+  private def findSymbolInType(treeWithoutSymbol: Tree, ref: RefTree)(tpe: Type): Symbol = {
     condOpt(tpe) {
       case tRef: TypeRef if ref.name == tRef.sym.name =>
         val res = condOpt(tRef.pre) {
