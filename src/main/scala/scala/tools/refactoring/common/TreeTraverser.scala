@@ -5,7 +5,7 @@
 package scala.tools.refactoring
 package common
 
-import scala.tools.refactoring.util.Casts._
+import scala.PartialFunction.condOpt
 
 trait TreeTraverser extends TracingImpl {
 
@@ -427,7 +427,7 @@ trait TreeTraverser extends TracingImpl {
      * lack symbols. This method takes care of this.
      */
     private def handleRefinedType(orig: Tree, tpe: RefinedType): Unit = {
-      orig.tryMatch {
+      condOpt(orig) {
         case orig: RefTree if orig.symbol == NoSymbol =>
           tpe.parents.foreach(handleParentTypeInRefinedType(_, orig))
 
@@ -441,7 +441,7 @@ trait TreeTraverser extends TracingImpl {
 
           if (oParents.size == tParents.size) {
             oParents.zip(tParents).foreach { case (oParent, tParent) =>
-              oParent.tryMatch {
+              condOpt(oParent) {
                 case s: Select =>
                   handleParentTypeInRefinedType(tParent, s)
               }
@@ -451,9 +451,9 @@ trait TreeTraverser extends TracingImpl {
     }
 
     private def handleParentTypeInRefinedType(tRef: Type, refTree: RefTree): Unit = {
-      tRef.tryMatch {
+      condOpt(tRef) {
         case tRef: TypeRef if refTree.name == tRef.sym.name =>
-          tRef.pre.tryMatch {
+          condOpt(tRef.pre) {
             case pre: ThisType if refTree.qualifier.pos.isRange =>
               f(pre.sym, refTree.qualifier)
           }

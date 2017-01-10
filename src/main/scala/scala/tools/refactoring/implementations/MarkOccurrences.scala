@@ -15,7 +15,8 @@ import scala.tools.refactoring.util.SourceWithMarker.Movement
 import scala.tools.refactoring.common.TracingHelpers
 import scala.tools.refactoring.util.SourceHelpers
 import scala.tools.refactoring.util.SourceWithSelection
-import scala.tools.refactoring.util.Casts._
+
+import scala.PartialFunction.condOpt
 
 trait MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.EnrichedTrees with common.InteractiveScalaCompiler {
   import global._
@@ -37,20 +38,20 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
    */
   private def tryFindMissingSymbol(treeWithoutSymbol: RefTree, root: Tree): Symbol = {
     root.foreach { t =>
-      t.tryMatch { case t: TypeTree =>
+      condOpt(t) { case t: TypeTree =>
         if (t.original == treeWithoutSymbol) {
           t.tpe.parents.foreach { p =>
-            p.tryMatch {
+            condOpt(p) {
               case p: TypeRef if p.sym.name == treeWithoutSymbol.name =>
                   return p.sym
             }
           }
         } else {
-          t.original.tryMatch {
+          condOpt(t.original) {
             case orig: RefTree if orig.qualifier == treeWithoutSymbol =>
               t.tpe.parents.foreach { p =>
-                p.tryMatch { case p: TypeRef =>
-                  p.pre.tryMatch {
+                condOpt(p) { case p: TypeRef =>
+                  condOpt(p.pre) {
                     case pre: ThisType if pre.sym.name.toString == treeWithoutSymbol.name.toString =>
                       return pre.sym
                   }
@@ -67,7 +68,7 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
 
               if (oParents.size == tParents.size) {
                 oParents.zip(tParents).foreach { case (oTree, tRef) =>
-                  oTree.tryMatch {
+                  condOpt(oTree) {
                     case refTree: RefTree =>
                       val sym = findSymbolInType(treeWithoutSymbol, tRef, refTree)
                       if (sym != NoSymbol) {
@@ -85,9 +86,9 @@ trait MarkOccurrences extends common.Selections with analysis.Indexes with commo
   }
 
   private def findSymbolInType(treeWithoutSymbol: Tree, tpe: Type, ref: RefTree): Symbol = {
-    tpe.tryMatch {
+    condOpt(tpe) {
       case tRef: TypeRef if ref.name == tRef.sym.name =>
-        val res = tRef.pre.tryMatch {
+        val res = condOpt(tRef.pre) {
           case pre: ThisType if ref.qualifier.pos.isRange && treeWithoutSymbol == ref.qualifier =>
             pre.sym
         }
