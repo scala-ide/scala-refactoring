@@ -14,7 +14,8 @@ import scala.tools.refactoring.tests.util.TestRefactoring
 
 class CustomFormattingTest extends TestHelper with TestRefactoring with SourceGenerator {
 
-  var surroundingImport = ""
+  @volatile
+  private var surroundingImport = ""
 
   override def spacingAroundMultipleImports = surroundingImport
 

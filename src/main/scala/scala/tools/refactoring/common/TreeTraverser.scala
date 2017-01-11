@@ -5,6 +5,8 @@
 package scala.tools.refactoring
 package common
 
+import scala.PartialFunction.condOpt
+
 trait TreeTraverser extends TracingImpl {
 
   this: CompilerAccess with common.EnrichedTrees =>
@@ -268,6 +270,7 @@ trait TreeTraverser extends TracingImpl {
     traverser.hits.toList
   }
 
+
   class TreeWithSymbolTraverser(f: (Symbol, Tree) => Unit) extends Traverser with TraversalInstrumentation {
     override def traverse(t: Tree) = {
 
@@ -276,16 +279,22 @@ trait TreeTraverser extends TracingImpl {
         case t: TypeTree if t.original != null =>
 
           (t.original, t.tpe) match {
+            case (orig, tpe: RefinedType) =>
+              handleRefinedType(orig, tpe)
+
             case (att @ AppliedTypeTree(_, args1), tref @ TypeRef(_, _, args2)) =>
               args1 zip args2 foreach {
                 case (i: RefTree, tpe: TypeRef) =>
                   f(tpe.sym, i)
                 case _ => ()
               }
+
             case (ExistentialTypeTree(AppliedTypeTree(tpt, _), _), ExistentialType(_, underlying: TypeRef)) =>
               f(underlying.sym, tpt)
+
             case (t, TypeRef(_, sym, _)) =>
               f(sym, t)
+
             case _ => ()
           }
 
@@ -410,6 +419,48 @@ trait TreeTraverser extends TracingImpl {
           }
 
           super.traverse(t)
+      }
+    }
+
+    /*
+     * Refined types need special handling, since their original representation might
+     * lack symbols. This method takes care of this.
+     */
+    private def handleRefinedType(orig: Tree, tpe: RefinedType): Unit = {
+      condOpt(orig) {
+        case orig: RefTree if orig.symbol == NoSymbol =>
+          tpe.parents.foreach(handleParentTypeInRefinedType(_, orig))
+
+        case orig: CompoundTypeTree =>
+          val tParents = tpe.parents.flatMap {
+            case t: RefinedType => t.parents
+            case _ => Nil
+          }
+
+          val oParents = orig.templ.parents
+
+          if (oParents.size == tParents.size) {
+            oParents.zip(tParents).foreach { case (oParent, tParent) =>
+              condOpt(oParent) {
+                case s: Select =>
+                  handleParentTypeInRefinedType(tParent, s)
+              }
+            }
+          }
+      }
+    }
+
+    private def handleParentTypeInRefinedType(tRef: Type, refTree: RefTree): Unit = {
+      condOpt(tRef) {
+        case tRef: TypeRef if refTree.name == tRef.sym.name =>
+          condOpt(tRef.pre) {
+            case pre: ThisType if refTree.qualifier.pos.isRange =>
+              f(pre.sym, refTree.qualifier)
+          }
+
+          if (refTree.namePosition().isRange) {
+            f(tRef.sym, refTree)
+          }
       }
     }
   }

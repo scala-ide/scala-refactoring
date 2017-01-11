@@ -16,20 +16,107 @@ import scala.tools.refactoring.common.TracingHelpers
 import scala.tools.refactoring.util.SourceHelpers
 import scala.tools.refactoring.util.SourceWithSelection
 
+import scala.PartialFunction.condOpt
+
 trait MarkOccurrences extends common.Selections with analysis.Indexes with common.CompilerAccess with common.EnrichedTrees with common.InteractiveScalaCompiler {
   import global._
   import TracingHelpers.toCompactString
+
+  private def tryFindMissingSymbol(treeWithoutSymbol: Tree, root: Tree): Symbol = {
+    treeWithoutSymbol match {
+      case treeWithoutSymbol: RefTree =>
+        tryFindMissingSymbol(treeWithoutSymbol: RefTree, root: Tree)
+
+      case _ =>
+        NoSymbol
+    }
+  }
+
+  /*
+   * In some cases (for example when dealing with refined self types), the selected tree might not
+   * have a symbol. This method attempts to find it anyway.
+   */
+  private def tryFindMissingSymbol(treeWithoutSymbol: RefTree, root: Tree): Symbol = {
+    root.foreach { t =>
+      condOpt(t) { case t: TypeTree =>
+        if (t.original == treeWithoutSymbol) {
+          t.tpe.parents.foreach { p =>
+            condOpt(p) {
+              case p: TypeRef if p.sym.name == treeWithoutSymbol.name =>
+                  return p.sym
+            }
+          }
+        } else {
+          condOpt(t.original) {
+            case orig: RefTree if orig.qualifier == treeWithoutSymbol =>
+              t.tpe.parents.foreach { p =>
+                condOpt(p) { case p: TypeRef =>
+                  condOpt(p.pre) {
+                    case pre: ThisType if pre.sym.name.toString == treeWithoutSymbol.name.toString =>
+                      return pre.sym
+                  }
+                }
+              }
+
+            case orig: CompoundTypeTree =>
+              val tParents = t.tpe.parents.flatMap {
+                case t: RefinedType => t.parents
+                case _ => Nil
+              }
+
+              val oParents = orig.templ.parents
+
+              if (oParents.size == tParents.size) {
+                oParents.zip(tParents).foreach { case (oTree, tRef) =>
+                  condOpt(oTree) {
+                    case refTree: RefTree =>
+                      val sym = findSymbolInType(treeWithoutSymbol, refTree)(tRef)
+                      if (sym != NoSymbol) {
+                        return sym
+                      }
+                  }
+                }
+              }
+          }
+        }
+      }
+    }
+
+    NoSymbol
+  }
+
+  private def findSymbolInType(treeWithoutSymbol: Tree, ref: RefTree)(tpe: Type): Symbol = {
+    condOpt(tpe) {
+      case tRef: TypeRef if ref.name == tRef.sym.name =>
+        val res = condOpt(tRef.pre) {
+          case pre: ThisType if ref.qualifier.pos.isRange && treeWithoutSymbol == ref.qualifier =>
+            pre.sym
+        }
+
+        res.getOrElse {
+          if (ref == treeWithoutSymbol && ref.namePosition().isRange) tRef.sym
+          else NoSymbol
+        }
+    }.getOrElse {
+      NoSymbol
+    }
+  }
 
   protected class SingleTreeSelection(val selected: Tree, val root: Tree) {
     val symbol = selected match {
       case Import(expr, List(selector)) =>
         findSymbolForImportSelector(expr, selector.name).getOrElse(NoSymbol)
-      case tree => tree.symbol
+
+      case tree if tree.symbol != NoSymbol =>
+        tree.symbol
+
+      case treeWithoutSymbol =>
+        tryFindMissingSymbol(treeWithoutSymbol, root)
     }
 
     val name = {
       val declaration = index.declaration(symbol)
-      trace(s"Selected symbol is decared at ${toCompactString(declaration)}")
+      trace(s"Selected symbol $symbol is decared at ${toCompactString(declaration)}")
 
       declaration.flatMap { declaration =>
         // We try to read the old name from the name position of the declaration, since this seems to be the most

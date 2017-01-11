@@ -4168,4 +4168,187 @@ class Blubb
     }
     """ -> TaggedAsLocalRename
   } prepareAndApplyRefactoring(prepareAndRenameTo("hanneloreHostasch"))
+
+  /*
+   * See Assembla Ticket 1002677
+   */
+  @Test
+  def testRenameWithQualifiedSelfTypes1002677v1() = new FileSet {
+    """
+    package hoellen./*(*/feuer/*)*/ {
+      trait Belze
+      trait Bub
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.Bub =>
+
+    }
+    """ becomes
+    """
+    package hoellen./*(*/wasser/*)*/ {
+      trait Belze
+      trait Bub
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: wasser.Belze with wasser.Bub =>
+
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("wasser"))
+
+  @Test
+  def testRenameWithQualifiedSelfTypes1002677v2() = new FileSet {
+    """
+    package hoellen.feuer {
+      trait /*(*/Belze/*)*/
+      trait Bub
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.Bub =>
+
+    }
+    """ becomes
+    """
+    package hoellen.feuer {
+      trait /*(*/Laus/*)*/
+      trait Bub
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Laus with feuer.Bub =>
+
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Laus"))
+
+  @Test
+  def testRenameWithQualifiedSelfTypes1002677v3() = new FileSet {
+    """
+    package hoellen.feuer {
+      trait Belze
+      trait /*(*/Bub/*)*/
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.Bub =>
+
+    }
+    """ becomes
+    """
+    package hoellen.feuer {
+      trait Belze
+      trait /*(*/Teufel/*)*/
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.Teufel =>
+
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Teufel"))
+
+  @Test
+  def testRenameWithQualifiedSelfTypes1002677v4() = new FileSet {
+    """
+    package hoellen.feuer {
+      trait Belze
+      trait /*(*/Bub/*)*/
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.Bub =>
+
+    }
+    """ becomes
+    """
+    package hoellen.feuer {
+      trait Belze
+      trait /*(*/Teufel/*)*/
+    }
+
+    import hoellen._
+
+    class JudgmentDay { this: feuer.Belze with feuer.Teufel =>
+
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Teufel"))
+
+  @Test
+  def testRenameWithQualifiedSelfTypes1002677v5() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    package outer {
+      package inner {
+        trait /*(*/TryRenameMe/*)*/
+      }
+    }
+
+    import outer._
+
+    class Bug2 { this: inner.TryRenameMe =>
+
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    package outer {
+      package inner {
+        trait /*(*/Ups/*)*/
+      }
+    }
+
+    import outer._
+
+    class Bug2 { this: inner.Ups =>
+
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("Ups"))
+
+  @Test
+  def testRenameWithQualifiedSelfTypes1002677v6() = new FileSet {
+    """
+    package com.github.mlangc.experiments
+
+    package outer {
+      package /*(*/tryRenameMe/*)*/ {
+        trait I
+      }
+    }
+
+    import outer._
+
+    class Bug3 { this: tryRenameMe.I =>
+
+    }
+    """ becomes
+    """
+    package com.github.mlangc.experiments
+
+    package outer {
+      package /*(*/ups/*)*/ {
+        trait I
+      }
+    }
+
+    import outer._
+
+    class Bug3 { this: ups.I =>
+
+    }
+    """ -> TaggedAsGlobalRename
+  } prepareAndApplyRefactoring(prepareAndRenameTo("ups"))
 }
