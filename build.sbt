@@ -1,19 +1,27 @@
 name := "org.scala-refactoring.library"
-
 version := "0.12.0-SNAPSHOT"
-
-scalaVersion := "2.12.0"
-
+scalaVersion := "2.12.1"
 moduleName := name.value
-
 organization := "org.scala-refactoring"
-
-crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0")
-
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1")
 crossVersion := CrossVersion.full
+fork := true
+parallelExecution in Test := false
+autoAPIMappings := true
 
-scalacOptions ++= (scalaBinaryVersion.value match {
-  case v if (v == "2.11") || (v startsWith "2.12") => Seq(
+libraryDependencies ++= Seq(
+  "org.scala-lang"  % "scala-compiler"    % scalaVersion.value,
+  "com.novocode"    % "junit-interface"   % "0.10"              % "test"
+)
+libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+  case Some((2, 12)) => Seq(
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+  )
+  case _             => Nil
+})
+
+scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+  case Some((2, v)) if v == 11 || v == 12 => Seq(
     "-deprecation:false",
     "-encoding", "UTF-8",
     "-feature",
@@ -30,24 +38,18 @@ scalacOptions ++= (scalaBinaryVersion.value match {
   case _ => Seq()
 })
 
-unmanagedSourceDirectories in Compile += baseDirectory.value / (scalaBinaryVersion.value match {
-  case "2.10" => "src/main/scala-2.10"
-  case "2.11" => "src/main/scala-2.11"
-  case _      => "src/main/scala-2.12"
-})
-
-unmanagedSourceDirectories in Test += baseDirectory.value / (scalaBinaryVersion.value match {
-  case "2.10" => "src/test/scala-2.10"
-  case "2.11" => "src/test/scala-2.11"
-  case _      => "src/test/scala-2.12"
-})
+Seq(Compile, Test).flatMap { config =>
+  inConfig(config) {
+    unmanagedSourceDirectories += {
+      val dir = scalaSource.value
+      val Some((major, minor)) = CrossVersion.partialVersion(scalaVersion.value)
+      file(s"${dir.getPath}-$major.$minor")
+    }
+  }
+}
 
 publishMavenStyle := true
-
 useGpg := true
-
-fork := true
-
 publishTo <<= isSnapshot { isSnapshot =>
   val nexus = "https://oss.sonatype.org"
   if (isSnapshot)
@@ -55,11 +57,7 @@ publishTo <<= isSnapshot { isSnapshot =>
   else
     Some("releases"  at s"$nexus/service/local/staging/deploy/maven2")
 }
-
 publishArtifact in Test := false
-
-autoAPIMappings := true
-
 pomExtra := (
  <url>http://scala-refactoring.org</url>
   <licenses>
@@ -83,20 +81,16 @@ pomExtra := (
     </developer>
   </developers>)
 
-credentials += Credentials(Path.userHome / ".m2" / "credentials")
-
-libraryDependencies ++= Seq(
-  "org.scala-lang"  % "scala-compiler"    % scalaVersion.value,
-  "com.novocode"    % "junit-interface"   % "0.10"              % "test"
-)
-libraryDependencies ++= (scalaBinaryVersion.value match {
-  case v if v startsWith "2.12" => Seq(
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
-  )
-  case _      => Nil
-})
-
-parallelExecution in Test := false
+credentials ++= {
+  val config = Path.userHome / ".m2" / "credentials"
+  if (config.exists) Seq(Credentials(config))
+  else {
+    for {
+      username <- sys.env.get("SONATYPE_USERNAME")
+      password <- sys.env.get("SONATYPE_PASSWORD")
+    } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)
+  }.toSeq
+}
 
 // sbt doesn't automatically load the content of the MANIFST.MF file, therefore
 // we have to do it here by ourselves Furthermore, the version format in the
