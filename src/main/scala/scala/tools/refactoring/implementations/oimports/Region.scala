@@ -3,19 +3,12 @@ package implementations.oimports
 
 import scala.annotation.tailrec
 import scala.reflect.internal.util.RangePosition
-import scala.reflect.internal.util.SourceFile
 import scala.tools.nsc.Global
 
 import sourcegen.Formatting
+import scala.tools.refactoring.util.SourceHelpers
 
 object RegionBuilder {
-  private def scanForComments[G <: Global](global: G)(source: SourceFile): List[RangePosition] = {
-    val scanners = new TreeToolboxScanners(global)
-    val commentScanner = new scanners.CommentScanner(source)
-    commentScanner.scan()
-    commentScanner.comments
-  }
-
   private def toImportsWithRange[G <: Global](g: G)(imports: List[g.Import]): List[List[g.Import]] = imports.foldLeft(List.empty[List[g.Import]]) { (z, imp) =>
     (imp match {
       case imp if imp.pos.isRange =>
@@ -31,7 +24,7 @@ object RegionBuilder {
   def apply[G <: Global, T <: TreeToolbox[G]](treeToolbox: T)(imports: List[treeToolbox.global.Import], owner: treeToolbox.global.Symbol, formatting: Formatting, printAtEndOfRegion: String = ""): Seq[treeToolbox.Region] = {
     require(imports.nonEmpty, "List of imports must not be empty.")
     val source = imports.head.pos.source
-    val comments = scanForComments(treeToolbox.global)(source)
+    val comments = SourceHelpers.findComments(source)
     toImportsWithRange[treeToolbox.global.type](treeToolbox.global)(imports).map { imports =>
       val regionImports = toRegionImports[G, T](treeToolbox)(imports, owner, comments)
       val regionStartPos = regionImports.head.positionWithComment.start
