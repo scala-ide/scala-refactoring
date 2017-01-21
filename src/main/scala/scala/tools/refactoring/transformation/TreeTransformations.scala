@@ -203,7 +203,12 @@ trait TreeTransformations extends Transformations with TreeFactory {
       val line = pos.source.lineToString(lineNumber)
       val indent = line.takeWhile(Character.isWhitespace)
       val insertPos = pos.source.lineToOffset(lineNumber)
-      val isEmptyLine = pos.source.lineToString(lineNumber+1).trim.isEmpty
+      val isEmptyLine =
+        try pos.source.lineToString(lineNumber+1).trim.isEmpty
+        catch {
+          // WORKAROUND https://github.com/scala/scala/pull/5330
+          case e: IndexOutOfBoundsException => true
+        }
       TextChange(pos.source, insertPos, insertPos, importsAsSrc(indent) + (if (isEmptyLine) "\n" else "\n\n"))
     }
 
