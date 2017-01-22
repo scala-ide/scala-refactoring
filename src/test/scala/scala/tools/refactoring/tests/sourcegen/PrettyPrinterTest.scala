@@ -276,6 +276,7 @@ class PrettyPrinterTest extends TestHelper {
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12.1")
   def testThrow() = global.ask { () =>
 
     val tree = treeFrom("""
@@ -304,6 +305,7 @@ class Throw2 {
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12.1")
   def testAnnotation() = global.ask { () =>
 
     val tree = treeFrom("""
@@ -469,6 +471,7 @@ class Test44 {
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12.1")
   def testCompoundTypeTree() = global.ask { () =>
 
     val tree = treeFrom("""
@@ -665,6 +668,7 @@ trait AbstractPrinter {
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12.1")
   def testSetters() = global.ask { () =>
     val tree = treeFrom("""
       package oneFromMany
@@ -1189,6 +1193,7 @@ trait CTrait {
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12.1")
   def testClassTemplates() = global.ask { () =>
 
     val tree = treeFrom("""
@@ -1212,6 +1217,7 @@ class AClass(i: Int, var b: String, val c: List[String]) extends ASuperClass(i, 
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12.1")
   def testSuperClass() = global.ask { () =>
 
     val tree = treeFrom("""
@@ -1226,6 +1232,7 @@ class AClass(i: Int, var b: String) extends ASuperClass(i, b)"""
   }
 
   @Test
+  @ScalaVersion(doesNotMatch = "2.12.1")
   def testTry() = global.ask { () =>
 
     val tree = treeFrom("""
