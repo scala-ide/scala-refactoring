@@ -18,11 +18,12 @@ public class ScalaVersionTestRule implements MethodRule {
 
   public Statement apply(Statement stmt, FrameworkMethod meth, Object arg2) {
     ScalaVersion onlyOn = meth.getAnnotation(ScalaVersion.class);
+    String versionString = Properties.versionString();
 
     if (onlyOn != null) {
-      if (!onlyOn.doesNotMatch().isEmpty() && Properties.versionString().contains(onlyOn.doesNotMatch())) {
+      if (!onlyOn.doesNotMatch().isEmpty() && versionString.contains(onlyOn.doesNotMatch())) {
         return new EmptyStatement();
-      } else if (Properties.versionString().contains(onlyOn.matches())) {
+      } else if (versionString.contains(onlyOn.matches())) {
         return stmt;
       } else {
         return new EmptyStatement();
