@@ -1,5 +1,5 @@
 name := "org.scala-refactoring.library"
-version := "0.12.0"
+version := "0.13.0-SNAPSHOT"
 scalaVersion := "2.12.1"
 moduleName := name.value
 organization := "org.scala-refactoring"
