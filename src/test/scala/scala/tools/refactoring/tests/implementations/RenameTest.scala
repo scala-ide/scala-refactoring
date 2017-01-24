@@ -4600,5 +4600,21 @@ class Blubb
     }
     """ -> "a/b/Mischief.scala"
   } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
+
+  @Test
+  def testRenamePackage1002769v8() = new FileSet {
+    """
+    package a/*<-cursor*/ {
+      class A
+    }
+    package b { }
+    """ -> "a/A.scala" becomes
+    """
+    package xxx/*<-cursor*/ {
+      class A
+    }
+    package b { }
+    """ -> "a/A.scala"
+  } prepareAndApplyRefactoring(prepareAndRenameTo("xxx"))
 }
 
