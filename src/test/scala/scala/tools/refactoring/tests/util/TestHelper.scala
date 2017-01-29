@@ -26,6 +26,7 @@ import scala.tools.refactoring.common.TracingImpl
 import scala.tools.refactoring.util.UniqueNames
 import scala.util.Try
 import scala.tools.refactoring.common.Selections
+import scala.tools.refactoring.common.MoveToDirChange
 
 object TestHelper {
   case class PrepResultWithChanges(prepResult: Option[Either[MultiStageRefactoring#PreparationError, Rename#PreparationResult]], changes: List[Change])
@@ -45,8 +46,8 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
   type GlobalIndexes = analysis.GlobalIndexes
   type ScalaVersion = tests.util.ScalaVersion
 
-  private case class Source(code: String, filename: String) {
-    def toPair = (code, filename)
+  private case class Source(code: String, path: String) {
+    def toPair = (code, path)
   }
 
   private object Source {
@@ -173,17 +174,46 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
       prepareAndPerformRefactoring(result).assertOk()
     }
 
-    def apply(f: FileSet => List[String]) = assert(f(this), Nil)
+    def apply(f: FileSet => List[String]) = assert(f(this))
 
-    private def assert(res: List[String], sourceRenames: List[RenameSourceFileChange]) = {
+    private def assert(res: List[String], sourceRenames: List[RenameSourceFileChange] = Nil, fileMoves: List[MoveToDirChange] = Nil) = {
       assertEquals(srcs.length, res.length)
       val expected = srcs.unzip._2.toList.map(_.code)
       expected zip res foreach (p => assertEquals(p._1, p._2))
 
-      fileRenameOps.foreach { case (oldName, newName) =>
-        assertTrue(s"Missing rename operation $oldName -> $newName", sourceRenames.exists { r =>
-          r.sourceFile.name == oldName && r.to == newName
-        })
+      fileRenameOps.foreach { case (oldPath, newPath) =>
+        val (oldPathComponents, newPathComponents) = (oldPath.split("/"), newPath.split("/"))
+
+        val differentComponents = oldPathComponents.zip(newPathComponents).filter { case (o, n) => o != n }
+        val nDifferentComponents = differentComponents.size
+        if (nDifferentComponents > 1 || oldPathComponents.size != newPathComponents.size) {
+          throw new AssertionError("Generic moves are not supported")
+        }
+
+        val (oldFileName, newFileName) = (oldPathComponents.last, newPathComponents.last)
+
+        if (oldFileName != newFileName) {
+          assertTrue(s"Missing file rename operation $oldFileName -> $newFileName", sourceRenames.exists { r =>
+            r.sourceFile.name == oldFileName && r.to == newFileName
+          })
+        } else {
+          differentComponents.headOption match {
+            case Some((oldDir, newDir)) =>
+              assertTrue(s"Missing dir rename operation $oldDir -> $newDir in $fileMoves", fileMoves.exists { m =>
+                val oldPath = m.sourceFile.path
+                val dest = m.to
+
+                oldPath.contains(s"$oldDir/") &&
+                  oldPath.endsWith(oldFileName) &&
+                  dest.contains(newDir)
+              })
+
+            case None =>
+              assertTrue(s"Illegal move operation in $fileMoves", !fileMoves.exists { m =>
+                m.sourceFile.path.endsWith(oldPath)
+              })
+          }
+        }
       }
 
       assertNoDuplicates(sourceRenames.map(_.to), d => s"Destination '$d' appearing multiple times")
@@ -197,8 +227,8 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
     }
 
     private def fileRenameOps = {
-      srcs.collect { case (oldSource, newSource) if oldSource.filename != newSource.filename =>
-        (oldSource.filename, newSource.filename)
+      srcs.collect { case (oldSource, newSource) if oldSource.path != newSource.path =>
+        (oldSource.path, newSource.path)
       }
     }
 
@@ -230,10 +260,12 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
 
       val sourceRenames = changes.collect { case d: RenameSourceFileChange => d }
 
+      val fileMoves = changes.collect { case d: MoveToDirChange => d }
+
       new {
         def withResultTree(fn: global.Tree => Unit) = fn(treeFrom(refactoredCode.mkString("\n")))
         def withResultSource(fn: String => Unit) = fn(refactoredCode.mkString("\n"))
-        def assertEqualSource() = assert(refactoredCode, sourceRenames)
+        def assertEqualSource() = assert(refactoredCode, sourceRenames, fileMoves)
 
         def assertOk() = {
           expectGlobalRename.foreach { expectGlobalRename =>

@@ -34,7 +34,8 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
           OverridesInSuperClasses with
           ClassVals with
           CaseClassVals with
-          TermsWithMissingRanges {
+          TermsWithMissingRanges with
+          PackageObjects {
 
             val cus = compilationUnits
           }
@@ -68,6 +69,13 @@ trait GlobalIndexes extends Indexes with DependentSymbolExpanders with Compilati
       } yield {
         cu.root
       }).distinct
+    }
+
+    def rootOf(tree: Tree): Option[Tree] = {
+      cus.collectFirst {
+        case cu if cu.root.pos.source.file == tree.pos.source.file =>
+          cu.root
+      }
     }
 
     @tailrec

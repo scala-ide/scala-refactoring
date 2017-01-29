@@ -69,6 +69,11 @@ trait Indexes {
     def rootsOf(trees: List[global.Tree]): List[global.Tree]
 
     /**
+     * Attempts to find the root of a single tree
+     */
+    def rootOf(tree: global.Tree): Option[global.Tree]
+
+    /**
      * For the given Symbol - which is a class or object - returns a
      * list of all sub- and super classes, in no particular order.
      */
