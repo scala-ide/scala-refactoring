@@ -69,7 +69,7 @@ object SourceHelpers {
     import scala.tools.refactoring.util.SourceWithMarker.Movements.charToMovement
 
     val commentMvnt = {
-      if (includeTrailingNewline) Movements.comment ~ '\n'.optional
+      if (includeTrailingNewline) Movements.comment ~ '\r'.optional ~ '\n'.optional
       else Movements.comment
     }
 
