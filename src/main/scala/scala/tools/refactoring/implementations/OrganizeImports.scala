@@ -99,10 +99,7 @@ abstract class OrganizeImports extends MultiStageRefactoring
   class PreparationResult(val missingTypes: List[String] = Nil)
 
   lazy val oiWorker = new OrganizeImportsWorker[global.type](global)
-  import oiWorker.participants._
   import oiWorker.global._
-
-  def DefaultOptions = List(SortImportSelectors)
 
   /**
    * Imports that should be added are passed as tuples in the form
@@ -110,7 +107,6 @@ abstract class OrganizeImports extends MultiStageRefactoring
    */
   class RefactoringParameters(
     val importsToAdd: List[(String, String)] = Nil,
-    val options: List[Participant] = DefaultOptions,
     val deps: Dependencies.Value = Dependencies.RemoveUnneeded,
     val organizeLocalImports: Boolean = true,
     val config: Option[OrganizeImports.OrganizeImportsConfig] = None)
