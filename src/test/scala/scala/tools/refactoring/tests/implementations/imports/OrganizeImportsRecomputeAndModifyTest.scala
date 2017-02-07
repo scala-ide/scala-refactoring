@@ -11,7 +11,7 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
 
   def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val oiConfig = OrganizeImports.OrganizeImportsConfig(None)
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List(),
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
         config = Some(oiConfig))
   }.mkChanges
 
@@ -20,7 +20,6 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
         None,
         groups = groups)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
-        options = Nil,
         config = Some(oiConfig))
   }.mkChanges
 
@@ -29,7 +28,6 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
         None,
         wildcards = ws)
     val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify,
-        options = Nil,
         config = Some(oiConfig))
   }.mkChanges
 

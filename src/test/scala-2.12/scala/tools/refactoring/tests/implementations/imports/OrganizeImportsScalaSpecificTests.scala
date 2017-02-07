@@ -13,12 +13,8 @@ class OrganizeImportsScalaSpecificTests extends OrganizeImportsBaseTest {
       importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
       wildcards = useWildcards,
       groups = groupPkgs)
-    import refactoring.oiWorker.participants._
     val params = {
       new refactoring.RefactoringParameters(
-        options =
-            PrependScalaPackage ::
-            Nil,
         deps = dependencies,
         organizeLocalImports = organizeLocalImports,
         config = Some(oiConfig))

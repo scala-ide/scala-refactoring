@@ -12,11 +12,10 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
 
   def organize(groups: List[String])(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     import refactoring._
-    val options = Nil
     val config = OrganizeImports.OrganizeImportsConfig(
       importsStrategy = Some(OrganizeImports.ImportsStrategy.ExpandImports),
       groups = groups)
-    val params = new RefactoringParameters(options = options, deps = Dependencies.FullyRecompute, config = Some(config))
+    val params = new RefactoringParameters(deps = Dependencies.FullyRecompute, config = Some(config))
   }.mkChanges
 
   val source = """

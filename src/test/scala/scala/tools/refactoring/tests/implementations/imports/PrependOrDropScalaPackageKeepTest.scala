@@ -11,15 +11,13 @@ import scala.tools.refactoring.implementations.OrganizeImports
 class PrependOrDropScalaPackageKeepTest extends OrganizeImportsBaseTest {
 
   def organizeDropScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro, new Formatting {override val dropScalaPackage = true}) {
-    import refactoring.oiWorker.participants._
     val oiConfig = OrganizeImports.OrganizeImportsConfig(None, scalaPackageStrategy = true)
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List(DropScalaPackage), config = Some(oiConfig))
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, config = Some(oiConfig))
   }.mkChanges
 
   def organizePrependScalaPackage(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
-    import refactoring.oiWorker.participants._
     val oiConfig = OrganizeImports.OrganizeImportsConfig(None, scalaPackageStrategy = false)
-    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, options = List(PrependScalaPackage), config = Some(oiConfig))
+    val params = new RefactoringParameters(deps = refactoring.Dependencies.RecomputeAndModify, config = Some(oiConfig))
   }.mkChanges
 
   @Test
