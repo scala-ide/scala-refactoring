@@ -16,6 +16,7 @@ abstract class OrganizeImportsBaseTest extends TestHelper with TestRefactoring {
     val refactoring = new OrganizeImports {
       val global = OrganizeImportsBaseTest.this.global
       override val dropScalaPackage = formatting.dropScalaPackage
+      override val lineDelimiter = formatting.lineDelimiter
     }
     type RefactoringParameters = refactoring.RefactoringParameters
     val params: RefactoringParameters

@@ -234,7 +234,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Main
     """ becomes
     """
-
     object Main
     """
   } applyRefactoring organize
@@ -253,7 +252,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     """ becomes
     """
     package importOnTrait
-
     trait A
 
     trait Main extends A {
@@ -387,7 +385,6 @@ class OrganizeImportsFullyRecomputeTest extends OrganizeImportsBaseTest {
     object Main {
     }    """ becomes
     """
-
     object Main {
     }    """
   } applyRefactoring organize

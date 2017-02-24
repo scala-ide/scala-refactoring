@@ -4,6 +4,8 @@
 
 package scala.tools.refactoring.sourcegen
 
+import scala.util.Properties
+
 /**
  * Holds default formatting preferences.
  */
@@ -30,4 +32,7 @@ trait Formatting {
    * `import util.Try`
    */
   def dropScalaPackage = false
+
+  /** Used when new line is added to source file and EOL is needed. */
+  def lineDelimiter = Properties.lineSeparator
 }

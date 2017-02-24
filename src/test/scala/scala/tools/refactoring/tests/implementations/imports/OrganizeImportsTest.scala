@@ -4,10 +4,10 @@
 
 package scala.tools.refactoring
 package tests.implementations.imports
-
 import scala.language.postfixOps
 import scala.tools.refactoring.implementations.OrganizeImports
 import scala.tools.refactoring.implementations.OrganizeImports.Dependencies
+
 class OrganizeImportsTest extends OrganizeImportsBaseTest {
   private def organize(pro: FileSet) = new OrganizeImportsRefatoring(pro) {
     val oiConfig = OrganizeImports.OrganizeImportsConfig(importsStrategy = Some(OrganizeImports.ImportsStrategy.CollapseImports))
@@ -268,7 +268,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       object Main
     """ becomes
       """
-
       object Main
     """
   } applyRefactoring organize
@@ -287,7 +286,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     """ becomes
       """
       package importOnTrait
-
       trait A
 
       trait Main extends A {
@@ -424,7 +422,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
       object Main {
       }    """ becomes
       """
-
       object Main {
       }    """
   } applyRefactoring organize
@@ -931,7 +928,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     import java.util.Collections.emptyList
 
     class Bug {
-
       def test = emptyList
     }
     """
@@ -1026,7 +1022,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     import java.util.Collections
 
     class Bug4 {
-
       def test1 = Arrays.asList(1, 2)
       def test2 = Collections.emptyList
     }
@@ -3708,7 +3703,6 @@ class OrganizeImportsTest extends OrganizeImportsBaseTest {
     package test
 
     object Outer {
-
       class TestTE(val a: (_, _))
     }
     """

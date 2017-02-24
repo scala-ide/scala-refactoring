@@ -1,12 +1,12 @@
 package scala.tools.refactoring
 package implementations.oimports
 
+import scala.reflect.internal.util.NoSourceFile
 import scala.reflect.internal.util.SourceFile
 import scala.tools.nsc.Global
 import scala.tools.refactoring.common.Change
 import scala.tools.refactoring.common.TextChange
-import scala.util.Properties
-import scala.reflect.internal.util.NoSourceFile
+import scala.annotation.tailrec
 
 class TreeToolbox[G <: Global](val global: G) {
   import global._
@@ -310,20 +310,27 @@ class TreeToolbox[G <: Global](val global: G) {
     def transform(transformation: List[Import] => List[Import]): Region =
       copy(imports = transformation(imports))
 
+    @tailrec
+    private def findNonBlankLine(to: Int): Int = if (to == source.content.length - 1)
+      to
+    else if (source.content(to) != '\r' && source.content(to) != '\n')
+      to
+    else
+      findNonBlankLine(to + 1)
+
     private def printEmptyImports: Change = {
       val fromBeginningOfLine = source.lineToOffset(source.offsetToLine(from))
       val from_ = if (source.content.slice(fromBeginningOfLine, from).exists(!_.isWhitespace))
         from
       else
         fromBeginningOfLine
-      val toEndOfLine = to + Properties.lineSeparator.length
       val lastLineNumber = source.offsetToLine(to)
       val lastLine = source.lineToString(lastLineNumber)
-      val beginningOfLastLine = source.lineToOffset(lastLineNumber)
-      val to_ = if (lastLine.drop(to - beginningOfLastLine).exists(!_.isWhitespace))
+      val beginOfLastLine = source.lineToOffset(lastLineNumber)
+      val to_ = if (lastLine.drop(to - beginOfLastLine).exists(!_.isWhitespace))
         to
       else
-        toEndOfLine
+        findNonBlankLine(to)
       TextChange(source, from_, to_, printAtTheEndOfRegion)
     }
 
@@ -350,11 +357,11 @@ class TreeToolbox[G <: Global](val global: G) {
           case (imp: RegionImport, 0) if isLast(0) =>
             imp.printWithComment(formatting).map { acc + _ }.getOrElse(acc)
           case (imp: RegionImport, 0) =>
-            imp.printWithComment(formatting).map { acc + _ + Properties.lineSeparator }.getOrElse(acc)
+            imp.printWithComment(formatting).map { acc + _ + formatting.lineDelimiter }.getOrElse(acc)
           case (imp: RegionImport, idx) if isLast(idx) =>
             imp.printWithComment(formatting).map { acc + indentation + _ }.getOrElse(acc)
           case (imp: RegionImport, _) =>
-            imp.printWithComment(formatting).map { acc + indentation + _ + Properties.lineSeparator }.getOrElse(acc)
+            imp.printWithComment(formatting).map { acc + indentation + _ + formatting.lineDelimiter }.getOrElse(acc)
         }
       } + printAtTheEndOfRegion
       TextChange(source, from, to, text)

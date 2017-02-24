@@ -6,10 +6,10 @@ package scala.tools.refactoring
 package implementations
 
 import scala.tools.refactoring.common.Change
+import scala.tools.refactoring.common.InteractiveScalaCompiler
 import scala.tools.refactoring.implementations.oimports.OrganizeImportsWorker
 import scala.tools.refactoring.sourcegen.Formatting
 import scala.util.control.NonFatal
-import scala.tools.refactoring.common.InteractiveScalaCompiler
 
 object OrganizeImports {
   /**

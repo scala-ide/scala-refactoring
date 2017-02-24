@@ -79,5 +79,6 @@ import scala.tools.refactoring.common.TracingHelpersTest
     classOf[OrganizeImportsAlgosTest],
     classOf[TracingHelpersTest],
     classOf[OrganizeImportsWithMacrosTest],
-    classOf[OrganizeImportsScalaSpecificTests]))
+    classOf[OrganizeImportsScalaSpecificTests],
+    classOf[OrganizeImportsEndOfLineTest]))
 class RefactoringTestSuite {}
