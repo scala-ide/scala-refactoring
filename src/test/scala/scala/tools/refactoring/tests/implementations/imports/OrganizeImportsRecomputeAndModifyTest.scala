@@ -96,7 +96,6 @@ class OrganizeImportsRecomputeAndModifyTest extends OrganizeImportsBaseTest {
     object Main
     """ becomes
     """
-
     object Main
     """
   } applyRefactoring organize

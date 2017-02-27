@@ -12,7 +12,6 @@ import scala.tools.refactoring.common.TreeTraverser
 import scala.tools.refactoring.sourcegen.Formatting
 import scala.tools.refactoring.transformation.TreeFactory
 import scala.tools.refactoring.transformation.TreeTransformations
-import scala.util.Properties
 
 class RegionTransformationsContext[G <: Global](val global: G) extends CompilationUnitDependencies
     with InteractiveScalaCompiler
@@ -43,7 +42,7 @@ class RegionTransformationsContext[G <: Global](val global: G) extends Compilati
         val nextPosition = nextPositionInitiator(region)
         def separatorRegion = {
           val pos = nextPosition()
-          region.copy(imports = Nil, from = pos, to = pos + 1, printAtTheEndOfRegion = Properties.lineSeparator + Properties.lineSeparator + region.indentation)
+          region.copy(imports = Nil, from = pos, to = pos + 1, printAtTheEndOfRegion = region.formatting.lineDelimiter + region.formatting.lineDelimiter + region.indentation)
         }
         def copyRegionWithNewPosition(regionToCopy: Int => Region) = {
           val pos = nextPosition()
@@ -62,7 +61,7 @@ class RegionTransformationsContext[G <: Global](val global: G) extends Compilati
         val allImports =
           Algos.groupImports(getImportExpression)(groups, region.imports).toList
         allImports match {
-          case Nil => List(region.copy(imports = Nil, to = region.to + Properties.lineSeparator.length, printAtTheEndOfRegion = ""))
+          case Nil => List(region.copy(imports = Nil, printAtTheEndOfRegion = ""))
           case imps :: Nil => List(region)
           case imps => toRegions(imps, Nil)
         }
@@ -188,7 +187,7 @@ class RegionTransformationsContext[G <: Global](val global: G) extends Compilati
             val imp = mkImportFromStrings(qualifier, name)
             imp.setPos(topLeastPkgPos)
         }
-        RegionBuilder[ttb.global.type, ttb.type](ttb)(imports, topLeastPackage.symbol, formatting, Properties.lineSeparator + Properties.lineSeparator + topNonPkgIndent).head
+        RegionBuilder[ttb.global.type, ttb.type](ttb)(imports, topLeastPackage.symbol, formatting, formatting.lineDelimiter + formatting.lineDelimiter + topNonPkgIndent).head
       }
 
       def apply(regions: List[Region], root: Tree, formatting: Formatting) = {
