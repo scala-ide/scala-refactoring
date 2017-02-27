@@ -62,7 +62,7 @@ object Change {
     }
 
     (source /: sortedChanges) { (src, change) =>
-      src.substring(0, change.from) + change.text + src.substring(change.to)
+      src.take(change.from) + change.text + src.drop(change.to)
     }
   }
 

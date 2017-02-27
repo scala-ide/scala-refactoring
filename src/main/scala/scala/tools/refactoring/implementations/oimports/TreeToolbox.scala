@@ -311,7 +311,7 @@ class TreeToolbox[G <: Global](val global: G) {
       copy(imports = transformation(imports))
 
     @tailrec
-    private def findNonBlankLine(to: Int): Int = if (to == source.content.length - 1)
+    private def findNonBlankLine(to: Int): Int = if (to == source.content.length)
       to
     else if (source.content(to) != '\r' && source.content(to) != '\n')
       to

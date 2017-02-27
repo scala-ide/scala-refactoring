@@ -36,7 +36,7 @@ class OrganizeImportsEndOfLineTest extends OrganizeImportsBaseTest {
   @Test
   def shouldPreserveUnixLineSeparator_v2() = new FileSet {
     "package testunix\n\nimport scala.util.Try\nimport java.util.List\n" becomes
-      "package testunix\n\n\n"
+      "package testunix\n\n"
   } applyRefactoring organizeWithUnixEOL
 
   @Test
@@ -60,7 +60,7 @@ class OrganizeImportsEndOfLineTest extends OrganizeImportsBaseTest {
   @Test
   def shouldPreserveWindowsLineSeparator_v2() = new FileSet {
     "package testwin\r\n\r\nimport scala.util.Try\r\nimport java.util.List\r\n" becomes
-      "package testwin\r\n\r\n\n"
+      "package testwin\r\n\r\n"
   } applyRefactoring organizeWithWindowsEOL
 
   @Test
