@@ -27,13 +27,12 @@ scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     "-feature",
     "-language:_",
     "-unchecked",
-    "-Xlint",
+    "-Xlint:-unused,_",
     "-Xfuture",
     "-Xfatal-warnings",
     "-Yno-adapted-args",
     "-Ywarn-dead-code",
-    "-Ywarn-unused-import",
-    "-Ywarn-unused"
+    "-Ywarn-unused:imports,privates,locals,-patvars,-params,-implicits,_"
   )
   case _ => Seq()
 })
