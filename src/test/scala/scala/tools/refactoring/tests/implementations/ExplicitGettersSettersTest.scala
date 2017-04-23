@@ -21,7 +21,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   }.changes
 
   @Test
-  @ScalaVersion(doesNotMatch = "2.12.1")
+  @ScalaVersion(doesNotMatch = "2.12")
   def oneVarFromMany() = new FileSet {
     """
       package oneFromMany
@@ -45,7 +45,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   } applyRefactoring(explicitGettersSetters)
 
   @Test
-  @ScalaVersion(doesNotMatch = "2.12.1")
+  @ScalaVersion(doesNotMatch = "2.12")
   def oneValFromMany() = new FileSet {
     """
       package oneFromMany
@@ -66,7 +66,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   } applyRefactoring(explicitGettersSetters)
 
   @Test
-  @ScalaVersion(doesNotMatch = "2.12.1")
+  @ScalaVersion(doesNotMatch = "2.12")
   def singleVal() = new FileSet {
     """
       package oneFromMany
@@ -83,7 +83,7 @@ class ExplicitGettersSettersTest extends TestHelper with TestRefactoring {
   } applyRefactoring(explicitGettersSetters)
 
   @Test
-  @ScalaVersion(doesNotMatch = "2.12.1")
+  @ScalaVersion(doesNotMatch = "2.12")
   def singleValWithEmptyBody() = new FileSet {
     """
       package oneFromMany

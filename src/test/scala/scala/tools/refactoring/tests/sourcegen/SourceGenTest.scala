@@ -1129,7 +1129,7 @@ class SourceGenTest extends TestHelper {
   }
 
   @Test
-  @ScalaVersion(doesNotMatch = "2.12.1")
+  @ScalaVersion(doesNotMatch = "2.12")
   def testValOrDefDefModifiers() = global.ask { () =>
 
     val tree = treeFrom("""
