@@ -3,7 +3,7 @@ version := "0.13.0-SNAPSHOT"
 scalaVersion := "2.12.2"
 moduleName := name.value
 organization := "org.scala-refactoring"
-crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1")
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.2")
 crossVersion := CrossVersion.full
 fork := true
 parallelExecution in Test := false
@@ -21,7 +21,21 @@ libraryDependencies ++= (CrossVersion.partialVersion(scalaVersion.value) match {
 })
 
 scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-  case Some((2, v)) if v == 11 || v == 12 => Seq(
+  case Some((2, 11)) => Seq(
+    "-deprecation:false",
+    "-encoding", "UTF-8",
+    "-feature",
+    "-language:_",
+    "-unchecked",
+    "-Xlint",
+    "-Xfuture",
+    "-Xfatal-warnings",
+    "-Yno-adapted-args",
+    "-Ywarn-dead-code",
+    "-Ywarn-unused-import",
+    "-Ywarn-unused"
+  )
+  case Some((2, 12)) => Seq(
     "-deprecation:false",
     "-encoding", "UTF-8",
     "-feature",
