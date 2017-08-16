@@ -216,9 +216,9 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
       import java.util.AbstractList
       import java.util.BitSet
 
-      import scala.io.Source
       import scala.collection.mutable.HashMap
       import scala.collection.mutable.ListBuffer
+      import scala.io.Source
 
       trait Temp {
         // we need some code that use the imports
