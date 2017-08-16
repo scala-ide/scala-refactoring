@@ -380,4 +380,48 @@ class OrganizeImportsGroupsTest extends OrganizeImportsBaseTest {
       }
     """
   } applyRefactoring organize(List("org", "scala", "java", "*"))
+
+  @Test
+  def mostSpecificTakesPrecedence() = new FileSet {
+    source becomes
+    """
+      import scala.io.Source
+
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+
+      import java.util.AbstractList
+      import java.util.BitSet
+      import org.xml.sax.Attributes
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Source)
+      }
+    """
+  } applyRefactoring organize(List("scala", "scala.collection"))
+
+  @Test
+  def fromSpecificToGeneral() = new FileSet {
+    source becomes
+    """
+      import scala.io.Source
+
+      import scala.collection.mutable.HashMap
+      import scala.collection.mutable.ListBuffer
+
+      import java.util.AbstractList
+      import java.util.BitSet
+      import org.xml.sax.Attributes
+
+      trait Temp {
+        // we need some code that use the imports
+        val x: (ListBuffer[Int], HashMap[String, Int])
+        val y: (AbstractList[Int], BitSet)
+        val z: (Attributes, Source)
+      }
+    """
+  } applyRefactoring organize(List("scala.io", "scala"))
 }
