@@ -22,7 +22,7 @@ object OrganizeImports {
       val acc = distinctGroups.map(_ -> scala.collection.mutable.ListBuffer.empty[ImportT]).toMap
       val assigned = imports.foldLeft(acc) { (acc, imp) =>
         val expr = getImportExpression(imp)
-        val (inGroup, _) = distinctGroups.partition { group =>
+        val inGroup = distinctGroups.filter { group =>
           expr.startsWith(group + ".") || expr == group
         }
         if (inGroup.nonEmpty) {
@@ -33,8 +33,7 @@ object OrganizeImports {
       }
       val unassigned = {
         val a = assigned.values.toList.flatten.map(getImportExpression)
-        val (_, unassigned) = imports.partition { imp => a.contains(getImportExpression(imp)) }
-        unassigned
+        imports.filterNot { imp => a.contains(getImportExpression(imp)) }
       }
       if (assigned.keySet(DefaultGroup)) {
         assigned(DefaultGroup) ++= unassigned
