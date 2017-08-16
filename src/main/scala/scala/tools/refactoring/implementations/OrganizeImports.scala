@@ -12,34 +12,35 @@ import scala.tools.refactoring.sourcegen.Formatting
 import scala.util.control.NonFatal
 
 object OrganizeImports {
+  val DefaultGroup = "*"
   /**
    * Abstract algorithms used by the implementation, extracted mostly for testing purposes
    */
   private[implementations] object Algos {
     def groupImports[ImportT](getImportExpression: ImportT => String)(groups: Seq[String], imports: Seq[ImportT]): Seq[List[ImportT]] = {
       val distinctGroups = groups.distinct
-
-      case class Accumulator(remainingImports: Seq[ImportT] = imports, groups: Map[String, List[ImportT]] = Map()) {
-        def assembleResult: Seq[List[ImportT]] = {
-          val importGroups = distinctGroups.flatMap(groups.get(_))
-          if (remainingImports.isEmpty) importGroups
-          else importGroups :+ remainingImports.toList
-        }
-      }
-
-      distinctGroups.sortBy(-_.length).foldLeft(Accumulator()) { (acc, group) =>
-        val (inGroup, remaining) = acc.remainingImports.partition { imp =>
-          val expr = getImportExpression(imp)
+      val acc = distinctGroups.map(_ -> scala.collection.mutable.ListBuffer.empty[ImportT]).toMap
+      val assigned = imports.foldLeft(acc) { (acc, imp) =>
+        val expr = getImportExpression(imp)
+        val inGroup = distinctGroups.filter { group =>
           expr.startsWith(group + ".") || expr == group
         }
-
-        val newGroups = {
-          if (inGroup.isEmpty) acc.groups
-          else acc.groups + (group -> inGroup.toList)
+        if (inGroup.nonEmpty) {
+          val mostSpecificGroup = inGroup.sortBy(-_.length).head
+          acc(mostSpecificGroup) += imp
         }
-
-        acc.copy(remainingImports = remaining, groups = newGroups)
-      }.assembleResult
+        acc
+      }
+      val unassigned = {
+        val a = assigned.values.toList.flatten.map(getImportExpression)
+        imports.filterNot { imp => a.contains(getImportExpression(imp)) }
+      }
+      if (assigned.keySet(DefaultGroup)) {
+        assigned(DefaultGroup) ++= unassigned
+        assigned.values.filter(_.nonEmpty).toSeq.map(_.toList)
+      } else {
+        assigned.values.filter(_.nonEmpty).toSeq.map(_.toList) :+ (unassigned.toList)
+      }
     }
   }
 
