@@ -35,12 +35,16 @@ object OrganizeImports {
         val a = assigned.values.toList.flatten.map(getImportExpression)
         imports.filterNot { imp => a.contains(getImportExpression(imp)) }
       }
-      if (assigned.keySet(DefaultGroup)) {
+      (if (assigned.keySet(DefaultGroup)) {
         assigned(DefaultGroup) ++= unassigned
-        assigned.values.filter(_.nonEmpty).toSeq.map(_.toList)
+        distinctGroups.foldRight(Seq.empty[List[ImportT]]) { (key, acc) =>
+          assigned(key).toList +: acc
+        }
       } else {
-        assigned.values.filter(_.nonEmpty).toSeq.map(_.toList) :+ (unassigned.toList)
-      }
+        distinctGroups.foldRight(Seq.empty[List[ImportT]]) { (key, acc) =>
+          assigned(key).toList +: acc
+        } :+ unassigned.toList
+      }).filter(_.nonEmpty)
     }
   }
 
