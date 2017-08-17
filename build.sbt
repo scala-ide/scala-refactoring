@@ -1,9 +1,9 @@
 name := "org.scala-refactoring.library"
 version := "0.13.0-SNAPSHOT"
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 moduleName := name.value
 organization := "org.scala-refactoring"
-crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.2")
+crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.2", "2.12.3")
 crossVersion := CrossVersion.full
 fork := true
 parallelExecution in Test := false
@@ -63,9 +63,9 @@ Seq(Compile, Test).flatMap { config =>
 
 publishMavenStyle := true
 useGpg := true
-publishTo <<= isSnapshot { isSnapshot =>
+publishTo := {
   val nexus = "https://oss.sonatype.org"
-  if (isSnapshot)
+  if (isSnapshot.value)
     Some("snapshots" at s"$nexus/content/repositories/snapshots")
   else
     Some("releases"  at s"$nexus/service/local/staging/deploy/maven2")
