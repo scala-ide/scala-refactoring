@@ -13,34 +13,55 @@ import scala.util.control.NonFatal
 
 object OrganizeImports {
   val DefaultGroup = "*"
+  val InGroupDelimiter = ","
   /**
    * Abstract algorithms used by the implementation, extracted mostly for testing purposes
    */
   private[implementations] object Algos {
     def groupImports[ImportT](getImportExpression: ImportT => String)(groups: Seq[String], imports: Seq[ImportT]): Seq[List[ImportT]] = {
-      val distinctGroups = groups.distinct
-      val acc = distinctGroups.map(_ -> scala.collection.mutable.ListBuffer.empty[ImportT]).toMap
-      val assigned = imports.foldLeft(acc) { (acc, imp) =>
+      val distinctGroups = groups.map(_.split(InGroupDelimiter).sorted.mkString(InGroupDelimiter)).distinct
+      val groupImportsMap = distinctGroups.map(_ -> scala.collection.mutable.ListBuffer.empty[ImportT]).toMap
+      val assigned = imports.foldLeft(groupImportsMap) { (groupImportsMap, imp) =>
         val expr = getImportExpression(imp)
-        val inGroup = distinctGroups.filter { group =>
-          expr.startsWith(group + ".") || expr == group
+        def isInGroup(group: String) = expr.startsWith(group + ".") || expr == group
+        distinctGroups.foldLeft[Option[String]](None) { (longestGroup, group) =>
+          val potential = group.split(InGroupDelimiter).exists { isInGroup }
+          if (potential) {
+            val locallyLongest = group.split(InGroupDelimiter).foldLeft(0) { (locallyLongest, group) =>
+              if (isInGroup(group) && group.length > locallyLongest) {
+                group.length
+              } else locallyLongest
+            }
+            longestGroup.map { lg =>
+              val longest = lg.split(InGroupDelimiter).foldLeft(0) { (longest, g) =>
+                if (isInGroup(g) && g.length > longest)
+                  g.length
+                else longest
+              }
+              if (longest < locallyLongest)
+                group
+              else lg
+            }.orElse(Option(group))
+          } else longestGroup
+        }.map { mostSpecificGroup =>
+          groupImportsMap(mostSpecificGroup) += imp
         }
-        if (inGroup.nonEmpty) {
-          val mostSpecificGroup = inGroup.sortBy(-_.length).head
-          acc(mostSpecificGroup) += imp
-        }
-        acc
+        groupImportsMap
       }
       val unassigned = {
         val a = assigned.values.toList.flatten.map(getImportExpression)
         imports.filterNot { imp => a.contains(getImportExpression(imp)) }
       }
-      if (assigned.keySet(DefaultGroup)) {
+      (if (assigned.keySet(DefaultGroup)) {
         assigned(DefaultGroup) ++= unassigned
-        assigned.values.filter(_.nonEmpty).toSeq.map(_.toList)
+        distinctGroups.foldRight(Seq.empty[List[ImportT]]) { (key, acc) =>
+          assigned(key).toList +: acc
+        }
       } else {
-        assigned.values.filter(_.nonEmpty).toSeq.map(_.toList) :+ (unassigned.toList)
-      }
+        distinctGroups.foldRight(Seq.empty[List[ImportT]]) { (key, acc) =>
+          assigned(key).toList +: acc
+        } :+ unassigned.toList
+      }).filter(_.nonEmpty)
     }
   }
 
