@@ -46,6 +46,42 @@ class OrganizeImportsAlgosTest {
         expected = List(List("a.A"), List("a.b.AB"), List("ab.Ab1", "ab.Ab2"), List("abc.Abc1", "abc.Abc2")))
   }
 
+  @Test
+  def testGroupImportsWithAlternatives(): Unit = {
+    testGroupImports(
+        groups = List("a.c", "a,b.c", "b"),
+        imports = List("a.b.X", "a.c.Y", "b.a.Y", "b.c.X"),
+        expected = List(List("a.c.Y"), List("a.b.X", "b.c.X"), List("b.a.Y")))
+
+    testGroupImports(
+        groups = List("a.c", "nonexisting", "a,b.c", "b"),
+        imports = List("a.b.X", "a.c.Y", "b.a.Y", "b.c.X"),
+        expected = List(List("a.c.Y"), List("a.b.X", "b.c.X"), List("b.a.Y")))
+
+    testGroupImports(
+        groups = List("a.c", "*", "a,b.c", "b"),
+        imports = List("a.b.X", "a.c.Y", "b.a.Y", "b.c.X", "d.a.Y"),
+        expected = List(List("a.c.Y"), List("d.a.Y"), List("a.b.X", "b.c.X"), List("b.a.Y")))
+
+    // default group at the end
+    testGroupImports(
+        groups = List("a.c", "a,b.c", "b"),
+        imports = List("a.b.X", "a.c.Y", "b.a.Y", "b.c.X", "d.a.Y"),
+        expected = List(List("a.c.Y"), List("a.b.X", "b.c.X"), List("b.a.Y"), List("d.a.Y")))
+
+    // disordered alternative
+    testGroupImports(
+        groups = List("a.c", "b.c,a", "b"),
+        imports = List("a.b.X", "a.c.Y", "b.a.Y", "b.c.X"),
+        expected = List(List("a.c.Y"), List("a.b.X", "b.c.X"), List("b.a.Y")))
+
+    // disordered and repeated alternative
+    testGroupImports(
+        groups = List("a.c", "b.c,a", "b", "a,b.c"),
+        imports = List("a.b.X", "a.c.Y", "b.a.Y", "b.c.X"),
+        expected = List(List("a.c.Y"), List("a.b.X", "b.c.X"), List("b.a.Y")))
+  }
+
   private def testGroupImports(groups: List[String], imports: List[String], expected: List[List[String]]): Unit = {
     def getImportExpr(imp: String) = {
       val lastDot = imp.lastIndexOf('.')
