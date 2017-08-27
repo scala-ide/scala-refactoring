@@ -34,7 +34,7 @@ this list, this might be a very good place to start contributing!
 ### Overall Architecture
 
 Refactorings are implemented on top of 
-[ASTs](http://docs.scala-lang.org/overviews/reflection/symbols-trees-types) 
+[ASTs](https://docs.scala-lang.org/overviews/reflection/symbols-trees-types.html) 
 from the Scala Presentation Compiler. If you plan to work on the library, you
 should definitely take a look at
 [Mirko Stockers Master Theses](https://github.com/scala-ide/scala-refactoring/raw/thesis-documentation/scala-refactoring.pdf).
