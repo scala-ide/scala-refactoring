@@ -9,39 +9,37 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
 
   val fromSource =
     """
+      |package implementMethods
+      |
       |trait T {
-      | def f(x: Int): String
+      |  def f(x: Int): String
       |}
       |
       |object Obj extends /*(*/T/*)*/ {
+      |
+      |  def g(x: Int): Int = 1
+      |
       |}
     """.stripMargin
 
   val toSource =
     """
+      |package implementMethods
+      |
       |trait T {
-      | def f(x: Int): String
+      |  def f(x: Int): String
       |}
       |
-      |object Obj extends T {
-      |  def g(): Int = {
-      |    ???    Left(PreparationError("crash!"))
-
+      |object Obj extends /*(*/T/*)*/ {
+      |
+      |  def g(x: Int): Int = 1
+      |
+      |  def f(x: Int): String = {
+      |    ???
       |  }
+      |
       |}
     """.stripMargin
-
-  /*@Test
-  def addMethod() = {
-    global.ask { () =>
-      val refactoring = new AddMethod {
-        val global: Global = outer.global
-        val file = addToCompiler(UniqueNames.basename(), fromSource)
-        val change = addMethod(file, "Obj", "g", List(Nil), Nil, Some("Int"), AddToObject)
-      }
-      assertEquals(toSource, Change.applyChanges(refactoring.change, fromSource))
-    }
-  }*/
 
   def implementMethods(pro: FileSet) = new TestRefactoringImpl(pro) {
     override val refactoring = new ImplementMethods with TestProjectIndex
