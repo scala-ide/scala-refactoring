@@ -51,6 +51,36 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
   } applyRefactoring implementMethods
 
   @Test
+  def implementMethodFromExtendedClass() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |abstract class C {
+      |  def f(x: Int): String
+      |}
+      |
+      |object Obj extends /*(*/C/*)*/ {
+      |  val x: Int = ???
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |abstract class C {
+      |  def f(x: Int): String
+      |}
+      |
+      |object Obj extends /*(*/C/*)*/ {
+      |  val x: Int = ???
+      |
+      |  def f(x: Int): String = {
+      |    ???
+      |  }
+      |}
+    """.stripMargin
+  } applyRefactoring implementMethods
+
+  @Test
   def implementMethodFromSecondMixing() = new FileSet() {
     """
       |package implementMethods
@@ -63,7 +93,7 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
       |  def g(x: Int): Int
       |}
       |
-      |object Obj extends T with /*(*/S/*)*/ {
+      |class C extends T with /*(*/S/*)*/ {
       |  val x: Int = ???
       |}
     """.stripMargin becomes
@@ -78,7 +108,7 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
       |  def g(x: Int): Int
       |}
       |
-      |object Obj extends T with /*(*/S/*)*/ {
+      |class C extends T with /*(*/S/*)*/ {
       |  val x: Int = ???
       |
       |  def g(x: Int): Int = {
