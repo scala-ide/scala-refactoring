@@ -124,4 +124,73 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
     """.stripMargin
   } applyRefactoring implementMethods
 
+  @Test
+  def implementMethodsSelectType() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |trait T[T] {
+      |  def f[T]: T
+      |}
+      |
+      |class C extends /*(*/T[Int]/*)*/ {
+      |
+      |  def g(x: Int): Int = ???
+      |
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |trait T[T] {
+      |  def f[T]: T
+      |}
+      |
+      |class C extends /*(*/T[Int]/*)*/ {
+      |
+      |  def g(x: Int): Int = ???
+      |
+      |  def f[T]: T = {
+      |    ???
+      |  }
+      |
+      |}
+    """.stripMargin
+  } applyRefactoring implementMethods
+
+  @Test
+  def implementMethodsSelectKind() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |trait T[T] {
+      |  def f[T]: T
+      |}
+      |
+      |class C extends /*(*/T/*)*/[Int] {
+      |
+      |  def g(x: Int): Int = ???
+      |
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |trait T[T] {
+      |  def f[T]: T
+      |}
+      |
+      |class C extends /*(*/T/*)*/[Int] {
+      |
+      |  def g(x: Int): Int = ???
+      |
+      |  def f[T]: T = {
+      |    ???
+      |  }
+      |
+      |}
+    """.stripMargin
+  } applyRefactoring implementMethods
+
+
 }

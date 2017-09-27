@@ -37,11 +37,17 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
 
   override def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
 
+
+    // Expand the selection to the concrete type when a kind was initially selected.
+    val maybeSelectedTemplate = (s::s.expandToNextEnclosingTree.toList) flatMap { sel: Selection =>
+      index.declaration(sel.enclosingTree.symbol)
+    } collectFirst {
+      case templateDeclaration: ClassDef => templateDeclaration
+    }
+
     // Get a sequence of methods found in the selected mixed trait.
     val methodsToImplement = for {
-      selectedTemplateDeclaration <- index.declaration(s.enclosingTree.symbol).toSeq collect {
-        case templateDeclaration: ClassDef => templateDeclaration
-      }
+      selectedTemplateDeclaration <- maybeSelectedTemplate.toList
       unimplementedMethod <- selectedTemplateDeclaration.impl.body collect {
         case methodDeclaration: DefDef if methodDeclaration.rhs.isEmpty =>
           methodDeclaration
