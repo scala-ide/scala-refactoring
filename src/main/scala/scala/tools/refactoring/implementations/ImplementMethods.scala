@@ -35,6 +35,17 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
     }
   }
 
+  private def templateAncestry(template: Template): List[Template] =
+    template :: {
+      for {
+        parent <- template.parents
+        parentImp <- index.declaration(parent.symbol).toList collect {
+          case ClassDef(_, _, _, impl) => impl
+        }
+        ancestor <- templateAncestry(parentImp)
+      } yield ancestor
+    }
+
   override def prepare(s: Selection): Either[PreparationError, PreparationResult] = {
 
 
@@ -42,17 +53,29 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
     val maybeSelectedTemplate = (s::s.expandToNextEnclosingTree.toList) flatMap { sel: Selection =>
       index.declaration(sel.enclosingTree.symbol)
     } collectFirst {
-      case templateDeclaration: ClassDef => templateDeclaration
+      case templateDeclaration: ClassDef => templateDeclaration.impl
     }
 
     // Get a sequence of methods found in the selected mixed trait.
-    val methodsToImplement = for {
-      selectedTemplateDeclaration <- maybeSelectedTemplate.toList
-      unimplementedMethod <- selectedTemplateDeclaration.impl.body collect {
-        case methodDeclaration: DefDef if methodDeclaration.rhs.isEmpty =>
-          methodDeclaration
-      }
-    } yield unimplementedMethod
+    val methodsToImplement = {
+
+      val rawList = for {
+        selectedTemplate <- maybeSelectedTemplate.toList
+        selectedDeclaration <- templateAncestry(selectedTemplate)
+        unimplementedMethod <- selectedDeclaration.body collect {
+          case methodDeclaration: DefDef if methodDeclaration.rhs.isEmpty =>
+            methodDeclaration
+        }
+      } yield unimplementedMethod;
+
+      val (uniqueMethods, _) =
+        rawList.foldRight((List.empty[DefDef], Set.empty[OverloadedMethod])) {
+          case (method, (l, visited)) if !visited.contains(method) =>
+            (method::l, visited + method)
+          case (_, st) => st
+        }
+      uniqueMethods
+    }
 
     // Use the selection to find the template where the methods should be implemented.
     val targetTemplate = s.expandToNextEnclosingTree.flatMap {

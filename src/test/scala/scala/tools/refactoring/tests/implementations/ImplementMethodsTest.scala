@@ -223,4 +223,110 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
   } applyRefactoring implementMethods
 
 
+  @Test
+  def implementMethodFromAncestry() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |trait R {
+      |  def k: Unit
+      |}
+      |
+      |trait T {
+      |  def f(x: Int): String
+      |}
+      |
+      |trait S extends T {
+      |  def g(x: Int): Int
+      |}
+      |
+      |object Obj extends /*(*/S/*)*/ with R {
+      |  val x: Int = ???
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |trait R {
+      |  def k: Unit
+      |}
+      |
+      |trait T {
+      |  def f(x: Int): String
+      |}
+      |
+      |trait S extends T {
+      |  def g(x: Int): Int
+      |}
+      |
+      |object Obj extends /*(*/S/*)*/ with R {
+      |  val x: Int = ???
+      |
+      |  def g(x: Int): Int = {
+      |    ???
+      |  }
+      |
+      |  def f(x: Int): String = {
+      |    ???
+      |  }
+      |}
+    """.stripMargin
+
+  } applyRefactoring implementMethods
+
+  @Test
+  def implementMethodFromCyclicAncestry() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |trait R {
+      |  def k: Unit
+      |}
+      |
+      |trait T extends R {
+      |  def f(x: Int): String
+      |}
+      |
+      |trait S extends T with R {
+      |  def g(x: Int): Int
+      |}
+      |
+      |object Obj extends /*(*/S/*)*/ with R {
+      |  val x: Int = ???
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |trait R {
+      |  def k: Unit
+      |}
+      |
+      |trait T extends R {
+      |  def f(x: Int): String
+      |}
+      |
+      |trait S extends T with R {
+      |  def g(x: Int): Int
+      |}
+      |
+      |object Obj extends /*(*/S/*)*/ with R {
+      |  val x: Int = ???
+      |
+      |  def g(x: Int): Int = {
+      |    ???
+      |  }
+      |
+      |  def f(x: Int): String = {
+      |    ???
+      |  }
+      |
+      |  def k: Unit = {
+      |    ???
+      |  }
+      |}
+    """.stripMargin
+
+  } applyRefactoring implementMethods
+
 }
