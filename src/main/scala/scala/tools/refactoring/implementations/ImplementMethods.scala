@@ -8,29 +8,32 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
 
   import global._
 
-  case class PreparationResult(targetTemplate: Template, methodsToImplement: Seq[DefDef])
+  case class PreparationResult(targetTemplate: Template, memberToImplement: Seq[ValOrDefDef])
 
-  /* Helper class to box methods so they can be
+  /* Helper class to box members so they can be
      compared in terms of their signature.
    */
-  implicit class OverloadedMethod(val method: DefDef) {
+  implicit class OverloadedMember(val member: ValOrDefDef) {
 
-    private val key = {
-      import method.{name, tparams, vparamss}
+    private val key = member match {
+      case method: DefDef =>
+        import method.{name, tparams, vparamss}
 
-      val vparamsTypes = for {
-        paramList <- vparamss
-        param <- paramList
-      } yield param.tpt.tpe
+        val vparamsTypes = for {
+          paramList <- vparamss
+          param <- paramList
+        } yield param.tpt.tpe
 
-      (name, tparams, vparamsTypes)
+        (name, tparams, vparamsTypes)
 
+      case ValDef(_, name, _, _) => name.toString.trim
     }
 
-    override def hashCode(): RunId = key.hashCode()
+    override def hashCode(): RunId =
+      key.hashCode()
 
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: OverloadedMethod => key == that.key
+      case that: OverloadedMember => key == that.key
       case _ => false
     }
   }
@@ -56,20 +59,19 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
       case templateDeclaration: ClassDef => templateDeclaration.impl
     }
 
-    // Get a sequence of methods found in the selected mixed trait.
-    val methodsToImplement = {
+    // Get a sequence of members (methods or values) found in the selected mixed trait
+    val membersToImplement = {
 
       val rawList = for {
         selectedTemplate <- maybeSelectedTemplate.toList
         selectedDeclaration <- templateAncestry(selectedTemplate)
-        unimplementedMethod <- selectedDeclaration.body collect {
-          case methodDeclaration: DefDef if methodDeclaration.rhs.isEmpty =>
-            methodDeclaration
+        unimplementedMember <- selectedDeclaration.body collect {
+          case defOrValDef: ValOrDefDef if defOrValDef.rhs.isEmpty => defOrValDef
         }
-      } yield unimplementedMethod;
+      } yield unimplementedMember
 
       val (uniqueMethods, _) =
-        rawList.foldRight((List.empty[DefDef], Set.empty[OverloadedMethod])) {
+        rawList.foldRight((List.empty[ValOrDefDef], Set.empty[OverloadedMember])) {
           case (method, (l, visited)) if !visited.contains(method) =>
             (method::l, visited + method)
           case (_, st) => st
@@ -77,7 +79,7 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
       uniqueMethods
     }
 
-    // Use the selection to find the template where the methods should be implemented.
+    // Use the selection to find the template where the members should be implemented.
     val targetTemplate = s.expandToNextEnclosingTree.flatMap {
       _.selectedSymbolTree collect {
         case target: Template => target
@@ -85,16 +87,16 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
     }
 
     targetTemplate map { t => // If the selection has indeed a target template...
-      if(methodsToImplement.isEmpty) Left { //... as long as there are methods in the mixed trait...
+      if(membersToImplement.isEmpty) Left { //... as long as there are members in the mixed trait...
         PreparationError("There are not methods to implement")
       } else Right { //... these are selected to be defined in the target template.
-        // If and only if they're not already defined there.
-        val implementedMethods: Set[OverloadedMethod] = {
+        // If and only if they were not already defined there.
+        val implementedMembers: Set[OverloadedMember] = {
           t.body collect {
-            case methodDef: DefDef => new OverloadedMethod(methodDef)
+            case memberDef: ValOrDefDef => new OverloadedMember(memberDef)
           } toSet
         }
-        PreparationResult(t, methodsToImplement.filterNot(implementedMethods contains _))
+       PreparationResult(t, membersToImplement.filterNot(implementedMembers contains _))
       }
     } getOrElse Left {
       PreparationError("No target class in selection")
@@ -112,8 +114,13 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
 
     val addMethods = transform {
       case tpl @ Template(_,  _, body) if tpl == prepared.targetTemplate =>
-        val methodsBody = Block(Ident("???") :: Nil, EmptyTree)
-        val methodWithRhs = methodsToImplement.map(_ copy (rhs = methodsBody))
+        val unimplementedSentence = Ident("???")
+        val methodWithRhs = memberToImplement collect {
+          case methodDef: DefDef =>
+            methodDef copy (rhs = Block(unimplementedSentence :: Nil, EmptyTree))
+          case valueDef: ValDef =>
+            valueDef copy (rhs = unimplementedSentence)
+        }
         tpl.copy(body = body ++ methodWithRhs).replaces(tpl)
     }
 

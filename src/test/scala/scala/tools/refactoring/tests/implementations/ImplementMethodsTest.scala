@@ -119,7 +119,7 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
   } applyRefactoring implementMethods
 
   @Test
-  def implementMethodsNotImplemented() = new FileSet() {
+  def implementNotImplementedMethods() = new FileSet() {
     """
       |package implementMethods
       |
@@ -145,6 +145,60 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
       |object Obj extends /*(*/T/*)*/ {
       |
       |  def g(x: Int): Int = 1
+      |
+      |  def f(x: Int): String = {
+      |    ???
+      |  }
+      |
+      |}
+    """.stripMargin
+  } applyRefactoring implementMethods
+
+  @Test
+  def implementNotImplementedMembers() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |trait T {
+      |
+      |  val x: Int
+      |  val y: Double
+      |  val a_longIdentifier: Long
+      |
+      |  def f(x: Int): String
+      |  def g(x: Int): Int
+      |}
+      |
+      |object Obj extends /*(*/T/*)*/ {
+      |
+      |  val y: Double = 42.0
+      |  val a_longIdentifier: Long = 42L
+      |
+      |  def g(x: Int): Int = 1
+      |
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |trait T {
+      |
+      |  val x: Int
+      |  val y: Double
+      |  val a_longIdentifier: Long
+      |
+      |  def f(x: Int): String
+      |  def g(x: Int): Int
+      |}
+      |
+      |object Obj extends /*(*/T/*)*/ {
+      |
+      |  val y: Double = 42.0
+      |  val a_longIdentifier: Long = 42L
+      |
+      |  def g(x: Int): Int = 1
+      |
+      |  val x: Int = ???
       |
       |  def f(x: Int): String = {
       |    ???
