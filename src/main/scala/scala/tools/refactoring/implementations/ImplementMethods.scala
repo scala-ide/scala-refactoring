@@ -8,12 +8,12 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
 
   import global._
 
-  case class PreparationResult(targetTemplate: Template, memberToImplement: Seq[ValOrDefDef])
+  case class PreparationResult(targetTemplate: Template, memberToImplement: Seq[MemberDef])
 
   /* Helper class to box members so they can be
      compared in terms of their signature.
    */
-  implicit class OverloadedMember(val member: ValOrDefDef) {
+  implicit class OverloadedMember(val member: MemberDef) {
 
     private val key = member match {
       case method: DefDef =>
@@ -26,7 +26,8 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
 
         (name, tparams, vparamsTypes)
 
-      case ValDef(_, name, _, _) => name.toString.trim
+      case ValDef(_, name, _, _) => 'valdef -> name.toString.trim
+      case TypeDef(_, name, _, _) => 'typedef -> name.toString.trim
     }
 
     override def hashCode(): RunId =
@@ -59,7 +60,7 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
       case templateDeclaration: ClassDef => templateDeclaration.impl
     }
 
-    // Get a sequence of members (methods or values) found in the selected mixed trait
+    // Get a sequence of members (types, methods or values) found in the selected mixed trait
     val membersToImplement = {
 
       val rawList = for {
@@ -67,16 +68,18 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
         selectedDeclaration <- templateAncestry(selectedTemplate)
         unimplementedMember <- selectedDeclaration.body collect {
           case defOrValDef: ValOrDefDef if defOrValDef.rhs.isEmpty => defOrValDef
+          case typeDef: TypeDef if !typeDef.rhs.hasExistingSymbol =>
+            typeDef
         }
       } yield unimplementedMember
 
-      val (uniqueMethods, _) =
-        rawList.foldRight((List.empty[ValOrDefDef], Set.empty[OverloadedMember])) {
-          case (method, (l, visited)) if !visited.contains(method) =>
-            (method::l, visited + method)
+      val (uniqueMembers, _) =
+        rawList.foldRight((List.empty[MemberDef], Set.empty[OverloadedMember])) {
+          case (member, (l, visited)) if !visited.contains(member) =>
+            (member::l, visited + member)
           case (_, st) => st
         }
-      uniqueMethods
+      uniqueMembers
     }
 
     // Use the selection to find the template where the members should be implemented.
@@ -88,12 +91,12 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
 
     targetTemplate map { t => // If the selection has indeed a target template...
       if(membersToImplement.isEmpty) Left { //... as long as there are members in the mixed trait...
-        PreparationError("There are not methods to implement")
+        PreparationError("There are not members to implement")
       } else Right { //... these are selected to be defined in the target template.
         // If and only if they were not already defined there.
         val implementedMembers: Set[OverloadedMember] = {
           t.body collect {
-            case memberDef: ValOrDefDef => new OverloadedMember(memberDef)
+            case memberDef: MemberDef => new OverloadedMember(memberDef)
           } toSet
         }
        PreparationResult(t, membersToImplement.filterNot(implementedMembers contains _))
@@ -112,22 +115,27 @@ abstract class ImplementMethods extends MultiStageRefactoring with analysis.Inde
       case t: Template => t == targetTemplate
     }
 
-    val addMethods = transform {
+    val addMembers = transform {
       case tpl @ Template(_,  _, body) if tpl == prepared.targetTemplate =>
         val unimplementedSentence = Ident("???")
-        val methodWithRhs = memberToImplement collect {
+        val thisType = SingletonTypeTree(This(TypeName("")))
+
+        val membersWithRhs = memberToImplement collect {
           case methodDef: DefDef =>
             methodDef copy (rhs = Block(unimplementedSentence :: Nil, EmptyTree))
           case valueDef: ValDef =>
             valueDef copy (rhs = unimplementedSentence)
+          case typeDef: TypeDef =>
+            typeDef copy (rhs = thisType)
         }
-        tpl.copy(body = body ++ methodWithRhs).replaces(tpl)
+
+        tpl.copy(body = body ++ membersWithRhs).replaces(tpl)
     }
 
     val transformation = topdown {
       matchingChildren {
         findTemplate &>
-        addMethods
+        addMembers
       }
     }
     Right(transformFile(selection.file, transformation))

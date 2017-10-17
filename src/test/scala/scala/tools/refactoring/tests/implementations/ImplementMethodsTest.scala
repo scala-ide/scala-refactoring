@@ -383,4 +383,64 @@ class ImplementMethodsTest extends TestHelper with TestRefactoring {
 
   } applyRefactoring implementMethods
 
+  @Test
+  def implementTypes() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |trait T {
+      |  type S
+      |}
+      |
+      |object Obj extends /*(*/T/*)*/ {
+      |  val x: Int = 3
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |trait T {
+      |  type S
+      |}
+      |
+      |object Obj extends /*(*/T/*)*/ {
+      |  val x: Int = 3
+      |
+      |  type S = this.type
+      |}
+    """.stripMargin
+  } applyRefactoring implementMethods
+
+  @Test
+  def implementTypesSkippingImplemented() = new FileSet() {
+    """
+      |package implementMethods
+      |
+      |trait T {
+      |  type S
+      |  type R
+      |}
+      |
+      |object Obj extends /*(*/T/*)*/ {
+      |  type R = Int
+      |  val x: Int = 3
+      |}
+    """.stripMargin becomes
+    """
+      |package implementMethods
+      |
+      |trait T {
+      |  type S
+      |  type R
+      |}
+      |
+      |object Obj extends /*(*/T/*)*/ {
+      |  type R = Int
+      |  val x: Int = 3
+      |
+      |  type S = this.type
+      |}
+    """.stripMargin
+  } applyRefactoring implementMethods
+
 }
