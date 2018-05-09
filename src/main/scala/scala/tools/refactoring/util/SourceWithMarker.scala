@@ -605,7 +605,7 @@ object SourceWithMarker {
     }
 
     val delimiter = charOfClass { c =>
-      c == '`' || c == ''' || c == '"' || c == '.' || c == ';' || c == ','
+      c == '`' || c == '\'' || c == '"' || c == '.' || c == ';' || c == ','
     }
 
     val opChar = charOfClass { c =>
@@ -620,10 +620,10 @@ object SourceWithMarker {
     }
 
     val characterLiteral = {
-      val charEscape = character('b') | 't' | 'n' | 'f' | 'r' | '"' | ''' | '\\'
+      val charEscape = character('b') | 't' | 'n' | 'f' | 'r' | '"' | '\'' | '\\'
       val octEscape = octalDigit ~ octalDigit.atMostNtimes(2)
 
-      ''' ~ ((any.butNot('\\') | ('\\' ~ (charEscape | octEscape)))) ~ '''
+      '\'' ~ ((any.butNot('\\') | ('\\' ~ (charEscape | octEscape)))) ~ '\''
     }
 
     val stringLiteral = {
@@ -680,7 +680,7 @@ object SourceWithMarker {
 
     val plainid = (upper ~ idrest) | varid | op
 
-    val symbolLiteral = ''' ~ plainid
+    val symbolLiteral = '\'' ~ plainid
 
     val literalIdentifier = '`' ~ any.butNot('`').atLeastOnce ~ '`'
 
