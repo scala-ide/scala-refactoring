@@ -343,7 +343,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  }.performRefactoring(extract(0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTreeIgnoringFreshNames
 
   @Test
   def dontExtractWildcardPatterns() = new FileSet(expectCompilingCode = false) {
@@ -364,7 +364,7 @@ class ExtractValueTest extends TestHelper with TestRefactoring {
       }
     }
     """
-  }.performRefactoring(extract(0)).assertEqualTree
+  }.performRefactoring(extract(0)).assertEqualTreeIgnoringFreshNames
 
   @Test
   def extractIntoNewValBlock() = new FileSet{
