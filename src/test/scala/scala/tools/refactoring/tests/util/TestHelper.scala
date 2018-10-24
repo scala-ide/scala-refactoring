@@ -281,6 +281,14 @@ trait TestHelper extends TestRules with Refactoring with CompilerProvider with c
           }
           assertEquals(expected, actual)
         }
+        def assertEqualTreeIgnoringFreshNames() = withResultTree { actualTree =>
+          val expectedTree = treeFrom(srcs.head._2.code)
+          def clean(s: String) = s.replaceAll("""\$\d+""", """\$""")
+          val (expected, actual) = global.ask { () =>
+            (clean(expectedTree.toString()), clean(actualTree.toString()))
+          }
+          assertEquals(expected, actual)
+        }
       }
     }
 
